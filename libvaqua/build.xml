@@ -1,0 +1,60 @@
+<project default="libvaqua" name="libosxfile" basedir=".">
+
+<typedef name="jni" classname="com.cbfiddle.ant.JNILibrary"/>
+
+	<property name="buildroot" location="${user.home}/build"/>
+	<property name="products" location="${buildroot}/products"/>
+	<property name="dist" location="${products}/jni"/>
+
+	<target name="headers">
+		<javah class="org.violetlib.aqua.fc.OSXFile"
+           classpath="/Users/alan/build/working/VAqua/classes"
+           destdir="."/>
+		<javah class="org.violetlib.aqua.OSXSystemProperties"
+           classpath="/Users/alan/build/working/VAqua/classes"
+           destdir="."/>
+		<javah class="org.violetlib.aqua.AquaNativeSupport"
+           classpath="/Users/alan/build/working/VAqua/classes"
+           destdir="."/>
+		<javah class="org.violetlib.aqua.AquaIcon"
+           classpath="/Users/alan/build/working/VAqua/classes"
+           destdir="."/>
+		<javah class="org.violetlib.aqua.AquaImageFactory"
+           classpath="/Users/alan/build/working/VAqua/classes"
+           destdir="."/>
+		<javah class="org.violetlib.aqua.AquaNativeColorChooser"
+           classpath="/Users/alan/build/working/VAqua/classes"
+           destdir="."/>
+		<javah class="org.violetlib.aqua.AquaUtils"
+           classpath="/Users/alan/build/working/VAqua/classes"
+           destdir="."/>
+	</target>
+
+	<target name="libvaqua" depends="headers">
+
+	<mkdir dir="${dist}"/>
+
+	<jni
+		version="1"
+		compatibilityversion="1"
+		outputfile="${dist}/libvaqua.dylib"
+		arch="x86_64"
+		librarypath="/usr/local/lib"
+		includepath="/usr/local/include"
+		>
+
+		<fileset dir=".">
+			<include name="*.c"/>
+			<include name="*.m"/>
+		</fileset>
+
+		<framework>CoreFoundation</framework>
+		<framework>Cocoa</framework>
+		<framework>JavaNativeFoundation</framework>
+
+	</jni>
+
+	<copy file="${dist}/libvaqua.dylib" preservelastmodified="true" tofile="${basedir}/../resources/libvaqua.dylib"/>
+
+	</target>
+</project>

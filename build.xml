@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<project name="VAqua" default="jar" basedir=".">
+
+	<property name="webroot" location="../../web site/violetlib.org"/>
+	<property name="installdir" location="${webroot}/release/vaqua"/>
+	<property name="homebin" location="${user.home}/bin"/>
+
+	<import file="../build/library.xml"/>
+	<import file="../build/releases.xml"/>
+
+	<filelist id="lib.jars" dir="${lib}">
+		<file name="VAquaRendering.jar"/>
+	</filelist>
+
+	<classpath/>
+
+	<target name="jar"
+	    depends="clean, compile, lib"
+	    description="Build the development version of the JAR">
+	  <define-library/>
+	</target>
+
+  <target name="lib"
+      description="Build the development version of the native library">
+    <ant dir="libvaqua" inheritAll="false"/>
+  </target>
+
+  <target name="release"
+      depends="validateReleaseNumber"
+      description="Build the release version of the JAR">
+    <property name="renderingLibraryJAR" location="${slib}/VAquaRendering.jar"/>
+    <ant dir="release" inheritAll="false">
+      <propertyset>
+        <propertyref name="RELEASE"/>
+        <propertyref name="renderingLibraryJAR"/>
+      </propertyset>
+    </ant>
+  </target>
+
+  <target name="showrelease">
+    <echo message="VAqua Release"/>
+    <exec dir="."
+        executable="${homebin}/jarecho"
+        os="Mac OS X">
+      <arg value="release/dist/VAqua.jar"/>
+      <arg value="org/violetlib/aqua/RELEASE.txt"/>
+    </exec>
+    <exec dir="."
+        executable="${homebin}/jarecho"
+        os="Mac OS X">
+      <arg value="release/dist/VAqua.jar"/>
+      <arg value="org/violetlib/aqua/BUILD.txt"/>
+    </exec>
+    <echo message="Includes VAquaRendering Release"/>
+    <exec dir="."
+        executable="${homebin}/jarecho"
+        os="Mac OS X">
+      <arg value="release/dist/VAqua.jar"/>
+      <arg value="org/violetlib/jnr/aqua/RELEASE.txt"/>
+    </exec>
+    <exec dir="."
+        executable="${homebin}/jarecho"
+        os="Mac OS X">
+      <arg value="release/dist/VAqua.jar"/>
+      <arg value="org/violetlib/jnr/aqua/BUILD.txt"/>
+    </exec>
+    <echo message=""/>
+  </target>
+
+  <target name="installlocal">
+			<copy file="release/dist/VAqua.jar" preservelastmodified="true" tofile="${slib}/VAqua.jar"/>
+  </target>
+
+  <target name="installjar" depends="validateReleaseNumber">
+    <mkdir dir="${installdir}/${RELEASE}"/>
+		<copy file="release/dist/VAqua.jar" preservelastmodified="true" tofile="${installdir}/${RELEASE}/VAqua${RELEASE}.jar"/>
+  </target>
+
+  <target name="installsource" depends="validateReleaseNumber">
+    <mkdir dir="${installdir}/${RELEASE}"/>
+    <zip destfile="${installdir}/${RELEASE}/VAqua${RELEASE}Source.zip">
+      <zipfileset dir="." prefix="VAqua/"
+        includes="license/**,src/**,resources/**,libvaqua/*.h,libvaqua/*.m,lib/**,release/build.xml">
+      </zipfileset>
+    </zip>
+  </target>
+
+  <target name="install" depends="installjar, installsource"/>
+
+  <target name="testRelease">
+  <java
+    fork="true"
+    classname="org.violetlib.test.TestVAqua"
+    classpath="/Users/alan/build/idea/production/TestVAqua/:/Users/alan/javalib/VAqua.jar:/Users/alan/build/working/TestVAqua/classes"/>
+  </target>
+
+</project>

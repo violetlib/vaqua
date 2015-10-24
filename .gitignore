@@ -1,0 +1,8 @@
+/.idea
+/archive
+/properties.txt
+/release/out
+/release/dist
+/resources/libvaqua.dylib
+/libvaqua/org_*.h
+/VAqua.iml
