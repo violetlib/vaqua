@@ -7,7 +7,7 @@ import javax.swing.*;
 /**
  * Supports the behavior of a scroll pane using overlay scroll bars.
  */
-public abstract class AquaOverlayScrollPaneController {
+public class AquaOverlayScrollPaneController {
 
     protected final Timer deactivationTimer;
     protected final AnimationController fadeOutController;
@@ -142,7 +142,8 @@ public abstract class AquaOverlayScrollPaneController {
         }
     }
 
-    protected abstract void reconfigure(JScrollBar sb, String which);
+    protected void reconfigure(JScrollBar sb, String which) {
+    }
 
     /**
      * If there is an active (visible) scroll bar that is not already scheduled to be deactivated, schedule its
