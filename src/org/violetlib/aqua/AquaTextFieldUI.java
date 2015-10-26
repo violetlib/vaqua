@@ -48,6 +48,7 @@ import javax.swing.text.*;
 import org.violetlib.aqua.AquaUtils.JComponentPainter;
 import org.violetlib.jnr.Insets2D;
 import org.violetlib.jnr.Insetter;
+import org.violetlib.jnr.LayoutInfo;
 
 public class AquaTextFieldUI extends BasicTextFieldUI implements FocusRingOutlineProvider {
 
@@ -250,6 +251,19 @@ public class AquaTextFieldUI extends BasicTextFieldUI implements FocusRingOutlin
     }
 
     protected Dimension getLayoutSize(LayoutOption opt) {
+        Dimension size = getLayoutSizeFromText(opt);
+        Border b = editor.getBorder();
+        if (b instanceof AquaTextFieldBorder) {
+            AquaTextFieldBorder tb = (AquaTextFieldBorder) b;
+            LayoutInfo info = tb.getLayoutInfo(editor);
+            int width = (int) Math.max(size.width, info.getMinimumVisualWidth());
+            int height = (int) Math.max(size.height, info.getMinimumVisualHeight());
+            return new Dimension(width, height);
+        }
+        return size;
+    }
+
+    protected Dimension getLayoutSizeFromText(LayoutOption opt) {
         // The text size includes the margin
         Dimension td = getTextSize(opt);
         int textWidth = td.width;
