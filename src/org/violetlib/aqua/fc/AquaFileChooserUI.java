@@ -485,7 +485,7 @@ public class AquaFileChooserUI extends BasicFileChooserUI {
 
         super.installUI(c);
 
-        installSelectedView(true);
+        installSelectedView(false, true);
     }
 
     private class NavigationPanel extends JToolBar {
@@ -1154,14 +1154,16 @@ public class AquaFileChooserUI extends BasicFileChooserUI {
         if (mode == ViewModeControl.COLUMN_VIEW || listView != null && mode == ViewModeControl.LIST_VIEW) {
             if (mode != viewMode) {
                 viewMode = mode;
-                installSelectedView(false);
-                activeView.requestFocusInWindow();
+                installSelectedView(false, false);
+                if (activeView != null) {
+                    activeView.requestFocusInWindow();
+                }
             }
         }
     }
 
-    private void installSelectedView(boolean forceReconfigure) {
-        if (!fc.isShowing()) {
+    private void installSelectedView(boolean forceInstall, boolean forceReconfigure) {
+        if (!fc.isShowing() && !forceInstall) {
             isViewInstalled = false;
         } else {
             isViewInstalled = true;
@@ -1759,11 +1761,10 @@ public class AquaFileChooserUI extends BasicFileChooserUI {
     /**
      * Update a model after a change in the file chooser configuration that might impact the model.
      */
-
     private void updateModel() {
         model.invalidateAll();
 
-        if (fc.isShowing()) {
+        if (fc.isShowing() && activeView != null) {
             reconfigureView();
             java.util.List<TreePath> oldSelection = activeView.getSelection();
             java.util.List<TreePath> newSelection = getNormalizedUISelection();
@@ -3318,21 +3319,14 @@ public class AquaFileChooserUI extends BasicFileChooserUI {
     }
 
     protected void configureForShowing() {
-        installSelectedView(true);
+        installSelectedView(true, true);
 
-        // invokeLater is a workaround for a bug in Java 1.6 (fixed in Java 1.7)
-        // without it, the focus system goes into a limbo state
-
-        SwingUtilities.invokeLater(new Runnable() {
-            public void run() {
-                if (fileNameTextField != null && isFileNameFieldVisible()) {
-                    fileNameTextField.selectAll();
-                    fileNameTextField.requestFocusInWindow();
-                } else {
-                    activeView.requestFocusInWindow();
-                }
-            }
-        });
+        if (fileNameTextField != null && isFileNameFieldVisible()) {
+            fileNameTextField.selectAll();
+            fileNameTextField.requestFocusInWindow();
+        } else {
+            activeView.requestFocusInWindow();
+        }
 
         if (model != null) {
             model.setAutoValidate(UIManager.getBoolean("FileChooser.autovalidate"));
