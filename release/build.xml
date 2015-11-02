@@ -55,7 +55,7 @@
     <target name="copyResources">
       <copy todir="${classesdir}">
         <fileset dir="${resources}">
-          <include name="**"/>
+          <include name="org/violetlib/**"/>
         </fileset>
       </copy>
     </target>
