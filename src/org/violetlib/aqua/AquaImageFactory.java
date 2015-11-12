@@ -459,48 +459,61 @@ public class AquaImageFactory {
         }
     }
 
+    // We cannot change the system colors
+    private static Color windowBackgroundColor = new ColorUIResource(236, 236, 236); // new SystemColorProxy(SystemColor.window);
+    private static Color desktopBackgroundColor = new ColorUIResource(65, 105, 170); //SystemColor.desktop
+    private static Color textSelectionBackgroundColor = new ColorUIResource(179, 215, 255); // new SystemColorProxy(SystemColor.textHighlight);
+    private static Color textSelectionForegroundColor = new ColorUIResource(0, 0, 0); // new SystemColorProxy(SystemColor.textHighlightText);
+    private static Color selectionBackgroundColor = new ColorUIResource(0, 104, 217); // new SystemColorProxy(SystemColor.controlHighlight);
+    private static Color selctionForegroundColor = new ColorUIResource(255, 255, 255); // new SystemColorProxy(SystemColor.controlLtHighlight);
+    private static Color comboBoxSelectionBackgroundColor = new ColorUIResource(0, 104, 217);
+    private static Color comboBoxSelectionForegroundColor = new ColorUIResource(217, 233, 250);
+    private static Color focusRingColor = new Color(62, 156, 246, 128); // new SystemColorProxy(LWCToolkit.getAppleColor(LWCToolkit.KEYBOARD_FOCUS_COLOR));
+    private static Color selectionInactiveBackgroundColor = new ColorUIResource(220, 220, 220);
+    private static Color selectionInactiveForegroundColor = new ColorUIResource(0, 0, 0); // new SystemColorProxy(LWCToolkit.getAppleColor(LWCToolkit.INACTIVE_SELECTION_FOREGROUND_COLOR));
+
     public static Color getWindowBackgroundColorUIResource() {
-        return new ColorUIResource(236, 236, 236); // new SystemColorProxy(SystemColor.window);
+        return windowBackgroundColor;
     }
 
     public static Color getDesktopBackgroundColorUIResource() {
-        return new ColorUIResource(65, 105, 170); //SystemColor.desktop
+        return desktopBackgroundColor;
     }
 
     public static Color getTextSelectionBackgroundColorUIResource() {
-        return new ColorUIResource(179, 215, 255); // new SystemColorProxy(SystemColor.textHighlight);
+        return textSelectionBackgroundColor;
     }
 
     public static Color getTextSelectionForegroundColorUIResource() {
-        return new ColorUIResource(0, 0, 0); // new SystemColorProxy(SystemColor.textHighlightText);
+        return textSelectionForegroundColor;
     }
 
     public static Color getSelectionBackgroundColorUIResource() {
-        return new ColorUIResource(0, 104, 217); // new SystemColorProxy(SystemColor.controlHighlight);
+        return selectionBackgroundColor;
     }
 
     public static Color getSelectionForegroundColorUIResource() {
-        return new ColorUIResource(255, 255, 255); // new SystemColorProxy(SystemColor.controlLtHighlight);
+        return selctionForegroundColor;
     }
 
     public static Color getComboBoxSelectionBackgroundColorUIResource() {
-        return new ColorUIResource(0, 104, 217);
+        return comboBoxSelectionBackgroundColor;
     }
 
     public static Color getComboBoxSelectionForegroundColorUIResource() {
-        return new ColorUIResource(217, 233, 250);
+        return comboBoxSelectionForegroundColor;
     }
 
     public static Color getFocusRingColorUIResource() {
-        return new Color(62, 156, 246, 128); // new SystemColorProxy(LWCToolkit.getAppleColor(LWCToolkit.KEYBOARD_FOCUS_COLOR));
+        return focusRingColor;
     }
 
     public static Color getSelectionInactiveBackgroundColorUIResource() {
-        return new ColorUIResource(220, 220, 220);
+        return selectionInactiveBackgroundColor;
     }
 
     public static Color getSelectionInactiveForegroundColorUIResource() {
-        return new ColorUIResource(0, 0, 0); // new SystemColorProxy(LWCToolkit.getAppleColor(LWCToolkit.INACTIVE_SELECTION_FOREGROUND_COLOR));
+        return selectionInactiveForegroundColor;
     }
 
     /**

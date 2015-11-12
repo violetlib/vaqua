@@ -535,7 +535,7 @@ final public class AquaUtils extends SwingUtilitiesModified {
         try {
             if (color instanceof UIResource
                     && isWindowTextured(c)
-                    && color.equals(SystemColor.window)) {
+                    && color.equals(AquaImageFactory.getWindowBackgroundColorUIResource())) {
                 cg.setComposite(AlphaComposite.Src);
                 cg.setColor(resetAlpha(color));
             } else {
