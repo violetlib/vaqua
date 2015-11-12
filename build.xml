@@ -86,6 +86,8 @@
     </zip>
   </target>
 
+  <target name="local" depends="jar, release, installlocal"/>
+
   <target name="install" depends="installjar, installsource"/>
 
   <target name="testRelease">
