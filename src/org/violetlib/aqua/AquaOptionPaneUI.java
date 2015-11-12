@@ -67,6 +67,15 @@ public class AquaOptionPaneUI extends BasicOptionPaneUI {
         return new AquaOptionPaneUI();
     }
 
+    @Override
+    public final void update(final Graphics g, final JComponent c) {
+        // Support textured background (magic eraser)
+        if (c.isOpaque()) {
+            AquaUtils.fillRect(g, c);
+        }
+        paint(g, c);
+    }
+
     /**
      * Creates and returns a Container containin the buttons. The buttons
      * are created by calling <code>getButtons</code>.
