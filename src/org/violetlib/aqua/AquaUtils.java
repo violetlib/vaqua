@@ -836,6 +836,24 @@ final public class AquaUtils extends SwingUtilitiesModified {
             d.setModalityType(Dialog.ModalityType.MODELESS);
         }
 
+        // Sheets are displayed over a vibrant background. To allow the vibrant background to be seen, we need to
+        // inhibit the normal Java window background and enable the magic eraser code, which we do using the textured
+        // window client property. However, if the window is already displayable, the client property will not affect
+        // the window background. As a work around, we call the peer directly.
+
+        JRootPane rp = null;
+        if (w instanceof RootPaneContainer) {
+            RootPaneContainer rpc = (RootPaneContainer) w;
+            rp = rpc.getRootPane();
+        }
+
+        if (rp != null) {
+            rp.putClientProperty("Window.style", "textured");
+            if (w.isDisplayable()) {
+                setTextured(w);
+            }
+        }
+
         if (!w.isDisplayable()) {
             w.addNotify();   // force the native peer to be created
         }
@@ -853,6 +871,21 @@ final public class AquaUtils extends SwingUtilitiesModified {
         }
 
         w.setVisible(true); // cause the lightweight components to be painted -- this method blocks on a modal dialog
+    }
+
+    private static void setTextured(Window w) {
+        try {
+            Method m = w.getClass().getMethod("getPeer");
+            m.setAccessible(true);
+            Object peer = m.invoke(w);
+            if (peer != null) {
+                m = peer.getClass().getDeclaredMethod("setTextured", Boolean.TYPE);
+                m.setAccessible(true);
+                m.invoke(peer, true);
+            }
+        } catch (Exception ex) {
+            System.err.println("Unable to set textured: " + ex);
+        }
     }
 
     private static class SheetCloser extends WindowAdapter implements HierarchyListener {
