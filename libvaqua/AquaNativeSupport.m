@@ -39,10 +39,10 @@ static jobject synchronizeCallback;
 @end
 @implementation MyDefaultResponder
 - (void)defaultsChanged:(NSNotification *)notification {
-		//NSLog(@"Notification received: %@", [notification name]);
+    //NSLog(@"Notification received: %@", [notification name]);
 
-		NSUserDefaults* defaults = [NSUserDefaults standardUserDefaults];
-		[defaults synchronize];
+    NSUserDefaults* defaults = [NSUserDefaults standardUserDefaults];
+    [defaults synchronize];
 
     JNIEnv *env;
     jboolean attached = NO;
@@ -57,15 +57,15 @@ static jobject synchronizeCallback;
     }
 
     if (status == JNI_OK) {
-    	if (synchronizeCallback != NULL) {
-				jclass cl = (*env)->GetObjectClass(env, synchronizeCallback);
-				jmethodID m = (*env)->GetMethodID(env, cl, "run", "()V");
-				if (m != NULL) {
-					(*env)->CallVoidMethod(env, synchronizeCallback, m);
-				} else {
-					NSLog(@"Unable to invoke callback -- run method not found");
-				}
-    	}
+        if (synchronizeCallback != NULL) {
+            jclass cl = (*env)->GetObjectClass(env, synchronizeCallback);
+            jmethodID m = (*env)->GetMethodID(env, cl, "run", "()V");
+            if (m != NULL) {
+                (*env)->CallVoidMethod(env, synchronizeCallback, m);
+            } else {
+                NSLog(@"Unable to invoke callback -- run method not found");
+            }
+        }
     } else {
     	NSLog(@"Unable to invoke notification callback %d", status);
     }
@@ -109,9 +109,9 @@ JNIEXPORT jboolean JNICALL Java_org_violetlib_aqua_OSXSystemProperties_nativeGet
 
 	JNF_COCOA_ENTER(env);
 
-	NSUserDefaults *userDefaults = [NSUserDefaults standardUserDefaults];
-	[userDefaults addSuiteNamed: @"com.apple.finder" ];
-  result = [userDefaults boolForKey:@"AppleShowAllFiles"];
+    NSUserDefaults *userDefaults = [NSUserDefaults standardUserDefaults];
+    [userDefaults addSuiteNamed: @"com.apple.finder" ];
+    result = [userDefaults boolForKey:@"AppleShowAllFiles"];
 
 	//NSLog(@"Show all files: %d", result);
 
@@ -132,8 +132,8 @@ JNIEXPORT jboolean JNICALL Java_org_violetlib_aqua_OSXSystemProperties_nativeGet
 
 	JNF_COCOA_ENTER(env);
 
-	NSUserDefaults *userDefaults = [NSUserDefaults standardUserDefaults];
-  result = [userDefaults boolForKey:@"AppleScrollerPagingBehavior"];
+    NSUserDefaults *userDefaults = [NSUserDefaults standardUserDefaults];
+    result = [userDefaults boolForKey:@"AppleScrollerPagingBehavior"];
 
 	JNF_COCOA_EXIT(env);
 
@@ -163,6 +163,26 @@ JNIEXPORT jboolean JNICALL Java_org_violetlib_aqua_OSXSystemProperties_nativeGet
 
 /*
  * Class:     org_violetlib_aqua_OSXSystemProperties
+ * Method:    nativeGetReduceTransparency
+ * Signature: ()Z
+ */
+JNIEXPORT jboolean JNICALL Java_org_violetlib_aqua_OSXSystemProperties_nativeGetReduceTransparency
+  (JNIEnv *env, jclass cl) {
+
+    jboolean result = NO;
+
+    JNF_COCOA_ENTER(env);
+
+    NSUserDefaults *userDefaults = [NSUserDefaults standardUserDefaults];
+    result = [userDefaults boolForKey:@"reduceTransparency"];
+
+    JNF_COCOA_EXIT(env);
+
+    return result;
+}
+
+/*
+ * Class:     org_violetlib_aqua_OSXSystemProperties
  * Method:    enableCallback
  * Signature: (Ljava/lang/Runnable;)V
  */
@@ -177,6 +197,7 @@ JNIEXPORT void JNICALL Java_org_violetlib_aqua_OSXSystemProperties_enableCallbac
 	if (status == 0) {
 
 		NSString * const KeyboardUIModeDidChangeNotification = @"com.apple.KeyboardUIModeDidChange";
+		NSString * const ReduceTransparencyStatusDidChangeNotification = @"AXInterfaceReduceTransparencyStatusDidChange";
 
 		MyDefaultResponder *r = [[MyDefaultResponder alloc] init];
 		[r retain];
@@ -184,11 +205,15 @@ JNIEXPORT void JNICALL Java_org_violetlib_aqua_OSXSystemProperties_enableCallbac
 		NSDistributedNotificationCenter *dcenter = [NSDistributedNotificationCenter defaultCenter];
 		[center addObserver:r
 				    selector:@selector(defaultsChanged:)
-					  name:NSPreferredScrollerStyleDidChangeNotification
+					    name:NSPreferredScrollerStyleDidChangeNotification
 					  object:nil];
 		[dcenter addObserver:r
 				    selector:@selector(defaultsChanged:)
-					  name:KeyboardUIModeDidChangeNotification
+					    name:KeyboardUIModeDidChangeNotification  // use nil to see all notifications
+					  object:nil];
+		[dcenter addObserver:r
+				    selector:@selector(defaultsChanged:)
+					    name:ReduceTransparencyStatusDidChangeNotification
 					  object:nil];
 		//NSLog(@"Observer registered");
 	}

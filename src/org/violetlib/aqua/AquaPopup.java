@@ -13,6 +13,8 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import javax.swing.*;
 import javax.swing.Timer;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 
 /**
  * A heavy weight popup.
@@ -34,11 +36,18 @@ public class AquaPopup extends Popup {
             JRootPane popupRootPane = ((RootPaneContainer) popup).getRootPane();
 
             if (isContextual) {
-                makeClear(popup);
+                makeClear(popup, !OSXSystemProperties.isReduceTransparency());
                 popup.pack();
                 AquaUtils.setTextured(popup);   // avoid painting a window background
-                AquaUtils.setCornerRadius(popup, 6);
                 AquaVibrantSupport.addFullWindowVibrantView(popup, AquaVibrantSupport.LIGHT_STYLE);
+                AquaUtils.setCornerRadius(popup, 6);
+
+                OSXSystemProperties.addChangeListener(new ChangeListener() {
+                    @Override
+                    public void stateChanged(ChangeEvent e) {
+                        makeClear(popup, !OSXSystemProperties.isReduceTransparency());
+                    }
+                });
             } else {
                 popupRootPane.putClientProperty("Window.alpha", TRANSLUCENT);
                 popupRootPane.putClientProperty("Window.shadow", Boolean.TRUE);
@@ -96,11 +105,12 @@ public class AquaPopup extends Popup {
         }
     }
 
-    private void makeClear(Window w) {
+    private void makeClear(Window w, boolean isClear) {
 
         Color clear = new Color(0, 0, 0, 0);
+        Color bc = isClear ? clear : AquaImageFactory.getWindowBackgroundColorUIResource();
 
-        w.setBackground(clear);
+        w.setBackground(bc);
 
         if (w instanceof RootPaneContainer) {
             JRootPane rp = ((RootPaneContainer) w).getRootPane();
