@@ -42,10 +42,7 @@ import javax.swing.*;
 import javax.swing.border.Border;
 import javax.swing.plaf.UIResource;
 import java.awt.*;
-import java.awt.event.HierarchyEvent;
-import java.awt.event.HierarchyListener;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
+import java.awt.event.*;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.*;
 import java.lang.ref.SoftReference;
@@ -873,7 +870,7 @@ final public class AquaUtils extends SwingUtilitiesModified {
         w.setVisible(true); // cause the lightweight components to be painted -- this method blocks on a modal dialog
     }
 
-    private static void setTextured(Window w) {
+    public static void setTextured(Window w) {
         try {
             Method m = w.getClass().getMethod("getPeer");
             m.setAccessible(true);
@@ -886,6 +883,10 @@ final public class AquaUtils extends SwingUtilitiesModified {
         } catch (Exception ex) {
             System.err.println("Unable to set textured: " + ex);
         }
+    }
+
+    public static void setCornerRadius(Window w, float radius) {
+        nativeSetWindowCornerRadius(w, radius);
     }
 
     private static class SheetCloser extends WindowAdapter implements HierarchyListener {
@@ -931,6 +932,7 @@ final public class AquaUtils extends SwingUtilitiesModified {
     private static native int nativeSetTitleBarStyle(Window w, int style);
     private static native int nativeAddToolbarToWindow(Window w);
     private static native int nativeDisplayAsSheet(Window w);
+    private static native int nativeSetWindowCornerRadius(Window w, float radius);
 
     public static native void syslog(String msg);
 }

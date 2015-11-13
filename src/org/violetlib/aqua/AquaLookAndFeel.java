@@ -44,6 +44,8 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.*;
 
 import javax.swing.*;
@@ -184,8 +186,17 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
 
         table.put("ClassLoader", getClass().getClassLoader());
 
+        // Popups must be heavy to use the vibrant background
         try {
-            // PopupFactory.getSharedInstance().setPopupType(2);
+            PopupFactory pf = PopupFactory.getSharedInstance();
+            Method m = pf.getClass().getDeclaredMethod("setPopupType", Integer.TYPE);
+            m.setAccessible(true);
+            m.invoke(pf, 2);
+        } catch (Exception ex) {
+            System.err.println("Unable to set default popup type: " + ex);
+        }
+
+        try {
             initClassDefaults(table);
 
             // Here we install all the Basic defaults in case we missed some in our System color
@@ -361,6 +372,8 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
         final LazyValue recessedFont = t -> AquaFonts.getRecessedButtonFont();
         final LazyValue inlineFont = t -> AquaFonts.getInlineButtonFont();
 
+        final Color clearColor = new ColorUIResource(new Color(0, 0, 0, 0));
+
         // can only approximate sidebar background colors using averages
         final Color sideBarBackgroundColor = new ColorUIResource(230, 230, 230);
         final Color sideBarInactiveBackgroundColor = new ColorUIResource(245, 245, 245);
@@ -374,7 +387,7 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
         final Color sideBarCategorySelectionForegroundColor = new ColorUIResource(0, 0, 0);
 
         final Color menuBorderColor = new ColorUIResource(209, 209, 209);
-        final Color menuBackgroundColor = new ColorUIResource(new Color(240, 240, 240));
+        final Color menuBackgroundColor = clearColor; // ColorUIResource(new Color(240, 240, 240));
         final Color menuForegroundColor = black;
 
         final Color menuSelectedForegroundColor = white;
@@ -779,7 +792,7 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
             "PasswordField.capsLockIconColor", textPasswordFieldCapsLockIconColor,
 
             "PopupMenu.font", menuFont,
-            "PopupMenu.background", menuBackgroundColor,
+            "PopupMenu.background", clearColor,
             // Fix for 7154516: make popups opaque
             "PopupMenu.translucentBackground", white,
             "PopupMenu.foreground", menuForegroundColor,

@@ -37,6 +37,7 @@ import java.awt.*;
 import java.awt.event.InputEvent;
 import java.awt.event.MouseEvent;
 import javax.swing.*;
+import javax.swing.border.Border;
 import javax.swing.plaf.basic.BasicComboPopup;
 
 @SuppressWarnings("serial") // Superclass is not serializable across versions
@@ -197,6 +198,7 @@ class AquaComboBoxPopup extends BasicComboPopup implements AquaExtendedPopup {
     protected class AquaPopupMenuList extends JList<Object> {
         public AquaPopupMenuList(ListModel<Object> dataModel) {
             super(dataModel);
+            setOpaque(false);
         }
 
         @Override
@@ -358,7 +360,7 @@ class AquaComboBoxPopup extends BasicComboPopup implements AquaExtendedPopup {
             int selectedIndex = comboBox.getSelectedIndex();
             if (selectedIndex >= 0) {
                 Rectangle cellBounds = list.getCellBounds(selectedIndex, selectedIndex);
-                AquaPopupMenuBorder border = new AquaPopupMenuBorder();
+                Border border = AquaContextualPopup.getContextualMenuBorder();
                 Insets s = border.getBorderInsets(this);
                 return -(cellBounds.y + s.top);
             }

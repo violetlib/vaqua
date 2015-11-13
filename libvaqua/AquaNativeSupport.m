@@ -83,9 +83,9 @@ static jobject synchronizeCallback;
  */
 JNIEXPORT jboolean JNICALL Java_org_violetlib_aqua_OSXSystemProperties_nativeGetFullKeyboardAccessEnabled
   (JNIEnv *env, jclass cl) {
-  
+
 	jboolean result = NO;
-  
+
 	JNF_COCOA_ENTER(env);
 
 	NSUserDefaults *userDefaults = [NSUserDefaults standardUserDefaults];
@@ -104,9 +104,9 @@ JNIEXPORT jboolean JNICALL Java_org_violetlib_aqua_OSXSystemProperties_nativeGet
  */
 JNIEXPORT jboolean JNICALL Java_org_violetlib_aqua_OSXSystemProperties_nativeGetShowAllFiles
   (JNIEnv *env, jclass cl) {
-  
+
 	jboolean result = NO;
-  
+
 	JNF_COCOA_ENTER(env);
 
 	NSUserDefaults *userDefaults = [NSUserDefaults standardUserDefaults];
@@ -127,9 +127,9 @@ JNIEXPORT jboolean JNICALL Java_org_violetlib_aqua_OSXSystemProperties_nativeGet
  */
 JNIEXPORT jboolean JNICALL Java_org_violetlib_aqua_OSXSystemProperties_nativeGetScrollToClick
   (JNIEnv *env, jclass cl) {
-  
+
 	jboolean result = NO;
-  
+
 	JNF_COCOA_ENTER(env);
 
 	NSUserDefaults *userDefaults = [NSUserDefaults standardUserDefaults];
@@ -147,9 +147,9 @@ JNIEXPORT jboolean JNICALL Java_org_violetlib_aqua_OSXSystemProperties_nativeGet
  */
 JNIEXPORT jboolean JNICALL Java_org_violetlib_aqua_OSXSystemProperties_nativeGetUseOverlayScrollBars
   (JNIEnv *env, jclass cl) {
-  
+
 	jboolean result = NO;
-  
+
 	JNF_COCOA_ENTER(env);
 
 	NSScrollerStyle style = [NSScroller preferredScrollerStyle];
@@ -183,11 +183,11 @@ JNIEXPORT void JNICALL Java_org_violetlib_aqua_OSXSystemProperties_enableCallbac
 		NSNotificationCenter *center = [NSNotificationCenter defaultCenter];
 		NSDistributedNotificationCenter *dcenter = [NSDistributedNotificationCenter defaultCenter];
 		[center addObserver:r
-				    selector:@selector(defaultsChanged:)  
+				    selector:@selector(defaultsChanged:)
 					  name:NSPreferredScrollerStyleDidChangeNotification
 					  object:nil];
 		[dcenter addObserver:r
-				    selector:@selector(defaultsChanged:)  
+				    selector:@selector(defaultsChanged:)
 					  name:KeyboardUIModeDidChangeNotification
 					  object:nil];
 		//NSLog(@"Observer registered");
@@ -455,7 +455,7 @@ static jintArray renderImageIntoBufferForDisplay(JNIEnv *env, NSImage *image, ji
 		(*env)->ReleasePrimitiveArrayCritical(env, jdata, data, 0);
 		return jdata;
     }
-	
+
 	return NULL;
 }
 
@@ -467,7 +467,7 @@ static jboolean renderImageIntoBuffers(JNIEnv *env, NSImage *image, jobjectArray
 	//NSLog(@"Render image into buffers: %@", image);
 
 	jboolean result = NO;
-	
+
 	jintArray buffer1 = renderImageIntoBufferForDisplay(env, image, w, h, 1);
 	jintArray buffer2 = renderImageIntoBufferForDisplay(env, image, w, h, 2);
 
@@ -476,7 +476,7 @@ static jboolean renderImageIntoBuffers(JNIEnv *env, NSImage *image, jobjectArray
 		(*env)->SetObjectArrayElement(env, joutput, 1, buffer2);
 		result = YES;
 	}
-	
+
 	return result;
 }
 
@@ -532,7 +532,7 @@ static NSImage *getFileImage(NSString *path, jboolean isQuickLook, jboolean isIc
  */
 JNIEXPORT jboolean JNICALL Java_org_violetlib_aqua_fc_OSXFile_nativeRenderFileImage
   (JNIEnv *env, jclass cl, jstring jpath, jboolean isQuickLook, jboolean isIconMode, jobjectArray output, jint w, jint h) {
-  
+
 	jboolean result = NO;
 
 	JNF_COCOA_ENTER(env);
@@ -580,7 +580,7 @@ JNIEXPORT jboolean JNICALL Java_org_violetlib_aqua_AquaImageFactory_nativeRender
  */
 JNIEXPORT jboolean JNICALL Java_org_violetlib_aqua_AquaIcon_nativeRenderIcon
   (JNIEnv *env, jclass cl, jint osType, jobjectArray buffers, jint size) {
-  
+
 	jboolean result = NO;
 
 	JNF_COCOA_ENTER(env);
@@ -796,7 +796,7 @@ JNIEXPORT jobjectArray JNICALL Java_org_violetlib_aqua_fc_OSXFile_nativeGetSideb
 
 	CFArrayRef items = LSSharedFileListCopySnapshot(list, &seed);
 	size_t count = CFArrayGetCount(items);
-	
+
 	jclass objectClass = (*env)->FindClass(env, "java/lang/Object");
 	jclass integerClass = (*env)->FindClass(env, "java/lang/Integer");
 	jmethodID newIntegerMethodID = (*env)->GetMethodID(env, integerClass, "<init>", "(I)V");
@@ -832,7 +832,7 @@ JNIEXPORT jobjectArray JNICALL Java_org_violetlib_aqua_fc_OSXFile_nativeGetSideb
 				CFRelease(hiddenProperty);
 			}
 			jobject flagsJ = (*env)->NewObject(env, integerClass, newIntegerMethodID, hiddenFlag);
-			
+
 			jstring pathJ = NULL;
 			CFURLRef outURL = LSSharedFileListItemCopyResolvedURL(item, kLSSharedFileListNoUserInteraction|kLSSharedFileListDoNotMountVolumes, NULL);
 			if (outURL) {
@@ -988,9 +988,9 @@ JNIEXPORT jboolean JNICALL Java_org_violetlib_aqua_AquaNativeColorChooser_create
   (JNIEnv *env, jclass cl, jobject ownerCallback)
 {
 	colorPanelCallback = JNFNewGlobalRef(env, ownerCallback);
-	
+
 	__block jboolean result = NO;
-	
+
 	JNF_COCOA_ENTER(env);
 
 	if (!vm) {
@@ -1002,9 +1002,9 @@ JNIEXPORT jboolean JNICALL Java_org_violetlib_aqua_AquaNativeColorChooser_create
 	};
 
 	if ([NSThread isMainThread]) {
-		block(); 
-	} else { 
-		[JNFRunLoop performOnMainThreadWaiting:YES withBlock:block]; 
+		block();
+	} else {
+		[JNFRunLoop performOnMainThreadWaiting:YES withBlock:block];
 	}
 
 	JNF_COCOA_EXIT(env);
@@ -1022,9 +1022,9 @@ static void showHideColorChooser(JNIEnv *env, jboolean isShow)
 		};
 
 		if ([NSThread isMainThread]) {
-			block(); 
-		} else { 
-			[JNFRunLoop performOnMainThreadWaiting:YES withBlock:block]; 
+			block();
+		} else {
+			[JNFRunLoop performOnMainThreadWaiting:YES withBlock:block];
 		}
 
 		JNF_COCOA_EXIT(env);
@@ -1071,7 +1071,7 @@ static NSWindow *getNativeWindow(JNIEnv *env, jobject w)
 		return NULL;
 	}
 	NSWindow *nw = (NSWindow *) JNFCallLongMethod(env, platformWindow, jm_getNSWindow);
-	return nw; 
+	return nw;
 }
 
 static const jint TITLEBAR_NONE = 0;
@@ -1116,7 +1116,7 @@ JNIEXPORT jint JNICALL Java_org_violetlib_aqua_AquaUtils_nativeSetTitleBarStyle
 			BOOL isTransparent = NO;
 			BOOL isHidden = NO;
 			BOOL isFixNeeded = NO;
-			
+
 			switch (style) {
 				case TITLEBAR_NONE:
 					styleMask &= ~(NSTitledWindowMask | NSFullSizeContentViewWindowMask);
@@ -1146,7 +1146,7 @@ JNIEXPORT jint JNICALL Java_org_violetlib_aqua_AquaUtils_nativeSetTitleBarStyle
 					isFixNeeded = YES;
 					break;
 				}
-					
+
 			[[nw standardWindowButton:NSWindowCloseButton] setHidden:isHidden];
 			[[nw standardWindowButton:NSWindowMiniaturizeButton] setHidden:isHidden];
 			[[nw standardWindowButton:NSWindowZoomButton] setHidden:isHidden];
@@ -1220,7 +1220,7 @@ JNIEXPORT jint JNICALL Java_org_violetlib_aqua_AquaUtils_nativeDisplayAsSheet
 	static JNF_MEMBER_CACHE(jm_getOwner, jc_Window, "getOwner", "()Ljava/awt/Window;");
 
 	jint result = -1;
-	
+
 	JNF_COCOA_ENTER(env);
 
 	// Get the owner window
@@ -1235,6 +1235,178 @@ JNIEXPORT jint JNICALL Java_org_violetlib_aqua_AquaUtils_nativeDisplayAsSheet
 			}
 		}
 	}
+
+	JNF_COCOA_EXIT(env);
+
+	return result;
+}
+
+/*
+ * Class:     org_violetlib_aqua_AquaUtils
+ * Method:    nativeSetWindowCornerRadius
+ * Signature: (Ljava/awt/Window;F)I
+ */
+JNIEXPORT jint JNICALL Java_org_violetlib_aqua_AquaUtils_nativeSetWindowCornerRadius
+  (JNIEnv *env, jclass cl, jobject window, jfloat radius)
+{
+    __block jint result = -1;
+
+    JNF_COCOA_ENTER(env);
+
+    NSWindow *nw = getNativeWindow(env, window);
+    if (nw != nil) {
+        [JNFRunLoop performOnMainThreadWaiting:YES withBlock:^(){
+            NSView *contentView = [ nw contentView ];
+            NSView *themeFrame = [ contentView superview ];
+            if ([themeFrame superview] == nil) {
+                themeFrame.wantsLayer = YES;
+                CALayer *layer = [ themeFrame layer ];
+                if (layer != nil) {
+                    if (![nw hasShadow]) {
+                        NSLog(@"Window %@ has no shadow", nw);
+                    }
+                    [ layer setCornerRadius: radius ];
+                    [ nw invalidateShadow ];
+                    result = 0;
+                } else {
+                    NSLog(@"Unable to set corner radius: no layer");
+                }
+            } else {
+                NSLog(@"Unable to set corner radius: did not find expected top view");
+            }
+        }];
+    }
+
+    JNF_COCOA_EXIT(env);
+
+    return result;
+}
+
+static NSAppearance *getVibrantAppearance(jint style)
+{
+  switch (style) {
+  case 1:
+    return [NSAppearance appearanceNamed:NSAppearanceNameVibrantDark];
+  default:
+    return [NSAppearance appearanceNamed:NSAppearanceNameVibrantLight];
+  }
+}
+
+/*
+ * Class:     org_violetlib_aqua_AquaVibrantSupport
+ * Method:    setupVisualEffectWindow
+ * Signature: (Ljava/awt/Window;I)I
+ */
+JNIEXPORT jint JNICALL Java_org_violetlib_aqua_AquaVibrantSupport_setupVisualEffectWindow
+  (JNIEnv *env, jclass cl, jobject window, jint style)
+{
+    jint result = -1;
+
+    JNF_COCOA_ENTER(env);
+
+    NSWindow *nw = getNativeWindow(env, window);
+    if (nw != nil) {
+        [JNFRunLoop performOnMainThreadWaiting:YES withBlock:^(){
+            // Insert a visual effect view as a sibling of the content view.
+            // This is not a recommended technique, but Java wants to see its own content view.
+            NSView *contentView = [nw contentView];
+            NSVisualEffectView *fxView = [[NSVisualEffectView alloc] initWithFrame: [contentView frame]];
+            fxView.appearance = getVibrantAppearance(style);
+            fxView.blendingMode = NSVisualEffectBlendingModeBehindWindow;
+            NSView *parent = [contentView superview];
+            [parent addSubview: fxView positioned: NSWindowBelow relativeTo: contentView];
+            [fxView setNeedsDisplay:YES];
+            fxView.autoresizingMask = NSViewWidthSizable|NSViewHeightSizable;
+        }];
+        result = 0;
+    }
+
+    JNF_COCOA_EXIT(env);
+
+    return result;
+}
+
+/*
+ * Class:     org_violetlib_aqua_AquaVibrantSupport
+ * Method:    createVisualEffectView
+ * Signature: (Ljava/awt/Window;I)J
+ */
+JNIEXPORT jlong JNICALL Java_org_violetlib_aqua_AquaVibrantSupport_createVisualEffectView
+  (JNIEnv *env, jclass cl, jobject window, jint style)
+{
+	__block jlong result = 0;
+
+	JNF_COCOA_ENTER(env);
+
+	NSWindow *nw = getNativeWindow(env, window);
+	if (nw != nil) {
+        [JNFRunLoop performOnMainThreadWaiting:YES withBlock:^(){
+            // Insert a visual effect view as a sibling of the content view.
+            NSView *contentView = [nw contentView];
+            NSVisualEffectView *fxView = [[NSVisualEffectView alloc] initWithFrame: [contentView frame]];
+            fxView.appearance = getVibrantAppearance(style);
+            fxView.blendingMode = NSVisualEffectBlendingModeBehindWindow;
+            NSView *parent = [contentView superview];
+            [parent addSubview: fxView positioned: NSWindowBelow relativeTo: contentView];
+            [fxView setNeedsDisplay:YES];
+            result = (jlong) fxView;
+        }];
+    }
+
+	JNF_COCOA_EXIT(env);
+
+	return result;
+}
+
+/*
+ * Class:     org_violetlib_aqua_AquaVibrantSupport
+ * Method:    setVisualEffectViewFrame
+ * Signature: (JIIII)I
+ */
+JNIEXPORT jint JNICALL Java_org_violetlib_aqua_AquaVibrantSupport_setVisualEffectViewFrame
+  (JNIEnv *env, jclass cl, jlong ptr, jint x, jint y, jint w, jint h)
+{
+	__block jint result = -1;
+
+	JNF_COCOA_ENTER(env);
+
+    NSVisualEffectView *fxView = (NSVisualEffectView *) ptr;
+    NSWindow *window = [fxView window];
+
+    if (window != nil) {
+        [JNFRunLoop performOnMainThreadWaiting:YES withBlock:^(){
+            float windowHeight = window.frame.size.height;
+            [fxView setFrame: NSMakeRect(x, windowHeight-y-h, w, h)];
+            result = 0;
+        }];
+    }
+
+	JNF_COCOA_EXIT(env);
+
+	return result;
+}
+
+/*
+ * Class:     org_violetlib_aqua_AquaVibrantSupport
+ * Method:    disposeVisualEffectView
+ * Signature: (J)I
+ */
+JNIEXPORT jint JNICALL Java_org_violetlib_aqua_AquaVibrantSupport_disposeVisualEffectView
+  (JNIEnv *env, jclass cl, jlong ptr)
+{
+	__block jint result = -1;
+
+	JNF_COCOA_ENTER(env);
+
+    NSVisualEffectView *fxView = (NSVisualEffectView *) ptr;
+    NSWindow *window = [fxView window];
+
+    if (window != nil) {
+        [JNFRunLoop performOnMainThreadWaiting:YES withBlock:^(){
+            [fxView removeFromSuperview];
+            result = 0;
+        }];
+    }
 
 	JNF_COCOA_EXIT(env);
 

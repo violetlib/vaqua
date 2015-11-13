@@ -1,14 +1,23 @@
+/*
+ * Copyright (c) 2015 Alan Snyder.
+ * All rights reserved.
+ *
+ * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
+ * accompanying license terms.
+ */
+
 package org.violetlib.aqua;
 
 import java.awt.*;
 import java.awt.event.MouseEvent;
 import javax.swing.*;
 import javax.swing.border.Border;
+import javax.swing.border.EmptyBorder;
 import javax.swing.plaf.UIResource;
 
 /**
- * A contextual style popup with rounded corners that (if necessary) scrolls without using a scroll bar and scrolls by
- * growing taller when possible.
+ * A contextual style popup that (if necessary) scrolls without using a scroll bar and scrolls by growing taller when
+ * possible.
  */
 public class AquaContextualPopup {
 
@@ -35,7 +44,7 @@ public class AquaContextualPopup {
                                Point selectedRegionLocation,
                                int x, int y, int width, int height) {
 
-        Border border = getContextualMenuBorder(owner);
+        Border border = getContextualMenuBorder();
         Insets s = border.getBorderInsets(null);
         Dimension ps = content.getPreferredSize();
 
@@ -94,39 +103,8 @@ public class AquaContextualPopup {
             content.setBorder(null);
         }
 
-        // Have not been able to get medium weight popups to do rounded corners.
-        // Therefore, use a heavy weight popup.
-
-        p = new AquaPopup(owner, wrapper, x, y);
-
-        // For rounded corners to work, all the relevant ancestors must not paint a background.
-
-        Container parent = wrapper.getParent();
-        if (parent instanceof JPanel) {
-            JPanel panel = (JPanel) parent;
-            panel.setOpaque(false);
-            panel.setBorder(null);
-            parent = parent.getParent();
-        }
-
-        if (parent instanceof JLayeredPane) {
-            ((JLayeredPane) parent).setOpaque(false);
-            parent = parent.getParent();
-        }
-
-        if (parent instanceof JRootPane) {
-            ((JRootPane) parent).setOpaque(false);
-            parent = parent.getParent();
-        }
-
-        if (parent instanceof Window) {
-            Window w = (Window) parent;
-            w.setBackground(new Color(0, 0, 0, 0));
-
-        } else if (parent instanceof Panel) {
-            Panel n = (Panel) parent;
-            n.setBackground(new Color(0, 0, 0, 0));
-        }
+        // Heavy weight popups are required for rounded corners and vibrant background.
+        p = new AquaPopup(owner, wrapper, x, y, true);
     }
 
     public Popup getPopup() {
@@ -137,8 +115,8 @@ public class AquaContextualPopup {
         wrapper.dispatchEvent(e);
     }
 
-    protected Border getContextualMenuBorder(Component c) {
-        return new AquaPopupMenuBorder();
+    public static Border getContextualMenuBorder() {
+        return new EmptyBorder(5, 0, 5, 0);
     }
 
     protected class MyScrollingWrapper extends AquaScrollingPopupMenuWrapper {
