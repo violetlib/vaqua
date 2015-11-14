@@ -36,6 +36,10 @@ public class AquaPopup extends Popup {
             JRootPane popupRootPane = ((RootPaneContainer) popup).getRootPane();
 
             if (isContextual) {
+
+                // Changing the transparency in response to the user default is not actually necessary, as the
+                // NSVisualEffectView itself changes.
+
                 makeClear(popup, !OSXSystemProperties.isReduceTransparency());
                 popup.pack();
                 AquaUtils.setTextured(popup);   // avoid painting a window background
