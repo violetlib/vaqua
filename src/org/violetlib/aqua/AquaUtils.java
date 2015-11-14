@@ -544,6 +544,30 @@ final public class AquaUtils extends SwingUtilitiesModified {
         }
     }
 
+    /**
+     * Fill with specified color or erase.
+     * @param g The graphics context.
+     * @param color The color to fill, or null to erase
+     * @param x
+     * @param y
+     * @param w
+     * @param h
+     */
+    public static void fillRect(Graphics2D g, Color color, int x, int y, int w, int h) {
+        final Graphics2D cg = (Graphics2D) g.create();
+        try {
+            if (color != null) {
+                cg.setColor(color);
+            } else {
+                cg.setComposite(AlphaComposite.Src);
+                cg.setColor(new Color(0, 0, 0, 0));
+            }
+            cg.fillRect(x, y, w, h);
+        } finally {
+            cg.dispose();
+        }
+    }
+
     public static Graphics2D toGraphics2D(Graphics g) {
         try {
             return (Graphics2D) g;

@@ -122,6 +122,8 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable {
     private Icon oldCellRendererIcon;
     private Icon oldCellRendererDisabledIcon;
 
+    private VisualEffectView visualEffectView;
+
     private static DropTargetListener defaultDropTargetListener = null;
 
     public AquaTreeUI() {
@@ -174,8 +176,29 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable {
         if (tree != null) {
             isCellFilled = Boolean.TRUE.equals(AquaUtils.getBooleanProperty(tree, IS_CELL_FILLED_KEY, QUAQUA_IS_CELL_FILLED_KEY));
             String style = getStyleProperty();
-            isSideBar = style != null && (style.equals("sideBar") || style.equals("sourceList"));
+            boolean newIsSidebar = style != null && (style.equals("sideBar") || style.equals("sourceList"));
             isStriped = style != null && style.equals("striped");
+            if (newIsSidebar != isSideBar) {
+                isSideBar = newIsSidebar;
+                updateSidebar();
+            }
+        }
+    }
+
+    protected void updateSidebar() {
+        if (isSideBar) {
+            if (visualEffectView == null) {
+                JComponent c = tree;
+                if (c.getParent() instanceof JViewport) {
+                    c = (JViewport) c.getParent();
+                }
+                visualEffectView = new VisualEffectView(c, AquaVibrantSupport.LIGHT_STYLE);
+            }
+        } else {
+            if (visualEffectView != null) {
+                visualEffectView.dispose();
+                visualEffectView = null;
+            }
         }
     }
 
@@ -500,18 +523,11 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable {
     }
 
     protected void paintBackground(Graphics g) {
-        /*
-         * TBD: In Yosemite, the sidebar background is a translucent blurry thing. One wonders if this could ever be
-         * simulated in Java.
-         */
-
-        Color background = getCurrentBackground();
-
-        if (tree.isOpaque()) {
+        if (tree.isOpaque() && g instanceof Graphics2D) {
             int width = tree.getWidth();
             int height = tree.getHeight();
-            g.setColor(background);
-            g.fillRect(0, 0, width, height);
+            Color background = getCurrentBackground();
+            AquaUtils.fillRect((Graphics2D) g, background, 0, 0, width, height);
         }
 
         Rectangle paintBounds = g.getClipBounds();
@@ -526,7 +542,7 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable {
 
     public Color getCurrentBackground() {
         if (isSideBar) {
-            return UIManager.getColor(isActive ? "Tree.sideBar.background" : "Tree.sideBar.inactiveBackground");
+            return null;
         } else {
             return tree.getBackground();
         }

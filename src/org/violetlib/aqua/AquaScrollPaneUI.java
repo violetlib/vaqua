@@ -170,9 +170,8 @@ public class AquaScrollPaneUI extends BasicScrollPaneUI implements AquaUtilContr
         }
 
         // The following supports the translucent legacy scroll bar used for a sidebar tree
-
-        Color bc = isOverlayScrollBars ? null : getSidebarBackground();
-        if (bc != null) {
+        boolean isSideBar = isSideBar();
+        if (isSideBar && !isOverlayScrollBars) {
             setSidebarStyle(scrollpane.getHorizontalScrollBar(), true);
             setSidebarStyle(scrollpane.getVerticalScrollBar(), true);
         } else {
@@ -180,16 +179,15 @@ public class AquaScrollPaneUI extends BasicScrollPaneUI implements AquaUtilContr
             setSidebarStyle(scrollpane.getVerticalScrollBar(), false);
         }
 
-        if (bc != null) {
-            g.setColor(bc);
-            g.fillRect(0, 0, c.getWidth(), c.getHeight());
+        // If using the sidebar style, must erase the background to allow the vibrant background to show.
+        if (isSideBar && g instanceof Graphics2D) {
+            AquaUtils.fillRect((Graphics2D) g, null, 0, 0, c.getWidth(), c.getHeight());
         }
 
         super.paint(g, c);
 
         // If two legacy scroll bars are displayed, the corner must be painted to match.
-
-        if (!isOverlayScrollBars && bc == null) {
+        if (!isOverlayScrollBars && !isSideBar) {
             JScrollBar vb = scrollpane.getVerticalScrollBar();
             JScrollBar hb = scrollpane.getHorizontalScrollBar();
             if (vb != null && hb != null && vb.isVisible() && hb.isVisible()) {
@@ -213,7 +211,7 @@ public class AquaScrollPaneUI extends BasicScrollPaneUI implements AquaUtilContr
         }
     }
 
-    protected Color getSidebarBackground() {
+    protected boolean isSideBar() {
         JViewport v = scrollpane.getViewport();
         if (v != null) {
             Component view = SwingUtilities.getUnwrappedView(v);
@@ -221,12 +219,12 @@ public class AquaScrollPaneUI extends BasicScrollPaneUI implements AquaUtilContr
                 AquaTreeUI treeUI = AquaUtils.getUI((JTree) view, AquaTreeUI.class);
                 if (treeUI != null) {
                     if (treeUI.isSideBar()) {
-                        return treeUI.getCurrentBackground();
+                        return true;
                     }
                 }
             }
         }
-        return null;
+        return false;
     }
 
     protected void setSidebarStyle(JScrollBar sb, boolean b) {

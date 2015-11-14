@@ -1368,7 +1368,7 @@ JNIEXPORT jlong JNICALL Java_org_violetlib_aqua_AquaVibrantSupport_createVisualE
         [JNFRunLoop performOnMainThreadWaiting:YES withBlock:^(){
             // Insert a visual effect view as a sibling of the content view.
             NSView *contentView = [nw contentView];
-            NSVisualEffectView *fxView = [[NSVisualEffectView alloc] initWithFrame: [contentView frame]];
+            NSVisualEffectView *fxView = [[NSVisualEffectView alloc] initWithFrame: NSMakeRect(0, 0, 0, 0)];
             fxView.appearance = getVibrantAppearance(style);
             fxView.blendingMode = NSVisualEffectBlendingModeBehindWindow;
             NSView *parent = [contentView superview];

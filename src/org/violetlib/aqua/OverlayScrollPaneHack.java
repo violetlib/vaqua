@@ -152,7 +152,6 @@ public class OverlayScrollPaneHack {
         }
     }
 
-
     protected class MyPropertyChangeListener implements PropertyChangeListener {
         @Override
         public void propertyChange(PropertyChangeEvent evt) {

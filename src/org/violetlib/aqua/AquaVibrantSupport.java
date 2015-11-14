@@ -33,7 +33,7 @@ public class AquaVibrantSupport {
     }
 
     private static native int setupVisualEffectWindow(Window w, int style);
-    private static native long createVisualEffectView(Window w, int style);
-   	private static native int setVisualEffectViewFrame(long viewPtr, int x, int y, int width, int height);
-   	private static native int disposeVisualEffectView(long viewPtr);
+    public static native long createVisualEffectView(Window w, int style);
+    public static native int setVisualEffectViewFrame(long viewPtr, int x, int y, int width, int height);
+    public static native int disposeVisualEffectView(long viewPtr);
 }
