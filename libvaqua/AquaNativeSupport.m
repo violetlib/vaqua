@@ -1401,7 +1401,9 @@ JNIEXPORT jint JNICALL Java_org_violetlib_aqua_AquaVibrantSupport_setVisualEffec
     if (window != nil) {
         [JNFRunLoop performOnMainThreadWaiting:YES withBlock:^(){
             float windowHeight = window.frame.size.height;
+            NSLog(@"Set frame %@ %d %d %d %d %f", fxView, x, y, w, h, windowHeight);
             [fxView setFrame: NSMakeRect(x, windowHeight-y-h, w, h)];
+            fxView.needsDisplay = YES;
             result = 0;
         }];
     }

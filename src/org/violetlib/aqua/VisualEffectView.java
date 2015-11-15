@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014-2015 Alan Snyder.
+ * Copyright (c) 2015 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -44,18 +44,6 @@ public class VisualEffectView {
         tracker.attach(component);
     }
 
-    private void setFrame(int x, int y, int w, int h) {
-        if (oldBounds == null || x != oldBounds.x || y != oldBounds.y || w != oldBounds.width || h != oldBounds.height) {
-            oldBounds = new Rectangle(x, y, w, h);
-            if (viewPointer != 0) {
-                int rc = AquaVibrantSupport.setVisualEffectViewFrame(viewPointer, x, y, w, h);
-                if (rc != 0) {
-                    System.err.println("setVisualEffectViewFrame failed");
-                }
-            }
-        }
-    }
-
     public void dispose() {
         if (tracker != null) {
             tracker.attach(null);
@@ -67,9 +55,7 @@ public class VisualEffectView {
     }
 
     protected void windowChanged(Window newWindow) {
-
         // The new window must be displayable to install a visual effect view.
-
         if (newWindow != null && !newWindow.isDisplayable()) {
             newWindow = null;
         }
@@ -92,14 +78,13 @@ public class VisualEffectView {
                 } else {
                     // remove the Java window background
                     AquaUtils.setTextured(window);
-                    visibleBoundsChanged();
                 }
             }
         }
     }
 
     protected void visibleBoundsChanged() {
-        if (window != null) {
+        if (window != null && window.isValid()) {
             Rectangle bounds = getVisibleBounds(component);
             if (bounds != null) {
                 setFrame(bounds.x, bounds.y, bounds.width, bounds.height);
@@ -109,16 +94,26 @@ public class VisualEffectView {
         }
     }
 
+    private void setFrame(int x, int y, int w, int h) {
+        if (oldBounds == null || x != oldBounds.x || y != oldBounds.y || w != oldBounds.width || h != oldBounds.height) {
+            oldBounds = new Rectangle(x, y, w, h);
+            if (viewPointer != 0) {
+                int rc = AquaVibrantSupport.setVisualEffectViewFrame(viewPointer, x, y, w, h);
+                if (rc != 0) {
+                    System.err.println("setVisualEffectViewFrame failed");
+                }
+            }
+        }
+    }
+
     private class MyComponentTracker extends ComponentTracker {
         @Override
-        protected void windowChanged(Window oldWindow, Window newWindow)
-        {
+        protected void windowChanged(Window oldWindow, Window newWindow) {
             VisualEffectView.this.windowChanged(newWindow);
         }
 
         @Override
-        protected void visibleBoundsChanged(Window window)
-        {
+        protected void visibleBoundsChanged(Window window) {
             if (window != null) {
                 VisualEffectView.this.visibleBoundsChanged();
             }

@@ -374,16 +374,16 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
 
         final Color clearColor = new ColorUIResource(new Color(0, 0, 0, 0));
 
-        // can only approximate sidebar background colors using averages
-        final Color sideBarBackgroundColor = new ColorUIResource(230, 230, 230);
-        final Color sideBarInactiveBackgroundColor = new ColorUIResource(245, 245, 245);
-        final Color sideBarSelectionBackgroundColor = new ColorUIResource(200, 200, 200);
+        // can only approximate vibrant sidebar colors
+        //final Color sideBarBackgroundColor = new ColorUIResource(230, 230, 230);
+        //final Color sideBarInactiveBackgroundColor = new ColorUIResource(245, 245, 245);
+        final Color sideBarSelectionBackgroundColor = new ColorUIResource(new Color(0, 0, 0, 67));
         final Color sideBarSelectionInactiveBackgroundColor = new ColorUIResource(205, 205, 205);
-        final Color sideBarForegroundColor = new ColorUIResource(60, 60, 60);
+        final Color sideBarForegroundColor = new ColorUIResource(new Color(31, 31, 31, 217));
         final Color sideBarInactiveForegroundColor = new ColorUIResource(68, 68, 68);
         final Color sideBarSelectionForegroundColor = new ColorUIResource(30, 30, 30);
         final Color sideBarSelectionInactiveForegroundColor = new ColorUIResource(0, 0, 0);
-        final Color sideBarCategoryForegroundColor = new ColorUIResource(115, 115, 115);
+        final Color sideBarCategoryForegroundColor = new ColorUIResource(new Color(85, 85, 85, 217));
         final Color sideBarCategorySelectionForegroundColor = new ColorUIResource(0, 0, 0);
 
         final Color menuBorderColor = new ColorUIResource(209, 209, 209);
@@ -1085,8 +1085,8 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
             "Tree.sideBarCategory.selectionFont", sideBarCategorySelectionFont,
 
             // Fairly arbitrary choices for backgrounds, since actual colors depend upon what is underneath
-            "Tree.sideBar.background", sideBarBackgroundColor,
-            "Tree.sideBar.inactiveBackground", sideBarInactiveBackgroundColor,
+            //"Tree.sideBar.background", sideBarBackgroundColor,
+            //"Tree.sideBar.inactiveBackground", sideBarInactiveBackgroundColor,
             "Tree.sideBar.selectionBackground", sideBarSelectionBackgroundColor,
             "Tree.sideBar.selectionInactiveBackground", sideBarSelectionInactiveBackgroundColor,
             "Tree.sideBar.foreground", sideBarForegroundColor,
