@@ -161,6 +161,19 @@ public class AquaScrollPaneUI extends BasicScrollPaneUI implements AquaUtilContr
     }
 
     @Override
+    public void update(Graphics g, JComponent c) {
+        if (c.isOpaque()) {
+            // If using the sidebar style, must erase the background to allow the vibrant background to show.
+            if (isSideBar()) {
+                AquaUtils.fillRect(g, (Color) null, 0, 0, c.getWidth(), c.getHeight());
+            } else {
+                AquaUtils.fillRect(g, c, AquaUtils.ERASE_IF_VIBRANT);
+            }
+        }
+        paint(g, c);
+    }
+
+    @Override
     public void paint(Graphics g, JComponent c) {
 
         // This check is necessary because we are not informed when a new layout manager is installed in the scroll
@@ -177,11 +190,6 @@ public class AquaScrollPaneUI extends BasicScrollPaneUI implements AquaUtilContr
         } else {
             setSidebarStyle(scrollpane.getHorizontalScrollBar(), false);
             setSidebarStyle(scrollpane.getVerticalScrollBar(), false);
-        }
-
-        // If using the sidebar style, must erase the background to allow the vibrant background to show.
-        if (isSideBar && g instanceof Graphics2D) {
-            AquaUtils.fillRect((Graphics2D) g, null, 0, 0, c.getWidth(), c.getHeight());
         }
 
         super.paint(g, c);

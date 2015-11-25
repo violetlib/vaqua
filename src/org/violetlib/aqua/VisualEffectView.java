@@ -18,24 +18,29 @@ import javax.swing.JViewport;
 import javax.swing.SwingUtilities;
 
 /**
- * This object manages a NSVisualEffectView whose bounds tracks the bounds of a component.
+ * This object manages a NSVisualEffectView or a collection of NSVisualEffectViews whose bounds tracks the bounds of a
+ * component. A collection of views is used to support vibrant selection backgrounds. Each region that displays a
+ * selection background has its own NSVisualEffectView to create the selection background.
  */
 public class VisualEffectView {
     private final JComponent component;
     private final int style;
-    private long viewPointer;
+    private final boolean supportSelections;
+    private VisualEffectViewPeer peer;
     private Rectangle oldBounds;
     private Window window;
     private ComponentTracker tracker;
 
     /**
-     * Create an object to manage a NSVisualEffectView.
-     * @param c The component that the NSVisualEffectView will track.
-     * @param style The style of the NSVisualEffectView.
+     * Create an object to manage a NSVisualEffectView or a collection of NSVisualEffectViews.
+     * @param c The component that the NSVisualEffectView(s) will track.
+     * @param style The style of the (master) NSVisualEffectView.
+     * @param supportSelections If true, enable support for subregions with a distinct selection background.
      */
-    public VisualEffectView(JComponent c, int style) {
+    public VisualEffectView(JComponent c, int style, boolean supportSelections) {
         this.component = c;
         this.style = style;
+        this.supportSelections = supportSelections;
         Window w = SwingUtilities.getWindowAncestor(c);
         if (w != null) {
             windowChanged(w);
@@ -54,6 +59,16 @@ public class VisualEffectView {
         }
     }
 
+	/**
+	 * Update the set of regions to display a selection background.
+	 * @param sd A description of the regions, or null if there are no regions.
+     */
+	public void updateSelectionBackgrounds(TreeSelectionBoundsTracker.SelectionDescription sd) {
+		if (peer != null && supportSelections) {
+			peer.updateSelectionBackgrounds(sd);
+		}
+	}
+
     protected void windowChanged(Window newWindow) {
         // The new window must be displayable to install a visual effect view.
         if (newWindow != null && !newWindow.isDisplayable()) {
@@ -61,21 +76,16 @@ public class VisualEffectView {
         }
 
         if (newWindow != window) {
-            if (window != null && viewPointer != 0) {
-                int rc = AquaVibrantSupport.disposeVisualEffectView(viewPointer);
-                if (rc != 0) {
-                    System.err.println("disposeVisualEffectView failed");
-                }
-                viewPointer = 0;
+            if (window != null && peer != null) {
+                peer.dispose();
+                peer = null;
             }
 
             if (newWindow != null) {
                 window = newWindow;
                 oldBounds = null;
-                viewPointer = AquaVibrantSupport.createVisualEffectView(window, style);
-                if (viewPointer == 0) {
-                    System.err.println("createVisualEffectView failed");
-                } else {
+                peer = AquaVibrantSupport.createVisualEffectView(window, style, supportSelections);
+                if (peer != null) {
                     // remove the Java window background
                     AquaUtils.setTextured(window);
                 }
@@ -97,11 +107,8 @@ public class VisualEffectView {
     private void setFrame(int x, int y, int w, int h) {
         if (oldBounds == null || x != oldBounds.x || y != oldBounds.y || w != oldBounds.width || h != oldBounds.height) {
             oldBounds = new Rectangle(x, y, w, h);
-            if (viewPointer != 0) {
-                int rc = AquaVibrantSupport.setVisualEffectViewFrame(viewPointer, x, y, w, h);
-                if (rc != 0) {
-                    System.err.println("setVisualEffectViewFrame failed");
-                }
+            if (peer != null) {
+                peer.setFrame(x, y, w, h);
             }
         }
     }

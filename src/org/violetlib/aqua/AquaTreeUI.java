@@ -122,7 +122,8 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable {
     private Icon oldCellRendererIcon;
     private Icon oldCellRendererDisabledIcon;
 
-    private VisualEffectView visualEffectView;
+    // support for sidebar presentation
+    private SidebarVibrantEffects sidebarVibrantEffects;
 
     private static DropTargetListener defaultDropTargetListener = null;
 
@@ -187,18 +188,65 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable {
 
     protected void updateSidebar() {
         if (isSideBar) {
-            if (visualEffectView == null) {
+            if (sidebarVibrantEffects == null) {
                 JComponent c = tree;
                 if (c.getParent() instanceof JViewport) {
                     c = (JViewport) c.getParent();
                 }
-                visualEffectView = new VisualEffectView(c, AquaVibrantSupport.LIGHT_STYLE);
+                sidebarVibrantEffects = new SidebarVibrantEffects(c);
             }
         } else {
-            if (visualEffectView != null) {
-                visualEffectView.dispose();
-                visualEffectView = null;
+            if (sidebarVibrantEffects != null) {
+                sidebarVibrantEffects.dispose();
+                sidebarVibrantEffects = null;
             }
+        }
+    }
+
+    /**
+     * Support for sidebar vibrant effects. An NSVisualEffectView is created for the sidebar background and for each
+     * selected row background region.
+     */
+    protected class SidebarVibrantEffects extends VisualEffectView {
+        protected TreeSelectionBoundsTracker bt;
+
+        public SidebarVibrantEffects(JComponent top) {
+            super(top, AquaVibrantSupport.SIDEBAR_STYLE, true);
+            bt = new TreeSelectionBoundsTracker(tree) {
+                @Override
+                protected void selectionDescriptionChanged(SelectionDescription sd) {
+                    SidebarVibrantEffects.this.updateSelectionBackgrounds(sd);
+                }
+                @Override
+                protected int convertRowYCoordinateToSelectionDescription(int y) {
+                    if (top != tree) {
+                        Point p = SwingUtilities.convertPoint(tree, 0, y, top);
+                        return p.y;
+                    } else {
+                        return y;
+                    }
+                }
+            };
+        }
+
+        public void update() {
+            if (bt != null) {
+                bt.update();
+            }
+        }
+
+        public void dispose() {
+            super.dispose();
+            if (bt != null) {
+                bt.dispose();
+                bt = null;
+            }
+        }
+
+        @Override
+        protected void windowChanged(Window newWindow) {
+            super.windowChanged(newWindow);
+            bt.reset();
         }
     }
 
@@ -496,6 +544,17 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable {
 
     public void paint(final Graphics g, final JComponent c) {
 
+        // We do not really know when the layout of the tree may have changed, so we verify the selection background
+        // locations now. Updating during painting has the advantage of (approximately) coordinating updates to the
+        // selection backgrounds with updates to the visible display of the tree, which minimizes artifacts when
+        // scrolling.
+
+        // An assumption is made here that scrolling a tree will cause the tree to be painted.
+
+        if (sidebarVibrantEffects != null) {
+            sidebarVibrantEffects.update();
+        }
+
         // Set the variables used by paintRow
 
         isActive = AquaFocusHandler.isActive(c);
@@ -600,6 +659,12 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable {
 
     protected Color getSpecialBackgroundForRow(int row) {
         if (tree.isRowSelected(row) && shouldPaintSelection) {
+
+            if (sidebarVibrantEffects != null) {
+                // sidebar selection backgrounds are managed using special views
+                return null;
+            }
+
             return selectionBackground;
         }
 

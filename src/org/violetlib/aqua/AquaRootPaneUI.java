@@ -358,7 +358,7 @@ public class AquaRootPaneUI extends BasicRootPaneUI implements AncestorListener,
         if (customStyledWindow != null) {
             customStyledWindow.paintBackground(g);
         } else if (c.isOpaque()) {
-            AquaUtils.fillRect(g, c);
+            AquaUtils.fillRect(g, c, AquaUtils.ERASE_IF_TEXTURED|AquaUtils.ERASE_IF_VIBRANT);
         }
         paint(g, c);
     }

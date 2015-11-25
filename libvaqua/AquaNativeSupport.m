@@ -29,10 +29,41 @@ static int VERSION = 1;
 #import <CoreFoundation/CoreFoundation.h>
 #import <CoreGraphics/CoreGraphics.h>
 #import <JavaNativeFoundation.h>
+#import "AquaSidebarBackground.h"
 
 static JavaVM *vm;
 static jint javaVersion;
 static jobject synchronizeCallback;
+
+void viewDebug(NSView *v, NSString *title, int indent) {
+    if (!title) {
+        title = @"";
+    }
+    NSLog(@"%@%@: %@ %f %f %f %f %@",
+        [@"                      " substringToIndex: indent],
+        title, [v description], v.frame.origin.x, v.frame.origin.y, v.bounds.size.width, v.bounds.size.height,
+        v.layer);
+    for (NSView *sv in v.subviews) {
+        viewDebug(sv, @"", indent+2);
+    }
+}
+
+void windowDebug(NSWindow *w) {
+    NSLog(@"Window: %@", [w description]);
+    NSView *v = [w contentView];
+    while (v.superview) {
+        v = v.superview;
+    }
+    viewDebug(v, @"", 2);
+}
+
+void setupLayers(NSView *v) {
+    NSView *vv = v;
+    while (vv) {
+        vv.wantsLayer = YES;
+        vv = vv.superview;
+    }
+}
 
 @interface MyDefaultResponder : NSObject
 - (void)defaultsChanged:(NSNotification *)notification;
@@ -1255,7 +1286,12 @@ JNIEXPORT jint JNICALL Java_org_violetlib_aqua_AquaUtils_nativeDisplayAsSheet
 		if (nw != nil) {
 			NSWindow *no = getNativeWindow(env, owner);
 			if (no != nil) {
-				[JNFRunLoop performOnMainThreadWaiting:NO withBlock:^(){[no beginSheet:nw completionHandler:nil];}];
+				[JNFRunLoop performOnMainThreadWaiting:NO withBlock:^(){
+				    // setting NSTitledWindowMask seems necessary for a reliable vibrant background
+			        NSUInteger styleMask = [nw styleMask];
+				    [nw setStyleMask: styleMask | NSTitledWindowMask ];
+				    [no beginSheet:nw completionHandler:nil];
+				}];
 				result = 0;
 			}
 		}
@@ -1307,11 +1343,16 @@ JNIEXPORT jint JNICALL Java_org_violetlib_aqua_AquaUtils_nativeSetWindowCornerRa
     return result;
 }
 
+static const int LIGHT_STYLE = 0;
+static const int DARK_STYLE = 1;
+static const int SIDEBAR_STYLE = 2;
+
 static NSAppearance *getVibrantAppearance(jint style)
 {
   switch (style) {
-  case 1:
+  case DARK_STYLE:
     return [NSAppearance appearanceNamed:NSAppearanceNameVibrantDark];
+  case SIDEBAR_STYLE:
   default:
     return [NSAppearance appearanceNamed:NSAppearanceNameVibrantLight];
   }
@@ -1332,16 +1373,30 @@ JNIEXPORT jint JNICALL Java_org_violetlib_aqua_AquaVibrantSupport_setupVisualEff
     NSWindow *nw = getNativeWindow(env, window);
     if (nw != nil) {
         [JNFRunLoop performOnMainThreadWaiting:YES withBlock:^(){
-            // Insert a visual effect view as a sibling of the content view.
+            // Insert a visual effect view as a sibling of the content view if there is not already one present.
             // This is not a recommended technique, but Java wants to see its own content view.
             NSView *contentView = [nw contentView];
-            NSVisualEffectView *fxView = [[NSVisualEffectView alloc] initWithFrame: [contentView frame]];
-            fxView.appearance = getVibrantAppearance(style);
-            fxView.blendingMode = NSVisualEffectBlendingModeBehindWindow;
             NSView *parent = [contentView superview];
-            [parent addSubview: fxView positioned: NSWindowBelow relativeTo: contentView];
-            [fxView setNeedsDisplay:YES];
-            fxView.autoresizingMask = NSViewWidthSizable|NSViewHeightSizable;
+            BOOL found = NO;
+            NSArray *siblings = [parent subviews];
+            NSUInteger siblingCount = [siblings count];
+            NSUInteger siblingIndex;
+            for (siblingIndex = 0; siblingIndex < siblingCount; siblingIndex++) {
+                NSView *sibling = [siblings objectAtIndex:siblingIndex];
+                if ([sibling isKindOfClass: [NSVisualEffectView class]]) {
+                    found = YES;
+                    break;
+                }
+            }
+            if (!found) {
+                NSVisualEffectView *fxView = [[NSVisualEffectView alloc] initWithFrame: [contentView frame]];
+                fxView.appearance = getVibrantAppearance(style);
+                fxView.blendingMode = NSVisualEffectBlendingModeBehindWindow;
+                fxView.autoresizingMask = NSViewWidthSizable|NSViewHeightSizable;
+                [parent addSubview: fxView positioned: NSWindowBelow relativeTo: contentView];
+                [fxView setNeedsDisplay:YES];
+                setupLayers(fxView);
+            }
         }];
         result = 0;
     }
@@ -1354,10 +1409,10 @@ JNIEXPORT jint JNICALL Java_org_violetlib_aqua_AquaVibrantSupport_setupVisualEff
 /*
  * Class:     org_violetlib_aqua_AquaVibrantSupport
  * Method:    createVisualEffectView
- * Signature: (Ljava/awt/Window;I)J
+ * Signature: (Ljava/awt/Window;IZ)J
  */
-JNIEXPORT jlong JNICALL Java_org_violetlib_aqua_AquaVibrantSupport_createVisualEffectView
-  (JNIEnv *env, jclass cl, jobject window, jint style)
+JNIEXPORT jlong JNICALL Java_org_violetlib_aqua_AquaVibrantSupport_nativeCreateVisualEffectView
+  (JNIEnv *env, jclass cl, jobject window, jint style, jboolean supportSelections)
 {
 	__block jlong result = 0;
 
@@ -1366,15 +1421,22 @@ JNIEXPORT jlong JNICALL Java_org_violetlib_aqua_AquaVibrantSupport_createVisualE
 	NSWindow *nw = getNativeWindow(env, window);
 	if (nw != nil) {
         [JNFRunLoop performOnMainThreadWaiting:YES withBlock:^(){
-            // Insert a visual effect view as a sibling of the content view.
+            // Insert a view as a sibling of the content view.
             NSView *contentView = [nw contentView];
-            NSVisualEffectView *fxView = [[NSVisualEffectView alloc] initWithFrame: NSMakeRect(0, 0, 0, 0)];
-            fxView.appearance = getVibrantAppearance(style);
-            fxView.blendingMode = NSVisualEffectBlendingModeBehindWindow;
+            NSView *view;
+            if (supportSelections && style == SIDEBAR_STYLE) {
+                view = [[AquaSidebarBackground alloc] initWithFrame: NSMakeRect(0, 0, 0, 0)];
+            } else {
+                NSVisualEffectView *fxView = [[NSVisualEffectView alloc] initWithFrame: NSMakeRect(0, 0, 0, 0)];
+                fxView.appearance = getVibrantAppearance(style);
+                fxView.blendingMode = NSVisualEffectBlendingModeBehindWindow;
+                view = fxView;
+            }
             NSView *parent = [contentView superview];
-            [parent addSubview: fxView positioned: NSWindowBelow relativeTo: contentView];
-            [fxView setNeedsDisplay:YES];
-            result = (jlong) fxView;
+            [parent addSubview: view positioned: NSWindowBelow relativeTo: contentView];
+            [view setNeedsDisplay:YES];
+            setupLayers(view);
+            result = (jlong) view;
         }];
     }
 
@@ -1385,27 +1447,67 @@ JNIEXPORT jlong JNICALL Java_org_violetlib_aqua_AquaVibrantSupport_createVisualE
 
 /*
  * Class:     org_violetlib_aqua_AquaVibrantSupport
- * Method:    setVisualEffectViewFrame
+ * Method:    setViewFrame
  * Signature: (JIIII)I
  */
-JNIEXPORT jint JNICALL Java_org_violetlib_aqua_AquaVibrantSupport_setVisualEffectViewFrame
+JNIEXPORT jint JNICALL Java_org_violetlib_aqua_AquaVibrantSupport_setViewFrame
   (JNIEnv *env, jclass cl, jlong ptr, jint x, jint y, jint w, jint h)
 {
 	__block jint result = -1;
 
 	JNF_COCOA_ENTER(env);
 
-    NSVisualEffectView *fxView = (NSVisualEffectView *) ptr;
-    NSWindow *window = [fxView window];
+    NSView *view = (NSView *) ptr;
+    NSWindow *window = [view window];
 
     if (window != nil) {
         [JNFRunLoop performOnMainThreadWaiting:YES withBlock:^(){
             float windowHeight = window.frame.size.height;
-            NSLog(@"Set frame %@ %d %d %d %d %f", fxView, x, y, w, h, windowHeight);
-            [fxView setFrame: NSMakeRect(x, windowHeight-y-h, w, h)];
-            fxView.needsDisplay = YES;
+            //NSLog(@"Set frame %@ %d %d %d %d %f", view, x, y, w, h, windowHeight);
+            [view setFrame: NSMakeRect(x, windowHeight-y-h, w, h)];
+            view.needsDisplay = YES;
             result = 0;
         }];
+    }
+
+	JNF_COCOA_EXIT(env);
+
+	return result;
+}
+
+/*
+ * Class:     org_violetlib_aqua_AquaVibrantSupport
+ * Method:    nativeUpdateSelectionBackgrounds
+ * Signature: (J[I)I
+ */
+JNIEXPORT jint JNICALL Java_org_violetlib_aqua_AquaVibrantSupport_nativeUpdateSelectionBackgrounds
+  (JNIEnv *env, jclass cl, jlong ptr, jintArray jdata)
+{
+	__block jint result = -1;
+
+	JNF_COCOA_ENTER(env);
+
+    NSView *view = (NSView *) ptr;
+
+    //windowDebug(view.window);   // debug
+
+    if ([view isKindOfClass: [AquaSidebarBackground class]]) {
+        AquaSidebarBackground *sbb = (AquaSidebarBackground*) view;
+        if (jdata != NULL) {
+            int *data = (*env)->GetIntArrayElements(env, jdata, NULL);
+            if (data != NULL) {
+                [JNFRunLoop performOnMainThreadWaiting:YES withBlock:^(){
+                    [sbb updateSelectionViews: data];
+                    result = 0;
+                }];
+                (*env)->ReleaseIntArrayElements(env, jdata, data, JNI_ABORT);
+            }
+        } else {
+            [JNFRunLoop performOnMainThreadWaiting:YES withBlock:^(){
+                [sbb updateSelectionViews: NULL];
+                result = 0;
+            }];
+        }
     }
 
 	JNF_COCOA_EXIT(env);
@@ -1425,12 +1527,12 @@ JNIEXPORT jint JNICALL Java_org_violetlib_aqua_AquaVibrantSupport_disposeVisualE
 
 	JNF_COCOA_ENTER(env);
 
-    NSVisualEffectView *fxView = (NSVisualEffectView *) ptr;
-    NSWindow *window = [fxView window];
+    NSView *view = (NSView *) ptr;
+    NSWindow *window = [view window];
 
     if (window != nil) {
         [JNFRunLoop performOnMainThreadWaiting:YES withBlock:^(){
-            [fxView removeFromSuperview];
+            [view removeFromSuperview];
             result = 0;
         }];
     }

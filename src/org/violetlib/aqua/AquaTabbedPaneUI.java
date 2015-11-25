@@ -258,6 +258,15 @@ public class AquaTabbedPaneUI extends AquaTabbedPaneCopyFromBasicUI implements A
     final Rectangle fTextRect = new Rectangle();
 
     // UI Rendering
+
+    @Override
+    public void update(Graphics g, JComponent c) {
+        if (c.isOpaque()) {
+            AquaUtils.fillRect(g, c, AquaUtils.ERASE_IF_VIBRANT);
+        }
+        paint(g, c);
+    }
+
     public void paint(final Graphics g, final JComponent c) {
 
         final int tabPlacement = tabPane.getTabPlacement();

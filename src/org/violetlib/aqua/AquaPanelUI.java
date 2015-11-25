@@ -44,7 +44,7 @@ public class AquaPanelUI extends BasicPanelUI {
     @Override
     public final void update(final Graphics g, final JComponent c) {
         if (c.isOpaque()) {
-            AquaUtils.fillRect(g, c);
+            AquaUtils.fillRect(g, c, AquaUtils.ERASE_IF_TEXTURED|AquaUtils.ERASE_IF_VIBRANT);
         }
         paint(g, c);
     }

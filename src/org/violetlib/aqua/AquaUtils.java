@@ -33,20 +33,14 @@
 
 package org.violetlib.aqua;
 
-import org.violetlib.aqua.AquaImageFactory.SlicedImageControl;
-import org.violetlib.aqua.fc.AbstractFileChooserBrowserListUI;
-import org.violetlib.jnr.aqua.AquaUIPainter;
-import sun.swing.SwingUtilities2;
-
-import javax.swing.*;
-import javax.swing.border.Border;
-import javax.swing.plaf.UIResource;
 import java.awt.*;
-import java.awt.event.*;
+import java.awt.event.HierarchyEvent;
+import java.awt.event.HierarchyListener;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.*;
 import java.lang.ref.SoftReference;
-import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
@@ -54,6 +48,13 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.StringTokenizer;
 import java.util.function.Supplier;
+import javax.swing.*;
+import javax.swing.border.Border;
+import javax.swing.plaf.UIResource;
+
+import org.violetlib.aqua.AquaImageFactory.SlicedImageControl;
+import org.violetlib.jnr.aqua.AquaUIPainter;
+import sun.swing.SwingUtilities2;
 
 final public class AquaUtils extends SwingUtilitiesModified {
 
@@ -497,72 +498,91 @@ final public class AquaUtils extends SwingUtilitiesModified {
         }
     }
 
-    public static boolean isWindowTextured(final Component c) {
-        if (!(c instanceof JComponent)) {
-            return false;
-        }
-        final JRootPane pane = ((JComponent) c).getRootPane();
-        if (pane == null) {
-            return false;
-        }
+    // options for when to use a magic eraser
+    public final static int ERASE_IF_TEXTURED = 1<<0;
+    public final static int ERASE_IF_VIBRANT = 1<<1;
+    public final static int ERASE_ALWLAYS = 1<<2;
 
-        Object prop = pane.getClientProperty("apple.awt.brushMetalLook");
-        if (prop != null) {
-            return Boolean.parseBoolean(prop.toString());
-        }
-        prop = pane.getClientProperty("Window.style");
-        return prop != null && "textured".equals(prop);
+    /**
+     * Fill the component bounds with the appropriate fill color or magic eraser.
+     * @param c The component.
+     */
+    public static void fillRect(Graphics g, Component c, int eraserMode) {
+        fillRect(g, c, eraserMode, 0, 0, c.getWidth(), c.getHeight());
     }
 
-    private static Color resetAlpha(final Color color) {
-        return new Color(color.getRed(), color.getGreen(), color.getBlue(), 0);
+    /**
+     * File the specified rectangle with the appropriate fill color or magic eraser.
+     * @param c The component.
+     */
+    public static void fillRect(Graphics g, Component c, int erarserMode, int x, int y, int w, int h) {
+        Color color = getFillColor(c, erarserMode);
+        fillRect(g, color, x, y, w, h);
     }
 
-    static void fillRect(final Graphics g, final Component c) {
-        fillRect(g, c, c.getBackground(), 0, 0, c.getWidth(), c.getHeight());
-    }
-
-    static void fillRect(final Graphics g, final Component c, final Color color,
-                         final int x, final int y, final int w, final int h) {
-        if (!(g instanceof Graphics2D)) {
-            return;
+    /**
+     * Determine the fill color to use for a component.
+     * @param c The component.
+     * @return the fill color, or null to use the magic eraser.
+     */
+    private static Color getFillColor(Component c, int eraserMode) {
+        if ((eraserMode & ERASE_ALWLAYS) != 0) {
+            return null;
         }
 
-        final Graphics2D cg = (Graphics2D) g.create();
-        try {
-            if (color instanceof UIResource
-                    && isWindowTextured(c)
-                    && color.equals(AquaImageFactory.getWindowBackgroundColorUIResource())) {
-                cg.setComposite(AlphaComposite.Src);
-                cg.setColor(resetAlpha(color));
-            } else {
-                cg.setColor(color);
+        Color bc = c.getBackground();
+        if (!(bc instanceof UIResource)) {
+            return bc;
+        }
+
+        if (bc == null) {
+            bc = AquaImageFactory.getWindowBackgroundColorUIResource();
+        }
+
+        JRootPane rp = SwingUtilities.getRootPane(c);
+        if (rp == null) {
+            return bc;
+        }
+
+        return !isMagicEraser(rp, c, bc, eraserMode) ? bc : null;
+    }
+
+    private static boolean isMagicEraser(JRootPane rp, Component c, Color bc, int eraserMode) {
+        //if (bc.equals(AquaImageFactory.getWindowBackgroundColorUIResource())) {
+            Object prop = rp.getClientProperty("apple.awt.brushMetalLook");
+            if (prop != null && (eraserMode & ERASE_IF_TEXTURED) != 0 && Boolean.parseBoolean(prop.toString())) {
+                return Boolean.parseBoolean(prop.toString());
             }
-            cg.fillRect(x, y, w, h);
-        } finally {
-            cg.dispose();
-        }
+            prop = rp.getClientProperty("Window.style");
+            if (prop != null) {
+                if (prop.equals("textured") && (eraserMode & ERASE_IF_TEXTURED) != 0) {
+                    return true;
+                }
+                if (prop.equals("vibrant") && (eraserMode & ERASE_IF_VIBRANT) != 0) {
+                    return true;
+                }
+            }
+        //}
+
+        return false;
     }
 
     /**
      * Fill with specified color or erase.
      * @param g The graphics context.
      * @param color The color to fill, or null to erase
-     * @param x
-     * @param y
-     * @param w
-     * @param h
      */
-    public static void fillRect(Graphics2D g, Color color, int x, int y, int w, int h) {
-        final Graphics2D cg = (Graphics2D) g.create();
+    public static void fillRect(Graphics g, Color color, int x, int y, int w, int h) {
+        final Graphics cg = g.create();
         try {
             if (color != null) {
                 cg.setColor(color);
-            } else {
-                cg.setComposite(AlphaComposite.Src);
+                cg.fillRect(x, y, w, h);
+            } else if (cg instanceof Graphics2D) {
+                ((Graphics2D) cg).setComposite(AlphaComposite.Src);
                 cg.setColor(new Color(0, 0, 0, 0));
+                cg.fillRect(x, y, w, h);
             }
-            cg.fillRect(x, y, w, h);
         } finally {
             cg.dispose();
         }
@@ -852,15 +872,30 @@ final public class AquaUtils extends SwingUtilitiesModified {
             throw new UnsupportedOperationException("Unable to display as sheet: the window must not be visible");
         }
 
+        Color clear = new Color(0, 0, 0, 0);
+
         if (w instanceof Dialog) {
             Dialog d = (Dialog) w;
             d.setModalityType(Dialog.ModalityType.MODELESS);
         }
 
-        // Sheets are displayed over a vibrant background. To allow the vibrant background to be seen, we need to
-        // inhibit the normal Java window background and enable the magic eraser code, which we do using the textured
-        // window client property. However, if the window is already displayable, the client property will not affect
-        // the window background. As a work around, we call the peer directly.
+        if (!w.isDisplayable()) {
+            w.addNotify();  // force the native peer to be created
+        }
+
+        setTextured(w); // prevent Java from painting a window background
+
+        try {
+            w.setBackground(clear);
+        } catch (Exception ex) {
+        }
+
+        // Dialog sheets are displayed over a vibrant background. For plain windows, we add our own NSVisualEffectView.
+
+        AquaVibrantSupport.addFullWindowVibrantView(w, AquaVibrantSupport.LIGHT_STYLE);
+
+        // To allow the vibrant background to be seen, we need to
+        // inhibit the normal Java window background and enable the magic eraser code.
 
         JRootPane rp = null;
         if (w instanceof RootPaneContainer) {
@@ -869,14 +904,9 @@ final public class AquaUtils extends SwingUtilitiesModified {
         }
 
         if (rp != null) {
-            rp.putClientProperty("Window.style", "textured");
-            if (w.isDisplayable()) {
-                setTextured(w);
-            }
-        }
-
-        if (!w.isDisplayable()) {
-            w.addNotify();   // force the native peer to be created
+            rp.putClientProperty("Window.style", "vibrant");
+            rp.setBackground(clear);
+            rp.getLayeredPane().setOpaque(false);
         }
 
         // TBD: is there a way to paint the lightweight components without displaying the dialog?
