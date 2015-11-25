@@ -144,6 +144,7 @@
             <arg value="JavaNativeFoundation"/>
 
             <arg value="${jnisrc}/AquaNativeSupport.m"/>
+            <arg value="${jnisrc}/AquaSidebarBackground.m"/>
         </exec>
 
     </target>
