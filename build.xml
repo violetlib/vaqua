@@ -38,6 +38,19 @@
     </ant>
   </target>
 
+  <target name="debugrelease"
+      depends="validateReleaseNumber"
+      description="Build the release version of the JAR">
+    <property name="renderingLibraryJAR" location="${slib}/VAquaRendering.jar"/>
+    <ant dir="release" inheritAll="false">
+      <property name="debug" value="true"/>
+      <propertyset>
+        <propertyref name="RELEASE"/>
+        <propertyref name="renderingLibraryJAR"/>
+      </propertyset>
+    </ant>
+  </target>
+
   <target name="showrelease">
     <echo message="VAqua Release"/>
     <exec dir="."

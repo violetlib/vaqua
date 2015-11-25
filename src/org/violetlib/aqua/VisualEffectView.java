@@ -94,13 +94,11 @@ public class VisualEffectView {
     }
 
     protected void visibleBoundsChanged() {
-        if (window != null && window.isValid()) {
-            Rectangle bounds = getVisibleBounds(component);
-            if (bounds != null) {
-                setFrame(bounds.x, bounds.y, bounds.width, bounds.height);
-            } else {
-                setFrame(0, 0, 0, 0);
-            }
+        Rectangle bounds = getVisibleBounds(component);
+        if (bounds != null && bounds.width > 0 && bounds.height > 0) {
+            setFrame(bounds.x, bounds.y, bounds.width, bounds.height);
+        } else {
+            setFrame(0, 0, 0, 0);
         }
     }
 

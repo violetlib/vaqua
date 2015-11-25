@@ -38,8 +38,8 @@ public abstract class ComponentTracker
      */
     public ComponentTracker() {
 
-        // We need to know when the component is added to a containment hierarchy, removed from a containment
-        // hierarchy, or its bounds are changed.
+        // We need to know when the component is added to a containment hierarchy, removed from a containment hierarchy,
+        // or its bounds are changed.
 
         hierarchyListener = new HierarchyListener() {
             public void hierarchyChanged(HierarchyEvent e) {
