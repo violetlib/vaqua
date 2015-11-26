@@ -203,6 +203,17 @@ final public class AquaUtils extends SwingUtilitiesModified {
     }
 
     /**
+     * Convenience method to get the root pane of a window.
+     */
+    public static JRootPane getRootPane(Window w) {
+        if (w instanceof RootPaneContainer) {
+            RootPaneContainer rpc = (RootPaneContainer) w;
+            return rpc.getRootPane();
+        }
+        return null;
+    }
+
+    /**
      * Convenience function for determining ComponentOrientation.  Helps us
      * avoid having Munge directives throughout the code.
      */

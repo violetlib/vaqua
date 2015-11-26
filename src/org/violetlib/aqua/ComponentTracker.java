@@ -100,11 +100,13 @@ public abstract class ComponentTracker
     public void attach(JComponent c) {
         if (tracked != c) {
             if (tracked != null) {
+                Window w = window;
                 tracked.removeHierarchyListener(hierarchyListener);
                 tracked.removeHierarchyBoundsListener(hierarchyBoundsListener);
                 tracked.removeComponentListener(componentListener);
                 tracked = null;
                 window = null;
+                detached(w);
             }
 
             if (c != null) {
@@ -113,10 +115,23 @@ public abstract class ComponentTracker
                 tracked.addHierarchyBoundsListener(hierarchyBoundsListener);
                 tracked.addComponentListener(componentListener);
                 window = SwingUtilities.getWindowAncestor(tracked);
+                attached(window);
             }
         }
+    }
 
-        visibleBoundsChanged(window);
+    /**
+     * Called when this tracker is detached from a component.
+     * @param w The window previously containing the component, or null if none.
+     */
+    protected void detached(Window w) {
+    }
+
+    /**
+     * Called when this tracker is attached to a component.
+     * @param w The window containing the component, or null if none.
+     */
+    protected void attached(Window w) {
     }
 
     /**

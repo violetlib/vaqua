@@ -41,10 +41,6 @@ public class VisualEffectView {
         this.component = c;
         this.style = style;
         this.supportSelections = supportSelections;
-        Window w = SwingUtilities.getWindowAncestor(c);
-        if (w != null) {
-            windowChanged(w);
-        }
         tracker = new MyComponentTracker();
         tracker.attach(component);
     }
@@ -53,9 +49,6 @@ public class VisualEffectView {
         if (tracker != null) {
             tracker.attach(null);
             tracker = null;
-        }
-        if (window != null) {
-            windowChanged(null);
         }
     }
 
@@ -112,6 +105,21 @@ public class VisualEffectView {
     }
 
     private class MyComponentTracker extends ComponentTracker {
+        @Override
+        protected void attached(Window w) {
+            if (w != null) {
+                VisualEffectView.this.windowChanged(w);
+                VisualEffectView.this.visibleBoundsChanged();
+            }
+        }
+
+        @Override
+        protected void detached(Window w) {
+            if (window != null) {
+                VisualEffectView.this.windowChanged(null);
+            }
+        }
+
         @Override
         protected void windowChanged(Window oldWindow, Window newWindow) {
             VisualEffectView.this.windowChanged(newWindow);

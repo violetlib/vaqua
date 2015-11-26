@@ -9,7 +9,6 @@
 package org.violetlib.aqua;
 
 import java.awt.*;
-import java.awt.event.*;
 import javax.swing.*;
 
 /**
@@ -20,13 +19,12 @@ public abstract class OverlayPainterComponent extends JComponent {
     protected final Insets margins;
     private final Integer layer;
 
-    private final HierarchyListener baseHierarchyListener;
-    private final HierarchyBoundsListener baseHierarchyBoundsListener;
-    private final ComponentListener baseComponentListener;
+    private final ComponentTracker tracker;
 
     private Component base;             // the currently configured base component
     private Rectangle baseBounds;       // the bounds of the base component in our coordinate space
     private Rectangle visibleBounds;    // the bounds within our coordinate space where we may paint or null if not paintable
+    private Window baseWindow;          // the window last known to contain the base component
 
     /**
      * Create a component for painting an overlay over a base component.
@@ -42,43 +40,30 @@ public abstract class OverlayPainterComponent extends JComponent {
         // We need to know when the base component is added to a containment hierarchy, removed from a containment
         // hierarchy, or its bounds are changed.
 
-        baseHierarchyListener = new HierarchyListener() {
-            public void hierarchyChanged(HierarchyEvent e) {
-                long flags = e.getChangeFlags();
-
-                boolean isUpdated = updateHierarchy();
-
-                if (isUpdated || (flags & HierarchyEvent.SHOWING_CHANGED) != 0) {
-                    updateBounds();
+        tracker = new ComponentTracker() {
+            @Override
+            protected void attached(Window w) {
+                if (w != null) {
+                    OverlayPainterComponent.this.windowChanged(w);
+                    OverlayPainterComponent.this.visibleBoundsChanged();
                 }
             }
-        };
 
-        baseHierarchyBoundsListener = new HierarchyBoundsListener() {
-            public void ancestorMoved(HierarchyEvent e) {
-                updateBounds();
+            @Override
+            protected void detached(Window w) {
+                if (baseWindow != null) {
+                    OverlayPainterComponent.this.windowChanged(null);
+                }
             }
 
-            public void ancestorResized(HierarchyEvent e) {
-                updateBounds();
-            }
-        };
-
-        baseComponentListener = new ComponentListener() {
-            public void componentResized(ComponentEvent e) {
-                updateBounds();
+            @Override
+            protected void windowChanged(Window oldWindow, Window newWindow) {
+                OverlayPainterComponent.this.windowChanged(newWindow);
             }
 
-            public void componentMoved(ComponentEvent e) {
-                updateBounds();
-            }
-
-            public void componentShown(ComponentEvent e) {
-                updateBounds();
-            }
-
-            public void componentHidden(ComponentEvent e) {
-                updateBounds();
+            @Override
+            protected void visibleBoundsChanged(Window window) {
+                OverlayPainterComponent.this.visibleBoundsChanged();
             }
         };
 
@@ -92,26 +77,16 @@ public abstract class OverlayPainterComponent extends JComponent {
     public void attach(JComponent c) {
         if (base != c) {
             if (base != null) {
-                base.removeHierarchyListener(baseHierarchyListener);
-                base.removeHierarchyBoundsListener(baseHierarchyBoundsListener);
-                base.removeComponentListener(baseComponentListener);
+                tracker.attach(null);
                 base = null;
             }
 
             if (c != null) {
                 base = c;
-                base.addHierarchyListener(baseHierarchyListener);
-                base.addHierarchyBoundsListener(baseHierarchyBoundsListener);
-                base.addComponentListener(baseComponentListener);
+                tracker.attach(c);
             }
+            repaint();
         }
-
-        if (base != null) {
-            updateHierarchy();
-        }
-
-        updateBounds();
-        repaint();
     }
 
     /**
@@ -128,16 +103,15 @@ public abstract class OverlayPainterComponent extends JComponent {
 
     /**
      * Ensure that this component is properly located in the containment hierarchy that contains the base component.
-     * Return true if and only if this component was moved to a new containment hierarchy or to a new place in the
-     * current containment hierarchy.
      */
-    private boolean updateHierarchy() {
-        JRootPane orp = getOurRootPane();
-        JRootPane nrp = getDesiredRootPane();
-
-        if (orp == nrp) {
-            return false;
+    private void windowChanged(Window newWindow) {
+        if (newWindow == baseWindow) {
+            return;
         }
+
+        JRootPane orp = AquaUtils.getRootPane(baseWindow);
+        JRootPane nrp = AquaUtils.getRootPane(newWindow);
+        baseWindow = newWindow;
 
         if (orp != null) {
             Container p = getParent();
@@ -148,16 +122,14 @@ public abstract class OverlayPainterComponent extends JComponent {
             JLayeredPane lp = nrp.getLayeredPane();
             lp.add(this, layer);
         }
-
-        return true;
     }
 
     /**
      * Update our information about the bounds of the base component in our coordinate space and the visible bounds
      * into which we are allowed to paint.
      */
-    private void updateBounds() {
-        JRootPane rp = getOurRootPane();
+    private void visibleBoundsChanged() {
+        JRootPane rp = AquaUtils.getRootPane(baseWindow);
         if (rp == null || base == null) {
             baseBounds = null;
             visibleBounds = null;
@@ -186,36 +158,7 @@ public abstract class OverlayPainterComponent extends JComponent {
         }
     }
 
-    /**
-     * Return the root pane associated with the base component.
-     */
-    private JRootPane getDesiredRootPane() {
-        if (base == null) {
-            return null;
-        }
-
-        Window w = SwingUtilities.getWindowAncestor(base);
-        if (w instanceof RootPaneContainer) {
-            RootPaneContainer rpc = (RootPaneContainer) w;
-            return rpc.getRootPane();
-        }
-
-        return null;
-    }
-
-    /**
-     * Return the root pane associated with this component.
-     */
-    private JRootPane getOurRootPane() {
-        Window w = SwingUtilities.getWindowAncestor(this);
-        if (w instanceof RootPaneContainer) {
-            RootPaneContainer rpc = (RootPaneContainer) w;
-            return rpc.getRootPane();
-        }
-
-        return null;
-    }
-
+    @Override
     public final void paintComponent(Graphics g) {
         if (visibleBounds != null) {
             Graphics2D gg = (Graphics2D) g.create();
@@ -239,8 +182,8 @@ public abstract class OverlayPainterComponent extends JComponent {
      * are constrained by the viewport.
      *
      * @param base The base component.
-     * @return the visible bounds, as defined above, in the coordinate space of the base component,
-     * or null if the component is not visible.
+     * @return the visible bounds, as defined above, in the coordinate space of the base component, or null if the
+     * component is not visible.
      */
     protected static Rectangle getVisibleBounds(Component base) {
         int x = 0;
