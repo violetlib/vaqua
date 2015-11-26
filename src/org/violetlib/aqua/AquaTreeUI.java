@@ -471,7 +471,13 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable {
         return totalChildIndent * (depth + depthOffset);
     }
 
-    public void paint(final Graphics g, final JComponent c) {
+    @Override
+    public void update(Graphics g, JComponent c) {
+        paint(g, c);
+    }
+
+    @Override
+    public void paint(Graphics g, JComponent c) {
 
         // Set the variables used by paintRow
 
@@ -500,11 +506,6 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable {
     }
 
     protected void paintBackground(Graphics g) {
-        /*
-         * TBD: In Yosemite, the sidebar background is a translucent blurry thing. One wonders if this could ever be
-         * simulated in Java.
-         */
-
         Color background = getCurrentBackground();
 
         if (tree.isOpaque()) {
