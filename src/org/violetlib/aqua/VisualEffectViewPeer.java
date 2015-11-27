@@ -13,6 +13,6 @@ package org.violetlib.aqua;
  */
 public interface VisualEffectViewPeer {
     void setFrame(int x, int y, int width, int height);
-    void updateSelectionBackgrounds(TreeSelectionBoundsTracker.SelectionDescription sd);
+    void updateSelectionBackgrounds(SelectionBoundsDescription sd);
     void dispose();
 }

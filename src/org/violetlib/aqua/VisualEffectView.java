@@ -45,6 +45,10 @@ public class VisualEffectView {
         tracker.attach(component);
     }
 
+    public int getStyle() {
+        return style;
+    }
+
     public void dispose() {
         if (tracker != null) {
             tracker.attach(null);
@@ -56,7 +60,7 @@ public class VisualEffectView {
 	 * Update the set of regions to display a selection background.
 	 * @param sd A description of the regions, or null if there are no regions.
      */
-	public void updateSelectionBackgrounds(TreeSelectionBoundsTracker.SelectionDescription sd) {
+	public void updateSelectionBackgrounds(SelectionBoundsDescription sd) {
 		if (peer != null && supportSelections) {
 			peer.updateSelectionBackgrounds(sd);
 		}

@@ -542,38 +542,53 @@ final public class AquaUtils extends SwingUtilitiesModified {
         }
 
         Color bc = c.getBackground();
-        if (!(bc instanceof UIResource)) {
+        if (bc != null && !(bc instanceof UIResource)) {
             return bc;
         }
 
-        if (bc == null) {
-            bc = AquaImageFactory.getWindowBackgroundColorUIResource();
-        }
-
-        JRootPane rp = SwingUtilities.getRootPane(c);
-        if (rp == null) {
-            return bc;
-        }
-
-        return !isMagicEraser(rp, c, bc, eraserMode) ? bc : null;
+        return !isMagicEraser(c, eraserMode) ? bc : null;
     }
 
-    private static boolean isMagicEraser(JRootPane rp, Component c, Color bc, int eraserMode) {
-        //if (bc.equals(AquaImageFactory.getWindowBackgroundColorUIResource())) {
-            Object prop = rp.getClientProperty("apple.awt.brushMetalLook");
-            if (prop != null && (eraserMode & ERASE_IF_TEXTURED) != 0 && Boolean.parseBoolean(prop.toString())) {
-                return Boolean.parseBoolean(prop.toString());
+    /**
+     * Determine whether a component should use a magic eraser instead of painting a background.
+     * A magic eraser erases the current contents of the frame buffer so that the native window or vibrant view
+     * background shows through.
+     * @param c The component.
+     * @param eraserMode The eraser mode, which selects the features that are tested for.
+     * @return true if the component should use a magic eraser.
+     */
+    private static boolean isMagicEraser(Component c, int eraserMode) {
+        while (c != null) {
+            if (c instanceof JRootPane) {
+                JRootPane rp = (JRootPane) c;
+
+                Object prop = rp.getClientProperty("apple.awt.brushMetalLook");
+                if (prop != null && (eraserMode & ERASE_IF_TEXTURED) != 0 && Boolean.parseBoolean(prop.toString())) {
+                    return Boolean.parseBoolean(prop.toString());
+                }
+
+                prop = rp.getClientProperty("Window.style");
+                if (prop != null) {
+                    if (prop.equals("textured") && (eraserMode & ERASE_IF_TEXTURED) != 0) {
+                        return true;
+                    }
+                    if (prop.equals("vibrant") && (eraserMode & ERASE_IF_VIBRANT) != 0) {
+                        return true;
+                    }
+                }
+
+                return false;
             }
-            prop = rp.getClientProperty("Window.style");
-            if (prop != null) {
-                if (prop.equals("textured") && (eraserMode & ERASE_IF_TEXTURED) != 0) {
+
+            if (c instanceof JComponent) {
+                JComponent jc = (JComponent) c;
+                if ((eraserMode & ERASE_IF_VIBRANT) != 0 && AquaVibrantSupport.isVibrant(jc)) {
                     return true;
                 }
-                if (prop.equals("vibrant") && (eraserMode & ERASE_IF_VIBRANT) != 0) {
-                    return true;
-                }
             }
-        //}
+
+            c = c.getParent();
+        }
 
         return false;
     }

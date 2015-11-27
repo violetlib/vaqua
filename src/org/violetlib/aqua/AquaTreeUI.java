@@ -212,11 +212,7 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable {
 
         public SidebarVibrantEffects(JComponent top) {
             super(top, AquaVibrantSupport.SIDEBAR_STYLE, true);
-            bt = new TreeSelectionBoundsTracker(tree) {
-                @Override
-                protected void selectionDescriptionChanged(SelectionDescription sd) {
-                    SidebarVibrantEffects.this.updateSelectionBackgrounds(sd);
-                }
+            bt = new TreeSelectionBoundsTracker(tree, this::updateSelectionBackgrounds) {
                 @Override
                 protected int convertRowYCoordinateToSelectionDescription(int y) {
                     if (top != tree) {

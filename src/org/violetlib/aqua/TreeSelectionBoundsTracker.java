@@ -9,8 +9,8 @@
 package org.violetlib.aqua;
 
 import java.awt.*;
-import java.util.Arrays;
 import java.util.Objects;
+import java.util.function.Consumer;
 import javax.swing.*;
 import javax.swing.tree.TreeSelectionModel;
 
@@ -18,28 +18,53 @@ import javax.swing.tree.TreeSelectionModel;
  * Update the bounds of the selected rows of a JTree. The update() method must be called after potential changes to the
  * tree layout.
  */
-public abstract class TreeSelectionBoundsTracker {
+public abstract class TreeSelectionBoundsTracker implements SelectionBoundsTracker {
     protected JTree tree;
+    protected Consumer<SelectionBoundsDescription> consumer;
 
-    private /* @Nullable */ SelectionDescription currentSelectionDescription;
+    private /* @Nullable */ SelectionBoundsDescription currentSelectionDescription;
 
-    public TreeSelectionBoundsTracker(JTree tree) {
+    public TreeSelectionBoundsTracker(JTree tree, Consumer<SelectionBoundsDescription> consumer) {
         this.tree = tree;
+        this.consumer = consumer;
 
         update();
+
+        if (consumer != null && currentSelectionDescription == null) {
+            consumer.accept(null);
+        }
     }
 
+    @Override
     public void dispose() {
         tree = null;
+        consumer = null;
     }
 
+    @Override
     public void reset() {
-        currentSelectionDescription = null;
+        if (currentSelectionDescription != null) {
+            currentSelectionDescription = null;
+            if (consumer != null) {
+                consumer.accept(null);
+            }
+        }
+    }
+
+    @Override
+    public void setConsumer(Consumer<SelectionBoundsDescription> consumer) {
+        if (consumer != this.consumer) {
+            this.consumer = consumer;
+            if (consumer != null) {
+                consumer.accept(currentSelectionDescription);
+            }
+        }
     }
 
     /**
-     * Call this method when the tree layout may have changed.
+     * Call this method when the tree layout (row bounds) may have changed.
      */
+    @Override
     public void update() {
         if (tree != null) {
             TreeSelectionModel sm = tree.getSelectionModel();
@@ -52,70 +77,26 @@ public abstract class TreeSelectionBoundsTracker {
     }
 
     protected void updateFromSelectedRows(/* @Nullable */ int[] rows) {
-        SelectionDescription newSelectionDescription = createSelectionDescription(rows);
+        SelectionBoundsDescription newSelectionDescription = createSelectionDescription(rows);
         if (!Objects.equals(newSelectionDescription, currentSelectionDescription)) {
             currentSelectionDescription = newSelectionDescription;
-            selectionDescriptionChanged(currentSelectionDescription);
+            if (consumer != null) {
+                consumer.accept(currentSelectionDescription);
+            }
         }
     }
 
-    private /* @Nullable */ SelectionDescription createSelectionDescription(int[] rows) {
+    private /* @Nullable */ SelectionBoundsDescription createSelectionDescription(int[] rows) {
         if (rows == null) {
             return null;
         }
-        SelectionDescription sd = new SelectionDescription(rows.length);
+        SelectionBoundsDescription sd = new SelectionBoundsDescription(rows.length);
         for (int row : rows) {
             Rectangle bounds = tree.getRowBounds(row);
             int y = convertRowYCoordinateToSelectionDescription(bounds.y);
-            sd.addRow(y, bounds.height);
+            sd.addRegion(y, bounds.height);
         }
         return sd;
-    }
-
-    /**
-     * A description of the number of selection regions and their vertical locations. Adjacent rows are combined.
-     */
-    public static class SelectionDescription {
-        int regionCount;
-        int lastY;
-        int[] data;
-
-        public SelectionDescription(int maximumRegionCount) {
-            data = new int[maximumRegionCount*2+1];
-        }
-
-        public void addRow(int y, int h) {
-            if (regionCount > 0 && lastY == y) {
-                // just extend the last region
-                data[regionCount*2] += h;
-            } else {
-                ++regionCount;
-                data[0] = regionCount;
-                data[regionCount*2-1] = y;
-                data[regionCount*2] = h;
-            }
-            lastY = y+h;
-        }
-
-        /**
-         * Return the selection description as an integer array for the purpose of passing to native code.
-         */
-        public int[] getData() {
-            return data;
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-            SelectionDescription that = (SelectionDescription) o;
-            return regionCount == that.regionCount && Arrays.equals(data, that.data);
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(regionCount, data);
-        }
     }
 
     /**
@@ -125,6 +106,4 @@ public abstract class TreeSelectionBoundsTracker {
     protected int convertRowYCoordinateToSelectionDescription(int y) {
         return y;
     }
-
-    protected abstract void selectionDescriptionChanged(/* @Nullable */ SelectionDescription sd);
 }

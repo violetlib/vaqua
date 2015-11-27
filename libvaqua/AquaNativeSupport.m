@@ -1374,28 +1374,66 @@ JNIEXPORT jint JNICALL Java_org_violetlib_aqua_AquaVibrantSupport_setupVisualEff
     if (nw != nil) {
         [JNFRunLoop performOnMainThreadWaiting:YES withBlock:^(){
             // Insert a visual effect view as a sibling of the content view if there is not already one present.
-            // This is not a recommended technique, but Java wants to see its own content view.
+            // This is not a recommended technique, but Java wants its AWTView to be the content view.
             NSView *contentView = [nw contentView];
             NSView *parent = [contentView superview];
-            BOOL found = NO;
+            NSVisualEffectView *fxView = nil;
             NSArray *siblings = [parent subviews];
             NSUInteger siblingCount = [siblings count];
             NSUInteger siblingIndex;
             for (siblingIndex = 0; siblingIndex < siblingCount; siblingIndex++) {
                 NSView *sibling = [siblings objectAtIndex:siblingIndex];
                 if ([sibling isKindOfClass: [NSVisualEffectView class]]) {
-                    found = YES;
+                    fxView = (NSVisualEffectView*) sibling;
                     break;
                 }
             }
-            if (!found) {
-                NSVisualEffectView *fxView = [[NSVisualEffectView alloc] initWithFrame: [contentView frame]];
+            if (fxView == nil) {
+                fxView = [[NSVisualEffectView alloc] initWithFrame: [contentView frame]];
                 fxView.appearance = getVibrantAppearance(style);
                 fxView.blendingMode = NSVisualEffectBlendingModeBehindWindow;
                 fxView.autoresizingMask = NSViewWidthSizable|NSViewHeightSizable;
                 [parent addSubview: fxView positioned: NSWindowBelow relativeTo: contentView];
                 [fxView setNeedsDisplay:YES];
                 setupLayers(fxView);
+            } else {
+                fxView.appearance = getVibrantAppearance(style);
+            }
+        }];
+        result = 0;
+    }
+
+    JNF_COCOA_EXIT(env);
+
+    return result;
+}
+
+/*
+ * Class:     org_violetlib_aqua_AquaVibrantSupport
+ * Method:    removeVisualEffectWindow
+ * Signature: (Ljava/awt/Window;)I
+ */
+JNIEXPORT jint JNICALL Java_org_violetlib_aqua_AquaVibrantSupport_removeVisualEffectWindow
+  (JNIEnv *env, jclass cl, jobject window)
+{
+    jint result = -1;
+
+    JNF_COCOA_ENTER(env);
+
+    NSWindow *nw = getNativeWindow(env, window);
+    if (nw != nil) {
+        [JNFRunLoop performOnMainThreadWaiting:YES withBlock:^(){
+            NSView *contentView = [nw contentView];
+            NSView *parent = [contentView superview];
+            NSArray *siblings = [parent subviews];
+            NSUInteger siblingCount = [siblings count];
+            NSUInteger siblingIndex;
+            for (siblingIndex = 0; siblingIndex < siblingCount; siblingIndex++) {
+                NSView *sibling = [siblings objectAtIndex:siblingIndex];
+                if ([sibling isKindOfClass: [NSVisualEffectView class]]) {
+                    [sibling removeFromSuperview];
+                    break;
+                }
             }
         }];
         result = 0;

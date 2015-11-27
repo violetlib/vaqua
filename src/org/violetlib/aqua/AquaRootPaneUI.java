@@ -50,6 +50,7 @@ import javax.swing.plaf.basic.BasicRootPaneUI;
 public class AquaRootPaneUI extends BasicRootPaneUI implements AncestorListener, WindowListener, ContainerListener {
 
     public final static String AQUA_WINDOW_STYLE_KEY = "Aqua.windowStyle";
+    public static final String VIBRANT_STYLE_KEY = "Window.vibrantStyle";
 
     //final static int kDefaultButtonPaintDelayBetweenFrames = 50;
 //    JButton fCurrentDefaultButton = null;
@@ -64,6 +65,7 @@ public class AquaRootPaneUI extends BasicRootPaneUI implements AncestorListener,
     protected WindowHierarchyListener hierarchyListener;
     protected boolean isInitialized;
     protected AquaCustomStyledWindow customStyledWindow;
+    protected int vibrantStyle = -1;
 
     public void installUI(final JComponent c) {
 
@@ -112,6 +114,8 @@ public class AquaRootPaneUI extends BasicRootPaneUI implements AncestorListener,
             customStyledWindow.dispose();
             customStyledWindow = null;
         }
+
+        removeVisualEffectView();
 
 //        if (sUseScreenMenuBar) {
 //            final JRootPane root = (JRootPane)c;
@@ -220,6 +224,19 @@ public class AquaRootPaneUI extends BasicRootPaneUI implements AncestorListener,
                     updateDefaultButton((JRootPane)e.getSource());
                 } else {
 //                    stopTimer();
+                }
+            }
+        } else if (VIBRANT_STYLE_KEY.equals(prop)) {
+            Object o = e.getNewValue();
+            int style = AquaVibrantSupport.parseVibrantStyle(o);
+            if (style == AquaVibrantSupport.SIDEBAR_STYLE) {
+                style = AquaVibrantSupport.LIGHT_STYLE;
+            }
+            if (style != vibrantStyle) {
+                vibrantStyle = style;
+                rootPane.setBackground(vibrantStyle >= 0 ? new Color(0, 0, 0, 0) : null);
+                if (isInitialized) {
+                    updateVisualEffectView();
                 }
             }
         }
@@ -369,7 +386,36 @@ public class AquaRootPaneUI extends BasicRootPaneUI implements AncestorListener,
             if (e.getChangeFlags() == HierarchyEvent.DISPLAYABILITY_CHANGED && rootPane.isDisplayable() && !isInitialized) {
                 isInitialized = true;
                 installCustomWindowStyle();
+                updateVisualEffectView();
             }
+        }
+    }
+
+    protected void updateVisualEffectView() {
+        Window w = SwingUtilities.getWindowAncestor(rootPane);
+        if (w != null) {
+            if (vibrantStyle >= 0) {
+                try {
+                    AquaVibrantSupport.addFullWindowVibrantView(w, vibrantStyle);
+                    AquaUtils.setTextured(w);
+                    rootPane.putClientProperty("Window.style", "vibrant");
+                    rootPane.repaint();
+                } catch (IllegalArgumentException ex) {
+                    System.err.println("Unable to install visual effect view: " + ex.getMessage());
+                }
+            } else {
+                AquaVibrantSupport.removeFullWindowVibrantView(w);
+                rootPane.putClientProperty("Window.style", null);
+                rootPane.repaint();
+                // TBD: cannot really undo this
+            }
+        }
+    }
+
+    protected void removeVisualEffectView() {
+        Window w = SwingUtilities.getWindowAncestor(rootPane);
+        if (w != null) {
+            AquaVibrantSupport.removeFullWindowVibrantView(w);
         }
     }
 
