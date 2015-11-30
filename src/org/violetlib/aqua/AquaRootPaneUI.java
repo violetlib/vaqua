@@ -50,7 +50,6 @@ import javax.swing.plaf.basic.BasicRootPaneUI;
 public class AquaRootPaneUI extends BasicRootPaneUI implements AncestorListener, WindowListener, ContainerListener {
 
     public final static String AQUA_WINDOW_STYLE_KEY = "Aqua.windowStyle";
-    public static final String VIBRANT_STYLE_KEY = "Window.vibrantStyle";
 
     //final static int kDefaultButtonPaintDelayBetweenFrames = 50;
 //    JButton fCurrentDefaultButton = null;
@@ -226,17 +225,21 @@ public class AquaRootPaneUI extends BasicRootPaneUI implements AncestorListener,
 //                    stopTimer();
                 }
             }
-        } else if (VIBRANT_STYLE_KEY.equals(prop)) {
+        } else if (AquaVibrantSupport.BACKGROUND_STYLE_KEY.equals(prop)) {
             Object o = e.getNewValue();
-            int style = AquaVibrantSupport.parseVibrantStyle(o);
-            if (style == AquaVibrantSupport.SIDEBAR_STYLE) {
-                style = AquaVibrantSupport.LIGHT_STYLE;
-            }
+            int style = AquaVibrantSupport.parseVibrantStyle(o, false);
             if (style != vibrantStyle) {
                 vibrantStyle = style;
                 rootPane.setBackground(vibrantStyle >= 0 ? new Color(0, 0, 0, 0) : null);
                 if (isInitialized) {
                     updateVisualEffectView();
+                } else {
+                    Window w = SwingUtilities.getWindowAncestor(rootPane);
+                    if (w != null) {
+                        // There may be some benefit to setting this property before the window is shown.
+                        // Not sure.
+                        AquaUtils.setWindowBackgroundClear(w, true);
+                    }
                 }
             }
         }
@@ -374,7 +377,7 @@ public class AquaRootPaneUI extends BasicRootPaneUI implements AncestorListener,
     public final void update(final Graphics g, final JComponent c) {
         if (customStyledWindow != null) {
             customStyledWindow.paintBackground(g);
-        } else if (c.isOpaque()) {
+        } else if (c.isOpaque() || vibrantStyle >= 0) {
             AquaUtils.fillRect(g, c, AquaUtils.ERASE_IF_TEXTURED|AquaUtils.ERASE_IF_VIBRANT);
         }
         paint(g, c);
@@ -397,16 +400,11 @@ public class AquaRootPaneUI extends BasicRootPaneUI implements AncestorListener,
             if (vibrantStyle >= 0) {
                 try {
                     AquaVibrantSupport.addFullWindowVibrantView(w, vibrantStyle);
-                    AquaUtils.setTextured(w);
-                    rootPane.putClientProperty("Window.style", "vibrant");
-                    rootPane.repaint();
                 } catch (IllegalArgumentException ex) {
                     System.err.println("Unable to install visual effect view: " + ex.getMessage());
                 }
             } else {
                 AquaVibrantSupport.removeFullWindowVibrantView(w);
-                rootPane.putClientProperty("Window.style", null);
-                rootPane.repaint();
                 // TBD: cannot really undo this
             }
         }

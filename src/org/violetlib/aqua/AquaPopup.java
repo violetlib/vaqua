@@ -9,12 +9,7 @@
 package org.violetlib.aqua;
 
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import javax.swing.*;
-import javax.swing.Timer;
-import javax.swing.event.ChangeEvent;
-import javax.swing.event.ChangeListener;
 
 /**
  * A heavy weight popup.
@@ -22,7 +17,6 @@ import javax.swing.event.ChangeListener;
 public class AquaPopup extends Popup {
 
     private final Window popup;
-    private boolean isShadowValid;
 
     private static final Float TRANSLUCENT = new Float(248f/255f);
 
@@ -30,28 +24,13 @@ public class AquaPopup extends Popup {
         super(owner, contents, x, y);
         popup = SwingUtilities.getWindowAncestor(contents);
 
-        // It seems that window shadows only work on opaque windows
-
         if (popup instanceof RootPaneContainer) {
             JRootPane popupRootPane = ((RootPaneContainer) popup).getRootPane();
 
             if (isContextual) {
-
-                // Changing the transparency in response to the user default is not actually necessary, as the
-                // NSVisualEffectView itself changes.
-
-                makeClear(popup, !OSXSystemProperties.isReduceTransparency());
                 popup.pack();
-                AquaUtils.setTextured(popup);   // avoid painting a window background
-                AquaVibrantSupport.addFullWindowVibrantView(popup, AquaVibrantSupport.LIGHT_STYLE);
                 AquaUtils.setCornerRadius(popup, 6);
-
-                OSXSystemProperties.addChangeListener(new ChangeListener() {
-                    @Override
-                    public void stateChanged(ChangeEvent e) {
-                        makeClear(popup, !OSXSystemProperties.isReduceTransparency());
-                    }
-                });
+                popupRootPane.putClientProperty("Aqua.backgroundStyle", "vibrantMenu");
             } else {
                 popupRootPane.putClientProperty("Window.alpha", TRANSLUCENT);
                 popupRootPane.putClientProperty("Window.shadow", Boolean.TRUE);
@@ -64,73 +43,5 @@ public class AquaPopup extends Popup {
 
     public Window getPopup() {
         return popup;
-    }
-
-    @Override
-    public void hide() {
-        super.hide();
-    }
-
-    @Override
-    public void show() {
-        super.show();
-
-        if (!isShadowValid) {
-            isShadowValid = true;
-            if (popup instanceof RootPaneContainer) {
-                JRootPane popupRootPane = ((RootPaneContainer) popup).getRootPane();
-                ShadowMaker shadowMaker = new ShadowMaker(popupRootPane);
-                // The shadow maker must run after the window has been painted.
-                // Not sure how to do that reliably...
-                // Sometimes invokeLater happens too quickly
-                SwingUtilities.invokeLater(shadowMaker);
-                Timer t = new Timer(50, shadowMaker);
-                t.setRepeats(false);
-                t.start();
-            }
-        }
-    }
-
-    private static class ShadowMaker implements ActionListener, Runnable {
-        private final JRootPane rp;
-
-        public ShadowMaker(JRootPane rp) {
-            this.rp = rp;
-        }
-
-        @Override
-        public void actionPerformed(ActionEvent e) {
-            run();
-        }
-
-        @Override
-        public void run() {
-            rp.putClientProperty("apple.awt.windowShadow.revalidateNow", Double.valueOf(Math.random()));
-        }
-    }
-
-    private void makeClear(Window w, boolean isClear) {
-
-        Color clear = new Color(0, 0, 0, 0);
-        Color bc = isClear ? clear : AquaImageFactory.getWindowBackgroundColorUIResource();
-
-        w.setBackground(bc);
-
-        if (w instanceof RootPaneContainer) {
-            JRootPane rp = ((RootPaneContainer) w).getRootPane();
-            rp.setBackground(clear);
-
-            JLayeredPane lp = rp.getLayeredPane();
-            lp.setOpaque(false);
-
-            Container cp = rp.getContentPane();
-            if (cp instanceof JComponent) {
-                ((JComponent) cp).setOpaque(false);
-            }
-            cp.setBackground(clear);
-
-            // set border to null ?
-
-        }
     }
 }

@@ -41,6 +41,8 @@ import java.awt.event.WindowEvent;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.*;
 import java.lang.ref.SoftReference;
+import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
@@ -54,6 +56,7 @@ import javax.swing.plaf.UIResource;
 
 import org.violetlib.aqua.AquaImageFactory.SlicedImageControl;
 import org.violetlib.jnr.aqua.AquaUIPainter;
+import sun.java2d.opengl.OGLRenderQueue;
 import sun.swing.SwingUtilities2;
 
 final public class AquaUtils extends SwingUtilitiesModified {
@@ -231,6 +234,17 @@ final public class AquaUtils extends SwingUtilitiesModified {
             for (final Component child : ((Container) c).getComponents()) {
                 enforceComponentOrientation(child, orientation);
             }
+        }
+    }
+
+    public static void paintImmediately(JComponent c) {
+        // a possible workaround... the goal is to paint to the AWT view before the window becomes visible
+        try {
+            Method m = JComponent.class.getDeclaredMethod("_paintImmediately", Integer.TYPE, Integer.TYPE, Integer.TYPE, Integer.TYPE);
+            m.setAccessible(true);
+            m.invoke(c, 0, 0, c.getWidth(), c.getHeight());
+        } catch (Exception ex) {
+            System.err.println("Unable to paint immediately: " + ex);
         }
     }
 
@@ -558,31 +572,32 @@ final public class AquaUtils extends SwingUtilitiesModified {
      * @return true if the component should use a magic eraser.
      */
     private static boolean isMagicEraser(Component c, int eraserMode) {
+
+        boolean isTextured = (eraserMode & ERASE_IF_TEXTURED) != 0;
+        boolean isVibrant = (eraserMode & ERASE_IF_VIBRANT) != 0;
+
         while (c != null) {
             if (c instanceof JRootPane) {
                 JRootPane rp = (JRootPane) c;
 
                 Object prop = rp.getClientProperty("apple.awt.brushMetalLook");
-                if (prop != null && (eraserMode & ERASE_IF_TEXTURED) != 0 && Boolean.parseBoolean(prop.toString())) {
-                    return Boolean.parseBoolean(prop.toString());
+                if (prop != null && isTextured) {
+                    if (Boolean.parseBoolean(prop.toString())) {
+                        return true;
+                    }
                 }
 
                 prop = rp.getClientProperty("Window.style");
                 if (prop != null) {
-                    if (prop.equals("textured") && (eraserMode & ERASE_IF_TEXTURED) != 0) {
-                        return true;
-                    }
-                    if (prop.equals("vibrant") && (eraserMode & ERASE_IF_VIBRANT) != 0) {
+                    if (prop.equals("textured") && isTextured) {
                         return true;
                     }
                 }
-
-                return false;
             }
 
             if (c instanceof JComponent) {
                 JComponent jc = (JComponent) c;
-                if ((eraserMode & ERASE_IF_VIBRANT) != 0 && AquaVibrantSupport.isVibrant(jc)) {
+                if (isVibrant && AquaVibrantSupport.isVibrant(jc)) {
                     return true;
                 }
             }
@@ -898,8 +913,6 @@ final public class AquaUtils extends SwingUtilitiesModified {
             throw new UnsupportedOperationException("Unable to display as sheet: the window must not be visible");
         }
 
-        Color clear = new Color(0, 0, 0, 0);
-
         if (w instanceof Dialog) {
             Dialog d = (Dialog) w;
             d.setModalityType(Dialog.ModalityType.MODELESS);
@@ -909,19 +922,29 @@ final public class AquaUtils extends SwingUtilitiesModified {
             w.addNotify();  // force the native peer to be created
         }
 
-        setTextured(w); // prevent Java from painting a window background
+        // The window should not be decorated. If it is decorated, the initial painting will go in the wrong place.
+        // Unfortunately, Java is very picky about when setUndecorated() can be called. So we just munge the style bits
+        // directly.
 
-        try {
-            w.setBackground(clear);
-        } catch (Exception ex) {
+        boolean needToUndecorate = false;
+        if (w instanceof Dialog) {
+            Dialog d = (Dialog) w;
+            if (!d.isUndecorated()) {
+                needToUndecorate = true;
+            }
+        } else if (w instanceof Frame) {
+            Frame fr = (Frame) w;
+            if (!fr.isUndecorated()) {
+                needToUndecorate = true;
+            }
         }
 
-        // Dialog sheets are displayed over a vibrant background. For plain windows, we add our own NSVisualEffectView.
-
-        AquaVibrantSupport.addFullWindowVibrantView(w, AquaVibrantSupport.LIGHT_STYLE);
-
-        // To allow the vibrant background to be seen, we need to
-        // inhibit the normal Java window background and enable the magic eraser code.
+        if (needToUndecorate) {
+            //syslog("About to reset title window style");
+            unsetTitledWindowStyle(w);
+            w.invalidate();
+            w.validate();
+        }
 
         JRootPane rp = null;
         if (w instanceof RootPaneContainer) {
@@ -930,15 +953,13 @@ final public class AquaUtils extends SwingUtilitiesModified {
         }
 
         if (rp != null) {
-            rp.putClientProperty("Window.style", "vibrant");
-            rp.setBackground(clear);
-            rp.getLayeredPane().setOpaque(false);
+            //syslog("About to set vibrant style");
+            rp.putClientProperty(AquaVibrantSupport.BACKGROUND_STYLE_KEY, "vibrantLight");
+            w.validate();
+
+            //syslog("About to paint sheet");
+            paintImmediately(rp);
         }
-
-        // TBD: is there a way to paint the lightweight components without displaying the dialog?
-        // Would like the window to be painted while it is expanding
-
-        //w.validate();
 
         SheetCloser closer = new SheetCloser(w, closeHandler);
         int result = nativeDisplayAsSheet(w);
@@ -950,23 +971,156 @@ final public class AquaUtils extends SwingUtilitiesModified {
         w.setVisible(true); // cause the lightweight components to be painted -- this method blocks on a modal dialog
     }
 
-    public static void setTextured(Window w) {
+    public static void unsetTitledWindowStyle(Window w) {
+
+        Rectangle oldBounds = w.getBounds();
+        Insets oldInsets = w.getInsets();
+        int newHeight = oldBounds.height - oldInsets.top;
+
         try {
             Method m = w.getClass().getMethod("getPeer");
             m.setAccessible(true);
             Object peer = m.invoke(w);
             if (peer != null) {
-                m = peer.getClass().getDeclaredMethod("setTextured", Boolean.TYPE);
+                m = peer.getClass().getDeclaredMethod("getPlatformWindow");
                 m.setAccessible(true);
-                m.invoke(peer, true);
+                Object platformWindow = m.invoke(peer);
+                if (platformWindow != null) {
+                    m = platformWindow.getClass().getDeclaredMethod("setStyleBits", Integer.TYPE, Boolean.TYPE);
+                    m.setAccessible(true);
+                    int DECORATED = 1 << 1;
+                    m.invoke(platformWindow, DECORATED, false);
+
+                    // Java eventually will be informed of the new window size and insets, but we need to update now so
+                    // that the initial painting of the root pane will be positioned correctly.
+
+                    Field f = Component.class.getDeclaredField("height");
+                    f.setAccessible(true);
+                    f.setInt(w, newHeight);
+
+                    m = peer.getClass().getDeclaredMethod("updateInsets", Insets.class);
+                    m.setAccessible(true);
+                    m.invoke(peer, new Insets(0, 0, 0, 0));
+
+                    return;
+                } else {
+                    System.err.println("Unable to unset titled window style: no platform window");
+                }
+            } else {
+                System.err.println("Unable to unset titled window style: no peer");
+                return;
             }
+        } catch (Exception ex) {
+            System.err.println("Unable to unset titled window style: " + ex);
+        }
+    }
+
+    /**
+     * Enable or disable a clear window background. This method alters the background of the AWTView. A clear background
+     * allows the native window background and NSVisualEffectViews behind the AWTView to be visible.
+     * @param w The window
+     * @param isClear True to make the window background clear, false to restore the default window background color.
+     */
+    public static void setWindowBackgroundClear(Window w, boolean isClear) {
+
+        Color c = isClear ? new Color(0, 0, 0, 0) : AquaImageFactory.getWindowBackgroundColorUIResource();
+
+        // It should not be necessary to set the textured attribute. However, setting the textured attribute seems to
+        // affect the timing of painting events in a good way. Without it, the shadow may be validated before any
+        // opaque pixels have been written to the AWTView layer, which means that there will be no shadow.
+
+        // See bug JDK-7124236
+
+        setWindowTextured(w, isClear);
+        setWindowBackground(w, c);
+    }
+
+    /**
+     * Set the textured attribute of the window peer. This method has no other side effects.
+     * @param w The window.
+     * @param isTextured The new value of the textured attribute.
+     */
+    private static void setWindowTextured(Window w, boolean isTextured) {
+
+        try {
+            Method mp = w.getClass().getMethod("getPeer");
+            mp.setAccessible(true);
+            Object peer = mp.invoke(w);
+
+            if (peer == null) {
+                System.err.println("Unable to set window textured: no peer");
+                return;
+            }
+
+            Method m = peer.getClass().getDeclaredMethod("setTextured", Boolean.TYPE);
+            m.setAccessible(true);
+            m.invoke(peer, isTextured);
+
         } catch (Exception ex) {
             System.err.println("Unable to set textured: " + ex);
         }
     }
 
+    /**
+     * Set the background color of a window. Unlike the public methods for setting the window background, this method
+     * does not reject setting a transparent or translucent background on a decorated window. This method may not work
+     * if the window does not have a peer.
+     * @param w The window.
+     * @param c The color.
+     */
+    public static void setWindowBackground(Window w, Color c) {
+
+        if (c.equals(w.getBackground())) {
+            return;
+        }
+
+        // The following lock is an attempt to work around bug JDK-8046290, which causes the transient display of
+        // garbage pixels.
+        OGLRenderQueue rq = OGLRenderQueue.getInstance();
+        rq.lock();
+
+        try {
+            // The following is possible only on undecorated windows
+            w.setBackground(c);
+        } catch (Throwable e) {
+            try {
+                Method mp = w.getClass().getMethod("getPeer");
+                mp.setAccessible(true);
+                Object peer = mp.invoke(w);
+
+                if (peer == null) {
+                    System.err.println("Unable to set window background: no peer");
+                    return;
+                }
+
+                Method mb = peer.getClass().getDeclaredMethod("setBackground", Color.class);
+                mb.setAccessible(true);
+                mb.invoke(peer, c);
+                Method mo = peer.getClass().getDeclaredMethod("setOpaque", Boolean.TYPE);
+                mo.setAccessible(true);
+                mo.invoke(peer, c.getAlpha() == 255);
+            } catch (Throwable th) {
+                if (th instanceof InvocationTargetException) {
+                    th = ((InvocationTargetException) th).getTargetException();
+                }
+                System.err.println("Unable to set window background: " + th);
+            }
+        } finally {
+            rq.unlock();
+        }
+    }
+
     public static void setCornerRadius(Window w, float radius) {
         nativeSetWindowCornerRadius(w, radius);
+    }
+
+    // for debugging
+    public static void setAWTViewVisibility(Window w, boolean isVisible) {
+        nativeSetAWTViewVisibility(w, isVisible);
+    }
+
+    public static void syncAWTView(Window w) {
+        nativeSyncAWTView(w);
     }
 
     private static class SheetCloser extends WindowAdapter implements HierarchyListener {
@@ -1013,6 +1167,9 @@ final public class AquaUtils extends SwingUtilitiesModified {
     private static native int nativeAddToolbarToWindow(Window w);
     private static native int nativeDisplayAsSheet(Window w);
     private static native int nativeSetWindowCornerRadius(Window w, float radius);
+    private static native void nativeSetAWTViewVisibility(Window w, boolean isVisible);
+    private static native void nativeSyncAWTView(Window w);
 
+    public static native void debugWindow(Window w);
     public static native void syslog(String msg);
 }

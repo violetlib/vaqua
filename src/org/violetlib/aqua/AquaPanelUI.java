@@ -47,8 +47,6 @@ import java.beans.PropertyChangeListener;
 public class AquaPanelUI extends BasicPanelUI {
     static RecyclableSingleton<AquaPanelUI> instance = new RecyclableSingletonFromDefaultConstructor<AquaPanelUI>(AquaPanelUI.class);
 
-    public static final String VIBRANT_STYLE_KEY = "JPanel.vibrantStyle";
-
     public PropertyChangeListener propertyChangeListener = new PropertyChangeListener() {
         @Override
         public void propertyChange(PropertyChangeEvent evt) {
@@ -63,50 +61,28 @@ public class AquaPanelUI extends BasicPanelUI {
     @Override
     public void installUI(JComponent c) {
         super.installUI(c);
-        updateVibrantStyle(c);
+        AquaVibrantSupport.updateVibrantStyle(c);
         c.addPropertyChangeListener(propertyChangeListener);
     }
 
     @Override
     public void uninstallUI(JComponent c) {
         c.removePropertyChangeListener(propertyChangeListener);
-        uninstallVibrantStyle(c);
+        AquaVibrantSupport.uninstallVibrantStyle(c);
         super.uninstallUI(c);
     }
 
     @Override
     public final void update(final Graphics g, final JComponent c) {
-        if (c.isOpaque()) {
+        if (c.isOpaque() || AquaVibrantSupport.isVibrant(c)) {
             AquaUtils.fillRect(g, c, AquaUtils.ERASE_IF_TEXTURED | AquaUtils.ERASE_IF_VIBRANT);
         }
         paint(g, c);
     }
 
     protected void propertyChange(PropertyChangeEvent evt) {
-        String prop = evt.getPropertyName();
-        JComponent c = (JComponent) evt.getSource();
-        if (VIBRANT_STYLE_KEY.equals(prop)) {
-            updateVibrantStyle(c);
+        if (AquaVibrantSupport.processVibrantStyleChange(evt)) {
+            return;
         }
-    }
-
-    protected void updateVibrantStyle(JComponent c) {
-        Object o = c.getClientProperty(VIBRANT_STYLE_KEY);
-        if (o instanceof String) {
-            int style = AquaVibrantSupport.parseVibrantStyle((String) o);
-            if (style >= 0) {
-                installVibrantStyle(c, style);
-                return;
-            }
-        }
-        uninstallVibrantStyle(c);
-    }
-
-    protected void installVibrantStyle(JComponent c, int style) {
-        AquaVibrantSupport.installVibrantStyle(c, style, null);
-    }
-
-    protected void uninstallVibrantStyle(JComponent c) {
-        AquaVibrantSupport.uninstallVibrantStyle(c);
     }
 }

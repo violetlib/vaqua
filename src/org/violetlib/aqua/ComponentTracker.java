@@ -32,6 +32,7 @@ public abstract class ComponentTracker
 
     private Component tracked;              // the currently configured component being tracked
     private Window window;                  // the window containing the tracked component
+    private boolean windowIsDisplayable;    // the last known displayability of the window
 
     /**
      * Create an object that tracks a component.
@@ -50,12 +51,24 @@ public abstract class ComponentTracker
                     if (!Objects.equals(window, w)) {
                         Window oldWindow = window;
                         window = w;
+                        windowIsDisplayable = w != null && w.isDisplayable();
                         windowChanged(oldWindow, window);
                     }
                 }
 
                 if ((flags & (HierarchyEvent.DISPLAYABILITY_CHANGED)) != 0) {
-                    windowChanged(window, window);
+                    // Displayability change events are generated for adding and removing thie tracked component.
+                    // These events are redundant with parent changed.
+                    // The only time we want to call windowChanged() with identical arguments is when the
+                    // window is not null and its displayability has changed.
+                    Window w = SwingUtilities.getWindowAncestor(tracked);
+                    if (w != null && w == window) {
+                        boolean isDisplayable = w.isDisplayable();
+                        if (isDisplayable != windowIsDisplayable) {
+                            windowIsDisplayable = isDisplayable;
+                            windowChanged(window, window);
+                        }
+                    }
                 }
 
                 if ((flags & (HierarchyEvent.SHOWING_CHANGED)) != 0) {
@@ -106,6 +119,7 @@ public abstract class ComponentTracker
                 tracked.removeComponentListener(componentListener);
                 tracked = null;
                 window = null;
+                windowIsDisplayable = false;
                 detached(w);
             }
 
@@ -115,6 +129,7 @@ public abstract class ComponentTracker
                 tracked.addHierarchyBoundsListener(hierarchyBoundsListener);
                 tracked.addComponentListener(componentListener);
                 window = SwingUtilities.getWindowAncestor(tracked);
+                windowIsDisplayable = window != null && window.isDisplayable();
                 attached(window);
             }
         }

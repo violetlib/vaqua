@@ -121,6 +121,7 @@ public abstract class OverlayPainterComponent extends JComponent {
         if (nrp != null) {
             JLayeredPane lp = nrp.getLayeredPane();
             lp.add(this, layer);
+            visibleBoundsChanged();
         }
     }
 

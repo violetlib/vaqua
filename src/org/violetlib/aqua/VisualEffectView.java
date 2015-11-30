@@ -78,14 +78,11 @@ public class VisualEffectView {
                 peer = null;
             }
 
-            if (newWindow != null) {
-                window = newWindow;
-                oldBounds = null;
+            window = newWindow;
+            oldBounds = null;
+            if (window != null) {
                 peer = AquaVibrantSupport.createVisualEffectView(window, style, supportSelections);
-                if (peer != null) {
-                    // remove the Java window background
-                    AquaUtils.setTextured(window);
-                }
+                visibleBoundsChanged();
             }
         }
     }
