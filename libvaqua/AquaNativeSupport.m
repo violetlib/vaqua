@@ -23,6 +23,12 @@ static int VERSION = 1;
 #include "org_violetlib_aqua_fc_OSXFile.h"
 #include "org_violetlib_aqua_OSXSystemProperties.h"
 #include "org_violetlib_aqua_AquaNativeSupport.h"
+#include "org_violetlib_aqua_AquaIcon.h"
+#include "org_violetlib_aqua_AquaImageFactory.h"
+#include "org_violetlib_aqua_AquaNativeColorChooser.h"
+#include "org_violetlib_aqua_AquaUtils.h"
+#include "org_violetlib_aqua_AquaSheetSupport.h"
+#include "org_violetlib_aqua_AquaVibrantSupport.h"
 
 #import <Cocoa/Cocoa.h>
 #import <CoreServices/CoreServices.h>
@@ -43,7 +49,7 @@ NSString *createIndentation(int indent) {
 
 NSString *createLayerDescription(CALayer *layer) {
     if (layer) {
-        NSString *description = [layer description];
+        NSString *description = [layer debugDescription];
         NSRect frame = layer.frame;
         CGColorRef bcc = layer.backgroundColor;
         NSString *cd = bcc ? [NSString stringWithFormat: @" %@", (NSColor*) bcc] : @"";
@@ -54,14 +60,28 @@ NSString *createLayerDescription(CALayer *layer) {
     }
 }
 
+NSString *createViewDescription(NSView *v) {
+    if (v) {
+        NSString *description = [v debugDescription];
+        if ([v isKindOfClass: [NSVisualEffectView class]]) {
+            NSVisualEffectView *vv = (NSVisualEffectView*) v;
+            description = [NSString stringWithFormat: @"%@ state=%ld", description, (long) vv.state];
+        }
+        return description;
+    } else {
+        return @"";
+    }
+}
+
 void viewDebug(NSView *v, NSString *title, int indent) {
     NSString *titleString = title ? [NSString stringWithFormat: @"%@: ", title] : @"";
     NSString *layerDescription = createLayerDescription(v.layer);
     NSString *od = v.opaque ? @" Opaque" : @"";
+    NSString *viewDescription = createViewDescription(v);
 
     NSLog(@"%@%@%@%@ %f %f %f %f %@",
         createIndentation(indent),
-        titleString, [v description], od, v.frame.origin.x, v.frame.origin.y, v.bounds.size.width, v.bounds.size.height,
+        titleString, viewDescription, od, v.frame.origin.x, v.frame.origin.y, v.bounds.size.width, v.bounds.size.height,
         layerDescription);
 
 //    if (v.layer) {
@@ -1305,7 +1325,12 @@ JNIEXPORT jint JNICALL Java_org_violetlib_aqua_AquaUtils_nativeAddToolbarToWindo
 	return result;
 }
 
-JNIEXPORT jint JNICALL Java_org_violetlib_aqua_AquaUtils_nativeDisplayAsSheet
+/*
+ * Class:     org_violetlib_aqua_AquaSheetSupport
+ * Method:    nativeDisplayAsSheet
+ * Signature: (Ljava/awt/Window;)I
+ */
+JNIEXPORT jint JNICALL Java_org_violetlib_aqua_AquaSheetSupport_nativeDisplayAsSheet
   (JNIEnv *env, jclass cl, jobject window)
 {
 	static JNF_CLASS_CACHE(jc_Window, "java/awt/Window");
@@ -1389,6 +1414,7 @@ static const int MENU_STYLE = 4;
 static const int POPOVER_STYLE = 5;
 static const int MEDIUM_LIGHT_STYLE = 6;
 static const int ULTRA_DARK_STYLE = 7;
+static const int SHEET_STYLE = 8;
 
 static NSAppearance *getVibrantAppearance(jint style)
 {
@@ -1417,6 +1443,7 @@ static NSVisualEffectMaterial getVibrantMaterial(jint style)
 
     default:
     case LIGHT_STYLE:
+    case SHEET_STYLE:
         return NSVisualEffectMaterialLight;
 
     case DARK_STYLE:
@@ -1445,10 +1472,10 @@ static NSVisualEffectMaterial getVibrantMaterial(jint style)
 /*
  * Class:     org_violetlib_aqua_AquaVibrantSupport
  * Method:    setupVisualEffectWindow
- * Signature: (Ljava/awt/Window;I)I
+ * Signature: (Ljava/awt/Window;IZ)I
  */
 JNIEXPORT jint JNICALL Java_org_violetlib_aqua_AquaVibrantSupport_setupVisualEffectWindow
-  (JNIEnv *env, jclass cl, jobject window, jint style)
+  (JNIEnv *env, jclass cl, jobject window, jint style, jboolean forceActive)
 {
     jint result = -1;
 
@@ -1456,6 +1483,11 @@ JNIEXPORT jint JNICALL Java_org_violetlib_aqua_AquaVibrantSupport_setupVisualEff
 
     NSWindow *nw = getNativeWindow(env, window);
     if (nw != nil) {
+
+        if (style == SHEET_STYLE) {
+            forceActive = YES;
+        }
+
         [JNFRunLoop performOnMainThreadWaiting:YES withBlock:^(){
             // Insert a visual effect view as a sibling of the content view if there is not already one present.
             // This is not a recommended technique, but Java wants its AWTView to be the content view.
@@ -1474,15 +1506,15 @@ JNIEXPORT jint JNICALL Java_org_violetlib_aqua_AquaVibrantSupport_setupVisualEff
             }
             if (fxView == nil) {
                 fxView = [[NSVisualEffectView alloc] initWithFrame: [contentView frame]];
-                fxView.appearance = getVibrantAppearance(style);
-                fxView.material = getVibrantMaterial(style);
                 fxView.blendingMode = NSVisualEffectBlendingModeBehindWindow;
                 fxView.autoresizingMask = NSViewWidthSizable|NSViewHeightSizable;
                 [parent addSubview: fxView positioned: NSWindowBelow relativeTo: contentView];
-            } else {
-                fxView.appearance = getVibrantAppearance(style);
-                fxView.material = getVibrantMaterial(style);
             }
+
+            fxView.appearance = getVibrantAppearance(style);
+            fxView.material = getVibrantMaterial(style);
+            fxView.state = forceActive ? NSVisualEffectStateActive : NSVisualEffectStateFollowsWindowActiveState;
+
             [fxView setNeedsDisplay: YES];
             setupLayers(fxView);
         }];
@@ -1592,6 +1624,8 @@ JNIEXPORT jint JNICALL Java_org_violetlib_aqua_AquaVibrantSupport_setViewFrame
             view.needsDisplay = YES;
             result = 0;
         }];
+    } else {
+        NSLog(@"AquaVibrantSupport_setViewFrame failed: no native window");
     }
 
 	JNF_COCOA_EXIT(env);

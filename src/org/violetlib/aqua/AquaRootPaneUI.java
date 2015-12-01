@@ -233,13 +233,6 @@ public class AquaRootPaneUI extends BasicRootPaneUI implements AncestorListener,
                 rootPane.setBackground(vibrantStyle >= 0 ? new Color(0, 0, 0, 0) : null);
                 if (isInitialized) {
                     updateVisualEffectView();
-                } else {
-                    Window w = SwingUtilities.getWindowAncestor(rootPane);
-                    if (w != null) {
-                        // There may be some benefit to setting this property before the window is shown.
-                        // Not sure.
-                        AquaUtils.setWindowBackgroundClear(w, true);
-                    }
                 }
             }
         }
@@ -386,7 +379,10 @@ public class AquaRootPaneUI extends BasicRootPaneUI implements AncestorListener,
     protected class WindowHierarchyListener implements HierarchyListener {
         @Override
         public void hierarchyChanged(HierarchyEvent e) {
-            if (e.getChangeFlags() == HierarchyEvent.DISPLAYABILITY_CHANGED && rootPane.isDisplayable() && !isInitialized) {
+            if (!isInitialized
+              && e.getChangeFlags() == HierarchyEvent.DISPLAYABILITY_CHANGED
+              && rootPane.getParent() != null
+              && rootPane.getParent().isDisplayable()) {
                 isInitialized = true;
                 installCustomWindowStyle();
                 updateVisualEffectView();

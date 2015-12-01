@@ -27,6 +27,7 @@ public class AquaVibrantSupport {
     public static final int POPOVER_STYLE = 5;
     public static final int MEDIUM_LIGHT_STYLE = 6;
     public static final int ULTRA_DARK_STYLE = 7;
+    public static final int SHEET_STYLE = 8;    // a way of indicating that the window will be displayed as a sheet
 
     /** This client property allows the client to request a vibrant background style on certain components. */
     public static final String BACKGROUND_STYLE_KEY = "Aqua.backgroundStyle";
@@ -62,6 +63,9 @@ public class AquaVibrantSupport {
             }
             if (s.equals("vibrantUltraDark")) {
                 return ULTRA_DARK_STYLE;
+            }
+            if (s.equals("vibrantSheet")) {
+                return SHEET_STYLE;
             }
         }
         return -1;
@@ -161,7 +165,11 @@ public class AquaVibrantSupport {
             throw new IllegalArgumentException("Sidebar style not supported for full window");
         }
 
-        int rc = setupVisualEffectWindow(w, style);
+        // If a window can never become active, then we should force visual effect view to display the active state.
+        // Otherwise, there is no point to enabling a vibrant style.
+
+        boolean forceActive = w.getType() == Window.Type.POPUP || isUndecorated(w);
+        int rc = setupVisualEffectWindow(w, style, forceActive);
         if (rc != 0) {
             System.err.println("Unable to install visual effect view");
         } else {
@@ -176,6 +184,18 @@ public class AquaVibrantSupport {
                 AquaUtils.syncAWTView(w);
             }
         }
+    }
+
+    private static boolean isUndecorated(Window w) {
+        if (w instanceof Frame) {
+            return ((Frame) w).isUndecorated();
+        }
+
+        if (w instanceof Dialog) {
+            return ((Dialog) w).isUndecorated();
+        }
+
+        return true;
     }
 
     /**
@@ -251,7 +271,7 @@ public class AquaVibrantSupport {
         }
     }
 
-    private static native int setupVisualEffectWindow(Window w, int style);
+    private static native int setupVisualEffectWindow(Window w, int style, boolean forceActive);
     private static native int removeVisualEffectWindow(Window w);
     private static native long nativeCreateVisualEffectView(Window w, int style, boolean supportSelections);
     private static native int setViewFrame(long viewPtr, int x, int y, int width, int height);

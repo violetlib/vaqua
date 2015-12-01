@@ -20,7 +20,6 @@ import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.File;
 import java.io.IOException;
-import java.lang.reflect.Constructor;
 import java.util.*;
 import javax.swing.*;
 import javax.swing.border.Border;
@@ -36,7 +35,6 @@ import javax.swing.tree.DefaultTreeSelectionModel;
 import javax.swing.tree.TreeNode;
 import javax.swing.tree.TreePath;
 
-import com.apple.laf.*;
 import org.violetlib.aqua.*;
 import org.violetlib.aqua.AquaGroupBorder;
 import org.violetlib.aqua.AquaOptionPaneUI;
@@ -292,7 +290,7 @@ public class AquaFileChooserUI extends BasicFileChooserUI {
         pane.setComponentOrientation(parent.getComponentOrientation());
         dialog.setContentPane(pane);
         dialog.pack();
-        AquaUtils.displayAsSheet(dialog, null);
+        AquaSheetSupport.displayAsSheet(dialog, null);
         //dialog.setVisible(true);
     }
 

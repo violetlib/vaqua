@@ -34,10 +34,6 @@
 package org.violetlib.aqua;
 
 import java.awt.*;
-import java.awt.event.HierarchyEvent;
-import java.awt.event.HierarchyListener;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.*;
 import java.lang.ref.SoftReference;
@@ -887,90 +883,6 @@ final public class AquaUtils extends SwingUtilitiesModified {
         }
     }
 
-    /**
-     * Display a window as a sheet, if possible. A sheet is dismissed when the window is hidden or disposed.
-     * <p>
-     * The behavior of a sheet is similar to a document modal dialog in that it prevents user interaction with the
-     * existing windows in the hierarchy of the owner. Unlike {@code setVisible(true)} on a model dialog, however, this
-     * method does not block waiting for the sheet to be dismissed.
-     *
-     * @param w the window. The window must have a visible owner. The window must not be visible. If the window is a
-     * dialog, its modality will be set to modeless.
-     * @param closeHandler If not null, this object will be invoked when the sheet is dismissed.
-     * @throws UnsupportedOperationException if the window could not be displayed as a sheet.
-     */
-    public static void displayAsSheet(Window w, Runnable closeHandler) throws UnsupportedOperationException {
-        Window owner = w.getOwner();
-        if (owner == null) {
-            throw new UnsupportedOperationException("Unable to display as sheet: no owner window");
-        }
-
-        if (!owner.isVisible()) {
-            throw new UnsupportedOperationException("Unable to display as sheet: owner window is not visible");
-        }
-
-        if (w.isVisible()) {
-            throw new UnsupportedOperationException("Unable to display as sheet: the window must not be visible");
-        }
-
-        if (w instanceof Dialog) {
-            Dialog d = (Dialog) w;
-            d.setModalityType(Dialog.ModalityType.MODELESS);
-        }
-
-        if (!w.isDisplayable()) {
-            w.addNotify();  // force the native peer to be created
-        }
-
-        // The window should not be decorated. If it is decorated, the initial painting will go in the wrong place.
-        // Unfortunately, Java is very picky about when setUndecorated() can be called. So we just munge the style bits
-        // directly.
-
-        boolean needToUndecorate = false;
-        if (w instanceof Dialog) {
-            Dialog d = (Dialog) w;
-            if (!d.isUndecorated()) {
-                needToUndecorate = true;
-            }
-        } else if (w instanceof Frame) {
-            Frame fr = (Frame) w;
-            if (!fr.isUndecorated()) {
-                needToUndecorate = true;
-            }
-        }
-
-        if (needToUndecorate) {
-            //syslog("About to reset title window style");
-            unsetTitledWindowStyle(w);
-            w.invalidate();
-            w.validate();
-        }
-
-        JRootPane rp = null;
-        if (w instanceof RootPaneContainer) {
-            RootPaneContainer rpc = (RootPaneContainer) w;
-            rp = rpc.getRootPane();
-        }
-
-        if (rp != null) {
-            //syslog("About to set vibrant style");
-            rp.putClientProperty(AquaVibrantSupport.BACKGROUND_STYLE_KEY, "vibrantLight");
-            w.validate();
-
-            //syslog("About to paint sheet");
-            paintImmediately(rp);
-        }
-
-        SheetCloser closer = new SheetCloser(w, closeHandler);
-        int result = nativeDisplayAsSheet(w);
-        if (result != 0) {
-            closer.dispose();
-            throw new UnsupportedOperationException("Unable to display as sheet");
-        }
-
-        w.setVisible(true); // cause the lightweight components to be painted -- this method blocks on a modal dialog
-    }
-
     public static void unsetTitledWindowStyle(Window w) {
 
         Rectangle oldBounds = w.getBounds();
@@ -1048,7 +960,7 @@ final public class AquaUtils extends SwingUtilitiesModified {
             Object peer = mp.invoke(w);
 
             if (peer == null) {
-                System.err.println("Unable to set window textured: no peer");
+                System.err.println("Unable to set window textured: no peer for " + w);
                 return;
             }
 
@@ -1089,7 +1001,7 @@ final public class AquaUtils extends SwingUtilitiesModified {
                 Object peer = mp.invoke(w);
 
                 if (peer == null) {
-                    System.err.println("Unable to set window background: no peer");
+                    System.err.println("Unable to set window background: no peer for " + w);
                     return;
                 }
 
@@ -1123,49 +1035,8 @@ final public class AquaUtils extends SwingUtilitiesModified {
         nativeSyncAWTView(w);
     }
 
-    private static class SheetCloser extends WindowAdapter implements HierarchyListener {
-        private final Window w;
-        private final Runnable closeHandler;
-        private boolean hasClosed = false;
-
-        public SheetCloser(Window w, Runnable closeHandler) {
-            this.w = w;
-            this.closeHandler = closeHandler;
-            w.addWindowListener(this);
-            w.addHierarchyListener(this);
-        }
-
-        @Override
-        public void hierarchyChanged(HierarchyEvent e) {
-            if (e.getChangeFlags() == HierarchyEvent.SHOWING_CHANGED && !w.isVisible()) {
-                completed();
-            }
-        }
-
-        @Override
-        public void windowClosed(WindowEvent e) {
-            completed();
-        }
-
-        private void completed() {
-            if (!hasClosed) {
-                hasClosed = true;
-                dispose();
-                if (closeHandler != null) {
-                    closeHandler.run();
-                }
-            }
-        }
-
-        public void dispose() {
-            w.removeWindowListener(this);
-            w.removeHierarchyListener(this);
-        }
-    }
-
     private static native int nativeSetTitleBarStyle(Window w, int style);
     private static native int nativeAddToolbarToWindow(Window w);
-    private static native int nativeDisplayAsSheet(Window w);
     private static native int nativeSetWindowCornerRadius(Window w, float radius);
     private static native void nativeSetAWTViewVisibility(Window w, boolean isVisible);
     private static native void nativeSyncAWTView(Window w);

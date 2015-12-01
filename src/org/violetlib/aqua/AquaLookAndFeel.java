@@ -44,7 +44,6 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.*;
 
@@ -149,7 +148,7 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
      */
     public void displayAsSheet(Window w, Runnable closeHandler) throws UnsupportedOperationException {
         // access point for VSheet which accesses using reflection
-        AquaUtils.displayAsSheet(w, closeHandler);
+        AquaSheetSupport.displayAsSheet(w, closeHandler);
     }
 
     @Override
@@ -837,7 +836,7 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
             //"RadioButtonMenuItem.arrowIcon", null,
 
             "Separator.background", null,
-            "Separator.foreground", new ColorUIResource(216, 216, 216),
+            "Separator.foreground", new ColorUIResource(new Color(17, 17, 17, 19)),  // simulate vibrant blending
 
             "ScrollBar.border", null,
             "ScrollBar.focusInputMap", aquaKeyBindings.getScrollBarInputMap(),

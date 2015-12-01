@@ -87,7 +87,7 @@ public class AquaFocusRingManager {
 
     private boolean isValid(Component c) {
         // TBD: could improve this
-        // TBD: should this be dynamic, like Frame.isActive?
+        // TBD: should this be dynamic, like Frame.active?
 
         return c.isVisible();
     }

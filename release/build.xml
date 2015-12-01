@@ -111,6 +111,14 @@
             classpath="${classesdir}"
             destdir="${headersdir}"
             />
+        <javah class="org.violetlib.aqua.AquaSheetSupport"
+            classpath="${classesdir}"
+            destdir="${headersdir}"
+            />
+        <javah class="org.violetlib.aqua.AquaVibrantSupport"
+            classpath="${classesdir}"
+            destdir="${headersdir}"
+            />
     </target>
 
     <target name="compile-VAqua-JNI" depends="compile-VAqua-JNI-headers">
