@@ -1032,6 +1032,8 @@ final public class AquaUtils extends SwingUtilitiesModified {
     }
 
     public static void syncAWTView(Window w) {
+        // Both calls appear to be necessary to ensure that the pixels are ready when the window is made visible.
+        Toolkit.getDefaultToolkit().sync();
         nativeSyncAWTView(w);
     }
 

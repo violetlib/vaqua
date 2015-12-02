@@ -179,8 +179,9 @@ public class AquaVibrantSupport {
                 rp.putClientProperty(VIBRANT_WINDOW_KEY, Boolean.TRUE);
                 rp.repaint();
                 // The goal of the following is to transfer the new clear background to the AWTView layer immediately so
-                // that when a vibrant window is first displayed, it shows the vibrant background immediately instead of
-                // showing the default window background and an instant later replacing it with the vibrant background.
+                // that when a vibrant window is first made visible, it shows the vibrant background immediately instead
+                // of showing the default window background first and an instant later replacing it with the vibrant
+                // background.
                 AquaUtils.syncAWTView(w);
             }
         }

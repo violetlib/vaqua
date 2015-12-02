@@ -218,11 +218,12 @@ public class AquaListUI extends BasicListUI {
         int cy = rowBounds.y;
         int cw = rowBounds.width;
         int ch = rowBounds.height;
-
-        // Paint the background, in case the cell renderer doesn't
-        Color c = isSelected ? list.getSelectionBackground() : isStriped ? getAlternateColor(row % 2) : list.getBackground();
-        g.setColor(c);
-        g.fillRect(cx, cy, cw, ch);
+        if (list.isOpaque() || isSelected) {
+            // Paint the background, in case the cell renderer doesn't
+            Color c = isSelected ? list.getSelectionBackground() : isStriped ? getAlternateColor(row % 2) : list.getBackground();
+            g.setColor(c);
+            g.fillRect(cx, cy, cw, ch);
+        }
 
         Component rendererComponent =
                 cellRenderer.getListCellRendererComponent(list, value, row, isSelected, cellHasFocus);
