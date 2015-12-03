@@ -340,6 +340,8 @@ public class AquaTableUI extends BasicTableUI implements SelectionRepaintable {
 
             int rMin = table.rowAtPoint(upperLeft);
             int rMax = table.rowAtPoint(lowerRight);
+            boolean extendVerticalGrid = false;
+
             // This should never happen (as long as our bounds intersect the clip,
             // which is why we bail above if that is the case).
             if (rMin == -1) {
@@ -348,28 +350,29 @@ public class AquaTableUI extends BasicTableUI implements SelectionRepaintable {
             // If the table does not have enough rows to fill the view we'll get -1.
             // (We could also get -1 if our bounds don't intersect the clip,
             // which is why we bail above if that is the case).
-            // Replace this with the index of the last row.
             if (rMax == -1) {
                 rMax = table.getRowCount() - 1;
+                extendVerticalGrid = true;
             }
 
             int cMin = table.columnAtPoint(ltr ? upperLeft : lowerRight);
             int cMax = table.columnAtPoint(ltr ? lowerRight : upperLeft);
+            boolean extendHorizontalGrid = false;
             // This should never happen.
             if (cMin == -1) {
                 cMin = 0;
             }
             // If the table does not have enough columns to fill the view we'll get -1.
-            // Replace this with the index of the last column.
             if (cMax == -1) {
                 cMax = table.getColumnCount() - 1;
+                extendHorizontalGrid = true;
             }
 
             if (isStriped || isSelection) {
                 paintBackground(g, rMin, rMax, cMin, cMax);
             }
 
-            paintGrid(g, rMin, rMax, cMin, cMax);
+            paintGrid(g, rMin, rMax, cMin, cMax, extendVerticalGrid, extendHorizontalGrid);
             paintCells(g, rMin, rMax, cMin, cMax);
         }
 
@@ -413,8 +416,7 @@ public class AquaTableUI extends BasicTableUI implements SelectionRepaintable {
             // TBD: should selected column be painted here or is it OK for just the cells to paint the selection background?
         }
 
-        @Override
-        protected void paintGrid(Graphics g, int rMin, int rMax, int cMin, int cMax) {
+        protected void paintGrid(Graphics g, int rMin, int rMax, int cMin, int cMax, boolean xVertical, boolean xHorizontal) {
             g.setColor(table.getGridColor());
 
             Rectangle minCell = table.getCellRect(rMin, cMin, true);
@@ -422,8 +424,7 @@ public class AquaTableUI extends BasicTableUI implements SelectionRepaintable {
             Rectangle damagedArea = minCell.union( maxCell );
 
             if (table.getShowHorizontalLines()) {
-                // horizontal grid lines should be as wide as the striped background
-                if (isStriped) {
+                if (xHorizontal) {
                     Rectangle clip = g.getClipBounds();
                     int y = damagedArea.y;
                     for (int row = rMin; row <= rMax; row++) {
@@ -443,6 +444,10 @@ public class AquaTableUI extends BasicTableUI implements SelectionRepaintable {
             if (table.getShowVerticalLines()) {
                 TableColumnModel cm = table.getColumnModel();
                 int tableHeight = damagedArea.y + damagedArea.height;
+                if (xVertical) {
+                    Rectangle clip = g.getClipBounds();
+                    tableHeight = clip.y + clip.height;
+                }
                 int x;
                 if (table.getComponentOrientation().isLeftToRight()) {
                     x = damagedArea.x;
