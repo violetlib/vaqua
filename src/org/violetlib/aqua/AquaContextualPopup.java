@@ -103,6 +103,8 @@ public class AquaContextualPopup {
             content.setBorder(null);
         }
 
+        wrapper.putClientProperty(AquaVibrantSupport.POPUP_BACKGROUND_STYLE_KEY, "vibrantMenu");
+
         // Heavy weight popups are required for rounded corners and vibrant background.
         p = new AquaPopup(owner, wrapper, x, y, true);
     }

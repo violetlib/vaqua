@@ -12,13 +12,11 @@ import java.awt.*;
 import javax.swing.*;
 
 /**
- * A heavy weight popup.
+ * The heavy weight popup used by this look and feel.
  */
 public class AquaPopup extends Popup {
 
     private final Window popup;
-
-    private static final Float TRANSLUCENT = new Float(248f/255f);
 
     public AquaPopup(Component owner, Component contents, int x, int y, boolean isContextual) {
         super(owner, contents, x, y);
@@ -30,13 +28,7 @@ public class AquaPopup extends Popup {
             if (isContextual) {
                 popup.pack();
                 AquaUtils.setCornerRadius(popup, 6);
-                popupRootPane.putClientProperty("Aqua.backgroundStyle", "vibrantMenu");
             } else {
-                popupRootPane.putClientProperty("Window.alpha", TRANSLUCENT);
-                popupRootPane.putClientProperty("Window.shadow", Boolean.TRUE);
-                popupRootPane.putClientProperty("apple.awt._windowFadeDelegate", owner);
-                popupRootPane.putClientProperty("apple.awt.draggableWindowBackground", Boolean.FALSE);
-                popup.pack();
             }
         }
     }

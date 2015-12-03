@@ -227,14 +227,7 @@ public class AquaRootPaneUI extends BasicRootPaneUI implements AncestorListener,
             }
         } else if (AquaVibrantSupport.BACKGROUND_STYLE_KEY.equals(prop)) {
             Object o = e.getNewValue();
-            int style = AquaVibrantSupport.parseVibrantStyle(o, false);
-            if (style != vibrantStyle) {
-                vibrantStyle = style;
-                rootPane.setBackground(vibrantStyle >= 0 ? new Color(0, 0, 0, 0) : null);
-                if (isInitialized) {
-                    updateVisualEffectView();
-                }
-            }
+            setupBackgroundStyle(o);
         }
     }
 
@@ -285,8 +278,9 @@ public class AquaRootPaneUI extends BasicRootPaneUI implements AncestorListener,
     public void ancestorAdded(final AncestorEvent event) {
         // this is so we can handle window activated and deactivated events so
         // our swing controls can color/enable/disable/focus draw correctly
-        final Container ancestor = event.getComponent();
-        final Window owningWindow = SwingUtilities.getWindowAncestor(ancestor);
+        final JComponent comp = event.getComponent();
+        final Window owningWindow = SwingUtilities.getWindowAncestor(comp);
+        JRootPane rp = comp instanceof JRootPane ? (JRootPane) comp : null;
 
         if (owningWindow != null) {
             // We get this message even when a dialog is opened and the owning window is a window
@@ -301,12 +295,8 @@ public class AquaRootPaneUI extends BasicRootPaneUI implements AncestorListener,
         // button to start the throbbing.  Since the UI is a singleton make sure the root pane
         // we are checking has a default button before calling update otherwise we will stop
         // throbbing the current default button.
-        final JComponent comp = event.getComponent();
-        if (comp instanceof JRootPane) {
-            final JRootPane rp = (JRootPane)comp;
-            if (rp.isEnabled() && rp.getDefaultButton() != null) {
-                updateDefaultButton((JRootPane)comp);
-            }
+        if (rp != null && rp.isEnabled() && rp.getDefaultButton() != null) {
+            updateDefaultButton(rp);
         }
     }
 
@@ -384,7 +374,37 @@ public class AquaRootPaneUI extends BasicRootPaneUI implements AncestorListener,
               && rootPane.getParent() != null
               && rootPane.getParent().isDisplayable()) {
                 isInitialized = true;
+                updatePopupStyle(rootPane);
                 installCustomWindowStyle();
+                updateVisualEffectView();
+            }
+        }
+    }
+
+    protected void updatePopupStyle(JRootPane rp) {
+        Window w = SwingUtilities.getWindowAncestor(rp);
+        if (w != null && w.getType() == Window.Type.POPUP) {
+            Container cp = rp.getContentPane();
+            if (cp != null) {
+                int count = cp.getComponentCount();
+                if (count == 1) {
+                    Component c = cp.getComponent(0);
+                    if (c instanceof JComponent) {
+                        JComponent jc = (JComponent) c;
+                        Object o = jc.getClientProperty(AquaVibrantSupport.POPUP_BACKGROUND_STYLE_KEY);
+                        setupBackgroundStyle(o);
+                    }
+                }
+            }
+        }
+    }
+
+    protected void setupBackgroundStyle(Object o) {
+        int style = AquaVibrantSupport.parseVibrantStyle(o, false);
+        if (style != vibrantStyle) {
+            vibrantStyle = style;
+            rootPane.setBackground(vibrantStyle >= 0 ? new Color(0, 0, 0, 0) : null);
+            if (isInitialized) {
                 updateVisualEffectView();
             }
         }

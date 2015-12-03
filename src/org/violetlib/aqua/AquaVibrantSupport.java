@@ -32,6 +32,9 @@ public class AquaVibrantSupport {
     /** This client property allows the client to request a vibrant background style on certain components. */
     public static final String BACKGROUND_STYLE_KEY = "Aqua.backgroundStyle";
 
+    /** This client property allows the client to request a vibrant background style on the top component of a popup. */
+    public static final String POPUP_BACKGROUND_STYLE_KEY = "AquaPopup.backgroundStyle";
+
     /** This internal client property stores our state for vibrant components, allowing use of a singleton component UI. */
     public static final String VIBRANT_EFFECTS_KEY = "AquaInternal.vibrantEffects";
 

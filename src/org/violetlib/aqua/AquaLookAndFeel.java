@@ -62,6 +62,7 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
 
     private AquaFocusRingManager focusRingManager;
     private PropertyChangeListener uiChangeListener;
+    private AquaPopupFactory popupFactory;
 
     public String getName() {
         return "VAqua";
@@ -90,6 +91,14 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
     public void initialize() {
         super.initialize();
 
+        // Popups must be heavy to use the vibrant background
+        if (popupFactory == null) {
+            popupFactory = new AquaPopupFactory();
+            PopupFactory.setSharedInstance(popupFactory);
+        }
+
+        popupFactory.setActive(true);
+
         focusRingManager = AquaFocusRingManager.getInstance();
         //focusRingManager.install();
 
@@ -110,6 +119,8 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
             focusRingManager.uninstall();
             focusRingManager = null;
         }
+
+        popupFactory.setActive(false);
 
         super.uninitialize();
     }
@@ -184,16 +195,6 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
         //UIDefaults table = new DebugDefaults();
 
         table.put("ClassLoader", getClass().getClassLoader());
-
-        // Popups must be heavy to use the vibrant background
-        try {
-            PopupFactory pf = PopupFactory.getSharedInstance();
-            Method m = pf.getClass().getDeclaredMethod("setPopupType", Integer.TYPE);
-            m.setAccessible(true);
-            m.invoke(pf, 2);
-        } catch (Exception ex) {
-            System.err.println("Unable to set default popup type: " + ex);
-        }
 
         try {
             initClassDefaults(table);
