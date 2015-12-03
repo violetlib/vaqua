@@ -35,6 +35,9 @@ public class AquaVibrantSupport {
     /** This client property allows the client to request a vibrant background style on the top component of a popup. */
     public static final String POPUP_BACKGROUND_STYLE_KEY = "AquaPopup.backgroundStyle";
 
+    /** This client property allows the client to request rounded corners on the top component of a popup. */
+    public static final String POPUP_CORNER_RADIUS_KEY = "AquaPopup.cornerRadius";
+
     /** This internal client property stores our state for vibrant components, allowing use of a singleton component UI. */
     public static final String VIBRANT_EFFECTS_KEY = "AquaInternal.vibrantEffects";
 
@@ -224,8 +227,8 @@ public class AquaVibrantSupport {
      * Create a visual effect view behind the content view of the specified window.
      * @param w The window.
      * @param style The vibrant style.
-     * @param supportSelections If true, support is enabled for additional visual effect views to implement regions
-     *                          with a vibrant selection background.
+     * @param supportSelections If true, support is enabled for additional visual effect views to implement regions with
+     *                          a vibrant selection background.
      * @return a peer that can be used to specify the bounds of the background view and the bounds of the regions
      *         displaying a vibrant selection background.
      */

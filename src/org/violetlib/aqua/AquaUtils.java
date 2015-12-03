@@ -34,6 +34,8 @@
 package org.violetlib.aqua;
 
 import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.*;
 import java.lang.ref.SoftReference;
@@ -937,14 +939,43 @@ final public class AquaUtils extends SwingUtilitiesModified {
 
         Color c = isClear ? new Color(0, 0, 0, 0) : AquaImageFactory.getWindowBackgroundColorUIResource();
 
-        // It should not be necessary to set the textured attribute. However, setting the textured attribute seems to
-        // affect the timing of painting events in a good way. Without it, the shadow may be validated before any
-        // opaque pixels have been written to the AWTView layer, which means that there will be no shadow.
-
-        // See bug JDK-7124236
-
+        // The following may be necessary to properly calculate the window shadow.
         setWindowTextured(w, isClear);
         setWindowBackground(w, c);
+
+        new ShadowMaker(w);
+    }
+
+    /**
+     * I have not found a reliable way to ensure that enough opaque pixels are present to allow AppKit to compute
+     * the window shadow for a vibrant popup. This class is a workaround for that problem.
+     *
+     * See bug JDK-7124236.
+     */
+    private static class ShadowMaker implements ActionListener, Runnable {
+        private final Window w;
+
+        public ShadowMaker(Window w) {
+            this.w = w;
+            SwingUtilities.invokeLater(this);
+            Timer t = new Timer(100, this);
+            t.setRepeats(false);
+            t.start();
+        }
+
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            run();
+        }
+
+        @Override
+        public void run() {
+            if (w instanceof RootPaneContainer) {
+                AquaUtils.syncAWTView(w);
+                JRootPane rp = ((RootPaneContainer) w).getRootPane();
+                rp.putClientProperty("apple.awt.windowShadow.revalidateNow", Math.random());
+            }
+        }
     }
 
     /**

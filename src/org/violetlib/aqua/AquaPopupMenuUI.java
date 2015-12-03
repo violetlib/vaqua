@@ -124,7 +124,8 @@ public class AquaPopupMenuUI extends BasicPopupMenuUI {
             cp = new AquaContextualPopup(popup, owner, selectedRegion, selectedRegionLocation, x, y, width, height);
             return cp.getPopup();
         } else {
-            return new AquaPopup(owner, popup, x, y, false);
+            PopupFactory f = PopupFactory.getSharedInstance();
+            return f.getPopup(owner, popup, x, y);
         }
     }
 

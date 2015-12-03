@@ -22,7 +22,7 @@ import javax.swing.plaf.UIResource;
 public class AquaContextualPopup {
 
     private JComponent wrapper;
-    private AquaPopup p;
+    private Popup p;
 
     /**
      * Create a contextual style popup.
@@ -104,9 +104,10 @@ public class AquaContextualPopup {
         }
 
         wrapper.putClientProperty(AquaVibrantSupport.POPUP_BACKGROUND_STYLE_KEY, "vibrantMenu");
+        wrapper.putClientProperty(AquaVibrantSupport.POPUP_CORNER_RADIUS_KEY, 6);
 
-        // Heavy weight popups are required for rounded corners and vibrant background.
-        p = new AquaPopup(owner, wrapper, x, y, true);
+        PopupFactory f = PopupFactory.getSharedInstance();
+        p = f.getPopup(owner, wrapper, x, y);
     }
 
     public Popup getPopup() {
@@ -141,38 +142,40 @@ public class AquaContextualPopup {
             // Before scrolling, try to enlarge the popup vertically
             Point loc = AquaUtils.getScreenLocation(wrapper);
             Rectangle screen = AquaUtils.getScreenBounds(loc, wrapper);
-            Window w = p.getPopup();
-            if (delta > 0) {
-                // scrolling up
-                int availableExtension = w.getY() - screen.y;
-                if (availableExtension > 0) {
-                    int extension = Math.min(delta, availableExtension);
-                    w.setBounds(w.getX(), w.getY() - extension, w.getWidth(), w.getHeight() + extension);
-                    height += extension;
-                    delta -= extension;
-                    configure(true);
+            Window w = SwingUtilities.getWindowAncestor(wrapper);
+            if (w != null) {
+                if (delta > 0) {
+                    // scrolling up
+                    int availableExtension = w.getY() - screen.y;
+                    if (availableExtension > 0) {
+                        int extension = Math.min(delta, availableExtension);
+                        w.setBounds(w.getX(), w.getY() - extension, w.getWidth(), w.getHeight() + extension);
+                        height += extension;
+                        delta -= extension;
+                        configure(true);
+                    }
+                } else {
+                    // scrolling down
+                    int availableExtension = screen.y + screen.height - (w.getY() + w.getHeight());
+                    if (availableExtension > 0) {
+                        int extension = Math.min(-delta, availableExtension);
+                        w.setBounds(w.getX(), w.getY(), w.getWidth(), w.getHeight() + extension);
+                        delta += extension;
+                        height += extension;
+                        Point vp = viewport.getViewPosition();
+                        viewport.setViewPosition(new Point(vp.x, vp.y - extension));
+                        configure(true);
+                    }
                 }
-            } else {
-                // scrolling down
-                int availableExtension = screen.y + screen.height - (w.getY() + w.getHeight());
-                if (availableExtension > 0) {
-                    int extension = Math.min(-delta, availableExtension);
-                    w.setBounds(w.getX(), w.getY(), w.getWidth(), w.getHeight() + extension);
-                    delta += extension;
-                    height += extension;
-                    Point vp = viewport.getViewPosition();
-                    viewport.setViewPosition(new Point(vp.x, vp.y - extension));
-                    configure(true);
+
+                if (delta != 0) {
+                    super.scroll(e, delta);
                 }
-            }
 
-            if (delta != 0) {
-                super.scroll(e, delta);
-            }
-
-            if (e != null && originalContent instanceof AquaExtendedPopup) {
-                AquaExtendedPopup cbp = (AquaExtendedPopup) originalContent;
-                cbp.updateSelection(e);
+                if (e != null && originalContent instanceof AquaExtendedPopup) {
+                    AquaExtendedPopup cbp = (AquaExtendedPopup) originalContent;
+                    cbp.updateSelection(e);
+                }
             }
         }
     }

@@ -29,7 +29,7 @@ public abstract class OverlayPainterComponent extends JComponent {
     /**
      * Create a component for painting an overlay over a base component.
      * @param margins The margins that determine the size of this component. The size of this component is determined
-     *               by adding the margins to the bounds of the base component.
+     *                by adding the margins to the bounds of the base component.
      * @param layer The layer in the layered pane to use for this component.
      */
     public OverlayPainterComponent(Insets margins, int layer) {
@@ -50,13 +50,6 @@ public abstract class OverlayPainterComponent extends JComponent {
             }
 
             @Override
-            protected void detached(Window w) {
-                if (baseWindow != null) {
-                    OverlayPainterComponent.this.windowChanged(null);
-                }
-            }
-
-            @Override
             protected void windowChanged(Window oldWindow, Window newWindow) {
                 OverlayPainterComponent.this.windowChanged(newWindow);
             }
@@ -68,6 +61,7 @@ public abstract class OverlayPainterComponent extends JComponent {
         };
 
         super.setOpaque(false);
+        setVisible(false);
     }
 
     /**
@@ -76,16 +70,18 @@ public abstract class OverlayPainterComponent extends JComponent {
      */
     public void attach(JComponent c) {
         if (base != c) {
-            if (base != null) {
-                tracker.attach(null);
-                base = null;
-            }
-
             if (c != null) {
                 base = c;
                 tracker.attach(c);
+                setVisible(true);
+                repaint();
+            } else {
+                setVisible(false);
+                if (base != null) {
+                    tracker.attach(null);
+                    base = null;
+                }
             }
-            repaint();
         }
     }
 
@@ -131,7 +127,14 @@ public abstract class OverlayPainterComponent extends JComponent {
      */
     private void visibleBoundsChanged() {
         JRootPane rp = AquaUtils.getRootPane(baseWindow);
-        if (rp == null || base == null) {
+        if (rp == null || base == null || !base.isVisible()) {
+            baseBounds = null;
+            visibleBounds = null;
+            return;
+        }
+
+        Dimension baseSize = base.getSize();
+        if (baseSize.width == 0 || baseSize.height == 0) {
             baseBounds = null;
             visibleBounds = null;
             return;
@@ -139,7 +142,6 @@ public abstract class OverlayPainterComponent extends JComponent {
 
         JLayeredPane lp = rp.getLayeredPane();
         Point baseLoc = SwingUtilities.convertPoint(base.getParent(), base.getLocation(), lp);
-        Dimension baseSize = base.getSize();
 
         int x = baseLoc.x - margins.left;
         int y = baseLoc.y - margins.top;

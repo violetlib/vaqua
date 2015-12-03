@@ -369,15 +369,22 @@ public class AquaRootPaneUI extends BasicRootPaneUI implements AncestorListener,
     protected class WindowHierarchyListener implements HierarchyListener {
         @Override
         public void hierarchyChanged(HierarchyEvent e) {
-            if (!isInitialized
-              && e.getChangeFlags() == HierarchyEvent.DISPLAYABILITY_CHANGED
-              && rootPane.getParent() != null
-              && rootPane.getParent().isDisplayable()) {
-                isInitialized = true;
-                updatePopupStyle(rootPane);
-                installCustomWindowStyle();
-                updateVisualEffectView();
+            if (!isInitialized && e.getChangeFlags() == HierarchyEvent.DISPLAYABILITY_CHANGED) {
+                configure();
             }
+        }
+    }
+
+    /**
+     * Configure or reconfigure the window based on root pane client properties.
+     * This method has no effect if the root pane parent is not displayable.
+     */
+    public void configure() {
+        if (rootPane.getParent() != null && rootPane.getParent().isDisplayable()) {
+            isInitialized = true;
+            updatePopupStyle(rootPane);
+            installCustomWindowStyle();
+            updateVisualEffectView();
         }
     }
 
@@ -393,6 +400,8 @@ public class AquaRootPaneUI extends BasicRootPaneUI implements AncestorListener,
                         JComponent jc = (JComponent) c;
                         Object o = jc.getClientProperty(AquaVibrantSupport.POPUP_BACKGROUND_STYLE_KEY);
                         setupBackgroundStyle(o);
+                        o = jc.getClientProperty(AquaVibrantSupport.POPUP_CORNER_RADIUS_KEY);
+                        setupCornerRadius(o);
                     }
                 }
             }
@@ -408,6 +417,24 @@ public class AquaRootPaneUI extends BasicRootPaneUI implements AncestorListener,
                 updateVisualEffectView();
             }
         }
+    }
+
+    protected void setupCornerRadius(Object o) {
+        float radius = 0;
+        if (o != null) {
+            if (o instanceof Integer) {
+                radius = (Integer) o;
+            } else if (o instanceof Float) {
+                radius = (Float) o;
+            } else if (o instanceof Double) {
+                radius = (float) (double) ((Double) o);
+            }
+            if (radius < 0) {
+                radius = 0;
+            }
+        }
+        Window w = SwingUtilities.getWindowAncestor(rootPane);
+        AquaUtils.setCornerRadius(w, radius);
     }
 
     protected void updateVisualEffectView() {

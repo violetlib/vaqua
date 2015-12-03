@@ -12,28 +12,11 @@ import java.awt.*;
 import javax.swing.*;
 
 /**
- * The heavy weight popup used by this look and feel.
+ * A heavy weight popup. Used only when unable to configure the standard popup factory.
  */
 public class AquaPopup extends Popup {
 
-    private final Window popup;
-
-    public AquaPopup(Component owner, Component contents, int x, int y, boolean isContextual) {
+    public AquaPopup(Component owner, Component contents, int x, int y) {
         super(owner, contents, x, y);
-        popup = SwingUtilities.getWindowAncestor(contents);
-
-        if (popup instanceof RootPaneContainer) {
-            JRootPane popupRootPane = ((RootPaneContainer) popup).getRootPane();
-
-            if (isContextual) {
-                popup.pack();
-                AquaUtils.setCornerRadius(popup, 6);
-            } else {
-            }
-        }
-    }
-
-    public Window getPopup() {
-        return popup;
     }
 }
