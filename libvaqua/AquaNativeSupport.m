@@ -16,7 +16,7 @@
  * @version $Id$
  */
 
-static int VERSION = 1;
+static int VERSION = 2;
 
 #include <stdio.h>
 #include <jni.h>
@@ -38,6 +38,7 @@ static int VERSION = 1;
 #import <Availability.h>
 
 #import "AquaSidebarBackground.h"
+#import "AquaWrappedAWTView.h"
 
 static JavaVM *vm;
 static jint javaVersion;
@@ -102,15 +103,26 @@ void viewDebug(NSView *v, NSString *title, int indent) {
     }
 }
 
+NSView *getTopView(NSWindow *w) {
+    NSView *view = w.contentView;
+    while (view != nil) {
+        NSView *parent = view.superview;
+        if (parent == nil) {
+            return view;
+        }
+        view = parent;
+    }
+    return nil;
+}
+
 void windowDebug(NSWindow *w) {
     NSString *od = w.opaque ? @" Opaque" : @"";
     NSRect frame = w.frame;
     NSLog(@"Window: %@%@ %f %f %f %f", [w description], od, frame.origin.x, frame.origin.y, frame.size.width, frame.size.height);
-    NSView *v = [w contentView];
-    while (v.superview) {
-        v = v.superview;
+    NSView *v = getTopView(w);
+    if (v != nil) {
+        viewDebug(v, @"", 2);
     }
-    viewDebug(v, @"", 2);
 }
 
 void setupLayers(NSView *v) {
@@ -119,6 +131,36 @@ void setupLayers(NSView *v) {
         vv.wantsLayer = YES;
         vv = vv.superview;
     }
+}
+
+AquaWrappedAWTView *ensureWrapper(NSWindow *w) {
+    NSView *contentView = w.contentView;
+    if ([contentView isKindOfClass: [AquaWrappedAWTView class]]) {
+        return (AquaWrappedAWTView *) contentView;
+    }
+    NSView *view = [contentView retain];
+    AquaWrappedAWTView *wrapper = [[AquaWrappedAWTView alloc] initWithFrame: view.frame];
+    w.contentView = wrapper;
+    [wrapper installAWTView: view];
+    [contentView release];
+    return wrapper;
+}
+
+AquaWrappedAWTView *getWrapper(NSWindow *w) {
+    NSView *contentView = w.contentView;
+    if ([contentView isKindOfClass: [AquaWrappedAWTView class]]) {
+        return (AquaWrappedAWTView *) contentView;
+    }
+    return nil;
+}
+
+NSView *getAWTView(NSWindow *w) {
+    NSView *contentView = w.contentView;
+    if ([contentView isKindOfClass: [AquaWrappedAWTView class]]) {
+        AquaWrappedAWTView *wrapper = (AquaWrappedAWTView *) contentView;
+        return [wrapper awtView];
+    }
+    return contentView;
 }
 
 @interface MyDefaultResponder : NSObject
@@ -708,6 +750,11 @@ JNIEXPORT jboolean JNICALL Java_org_violetlib_aqua_AquaIcon_nativeRenderIcon
   return result;
 }
 
+// Many deprecated functions but no replacement as of OS X 10.11
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#pragma GCC warning "Many deprecated functions used here"
+
 /*
  * Class:     org_violetlib_aqua_fc_OSXFile
  * Method:    getBasicItemInfoFlags
@@ -984,6 +1031,8 @@ JNIEXPORT jobjectArray JNICALL Java_org_violetlib_aqua_fc_OSXFile_nativeGetSideb
 	CFRelease(list);
 	return result;
 }
+
+#pragma GCC diagnostic pop
 
 static NSColorPanel *colorPanel;
 static jobject colorPanelCallback;
@@ -1272,10 +1321,9 @@ JNIEXPORT jint JNICALL Java_org_violetlib_aqua_AquaUtils_nativeSetTitleBarStyle
 			if (isFixNeeded) {
 				// Workaround for a mysterious problem observed in some circumstances but not others.
 				// The corner radius is not set, so painting happens outside the rounded corners.
-				NSView *contentView = [ nw contentView ];
-				NSView *themeFrame = [ contentView superview ];
-				if ([themeFrame superview] == nil) {
-					CALayer *layer = [ themeFrame layer ];
+				NSView *topView = getTopView(nw);
+				if (topView != nil) {
+					CALayer *layer = [ topView layer ];
 					if (layer != nil) {
 						CGFloat radius = [ layer cornerRadius ];
 						if (radius == 0) {
@@ -1286,7 +1334,7 @@ JNIEXPORT jint JNICALL Java_org_violetlib_aqua_AquaUtils_nativeSetTitleBarStyle
 						NSLog(@"Unable to fix corner radius: no layer");
 					}
 				} else {
-					NSLog(@"Unable to fix corner radius: did not find expected top view");
+					NSLog(@"Unable to fix corner radius: did not find top view");
 				}
 			}
 		}];
@@ -1380,11 +1428,10 @@ JNIEXPORT jint JNICALL Java_org_violetlib_aqua_AquaUtils_nativeSetWindowCornerRa
     NSWindow *nw = getNativeWindow(env, window);
     if (nw != nil) {
         [JNFRunLoop performOnMainThreadWaiting:YES withBlock:^(){
-            NSView *contentView = [ nw contentView ];
-            NSView *themeFrame = [ contentView superview ];
-            if ([themeFrame superview] == nil) {
-                themeFrame.wantsLayer = YES;
-                CALayer *layer = [ themeFrame layer ];
+            NSView *topView = getTopView(nw);
+            if (topView != nil) {
+                topView.wantsLayer = YES;
+                CALayer *layer = [ topView layer ];
                 if (layer != nil) {
                     if (![nw hasShadow]) {
                         NSLog(@"Window %@ has no shadow", nw);
@@ -1396,7 +1443,7 @@ JNIEXPORT jint JNICALL Java_org_violetlib_aqua_AquaUtils_nativeSetWindowCornerRa
                     NSLog(@"Unable to set corner radius: no layer");
                 }
             } else {
-                NSLog(@"Unable to set corner radius: did not find expected top view");
+                NSLog(@"Unable to set corner radius: did not find top view");
             }
         }];
     }
@@ -1489,32 +1536,12 @@ JNIEXPORT jint JNICALL Java_org_violetlib_aqua_AquaVibrantSupport_setupVisualEff
         }
 
         [JNFRunLoop performOnMainThreadWaiting:YES withBlock:^(){
-            // Insert a visual effect view as a sibling of the content view if there is not already one present.
-            // This is not a recommended technique, but Java wants its AWTView to be the content view.
-            NSView *contentView = [nw contentView];
-            NSView *parent = [contentView superview];
-            NSVisualEffectView *fxView = nil;
-            NSArray *siblings = [parent subviews];
-            NSUInteger siblingCount = [siblings count];
-            NSUInteger siblingIndex;
-            for (siblingIndex = 0; siblingIndex < siblingCount; siblingIndex++) {
-                NSView *sibling = [siblings objectAtIndex:siblingIndex];
-                if ([sibling isKindOfClass: [NSVisualEffectView class]]) {
-                    fxView = (NSVisualEffectView*) sibling;
-                    break;
-                }
-            }
-            if (fxView == nil) {
-                fxView = [[NSVisualEffectView alloc] initWithFrame: [contentView frame]];
-                fxView.blendingMode = NSVisualEffectBlendingModeBehindWindow;
-                fxView.autoresizingMask = NSViewWidthSizable|NSViewHeightSizable;
-                [parent addSubview: fxView positioned: NSWindowBelow relativeTo: contentView];
-            }
-
+            // Insert a visual effect view as a sibling of the AWT view if there is not already one present.
+            AquaWrappedAWTView *wrapper = ensureWrapper(nw);
+            NSVisualEffectView *fxView = [wrapper addFullWindowVisualEffectView];
             fxView.appearance = getVibrantAppearance(style);
             fxView.material = getVibrantMaterial(style);
             fxView.state = forceActive ? NSVisualEffectStateActive : NSVisualEffectStateFollowsWindowActiveState;
-
             [fxView setNeedsDisplay: YES];
             setupLayers(fxView);
         }];
@@ -1541,17 +1568,9 @@ JNIEXPORT jint JNICALL Java_org_violetlib_aqua_AquaVibrantSupport_removeVisualEf
     NSWindow *nw = getNativeWindow(env, window);
     if (nw != nil) {
         [JNFRunLoop performOnMainThreadWaiting:YES withBlock:^(){
-            NSView *contentView = [nw contentView];
-            NSView *parent = [contentView superview];
-            NSArray *siblings = [parent subviews];
-            NSUInteger siblingCount = [siblings count];
-            NSUInteger siblingIndex;
-            for (siblingIndex = 0; siblingIndex < siblingCount; siblingIndex++) {
-                NSView *sibling = [siblings objectAtIndex:siblingIndex];
-                if ([sibling isKindOfClass: [NSVisualEffectView class]]) {
-                    [sibling removeFromSuperview];
-                    break;
-                }
+            AquaWrappedAWTView *wrapper = getWrapper(nw);
+            if (wrapper != nil) {
+                [wrapper removeFullWindowVisualEffectView];
             }
         }];
         result = 0;
@@ -1577,8 +1596,8 @@ JNIEXPORT jlong JNICALL Java_org_violetlib_aqua_AquaVibrantSupport_nativeCreateV
 	NSWindow *nw = getNativeWindow(env, window);
 	if (nw != nil) {
         [JNFRunLoop performOnMainThreadWaiting:YES withBlock:^(){
-            // Insert a view as a sibling of the content view.
-            NSView *contentView = [nw contentView];
+            // Insert a view as a sibling of the AWT view.
+            AquaWrappedAWTView *wrapper = ensureWrapper(nw);
             NSView *view;
             if (supportSelections && style == SIDEBAR_STYLE) {
                 view = [[AquaSidebarBackground alloc] initWithFrame: NSMakeRect(0, 0, 0, 0)];
@@ -1589,8 +1608,7 @@ JNIEXPORT jlong JNICALL Java_org_violetlib_aqua_AquaVibrantSupport_nativeCreateV
                 fxView.blendingMode = NSVisualEffectBlendingModeBehindWindow;
                 view = fxView;
             }
-            NSView *parent = [contentView superview];
-            [parent addSubview: view positioned: NSWindowBelow relativeTo: contentView];
+            [wrapper addSiblingView: view];
             setupLayers(view);
             result = (jlong) view;
         }];
@@ -1604,10 +1622,10 @@ JNIEXPORT jlong JNICALL Java_org_violetlib_aqua_AquaVibrantSupport_nativeCreateV
 /*
  * Class:     org_violetlib_aqua_AquaVibrantSupport
  * Method:    setViewFrame
- * Signature: (JIIII)I
+ * Signature: (JIIIII)I
  */
 JNIEXPORT jint JNICALL Java_org_violetlib_aqua_AquaVibrantSupport_setViewFrame
-  (JNIEnv *env, jclass cl, jlong ptr, jint x, jint y, jint w, jint h)
+  (JNIEnv *env, jclass cl, jlong ptr, jint x, jint y, jint w, jint h, jint yflipped)
 {
 	__block jint result = -1;
 
@@ -1618,14 +1636,17 @@ JNIEXPORT jint JNICALL Java_org_violetlib_aqua_AquaVibrantSupport_setViewFrame
 
     if (window != nil) {
         [JNFRunLoop performOnMainThreadWaiting:YES withBlock:^(){
-            float windowHeight = window.frame.size.height;
-            //NSLog(@"Set frame %@ %d %d %d %d %f", view, x, y, w, h, windowHeight);
-            [view setFrame: NSMakeRect(x, windowHeight-y-h, w, h)];
+
+//            NSLog(@"Setting visual effect view frame: %d %d %d %d %d", x, y, w, h, yflipped);
+//            NSRect f = window.frame;
+//            NSLog(@"  Window size: %f %f", f.size.width, f.size.height);
+
+            [view setFrame: NSMakeRect(x, yflipped, w, h)];
             view.needsDisplay = YES;
             result = 0;
         }];
     } else {
-        //NSLog(@"AquaVibrantSupport_setViewFrame failed: no native window");
+        NSLog(@"AquaVibrantSupport_setViewFrame failed: no native window");
     }
 
 	JNF_COCOA_EXIT(env);
@@ -1690,9 +1711,14 @@ JNIEXPORT jint JNICALL Java_org_violetlib_aqua_AquaVibrantSupport_disposeVisualE
 
     if (window != nil) {
         [JNFRunLoop performOnMainThreadWaiting:YES withBlock:^(){
-            [view removeFromSuperview];
-            result = 0;
+            AquaWrappedAWTView *wrapper = getWrapper(window);
+            if (wrapper != nil && wrapper == [view superview]) {
+                [view removeFromSuperview];
+                result = 0;
+            }
         }];
+    } else {
+        NSLog(@"AquaVibrantSupport_disposeVisualEffectView failed: no native window");
     }
 
 	JNF_COCOA_EXIT(env);
@@ -1713,7 +1739,7 @@ JNIEXPORT void JNICALL Java_org_violetlib_aqua_AquaUtils_nativeSetAWTViewVisibil
 	NSWindow *nw = getNativeWindow(env, window);
 	if (nw != nil) {
         [JNFRunLoop performOnMainThreadWaiting:YES withBlock:^(){
-            NSView *v = nw.contentView;
+            NSView *v = getAWTView(nw);
             v.hidden = !isVisible;
         }];
     }
@@ -1734,7 +1760,7 @@ JNIEXPORT void JNICALL Java_org_violetlib_aqua_AquaUtils_nativeSyncAWTView
 	NSWindow *nw = getNativeWindow(env, window);
 	if (nw != nil) {
         [JNFRunLoop performOnMainThreadWaiting:YES withBlock:^(){
-            NSView *v = nw.contentView;
+            NSView *v = getAWTView(nw);
             [v.layer setNeedsDisplay];
             [v.layer displayIfNeeded];
         }];

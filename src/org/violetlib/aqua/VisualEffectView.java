@@ -29,6 +29,7 @@ public class VisualEffectView {
     private VisualEffectViewPeer peer;
     private Rectangle oldBounds;
     private Window window;
+    private int windowHeight;   // corresponds to bounds, needed to calculate AppKit Y origin
     private ComponentTracker tracker;
 
     /**
@@ -97,8 +98,11 @@ public class VisualEffectView {
     }
 
     private void setFrame(int x, int y, int w, int h) {
-        if (oldBounds == null || x != oldBounds.x || y != oldBounds.y || w != oldBounds.width || h != oldBounds.height) {
+        int newWindowHeight = window != null ? window.getHeight() : 0;
+        if (oldBounds == null || x != oldBounds.x || y != oldBounds.y
+                || w != oldBounds.width || h != oldBounds.height || windowHeight != newWindowHeight) {
             oldBounds = new Rectangle(x, y, w, h);
+            windowHeight = newWindowHeight;
             if (peer != null) {
                 peer.setFrame(x, y, w, h);
             }

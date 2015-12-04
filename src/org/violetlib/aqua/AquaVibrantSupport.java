@@ -256,8 +256,7 @@ public class AquaVibrantSupport {
                 int rc = disposeVisualEffectView(nativeNSViewPointer);
                 nativeNSViewPointer = 0;
                 if (rc != 0) {
-                    // Not an interesting error... most likely my view has been replaced with a native view
-                    // System.err.println("disposeVisualEffectView failed");
+                    System.err.println("disposeVisualEffectView failed");
                 }
                 AquaUtils.setWindowBackgroundClear(w, false); // restore Java window background
             }
@@ -265,10 +264,15 @@ public class AquaVibrantSupport {
 
         @Override
         public void setFrame(int x, int y, int width, int height) {
-            int rc = setViewFrame(nativeNSViewPointer, x, y, width, height);
+            // The specified bounds are in Java window coordinates. Native code might need the distance between the
+            // bottom of the frame and the bottom of the window. It may not be able to determine that distance because
+            // the native window height might be (temporarily) different that the Java window height. We resolve by
+            // calculating that distance here and passing it to the native code.
+
+            int yflipped = w.getHeight() - (y + height);
+            int rc = setViewFrame(nativeNSViewPointer, x, y, width, height, yflipped);
             if (rc != 0) {
-                // Not an interesting error... most likely my view has been replaced with a native view
-                // System.err.println("setViewFrame failed");
+                System.err.println("setViewFrame failed");
             }
         }
 
@@ -283,7 +287,7 @@ public class AquaVibrantSupport {
     private static native int setupVisualEffectWindow(Window w, int style, boolean forceActive);
     private static native int removeVisualEffectWindow(Window w);
     private static native long nativeCreateVisualEffectView(Window w, int style, boolean supportSelections);
-    private static native int setViewFrame(long viewPtr, int x, int y, int width, int height);
+    private static native int setViewFrame(long viewPtr, int x, int y, int width, int height, int yflipped);
     private static native int nativeUpdateSelectionBackgrounds(long viewPtr, int[] data);
     private static native int disposeVisualEffectView(long viewPtr);
 }
