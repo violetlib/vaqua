@@ -33,11 +33,16 @@ public class AquaPopupFactory extends PopupFactory {
             }
             Popup p = super.getPopup(owner, contents, x, y);
             // If the popup is a reused popup, then we need to reconfigure it.
+            // TBD: can we tell if the popup is reused?
             Window w = SwingUtilities.getWindowAncestor(contents);
             if (w.isDisplayable() && w instanceof RootPaneContainer) {
                 JRootPane rp = ((RootPaneContainer) w).getRootPane();
                 AquaRootPaneUI ui = AquaUtils.getUI(rp, AquaRootPaneUI.class);
                 if (ui != null) {
+                    // A reused popup will have the old size
+                    w.setSize(w.getPreferredSize());
+                    w.invalidate();
+                    w.validate();
                     ui.configure();
                 }
             }
