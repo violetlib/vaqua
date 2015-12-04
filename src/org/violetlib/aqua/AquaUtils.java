@@ -237,6 +237,7 @@ final public class AquaUtils extends SwingUtilitiesModified {
 
     public static void paintImmediately(JComponent c) {
         // a possible workaround... the goal is to paint to the AWT view before the window becomes visible
+        // Note that the public paintImmediately() method does nothing if it believes that the component is not visible.
         try {
             Method m = JComponent.class.getDeclaredMethod("_paintImmediately", Integer.TYPE, Integer.TYPE, Integer.TYPE, Integer.TYPE);
             m.setAccessible(true);
