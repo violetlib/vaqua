@@ -153,6 +153,7 @@
 
             <arg value="${jnisrc}/AquaNativeSupport.m"/>
             <arg value="${jnisrc}/AquaSidebarBackground.m"/>
+            <arg value="${jnisrc}/AquaWrappedAWTView.m"/>
         </exec>
 
     </target>
