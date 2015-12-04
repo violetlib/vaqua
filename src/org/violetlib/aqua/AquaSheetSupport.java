@@ -51,9 +51,7 @@ public class AquaSheetSupport {
             d.setModalityType(Dialog.ModalityType.MODELESS);
         }
 
-        if (!w.isDisplayable()) {
-            w.addNotify();  // force the native peer to be created
-        }
+        AquaUtils.ensureWindowPeer(w);
 
         // The window should not be decorated. If it is decorated, the initial painting will go in the wrong place.
         // Unfortunately, Java is very picky about when setUndecorated() can be called. So we just munge the style bits

@@ -861,7 +861,7 @@ final public class AquaUtils extends SwingUtilitiesModified {
      * @throws UnsupportedOperationException if the title bar style could not be changed.
      */
     public static void setTitleBarStyle(Window w, int style) {
-        w.addNotify();
+        ensureWindowPeer(w);
         int result = nativeSetTitleBarStyle(w, style);
         if (result != 0) {
             throw new UnsupportedOperationException("Unable to set window title bar style");
@@ -879,10 +879,22 @@ final public class AquaUtils extends SwingUtilitiesModified {
     }
 
     public static void addNativeToolbarToWindow(Window w) throws UnsupportedOperationException {
-        w.addNotify();
+        ensureWindowPeer(w);
         int result = nativeAddToolbarToWindow(w);
         if (result != 0) {
             throw new UnsupportedOperationException("Unable to add native toolbar to window");
+        }
+    }
+
+    /**
+     * Ensure that the window peer has been created, as a prerequisite for calling native code that operates on the
+     * native window.
+     * @param w The window.
+     */
+    public static void ensureWindowPeer(Window w) {
+        if (!w.isDisplayable()) {
+            w.setSize(w.getPreferredSize());
+            w.addNotify();
         }
     }
 
