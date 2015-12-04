@@ -227,7 +227,7 @@ public class AquaRootPaneUI extends BasicRootPaneUI implements AncestorListener,
             }
         } else if (AquaVibrantSupport.BACKGROUND_STYLE_KEY.equals(prop)) {
             Object o = e.getNewValue();
-            setupBackgroundStyle(o);
+            setupBackgroundStyle(o, true);
         }
     }
 
@@ -399,7 +399,7 @@ public class AquaRootPaneUI extends BasicRootPaneUI implements AncestorListener,
                     if (c instanceof JComponent) {
                         JComponent jc = (JComponent) c;
                         Object o = jc.getClientProperty(AquaVibrantSupport.POPUP_BACKGROUND_STYLE_KEY);
-                        setupBackgroundStyle(o);
+                        setupBackgroundStyle(o, false);
                         o = jc.getClientProperty(AquaVibrantSupport.POPUP_CORNER_RADIUS_KEY);
                         setupCornerRadius(o);
                     }
@@ -408,12 +408,12 @@ public class AquaRootPaneUI extends BasicRootPaneUI implements AncestorListener,
         }
     }
 
-    protected void setupBackgroundStyle(Object o) {
+    protected void setupBackgroundStyle(Object o, boolean update) {
         int style = AquaVibrantSupport.parseVibrantStyle(o, false);
         if (style != vibrantStyle) {
             vibrantStyle = style;
             rootPane.setBackground(vibrantStyle >= 0 ? new Color(0, 0, 0, 0) : null);
-            if (isInitialized) {
+            if (isInitialized && update) {
                 updateVisualEffectView();
             }
         }
