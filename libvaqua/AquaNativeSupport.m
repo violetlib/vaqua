@@ -1625,7 +1625,7 @@ JNIEXPORT jint JNICALL Java_org_violetlib_aqua_AquaVibrantSupport_setViewFrame
             result = 0;
         }];
     } else {
-        NSLog(@"AquaVibrantSupport_setViewFrame failed: no native window");
+        //NSLog(@"AquaVibrantSupport_setViewFrame failed: no native window");
     }
 
 	JNF_COCOA_EXIT(env);

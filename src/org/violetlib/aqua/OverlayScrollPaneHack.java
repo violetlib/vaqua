@@ -97,7 +97,6 @@ public class OverlayScrollPaneHack {
         }
     }
 
-
     protected void sync(boolean isNewHolder) {
         JViewport viewport = scrollPane.getViewport();
         if (viewport != lastKnownViewport) {

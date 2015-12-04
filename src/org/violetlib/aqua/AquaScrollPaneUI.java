@@ -370,6 +370,15 @@ public class AquaScrollPaneUI extends BasicScrollPaneUI implements AquaUtilContr
         }
     }
 
+    /**
+     * If there is a viewport holder, set its size to the size of the scroll pane.
+     */
+    public void syncOverlayScrollPaneViewportHolderSize() {
+        if (overlayScrollPaneHack != null) {
+            overlayScrollPaneHack.syncScrollPaneSize();
+        }
+    }
+
     protected void updateScrollBar(JScrollBar bar) {
         // Called to initialize and when the scroll pane size variant or style or thumb style may have changed
         if (bar != null) {
@@ -452,17 +461,9 @@ public class AquaScrollPaneUI extends BasicScrollPaneUI implements AquaUtilContr
     }
 
     protected class MyComponentListener extends ComponentAdapter {
-
         @Override
         public void componentShown(ComponentEvent e) {
             syncLayoutManager();
-        }
-
-        @Override
-        public void componentResized(ComponentEvent e) {
-            if (overlayScrollPaneHack != null) {
-                overlayScrollPaneHack.syncScrollPaneSize();
-            }
         }
     }
 

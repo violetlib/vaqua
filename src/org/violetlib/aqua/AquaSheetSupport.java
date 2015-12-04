@@ -72,11 +72,10 @@ public class AquaSheetSupport {
             }
         }
 
+        int oldTop = 0;
         if (needToUndecorate) {
             //syslog("About to reset title window style");
-            AquaUtils.unsetTitledWindowStyle(w);
-            w.invalidate();
-            w.validate();
+            oldTop = AquaUtils.unsetTitledWindowStyle(w);
         }
 
         JRootPane rp = null;
@@ -102,9 +101,21 @@ public class AquaSheetSupport {
         // alter what that does.
 
         SheetCloser closer = new SheetCloser(w, closeHandler, oldBackgroundStyle);
-        int result = nativeDisplayAsSheet(w);
+        int result;
+        if ("true".equals(System.getProperty("VAqua.injectSheetDisplayFailure"))) {
+            // inject failure for testing
+            System.err.println("Injected failure to display sheet");
+            result = -1;
+        } else {
+            result = nativeDisplayAsSheet(w);
+        }
+
         if (result != 0) {
             closer.dispose();
+            if (oldTop > 0) {
+                AquaUtils.restoreTitledWindowStyle(w, oldTop);
+                AquaUtils.syncAWTView(w);
+            }
             throw new UnsupportedOperationException("Unable to display as sheet");
         }
 

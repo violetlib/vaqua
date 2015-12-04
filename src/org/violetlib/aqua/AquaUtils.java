@@ -886,11 +886,59 @@ final public class AquaUtils extends SwingUtilitiesModified {
         }
     }
 
-    public static void unsetTitledWindowStyle(Window w) {
-
+    public static int unsetTitledWindowStyle(Window w) {
         Rectangle oldBounds = w.getBounds();
         Insets oldInsets = w.getInsets();
-        int newHeight = oldBounds.height - oldInsets.top;
+        int top = oldInsets.top;
+
+        if (top > 0) {
+            int newHeight = oldBounds.height - oldInsets.top;
+
+            try {
+                Method m = w.getClass().getMethod("getPeer");
+                m.setAccessible(true);
+                Object peer = m.invoke(w);
+                if (peer != null) {
+                    m = peer.getClass().getDeclaredMethod("getPlatformWindow");
+                    m.setAccessible(true);
+                    Object platformWindow = m.invoke(peer);
+                    if (platformWindow != null) {
+                        m = platformWindow.getClass().getDeclaredMethod("setStyleBits", Integer.TYPE, Boolean.TYPE);
+                        m.setAccessible(true);
+                        int DECORATED = 1 << 1;
+                        m.invoke(platformWindow, DECORATED, false);
+
+                        // Java eventually will be informed of the new window size and insets, but we need to update now so
+                        // that the initial painting of the root pane will be positioned correctly.
+
+                        Field f = Component.class.getDeclaredField("height");
+                        f.setAccessible(true);
+                        f.setInt(w, newHeight);
+
+                        m = peer.getClass().getDeclaredMethod("updateInsets", Insets.class);
+                        m.setAccessible(true);
+                        m.invoke(peer, new Insets(0, 0, 0, 0));
+
+                        w.invalidate();
+                        w.validate();
+                        return top;
+                    } else {
+                        System.err.println("Unable to unset titled window style: no platform window");
+                    }
+                } else {
+                    System.err.println("Unable to unset titled window style: no peer");
+                }
+            } catch (Exception ex) {
+                System.err.println("Unable to unset titled window style: " + ex);
+            }
+        }
+        return top;
+    }
+
+    public static void restoreTitledWindowStyle(Window w, int top) {
+        Rectangle oldBounds = w.getBounds();
+        Insets oldInsets = w.getInsets();
+        int newHeight = oldBounds.height + top;
 
         try {
             Method m = w.getClass().getMethod("getPeer");
@@ -904,10 +952,7 @@ final public class AquaUtils extends SwingUtilitiesModified {
                     m = platformWindow.getClass().getDeclaredMethod("setStyleBits", Integer.TYPE, Boolean.TYPE);
                     m.setAccessible(true);
                     int DECORATED = 1 << 1;
-                    m.invoke(platformWindow, DECORATED, false);
-
-                    // Java eventually will be informed of the new window size and insets, but we need to update now so
-                    // that the initial painting of the root pane will be positioned correctly.
+                    m.invoke(platformWindow, DECORATED, true);
 
                     Field f = Component.class.getDeclaredField("height");
                     f.setAccessible(true);
@@ -915,18 +960,18 @@ final public class AquaUtils extends SwingUtilitiesModified {
 
                     m = peer.getClass().getDeclaredMethod("updateInsets", Insets.class);
                     m.setAccessible(true);
-                    m.invoke(peer, new Insets(0, 0, 0, 0));
+                    m.invoke(peer, new Insets(top, 0, 0, 0));
 
-                    return;
+                    w.invalidate();
+                    w.validate();
                 } else {
-                    System.err.println("Unable to unset titled window style: no platform window");
+                    System.err.println("Unable to restore titled window style: no platform window");
                 }
             } else {
-                System.err.println("Unable to unset titled window style: no peer");
-                return;
+                System.err.println("Unable to restore titled window style: no peer");
             }
         } catch (Exception ex) {
-            System.err.println("Unable to unset titled window style: " + ex);
+            System.err.println("Unable to restore titled window style: " + ex);
         }
     }
 

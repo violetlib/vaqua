@@ -256,7 +256,8 @@ public class AquaVibrantSupport {
                 int rc = disposeVisualEffectView(nativeNSViewPointer);
                 nativeNSViewPointer = 0;
                 if (rc != 0) {
-                    System.err.println("disposeVisualEffectView failed");
+                    // Not an interesting error... most likely my view has been replaced with a native view
+                    // System.err.println("disposeVisualEffectView failed");
                 }
                 AquaUtils.setWindowBackgroundClear(w, false); // restore Java window background
             }
@@ -266,7 +267,8 @@ public class AquaVibrantSupport {
         public void setFrame(int x, int y, int width, int height) {
             int rc = setViewFrame(nativeNSViewPointer, x, y, width, height);
             if (rc != 0) {
-                System.err.println("setViewFrame failed");
+                // Not an interesting error... most likely my view has been replaced with a native view
+                // System.err.println("setViewFrame failed");
             }
         }
 
