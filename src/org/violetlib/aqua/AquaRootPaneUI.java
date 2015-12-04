@@ -422,12 +422,13 @@ public class AquaRootPaneUI extends BasicRootPaneUI implements AncestorListener,
     protected void setupCornerRadius(Object o) {
         float radius = 0;
         if (o != null) {
-            if (o instanceof Integer) {
-                radius = (Integer) o;
-            } else if (o instanceof Float) {
-                radius = (Float) o;
-            } else if (o instanceof Double) {
-                radius = (float) (double) ((Double) o);
+            if (o instanceof String) {
+                String s = (String) o;
+                if (s.equals("default")) {
+                    radius = 6;
+                }
+            } else if (o instanceof Number) {
+                radius = ((Number) o).floatValue();
             }
             if (radius < 0) {
                 radius = 0;
