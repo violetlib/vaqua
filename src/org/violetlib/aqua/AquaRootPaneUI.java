@@ -36,6 +36,7 @@ package org.violetlib.aqua;
 import java.awt.*;
 import java.awt.event.*;
 import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import javax.swing.*;
 import javax.swing.event.AncestorEvent;
 import javax.swing.event.AncestorListener;
@@ -62,6 +63,8 @@ public class AquaRootPaneUI extends BasicRootPaneUI implements AncestorListener,
 
     protected JRootPane rootPane;
     protected WindowHierarchyListener hierarchyListener;
+    protected AncestorChangeListener ancestorChangeListener;
+    protected PropertyChangeListener windowStylePropertyChangeListener;
     protected boolean isInitialized;
     protected AquaCustomStyledWindow customStyledWindow;
     protected int vibrantStyle = -1;
@@ -73,6 +76,8 @@ public class AquaRootPaneUI extends BasicRootPaneUI implements AncestorListener,
         super.installUI(c);
 
         c.addAncestorListener(this);
+
+        ancestorChangeListener = new AncestorChangeListener();
 
         if (c.isShowing() && c.isEnabled()) {
             updateDefaultButton(rootPane);
@@ -138,7 +143,13 @@ public class AquaRootPaneUI extends BasicRootPaneUI implements AncestorListener,
     protected void uninstallListeners(JRootPane root) {
         root.removeHierarchyListener(hierarchyListener);
         hierarchyListener = null;
+        root.removePropertyChangeListener("ancestor", ancestorChangeListener);
+        ancestorChangeListener = null;
         super.uninstallListeners(root);
+        if (windowStylePropertyChangeListener != null) {
+            root.removePropertyChangeListener(windowStylePropertyChangeListener);
+            windowStylePropertyChangeListener = null;
+        }
     }
 
     /**
@@ -228,6 +239,45 @@ public class AquaRootPaneUI extends BasicRootPaneUI implements AncestorListener,
         } else if (AquaVibrantSupport.BACKGROUND_STYLE_KEY.equals(prop)) {
             Object o = e.getNewValue();
             setupBackgroundStyle(o, true);
+        }
+    }
+
+    /**
+     * A property change listener for the {@code ancestor} property. The intent is for this listener to run after the
+     * similar listener used by CPlatformWindow to configure itself from root pane client properties. The problem we
+     * are trying to solve is that CPlatformWindow does not know about the full content view style bit and it clears
+     * that bit every time it updates the NSWindow style mask.
+     */
+    protected class AncestorChangeListener implements PropertyChangeListener {
+        @Override
+        public void propertyChange(PropertyChangeEvent e) {
+            if (e.getNewValue() != null) {
+                refreshWindowStyleMask();
+                if (windowStylePropertyChangeListener == null) {
+                    windowStylePropertyChangeListener = new WindowStylePropertyChangeListener();
+                    rootPane.addPropertyChangeListener(windowStylePropertyChangeListener);
+                }
+            }
+        }
+    }
+
+    protected class WindowStylePropertyChangeListener implements PropertyChangeListener {
+        @Override
+        public void propertyChange(PropertyChangeEvent e) {
+            String prop = e.getPropertyName();
+            if (prop != null) {
+                if (prop.equals("Window.closeable") || prop.equals("Window.minimizable")) {
+                    // These properties can be changed after the window peer is created and they alter the window
+                    // style mask.
+                    refreshWindowStyleMask();
+                }
+            }
+        }
+    }
+
+    protected void refreshWindowStyleMask() {
+        if (customStyledWindow != null) {
+            customStyledWindow.refreshWindowStyleMask();
         }
     }
 
@@ -370,6 +420,8 @@ public class AquaRootPaneUI extends BasicRootPaneUI implements AncestorListener,
         @Override
         public void hierarchyChanged(HierarchyEvent e) {
             if (!isInitialized && e.getChangeFlags() == HierarchyEvent.DISPLAYABILITY_CHANGED) {
+                // Add listener now because we want to be called after the window peer property change listener
+                rootPane.addPropertyChangeListener("ancestor", ancestorChangeListener);
                 configure();
             }
         }

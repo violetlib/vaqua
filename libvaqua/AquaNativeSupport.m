@@ -1270,7 +1270,8 @@ JNIEXPORT jint JNICALL Java_org_violetlib_aqua_AquaUtils_nativeSetTitleBarStyle
 			// to the Java window. If we want some control over title bar mouse events (which
 			// we do when the title bar is transparent), we must make the window Movable.
 
-			NSUInteger styleMask = [nw styleMask];
+            NSUInteger originalStyleMask = nw.styleMask;
+			NSUInteger styleMask = originalStyleMask;
 			BOOL isTextured = (styleMask & NSTexturedBackgroundWindowMask) != 0;
 			BOOL isMovable = true;
 			BOOL isMovableByBackground = isTextured;
@@ -1336,6 +1337,18 @@ JNIEXPORT jint JNICALL Java_org_violetlib_aqua_AquaUtils_nativeSetTitleBarStyle
 				} else {
 					NSLog(@"Unable to fix corner radius: did not find top view");
 				}
+			}
+
+			if (((originalStyleMask ^ styleMask) & NSFullSizeContentViewWindowMask) != 0) {
+			    // The full size content view option has changed.
+			    // We need to get Java to recompute the window insets.
+			    // This should do it...
+			    if ([nw respondsToSelector: @selector(windowDidResize:)]) {
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wnonnull"
+			        [((id)nw) windowDidResize:nil];
+#pragma GCC diagnostic pop
+			    }
 			}
 		}];
 		result = 0;
