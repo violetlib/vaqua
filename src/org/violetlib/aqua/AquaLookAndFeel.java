@@ -1078,8 +1078,8 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
             // no expand or collapse icons
             "Tree.changeSelectionWithFocus", Boolean.TRUE,
             "Tree.drawsFocusBorderAroundIcon", Boolean.FALSE,
-            "Tree.evenRowBackground", alternateBackground,
-            "Tree.oddRowBackground", white,
+            "Tree.evenRowBackground", white,
+            "Tree.oddRowBackground", alternateBackground,
 
             "Tree.sideBar.font", sideBarFont,
             "Tree.sideBar.selectionFont", sideBarSelectionFont,
