@@ -164,13 +164,9 @@ public class AquaVibrantSupport {
      * Add a full window sized visual effect view as a sibling behind the content view of the specified window.
      * If a full window sized visual effect view is already present, its style is updated as needed.
      * @param w The window.
-     * @param style The vibrant style ({@link #SIDEBAR_STYLE} is not supported).
+     * @param style The vibrant style.
      */
     public static void addFullWindowVibrantView(Window w, int style) {
-        if (style == SIDEBAR_STYLE) {
-            throw new IllegalArgumentException("Sidebar style not supported for full window");
-        }
-
         // If a window can never become active, then we should force visual effect view to display the active state.
         // Otherwise, there is no point to enabling a vibrant style.
 
