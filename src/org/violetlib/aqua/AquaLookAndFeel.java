@@ -387,7 +387,8 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
         final Color sideBarCategorySelectionForegroundColor = new ColorUIResource(0, 0, 0);
 
         final Color menuBorderColor = new ColorUIResource(209, 209, 209);
-        final Color menuBackgroundColor = clearColor; // ColorUIResource(new Color(240, 240, 240));
+        final Color menuBarBackgroundColor = new ColorUIResource(new Color(246, 246, 246));
+        final Color menuBackgroundColor = clearColor; // new ColorUIResource(new Color(240, 240, 240));
         final Color menuForegroundColor = black;
 
         final Color menuSelectedForegroundColor = white;
@@ -395,6 +396,7 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
 
         final Color menuDisabledBackgroundColor = menuBackgroundColor;
         final Color menuDisabledForegroundColor = disabled;
+        final Color menuBarDisabledBackgroundColor = menuBarBackgroundColor;
 
         final Color menuAccelForegroundColor = black;
         final Color menuAccelSelectionForegroundColor = black;
@@ -711,13 +713,13 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
             "Menu.submenuPopupOffsetY", new Integer(-4),
 
             "MenuBar.font", menuFont,
-            "MenuBar.background", menuBackgroundColor, // not a menu item, not selected
+            "MenuBar.background", menuBarBackgroundColor, // not a menu item, not selected
             "MenuBar.foreground", menuForegroundColor,
             "MenuBar.border", new AquaMenuBarBorder(), // sja make lazy!
             "MenuBar.margin", new InsetsUIResource(0, 8, 0, 8), // sja make lazy!
             "MenuBar.selectionBackground", menuSelectedBackgroundColor, // not a menu item, is selected
             "MenuBar.selectionForeground", menuSelectedForegroundColor,
-            "MenuBar.disabledBackground", menuDisabledBackgroundColor, //ThemeBrush.GetThemeBrushForMenu(false, false), // not a menu item, not selected
+            "MenuBar.disabledBackground", menuBarDisabledBackgroundColor, //ThemeBrush.GetThemeBrushForMenu(false, false), // not a menu item, not selected
             "MenuBar.disabledForeground", menuDisabledForegroundColor,
             "MenuBar.backgroundPainter",(LazyValue) t -> AquaMenuPainter.getMenuBarPainter(),
             "MenuBar.selectedBackgroundPainter",(LazyValue) t -> AquaMenuPainter.getSelectedMenuBarItemPainter(),
