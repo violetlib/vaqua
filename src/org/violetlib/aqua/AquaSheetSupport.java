@@ -9,16 +9,146 @@
 package org.violetlib.aqua;
 
 import java.awt.*;
-import java.awt.event.HierarchyEvent;
-import java.awt.event.HierarchyListener;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
+import java.awt.event.*;
+import java.util.function.Consumer;
+import javax.accessibility.AccessibleContext;
 import javax.swing.*;
+import javax.swing.plaf.FileChooserUI;
 
 /**
  * Support for displaying windows as sheets.
  */
 public class AquaSheetSupport {
+
+    /**
+     * Display an option pane in a document modal dialog as a sheet.
+     * @param d The dialog.
+     * @param pane The option pane.
+     * @param resultConsumer If not null, this consumer will be called when the dialog is dismissed with an integer
+     * indicating the option chosen by the user, or <code>CLOSED_OPTION</code> if the user dismissed the dialog without
+     * choosing an option.
+     * @throws HeadlessException if the graphics environment is headless.
+     * @throws UnsupportedOperationException if it is not possible to display as a sheet.
+     */
+    public static void showOptionPaneAsSheet(JDialog d, JOptionPane pane, Consumer<Integer> resultConsumer)
+            throws UnsupportedOperationException {
+        Runnable closeHandler = null;
+        if (resultConsumer != null) {
+            closeHandler = new Runnable() {
+                @Override
+                public void run() {
+                    resultConsumer.accept(getOption(pane));
+                }
+            };
+        }
+        displayAsSheet(d, closeHandler);
+    }
+
+    private static int getOption(JOptionPane pane) {
+        Object selectedValue = pane.getValue();
+
+        if (selectedValue == null) {
+            return JOptionPane.CLOSED_OPTION;
+        }
+
+        Object[] options = pane.getOptions();
+        if (options == null) {
+            if(selectedValue instanceof Integer)
+                return (Integer) selectedValue;
+            return JOptionPane.CLOSED_OPTION;
+        }
+
+        for(int counter = 0, maxCounter = options.length;
+            counter < maxCounter; counter++) {
+            if(options[counter].equals(selectedValue))
+                return counter;
+        }
+        return JOptionPane.CLOSED_OPTION;
+    }
+
+    /**
+     * Display a file chooser as a document modal sheet.
+     * @param owner The owner of the dialog.
+     * @param fc The file chooser.
+     * @param resultConsumer If not null, this object will be invoked upon dismissal of the dialog with the return state of
+     * the file chooser.
+     * @throws HeadlessException if the graphics environment is headless.
+     * @throws UnsupportedOperationException if it is not possible to display as a sheet.
+     */
+    public static void showFileChooserAsSheet(Window owner, JFileChooser fc, Consumer<Integer> resultConsumer)
+            throws UnsupportedOperationException {
+        // We try to duplicate what JFileChooser does when showing a dialog
+        // Cannot test for a dialog in progress the way that JFileChooser does...
+        FileChooserUI ui = fc.getUI();
+        String title = ui.getDialogTitle(fc);
+        fc.putClientProperty(AccessibleContext.ACCESSIBLE_DESCRIPTION_PROPERTY, title);
+
+        JDialog dialog;
+        if (owner instanceof Frame) {
+            dialog = new JDialog((Frame)owner, title, Dialog.ModalityType.MODELESS);
+        } else {
+            dialog = new JDialog((Dialog)owner, title, Dialog.ModalityType.MODELESS);
+        }
+        dialog.setComponentOrientation(fc.getComponentOrientation());
+
+        Container contentPane = dialog.getContentPane();
+        contentPane.setLayout(new BorderLayout());
+        contentPane.add(fc, BorderLayout.CENTER);
+
+        dialog.pack();
+        dialog.setLocationRelativeTo(owner);
+
+        FileChooserActionListener listener = new FileChooserActionListener(dialog);
+        fc.addActionListener(listener);
+        fc.rescanCurrentDirectory();
+
+        Runnable closeHandler = new Runnable() {
+            @Override
+            public void run() {
+                int returnValue = listener.returnValue;
+                fc.removeActionListener(listener);
+
+                //fc.firePropertyChange("JFileChooserDialogIsClosingProperty", dialog, null);
+
+                // Remove all components from dialog. The MetalFileChooserUI.installUI() method (and other LAFs)
+                // registers AWT listener for dialogs and produces memory leaks. It happens when
+                // installUI invoked after the showDialog method.
+                dialog.getContentPane().removeAll();
+                dialog.dispose();
+                if (resultConsumer != null) {
+                    resultConsumer.accept(returnValue);
+                }
+            }
+        };
+
+        try {
+            displayAsSheet(dialog, closeHandler);
+        } catch (UnsupportedOperationException ex) {
+            dialog.getContentPane().removeAll();
+            dialog.dispose();
+            throw ex;
+        }
+    }
+
+    private static class FileChooserActionListener implements ActionListener {
+        private JDialog d;
+
+        public FileChooserActionListener(JDialog d) {
+            this.d = d;
+        }
+
+        int returnValue = JFileChooser.ERROR_OPTION;
+        public void actionPerformed(ActionEvent e) {
+            String s = e.getActionCommand();
+            if (s.equals(JFileChooser.APPROVE_SELECTION)) {
+                returnValue = JFileChooser.APPROVE_OPTION;
+                d.setVisible(false);
+            } else if (s.equals(JFileChooser.CANCEL_SELECTION)) {
+                returnValue = JFileChooser.CANCEL_OPTION;
+                d.setVisible(false);
+            }
+        }
+    }
 
     /**
      * Display a window as a sheet, if possible. A sheet is dismissed when the window is hidden or disposed.

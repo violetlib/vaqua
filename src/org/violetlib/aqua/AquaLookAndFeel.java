@@ -44,8 +44,8 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.lang.reflect.Method;
 import java.util.*;
+import java.util.function.Consumer;
 
 import javax.swing.*;
 import javax.swing.border.Border;
@@ -160,6 +160,16 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
     public void displayAsSheet(Window w, Runnable closeHandler) throws UnsupportedOperationException {
         // access point for VSheet which accesses using reflection
         AquaSheetSupport.displayAsSheet(w, closeHandler);
+    }
+
+    public void showOptionPaneAsSheet(JDialog d, JOptionPane pane, Consumer<Integer> resultConsumer) {
+        // access point for VSheet which accesses using reflection
+        AquaSheetSupport.showOptionPaneAsSheet(d, pane, resultConsumer);
+    }
+
+    public void showFileChooserAsSheet(Window owner, JFileChooser fc, Consumer<Integer> resultConsumer) {
+        // access point for VSheet which accesses using reflection
+        AquaSheetSupport.showFileChooserAsSheet(owner, fc, resultConsumer);
     }
 
     @Override
