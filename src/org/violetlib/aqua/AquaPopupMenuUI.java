@@ -40,8 +40,7 @@ import java.awt.*;
 import java.awt.event.*;
 
 /**
- * UI for all kinds of pop up menus. For most menus, this class will paint a background with rounded corners.
- * That is useful only if the pop up component does not paint there itself. See {@link AquaPopupMenuBorder}.
+ * UI for all kinds of pop up menus.
  */
 public class AquaPopupMenuUI extends BasicPopupMenuUI {
 
@@ -61,6 +60,12 @@ public class AquaPopupMenuUI extends BasicPopupMenuUI {
     public boolean isPopupTrigger(final MouseEvent e) {
         // Use the awt popup trigger code since this only runs on our OS!
         return e.isPopupTrigger();
+    }
+
+    @Override
+    public void installDefaults() {
+        super.installDefaults();
+        LookAndFeel.installProperty(popupMenu, "opaque", Boolean.FALSE);
     }
 
     @Override
@@ -119,7 +124,8 @@ public class AquaPopupMenuUI extends BasicPopupMenuUI {
             cp = new AquaContextualPopup(popup, owner, selectedRegion, selectedRegionLocation, x, y, width, height);
             return cp.getPopup();
         } else {
-            return new AquaPopup(owner, popup, x, y);
+            PopupFactory f = PopupFactory.getSharedInstance();
+            return f.getPopup(owner, popup, x, y);
         }
     }
 

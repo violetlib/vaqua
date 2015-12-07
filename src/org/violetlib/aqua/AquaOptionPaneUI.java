@@ -69,9 +69,8 @@ public class AquaOptionPaneUI extends BasicOptionPaneUI {
 
     @Override
     public final void update(final Graphics g, final JComponent c) {
-        // Support textured background (magic eraser)
         if (c.isOpaque()) {
-            AquaUtils.fillRect(g, c);
+            AquaUtils.fillRect(g, c, AquaUtils.ERASE_IF_VIBRANT);
         }
         paint(g, c);
     }

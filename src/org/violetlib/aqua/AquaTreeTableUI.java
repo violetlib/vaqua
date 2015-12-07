@@ -81,7 +81,7 @@ public class AquaTreeTableUI extends BasicTreeTableUI {
     @Override
     protected List<String> getProperties() {
         List<String> props = new ArrayList<String>(super.getProperties());
-        props.add("Frame.active");
+        props.add(AquaFocusHandler.FRAME_ACTIVE_PROPERTY);
         return props;
     }
 
@@ -105,10 +105,10 @@ public class AquaTreeTableUI extends BasicTreeTableUI {
         @Override
         public void propertyChange(PropertyChangeEvent evt) {
             super.propertyChange(evt);
-            if ("Frame.active".equals(evt.getPropertyName())) {
+            if (AquaFocusHandler.FRAME_ACTIVE_PROPERTY.equals(evt.getPropertyName())) {
                 // Need to propagate manually because the tree and table are not child components
-                getTree().putClientProperty("Frame.active", evt.getNewValue());
-                getTable().putClientProperty("Frame.active", evt.getNewValue());
+                getTree().putClientProperty(AquaFocusHandler.FRAME_ACTIVE_PROPERTY, evt.getNewValue());
+                getTable().putClientProperty(AquaFocusHandler.FRAME_ACTIVE_PROPERTY, evt.getNewValue());
             }
         }
     }

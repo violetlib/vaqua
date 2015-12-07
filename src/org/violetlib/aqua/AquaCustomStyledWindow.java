@@ -181,6 +181,14 @@ public class AquaCustomStyledWindow {
         AquaUtils.setTitleBarStyle(w, titleBarStyle);
     }
 
+    /**
+     * This method supports a workaround. Make sure that the bits we care about in the NSWindow style mask are set
+     * properly.
+     */
+    public void refreshWindowStyleMask() {
+        AquaUtils.setTitleBarStyle(w, titleBarStyle);
+    }
+
     public void dispose() {
         if (w != null) {
             rp.removePropertyChangeListener(AquaFocusHandler.FRAME_ACTIVE_PROPERTY, propertyChangeListener);

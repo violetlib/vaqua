@@ -42,5 +42,4 @@ public class AquaBasicPopupMenuWrapper extends JPanel {
 
         super.paintComponent(g);
     }
-
 }

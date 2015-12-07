@@ -44,6 +44,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.lang.reflect.Method;
 import java.util.*;
 
 import javax.swing.*;
@@ -61,6 +62,7 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
 
     private AquaFocusRingManager focusRingManager;
     private PropertyChangeListener uiChangeListener;
+    private AquaPopupFactory popupFactory;
 
     public String getName() {
         return "VAqua";
@@ -89,6 +91,14 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
     public void initialize() {
         super.initialize();
 
+        // Popups must be heavy to use the vibrant background
+        if (popupFactory == null) {
+            popupFactory = new AquaPopupFactory();
+            PopupFactory.setSharedInstance(popupFactory);
+        }
+
+        popupFactory.setActive(true);
+
         focusRingManager = AquaFocusRingManager.getInstance();
         //focusRingManager.install();
 
@@ -109,6 +119,8 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
             focusRingManager.uninstall();
             focusRingManager = null;
         }
+
+        popupFactory.setActive(false);
 
         super.uninitialize();
     }
@@ -147,7 +159,7 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
      */
     public void displayAsSheet(Window w, Runnable closeHandler) throws UnsupportedOperationException {
         // access point for VSheet which accesses using reflection
-        AquaUtils.displayAsSheet(w, closeHandler);
+        AquaSheetSupport.displayAsSheet(w, closeHandler);
     }
 
     @Override
@@ -185,7 +197,6 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
         table.put("ClassLoader", getClass().getClassLoader());
 
         try {
-            // PopupFactory.getSharedInstance().setPopupType(2);
             initClassDefaults(table);
 
             // Here we install all the Basic defaults in case we missed some in our System color
@@ -361,20 +372,23 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
         final LazyValue recessedFont = t -> AquaFonts.getRecessedButtonFont();
         final LazyValue inlineFont = t -> AquaFonts.getInlineButtonFont();
 
-        // can only approximate sidebar background colors using averages
-        final Color sideBarBackgroundColor = new ColorUIResource(230, 230, 230);
-        final Color sideBarInactiveBackgroundColor = new ColorUIResource(245, 245, 245);
-        final Color sideBarSelectionBackgroundColor = new ColorUIResource(200, 200, 200);
+        final Color clearColor = new ColorUIResource(new Color(0, 0, 0, 0));
+
+        // can only approximate vibrant sidebar colors
+        //final Color sideBarBackgroundColor = new ColorUIResource(230, 230, 230);
+        //final Color sideBarInactiveBackgroundColor = new ColorUIResource(245, 245, 245);
+        final Color sideBarSelectionBackgroundColor = new ColorUIResource(new Color(0, 0, 0, 67));
         final Color sideBarSelectionInactiveBackgroundColor = new ColorUIResource(205, 205, 205);
-        final Color sideBarForegroundColor = new ColorUIResource(60, 60, 60);
+        final Color sideBarForegroundColor = new ColorUIResource(new Color(31, 31, 31, 217));
         final Color sideBarInactiveForegroundColor = new ColorUIResource(68, 68, 68);
         final Color sideBarSelectionForegroundColor = new ColorUIResource(30, 30, 30);
         final Color sideBarSelectionInactiveForegroundColor = new ColorUIResource(0, 0, 0);
-        final Color sideBarCategoryForegroundColor = new ColorUIResource(115, 115, 115);
+        final Color sideBarCategoryForegroundColor = new ColorUIResource(new Color(85, 85, 85, 217));
         final Color sideBarCategorySelectionForegroundColor = new ColorUIResource(0, 0, 0);
 
         final Color menuBorderColor = new ColorUIResource(209, 209, 209);
-        final Color menuBackgroundColor = new ColorUIResource(new Color(240, 240, 240));
+        final Color menuBarBackgroundColor = new ColorUIResource(new Color(246, 246, 246));
+        final Color menuBackgroundColor = clearColor; // new ColorUIResource(new Color(240, 240, 240));
         final Color menuForegroundColor = black;
 
         final Color menuSelectedForegroundColor = white;
@@ -382,6 +396,7 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
 
         final Color menuDisabledBackgroundColor = menuBackgroundColor;
         final Color menuDisabledForegroundColor = disabled;
+        final Color menuBarDisabledBackgroundColor = menuBarBackgroundColor;
 
         final Color menuAccelForegroundColor = black;
         final Color menuAccelSelectionForegroundColor = black;
@@ -698,13 +713,13 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
             "Menu.submenuPopupOffsetY", new Integer(-4),
 
             "MenuBar.font", menuFont,
-            "MenuBar.background", menuBackgroundColor, // not a menu item, not selected
+            "MenuBar.background", menuBarBackgroundColor, // not a menu item, not selected
             "MenuBar.foreground", menuForegroundColor,
             "MenuBar.border", new AquaMenuBarBorder(), // sja make lazy!
             "MenuBar.margin", new InsetsUIResource(0, 8, 0, 8), // sja make lazy!
             "MenuBar.selectionBackground", menuSelectedBackgroundColor, // not a menu item, is selected
             "MenuBar.selectionForeground", menuSelectedForegroundColor,
-            "MenuBar.disabledBackground", menuDisabledBackgroundColor, //ThemeBrush.GetThemeBrushForMenu(false, false), // not a menu item, not selected
+            "MenuBar.disabledBackground", menuBarDisabledBackgroundColor, //ThemeBrush.GetThemeBrushForMenu(false, false), // not a menu item, not selected
             "MenuBar.disabledForeground", menuDisabledForegroundColor,
             "MenuBar.backgroundPainter",(LazyValue) t -> AquaMenuPainter.getMenuBarPainter(),
             "MenuBar.selectedBackgroundPainter",(LazyValue) t -> AquaMenuPainter.getSelectedMenuBarItemPainter(),
@@ -779,7 +794,7 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
             "PasswordField.capsLockIconColor", textPasswordFieldCapsLockIconColor,
 
             "PopupMenu.font", menuFont,
-            "PopupMenu.background", menuBackgroundColor,
+            "PopupMenu.background", clearColor,
             // Fix for 7154516: make popups opaque
             "PopupMenu.translucentBackground", white,
             "PopupMenu.foreground", menuForegroundColor,
@@ -824,7 +839,7 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
             //"RadioButtonMenuItem.arrowIcon", null,
 
             "Separator.background", null,
-            "Separator.foreground", new ColorUIResource(216, 216, 216),
+            "Separator.foreground", new ColorUIResource(new Color(17, 17, 17, 19)),  // simulate vibrant blending
 
             "ScrollBar.border", null,
             "ScrollBar.focusInputMap", aquaKeyBindings.getScrollBarInputMap(),
@@ -1063,8 +1078,8 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
             // no expand or collapse icons
             "Tree.changeSelectionWithFocus", Boolean.TRUE,
             "Tree.drawsFocusBorderAroundIcon", Boolean.FALSE,
-            "Tree.evenRowBackground", alternateBackground,
-            "Tree.oddRowBackground", white,
+            "Tree.evenRowBackground", white,
+            "Tree.oddRowBackground", alternateBackground,
 
             "Tree.sideBar.font", sideBarFont,
             "Tree.sideBar.selectionFont", sideBarSelectionFont,
@@ -1072,8 +1087,8 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
             "Tree.sideBarCategory.selectionFont", sideBarCategorySelectionFont,
 
             // Fairly arbitrary choices for backgrounds, since actual colors depend upon what is underneath
-            "Tree.sideBar.background", sideBarBackgroundColor,
-            "Tree.sideBar.inactiveBackground", sideBarInactiveBackgroundColor,
+            //"Tree.sideBar.background", sideBarBackgroundColor,
+            //"Tree.sideBar.inactiveBackground", sideBarInactiveBackgroundColor,
             "Tree.sideBar.selectionBackground", sideBarSelectionBackgroundColor,
             "Tree.sideBar.selectionInactiveBackground", sideBarSelectionInactiveBackgroundColor,
             "Tree.sideBar.foreground", sideBarForegroundColor,
@@ -1185,8 +1200,7 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
 
             "ColorChooserUI", basicPackageName + "BasicColorChooserUI",
 
-            // text UIs
-            "ViewportUI", basicPackageName + "BasicViewportUI",
+            "ViewportUI", PKG_PREFIX + "AquaViewportUI",
         };
         table.putDefaults(uiDefaults);
     }

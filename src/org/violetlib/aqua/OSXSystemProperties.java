@@ -24,6 +24,7 @@ public class OSXSystemProperties {
     private static boolean hasBeenSynchronized;
     private static boolean isFullKeyboardAccessEnabled; // cached value
     private static boolean useOverlayScrollBars;        // cached value
+    private static boolean reduceTransparency;          // cached value
 
     private static final List<ChangeListener> changeListeners = new ArrayList<>();
 
@@ -40,6 +41,11 @@ public class OSXSystemProperties {
     public static boolean isFullKeyboardAccessEnabled() {
         ensureSynchronized();
         return isFullKeyboardAccessEnabled;
+    }
+
+    public static boolean isReduceTransparency() {
+        ensureSynchronized();
+        return reduceTransparency;
     }
 
     public static boolean doScrollPanesSupportRTL() {
@@ -133,9 +139,13 @@ public class OSXSystemProperties {
         boolean oldUseOverlayScrollBars = useOverlayScrollBars;
         useOverlayScrollBars = nativeGetUseOverlayScrollBars();
 
+        boolean oldReduceTransparency = reduceTransparency;
+        reduceTransparency = nativeGetReduceTransparency();
+
         if (hasBeenSynchronized &&
                 (isFullKeyboardAccessEnabled != oldFullKeyboardAccessEnabled)
-                || (useOverlayScrollBars != oldUseOverlayScrollBars)) {
+                || (useOverlayScrollBars != oldUseOverlayScrollBars)
+                || (reduceTransparency != oldReduceTransparency)) {
             fireChangeEvent();
         }
 
@@ -146,5 +156,6 @@ public class OSXSystemProperties {
     private static native boolean nativeGetShowAllFiles();
     private static native boolean nativeGetScrollToClick();
     private static native boolean nativeGetUseOverlayScrollBars();
+    private static native boolean nativeGetReduceTransparency();
     private static native void enableCallback(Runnable synchronizer);
 }

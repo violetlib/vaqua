@@ -122,6 +122,9 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable {
     private Icon oldCellRendererIcon;
     private Icon oldCellRendererDisabledIcon;
 
+    // support for sidebar presentation
+    private SidebarVibrantEffects sidebarVibrantEffects;
+
     private static DropTargetListener defaultDropTargetListener = null;
 
     public AquaTreeUI() {
@@ -174,8 +177,72 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable {
         if (tree != null) {
             isCellFilled = Boolean.TRUE.equals(AquaUtils.getBooleanProperty(tree, IS_CELL_FILLED_KEY, QUAQUA_IS_CELL_FILLED_KEY));
             String style = getStyleProperty();
-            isSideBar = style != null && (style.equals("sideBar") || style.equals("sourceList"));
+            boolean newIsSidebar = style != null && (style.equals("sideBar") || style.equals("sourceList"));
             isStriped = style != null && style.equals("striped");
+            if (newIsSidebar != isSideBar) {
+                isSideBar = newIsSidebar;
+                updateSidebar();
+            }
+        }
+    }
+
+    protected void updateSidebar() {
+        if (isSideBar) {
+            if (sidebarVibrantEffects == null) {
+                JComponent c = tree;
+                if (c.getParent() instanceof JViewport) {
+                    c = (JViewport) c.getParent();
+                }
+                sidebarVibrantEffects = new SidebarVibrantEffects(c);
+            }
+        } else {
+            if (sidebarVibrantEffects != null) {
+                sidebarVibrantEffects.dispose();
+                sidebarVibrantEffects = null;
+            }
+        }
+    }
+
+    /**
+     * Support for sidebar vibrant effects. An NSVisualEffectView is created for the sidebar background and for each
+     * selected row background region.
+     */
+    protected class SidebarVibrantEffects extends VisualEffectView {
+        protected TreeSelectionBoundsTracker bt;
+
+        public SidebarVibrantEffects(JComponent top) {
+            super(top, AquaVibrantSupport.SIDEBAR_STYLE, true);
+            bt = new TreeSelectionBoundsTracker(tree, this::updateSelectionBackgrounds) {
+                @Override
+                protected int convertRowYCoordinateToSelectionDescription(int y) {
+                    if (top != tree) {
+                        Point p = SwingUtilities.convertPoint(tree, 0, y, top);
+                        return p.y;
+                    } else {
+                        return y;
+                    }
+                }
+            };
+        }
+
+        public void update() {
+            if (bt != null) {
+                bt.update();
+            }
+        }
+
+        public void dispose() {
+            super.dispose();
+            if (bt != null) {
+                bt.dispose();
+                bt = null;
+            }
+        }
+
+        @Override
+        protected void windowChanged(Window newWindow) {
+            super.windowChanged(newWindow);
+            bt.reset();
         }
     }
 
@@ -479,6 +546,17 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable {
     @Override
     public void paint(Graphics g, JComponent c) {
 
+        // We do not really know when the layout of the tree may have changed, so we verify the selection background
+        // locations now. Updating during painting has the advantage of (approximately) coordinating updates to the
+        // selection backgrounds with updates to the visible display of the tree, which minimizes artifacts when
+        // scrolling.
+
+        // An assumption is made here that scrolling a tree will cause the tree to be painted.
+
+        if (sidebarVibrantEffects != null) {
+            sidebarVibrantEffects.update();
+        }
+
         // Set the variables used by paintRow
 
         isActive = AquaFocusHandler.isActive(c);
@@ -506,13 +584,11 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable {
     }
 
     protected void paintBackground(Graphics g) {
-        Color background = getCurrentBackground();
-
-        if (tree.isOpaque()) {
+        if (tree.isOpaque() && g instanceof Graphics2D) {
             int width = tree.getWidth();
             int height = tree.getHeight();
-            g.setColor(background);
-            g.fillRect(0, 0, width, height);
+            Color background = getCurrentBackground();
+            AquaUtils.fillRect((Graphics2D) g, background, 0, 0, width, height);
         }
 
         Rectangle paintBounds = g.getClipBounds();
@@ -527,7 +603,7 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable {
 
     public Color getCurrentBackground() {
         if (isSideBar) {
-            return UIManager.getColor(isActive ? "Tree.sideBar.background" : "Tree.sideBar.inactiveBackground");
+            return null;
         } else {
             return tree.getBackground();
         }
@@ -585,6 +661,12 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable {
 
     protected Color getSpecialBackgroundForRow(int row) {
         if (tree.isRowSelected(row) && shouldPaintSelection) {
+
+            if (sidebarVibrantEffects != null) {
+                // sidebar selection backgrounds are managed using special views
+                return null;
+            }
+
             return selectionBackground;
         }
 

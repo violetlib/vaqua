@@ -20,7 +20,7 @@ public class AquaNativeSupport {
     /**
      * Expected version of the native code library.
      */
-    private final static int EXPECTED_NATIVE_CODE_VERSION = 1;
+    private final static int EXPECTED_NATIVE_CODE_VERSION = 2;
 
     private static final String libraryName = "vaqua";
 

@@ -37,6 +37,7 @@ import org.violetlib.jnr.LayoutInfo;
 import org.violetlib.jnr.aqua.AquaUIPainter;
 import org.violetlib.jnr.aqua.SplitPaneDividerLayoutConfiguration;
 
+import java.awt.*;
 import java.awt.event.*;
 import java.beans.*;
 
@@ -174,6 +175,14 @@ public class AquaSplitPaneUI extends BasicSplitPaneUI implements MouseListener, 
 
     protected boolean isStyleProperty(String prop) {
         return AquaUtils.isProperty(prop, SPLIT_PANE_STYLE_KEY, QUAQUA_SPLIT_PANE_STYLE_KEY);
+    }
+
+    @Override
+    public void update(Graphics g, JComponent c) {
+        if (c.isOpaque()) {
+            AquaUtils.fillRect(g, c, AquaUtils.ERASE_IF_VIBRANT);
+        }
+        paint(g, c);
     }
 
     public void mouseClicked(final MouseEvent e) {

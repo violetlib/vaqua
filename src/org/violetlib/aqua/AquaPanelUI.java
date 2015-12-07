@@ -1,4 +1,12 @@
 /*
+ * Changes Copyright (c) 2015 Alan Snyder.
+ * All rights reserved.
+ *
+ * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
+ * accompanying license terms.
+ */
+
+/*
  * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -25,27 +33,56 @@
 
 package org.violetlib.aqua;
 
-import javax.swing.JComponent;
+import javax.swing.*;
 import javax.swing.plaf.ComponentUI;
 import javax.swing.plaf.basic.BasicPanelUI;
 
 import org.violetlib.aqua.AquaUtils.RecyclableSingleton;
 import org.violetlib.aqua.AquaUtils.RecyclableSingletonFromDefaultConstructor;
 
-import java.awt.Graphics;
+import java.awt.*;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 
 public class AquaPanelUI extends BasicPanelUI {
     static RecyclableSingleton<AquaPanelUI> instance = new RecyclableSingletonFromDefaultConstructor<AquaPanelUI>(AquaPanelUI.class);
+
+    public PropertyChangeListener propertyChangeListener = new PropertyChangeListener() {
+        @Override
+        public void propertyChange(PropertyChangeEvent evt) {
+            AquaPanelUI.this.propertyChange(evt);
+        }
+    };
 
     public static ComponentUI createUI(final JComponent c) {
         return instance.get();
     }
 
     @Override
+    public void installUI(JComponent c) {
+        super.installUI(c);
+        AquaVibrantSupport.updateVibrantStyle(c);
+        c.addPropertyChangeListener(propertyChangeListener);
+    }
+
+    @Override
+    public void uninstallUI(JComponent c) {
+        c.removePropertyChangeListener(propertyChangeListener);
+        AquaVibrantSupport.uninstallVibrantStyle(c);
+        super.uninstallUI(c);
+    }
+
+    @Override
     public final void update(final Graphics g, final JComponent c) {
-        if (c.isOpaque()) {
-            AquaUtils.fillRect(g, c);
+        if (c.isOpaque() || AquaVibrantSupport.isVibrant(c)) {
+            AquaUtils.fillRect(g, c, AquaUtils.ERASE_IF_TEXTURED | AquaUtils.ERASE_IF_VIBRANT);
         }
         paint(g, c);
+    }
+
+    protected void propertyChange(PropertyChangeEvent evt) {
+        if (AquaVibrantSupport.processVibrantStyleChange(evt)) {
+            return;
+        }
     }
 }

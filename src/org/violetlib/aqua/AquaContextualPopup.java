@@ -1,19 +1,28 @@
+/*
+ * Copyright (c) 2015 Alan Snyder.
+ * All rights reserved.
+ *
+ * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
+ * accompanying license terms.
+ */
+
 package org.violetlib.aqua;
 
 import java.awt.*;
 import java.awt.event.MouseEvent;
 import javax.swing.*;
 import javax.swing.border.Border;
+import javax.swing.border.EmptyBorder;
 import javax.swing.plaf.UIResource;
 
 /**
- * A contextual style popup with rounded corners that (if necessary) scrolls without using a scroll bar and scrolls by
- * growing taller when possible.
+ * A contextual style popup that (if necessary) scrolls without using a scroll bar and scrolls by growing taller when
+ * possible.
  */
 public class AquaContextualPopup {
 
     private JComponent wrapper;
-    private AquaPopup p;
+    private Popup p;
 
     /**
      * Create a contextual style popup.
@@ -35,7 +44,7 @@ public class AquaContextualPopup {
                                Point selectedRegionLocation,
                                int x, int y, int width, int height) {
 
-        Border border = getContextualMenuBorder(owner);
+        Border border = getContextualMenuBorder();
         Insets s = border.getBorderInsets(null);
         Dimension ps = content.getPreferredSize();
 
@@ -94,39 +103,11 @@ public class AquaContextualPopup {
             content.setBorder(null);
         }
 
-        // Have not been able to get medium weight popups to do rounded corners.
-        // Therefore, use a heavy weight popup.
+        wrapper.putClientProperty(AquaVibrantSupport.POPUP_BACKGROUND_STYLE_KEY, "vibrantMenu");
+        wrapper.putClientProperty(AquaVibrantSupport.POPUP_CORNER_RADIUS_KEY, 6);
 
-        p = new AquaPopup(owner, wrapper, x, y);
-
-        // For rounded corners to work, all the relevant ancestors must not paint a background.
-
-        Container parent = wrapper.getParent();
-        if (parent instanceof JPanel) {
-            JPanel panel = (JPanel) parent;
-            panel.setOpaque(false);
-            panel.setBorder(null);
-            parent = parent.getParent();
-        }
-
-        if (parent instanceof JLayeredPane) {
-            ((JLayeredPane) parent).setOpaque(false);
-            parent = parent.getParent();
-        }
-
-        if (parent instanceof JRootPane) {
-            ((JRootPane) parent).setOpaque(false);
-            parent = parent.getParent();
-        }
-
-        if (parent instanceof Window) {
-            Window w = (Window) parent;
-            w.setBackground(new Color(0, 0, 0, 0));
-
-        } else if (parent instanceof Panel) {
-            Panel n = (Panel) parent;
-            n.setBackground(new Color(0, 0, 0, 0));
-        }
+        PopupFactory f = PopupFactory.getSharedInstance();
+        p = f.getPopup(owner, wrapper, x, y);
     }
 
     public Popup getPopup() {
@@ -137,8 +118,8 @@ public class AquaContextualPopup {
         wrapper.dispatchEvent(e);
     }
 
-    protected Border getContextualMenuBorder(Component c) {
-        return new AquaPopupMenuBorder();
+    public static Border getContextualMenuBorder() {
+        return new EmptyBorder(5, 0, 5, 0);
     }
 
     protected class MyScrollingWrapper extends AquaScrollingPopupMenuWrapper {
@@ -161,38 +142,40 @@ public class AquaContextualPopup {
             // Before scrolling, try to enlarge the popup vertically
             Point loc = AquaUtils.getScreenLocation(wrapper);
             Rectangle screen = AquaUtils.getScreenBounds(loc, wrapper);
-            Window w = p.getPopup();
-            if (delta > 0) {
-                // scrolling up
-                int availableExtension = w.getY() - screen.y;
-                if (availableExtension > 0) {
-                    int extension = Math.min(delta, availableExtension);
-                    w.setBounds(w.getX(), w.getY() - extension, w.getWidth(), w.getHeight() + extension);
-                    height += extension;
-                    delta -= extension;
-                    configure(true);
+            Window w = SwingUtilities.getWindowAncestor(wrapper);
+            if (w != null) {
+                if (delta > 0) {
+                    // scrolling up
+                    int availableExtension = w.getY() - screen.y;
+                    if (availableExtension > 0) {
+                        int extension = Math.min(delta, availableExtension);
+                        w.setBounds(w.getX(), w.getY() - extension, w.getWidth(), w.getHeight() + extension);
+                        height += extension;
+                        delta -= extension;
+                        configure(true);
+                    }
+                } else {
+                    // scrolling down
+                    int availableExtension = screen.y + screen.height - (w.getY() + w.getHeight());
+                    if (availableExtension > 0) {
+                        int extension = Math.min(-delta, availableExtension);
+                        w.setBounds(w.getX(), w.getY(), w.getWidth(), w.getHeight() + extension);
+                        delta += extension;
+                        height += extension;
+                        Point vp = viewport.getViewPosition();
+                        viewport.setViewPosition(new Point(vp.x, vp.y - extension));
+                        configure(true);
+                    }
                 }
-            } else {
-                // scrolling down
-                int availableExtension = screen.y + screen.height - (w.getY() + w.getHeight());
-                if (availableExtension > 0) {
-                    int extension = Math.min(-delta, availableExtension);
-                    w.setBounds(w.getX(), w.getY(), w.getWidth(), w.getHeight() + extension);
-                    delta += extension;
-                    height += extension;
-                    Point vp = viewport.getViewPosition();
-                    viewport.setViewPosition(new Point(vp.x, vp.y - extension));
-                    configure(true);
+
+                if (delta != 0) {
+                    super.scroll(e, delta);
                 }
-            }
 
-            if (delta != 0) {
-                super.scroll(e, delta);
-            }
-
-            if (e != null && originalContent instanceof AquaExtendedPopup) {
-                AquaExtendedPopup cbp = (AquaExtendedPopup) originalContent;
-                cbp.updateSelection(e);
+                if (e != null && originalContent instanceof AquaExtendedPopup) {
+                    AquaExtendedPopup cbp = (AquaExtendedPopup) originalContent;
+                    cbp.updateSelection(e);
+                }
             }
         }
     }
