@@ -481,13 +481,15 @@ public class AquaButtonExtendedTypes {
         Color dark220 = new ColorUIResource(new Color(0, 0, 0, 220));
         Color light180 = new ColorUIResource(new Color(255, 255, 255, 180));
         Color white = new ColorUIResource(Color.WHITE);
+        Color pressedWhite = new ColorUIResource(new Color(247, 247, 247, 224));
+        Color defaultWhite = new ColorUIResource(250, 250, 250);
 
         result.put(BUTTON_CHECK_BOX, new WidgetInfo());
         result.put(BUTTON_RADIO, new WidgetInfo());
 
         result.put(BUTTON_PUSH, new WidgetInfo()
-                .withForeground(black34, dark64, white)
-                .withActiveDefaultButtonForeground(white)
+                .withForeground(black34, dark64, pressedWhite)
+                .withActiveDefaultButtonForeground(defaultWhite)
         );
 
         result.put(BUTTON_SEGMENTED, new WidgetInfo(true)

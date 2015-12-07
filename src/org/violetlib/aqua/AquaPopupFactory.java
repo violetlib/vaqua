@@ -32,20 +32,38 @@ public class AquaPopupFactory extends PopupFactory {
                 return new AquaPopup(owner, contents, x, y);
             }
             Popup p = super.getPopup(owner, contents, x, y);
+
+            // Reusing popups is not working reliably. Not sure if there is a general timing problem or a change in
+            // behavior in El Capitan. The problem is that the stale contents are briefly displayed.
+            // See bug JDK-8040630.
+
+            try {
+                Method m = p.getClass().getDeclaredMethod("setCacheEnabled", Boolean.TYPE);
+                m.setAccessible(true);
+                m.invoke(p, false);
+            } catch (Exception ex) {
+                System.err.println("Unable to prevent popup from being reused");
+            }
+
             // If the popup is a reused popup, then we need to reconfigure it.
-            // TBD: can we tell if the popup is reused?
+            // A new popup will have zero size because pack() is not called if the window is not visible (and why would
+            // it be?) A reused popup will probably have the wrong size, for the same reason.
             Window w = SwingUtilities.getWindowAncestor(contents);
-            if (w.isDisplayable() && w instanceof RootPaneContainer) {
-                JRootPane rp = ((RootPaneContainer) w).getRootPane();
-                AquaRootPaneUI ui = AquaUtils.getUI(rp, AquaRootPaneUI.class);
-                if (ui != null) {
-                    // A reused popup will have the old size
-                    w.setSize(w.getPreferredSize());
-                    w.invalidate();
-                    w.validate();
-                    ui.configure();
+            if (w.isDisplayable() && w.getWidth() > 0) {
+                // The popup is reused. It will have the old size.
+                w.setSize(w.getPreferredSize());
+                w.invalidate();
+                w.validate();
+                if (w instanceof RootPaneContainer) {
+                    JRootPane rp = ((RootPaneContainer) w).getRootPane();
+                    AquaRootPaneUI ui = AquaUtils.getUI(rp, AquaRootPaneUI.class);
+                    if (ui != null) {
+                        // Reconfigure the popup based on the client properties of the new content component.
+                        ui.configure();
+                    }
                 }
             }
+
             return p;
         }
         return super.getPopup(owner, contents, x, y);

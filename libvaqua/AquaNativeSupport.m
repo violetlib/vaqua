@@ -1774,8 +1774,9 @@ JNIEXPORT void JNICALL Java_org_violetlib_aqua_AquaUtils_nativeSyncAWTView
 	if (nw != nil) {
         [JNFRunLoop performOnMainThreadWaiting:YES withBlock:^(){
             NSView *v = getAWTView(nw);
-            [v.layer setNeedsDisplay];
+            //NSLog(@"Forcing update of AWTView layer");
             [v.layer displayIfNeeded];
+            //NSLog(@"Completed forced update of AWTView layer");
         }];
     }
 
