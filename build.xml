@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<project name="VAqua" default="jar" basedir=".">
+<project name="VAqua" default="debugrelease" basedir=".">
 
 	<property name="webroot" location="../../web site/violetlib.org"/>
 	<property name="installdir" location="${webroot}/release/vaqua"/>
@@ -15,6 +15,7 @@
 
 	<classpath/>
 
+  <!--
 	<target name="jar"
 	    depends="clean, compile, lib"
 	    description="Build the development version of the JAR">
@@ -25,30 +26,47 @@
       description="Build the development version of the native library">
     <ant dir="libvaqua" inheritAll="false"/>
   </target>
+  -->
 
   <target name="release"
       depends="validateReleaseNumber"
       description="Build the release version of the JAR">
-    <property name="renderingLibraryJAR" location="${slib}/VAquaRendering.jar"/>
+
+    <mkdir dir="dist/${CURRENT_BRANCH}"/>
+    <mkdir dir="out/${CURRENT_BRANCH}"/>
+
+    <property name="renderingLibraryJAR" location="../VAquaRendering/dist/release/VAquaRendering.jar"/>
+
     <ant dir="release" inheritAll="false">
+      <property name="distdir" location="dist/${CURRENT_BRANCH}"/>
+      <property name="builddir" location="out/${CURRENT_BRANCH}"/>
       <propertyset>
         <propertyref name="RELEASE"/>
         <propertyref name="renderingLibraryJAR"/>
       </propertyset>
     </ant>
+		<copy file="dist/${CURRENT_BRANCH}/VAqua.jar" preservelastmodified="true" tofile="dist/release/VAqua.jar"/>
   </target>
 
   <target name="debugrelease"
       depends="validateReleaseNumber"
-      description="Build the release version of the JAR">
-    <property name="renderingLibraryJAR" location="${slib}/VAquaRendering.jar"/>
+      description="Build the development version of the JAR">
+
+    <mkdir dir="dist/${CURRENT_BRANCH}"/>
+    <mkdir dir="out/${CURRENT_BRANCH}"/>
+
+    <property name="renderingLibraryJAR" location="../VAquaRendering/dist/VAquaRendering.jar"/>
+
     <ant dir="release" inheritAll="false">
       <property name="debug" value="true"/>
+      <property name="distdir" location="dist/${CURRENT_BRANCH}"/>
+      <property name="builddir" location="out/${CURRENT_BRANCH}"/>
+      <property name="RELEASE" value="${CURRENT_BRANCH} ${RELEASE}x"/>
       <propertyset>
-        <propertyref name="RELEASE"/>
         <propertyref name="renderingLibraryJAR"/>
       </propertyset>
     </ant>
+		<copy file="dist/${CURRENT_BRANCH}/VAqua.jar" preservelastmodified="true" tofile="dist/VAqua.jar"/>
   </target>
 
   <target name="showrelease">
@@ -99,7 +117,7 @@
     </zip>
   </target>
 
-  <target name="local" depends="jar, release, installlocal"/>
+  <target name="local" depends="release, installlocal"/>
 
   <target name="install" depends="installjar, installsource"/>
 
