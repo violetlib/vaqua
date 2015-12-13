@@ -35,7 +35,7 @@
     <mkdir dir="dist/${CURRENT_BRANCH}/test"/>
     <mkdir dir="out/${CURRENT_BRANCH}/test"/>
 
-    <property name="renderingLibraryJAR" location="../VAquaRendering/dist/test/VAquaRendering.jar"/>
+    <property name="renderingLibraryJAR" location="../VAquaRendering/dist/test/full/VAquaRendering.jar"/>
 
     <ant dir="release" inheritAll="false">
       <property name="distdir" location="dist/${CURRENT_BRANCH}/test"/>
