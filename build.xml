@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<project name="VAqua" default="debug" basedir=".">
+<project name="VAqua" basedir=".">
 
 	<property name="homebin" location="${user.home}/bin"/>
 
