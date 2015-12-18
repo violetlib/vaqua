@@ -2,8 +2,6 @@
 
 <project name="VAqua" default="debug" basedir=".">
 
-	<property name="webroot" location="../../web site/violetlib.org"/>
-	<property name="installdir" location="${webroot}/release/vaqua"/>
 	<property name="homebin" location="${user.home}/bin"/>
 
 	<import file="../build/library.xml"/>
@@ -15,111 +13,14 @@
 
 	<classpath/>
 
-  <!--
-	<target name="jar"
-	    depends="clean, compile, lib"
-	    description="Build the development version of the JAR">
-	  <define-library/>
-	</target>
-
-  <target name="lib"
-      description="Build the development version of the native library">
-    <ant dir="libvaqua" inheritAll="false"/>
-  </target>
-  -->
-
-  <target name="test"
-      depends="validateReleaseNumber"
-      description="Build the test release version of the JAR">
-
-    <mkdir dir="dist/${CURRENT_BRANCH}/test"/>
-    <mkdir dir="out/${CURRENT_BRANCH}/test"/>
-
-    <property name="renderingLibraryJAR" location="../VAquaRendering/dist/test/full/VAquaRendering.jar"/>
-
-    <ant dir="release" inheritAll="false">
-      <property name="distdir" location="dist/${CURRENT_BRANCH}/test"/>
-      <property name="builddir" location="out/${CURRENT_BRANCH}/test"/>
-      <propertyset>
-        <propertyref name="RELEASE"/>
-        <propertyref name="renderingLibraryJAR"/>
-      </propertyset>
-    </ant>
-		<copy file="dist/${CURRENT_BRANCH}/test/VAqua.jar" preservelastmodified="true" tofile="dist/test/VAqua.jar"/>
-  </target>
-
-  <target name="debug"
-      depends="validateReleaseNumber"
-      description="Build the development version of the JAR">
-
-    <mkdir dir="dist/${CURRENT_BRANCH}/debug"/>
-    <mkdir dir="out/${CURRENT_BRANCH}/debug"/>
-
-    <property name="renderingLibraryJAR" location="../VAquaRendering/dist/debug/VAquaRendering.jar"/>
-
-    <ant dir="release" inheritAll="false">
-      <property name="debug" value="true"/>
-      <property name="distdir" location="dist/${CURRENT_BRANCH}/debug"/>
-      <property name="builddir" location="out/${CURRENT_BRANCH}/debug"/>
-      <property name="RELEASE" value="${CURRENT_BRANCH} ${RELEASE}x"/>
-      <propertyset>
-        <propertyref name="renderingLibraryJAR"/>
-      </propertyset>
-    </ant>
-		<copy file="dist/${CURRENT_BRANCH}/debug/VAqua.jar" preservelastmodified="true" tofile="dist/debug/VAqua.jar"/>
-  </target>
-
-  <target name="showrelease">
-    <echo message="VAqua Release"/>
-    <exec dir="."
-        executable="${homebin}/jarecho"
-        os="Mac OS X">
-      <arg value="release/dist/VAqua.jar"/>
-      <arg value="org/violetlib/aqua/RELEASE.txt"/>
-    </exec>
-    <exec dir="."
-        executable="${homebin}/jarecho"
-        os="Mac OS X">
-      <arg value="release/dist/VAqua.jar"/>
-      <arg value="org/violetlib/aqua/BUILD.txt"/>
-    </exec>
-    <echo message="Includes VAquaRendering Release"/>
-    <exec dir="."
-        executable="${homebin}/jarecho"
-        os="Mac OS X">
-      <arg value="release/dist/VAqua.jar"/>
-      <arg value="org/violetlib/jnr/aqua/RELEASE.txt"/>
-    </exec>
-    <exec dir="."
-        executable="${homebin}/jarecho"
-        os="Mac OS X">
-      <arg value="release/dist/VAqua.jar"/>
-      <arg value="org/violetlib/jnr/aqua/BUILD.txt"/>
-    </exec>
-    <echo message=""/>
-  </target>
-
-  <target name="installlocal">
-			<copy file="release/dist/VAqua.jar" preservelastmodified="true" tofile="${slib}/VAqua.jar"/>
-  </target>
-
-  <target name="installjar" depends="validateReleaseNumber">
-    <mkdir dir="${installdir}/${RELEASE}"/>
-		<copy file="release/dist/VAqua.jar" preservelastmodified="true" tofile="${installdir}/${RELEASE}/VAqua${RELEASE}.jar"/>
-  </target>
-
-  <target name="installsource" depends="validateReleaseNumber">
-    <mkdir dir="${installdir}/${RELEASE}"/>
-    <zip destfile="${installdir}/${RELEASE}/VAqua${RELEASE}Source.zip">
+  <target name="createSourceArchive">
+    <mkdir dir="${sourceArchiveOutputDirectory}"/>
+    <zip destfile="${sourceArchiveOutputDirectory}/Source.zip">
       <zipfileset dir="." prefix="VAqua/"
         includes="license/**,src/**,resources/**,libvaqua/*.h,libvaqua/*.m,lib/**,release/build.xml">
       </zipfileset>
     </zip>
   </target>
-
-  <target name="local" depends="test, installlocal"/>
-
-  <target name="install" depends="installjar, installsource"/>
 
   <target name="testRelease">
   <java
