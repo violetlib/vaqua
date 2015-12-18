@@ -57,15 +57,15 @@ public class VisualEffectView {
         }
     }
 
-	/**
-	 * Update the set of regions to display a selection background.
-	 * @param sd A description of the regions, or null if there are no regions.
+    /**
+     * Update the set of regions to display a selection background.
+     * @param sd A description of the regions, or null if there are no regions.
      */
-	public void updateSelectionBackgrounds(SelectionBoundsDescription sd) {
-		if (peer != null && supportSelections) {
-			peer.updateSelectionBackgrounds(sd);
-		}
-	}
+    public void updateSelectionBackgrounds(SelectionBoundsDescription sd) {
+        if (peer != null && supportSelections) {
+            peer.updateSelectionBackgrounds(sd);
+        }
+    }
 
     protected void windowChanged(Window newWindow) {
         // The new window must be displayable to install a visual effect view.

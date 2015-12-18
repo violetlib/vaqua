@@ -177,12 +177,12 @@ NSView *getAWTView(NSWindow *w) {
     jboolean attached = NO;
     int status = (*vm)->GetEnv(vm, (void **) &env, JNI_VERSION_1_6);
     if (status == JNI_EDETACHED) {
-    	status = (*vm)->AttachCurrentThread(vm, (void **) &env, 0);
-    	if (status == JNI_OK) {
-    		attached = YES;
-    	} else {
-    		NSLog(@"Unable to attach thread %d", status);
-    	}
+        status = (*vm)->AttachCurrentThread(vm, (void **) &env, 0);
+        if (status == JNI_OK) {
+            attached = YES;
+        } else {
+            NSLog(@"Unable to attach thread %d", status);
+        }
     }
 
     if (status == JNI_OK) {
@@ -196,12 +196,12 @@ NSView *getAWTView(NSWindow *w) {
             }
         }
     } else {
-    	NSLog(@"Unable to invoke notification callback %d", status);
+        NSLog(@"Unable to invoke notification callback %d", status);
     }
 
-	if (attached) {
-		(*vm)->DetachCurrentThread(vm);
-	}
+    if (attached) {
+        (*vm)->DetachCurrentThread(vm);
+    }
 }
 @end
 
@@ -213,17 +213,17 @@ NSView *getAWTView(NSWindow *w) {
 JNIEXPORT jboolean JNICALL Java_org_violetlib_aqua_OSXSystemProperties_nativeGetFullKeyboardAccessEnabled
   (JNIEnv *env, jclass cl) {
 
-	jboolean result = NO;
+    jboolean result = NO;
 
-	JNF_COCOA_ENTER(env);
+    JNF_COCOA_ENTER(env);
 
-	NSUserDefaults *userDefaults = [NSUserDefaults standardUserDefaults];
-	NSInteger value = [userDefaults integerForKey: @"AppleKeyboardUIMode"];
-	result = (value & 02) != 0;
+    NSUserDefaults *userDefaults = [NSUserDefaults standardUserDefaults];
+    NSInteger value = [userDefaults integerForKey: @"AppleKeyboardUIMode"];
+    result = (value & 02) != 0;
 
-	JNF_COCOA_EXIT(env);
+    JNF_COCOA_EXIT(env);
 
-	return result;
+    return result;
 }
 
 /*
@@ -234,19 +234,19 @@ JNIEXPORT jboolean JNICALL Java_org_violetlib_aqua_OSXSystemProperties_nativeGet
 JNIEXPORT jboolean JNICALL Java_org_violetlib_aqua_OSXSystemProperties_nativeGetShowAllFiles
   (JNIEnv *env, jclass cl) {
 
-	jboolean result = NO;
+    jboolean result = NO;
 
-	JNF_COCOA_ENTER(env);
+    JNF_COCOA_ENTER(env);
 
     NSUserDefaults *userDefaults = [NSUserDefaults standardUserDefaults];
     [userDefaults addSuiteNamed: @"com.apple.finder" ];
     result = [userDefaults boolForKey:@"AppleShowAllFiles"];
 
-	//NSLog(@"Show all files: %d", result);
+    //NSLog(@"Show all files: %d", result);
 
-	JNF_COCOA_EXIT(env);
+    JNF_COCOA_EXIT(env);
 
-	return result;
+    return result;
 }
 
 /*
@@ -257,16 +257,16 @@ JNIEXPORT jboolean JNICALL Java_org_violetlib_aqua_OSXSystemProperties_nativeGet
 JNIEXPORT jboolean JNICALL Java_org_violetlib_aqua_OSXSystemProperties_nativeGetScrollToClick
   (JNIEnv *env, jclass cl) {
 
-	jboolean result = NO;
+    jboolean result = NO;
 
-	JNF_COCOA_ENTER(env);
+    JNF_COCOA_ENTER(env);
 
     NSUserDefaults *userDefaults = [NSUserDefaults standardUserDefaults];
     result = [userDefaults boolForKey:@"AppleScrollerPagingBehavior"];
 
-	JNF_COCOA_EXIT(env);
+    JNF_COCOA_EXIT(env);
 
-	return result;
+    return result;
 }
 
 /*
@@ -277,17 +277,17 @@ JNIEXPORT jboolean JNICALL Java_org_violetlib_aqua_OSXSystemProperties_nativeGet
 JNIEXPORT jboolean JNICALL Java_org_violetlib_aqua_OSXSystemProperties_nativeGetUseOverlayScrollBars
   (JNIEnv *env, jclass cl) {
 
-	jboolean result = NO;
+    jboolean result = NO;
 
-	JNF_COCOA_ENTER(env);
+    JNF_COCOA_ENTER(env);
 
-	NSScrollerStyle style = [NSScroller preferredScrollerStyle];
-	result = style == NSScrollerStyleOverlay;
-	//NSLog(@"Use overlay scroll bars: %ld %d", (long) style, result);
+    NSScrollerStyle style = [NSScroller preferredScrollerStyle];
+    result = style == NSScrollerStyleOverlay;
+    //NSLog(@"Use overlay scroll bars: %ld %d", (long) style, result);
 
-	JNF_COCOA_EXIT(env);
+    JNF_COCOA_EXIT(env);
 
-	return result;
+    return result;
 }
 
 /*
@@ -318,36 +318,36 @@ JNIEXPORT jboolean JNICALL Java_org_violetlib_aqua_OSXSystemProperties_nativeGet
 JNIEXPORT void JNICALL Java_org_violetlib_aqua_OSXSystemProperties_enableCallback
   (JNIEnv *env, jclass cl, jobject jrunnable) {
 
-	JNF_COCOA_ENTER(env);
+    JNF_COCOA_ENTER(env);
 
-	synchronizeCallback = JNFNewGlobalRef(env, jrunnable);
+    synchronizeCallback = JNFNewGlobalRef(env, jrunnable);
 
-	jint status = (*env)->GetJavaVM(env, &vm);
-	if (status == 0) {
+    jint status = (*env)->GetJavaVM(env, &vm);
+    if (status == 0) {
 
-		NSString * const KeyboardUIModeDidChangeNotification = @"com.apple.KeyboardUIModeDidChange";
-		NSString * const ReduceTransparencyStatusDidChangeNotification = @"AXInterfaceReduceTransparencyStatusDidChange";
+        NSString * const KeyboardUIModeDidChangeNotification = @"com.apple.KeyboardUIModeDidChange";
+        NSString * const ReduceTransparencyStatusDidChangeNotification = @"AXInterfaceReduceTransparencyStatusDidChange";
 
-		MyDefaultResponder *r = [[MyDefaultResponder alloc] init];
-		[r retain];
-		NSNotificationCenter *center = [NSNotificationCenter defaultCenter];
-		NSDistributedNotificationCenter *dcenter = [NSDistributedNotificationCenter defaultCenter];
-		[center addObserver:r
-				    selector:@selector(defaultsChanged:)
-					    name:NSPreferredScrollerStyleDidChangeNotification
-					  object:nil];
-		[dcenter addObserver:r
-				    selector:@selector(defaultsChanged:)
-					    name:KeyboardUIModeDidChangeNotification  // use nil to see all notifications
-					  object:nil];
-		[dcenter addObserver:r
-				    selector:@selector(defaultsChanged:)
-					    name:ReduceTransparencyStatusDidChangeNotification
-					  object:nil];
-		//NSLog(@"Observer registered");
-	}
+        MyDefaultResponder *r = [[MyDefaultResponder alloc] init];
+        [r retain];
+        NSNotificationCenter *center = [NSNotificationCenter defaultCenter];
+        NSDistributedNotificationCenter *dcenter = [NSDistributedNotificationCenter defaultCenter];
+        [center addObserver:r
+                    selector:@selector(defaultsChanged:)
+                        name:NSPreferredScrollerStyleDidChangeNotification
+                      object:nil];
+        [dcenter addObserver:r
+                    selector:@selector(defaultsChanged:)
+                        name:KeyboardUIModeDidChangeNotification  // use nil to see all notifications
+                      object:nil];
+        [dcenter addObserver:r
+                    selector:@selector(defaultsChanged:)
+                        name:ReduceTransparencyStatusDidChangeNotification
+                      object:nil];
+        //NSLog(@"Observer registered");
+    }
 
-	JNF_COCOA_EXIT(env);
+    JNF_COCOA_EXIT(env);
 }
 
 /*
@@ -566,51 +566,51 @@ JNIEXPORT jstring JNICALL Java_org_violetlib_aqua_fc_OSXFile_nativeGetKindString
 
 static jintArray renderImageIntoBufferForDisplay(JNIEnv *env, NSImage *image, jint w, jint h, jfloat scaleFactor) {
 
-	if (scaleFactor > 1 && [[image representations] count] < 2) {
-		return NULL;
-	}
+    if (scaleFactor > 1 && [[image representations] count] < 2) {
+        return NULL;
+    }
 
-	int rw = (int) (w * scaleFactor);
-	int rh = (int) (h * scaleFactor);
+    int rw = (int) (w * scaleFactor);
+    int rh = (int) (h * scaleFactor);
 
-	jboolean isCopy = JNI_FALSE;
-	jintArray jdata = (*env)->NewIntArray(env, rw * rh);
+    jboolean isCopy = JNI_FALSE;
+    jintArray jdata = (*env)->NewIntArray(env, rw * rh);
     void *data = (*env)->GetPrimitiveArrayCritical(env, jdata, &isCopy);
     if (data != nil) {
-    	CGColorSpaceRef colorspace = CGColorSpaceCreateDeviceRGB();
-		CGContextRef cg = CGBitmapContextCreate(data, rw, rh, 8, rw * 4, colorspace, kCGImageAlphaPremultipliedFirst | kCGBitmapByteOrder32Host);
-		CGColorSpaceRelease(colorspace);
+        CGColorSpaceRef colorspace = CGColorSpaceCreateDeviceRGB();
+        CGContextRef cg = CGBitmapContextCreate(data, rw, rh, 8, rw * 4, colorspace, kCGImageAlphaPremultipliedFirst | kCGBitmapByteOrder32Host);
+        CGColorSpaceRelease(colorspace);
 
-		// The following method is deprecated in OS 10.10
-		// NSGraphicsContext *ng = [NSGraphicsContext graphicsContextWithGraphicsPort:cg flipped:NO];
+        // The following method is deprecated in OS 10.10
+        // NSGraphicsContext *ng = [NSGraphicsContext graphicsContextWithGraphicsPort:cg flipped:NO];
 
-		NSGraphicsContext *ng = [NSGraphicsContext graphicsContextWithCGContext:cg flipped:NO];
+        NSGraphicsContext *ng = [NSGraphicsContext graphicsContextWithCGContext:cg flipped:NO];
 
     CGContextRelease(cg);
 
-		//NSLog(@"Rendering image into %dx%d %fx: %@", w, h, scaleFactor, image);
+        //NSLog(@"Rendering image into %dx%d %fx: %@", w, h, scaleFactor, image);
 
-		NSGraphicsContext *old = [[NSGraphicsContext currentContext] retain];
-		[NSGraphicsContext setCurrentContext:ng];
+        NSGraphicsContext *old = [[NSGraphicsContext currentContext] retain];
+        [NSGraphicsContext setCurrentContext:ng];
 
-		NSAffineTransform *tr = [NSAffineTransform transform];
-		[tr scaleBy: scaleFactor];
-		NSDictionary *hints = [NSDictionary dictionaryWithObject:tr forKey:NSImageHintCTM];
-		NSRect frame = NSMakeRect(0, 0, w, h);
-		NSImageRep *rep = [image bestRepresentationForRect:frame context:nil hints:hints];
+        NSAffineTransform *tr = [NSAffineTransform transform];
+        [tr scaleBy: scaleFactor];
+        NSDictionary *hints = [NSDictionary dictionaryWithObject:tr forKey:NSImageHintCTM];
+        NSRect frame = NSMakeRect(0, 0, w, h);
+        NSImageRep *rep = [image bestRepresentationForRect:frame context:nil hints:hints];
     NSRect toRect = NSMakeRect(0, 0, rw, rh);
 
-		//NSLog(@"Rendering image into %dx%d %fx using rep: %@", w, h, scaleFactor, rep);
+        //NSLog(@"Rendering image into %dx%d %fx using rep: %@", w, h, scaleFactor, rep);
 
-		[rep drawInRect:toRect];
+        [rep drawInRect:toRect];
 
-		[NSGraphicsContext setCurrentContext:old];
-		[old release];
-		(*env)->ReleasePrimitiveArrayCritical(env, jdata, data, 0);
-		return jdata;
+        [NSGraphicsContext setCurrentContext:old];
+        [old release];
+        (*env)->ReleasePrimitiveArrayCritical(env, jdata, data, 0);
+        return jdata;
     }
 
-	return NULL;
+    return NULL;
 }
 
 // Render an image into a Java array
@@ -618,63 +618,63 @@ static jintArray renderImageIntoBufferForDisplay(JNIEnv *env, NSImage *image, ji
 
 static jboolean renderImageIntoBuffers(JNIEnv *env, NSImage *image, jobjectArray joutput, jint w, jint h) {
 
-	//NSLog(@"Render image into buffers: %@", image);
+    //NSLog(@"Render image into buffers: %@", image);
 
-	jboolean result = NO;
+    jboolean result = NO;
 
-	jintArray buffer1 = renderImageIntoBufferForDisplay(env, image, w, h, 1);
-	jintArray buffer2 = renderImageIntoBufferForDisplay(env, image, w, h, 2);
+    jintArray buffer1 = renderImageIntoBufferForDisplay(env, image, w, h, 1);
+    jintArray buffer2 = renderImageIntoBufferForDisplay(env, image, w, h, 2);
 
-	if (buffer1) {
-		(*env)->SetObjectArrayElement(env, joutput, 0, buffer1);
-		(*env)->SetObjectArrayElement(env, joutput, 1, buffer2);
-		result = YES;
-	}
+    if (buffer1) {
+        (*env)->SetObjectArrayElement(env, joutput, 0, buffer1);
+        (*env)->SetObjectArrayElement(env, joutput, 1, buffer2);
+        result = YES;
+    }
 
-	return result;
+    return result;
 }
 
 typedef long (*QuickLookRequest)(CFAllocatorRef, CFURLRef, CGSize, CFDictionaryRef);
 
 static NSImage *getFileImage(NSString *path, jboolean isQuickLook, jboolean isIconMode, jint w, jint h) {
 
-	//NSLog(@"getFileImage %d %@", isQuickLook, path);
+    //NSLog(@"getFileImage %d %@", isQuickLook, path);
 
-	NSImage *result = nil;
-	if (isQuickLook) {
-		NSURL *fileURL = [NSURL fileURLWithPath:path];
-		if (fileURL != nil) {
-			// Load the QuickLook bundle
-			NSURL *bundleURL = [NSURL fileURLWithPath:@"/System/Library/Frameworks/QuickLook.framework"];
-			CFBundleRef cfBundle = CFBundleCreate(kCFAllocatorDefault, (CFURLRef)bundleURL);
-			// If we didn't succeed, the framework does not exist.
-			if (cfBundle) {
-				NSDictionary *dict = [NSDictionary dictionaryWithObject:[NSNumber numberWithBool:isIconMode]
-																 forKey:@"IconMode"];
-				// Get the thumbnail function pointer
-				QuickLookRequest functionRef = CFBundleGetFunctionPointerForName(cfBundle,
-																				 CFSTR("QLThumbnailImageCreate"));
-				if (functionRef) {
-					CGSize size = CGSizeMake(w, h);
-					CGImageRef ref = (CGImageRef) functionRef(kCFAllocatorDefault,
-												 (CFURLRef)fileURL,
-												 size,
-												 (CFDictionaryRef)dict);
+    NSImage *result = nil;
+    if (isQuickLook) {
+        NSURL *fileURL = [NSURL fileURLWithPath:path];
+        if (fileURL != nil) {
+            // Load the QuickLook bundle
+            NSURL *bundleURL = [NSURL fileURLWithPath:@"/System/Library/Frameworks/QuickLook.framework"];
+            CFBundleRef cfBundle = CFBundleCreate(kCFAllocatorDefault, (CFURLRef)bundleURL);
+            // If we didn't succeed, the framework does not exist.
+            if (cfBundle) {
+                NSDictionary *dict = [NSDictionary dictionaryWithObject:[NSNumber numberWithBool:isIconMode]
+                                                                 forKey:@"IconMode"];
+                // Get the thumbnail function pointer
+                QuickLookRequest functionRef = CFBundleGetFunctionPointerForName(cfBundle,
+                                                                                 CFSTR("QLThumbnailImageCreate"));
+                if (functionRef) {
+                    CGSize size = CGSizeMake(w, h);
+                    CGImageRef ref = (CGImageRef) functionRef(kCFAllocatorDefault,
+                                                 (CFURLRef)fileURL,
+                                                 size,
+                                                 (CFDictionaryRef)dict);
 
-					if (ref) {
-						result = [[[NSImage alloc] initWithCGImage:ref size:size] autorelease];
-						CFRelease(ref);
-					} else {
-						//NSLog(@"No quick look image found");
-					}
-				}
-			}
-		}
-	} else {
-		result = [[NSWorkspace sharedWorkspace] iconForFile:path];
+                    if (ref) {
+                        result = [[[NSImage alloc] initWithCGImage:ref size:size] autorelease];
+                        CFRelease(ref);
+                    } else {
+                        //NSLog(@"No quick look image found");
+                    }
+                }
+            }
+        }
+    } else {
+        result = [[NSWorkspace sharedWorkspace] iconForFile:path];
   }
 
-	//NSLog(@"getFileImage result %@", result);
+    //NSLog(@"getFileImage result %@", result);
 
     return result;
 }
@@ -687,20 +687,20 @@ static NSImage *getFileImage(NSString *path, jboolean isQuickLook, jboolean isIc
 JNIEXPORT jboolean JNICALL Java_org_violetlib_aqua_fc_OSXFile_nativeRenderFileImage
   (JNIEnv *env, jclass cl, jstring jpath, jboolean isQuickLook, jboolean isIconMode, jobjectArray output, jint w, jint h) {
 
-	jboolean result = NO;
+    jboolean result = NO;
 
-	JNF_COCOA_ENTER(env);
+    JNF_COCOA_ENTER(env);
 
-	NSString *path = JNFNormalizedNSStringForPath(env, jpath);
+    NSString *path = JNFNormalizedNSStringForPath(env, jpath);
 
-		NSImage *image = getFileImage(path, isQuickLook, isIconMode, w, h);
-		if (image != nil) {
-			result = renderImageIntoBuffers(env, image, output, w, h);
-		}
+        NSImage *image = getFileImage(path, isQuickLook, isIconMode, w, h);
+        if (image != nil) {
+            result = renderImageIntoBuffers(env, image, output, w, h);
+        }
 
-	JNF_COCOA_EXIT(env);
+    JNF_COCOA_EXIT(env);
 
-	return result;
+    return result;
 }
 
 /*
@@ -711,18 +711,18 @@ JNIEXPORT jboolean JNICALL Java_org_violetlib_aqua_fc_OSXFile_nativeRenderFileIm
 JNIEXPORT jboolean JNICALL Java_org_violetlib_aqua_AquaImageFactory_nativeRenderImageFile
   (JNIEnv *env, jclass cl, jstring jpath, jobjectArray buffers, jint w, jint h) {
 
-	jboolean result = NO;
+    jboolean result = NO;
 
-	JNF_COCOA_ENTER(env);
+    JNF_COCOA_ENTER(env);
 
-	NSString *path = JNFNormalizedNSStringForPath(env, jpath);
-	NSImage *image = [[NSImage alloc] initWithContentsOfFile:path];
+    NSString *path = JNFNormalizedNSStringForPath(env, jpath);
+    NSImage *image = [[NSImage alloc] initWithContentsOfFile:path];
 
-	if (image != nil) {
-		result = renderImageIntoBuffers(env, image, buffers, w, h);
-	}
+    if (image != nil) {
+        result = renderImageIntoBuffers(env, image, buffers, w, h);
+    }
 
-	JNF_COCOA_EXIT(env);
+    JNF_COCOA_EXIT(env);
 
   return result;
 }
@@ -735,17 +735,17 @@ JNIEXPORT jboolean JNICALL Java_org_violetlib_aqua_AquaImageFactory_nativeRender
 JNIEXPORT jboolean JNICALL Java_org_violetlib_aqua_AquaIcon_nativeRenderIcon
   (JNIEnv *env, jclass cl, jint osType, jobjectArray buffers, jint size) {
 
-	jboolean result = NO;
+    jboolean result = NO;
 
-	JNF_COCOA_ENTER(env);
+    JNF_COCOA_ENTER(env);
 
-	NSImage *image = [[NSWorkspace sharedWorkspace] iconForFileType: NSFileTypeForHFSTypeCode(osType)];
+    NSImage *image = [[NSWorkspace sharedWorkspace] iconForFileType: NSFileTypeForHFSTypeCode(osType)];
 
-	if (image != nil) {
-		result = renderImageIntoBuffers(env, image, buffers, size, size);
-	}
+    if (image != nil) {
+        result = renderImageIntoBuffers(env, image, buffers, size, size);
+    }
 
-	JNF_COCOA_EXIT(env);
+    JNF_COCOA_EXIT(env);
 
   return result;
 }
@@ -851,7 +851,7 @@ JNIEXPORT jlong JNICALL Java_org_violetlib_aqua_fc_OSXFile_nativeGetLastUsedDate
         if (item != NULL) {
             CFDateRef date = (CFDateRef) MDItemCopyAttribute(item, kMDItemLastUsedDate);
             if (date != NULL) {
-                CFAbsoluteTime /* double */ at = CFDateGetAbsoluteTime(date);	/* seconds since Jan 1 2001 */
+                CFAbsoluteTime /* double */ at = CFDateGetAbsoluteTime(date);    /* seconds since Jan 1 2001 */
                 long long jtime = (long long) at;
                 jtime += (60 * 60 * 24) * (31 * 365 + 8);
                 jtime *= 1000;
@@ -939,97 +939,97 @@ JNIEXPORT jobjectArray JNICALL Java_org_violetlib_aqua_fc_OSXFile_nativeExecuteS
 JNIEXPORT jobjectArray JNICALL Java_org_violetlib_aqua_fc_OSXFile_nativeGetSidebarFiles
   (JNIEnv *env, jclass cl, jint which, jint iconSize, jint lastSeed)
 {
-	CFStringRef listID = which > 0 ? kLSSharedFileListFavoriteVolumes : kLSSharedFileListFavoriteItems;
+    CFStringRef listID = which > 0 ? kLSSharedFileListFavoriteVolumes : kLSSharedFileListFavoriteItems;
 
-	LSSharedFileListRef list = LSSharedFileListCreate(NULL, listID, NULL);
-	if (!list) {
-		NSLog(@"Failed to create shared file list for %@", listID);
-		return NULL;
-	}
+    LSSharedFileListRef list = LSSharedFileListCreate(NULL, listID, NULL);
+    if (!list) {
+        NSLog(@"Failed to create shared file list for %@", listID);
+        return NULL;
+    }
 
-	UInt32 seed = LSSharedFileListGetSeedValue(list);
-	if (seed == lastSeed) {
-		CFRelease(list);
-		return NULL;
-	}
+    UInt32 seed = LSSharedFileListGetSeedValue(list);
+    if (seed == lastSeed) {
+        CFRelease(list);
+        return NULL;
+    }
 
-	CFArrayRef items = LSSharedFileListCopySnapshot(list, &seed);
-	size_t count = CFArrayGetCount(items);
+    CFArrayRef items = LSSharedFileListCopySnapshot(list, &seed);
+    size_t count = CFArrayGetCount(items);
 
-	jclass objectClass = (*env)->FindClass(env, "java/lang/Object");
-	jclass integerClass = (*env)->FindClass(env, "java/lang/Integer");
-	jmethodID newIntegerMethodID = (*env)->GetMethodID(env, integerClass, "<init>", "(I)V");
+    jclass objectClass = (*env)->FindClass(env, "java/lang/Object");
+    jclass integerClass = (*env)->FindClass(env, "java/lang/Integer");
+    jmethodID newIntegerMethodID = (*env)->GetMethodID(env, integerClass, "<init>", "(I)V");
 
-	jobjectArray result = (*env)->NewObjectArray(env, 1 + count * 6, objectClass, NULL);
-	size_t j = 0;
-	(*env)->SetObjectArrayElement(env, result, j++, (*env)->NewObject(env, integerClass, newIntegerMethodID, seed));
+    jobjectArray result = (*env)->NewObjectArray(env, 1 + count * 6, objectClass, NULL);
+    size_t j = 0;
+    (*env)->SetObjectArrayElement(env, result, j++, (*env)->NewObject(env, integerClass, newIntegerMethodID, seed));
 
-	if (which >= 2) {	// testing
-		NSLog(@"%ld elements for %@", count, list);
-	}
+    if (which >= 2) {    // testing
+        NSLog(@"%ld elements for %@", count, list);
+    }
 
-	if (count > 0) {
-		for (size_t i = 0; i < count; i++) {
-			LSSharedFileListItemRef item = (LSSharedFileListItemRef) CFArrayGetValueAtIndex(items, i);
-			if (!item) {
-				continue;
-			}
+    if (count > 0) {
+        for (size_t i = 0; i < count; i++) {
+            LSSharedFileListItemRef item = (LSSharedFileListItemRef) CFArrayGetValueAtIndex(items, i);
+            if (!item) {
+                continue;
+            }
 
-			// Collect six elements: display name, UID, hidden flag, resolved path, 1x rendering, 2x rendering
+            // Collect six elements: display name, UID, hidden flag, resolved path, 1x rendering, 2x rendering
 
-			CFStringRef displayName = LSSharedFileListItemCopyDisplayName(item);
-			NSString *displayNameNS = (NSString *) displayName;
-			jstring displayNameJ = (*env)->NewStringUTF(env, [displayNameNS UTF8String]);
-			CFRelease(displayName);
+            CFStringRef displayName = LSSharedFileListItemCopyDisplayName(item);
+            NSString *displayNameNS = (NSString *) displayName;
+            jstring displayNameJ = (*env)->NewStringUTF(env, [displayNameNS UTF8String]);
+            CFRelease(displayName);
 
       UInt32 itemId = LSSharedFileListItemGetID(item);
-			jobject itemIdJ = (*env)->NewObject(env, integerClass, newIntegerMethodID, itemId);
+            jobject itemIdJ = (*env)->NewObject(env, integerClass, newIntegerMethodID, itemId);
 
-			CFTypeRef hiddenProperty = LSSharedFileListItemCopyProperty(item, kLSSharedFileListItemHidden);
-			jint hiddenFlag = hiddenProperty && hiddenProperty == kCFBooleanTrue;
-			if (hiddenProperty) {
-				CFRelease(hiddenProperty);
-			}
-			jobject flagsJ = (*env)->NewObject(env, integerClass, newIntegerMethodID, hiddenFlag);
+            CFTypeRef hiddenProperty = LSSharedFileListItemCopyProperty(item, kLSSharedFileListItemHidden);
+            jint hiddenFlag = hiddenProperty && hiddenProperty == kCFBooleanTrue;
+            if (hiddenProperty) {
+                CFRelease(hiddenProperty);
+            }
+            jobject flagsJ = (*env)->NewObject(env, integerClass, newIntegerMethodID, hiddenFlag);
 
-			jstring pathJ = NULL;
-			CFURLRef outURL = LSSharedFileListItemCopyResolvedURL(item, kLSSharedFileListNoUserInteraction|kLSSharedFileListDoNotMountVolumes, NULL);
-			if (outURL) {
-				CFStringRef itemPath = CFURLCopyFileSystemPath(outURL, kCFURLPOSIXPathStyle);
-				if (itemPath) {
-					NSString *pathNS = (NSString *) itemPath;
-					pathJ = (*env)->NewStringUTF(env, [pathNS UTF8String]);
-					CFRelease(itemPath);
-				}
-				CFRelease(outURL);
-			}
+            jstring pathJ = NULL;
+            CFURLRef outURL = LSSharedFileListItemCopyResolvedURL(item, kLSSharedFileListNoUserInteraction|kLSSharedFileListDoNotMountVolumes, NULL);
+            if (outURL) {
+                CFStringRef itemPath = CFURLCopyFileSystemPath(outURL, kCFURLPOSIXPathStyle);
+                if (itemPath) {
+                    NSString *pathNS = (NSString *) itemPath;
+                    pathJ = (*env)->NewStringUTF(env, [pathNS UTF8String]);
+                    CFRelease(itemPath);
+                }
+                CFRelease(outURL);
+            }
 
-			jobject icon1J = NULL;
-			jobject icon2J = NULL;
+            jobject icon1J = NULL;
+            jobject icon2J = NULL;
 
-			if (iconSize > 0) {
-				IconRef icon = LSSharedFileListItemCopyIconRef(item);
-				if (icon) {
-					NSImage *iconImage = [[NSImage alloc] initWithIconRef:icon];
-					icon1J = renderImageIntoBufferForDisplay(env, iconImage, iconSize, iconSize, 1);
-					icon2J = renderImageIntoBufferForDisplay(env, iconImage, iconSize, iconSize, 2);
-					[iconImage release];
-					CFRelease(icon);
-				}
-			}
+            if (iconSize > 0) {
+                IconRef icon = LSSharedFileListItemCopyIconRef(item);
+                if (icon) {
+                    NSImage *iconImage = [[NSImage alloc] initWithIconRef:icon];
+                    icon1J = renderImageIntoBufferForDisplay(env, iconImage, iconSize, iconSize, 1);
+                    icon2J = renderImageIntoBufferForDisplay(env, iconImage, iconSize, iconSize, 2);
+                    [iconImage release];
+                    CFRelease(icon);
+                }
+            }
 
-			(*env)->SetObjectArrayElement(env, result, j++, displayNameJ);
-			(*env)->SetObjectArrayElement(env, result, j++, itemIdJ);
-			(*env)->SetObjectArrayElement(env, result, j++, flagsJ);
-			(*env)->SetObjectArrayElement(env, result, j++, pathJ);
-			(*env)->SetObjectArrayElement(env, result, j++, icon1J);
-			(*env)->SetObjectArrayElement(env, result, j++, icon2J);
-		}
-	}
+            (*env)->SetObjectArrayElement(env, result, j++, displayNameJ);
+            (*env)->SetObjectArrayElement(env, result, j++, itemIdJ);
+            (*env)->SetObjectArrayElement(env, result, j++, flagsJ);
+            (*env)->SetObjectArrayElement(env, result, j++, pathJ);
+            (*env)->SetObjectArrayElement(env, result, j++, icon1J);
+            (*env)->SetObjectArrayElement(env, result, j++, icon2J);
+        }
+    }
 
-	CFRelease(items);
-	CFRelease(list);
-	return result;
+    CFRelease(items);
+    CFRelease(list);
+    return result;
 }
 
 #pragma GCC diagnostic pop
@@ -1045,99 +1045,99 @@ static jobject colorPanelCallback;
 
 - (void) windowWillClose:(NSNotification *) ns
 {
-	JNIEnv *env;
-	jboolean attached = NO;
-	int status = (*vm)->GetEnv(vm, (void **) &env, JNI_VERSION_1_6);
-	if (status == JNI_EDETACHED) {
-		status = (*vm)->AttachCurrentThread(vm, (void **) &env, 0);
-		if (status == JNI_OK) {
-			attached = YES;
-		} else {
-			NSLog(@"Unable to attach thread %d", status);
-		}
-	}
+    JNIEnv *env;
+    jboolean attached = NO;
+    int status = (*vm)->GetEnv(vm, (void **) &env, JNI_VERSION_1_6);
+    if (status == JNI_EDETACHED) {
+        status = (*vm)->AttachCurrentThread(vm, (void **) &env, 0);
+        if (status == JNI_OK) {
+            attached = YES;
+        } else {
+            NSLog(@"Unable to attach thread %d", status);
+        }
+    }
 
-	if (status == JNI_OK) {
-		// Using dynamic lookup because we do not know which class loader was used
-		jclass cl = (*env)->GetObjectClass(env, colorPanelCallback);
-		jmethodID m = (*env)->GetMethodID(env, cl, "disconnected", "()V");
-		if (m != NULL) {
-			(*env)->CallVoidMethod(env, colorPanelCallback, m);
-		} else {
-			NSLog(@"Unable to invoke callback -- disconnected method not found");
-		}
-	} else {
-		NSLog(@"Unable to invoke callback %d", status);
-	}
+    if (status == JNI_OK) {
+        // Using dynamic lookup because we do not know which class loader was used
+        jclass cl = (*env)->GetObjectClass(env, colorPanelCallback);
+        jmethodID m = (*env)->GetMethodID(env, cl, "disconnected", "()V");
+        if (m != NULL) {
+            (*env)->CallVoidMethod(env, colorPanelCallback, m);
+        } else {
+            NSLog(@"Unable to invoke callback -- disconnected method not found");
+        }
+    } else {
+        NSLog(@"Unable to invoke callback %d", status);
+    }
 
-	if (attached) {
-		(*vm)->DetachCurrentThread(vm);
-	}
+    if (attached) {
+        (*vm)->DetachCurrentThread(vm);
+    }
 }
 
 - (void) colorChanged: (id) sender
 {
-	NSColor *color = [colorPanel color];
+    NSColor *color = [colorPanel color];
 
-	JNIEnv *env;
-	jboolean attached = NO;
-	int status = (*vm)->GetEnv(vm, (void **) &env, JNI_VERSION_1_6);
-	if (status == JNI_EDETACHED) {
-		status = (*vm)->AttachCurrentThread(vm, (void **) &env, 0);
-		if (status == JNI_OK) {
-			attached = YES;
-		} else {
-			NSLog(@"Unable to attach thread %d", status);
-		}
-	}
+    JNIEnv *env;
+    jboolean attached = NO;
+    int status = (*vm)->GetEnv(vm, (void **) &env, JNI_VERSION_1_6);
+    if (status == JNI_EDETACHED) {
+        status = (*vm)->AttachCurrentThread(vm, (void **) &env, 0);
+        if (status == JNI_OK) {
+            attached = YES;
+        } else {
+            NSLog(@"Unable to attach thread %d", status);
+        }
+    }
 
-	if (status == JNI_OK) {
+    if (status == JNI_OK) {
     static JNF_CLASS_CACHE(jc_Color, "java/awt/Color");
     static JNF_MEMBER_CACHE(jm_createColor, jc_Color, "<init>", "(FFFF)V");
-		CGFloat r, g, b, a;
-		[color getRed:&r green:&g blue:&b alpha:&a];
-		jobject jColor = JNFNewObject(env, jm_createColor, r, g, b, a);
-		// Using dynamic lookup because we do not know which class loader was used
-		jclass cl = (*env)->GetObjectClass(env, colorPanelCallback);
-		jmethodID m = (*env)->GetMethodID(env, cl, "applyColor", "(Ljava/awt/Color;)V");
-		if (m != NULL) {
-			(*env)->CallVoidMethod(env, colorPanelCallback, m, jColor);
-		} else {
-			NSLog(@"Unable to invoke callback -- applyColor method not found");
-		}
-	} else {
-		NSLog(@"Unable to invoke callback %d", status);
-	}
+        CGFloat r, g, b, a;
+        [color getRed:&r green:&g blue:&b alpha:&a];
+        jobject jColor = JNFNewObject(env, jm_createColor, r, g, b, a);
+        // Using dynamic lookup because we do not know which class loader was used
+        jclass cl = (*env)->GetObjectClass(env, colorPanelCallback);
+        jmethodID m = (*env)->GetMethodID(env, cl, "applyColor", "(Ljava/awt/Color;)V");
+        if (m != NULL) {
+            (*env)->CallVoidMethod(env, colorPanelCallback, m, jColor);
+        } else {
+            NSLog(@"Unable to invoke callback -- applyColor method not found");
+        }
+    } else {
+        NSLog(@"Unable to invoke callback %d", status);
+    }
 
-	if (attached) {
-		(*vm)->DetachCurrentThread(vm);
-	}
+    if (attached) {
+        (*vm)->DetachCurrentThread(vm);
+    }
 }
 
 @end
 
 static jboolean setupColorPanel()
 {
-	MyColorPanelDelegate *delegate = [[MyColorPanelDelegate alloc] init];
-	colorPanel = [NSColorPanel sharedColorPanel];
-	[colorPanel setDelegate: delegate];
-	[colorPanel setAction: @selector(colorChanged:)];
-	[colorPanel setTarget: delegate];
-	[colorPanel setContinuous: YES];
-	[colorPanel makeKeyAndOrderFront: nil];
-	[colorPanel setReleasedWhenClosed: NO];
-	return YES;
+    MyColorPanelDelegate *delegate = [[MyColorPanelDelegate alloc] init];
+    colorPanel = [NSColorPanel sharedColorPanel];
+    [colorPanel setDelegate: delegate];
+    [colorPanel setAction: @selector(colorChanged:)];
+    [colorPanel setTarget: delegate];
+    [colorPanel setContinuous: YES];
+    [colorPanel makeKeyAndOrderFront: nil];
+    [colorPanel setReleasedWhenClosed: NO];
+    return YES;
 }
 
 static void setColorPanelVisible(jboolean isShow)
 {
-	if (colorPanel) {
-		if (isShow) {
-    		[colorPanel makeKeyAndOrderFront: nil];
-		} else {
-    		[colorPanel close];
-		}
-	}
+    if (colorPanel) {
+        if (isShow) {
+            [colorPanel makeKeyAndOrderFront: nil];
+        } else {
+            [colorPanel close];
+        }
+    }
 }
 
 /*
@@ -1148,48 +1148,48 @@ static void setColorPanelVisible(jboolean isShow)
 JNIEXPORT jboolean JNICALL Java_org_violetlib_aqua_AquaNativeColorChooser_create
   (JNIEnv *env, jclass cl, jobject ownerCallback)
 {
-	colorPanelCallback = JNFNewGlobalRef(env, ownerCallback);
+    colorPanelCallback = JNFNewGlobalRef(env, ownerCallback);
 
-	__block jboolean result = NO;
+    __block jboolean result = NO;
 
-	JNF_COCOA_ENTER(env);
+    JNF_COCOA_ENTER(env);
 
-	if (!vm) {
-		(*env)->GetJavaVM(env, &vm);
-	}
+    if (!vm) {
+        (*env)->GetJavaVM(env, &vm);
+    }
 
-	void (^block)() = ^(){
-		result = setupColorPanel();
-	};
+    void (^block)() = ^(){
+        result = setupColorPanel();
+    };
 
-	if ([NSThread isMainThread]) {
-		block();
-	} else {
-		[JNFRunLoop performOnMainThreadWaiting:YES withBlock:block];
-	}
+    if ([NSThread isMainThread]) {
+        block();
+    } else {
+        [JNFRunLoop performOnMainThreadWaiting:YES withBlock:block];
+    }
 
-	JNF_COCOA_EXIT(env);
+    JNF_COCOA_EXIT(env);
 
-	return result;
+    return result;
 }
 
 static void showHideColorChooser(JNIEnv *env, jboolean isShow)
 {
-	if (colorPanel) {
-		JNF_COCOA_ENTER(env);
+    if (colorPanel) {
+        JNF_COCOA_ENTER(env);
 
-		void (^block)() = ^(){
-			setColorPanelVisible(isShow);
-		};
+        void (^block)() = ^(){
+            setColorPanelVisible(isShow);
+        };
 
-		if ([NSThread isMainThread]) {
-			block();
-		} else {
-			[JNFRunLoop performOnMainThreadWaiting:YES withBlock:block];
-		}
+        if ([NSThread isMainThread]) {
+            block();
+        } else {
+            [JNFRunLoop performOnMainThreadWaiting:YES withBlock:block];
+        }
 
-		JNF_COCOA_EXIT(env);
-	}
+        JNF_COCOA_EXIT(env);
+    }
 }
 
 /*
@@ -1200,7 +1200,7 @@ static void showHideColorChooser(JNIEnv *env, jboolean isShow)
 JNIEXPORT void JNICALL Java_org_violetlib_aqua_AquaNativeColorChooser_show
   (JNIEnv *env, jclass cl)
 {
-	showHideColorChooser(env, YES);
+    showHideColorChooser(env, YES);
 }
 
 /*
@@ -1211,28 +1211,28 @@ JNIEXPORT void JNICALL Java_org_violetlib_aqua_AquaNativeColorChooser_show
 JNIEXPORT void JNICALL Java_org_violetlib_aqua_AquaNativeColorChooser_hide
   (JNIEnv *env, jclass cl)
 {
-	showHideColorChooser(env, NO);
+    showHideColorChooser(env, NO);
 }
 
 static NSWindow *getNativeWindow(JNIEnv *env, jobject w)
 {
-	static JNF_CLASS_CACHE(jc_Window, "java/awt/Window");
-	static JNF_MEMBER_CACHE(jm_getPeer, jc_Window, "getPeer", "()Ljava/awt/peer/ComponentPeer;");
-	static JNF_CLASS_CACHE(jc_LWWindowPeer, "sun/lwawt/LWWindowPeer");
-	static JNF_MEMBER_CACHE(jm_getPlatformWindow, jc_LWWindowPeer, "getPlatformWindow", "()Lsun/lwawt/PlatformWindow;");
-	static JNF_CLASS_CACHE(jc_CPlatformWindow, "sun/lwawt/macosx/CPlatformWindow");
-	static JNF_MEMBER_CACHE(jm_getNSWindow, jc_CPlatformWindow, "getNSWindowPtr", "()J");
+    static JNF_CLASS_CACHE(jc_Window, "java/awt/Window");
+    static JNF_MEMBER_CACHE(jm_getPeer, jc_Window, "getPeer", "()Ljava/awt/peer/ComponentPeer;");
+    static JNF_CLASS_CACHE(jc_LWWindowPeer, "sun/lwawt/LWWindowPeer");
+    static JNF_MEMBER_CACHE(jm_getPlatformWindow, jc_LWWindowPeer, "getPlatformWindow", "()Lsun/lwawt/PlatformWindow;");
+    static JNF_CLASS_CACHE(jc_CPlatformWindow, "sun/lwawt/macosx/CPlatformWindow");
+    static JNF_MEMBER_CACHE(jm_getNSWindow, jc_CPlatformWindow, "getNSWindowPtr", "()J");
 
-	jobject peer = JNFCallObjectMethod(env, w, jm_getPeer);
-	if (peer == NULL) {
-		return NULL;
-	}
-	jobject platformWindow = JNFCallObjectMethod(env, peer, jm_getPlatformWindow);
-	if (platformWindow == NULL) {
-		return NULL;
-	}
-	NSWindow *nw = (NSWindow *) JNFCallLongMethod(env, platformWindow, jm_getNSWindow);
-	return nw;
+    jobject peer = JNFCallObjectMethod(env, w, jm_getPeer);
+    if (peer == NULL) {
+        return NULL;
+    }
+    jobject platformWindow = JNFCallObjectMethod(env, peer, jm_getPlatformWindow);
+    if (platformWindow == NULL) {
+        return NULL;
+    }
+    NSWindow *nw = (NSWindow *) JNFCallLongMethod(env, platformWindow, jm_getNSWindow);
+    return nw;
 }
 
 static const jint TITLEBAR_NONE = 0;
@@ -1249,114 +1249,114 @@ static const jint TITLEBAR_OVERLAY = 4;
 JNIEXPORT jint JNICALL Java_org_violetlib_aqua_AquaUtils_nativeSetTitleBarStyle
   (JNIEnv *env, jclass cl, jobject window, jint style)
 {
-	// This method uses API introduced in Yosemite
+    // This method uses API introduced in Yosemite
 
-	jint result = -1;
+    jint result = -1;
 
-	JNF_COCOA_ENTER(env);
+    JNF_COCOA_ENTER(env);
 
-	NSWindow *nw = getNativeWindow(env, window);
-	if (nw != nil && [nw respondsToSelector: @selector(setTitlebarAppearsTransparent:)]) {
-		[JNFRunLoop performOnMainThreadWaiting:YES withBlock:^(){
+    NSWindow *nw = getNativeWindow(env, window);
+    if (nw != nil && [nw respondsToSelector: @selector(setTitlebarAppearsTransparent:)]) {
+        [JNFRunLoop performOnMainThreadWaiting:YES withBlock:^(){
 
-			NSProcessInfo *pi = [NSProcessInfo processInfo];
-			NSOperatingSystemVersion osv = [pi operatingSystemVersion];
-			BOOL isElCapitan = osv.majorVersion >= 10 && osv.minorVersion >= 11;
+            NSProcessInfo *pi = [NSProcessInfo processInfo];
+            NSOperatingSystemVersion osv = [pi operatingSystemVersion];
+            BOOL isElCapitan = osv.majorVersion >= 10 && osv.minorVersion >= 11;
 
-			// Because this method is used by component UIs, it updates the same set of
-			// properties regardless of the style. It never does a partial update.
+            // Because this method is used by component UIs, it updates the same set of
+            // properties regardless of the style. It never does a partial update.
 
-			// On Yosemite, if the window is not Movable, mouse events over the title bar never get
-			// to the Java window. If we want some control over title bar mouse events (which
-			// we do when the title bar is transparent), we must make the window Movable.
+            // On Yosemite, if the window is not Movable, mouse events over the title bar never get
+            // to the Java window. If we want some control over title bar mouse events (which
+            // we do when the title bar is transparent), we must make the window Movable.
 
             NSUInteger originalStyleMask = nw.styleMask;
-			NSUInteger styleMask = originalStyleMask;
-			BOOL isTextured = (styleMask & NSTexturedBackgroundWindowMask) != 0;
-			BOOL isMovable = true;
-			BOOL isMovableByBackground = isTextured;
-			BOOL isTransparent = NO;
-			BOOL isHidden = NO;
-			BOOL isFixNeeded = NO;
+            NSUInteger styleMask = originalStyleMask;
+            BOOL isTextured = (styleMask & NSTexturedBackgroundWindowMask) != 0;
+            BOOL isMovable = true;
+            BOOL isMovableByBackground = isTextured;
+            BOOL isTransparent = NO;
+            BOOL isHidden = NO;
+            BOOL isFixNeeded = NO;
 
-			switch (style) {
-				case TITLEBAR_NONE:
-					styleMask &= ~(NSTitledWindowMask | NSFullSizeContentViewWindowMask);
-					break;
-				case TITLEBAR_ORDINARY:
-				default:
-					styleMask |= NSTitledWindowMask;
-					styleMask &= ~NSFullSizeContentViewWindowMask;
-					break;
-				case TITLEBAR_TRANSPARENT:
-					styleMask |= (NSTitledWindowMask | NSFullSizeContentViewWindowMask);
-					isTransparent = YES;
-					isMovable = !isElCapitan;
-					isMovableByBackground = NO;
-					isFixNeeded = YES;
-					break;
-				case TITLEBAR_HIDDEN:
-					styleMask |= (NSTitledWindowMask | NSFullSizeContentViewWindowMask);
-					isTransparent = YES;
-					isHidden = YES;
-					isMovable = !isElCapitan;
-					isMovableByBackground = NO;
-					isFixNeeded = YES;
-					break;
-				case TITLEBAR_OVERLAY:
-					styleMask |= (NSTitledWindowMask | NSFullSizeContentViewWindowMask);
-					isFixNeeded = YES;
-					break;
-				}
+            switch (style) {
+                case TITLEBAR_NONE:
+                    styleMask &= ~(NSTitledWindowMask | NSFullSizeContentViewWindowMask);
+                    break;
+                case TITLEBAR_ORDINARY:
+                default:
+                    styleMask |= NSTitledWindowMask;
+                    styleMask &= ~NSFullSizeContentViewWindowMask;
+                    break;
+                case TITLEBAR_TRANSPARENT:
+                    styleMask |= (NSTitledWindowMask | NSFullSizeContentViewWindowMask);
+                    isTransparent = YES;
+                    isMovable = !isElCapitan;
+                    isMovableByBackground = NO;
+                    isFixNeeded = YES;
+                    break;
+                case TITLEBAR_HIDDEN:
+                    styleMask |= (NSTitledWindowMask | NSFullSizeContentViewWindowMask);
+                    isTransparent = YES;
+                    isHidden = YES;
+                    isMovable = !isElCapitan;
+                    isMovableByBackground = NO;
+                    isFixNeeded = YES;
+                    break;
+                case TITLEBAR_OVERLAY:
+                    styleMask |= (NSTitledWindowMask | NSFullSizeContentViewWindowMask);
+                    isFixNeeded = YES;
+                    break;
+                }
 
-			[[nw standardWindowButton:NSWindowCloseButton] setHidden:isHidden];
-			[[nw standardWindowButton:NSWindowMiniaturizeButton] setHidden:isHidden];
-			[[nw standardWindowButton:NSWindowZoomButton] setHidden:isHidden];
+            [[nw standardWindowButton:NSWindowCloseButton] setHidden:isHidden];
+            [[nw standardWindowButton:NSWindowMiniaturizeButton] setHidden:isHidden];
+            [[nw standardWindowButton:NSWindowZoomButton] setHidden:isHidden];
 
-			[nw setTitlebarAppearsTransparent: isTransparent];
-			[nw setStyleMask: styleMask];
+            [nw setTitlebarAppearsTransparent: isTransparent];
+            [nw setStyleMask: styleMask];
 
-			[nw setMovableByWindowBackground:isMovableByBackground];
-			[nw setMovable:isMovable];
+            [nw setMovableByWindowBackground:isMovableByBackground];
+            [nw setMovable:isMovable];
 
-			if (isFixNeeded) {
-				// Workaround for a mysterious problem observed in some circumstances but not others.
-				// The corner radius is not set, so painting happens outside the rounded corners.
-				NSView *topView = getTopView(nw);
-				if (topView != nil) {
-					CALayer *layer = [ topView layer ];
-					if (layer != nil) {
-						CGFloat radius = [ layer cornerRadius ];
-						if (radius == 0) {
-							//NSLog(@"Fixing corner radius of %@", layer);
-							[ layer setCornerRadius: 6 ];
-						}
-					} else {
-						NSLog(@"Unable to fix corner radius: no layer");
-					}
-				} else {
-					NSLog(@"Unable to fix corner radius: did not find top view");
-				}
-			}
+            if (isFixNeeded) {
+                // Workaround for a mysterious problem observed in some circumstances but not others.
+                // The corner radius is not set, so painting happens outside the rounded corners.
+                NSView *topView = getTopView(nw);
+                if (topView != nil) {
+                    CALayer *layer = [ topView layer ];
+                    if (layer != nil) {
+                        CGFloat radius = [ layer cornerRadius ];
+                        if (radius == 0) {
+                            //NSLog(@"Fixing corner radius of %@", layer);
+                            [ layer setCornerRadius: 6 ];
+                        }
+                    } else {
+                        NSLog(@"Unable to fix corner radius: no layer");
+                    }
+                } else {
+                    NSLog(@"Unable to fix corner radius: did not find top view");
+                }
+            }
 
-			if (((originalStyleMask ^ styleMask) & NSFullSizeContentViewWindowMask) != 0) {
-			    // The full size content view option has changed.
-			    // We need to get Java to recompute the window insets.
-			    // This should do it...
-			    if ([nw respondsToSelector: @selector(windowDidResize:)]) {
+            if (((originalStyleMask ^ styleMask) & NSFullSizeContentViewWindowMask) != 0) {
+                // The full size content view option has changed.
+                // We need to get Java to recompute the window insets.
+                // This should do it...
+                if ([nw respondsToSelector: @selector(windowDidResize:)]) {
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wnonnull"
-			        [((id)nw) windowDidResize:nil];
+                    [((id)nw) windowDidResize:nil];
 #pragma GCC diagnostic pop
-			    }
-			}
-		}];
-		result = 0;
-	}
+                }
+            }
+        }];
+        result = 0;
+    }
 
-	JNF_COCOA_EXIT(env);
+    JNF_COCOA_EXIT(env);
 
-	return result;
+    return result;
 }
 
 /*
@@ -1367,23 +1367,23 @@ JNIEXPORT jint JNICALL Java_org_violetlib_aqua_AquaUtils_nativeSetTitleBarStyle
 JNIEXPORT jint JNICALL Java_org_violetlib_aqua_AquaUtils_nativeAddToolbarToWindow
   (JNIEnv *env, jclass cl, jobject window)
 {
-	jint result = -1;
+    jint result = -1;
 
-	JNF_COCOA_ENTER(env);
+    JNF_COCOA_ENTER(env);
 
-	NSWindow *nw = getNativeWindow(env, window);
-	if (nw != nil) {
-		[JNFRunLoop performOnMainThreadWaiting:YES withBlock:^(){
-			NSToolbar *tb = [[NSToolbar alloc] initWithIdentifier: @"Foo"];
-			[tb setShowsBaselineSeparator: NO];
-			[nw setToolbar: tb];
-		}];
-		result = 0;
-	}
+    NSWindow *nw = getNativeWindow(env, window);
+    if (nw != nil) {
+        [JNFRunLoop performOnMainThreadWaiting:YES withBlock:^(){
+            NSToolbar *tb = [[NSToolbar alloc] initWithIdentifier: @"Foo"];
+            [tb setShowsBaselineSeparator: NO];
+            [nw setToolbar: tb];
+        }];
+        result = 0;
+    }
 
-	JNF_COCOA_EXIT(env);
+    JNF_COCOA_EXIT(env);
 
-	return result;
+    return result;
 }
 
 /*
@@ -1394,36 +1394,36 @@ JNIEXPORT jint JNICALL Java_org_violetlib_aqua_AquaUtils_nativeAddToolbarToWindo
 JNIEXPORT jint JNICALL Java_org_violetlib_aqua_AquaSheetSupport_nativeDisplayAsSheet
   (JNIEnv *env, jclass cl, jobject window)
 {
-	static JNF_CLASS_CACHE(jc_Window, "java/awt/Window");
-	static JNF_MEMBER_CACHE(jm_getOwner, jc_Window, "getOwner", "()Ljava/awt/Window;");
+    static JNF_CLASS_CACHE(jc_Window, "java/awt/Window");
+    static JNF_MEMBER_CACHE(jm_getOwner, jc_Window, "getOwner", "()Ljava/awt/Window;");
 
-	jint result = -1;
+    jint result = -1;
 
-	JNF_COCOA_ENTER(env);
+    JNF_COCOA_ENTER(env);
 
-	// Get the owner window
-	jobject owner = JNFCallObjectMethod(env, window, jm_getOwner);
-	if (owner != NULL) {
-		NSWindow *nw = getNativeWindow(env, window);
-		if (nw != nil) {
-			NSWindow *no = getNativeWindow(env, owner);
-			if (no != nil) {
-				[JNFRunLoop performOnMainThreadWaiting:NO withBlock:^(){
-				    // setting NSTitledWindowMask seems necessary for a reliable vibrant background in a native sheet
-				    // but we install our own NSVisualEffectView, so it is not necessary here
-			        // NSUInteger styleMask = [nw styleMask];
-				    // [nw setStyleMask: styleMask | NSTitledWindowMask ];
-				    // debug
-				    [no beginSheet:nw completionHandler:nil];
-				}];
-				result = 0;
-			}
-		}
-	}
+    // Get the owner window
+    jobject owner = JNFCallObjectMethod(env, window, jm_getOwner);
+    if (owner != NULL) {
+        NSWindow *nw = getNativeWindow(env, window);
+        if (nw != nil) {
+            NSWindow *no = getNativeWindow(env, owner);
+            if (no != nil) {
+                [JNFRunLoop performOnMainThreadWaiting:NO withBlock:^(){
+                    // setting NSTitledWindowMask seems necessary for a reliable vibrant background in a native sheet
+                    // but we install our own NSVisualEffectView, so it is not necessary here
+                    // NSUInteger styleMask = [nw styleMask];
+                    // [nw setStyleMask: styleMask | NSTitledWindowMask ];
+                    // debug
+                    [no beginSheet:nw completionHandler:nil];
+                }];
+                result = 0;
+            }
+        }
+    }
 
-	JNF_COCOA_EXIT(env);
+    JNF_COCOA_EXIT(env);
 
-	return result;
+    return result;
 }
 
 /*
@@ -1602,12 +1602,12 @@ JNIEXPORT jint JNICALL Java_org_violetlib_aqua_AquaVibrantSupport_removeVisualEf
 JNIEXPORT jlong JNICALL Java_org_violetlib_aqua_AquaVibrantSupport_nativeCreateVisualEffectView
   (JNIEnv *env, jclass cl, jobject window, jint style, jboolean supportSelections)
 {
-	__block jlong result = 0;
+    __block jlong result = 0;
 
-	JNF_COCOA_ENTER(env);
+    JNF_COCOA_ENTER(env);
 
-	NSWindow *nw = getNativeWindow(env, window);
-	if (nw != nil) {
+    NSWindow *nw = getNativeWindow(env, window);
+    if (nw != nil) {
         [JNFRunLoop performOnMainThreadWaiting:YES withBlock:^(){
             // Insert a view as a sibling of the AWT view.
             AquaWrappedAWTView *wrapper = ensureWrapper(nw);
@@ -1627,9 +1627,9 @@ JNIEXPORT jlong JNICALL Java_org_violetlib_aqua_AquaVibrantSupport_nativeCreateV
         }];
     }
 
-	JNF_COCOA_EXIT(env);
+    JNF_COCOA_EXIT(env);
 
-	return result;
+    return result;
 }
 
 /*
@@ -1640,9 +1640,9 @@ JNIEXPORT jlong JNICALL Java_org_violetlib_aqua_AquaVibrantSupport_nativeCreateV
 JNIEXPORT jint JNICALL Java_org_violetlib_aqua_AquaVibrantSupport_setViewFrame
   (JNIEnv *env, jclass cl, jlong ptr, jint x, jint y, jint w, jint h, jint yflipped)
 {
-	__block jint result = -1;
+    __block jint result = -1;
 
-	JNF_COCOA_ENTER(env);
+    JNF_COCOA_ENTER(env);
 
     NSView *view = (NSView *) ptr;
     NSWindow *window = [view window];
@@ -1662,9 +1662,9 @@ JNIEXPORT jint JNICALL Java_org_violetlib_aqua_AquaVibrantSupport_setViewFrame
         NSLog(@"AquaVibrantSupport_setViewFrame failed: no native window");
     }
 
-	JNF_COCOA_EXIT(env);
+    JNF_COCOA_EXIT(env);
 
-	return result;
+    return result;
 }
 
 /*
@@ -1675,9 +1675,9 @@ JNIEXPORT jint JNICALL Java_org_violetlib_aqua_AquaVibrantSupport_setViewFrame
 JNIEXPORT jint JNICALL Java_org_violetlib_aqua_AquaVibrantSupport_nativeUpdateSelectionBackgrounds
   (JNIEnv *env, jclass cl, jlong ptr, jintArray jdata)
 {
-	__block jint result = -1;
+    __block jint result = -1;
 
-	JNF_COCOA_ENTER(env);
+    JNF_COCOA_ENTER(env);
 
     NSView *view = (NSView *) ptr;
 
@@ -1702,9 +1702,9 @@ JNIEXPORT jint JNICALL Java_org_violetlib_aqua_AquaVibrantSupport_nativeUpdateSe
         }
     }
 
-	JNF_COCOA_EXIT(env);
+    JNF_COCOA_EXIT(env);
 
-	return result;
+    return result;
 }
 
 /*
@@ -1715,9 +1715,9 @@ JNIEXPORT jint JNICALL Java_org_violetlib_aqua_AquaVibrantSupport_nativeUpdateSe
 JNIEXPORT jint JNICALL Java_org_violetlib_aqua_AquaVibrantSupport_disposeVisualEffectView
   (JNIEnv *env, jclass cl, jlong ptr)
 {
-	__block jint result = -1;
+    __block jint result = -1;
 
-	JNF_COCOA_ENTER(env);
+    JNF_COCOA_ENTER(env);
 
     NSView *view = (NSView *) ptr;
     NSWindow *window = [view window];
@@ -1734,9 +1734,9 @@ JNIEXPORT jint JNICALL Java_org_violetlib_aqua_AquaVibrantSupport_disposeVisualE
         NSLog(@"AquaVibrantSupport_disposeVisualEffectView failed: no native window");
     }
 
-	JNF_COCOA_EXIT(env);
+    JNF_COCOA_EXIT(env);
 
-	return result;
+    return result;
 }
 
 /*
@@ -1747,17 +1747,17 @@ JNIEXPORT jint JNICALL Java_org_violetlib_aqua_AquaVibrantSupport_disposeVisualE
 JNIEXPORT void JNICALL Java_org_violetlib_aqua_AquaUtils_nativeSetAWTViewVisibility
   (JNIEnv *env, jclass cl, jobject window, jboolean isVisible)
 {
-	JNF_COCOA_ENTER(env);
+    JNF_COCOA_ENTER(env);
 
-	NSWindow *nw = getNativeWindow(env, window);
-	if (nw != nil) {
+    NSWindow *nw = getNativeWindow(env, window);
+    if (nw != nil) {
         [JNFRunLoop performOnMainThreadWaiting:YES withBlock:^(){
             NSView *v = getAWTView(nw);
             v.hidden = !isVisible;
         }];
     }
 
-	JNF_COCOA_EXIT(env);
+    JNF_COCOA_EXIT(env);
 }
 
 /*
@@ -1768,10 +1768,10 @@ JNIEXPORT void JNICALL Java_org_violetlib_aqua_AquaUtils_nativeSetAWTViewVisibil
 JNIEXPORT void JNICALL Java_org_violetlib_aqua_AquaUtils_nativeSyncAWTView
   (JNIEnv *env, jclass cl, jobject window)
 {
-	JNF_COCOA_ENTER(env);
+    JNF_COCOA_ENTER(env);
 
-	NSWindow *nw = getNativeWindow(env, window);
-	if (nw != nil) {
+    NSWindow *nw = getNativeWindow(env, window);
+    if (nw != nil) {
         [JNFRunLoop performOnMainThreadWaiting:YES withBlock:^(){
             NSView *v = getAWTView(nw);
             //NSLog(@"Forcing update of AWTView layer");
@@ -1780,7 +1780,7 @@ JNIEXPORT void JNICALL Java_org_violetlib_aqua_AquaUtils_nativeSyncAWTView
         }];
     }
 
-	JNF_COCOA_EXIT(env);
+    JNF_COCOA_EXIT(env);
 }
 
 /*
@@ -1791,16 +1791,16 @@ JNIEXPORT void JNICALL Java_org_violetlib_aqua_AquaUtils_nativeSyncAWTView
 JNIEXPORT void JNICALL Java_org_violetlib_aqua_AquaUtils_debugWindow
   (JNIEnv *env, jclass cl, jobject window)
 {
-	JNF_COCOA_ENTER(env);
+    JNF_COCOA_ENTER(env);
 
-	NSWindow *nw = getNativeWindow(env, window);
-	if (nw != nil) {
+    NSWindow *nw = getNativeWindow(env, window);
+    if (nw != nil) {
         [JNFRunLoop performOnMainThreadWaiting:YES withBlock:^(){
             windowDebug(nw);
         }];
     }
 
-	JNF_COCOA_EXIT(env);
+    JNF_COCOA_EXIT(env);
 }
 
 /*
@@ -1811,12 +1811,12 @@ JNIEXPORT void JNICALL Java_org_violetlib_aqua_AquaUtils_debugWindow
 JNIEXPORT void JNICALL Java_org_violetlib_aqua_AquaUtils_syslog
   (JNIEnv *env, jclass cl, jstring msg)
 {
-	jsize slen = (*env) -> GetStringLength(env, msg);
-	const jchar *schars = (*env) -> GetStringChars(env, msg, NULL);
-	CFStringRef s = CFStringCreateWithCharacters(NULL, schars, slen);
-	NSLog(@"%@", s);
-	CFRelease(s);
-	(*env) -> ReleaseStringChars(env, msg, schars);
+    jsize slen = (*env) -> GetStringLength(env, msg);
+    const jchar *schars = (*env) -> GetStringChars(env, msg, NULL);
+    CFStringRef s = CFStringCreateWithCharacters(NULL, schars, slen);
+    NSLog(@"%@", s);
+    CFRelease(s);
+    (*env) -> ReleaseStringChars(env, msg, schars);
 }
 
 /*
@@ -1827,7 +1827,7 @@ JNIEXPORT void JNICALL Java_org_violetlib_aqua_AquaUtils_syslog
 JNIEXPORT void JNICALL Java_org_violetlib_aqua_AquaNativeSupport_setup
   (JNIEnv *env, jclass cl, jint jv)
 {
-	javaVersion = jv;
+    javaVersion = jv;
 }
 
 /*
@@ -1838,5 +1838,5 @@ JNIEXPORT void JNICALL Java_org_violetlib_aqua_AquaNativeSupport_setup
 JNIEXPORT jint JNICALL Java_org_violetlib_aqua_AquaNativeSupport_nativeGetNativeCodeVersion
   (JNIEnv *env, jclass javaClass)
 {
-	return VERSION;
+    return VERSION;
 }
