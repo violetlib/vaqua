@@ -36,7 +36,7 @@
     <property name="debug" value="false"/>
 
     <target name="init">
-        <echo message="${fullReleaseName}"/>
+        <echo level="info" message="${fullReleaseName}"/>
     </target>
         
     <target name="clean" description="Remove build directories">
@@ -160,7 +160,7 @@
 
     <target name="VAqua" depends="compile-VAqua-JNI,saveIDs">
 
-        <echo message="Building VAqua ${fullReleaseName}"/>
+        <echo level="info" message="Building VAqua ${fullReleaseName}"/>
 
         <mkdir dir="${distdir}"/>
 
