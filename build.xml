@@ -13,15 +13,6 @@
 
 	<classpath/>
 
-  <target name="createSourceArchive">
-    <mkdir dir="${sourceArchiveOutputDirectory}"/>
-    <zip destfile="${sourceArchiveOutputDirectory}/Source.zip">
-      <zipfileset dir="." prefix="VAqua/"
-        includes="license/**,src/**,resources/**,libvaqua/*.h,libvaqua/*.m,lib/**,release/build.xml">
-      </zipfileset>
-    </zip>
-  </target>
-
   <target name="testRelease">
   <java
     fork="true"
