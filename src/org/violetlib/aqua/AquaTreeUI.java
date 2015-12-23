@@ -242,7 +242,9 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable {
         @Override
         protected void windowChanged(Window newWindow) {
             super.windowChanged(newWindow);
-            bt.reset();
+            if (bt != null) {
+                bt.reset();
+            }
         }
     }
 
@@ -545,6 +547,10 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable {
 
     @Override
     public void paint(Graphics g, JComponent c) {
+
+        if (treeState == null) {
+            return;
+        }
 
         // We do not really know when the layout of the tree may have changed, so we verify the selection background
         // locations now. Updating during painting has the advantage of (approximately) coordinating updates to the
