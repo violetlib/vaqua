@@ -208,7 +208,7 @@ public class AquaScrollingPopupMenuWrapper extends JPanel {
     }
 
     protected final boolean scrollIfPossible(MouseEvent e, int delta) {
-        int limit = scrollableView.getHeight() - viewport.getExtentSize().height;
+        int limit = Math.max(0, scrollableView.getHeight() - viewport.getExtentSize().height);
         Point vp = viewport.getViewPosition();
         int pos = vp.y + delta;
         if (pos < 0) {
@@ -295,7 +295,9 @@ public class AquaScrollingPopupMenuWrapper extends JPanel {
             changed = true;
         }
         if (changed || forceLayout) {
-            revalidate();
+            // The layout must be changed immediately if scrolling is underway
+            invalidate();
+            validate();
             repaint();
         }
    }

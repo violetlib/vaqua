@@ -150,6 +150,9 @@ public class AquaContextualPopup {
                     if (availableExtension > 0) {
                         int extension = Math.min(delta, availableExtension);
                         w.setBounds(w.getX(), w.getY() - extension, w.getWidth(), w.getHeight() + extension);
+                        // The layout must be changed immediately to prevent excess scrolling on the next event
+                        w.invalidate();
+                        w.validate();
                         height += extension;
                         delta -= extension;
                         configure(true);
@@ -160,6 +163,9 @@ public class AquaContextualPopup {
                     if (availableExtension > 0) {
                         int extension = Math.min(-delta, availableExtension);
                         w.setBounds(w.getX(), w.getY(), w.getWidth(), w.getHeight() + extension);
+                        // The layout must be changed immediately to prevent excess scrolling on the next event
+                        w.invalidate();
+                        w.validate();
                         delta += extension;
                         height += extension;
                         Point vp = viewport.getViewPosition();
