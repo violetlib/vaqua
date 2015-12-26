@@ -9,10 +9,11 @@
 package org.violetlib.aqua;
 
 import java.awt.*;
+import javax.swing.*;
 
 /**
  * The interface for an object that paints the background of a component.
  */
 public interface BackgroundPainter {
-    void paintBackground(Component c, Graphics g, int x, int y, int width, int height);
+    void paintBackground(JComponent c, Graphics g, int x, int y, int width, int height);
 }

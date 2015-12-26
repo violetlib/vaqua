@@ -660,7 +660,7 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
             // Radar [3543438]. We now define the TitledBorder properties for font and color.
             // Aqua HIG doesn't define TitledBorders as Swing does. Eventually, we might want to
             // re-think TitledBorder to behave more like a Box (NSBox). (vm)
-            "TitledBorder.font", controlFont,
+            "TitledBorder.font", controlSmallFont,
             "TitledBorder.titleColor", black,
             "TitledBorder.aquaVariant", aquaTitledBorder, // this is the border that matches what aqua really looks like
             "InsetBorder.aquaVariant", aquaInsetBorder, // this is the title-less variant

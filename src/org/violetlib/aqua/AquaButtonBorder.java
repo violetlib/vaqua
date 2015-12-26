@@ -94,7 +94,7 @@ public abstract class AquaButtonBorder extends AquaBorder implements BackgroundP
         // These borders generally paint as backgrounds, unlike normal borders that are painted on top the component.
     }
 
-    public final void paintBackground(final Component c, final Graphics g, final int x, final int y, final int width, final int height) {
+    public final void paintBackground(final JComponent c, final Graphics g, final int x, final int y, final int width, final int height) {
         final AbstractButton b = (AbstractButton)c;
         doButtonPaint(b, g, x, y, width, height);
     }
