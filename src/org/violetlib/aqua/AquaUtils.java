@@ -536,7 +536,7 @@ final public class AquaUtils extends SwingUtilitiesModified {
     }
 
     /**
-     * File the specified rectangle with the appropriate fill color or magic eraser.
+     * Fill the specified rectangle with the appropriate fill color or magic eraser.
      * @param c The component.
      */
     public static void fillRect(Graphics g, Component c, int eraserMode, int x, int y, int w, int h) {
