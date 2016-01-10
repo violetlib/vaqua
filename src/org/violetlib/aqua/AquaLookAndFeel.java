@@ -1,5 +1,5 @@
 /*
- * Changes copyright (c) 2015 Alan Snyder.
+ * Changes copyright (c) 2015-2016 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -260,9 +260,6 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
 
         final InsetsUIResource zeroInsets = new InsetsUIResource(0, 0, 0, 0);
         final InsetsUIResource menuItemMargin = zeroInsets;
-
-        // <rdar://problem/5189013> Entire Java application window refreshes when moving off Shortcut menu item
-        final Boolean useOpaqueComponents = Boolean.TRUE;
 
         // *** List value objects
         final Object listCellRendererActiveValue = new UIDefaults.ActiveValue(){
@@ -674,7 +671,6 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
             "Label.foreground", black,
             "Label.disabledForeground", disabled,
             "Label.disabledShadow", disabledShadow,
-            "Label.opaque", useOpaqueComponents,
             "Label.border", null,
 
             "List.font", viewFont, // [3577901] Aqua HIG says "default font of text in lists and tables" should be 12 point (vm).
@@ -789,7 +785,6 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
             "Panel.font", controlFont,
             "Panel.background", panelBackgroundColor, //new ColorUIResource(0.5647f, 0.9957f, 0.5059f),
             "Panel.foreground", black,
-            "Panel.opaque", useOpaqueComponents,
 
             "PasswordField.focusInputMap", aquaKeyBindings.getPasswordFieldInputMap(),
             "PasswordField.font", controlFont,
@@ -918,7 +913,6 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
             //"TabbedPane.shadow", table.get("controlShadow"),
             //"TabbedPane.darkShadow", table.get("controlDkShadow"),
             //"TabbedPane.focus", table.get("controlText"),
-            "TabbedPane.opaque", useOpaqueComponents,
             "TabbedPane.textIconGap", new Integer(4),
             "TabbedPane.tabInsets", new InsetsUIResource(0, 10, 3, 10), // Label within tab (top, left, bottom, right)
             //"TabbedPane.rightTabInsets", new InsetsUIResource(0, 10, 3, 10), // Label within tab (top, left, bottom, right)
