@@ -584,18 +584,35 @@ public class AquaTabbedPaneUI extends AquaTabbedPaneCopyFromBasicUI implements A
 
         final Color color = tabPane.getForegroundAt(tabIndex);
         if (color instanceof UIResource) {
-            // sja fix getTheme().setThemeTextColor(g, isSelected, isPressed && tracking, tabPane.isEnabledAt(tabIndex));
-            if (tabPane.isEnabledAt(tabIndex) && frameActive) {
-                g2d.setColor(Color.black);
-            } else {
-                g2d.setColor(Color.gray);
-            }
+            g2d.setColor(getTabTextColor(tabIndex, frameActive));
         } else {
             g2d.setColor(color);
         }
 
         g2d.setFont(font);
         AquaUtils.drawString(tabPane, g2d, title, textRect.x, textRect.y + metrics.getAscent());
+    }
+
+    protected Color getTabTextColor(int tabIndex, boolean frameActive) {
+        String base;
+
+        if (!tabPane.isEnabledAt(tabIndex)) {
+            base = "Disabled";
+        } else if (!frameActive) {
+            base = "Inactive";
+        } else if (isPressedAt(tabIndex)) {
+            base = "Pressed";
+        } else {
+            base = "Normal";
+        }
+
+        String prefix = tabPane.getSelectedIndex() == tabIndex ? "selected" : "nonSelected";
+        String property = "TabbedPane." + prefix + "TabTitle" + base + "Color";
+        return UIManager.getColor(property);
+    }
+
+    protected boolean isPressedAt(int index) {
+        return false;   // not needed, so not implemented
     }
 
     protected Direction getDirection() {

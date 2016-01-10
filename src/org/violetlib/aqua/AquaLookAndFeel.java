@@ -289,14 +289,17 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
         final ColorUIResource selected = new ColorUIResource(1.0f, 0.4f, 0.4f);
         final ColorUIResource alternateBackground = new ColorUIResource(245, 245, 245);
 
-        // Contrast tab UI colors
+        // Tabbed pane title colors
 
-        final ColorUIResource selectedTabTitlePressedColor = new ColorUIResource(240, 240, 240);
-        final ColorUIResource selectedTabTitleDisabledColor = black;
+        final ColorUIResource selectedTabTitlePressedColor = white;
+        final ColorUIResource selectedTabTitleDisabledColor = disabled;
         final ColorUIResource selectedTabTitleNormalColor = white;
-        final ColorUIResource selectedTabTitleShadowDisabledColor = new ColorUIResource(new Color(0, 0, 0, 0.25f));
-        final ColorUIResource selectedTabTitleShadowNormalColor = mediumTranslucentBlack;
+        final ColorUIResource selectedTabTitleInactiveColor = black;
+
+        final ColorUIResource nonSelectedTabTitlePressedColor = black;
+        final ColorUIResource nonSelectedTabTitleDisabledColor = disabled;
         final ColorUIResource nonSelectedTabTitleNormalColor = black;
+        final ColorUIResource nonSelectedTabTitleInactiveColor = black;
 
         final ColorUIResource toolbarDragHandleColor = new ColorUIResource(140, 140, 140);
 
@@ -931,9 +934,11 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
             "TabbedPane.selectedTabTitlePressedColor", selectedTabTitlePressedColor,
             "TabbedPane.selectedTabTitleDisabledColor", selectedTabTitleDisabledColor,
             "TabbedPane.selectedTabTitleNormalColor", selectedTabTitleNormalColor,
-            "TabbedPane.selectedTabTitleShadowDisabledColor", selectedTabTitleShadowDisabledColor,
-            "TabbedPane.selectedTabTitleShadowNormalColor", selectedTabTitleShadowNormalColor,
+            "TabbedPane.selectedTabTitleInactiveColor", selectedTabTitleInactiveColor,
+            "TabbedPane.nonSelectedTabTitlePressedColor", nonSelectedTabTitlePressedColor,
+            "TabbedPane.nonSelectedTabTitleDisabledColor", nonSelectedTabTitleDisabledColor,
             "TabbedPane.nonSelectedTabTitleNormalColor", nonSelectedTabTitleNormalColor,
+            "TabbedPane.nonSelectedTabTitleInactiveColor", nonSelectedTabTitleInactiveColor,
             "TabbedPane.selectedLabelShift", -1,
             "TabbedPane.labelShift", 1,
             "TabbedPane.selectionFollowsFocus", true,
