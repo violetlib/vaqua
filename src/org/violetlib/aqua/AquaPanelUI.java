@@ -34,7 +34,10 @@
 package org.violetlib.aqua;
 
 import javax.swing.*;
+import javax.swing.border.Border;
+import javax.swing.plaf.BorderUIResource;
 import javax.swing.plaf.ComponentUI;
+import javax.swing.plaf.UIResource;
 import javax.swing.plaf.basic.BasicPanelUI;
 
 import org.violetlib.aqua.AquaUtils.RecyclableSingleton;
@@ -45,6 +48,11 @@ import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 
 public class AquaPanelUI extends BasicPanelUI {
+
+    public static final String PANEL_STYLE_KEY = "JPanel.style";
+    public static final String GROUP_BOX_STYLE = "groupBox";
+    public static final String GROUP_BOX_TITLE_KEY = "Aqua.groupBoxTitle";
+
     static RecyclableSingleton<AquaPanelUI> instance = new RecyclableSingletonFromDefaultConstructor<AquaPanelUI>(AquaPanelUI.class);
 
     public PropertyChangeListener propertyChangeListener = new PropertyChangeListener() {
@@ -63,12 +71,19 @@ public class AquaPanelUI extends BasicPanelUI {
         super.installUI(c);
         AquaVibrantSupport.updateVibrantStyle(c);
         c.addPropertyChangeListener(propertyChangeListener);
+        updateStyle(c);
     }
 
     @Override
     public void uninstallUI(JComponent c) {
         c.removePropertyChangeListener(propertyChangeListener);
         AquaVibrantSupport.uninstallVibrantStyle(c);
+
+        Border b = c.getBorder();
+        if (b instanceof UIResource) {
+            c.setBorder(null);
+        }
+
         super.uninstallUI(c);
     }
 
@@ -76,6 +91,14 @@ public class AquaPanelUI extends BasicPanelUI {
     protected void installDefaults(JPanel p) {
         super.installDefaults(p);
         LookAndFeel.installProperty(p, "opaque", Boolean.FALSE);
+	}
+
+	@Override
+    public void paint(Graphics g, JComponent c) {
+        BackgroundPainter p = getBackgroundPainter(c);
+        if (p != null) {
+            p.paintBackground(c, g, 0, 0, c.getWidth(), c.getHeight());
+        }
     }
 
     @Override
@@ -89,6 +112,60 @@ public class AquaPanelUI extends BasicPanelUI {
     protected void propertyChange(PropertyChangeEvent evt) {
         if (AquaVibrantSupport.processVibrantStyleChange(evt)) {
             return;
+        } else {
+            String prop = evt.getPropertyName();
+            if (PANEL_STYLE_KEY.equals(prop) || GROUP_BOX_TITLE_KEY.equals(prop)) {
+                JComponent c = (JComponent) evt.getSource();
+                updateStyle(c);
+            }
         }
+    }
+
+    protected void updateStyle(JComponent c) {
+        c.repaint();
+
+        Border b = c.getBorder();
+        if (b == null || b instanceof UIResource) {
+            c.setBorder(getDefaultBorder(c));
+        }
+    }
+
+    protected Border getDefaultBorder(JComponent c) {
+        String style = getStyle(c);
+        if (GROUP_BOX_STYLE.equals(style)) {
+            String title = getGroupBoxTitle(c);
+            if (title != null) {
+                return AquaBoxPainter.getBorderForTitledBox();
+            } else {
+                return AquaBoxPainter.getTitlelessBorder();
+            }
+        }
+        return null;
+    }
+
+    protected String getStyle(JComponent c) {
+        Object o = c.getClientProperty(PANEL_STYLE_KEY);
+        if (o instanceof String) {
+            return (String) o;
+        } else {
+            return null;
+        }
+    }
+
+    protected String getGroupBoxTitle(JComponent c) {
+        Object o = c.getClientProperty(GROUP_BOX_TITLE_KEY);
+        if (o instanceof String) {
+            return (String) o;
+        } else {
+            return null;
+        }
+    }
+
+    protected BackgroundPainter getBackgroundPainter(JComponent c) {
+        Object o = c.getClientProperty(PANEL_STYLE_KEY);
+        if (GROUP_BOX_STYLE.equals(o)) {
+            return AquaBoxPainter.getInstance();
+        }
+        return null;
     }
 }
