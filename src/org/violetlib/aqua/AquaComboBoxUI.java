@@ -537,15 +537,6 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements AquaUtilControlSi
             });
         }
 
-        @Override
-        public void addNotify() {
-            super.addNotify();
-
-            if (!(comboBox.getParent() instanceof CellRendererPane)) {
-                requestFocusInWindow();
-            }
-        }
-
         // workaround for 4530952
         public void setText(final String s) {
             if (getText().equals(s)) {
