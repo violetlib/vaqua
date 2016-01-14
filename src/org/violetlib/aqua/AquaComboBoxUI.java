@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015 Alan Snyder.
+ * Copyright (c) 2015-2016 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -57,6 +57,8 @@ import org.violetlib.jnr.LayoutInfo;
 import org.violetlib.jnr.aqua.*;
 import org.violetlib.jnr.aqua.AquaUIPainter.Size;
 
+import static org.violetlib.jnr.aqua.AquaUIPainter.PopupButtonWidget.*;
+
 // Inspired by MetalComboBoxUI, which also has a combined text-and-arrow button for noneditables
 public class AquaComboBoxUI extends BasicComboBoxUI implements AquaUtilControlSize.Sizeable, FocusRingOutlineProvider {
     public static ComponentUI createUI(final JComponent c) {
@@ -77,9 +79,8 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements AquaUtilControlSi
     private static OptionallyFocusableComponentHandler focusHandler = new MyOptionalFocusHandler();
 
     private int oldMaximumRowCount;
-
+    protected Size sizeVariant;
     protected Dimension cachedPreferredSize = new Dimension( 0, 0 );
-
     protected AquaComboBoxButton arrowButton;
 
     public void installUI(final JComponent c) {
@@ -844,11 +845,39 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements AquaUtilControlSi
     };
 
     public void applySizeFor(JComponent c, Size size, boolean isDefaultSize) {
+        sizeVariant = size;
         if (isDefaultSize) {
             size = determineDefaultSize(size);
         }
 
         configure(size);
+    }
+
+    /**
+     * Return the effective size variant. The effective size variant may differ from the specified size variant if the
+     * selected style does not support the specified size variant.
+     */
+    public Size getSizeVariant() {
+        if (sizeVariant == null) {
+            return Size.REGULAR;
+        }
+
+        if (sizeVariant != Size.REGULAR) {
+            AbstractComboBoxLayoutConfiguration g = getLayoutConfiguration();
+            if (g != null) {
+                // TBD: ideally, should get this information from the LayoutInfo
+                Size size = g.getSize();
+                if (size == Size.MINI) {
+                    AquaUIPainter.PopupButtonWidget w = getPopupButtonWidget();
+                    if (w == BUTTON_POP_UP_SQUARE || w == BUTTON_POP_DOWN_SQUARE || w == BUTTON_POP_UP_CELL || w == BUTTON_POP_DOWN_CELL) {
+                        size = Size.SMALL;
+                    }
+                }
+                return size;
+            }
+        }
+
+        return sizeVariant;
     }
 
     protected Size determineDefaultSize(Size size) {
@@ -933,6 +962,45 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements AquaUtilControlSi
         } else if (comboBox != null) {
             comboBox.repaint();
         }
+    }
+
+    /**
+     * Return the offset needed to align a popup menu item label with the combo box button label.
+     * @return the offset, or null if none.
+     */
+    public Point getPopupButtonLabelOffset() {
+        // For a pop up menu, the goal is for the menu item label to exactly overlay the combo box button label, at
+        // least in the case where our default renderer is used. The correction factors are based on a number of
+        // parameters, many of which are not currently accessible. We can get a good approximation with the following
+        // values.
+
+        // TBD: calculate exactly based on layout information
+
+        int labelXOffset = 0;
+        int labelYOffset = 0;
+
+        AquaComboBoxType type = getComboBoxType(comboBox);
+        if (type == AquaComboBoxType.POP_UP_MENU_BUTTON) {
+            labelXOffset -= 8;
+            labelYOffset = 1;
+
+            AquaUIPainter.PopupButtonWidget w = getPopupButtonWidget();
+            if (w != AquaUIPainter.PopupButtonWidget.BUTTON_POP_UP) {
+                labelXOffset -= 2;
+                labelYOffset = 2;
+            }
+        }
+
+        return labelXOffset != 0 || labelYOffset != 0 ? new Point(labelXOffset, labelYOffset) : null;
+    }
+
+    public AquaUIPainter.PopupButtonWidget getPopupButtonWidget() {
+        AbstractComboBoxLayoutConfiguration g = getLayoutConfiguration();
+        if (g instanceof PopupButtonLayoutConfiguration) {
+            PopupButtonLayoutConfiguration pg = (PopupButtonLayoutConfiguration) g;
+            return pg.getPopupButtonWidget();
+        }
+        return null;
     }
 
     @SuppressWarnings("unchecked")

@@ -1,5 +1,5 @@
 /*
- * Changes copyright (c) 2015 Alan Snyder.
+ * Changes copyright (c) 2015-2016 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -46,11 +46,16 @@ import javax.swing.plaf.UIResource;
 import org.violetlib.aqua.AquaIcon.InvertableIcon;
 import org.violetlib.aqua.AquaUtils.RecyclableSingleton;
 import org.violetlib.aqua.fc.OSXFile;
+import org.violetlib.jnr.aqua.AquaUIPainter.Size;
 
 public class AquaImageFactory {
 
     public static boolean debugNativeRendering = false;
     private static final int kAlertIconSize = 64;
+
+    private static InvertableImageIcon regularPopupMenuCheckIcon;
+    private static InvertableImageIcon smallPopupMenuCheckIcon;
+    private static InvertableImageIcon miniPopupMenuCheckIcon;
 
     public static IconUIResource getConfirmImageIcon() {
         // public, because UIDefaults.ProxyLazyValue uses reflection to get this value
@@ -301,12 +306,52 @@ public class AquaImageFactory {
         return new InvertableImageIcon(AquaUtils.generateLightenedImage(eastArrow.get(), 25));
     }
 
+    public static Icon getPopupMenuItemCheckIcon(Size sizeVariant) {
+        if (sizeVariant == Size.SMALL) {
+            return getSmallPopupMenuItemCheckIcon();
+        } else if (sizeVariant == Size.MINI) {
+            return getMiniPopupMenuItemCheckIcon();
+        } else {
+            return getRegularPopupMenuItemCheckIcon();
+        }
+    }
+
+    private static Icon getRegularPopupMenuItemCheckIcon() {
+        if (regularPopupMenuCheckIcon == null) {
+            regularPopupMenuCheckIcon = getPopupMenuItemCheckIcon(10);
+        }
+        return regularPopupMenuCheckIcon;
+    }
+
+    private static Icon getSmallPopupMenuItemCheckIcon() {
+        if (smallPopupMenuCheckIcon == null) {
+            smallPopupMenuCheckIcon = getPopupMenuItemCheckIcon(8);
+        }
+        return smallPopupMenuCheckIcon;
+    }
+
+    private static Icon getMiniPopupMenuItemCheckIcon() {
+        if (miniPopupMenuCheckIcon == null) {
+            miniPopupMenuCheckIcon = getPopupMenuItemCheckIcon(6);
+        }
+        return miniPopupMenuCheckIcon;
+    }
+
+    private static InvertableImageIcon getPopupMenuItemCheckIcon(int size) {
+        Image im = getNSImage("NSMenuCheckmark", size, size);
+        return new InvertableImageIcon(im);
+    }
+
     public static Icon getMenuItemCheckIcon() {
         return new InvertableImageIcon(AquaUtils.generateLightenedImage(getNSIcon("NSMenuCheckmark"), 25));
     }
 
     public static Icon getMenuItemDashIcon() {
         return new InvertableImageIcon(AquaUtils.generateLightenedImage(getNSIcon("NSMenuMixedState"), 25));
+    }
+
+    private static Image getNSImage(String imageName, int width, int height) {
+      return getNativeImage(imageName, width, height);
     }
 
     private static Image getNSIcon(String imageName) {
@@ -515,6 +560,11 @@ public class AquaImageFactory {
     public static Color getSelectionInactiveForegroundColorUIResource() {
         return selectionInactiveForegroundColor;
     }
+
+    /**
+     * Obtain a native image with a specified logical size.
+     */
+    private static native Image getNativeImage(String name, int width, int height);
 
     /**
      * Render an image file.

@@ -586,7 +586,7 @@ static jintArray renderImageIntoBufferForDisplay(JNIEnv *env, NSImage *image, ji
 
         NSGraphicsContext *ng = [NSGraphicsContext graphicsContextWithCGContext:cg flipped:NO];
 
-    CGContextRelease(cg);
+        CGContextRelease(cg);
 
         //NSLog(@"Rendering image into %dx%d %fx: %@", w, h, scaleFactor, image);
 
@@ -598,7 +598,7 @@ static jintArray renderImageIntoBufferForDisplay(JNIEnv *env, NSImage *image, ji
         NSDictionary *hints = [NSDictionary dictionaryWithObject:tr forKey:NSImageHintCTM];
         NSRect frame = NSMakeRect(0, 0, w, h);
         NSImageRep *rep = [image bestRepresentationForRect:frame context:nil hints:hints];
-    NSRect toRect = NSMakeRect(0, 0, rw, rh);
+        NSRect toRect = NSMakeRect(0, 0, rw, rh);
 
         //NSLog(@"Rendering image into %dx%d %fx using rep: %@", w, h, scaleFactor, rep);
 
@@ -725,6 +725,33 @@ JNIEXPORT jboolean JNICALL Java_org_violetlib_aqua_AquaImageFactory_nativeRender
     JNF_COCOA_EXIT(env);
 
   return result;
+}
+
+/*
+ * Class:     org_violetlib_aqua_AquaImageFactory
+ * Method:    getNativeImage
+ * Signature: (Ljava/lang/String;II)Ljava/awt/Image;
+ */
+JNIEXPORT jobject JNICALL Java_org_violetlib_aqua_AquaImageFactory_getNativeImage
+  (JNIEnv *env, jclass cl, jstring jname, jint w, jint h) {
+
+    jobject result = NULL;
+
+    static JNF_CLASS_CACHE(jc_CImage, "sun/lwawt/macosx/CImage");
+    static JNF_CLASS_CACHE(jc_Creator, "sun/lwawt/macosx/CImage$Creator");
+    static JNF_STATIC_MEMBER_CACHE(jm_getCreator, jc_CImage, "getCreator", "()Lsun/lwawt/macosx/CImage$Creator;");
+    static JNF_MEMBER_CACHE(jm_createImage, jc_Creator, "createImageFromName", "(Ljava/lang/String;II)Ljava/awt/Image;");
+
+    JNF_COCOA_ENTER(env);
+
+    jobject creator = JNFCallStaticObjectMethod(env, jm_getCreator);
+    if (creator != NULL) {
+        result = JNFCallObjectMethod(env, creator, jm_createImage, jname, w, h);
+    }
+
+    JNF_COCOA_EXIT(env);
+
+    return result;
 }
 
 /*
@@ -1092,8 +1119,8 @@ static jobject colorPanelCallback;
     }
 
     if (status == JNI_OK) {
-    static JNF_CLASS_CACHE(jc_Color, "java/awt/Color");
-    static JNF_MEMBER_CACHE(jm_createColor, jc_Color, "<init>", "(FFFF)V");
+        static JNF_CLASS_CACHE(jc_Color, "java/awt/Color");
+        static JNF_MEMBER_CACHE(jm_createColor, jc_Color, "<init>", "(FFFF)V");
         CGFloat r, g, b, a;
         [color getRed:&r green:&g blue:&b alpha:&a];
         jobject jColor = JNFNewObject(env, jm_createColor, r, g, b, a);

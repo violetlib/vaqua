@@ -1,5 +1,5 @@
 /*
- * Changes Copyright (c) 2015 Alan Snyder.
+ * Changes Copyright (c) 2015-2016 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -265,8 +265,6 @@ class AquaComboBoxPopup extends BasicComboPopup implements AquaExtendedPopup {
         }
     }
 
-
-
     @Override
     protected Rectangle computePopupBounds(int xx, int yy, int pw, int ph) {
         // When this method is called, the X and Y parameters are not interesting.
@@ -278,12 +276,12 @@ class AquaComboBoxPopup extends BasicComboPopup implements AquaExtendedPopup {
         // scrolling, except for editable combo box menus, which support internal scrolling.
 
         // Get the screen location of the combo box
+        // Retain this location because our result must be relative to the combo box
         final Point p = AquaUtils.getScreenLocation(comboBox);
 
         // Get the available bounds of the screen where the popup should appear.
         Rectangle scrBounds = AquaUtils.getScreenBounds(p, comboBox);
 
-        // Adjust the X axis position to align with the leading edge of the combo box.
         if (currentDisplayType == PopupDisplayType.EDITABLE_SCROLL) {
             pw += 15;
         }
@@ -297,13 +295,31 @@ class AquaComboBoxPopup extends BasicComboPopup implements AquaExtendedPopup {
             x = p.x + comboBoxSize.width - comboBoxInsets.right - pw;
         }
 
-        putClientProperty(AquaPopupMenuUI.POP_UP_SELECTED_REGION, null);
-        putClientProperty(AquaPopupMenuUI.POP_UP_SELECTED_REGION_LOCATION, null);
-
         AquaComboBoxType type = getComboBoxType();
 
         int yOffset = getNominalPopupYOffset(type, comboBoxSize.height);
         int y = p.y + yOffset;
+
+        // For a pop up menu, the goal is for the menu item label to exactly overlay the combo box button label, at
+        // least in the case where our default renderer is used.
+
+        int labelYOffset = 0;
+        if (type == AquaComboBoxType.POP_UP_MENU_BUTTON) {
+            AquaComboBoxUI ui = AquaUtils.getUI(comboBox, AquaComboBoxUI.class);
+            if (ui != null) {
+                Point labelOffset = ui.getPopupButtonLabelOffset();
+                if (labelOffset != null) {
+                    x += labelOffset.x;
+                    labelYOffset = labelOffset.y;
+                }
+            }
+        }
+
+        y += labelYOffset;
+
+        putClientProperty(AquaPopupMenuUI.POP_UP_SELECTED_REGION, null);
+        putClientProperty(AquaPopupMenuUI.POP_UP_SELECTED_REGION_LOCATION, null);
+
         int popupHeight = 0;    // 0 => fit to content
         int roomBelow = scrBounds.y + scrBounds.height - p.y;
         if (roomBelow < 100) {
@@ -315,14 +331,16 @@ class AquaComboBoxPopup extends BasicComboPopup implements AquaExtendedPopup {
         }
 
         // If the combo box is a pop up menu button, make sure the selected item is visible and try to position it
-        // over the combo box.
+        // so that the selected menu item label is over the combo box button label.
         if (list != null && type == AquaComboBoxType.POP_UP_MENU_BUTTON) {
             int selectedIndex = comboBox.getSelectedIndex();
             if (selectedIndex >= 0) {
                 Rectangle cellBounds = list.getCellBounds(selectedIndex, selectedIndex);
                 cellBounds = new Rectangle(cellBounds.x, cellBounds.y, cellBounds.width, cellBounds.height+2);
+                // For scrolling purposes, only the Y coordinate matters.
+                Point regionScreenLocation = new Point(x, p.y + labelYOffset);
                 putClientProperty(AquaPopupMenuUI.POP_UP_SELECTED_REGION, cellBounds);
-                putClientProperty(AquaPopupMenuUI.POP_UP_SELECTED_REGION_LOCATION, p);
+                putClientProperty(AquaPopupMenuUI.POP_UP_SELECTED_REGION_LOCATION, regionScreenLocation);
             }
         }
 

@@ -1,4 +1,12 @@
 /*
+ * Changes Copyright (c) 2015-2016 Alan Snyder.
+ * All rights reserved.
+ *
+ * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
+ * accompanying license terms.
+ */
+
+/*
  * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -29,6 +37,7 @@ import javax.swing.*;
 import java.awt.*;
 
 import org.violetlib.jnr.aqua.PopupButtonLayoutConfiguration;
+import org.violetlib.jnr.aqua.AquaUIPainter.Size;
 
 @SuppressWarnings("serial") // Superclass is not serializable across versions
 public class AquaComboBoxRendererInternal<E> extends JLabel implements ListCellRenderer<E> {
@@ -38,6 +47,16 @@ public class AquaComboBoxRendererInternal<E> extends JLabel implements ListCellR
     boolean fInList;
     boolean fEditable;
     boolean fDrawCheckedItem = true;
+
+    private static int checkMarkLeftInset = 5;
+    private static int checkMarkTopInset = 3;
+    private static int menuLabelLeftInset = 21;
+    private static int buttonLabelLeftInset = 5;
+    private static int menuLabelTopInset = 0;
+    private static int menuLabelBottomInset = 1;
+    private static int buttonLabelTopInset = 1;
+    private static int miniMenuLabelTopInset = 1;
+    private static int miniMenuLabelBottomInset = 0;
 
     // Provides space for a checkbox, and is translucent
     public AquaComboBoxRendererInternal(final JComboBox<?> comboBox) {
@@ -121,10 +140,21 @@ public class AquaComboBoxRendererInternal<E> extends JLabel implements ListCellR
 
     public Insets getInsets(Insets insets) {
         if (insets == null) insets = new Insets(0, 0, 0, 0);
-        insets.top = 1;
-        insets.bottom = 1;
-        insets.right = 5;
-        insets.left = (fInList && !fEditable ? 16 + 7 : 5);
+
+        Size size = getComboBoxSizeVariant();
+
+        if (fInList && !fEditable) {
+            insets.top = size == Size.MINI ? miniMenuLabelTopInset : menuLabelTopInset;
+            insets.bottom = size == Size.MINI ? miniMenuLabelBottomInset : menuLabelBottomInset;
+            insets.right = 5;
+            insets.left = menuLabelLeftInset;
+        } else {
+            insets.top = buttonLabelTopInset;
+            insets.bottom = 1;
+            insets.right = 5;
+            insets.left = buttonLabelLeftInset;
+        }
+
         return insets;
     }
 
@@ -139,18 +169,27 @@ public class AquaComboBoxRendererInternal<E> extends JLabel implements ListCellR
             g.fillRect(0, 0, getWidth(), getHeight());
 
             if (fChecked && !fEditable && fDrawCheckedItem) {
-                final int y = getHeight() - 4;
-                g.setColor(getForeground());
-                Icon checkMark = AquaImageFactory.getMenuItemCheckIcon();
+                Size size = getComboBoxSizeVariant();
+                Icon checkMark = AquaImageFactory.getPopupMenuItemCheckIcon(size);
                 if (fSelected && checkMark instanceof AquaImageFactory.InvertableImageIcon) {
                     AquaImageFactory.InvertableImageIcon ic = (AquaImageFactory.InvertableImageIcon) checkMark;
                     checkMark = ic.getInvertedIcon();
                 }
-                checkMark.paintIcon(fComboBox, g, 6, 2);
-                //AquaUtils.drawString(fComboBox, g, "\u2713", 6, y);
+                int height = getHeight();
+                int left = checkMarkLeftInset;
+                int top = Math.max(checkMarkTopInset, (height - checkMark.getIconHeight() - 1) / 2);
+                checkMark.paintIcon(fComboBox, g, left, top);
             }
         }
         super.paintComponent(g);
+    }
+
+    protected Size getComboBoxSizeVariant() {
+        AquaComboBoxUI ui = AquaUtils.getUI(fComboBox, AquaComboBoxUI.class);
+        if (ui != null) {
+            return ui.getSizeVariant();
+        }
+        return Size.REGULAR;
     }
 
     protected boolean isPullDown(JComboBox comboBox) {
