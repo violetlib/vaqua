@@ -87,7 +87,7 @@ public class AquaPanelUI extends BasicPanelUI {
         super.uninstallUI(c);
     }
 
-	@Override
+    @Override
     public void paint(Graphics g, JComponent c) {
         BackgroundPainter p = getBackgroundPainter(c);
         if (p != null) {
