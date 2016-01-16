@@ -2,7 +2,7 @@
  * @(#)FilePreview.java
  *
  * Copyright (c) 2009-2010 Werner Randelshofer, Switzerland.
- * Copyright (c) 2014-2015 Alan Snyder.
+ * Copyright (c) 2014-2016 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the
@@ -621,7 +621,7 @@ public class FilePreview extends JPanel implements BrowserPreviewRenderer {
 
             Insets s = getInsets();
             g.setColor(new Color(0xd9d9d9));
-            g.drawLine(s.left, s.top, getWidth()-s.right, s.top);
+            g.fillRect(s.left, s.top, getWidth() - s.left - s.right, 1);
         }
     }
 

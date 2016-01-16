@@ -1,4 +1,12 @@
 /*
+ * Changes Copyright (c) 2016 Alan Snyder.
+ * All rights reserved.
+ *
+ * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
+ * accompanying license terms.
+ */
+
+/*
  * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -42,22 +50,10 @@ public class AquaToolBarSeparatorUI extends BasicToolBarSeparatorUI {
     }
 
     public AquaToolBarSeparatorUI() {
-        super();
     }
 
-    BasicStroke dashedStroke = new BasicStroke(1.0f, BasicStroke.CAP_BUTT, BasicStroke.JOIN_BEVEL, 0.0f, new float[] { 1.0f, 2.0f }, 0.0f);
-
     public void paint(final Graphics g, final JComponent c) {
-        g.setColor(c.getForeground());
-        ((Graphics2D)g).setStroke(dashedStroke);
-
-        final int width = c.getWidth();
-        final int height = c.getHeight();
-        if (((JToolBar.Separator)c).getOrientation() == SwingConstants.HORIZONTAL) {
-            g.drawLine(2, height / 2, width - 3, height / 2);
-        } else {
-            g.drawLine(width / 2, 2, width / 2, height - 3);
-        }
+        // The separator item style was removed in OS 10.7. We implement as a space.
     }
 
     public Dimension getMinimumSize(final JComponent c) {
