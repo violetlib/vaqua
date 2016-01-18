@@ -326,11 +326,12 @@ public class AquaOptionPaneUI extends BasicOptionPaneUI {
             textArea.setFont(UIManager.getFont("Label.font"));
             textArea.setWrapStyleWord(true);
             textArea.setLineWrap(true);
-            textArea.setColumns(maxll);
             textArea.setText(text);
             // The following is a pitiful attempt to get JTextArea to compute a plausible
-            // preferred size. It is better than nothing.
-            textArea.setSize(maxll * 15, 10000);
+            // preferred size. It is better than nothing. Do not set columns, it just increases the
+            // preferred width.
+            int columnWidth = textArea.getFontMetrics(textArea.getFont()).charWidth('n');
+            textArea.setSize(maxll * columnWidth, 10000);
             return textArea;
         }
     }
