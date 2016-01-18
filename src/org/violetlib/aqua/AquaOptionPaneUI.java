@@ -41,6 +41,7 @@ import javax.swing.*;
 import javax.swing.plaf.ComponentUI;
 import javax.swing.plaf.basic.BasicOptionPaneUI;
 import javax.swing.text.Document;
+import javax.swing.text.View;
 
 public class AquaOptionPaneUI extends BasicOptionPaneUI {
     private static final int kOKCancelButtonWidth = 79;
@@ -306,9 +307,16 @@ public class AquaOptionPaneUI extends BasicOptionPaneUI {
         if (maxll > 100000) {
             maxll = 80;
         }
-        int width = 15 * Math.max(maxll, 100);
         JLabel label = new JLabel(text, JLabel.LEADING);
-        label.setMaximumSize(new Dimension(width, 10000));
+        int columnWidth = label.getFontMetrics(label.getFont()).charWidth('n');
+        int width = columnWidth * maxll;
+        View view = (View) label.getClientProperty(javax.swing.plaf.basic.BasicHTML.propertyKey);
+        if (view != null) {
+            view.setSize(width, 0);
+            float w = view.getPreferredSpan(View.X_AXIS);
+            float h = view.getPreferredSpan(View.Y_AXIS);
+            label.setPreferredSize(new Dimension((int) Math.ceil(w), (int) Math.ceil(h)));
+        }
         return label;
     }
 
