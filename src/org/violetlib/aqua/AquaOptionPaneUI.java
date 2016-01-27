@@ -1,5 +1,5 @@
 /*
- * Changes Copyright (c) 2015 Alan Snyder.
+ * Changes Copyright (c) 2015-2016 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -308,14 +308,18 @@ public class AquaOptionPaneUI extends BasicOptionPaneUI {
             maxll = 80;
         }
         JLabel label = new JLabel(text, JLabel.LEADING);
+        Dimension preferredSize = label.getPreferredSize();
+        int preferredWidth = preferredSize.width;
         int columnWidth = label.getFontMetrics(label.getFont()).charWidth('n');
         int width = columnWidth * maxll;
-        View view = (View) label.getClientProperty(javax.swing.plaf.basic.BasicHTML.propertyKey);
-        if (view != null) {
-            view.setSize(width, 0);
-            float w = view.getPreferredSpan(View.X_AXIS);
-            float h = view.getPreferredSpan(View.Y_AXIS);
-            label.setPreferredSize(new Dimension((int) Math.ceil(w), (int) Math.ceil(h)));
+        if (preferredWidth > width) {
+            View view = (View) label.getClientProperty(javax.swing.plaf.basic.BasicHTML.propertyKey);
+            if (view != null) {
+                view.setSize(width, 0);
+                float w = view.getPreferredSpan(View.X_AXIS);
+                float h = view.getPreferredSpan(View.Y_AXIS);
+                label.setPreferredSize(new Dimension((int) Math.ceil(w), (int) Math.ceil(h)));
+            }
         }
         return label;
     }
