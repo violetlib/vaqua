@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015 Alan Snyder.
+ * Copyright (c) 2015-2016 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -33,7 +33,7 @@ public abstract class AquaLabeledButtonBorder extends AquaNamedButtonBorder {
 
     public Shape getFocusRingOutline(AbstractButton b, Rectangle iconBounds) {
         // The focus ring is drawn around the icon, not the entire component
-        LayoutConfiguration g = (LayoutConfiguration) b.getClientProperty(AquaButtonUI.LAYOUT_CONFIGURATION_PROPERTY);
+        LayoutConfiguration g = getLayoutConfiguration(b);
         if (g != null) {
             painter.configure(iconBounds.width, iconBounds.height);
             Shape s = painter.getOutline(g);
@@ -56,6 +56,11 @@ public abstract class AquaLabeledButtonBorder extends AquaNamedButtonBorder {
     @Override
     protected ButtonState getButtonState(AbstractButton b) {
         return b.getModel().isSelected() ? isIndeterminate(b) ? MIXED : ON : OFF;
+    }
+
+    @Override
+    protected Insets getSpecialInsets(AbstractButton b) {
+        return null;
     }
 
     static boolean isIndeterminate(final AbstractButton b) {

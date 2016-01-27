@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015 Alan Snyder.
+ * Copyright (c) 2015-2016 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -76,7 +76,7 @@ public class AquaCustomStyledWindow {
     public static final int STYLE_TEXTURED_HIDDEN = 4;
     public static final int STYLE_COMBINED = 5;
 
-    protected final int TITLE_BAR_HEIGHT = 24;
+    protected final int TITLE_BAR_HEIGHT = 22;
     protected final int TITLE_BAR_BUTTONS_WIDTH = 78;
 
     protected Window w;
@@ -250,48 +250,18 @@ public class AquaCustomStyledWindow {
     protected void installToolbarBorder(JToolBar tb) {
         Border b = tb.getBorder();
         if (b == null || b instanceof UIResource) {
-            boolean isTall = isTallFormat(tb);
+            boolean isTall = AquaToolBarUI.isTallFormat(tb);
+            int left = 4;
+            int top = 4;
+            int bottom = isTall ? 0 : 4;
             if (style == STYLE_UNIFIED) {
-                int margin = isTall ? 0 : 4;
-                tb.setBorder(new CustomToolbarBorder(margin, TITLE_BAR_HEIGHT, margin, true));
+                tb.setBorder(new CustomToolbarBorder(left, TITLE_BAR_HEIGHT, bottom, true));
             } else if (style == STYLE_COMBINED) {
-                int margin = isTall ? 0 : 4;
-                tb.setBorder(new CustomToolbarBorder(TITLE_BAR_BUTTONS_WIDTH, margin, margin, true));
+                tb.setBorder(new CustomToolbarBorder(TITLE_BAR_BUTTONS_WIDTH, top, bottom, true));
             } else if (style == STYLE_TEXTURED_HIDDEN){
-                int margin = isTall ? 0 : 4;
-                tb.setBorder(new CustomToolbarBorder(margin, margin, margin, true));
+                tb.setBorder(new CustomToolbarBorder(left, top, bottom, true));
             }
         }
-    }
-
-    protected boolean isTallFormat(JToolBar tb) {
-
-        // A tall format tool bar is one that contains a tall format button.
-        // A tall format button is one that contains both text and icons and whose vertical
-        // text position is bottom.
-
-        int count = tb.getComponentCount();
-        for (int i = 0; i < count; i++) {
-            Component c = tb.getComponent(i);
-            if (c instanceof AbstractButton) {
-                AbstractButton b = (AbstractButton) c;
-                if (isTallFormat(b)) {
-                    return true;
-                }
-            }
-        }
-        return false;
-    }
-
-    protected boolean isTallFormat(AbstractButton b) {
-        if (b.getIcon() == null) {
-            return false;
-        }
-        String text = b.getText();
-        if (text == null || text.isEmpty()) {
-            return false;
-        }
-        return b.getVerticalTextPosition() == SwingConstants.BOTTOM;
     }
 
     protected void installBorder(JComponent c, int top, int left, int bottom, int right) {

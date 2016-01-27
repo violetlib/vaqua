@@ -465,7 +465,7 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
             "Button.textIconGap", new Integer(4),
             "Button.textShiftOffset", zero, // radar 3308129 - aqua doesn't move images when pressed.
             "Button.focusInputMap", controlFocusInputMap,
-            "Button.margin", new InsetsUIResource(0, 2, 0, 2),
+            "Button.margin", new InsetsUIResource(0, 0, 0, 0),
             "Button.opaque", false,
             "Button.recessed.font", recessedFont,
             "Button.inline.font", inlineFont,
@@ -1035,7 +1035,7 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
             "ToggleButton.textIconGap", new Integer(4),
             "ToggleButton.textShiftOffset", zero, // radar 3308129 - aqua doesn't move images when pressed.
             "ToggleButton.focusInputMap", controlFocusInputMap,
-            "ToggleButton.margin", new InsetsUIResource(0, 2, 0, 2),
+            "ToggleButton.margin", new InsetsUIResource(0, 0, 0, 0),
             "ToggleButton.opaque", false,
 
             // *** ToolBar
@@ -1051,10 +1051,6 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
             //"ToolBar.separatorSize", new DimensionUIResource( 10, 10 ),
             "ToolBar.separatorSize", null,
             "ToolBar.title.background", toolBarTitleBackground,
-
-            // *** ToolBarButton
-            "ToolBarButton.margin", new InsetsUIResource(3, 3, 3, 3),
-            "ToolBarButton.insets", new InsetsUIResource(1, 1, 1, 1),
 
             // *** ToolTips
             "ToolTip.font", controlSmallFont,

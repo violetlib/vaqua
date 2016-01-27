@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015 Alan Snyder.
+ * Copyright (c) 2015-2016 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -271,6 +271,7 @@ public class AquaButtonExtendedTypes {
         private float fontSize;
         private boolean isRolloverEnabled;
         private int iconTextGap;
+        private int margin;
 
         WidgetInfo() {
         }
@@ -296,6 +297,11 @@ public class AquaButtonExtendedTypes {
 
         WidgetInfo withIconTextGap(int gap) {
             this.iconTextGap = gap;
+            return this;
+        }
+
+        WidgetInfo withMargin(int margin) {
+            this.margin = margin;
             return this;
         }
 
@@ -371,6 +377,10 @@ public class AquaButtonExtendedTypes {
 
         public int getIconTextGap() {
             return iconTextGap;
+        }
+
+        public int getMargin() {
+            return margin;
         }
 
         public Font getFont(AquaUIPainter.Size size) {
@@ -488,21 +498,23 @@ public class AquaButtonExtendedTypes {
         result.put(BUTTON_RADIO, new WidgetInfo());
 
         result.put(BUTTON_PUSH, new WidgetInfo()
+                .withMargin(5)
                 .withForeground(black34, dark64, pressedWhite)
                 .withActiveDefaultButtonForeground(defaultWhite)
         );
 
         result.put(BUTTON_SEGMENTED, new WidgetInfo(true)
+                .withMargin(5)
                 .withForeground(black34, white, null, null)
                 .withDisabledForeground(new GrayUIResource(172), dark64)
                 .withInactiveForeground(black34, null)
         );
 
         WidgetInfo gradient = new WidgetInfo().withForeground(dark220, dark220, dark64, null);
-        result.put(BUTTON_GRADIENT, gradient);
-        result.put(BUTTON_BEVEL, gradient);
-        result.put(BUTTON_BEVEL_ROUND, gradient);
-        result.put(BUTTON_ROUNDED_RECT, gradient);
+        result.put(BUTTON_GRADIENT, gradient.withMargin(2));
+        result.put(BUTTON_BEVEL, gradient.withMargin(4));
+        result.put(BUTTON_BEVEL_ROUND, gradient.withMargin(6));
+        result.put(BUTTON_ROUNDED_RECT, gradient.withMargin(4));
 
         // Round buttons are like gradient buttons, but white looks better on the blue background
         result.put(BUTTON_ROUND, new WidgetInfo().withForeground(dark220, white, dark64, null));

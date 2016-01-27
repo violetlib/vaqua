@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015 Alan Snyder.
+ * Copyright (c) 2015-2016 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -127,7 +127,7 @@ public class AquaButtonUI extends BasicButtonUI implements AquaUtilControlSize.S
         Border border = b.getBorder();
         if (border instanceof AquaButtonBorder) {
             AquaButtonBorder bb = (AquaButtonBorder) border;
-            g = bb.getLayoutConfiguration(b);
+            g = bb.determineLayoutConfiguration(b);
             if (bb.isRolloverEnabled(b)) {
                 LookAndFeel.installProperty(b, "rolloverEnabled", true);
             }
