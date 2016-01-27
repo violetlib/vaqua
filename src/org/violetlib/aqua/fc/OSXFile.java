@@ -2,7 +2,7 @@
  * @(#)OSXFile.java
  *
  * Copyright (c) 2009-2013 Werner Randelshofer, Switzerland.
- * Copyright (c) 2014-2015 Alan Snyder.
+ * Copyright (c) 2014-2016 Alan Snyder.
  * You may not use, copy or modify this file, except in compliance with the
  * accompanying license terms.
  */
@@ -946,7 +946,8 @@ public class OSXFile {
             haveFetchedComputerName = true;
             String[] cmd = { "/usr/sbin/scutil", "--get", "ComputerName" };
             Charset cs = Charset.forName("UTF-8");
-            computerName = exec(cmd, cs).trim();
+            String s = exec(cmd, cs);
+            computerName = s != null ? s.trim() : null;
         }
         return computerName;
     }
@@ -1148,8 +1149,8 @@ public class OSXFile {
      * Returns the name of the file or directory at a given path in a localized
      * form appropriate for presentation to the user.
      *
-     * @param path
-     * @return
+     * @param path The path.
+     * @return the display name.
      */
     private static native String nativeGetDisplayName(String path);
 
