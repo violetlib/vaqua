@@ -1,5 +1,5 @@
 /*
- * Changes Copyright (c) 2015 Alan Snyder.
+ * Changes Copyright (c) 2015-2016 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -46,7 +46,7 @@ import javax.swing.border.Border;
 import javax.swing.plaf.ComponentUI;
 import javax.swing.plaf.basic.*;
 
-public class AquaSplitPaneUI extends BasicSplitPaneUI implements MouseListener, PropertyChangeListener {
+public class AquaSplitPaneUI extends BasicSplitPaneUI implements MouseListener, ContainerListener, PropertyChangeListener {
     static final String DIVIDER_PAINTER_KEY = "JSplitPane.dividerPainter";
 
     public static final String SPLIT_PANE_STYLE_KEY = "JSplitPane.style";
@@ -58,6 +58,11 @@ public class AquaSplitPaneUI extends BasicSplitPaneUI implements MouseListener, 
 
     protected static SplitPaneStyle defaultStyle = SplitPaneStyle.THIN;
     protected SplitPaneStyle style = defaultStyle;
+
+    private boolean isReorderingComponents;
+    private boolean initialDividerUpdatePerformed;
+    private boolean ignoreDividerLocationChange;
+    private boolean isInLayout;
 
     public AquaSplitPaneUI() {
         super();
@@ -87,11 +92,13 @@ public class AquaSplitPaneUI extends BasicSplitPaneUI implements MouseListener, 
         splitPane.addPropertyChangeListener(DIVIDER_PAINTER_KEY, this);
         splitPane.addPropertyChangeListener(SPLIT_PANE_STYLE_KEY, this);
         splitPane.addPropertyChangeListener(QUAQUA_SPLIT_PANE_STYLE_KEY, this);
+        splitPane.addContainerListener(this);
         divider.addMouseListener(this);
     }
 
     protected void uninstallListeners() {
         divider.removeMouseListener(this);
+        splitPane.removeContainerListener(this);
         splitPane.removePropertyChangeListener(DIVIDER_PAINTER_KEY, this);
         splitPane.removePropertyChangeListener(SPLIT_PANE_STYLE_KEY, this);
         splitPane.removePropertyChangeListener(QUAQUA_SPLIT_PANE_STYLE_KEY, this);
@@ -138,8 +145,19 @@ public class AquaSplitPaneUI extends BasicSplitPaneUI implements MouseListener, 
         AquaUIPainter.Orientation o = isVerticalDivider ? AquaUIPainter.Orientation.VERTICAL : AquaUIPainter.Orientation.HORIZONTAL;
         SplitPaneDividerLayoutConfiguration g = new SplitPaneDividerLayoutConfiguration(w, o, 0);
         LayoutInfo layoutInfo = painter.getLayoutInfo().getLayoutInfo(g);
-
         return (int) (isVerticalDivider ? layoutInfo.getFixedVisualWidth() : layoutInfo.getFixedVisualHeight());
+    }
+
+    /**
+     * The divider extension is the "width" of the transparent area to add to either side of the divider to make it
+     * easier to grab when dragging.
+     */
+    public int getDividerExtension() {
+        AquaUIPainter.DividerWidget w = getWidget();
+        if (w == AquaUIPainter.DividerWidget.THIN_DIVIDER) {
+            return 2;
+        }
+        return 0;
     }
 
     /**
@@ -178,11 +196,208 @@ public class AquaSplitPaneUI extends BasicSplitPaneUI implements MouseListener, 
     }
 
     @Override
+    public boolean isContinuousLayout() {
+        // We do not support non-continuous layout. In particular, we do not support a "hidden" divider.
+        return true;
+    }
+
+    @Override
+    public Component getNonContinuousLayoutDivider() {
+        // We do not support non-continuous layout. In particular, we do not support a "hidden" divider.
+        return null;
+    }
+
+    @Override
+    public void componentAdded(ContainerEvent e) {
+        ensureComponentOrder();
+    }
+
+    @Override
+    public void componentRemoved(ContainerEvent e) {
+    }
+
+    /**
+     * Ensure that the divider is on top of the other components. The divider may have transparent areas that make it
+     * easier to grab.
+     */
+    protected void ensureComponentOrder() {
+        if (!isReorderingComponents) {
+            isReorderingComponents = true;
+            try {
+                Component leftC = splitPane.getLeftComponent();
+                Component rightC = splitPane.getRightComponent();
+                int lastLocation = splitPane.getDividerLocation();
+                if (leftC != null) {
+                    splitPane.setLeftComponent(null);
+                }
+                if (rightC != null) {
+                    splitPane.setRightComponent(null);
+                }
+                splitPane.remove(divider);
+                splitPane.add(divider, JSplitPane.DIVIDER);
+                splitPane.setLeftComponent(leftC);
+                splitPane.setRightComponent(rightC);
+                splitPane.setDividerLocation(lastLocation);
+            } finally {
+                isReorderingComponents = false;
+            }
+        }
+    }
+
+    /**
+     * Resets the layout manager based on orientation and messages it
+     * with invalidateLayout to pull in appropriate Components.
+     */
+    protected void resetLayoutManager() {
+        super.resetLayoutManager();
+
+        LayoutManager2 manager = (LayoutManager2) splitPane.getLayout();
+        LayoutManager myLayoutManager = new MyLayoutManager(manager);
+        splitPane.setLayout(myLayoutManager);
+    }
+
+    /**
+     * The only thing we need to do in our custom layout manager is extend the "width" of the divider as appropriate.
+     */
+    protected class MyLayoutManager implements LayoutManager2 {
+        LayoutManager2 delegate;
+
+        public MyLayoutManager(LayoutManager2 delegate) {
+            this.delegate = delegate;
+        }
+
+        @Override
+        public void addLayoutComponent(Component comp, Object constraints) {
+            delegate.addLayoutComponent(comp, constraints);
+        }
+
+        @Override
+        public Dimension maximumLayoutSize(Container target) {
+            return delegate.maximumLayoutSize(target);
+        }
+
+        @Override
+        public float getLayoutAlignmentX(Container target) {
+            return delegate.getLayoutAlignmentX(target);
+        }
+
+        @Override
+        public float getLayoutAlignmentY(Container target) {
+            return delegate.getLayoutAlignmentY(target);
+        }
+
+        @Override
+        public void invalidateLayout(Container target) {
+            delegate.invalidateLayout(target);
+        }
+
+        @Override
+        public void addLayoutComponent(String name, Component comp) {
+            delegate.addLayoutComponent(name, comp);
+        }
+
+        @Override
+        public void layoutContainer(Container parent) {
+            isInLayout = true;
+            delegate.layoutContainer(parent);
+            isInLayout = false;
+            Dimension containerSize = parent.getSize();
+            if (containerSize.height <= 0 || containerSize.width <= 0 ) {
+                return;
+            }
+            updateDividerBounds();
+        }
+
+        @Override
+        public Dimension minimumLayoutSize(Container parent) {
+            return delegate.minimumLayoutSize(parent);
+        }
+
+        @Override
+        public Dimension preferredLayoutSize(Container parent) {
+            return delegate.preferredLayoutSize(parent);
+        }
+
+        @Override
+        public void removeLayoutComponent(Component comp) {
+            delegate.removeLayoutComponent(comp);
+        }
+    }
+
+    /**
+     * Sets the location of the divider to location.
+     */
+    public void setDividerLocation(JSplitPane jc, int location) {
+        if (!ignoreDividerLocationChange) {
+            super.setDividerLocation(jc, location);
+        }
+    }
+
+    /**
+     * Assuming that the divider is in its nominal state (no extension has been added), add the extension.
+     */
+    protected void updateDividerBounds() {
+        if (divider != null) {
+            initialDividerUpdatePerformed = true;
+            int extension = getDividerExtension();
+            if (extension > 0) {
+                int x = divider.getX();
+                int y = divider.getY();
+                int w = divider.getWidth();
+                int h = divider.getHeight();
+                if (splitPane.getOrientation() == JSplitPane.HORIZONTAL_SPLIT) {
+                    // the divider is vertical
+                    divider.setBounds(x - extension, y, w + 2*extension, h);
+                } else {
+                    // the divider is horizontal
+                    divider.setBounds(x, y-extension, w, h + 2*extension);
+                }
+            }
+        }
+    }
+
+    /**
+     * Returns the nominal location of the divider, which is the location of the portion of the divider exclusing any
+     * divider extension.
+     */
+    @Override
+    public int getDividerLocation(JSplitPane jc) {
+        int extension = isInLayout ? 0 : getDividerExtension();
+        if (splitPane.getOrientation() == JSplitPane.HORIZONTAL_SPLIT) {
+            return divider.getLocation().x + extension;
+        } else {
+            return divider.getLocation().y + extension;
+        }
+    }
+
+    @Override
+    public void dragDividerTo(int location) {
+        super.dragDividerTo(location);
+    }
+
+    @Override
+    public void finishDraggingTo(int location) {
+        super.finishDraggingTo(location);
+    }
+
+    @Override
     public void update(Graphics g, JComponent c) {
         if (c.isOpaque()) {
             AquaUtils.fillRect(g, c, AquaUtils.ERASE_IF_VIBRANT);
         }
         paint(g, c);
+    }
+
+    @Override
+    public void paint(Graphics g, JComponent jc) {
+        if (!initialDividerUpdatePerformed) {
+            updateDividerBounds();
+            ignoreDividerLocationChange = true;
+            splitPane.setDividerLocation(getDividerLocation(splitPane));
+            ignoreDividerLocationChange = false;
+        }
+
+        super.paint(g, jc);
     }
 
     public void mouseClicked(final MouseEvent e) {

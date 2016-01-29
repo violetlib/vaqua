@@ -1,5 +1,5 @@
 /*
- * Changes copyright (c) 2015 Alan Snyder.
+ * Changes copyright (c) 2015-2016 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -93,6 +93,14 @@ public class AquaSplitPaneDivider extends BasicSplitPaneDivider {
     }
 
     /**
+     * The divider extension is the "width" of the transparent area to add to either side of the divider to make it
+     * easier to grab when dragging.
+     */
+    public int getDividerExtension() {
+        return ui.getDividerExtension();
+    }
+
+    /**
      * Paints the divider.
      */
     public void paint(final Graphics g) {
@@ -144,6 +152,16 @@ public class AquaSplitPaneDivider extends BasicSplitPaneDivider {
 
     protected State getState() {
         return splitPane.isEnabled() ? State.ACTIVE : State.DISABLED;
+    }
+
+    protected void dragDividerTo(int location) {
+        location += getDividerExtension();
+        ((AquaSplitPaneUI) splitPaneUI).dragDividerTo(location);
+    }
+
+    protected void finishDraggingTo(int location) {
+        location += getDividerExtension();
+        ((AquaSplitPaneUI) splitPaneUI).finishDraggingTo(location);
     }
 
     protected JButton createLeftOneTouchButton() {
