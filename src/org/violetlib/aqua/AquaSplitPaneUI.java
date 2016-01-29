@@ -405,19 +405,19 @@ public class AquaSplitPaneUI extends BasicSplitPaneUI implements MouseListener, 
         if (!splitPane.isOneTouchExpandable()) return;
 
         final double resizeWeight = splitPane.getResizeWeight();
-        final int paneWidth = splitPane.getWidth();
-        final int divSize = splitPane.getDividerSize();
+        final int minLocation = splitPane.getMinimumDividerLocation();
+        final int maxLocation = splitPane.getMaximumDividerLocation();
         final int divLocation = splitPane.getDividerLocation();
         final int lastDivLocation = splitPane.getLastDividerLocation();
 
         // if we are at the far edge
-        if (paneWidth - divSize <= divLocation + 5) {
+        if (divLocation >= maxLocation - 5) {
             splitPane.setDividerLocation(lastDivLocation);
             return;
         }
 
         // if we are at the starting edge
-        if (divSize >= divLocation - 5) {
+        if (divLocation < minLocation + 5) {
             splitPane.setDividerLocation(lastDivLocation);
             return;
         }
@@ -426,7 +426,7 @@ public class AquaSplitPaneUI extends BasicSplitPaneUI implements MouseListener, 
         if (resizeWeight > 0.5) {
             splitPane.setDividerLocation(0);
         } else {
-            splitPane.setDividerLocation(paneWidth);
+            splitPane.setDividerLocation(maxLocation);
         }
     }
 
