@@ -255,7 +255,10 @@ public abstract class AquaButtonBorder extends AquaBorder implements BackgroundP
         LayoutConfiguration g = getLayoutConfiguration(b);
         if (g instanceof SegmentedButtonLayoutConfiguration) {
             SegmentedButtonLayoutConfiguration sg = (SegmentedButtonLayoutConfiguration) g;
-            if (sg.getWidget() == AquaUIPainter.SegmentedButtonWidget.BUTTON_SEGMENTED_SMALL_SQUARE) {
+            AquaUIPainter.SegmentedButtonWidget w = sg.getWidget();
+            if (w == AquaUIPainter.SegmentedButtonWidget.BUTTON_SEGMENTED_SMALL_SQUARE
+                    || w == AquaUIPainter.SegmentedButtonWidget.BUTTON_SEGMENTED
+                    || w == AquaUIPainter.SegmentedButtonWidget.BUTTON_TAB) {
                 if (sg.getSize() == Size.MINI) {
                     top = 1;
                 }
