@@ -50,9 +50,12 @@ import java.util.StringTokenizer;
 import java.util.function.Supplier;
 import javax.swing.*;
 import javax.swing.border.Border;
+import javax.swing.plaf.InsetsUIResource;
 import javax.swing.plaf.UIResource;
 
 import org.violetlib.aqua.AquaImageFactory.SlicedImageControl;
+import org.violetlib.jnr.Insets2D;
+import org.violetlib.jnr.Insetter;
 import org.violetlib.jnr.aqua.AquaUIPainter;
 import sun.java2d.opengl.OGLRenderQueue;
 import sun.swing.SwingUtilities2;
@@ -111,6 +114,56 @@ final public class AquaUtils extends SwingUtilitiesModified {
         } catch (Throwable th) {
             return null;
         }
+    }
+
+    public static Insets combineAsInsets(Insetter s, Insets adjustments) {
+        if (s != null) {
+            Insets n = s.asInsets();
+            return combineInsets(n, adjustments);
+        } else {
+            return adjustments != null ? adjustments : new Insets(0, 0, 0, 0);
+        }
+    }
+
+    public static Insets2D combineAsInsets2D(Insetter s, Insets adjustments) {
+        if (s != null) {
+            Insets2D n = s.asInsets2D();
+            return combineInsets(n, adjustments);
+        } else {
+            return adjustments != null ? asInsets2D(adjustments) : new Insets2D(0, 0, 0, 0);
+        }
+    }
+
+    public static Insets combineInsets(Insets s1, Insets s2) {
+        if (s1 != null) {
+            if (s2 != null) {
+                return new Insets(s1.top + s2.top, s1.left + s2.left, s1.bottom + s2.bottom, s1.right + s2.right);
+            } else {
+                return s1;
+            }
+        } else if (s2 != null) {
+            return s2;
+        } else {
+            return new Insets(0, 0, 0, 0);
+        }
+    }
+
+    public static Insets2D combineInsets(Insets2D s1, Insets s2) {
+        if (s1 != null) {
+            if (s2 != null) {
+                return new Insets2D(s1.getTop() + s2.top, s1.getLeft() + s2.left, s1.getBottom() + s2.bottom, s1.getRight() + s2.right);
+            } else {
+                return s1;
+            }
+        } else if (s2 != null) {
+            return asInsets2D(s2);
+        } else {
+            return new Insets2D(0, 0, 0, 0);
+        }
+    }
+
+    public static Insets2D asInsets2D(Insets s) {
+        return new Insets2D(s.top, s.left, s.bottom, s.right);
     }
 
     public static Rectangle toRectangle(Rectangle2D r) {

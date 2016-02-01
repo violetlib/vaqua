@@ -56,7 +56,7 @@ public class AquaSegmentedButtonBorder extends AquaButtonBorder implements Focus
     protected final AquaButtonExtendedTypes.WidgetInfo info;
     protected final Position position;
 
-    protected AquaSegmentedButtonBorder(SegmentedButtonWidget widget, AquaButtonExtendedTypes.WidgetInfo info, Position position) {
+    public AquaSegmentedButtonBorder(SegmentedButtonWidget widget, AquaButtonExtendedTypes.WidgetInfo info, Position position) {
         this.widget = widget;
         this.info = info;
         this.position = position;

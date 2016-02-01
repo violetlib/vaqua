@@ -226,7 +226,7 @@ public class AquaButtonUI extends BasicButtonUI implements AquaUtilControlSize.S
                 ? UIManager.getFont("IconButton.smallFont")
                 : UIManager.getFont("IconButton.font");
         } else {
-            return b.getFont();
+            return (Font) b.getClientProperty(DEFAULT_FONT_PROPERTY);
         }
     }
 

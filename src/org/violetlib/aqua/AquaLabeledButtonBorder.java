@@ -59,7 +59,7 @@ public abstract class AquaLabeledButtonBorder extends AquaNamedButtonBorder {
     }
 
     @Override
-    protected Insets getSpecialInsets(AbstractButton b) {
+    protected Insets getSpecialMarginAdjustments(AbstractButton b) {
         return null;
     }
 

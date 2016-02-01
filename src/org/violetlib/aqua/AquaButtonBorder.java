@@ -41,6 +41,7 @@ import javax.swing.plaf.UIResource;
 import org.violetlib.aqua.AquaUtils.RecyclableSingleton;
 import org.violetlib.aqua.AquaUtils.RecyclableSingletonFromDefaultConstructor;
 import org.violetlib.aqua.fc.EmptyIcon;
+import org.violetlib.jnr.Insets2D;
 import org.violetlib.jnr.Insetter;
 import org.violetlib.jnr.LayoutInfo;
 import org.violetlib.jnr.aqua.*;
@@ -194,46 +195,84 @@ public abstract class AquaButtonBorder extends AquaBorder implements BackgroundP
         return gap > 0 ? gap : 4;
     }
 
-    public int getMargin(AbstractButton b) {
-        AquaButtonExtendedTypes.WidgetInfo info = getWidgetInfo(b);
-        return info.getMargin();
-    }
-
     /**
      * Returns the insets of the border.
      * @param c the component for which this border insets value applies
      */
     public final Insets getBorderInsets(final Component c) {
-        if (c == null || !(c instanceof AbstractButton)) return new Insets(0, 0, 0, 0);
+        if (c == null || !(c instanceof AbstractButton)) {
+            return new Insets(0, 0, 0, 0);
+        }
 
         AbstractButton b = (AbstractButton) c;
+        Insetter s = getContentInsets(b);
+        Insets adjustments = getMarginAdjustments(b);
+        return AquaUtils.combineAsInsets(s, adjustments);
+   }
 
+    /**
+     * Returns the insets of the border.
+     * @param c the component for which this border insets value applies
+     */
+    public final Insets2D getBorderInsets2D(final Component c) {
+        if (c == null || !(c instanceof AbstractButton)) {
+            return new Insets2D(0, 0, 0, 0);
+        }
+
+        AbstractButton b = (AbstractButton) c;
+        Insetter s = getContentInsets(b);
+        Insets adjustments = getMarginAdjustments(b);
+        return AquaUtils.combineAsInsets2D(s, adjustments);
+   }
+
+    /**
+     * Return the margin adjustments to use for the specified button.
+     * @param b The button.
+     * @return the margin adjustments, or null if none.
+     */
+    protected Insets getMarginAdjustments(AbstractButton b) {
         Insets margin = b.getMargin();
         if (margin != null && !(margin instanceof UIResource)) {
             // always use an application provided margin
-            margin = (Insets) margin.clone();
+            return margin;
         } else {
-            // check for a type specific margin
-            Insets specialInsets = getSpecialInsets(b);
-            if (specialInsets != null) {
-                margin = specialInsets;
-            } else if (margin != null) {
-                // Use the UI default if there is no type specific margin
-                margin = (Insets) margin.clone();
-            } else {
-                // This probably should not happen
-                margin = new InsetsUIResource(0, 0, 0, 0);
+            // Check for a style specific margin
+            // Use the UI default if there is no type specific margin
+            Insets specialInsets = getSpecialMarginAdjustments(b);
+            return specialInsets != null ? specialInsets : margin;
+        }
+    }
+
+    protected Insets getSpecialMarginAdjustments(AbstractButton b) {
+        int m = getMargin(b);
+        int top = 0;
+        int left = m;
+        int bottom = 0;
+        int right = m;
+
+        // TBD: at present, there is no organized way to support size specific adjustments
+
+        LayoutConfiguration g = getLayoutConfiguration(b);
+        if (g instanceof SegmentedButtonLayoutConfiguration) {
+            SegmentedButtonLayoutConfiguration sg = (SegmentedButtonLayoutConfiguration) g;
+            if (sg.getWidget() == AquaUIPainter.SegmentedButtonWidget.BUTTON_SEGMENTED_SMALL_SQUARE) {
+                if (sg.getSize() == Size.MINI) {
+                    top = 1;
+                }
             }
         }
 
-        alterBorderInsets(b, margin);
-
-        return margin;
+        return new Insets(top, left, bottom, right);
     }
 
-    protected Insets getSpecialInsets(AbstractButton b) {
-        int m = getMargin(b);
-        return new InsetsUIResource(0, m, 0, m);
+    protected int getMargin(AbstractButton b) {
+        AquaButtonExtendedTypes.WidgetInfo info = getWidgetInfo(b);
+        return info.getMargin();
+    }
+
+    protected Insetter getContentInsets(AbstractButton b) {
+        LayoutConfiguration g = getLayoutConfiguration(b);
+        return g != null ? painter.getLayoutInfo().getContentInsets(g) : null;
     }
 
     public Insets getContentInsets(final AbstractButton b, final int w, final int h) {
@@ -245,22 +284,6 @@ public abstract class AquaButtonBorder extends AquaBorder implements BackgroundP
             }
         }
         return null;
-    }
-
-    protected void alterBorderInsets(AbstractButton b, Insets margin) {
-        LayoutConfiguration g = getLayoutConfiguration(b);
-        if (g != null) {
-            Insetter s = painter.getLayoutInfo().getContentInsets(g);
-            if (s != null) {
-                Insets n = s.asInsets();
-                if (n != null) {
-                    margin.top += n.top;
-                    margin.bottom += n.bottom;
-                    margin.left += n.left;
-                    margin.right += n.right;
-                }
-            }
-        }
     }
 
     public Dimension getMinimumButtonSize(AbstractButton b) {
