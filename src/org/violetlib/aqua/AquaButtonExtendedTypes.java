@@ -70,16 +70,6 @@ public class AquaButtonExtendedTypes {
     }
 
     /**
-     * Identify the appropriate button border to use for a button component based on the client properties of the button.
-     * @param b The button component.
-     * @return the button border, or null if a button type was not declared or the button type was not recognized.
-     */
-    public static Border getBorder(AbstractButton b) {
-        TypeSpecifier type = getTypeSpecifier(b);
-        return type != null ? type.getBorder() : null;
-    }
-
-    /**
      * Identify a button type specifier based on the client properties of a button.
      * @param b The button component.
      * @return the button type specifier, or null if a button type was not declared or the button type was not recognized.
@@ -102,13 +92,13 @@ public class AquaButtonExtendedTypes {
             if (segmentPositionProperty instanceof String) {
                 String segmentPosition = (String) segmentPositionProperty;
                 String typeName = buttonType + "-" + getRealPositionForLogicalPosition(segmentPosition, b.getComponentOrientation().isLeftToRight());
-                final TypeSpecifier specifier = getSpecifierByName(typeName);
+                final TypeSpecifier specifier = getSpecifierByName(b, typeName);
                 if (specifier != null) {
                     return specifier;
                 }
             }
 
-            return getSpecifierByName(buttonType);
+            return getSpecifierByName(b, buttonType);
         }
 
         return null;
@@ -182,7 +172,15 @@ public class AquaButtonExtendedTypes {
         }
     }
 
-    public static TypeSpecifier getSpecifierByName(final String name) {
+    public static TypeSpecifier getSpecifierByName(AbstractButton b, String name) {
+        if (AquaButtonUI.isOnToolbar(b)) {
+            String toolbarName = name + "-onToolbar";
+            TypeSpecifier specifier = typeDefinitions.get().get(toolbarName);
+            if (specifier != null) {
+                return specifier;
+            }
+        }
+
         return typeDefinitions.get().get(name);
     }
 
@@ -567,6 +565,9 @@ public class AquaButtonExtendedTypes {
         result.put(BUTTON_POP_DOWN_TEXTURED, result.get(BUTTON_TEXTURED));
         result.put(BUTTON_POP_UP_TEXTURED, result.get(BUTTON_TEXTURED));
 
+        result.put(BUTTON_POP_DOWN_TEXTURED_TOOLBAR, result.get(BUTTON_TEXTURED_TOOLBAR));
+        result.put(BUTTON_POP_UP_TEXTURED_TOOLBAR, result.get(BUTTON_TEXTURED_TOOLBAR));
+
         result.put(BUTTON_POP_DOWN_GRADIENT, result.get(BUTTON_GRADIENT));
         result.put(BUTTON_POP_UP_GRADIENT, result.get(BUTTON_GRADIENT));
 
@@ -592,6 +593,7 @@ public class AquaButtonExtendedTypes {
             new BorderDefinedTypeSpecifier("bevel", BUTTON_BEVEL_ROUND),
 
             new BorderDefinedTypeSpecifier("textured", BUTTON_TEXTURED),
+            new BorderDefinedTypeSpecifier("textured-onToolbar", BUTTON_TEXTURED_TOOLBAR),
             new BorderDefinedTypeSpecifier("roundRect", BUTTON_ROUNDED_RECT),
             new BorderDefinedTypeSpecifier("recessed", BUTTON_RECESSED),
             new BorderDefinedTypeSpecifier("inline", BUTTON_INLINE),
@@ -609,6 +611,11 @@ public class AquaButtonExtendedTypes {
             new SegmentedTypeSpecifier("segmented-last", BUTTON_SEGMENTED, Position.LAST),
             new SegmentedTypeSpecifier("segmented-only", BUTTON_SEGMENTED, Position.ONLY),
 
+            new SegmentedTypeSpecifier("segmentedSeparated-first", BUTTON_SEGMENTED_SEPARATED, Position.FIRST),
+            new SegmentedTypeSpecifier("segmentedSeparated-middle", BUTTON_SEGMENTED_SEPARATED, Position.MIDDLE),
+            new SegmentedTypeSpecifier("segmentedSeparated-last", BUTTON_SEGMENTED_SEPARATED, Position.LAST),
+            new SegmentedTypeSpecifier("segmentedSeparated-only", BUTTON_SEGMENTED_SEPARATED, Position.ONLY),
+
             new SegmentedTypeSpecifier("segmentedRoundRect-first", BUTTON_SEGMENTED_INSET, Position.FIRST),
             new SegmentedTypeSpecifier("segmentedRoundRect-middle", BUTTON_SEGMENTED_INSET, Position.MIDDLE),
             new SegmentedTypeSpecifier("segmentedRoundRect-last", BUTTON_SEGMENTED_INSET, Position.LAST),
@@ -624,6 +631,11 @@ public class AquaButtonExtendedTypes {
             new SegmentedTypeSpecifier("segmentedTextured-last", BUTTON_SEGMENTED_TEXTURED, Position.LAST),
             new SegmentedTypeSpecifier("segmentedTextured-only", BUTTON_SEGMENTED_TEXTURED, Position.ONLY),
 
+            new SegmentedTypeSpecifier("segmentedTextured-first-onToolbar", BUTTON_SEGMENTED_TEXTURED_TOOLBAR, Position.FIRST),
+            new SegmentedTypeSpecifier("segmentedTextured-middle-onToolbar", BUTTON_SEGMENTED_TEXTURED_TOOLBAR, Position.MIDDLE),
+            new SegmentedTypeSpecifier("segmentedTextured-last-onToolbar", BUTTON_SEGMENTED_TEXTURED_TOOLBAR, Position.LAST),
+            new SegmentedTypeSpecifier("segmentedTextured-only-onToolbar", BUTTON_SEGMENTED_TEXTURED_TOOLBAR, Position.ONLY),
+
             new SegmentedTypeSpecifier("segmentedCapsule-first", BUTTON_SEGMENTED_TOOLBAR, Position.FIRST),
             new SegmentedTypeSpecifier("segmentedCapsule-middle", BUTTON_SEGMENTED_TOOLBAR, Position.MIDDLE),
             new SegmentedTypeSpecifier("segmentedCapsule-last", BUTTON_SEGMENTED_TOOLBAR, Position.LAST),
@@ -638,6 +650,11 @@ public class AquaButtonExtendedTypes {
             new SegmentedTypeSpecifier("segmentedTexturedSeparated-middle", BUTTON_SEGMENTED_TEXTURED_SEPARATED, Position.MIDDLE),
             new SegmentedTypeSpecifier("segmentedTexturedSeparated-last", BUTTON_SEGMENTED_TEXTURED_SEPARATED, Position.LAST),
             new SegmentedTypeSpecifier("segmentedTexturedSeparated-only", BUTTON_SEGMENTED_TEXTURED_SEPARATED, Position.ONLY),
+
+            new SegmentedTypeSpecifier("segmentedTexturedSeparated-first-onToolbar", BUTTON_SEGMENTED_TEXTURED_SEPARATED_TOOLBAR, Position.FIRST),
+            new SegmentedTypeSpecifier("segmentedTexturedSeparated-middle-onToolbar", BUTTON_SEGMENTED_TEXTURED_SEPARATED_TOOLBAR, Position.MIDDLE),
+            new SegmentedTypeSpecifier("segmentedTexturedSeparated-last-onToolbar", BUTTON_SEGMENTED_TEXTURED_SEPARATED_TOOLBAR, Position.LAST),
+            new SegmentedTypeSpecifier("segmentedTexturedSeparated-only-onToolbar", BUTTON_SEGMENTED_TEXTURED_SEPARATED_TOOLBAR, Position.ONLY),
         };
 
         for (final TypeSpecifier specifier : specifiers) {
@@ -652,5 +669,4 @@ public class AquaButtonExtendedTypes {
             super(new Color(c, c, c));
         }
     }
-
 }

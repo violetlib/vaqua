@@ -29,7 +29,7 @@ public class AquaToggleButtonBorder extends AquaButtonBorder implements FocusRin
     public final Object getButtonWidget(AbstractButton b) {
         boolean isOnToolbar = AquaButtonUI.isOnToolbar(b);
 
-        Object preferredWidget = isOnToolbar ? ButtonWidget.BUTTON_TEXTURED : BUTTON_SEGMENTED;
+        Object preferredWidget = isOnToolbar ? ButtonWidget.BUTTON_TEXTURED_TOOLBAR : BUTTON_SEGMENTED;
         if (isProposedButtonWidgetUsable(b, preferredWidget)) {
             return preferredWidget;
         }

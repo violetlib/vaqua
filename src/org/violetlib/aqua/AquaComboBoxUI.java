@@ -299,8 +299,8 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements AquaUtilControlSi
         if (padding != null) {
             left += padding.left;
             top += padding.top;
-            width -= padding.left + padding.right;
-            height -= padding.top + padding.bottom;
+            width -= padding.left;  // do not use right padding here, if we need the room we should use it
+            height -= padding.top;  // do not use bottom padding here, if we need the room we should use it
         }
 
         currentValuePane.paintComponent(g, c, comboBox, left, top, width, height, shouldValidate);
@@ -416,6 +416,23 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements AquaUtilControlSi
             if (comboBox.getParent() instanceof CellRendererPane) {
                 return;
             }
+
+            if (arrowButton != null) {
+                ComboBoxConfiguration bg = (ComboBoxConfiguration) arrowButton.getConfiguration();
+                if (bg.getState() == AquaUIPainter.State.INACTIVE) {
+                    AquaUIPainter.ComboBoxWidget w = bg.getWidget();
+                    if (w == AquaUIPainter.ComboBoxWidget.BUTTON_COMBO_BOX_TEXTURED || w == AquaUIPainter.ComboBoxWidget.BUTTON_COMBO_BOX_TEXTURED_TOOLBAR) {
+                        // Textured combo boxes change background color when inactive
+                        int width = editor.getWidth();
+                        int height = editor.getHeight();
+                        Color c = new Color(245, 245, 245);
+                        g.setColor(c);
+                        g.fillRect(0, 0, width, height);
+                        return;
+                    }
+                }
+            }
+
             super.paintBackgroundSafely(g);
         }
 
@@ -950,6 +967,17 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements AquaUtilControlSi
         isMinimumSizeDirty = false;
     }
 
+    // Overridden to use the proper renderer
+    @Override
+    protected Dimension getDefaultSize() {
+        ListCellRenderer r = comboBox.getRenderer();
+        if (r == null)  {
+            r = new DefaultListCellRenderer();
+        }
+        Dimension d = getSizeForComponent(r.getListCellRendererComponent(listBox, " ", -1, false, false));
+        return new Dimension(d.width, d.height);
+    }
+
     /**
      * Style related configuration affecting layout
      *
@@ -1015,6 +1043,9 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements AquaUtilControlSi
                             if (target.comboBox != null) target.comboBox.hidePopup();
                         }
                         if (target.listBox != null) target.listBox.repaint();
+                        if (target.comboBox != null) {
+                            target.comboBox.repaint();
+                        }
                     }
                 },
                 new Property<AquaComboBoxUI>("editable") {
@@ -1054,6 +1085,7 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements AquaUtilControlSi
                 new Property<AquaComboBoxUI>(TITLE_CLIENT_PROPERTY_KEY) {
                     public void applyProperty(final AquaComboBoxUI target, final Object value) {
                         if (target.comboBox != null) {
+                            target.comboBox.setPrototypeDisplayValue(value);
                             target.comboBox.repaint();
                         }
                     }

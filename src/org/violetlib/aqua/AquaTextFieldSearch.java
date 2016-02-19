@@ -1,5 +1,5 @@
 /*
- * Changes Copyright (c) 2015 Alan Snyder.
+ * Changes Copyright (c) 2015-2016 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -323,10 +323,18 @@ public class AquaTextFieldSearch {
                 hasCancelButton = hasFocus;
             }
 
+            boolean isToolbar = isOnToolbar(tc);
+
             return !hasCancelButton ?
-                    hasMenu ? TextFieldWidget.TEXT_FIELD_SEARCH_WITH_MENU : TextFieldWidget.TEXT_FIELD_SEARCH
+                    hasMenu ?
+                            isToolbar ? TextFieldWidget.TEXT_FIELD_SEARCH_WITH_MENU_TOOLBAR : TextFieldWidget.TEXT_FIELD_SEARCH_WITH_MENU
+                            :
+                            isToolbar ? TextFieldWidget.TEXT_FIELD_SEARCH_TOOLBAR: TextFieldWidget.TEXT_FIELD_SEARCH
                     :
-                    hasMenu ? TextFieldWidget.TEXT_FIELD_SEARCH_WITH_MENU_AND_CANCEL : TextFieldWidget.TEXT_FIELD_SEARCH_WITH_CANCEL;
+                    hasMenu ?
+                            isToolbar ? TextFieldWidget.TEXT_FIELD_SEARCH_WITH_MENU_AND_CANCEL_TOOLBAR : TextFieldWidget.TEXT_FIELD_SEARCH_WITH_MENU_AND_CANCEL
+                            :
+                            isToolbar ? TextFieldWidget.TEXT_FIELD_SEARCH_WITH_CANCEL_TOOLBAR : TextFieldWidget.TEXT_FIELD_SEARCH_WITH_CANCEL;
         }
 
         public Insets getBorderInsets(final Component c) {

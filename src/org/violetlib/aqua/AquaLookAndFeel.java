@@ -507,7 +507,7 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
             "ComboBox.disabledBackground", menuDisabledBackgroundColor,
             "ComboBox.disabledForeground", menuDisabledForegroundColor,
             "ComboBox.ancestorInputMap", aquaKeyBindings.getComboBoxInputMap(),
-            "ComboBox.padding", new InsetsUIResource(1, 5, 1, 5),   // affects only non-editable combo boxes
+            "ComboBox.padding", new InsetsUIResource(1, 4, 1, 4),   // affects only non-editable combo boxes
             "ComboBox.maximumRowCount", 5,
 
             "DesktopIcon.border", internalFrameBorder,

@@ -51,10 +51,12 @@ public class AquaComboBoxRendererInternal<E> extends JLabel implements ListCellR
     private static int checkMarkLeftInset = 5;
     private static int checkMarkTopInset = 3;
     private static int menuLabelLeftInset = 21;
-    private static int buttonLabelLeftInset = 5;
+    private static int buttonLabelLeftInset = 0;    // already determined using content area and padding
     private static int menuLabelTopInset = 0;
     private static int menuLabelBottomInset = 1;
-    private static int buttonLabelTopInset = 1;
+    private static int buttonLabelTopInset = 0;     // already determined using content area
+    private static int buttonLabelBottomInset = 0;    // already determined using content area
+    private static int buttonLabelRightInset = 0;    // already determined using content area and padding
     private static int miniMenuLabelTopInset = 1;
     private static int miniMenuLabelBottomInset = 0;
 
@@ -150,8 +152,8 @@ public class AquaComboBoxRendererInternal<E> extends JLabel implements ListCellR
             insets.left = menuLabelLeftInset;
         } else {
             insets.top = buttonLabelTopInset;
-            insets.bottom = 1;
-            insets.right = 5;
+            insets.bottom = buttonLabelBottomInset;
+            insets.right = buttonLabelRightInset;
             insets.left = buttonLabelLeftInset;
         }
 

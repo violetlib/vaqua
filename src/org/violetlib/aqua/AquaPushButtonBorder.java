@@ -25,7 +25,7 @@ public class AquaPushButtonBorder extends AquaButtonBorder {
     public ButtonWidget getButtonWidget(AbstractButton b) {
         boolean isOnToolbar = AquaButtonUI.isOnToolbar(b);
 
-        ButtonWidget preferredWidget = isOnToolbar ? ButtonWidget.BUTTON_TEXTURED : ButtonWidget.BUTTON_PUSH;
+        ButtonWidget preferredWidget = isOnToolbar ? ButtonWidget.BUTTON_TEXTURED_TOOLBAR : ButtonWidget.BUTTON_PUSH;
         if (isProposedButtonWidgetUsable(b, preferredWidget)) {
             return preferredWidget;
         }
