@@ -249,10 +249,6 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements AquaUtilControlSi
             displayedItem = comboBox.getSelectedItem();
         }
 
-        // fake it out! not renderPressed
-        final Component c = renderer.getListCellRendererComponent(listBox, displayedItem, -1, false, false);
-        // System.err.println("Renderer: " + renderer);
-
         int top = 0;
         int left = 0;
         int width = comboBox.getWidth();
@@ -269,10 +265,19 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements AquaUtilControlSi
             }
         }
 
+        if (padding != null) {
+            left += padding.left;
+            top += padding.top;
+            width -= padding.left;  // do not use right padding here, if we need the room we should use it
+            height -= padding.top;  // do not use bottom padding here, if we need the room we should use it
+        }
+
+        // fake it out! not renderPressed
+        Component c = renderer.getListCellRendererComponent(listBox, displayedItem, -1, false, false);
+        // System.err.println("Renderer: " + renderer);
         c.setFont(currentValuePane.getFont());
 
         Color foreground = arrowButton.getForeground();
-
         c.setForeground(foreground);
 
         // Sun Fix for 4238829: should lay out the JPanel.
@@ -281,27 +286,9 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements AquaUtilControlSi
             shouldValidate = true;
         }
 
-//        final int iconWidth = 0;
-//        final int cWidth = width - (insets.right + iconWidth);
-//
-//        // fix for 3156483 we need to crop images that are too big.
-//        // if (height > 18)
-//        // always crop.
-//        {
-//            top = height / 2 - 8;
-//            height = 19;
-//        }
-
         // It doesn't need to draw its background, we handled it
         final Color background = c.getBackground();
-            c.setBackground(new Color(0, 0, 0, 0));
-
-        if (padding != null) {
-            left += padding.left;
-            top += padding.top;
-            width -= padding.left;  // do not use right padding here, if we need the room we should use it
-            height -= padding.top;  // do not use bottom padding here, if we need the room we should use it
-        }
+        c.setBackground(new Color(0, 0, 0, 0));
 
         currentValuePane.paintComponent(g, c, comboBox, left, top, width, height, shouldValidate);
 
@@ -1085,8 +1072,11 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements AquaUtilControlSi
                 new Property<AquaComboBoxUI>(TITLE_CLIENT_PROPERTY_KEY) {
                     public void applyProperty(final AquaComboBoxUI target, final Object value) {
                         if (target.comboBox != null) {
-                            target.comboBox.setPrototypeDisplayValue(value);
-                            target.comboBox.repaint();
+                            AquaComboBoxType type = getComboBoxType(target.comboBox);
+                            if (type == AquaComboBoxType.PULL_DOWN_MENU_BUTTON) {
+                                target.comboBox.setPrototypeDisplayValue(value);
+                                target.comboBox.repaint();
+                            }
                         }
                     }
                 }

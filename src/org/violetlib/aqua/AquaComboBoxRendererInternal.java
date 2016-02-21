@@ -70,9 +70,16 @@ public class AquaComboBoxRendererInternal<E> extends JLabel implements ListCellR
     // - the popup-size calc will get checkIcon space from getInsets
     public Dimension getPreferredSize() {
         // From BasicComboBoxRenderer - trick to avoid zero-height items
-        final Dimension size;
 
-        final String text = getText();
+        Icon icon = getIcon();
+        if (icon != null) {
+            int width = icon.getIconWidth();
+            int height = icon.getIconHeight();
+            return new Dimension(width, height);
+        }
+
+        String text = getText();
+        Dimension size;
         if ((text == null) || ("".equals(text))) {
             setText(" ");
             size = super.getPreferredSize();
@@ -134,7 +141,9 @@ public class AquaComboBoxRendererInternal<E> extends JLabel implements ListCellR
 
         if (value instanceof Icon) {
             setIcon((Icon)value);
+            setText(null);
         } else {
+            setIcon(null);
             setText((value == null) ? " " : value.toString());
         }
         return this;
