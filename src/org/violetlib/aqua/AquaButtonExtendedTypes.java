@@ -540,9 +540,12 @@ public class AquaButtonExtendedTypes {
                 );
 
         result.put(BUTTON_TEXTURED, textured);
+        result.put(BUTTON_TEXTURED_TOOLBAR, textured);
         result.put(BUTTON_ROUND_TEXTURED, textured);
         result.put(BUTTON_SEGMENTED_TEXTURED, textured);
         result.put(BUTTON_SEGMENTED_TEXTURED_SEPARATED, textured);
+        result.put(BUTTON_SEGMENTED_TEXTURED_TOOLBAR, textured);
+        result.put(BUTTON_SEGMENTED_TEXTURED_SEPARATED_TOOLBAR, textured);
 
         result.put(BUTTON_RECESSED, new WidgetInfo()
                 .withFont(UIManager.getFont("Button.recessed.font"))
