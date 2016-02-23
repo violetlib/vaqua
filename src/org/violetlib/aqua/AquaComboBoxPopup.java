@@ -36,9 +36,13 @@ package org.violetlib.aqua;
 import java.awt.*;
 import java.awt.event.InputEvent;
 import java.awt.event.MouseEvent;
+import java.awt.event.MouseWheelEvent;
+import java.awt.event.MouseWheelListener;
 import javax.swing.*;
 import javax.swing.border.Border;
 import javax.swing.plaf.basic.BasicComboPopup;
+
+import org.jcp.xml.dsig.internal.dom.Utils;
 
 @SuppressWarnings("serial") // Superclass is not serializable across versions
 class AquaComboBoxPopup extends BasicComboPopup implements AquaExtendedPopup {
@@ -53,6 +57,13 @@ class AquaComboBoxPopup extends BasicComboPopup implements AquaExtendedPopup {
     }
 
     protected PopupDisplayType currentDisplayType;
+
+    protected static MouseWheelListener mouseWheelEventConsumer = new MouseWheelListener() {
+        @Override
+        public void mouseWheelMoved(MouseWheelEvent e) {
+            e.consume();
+        }
+    };
 
     public AquaComboBoxPopup(final JComboBox<Object> cBox) {
         super(cBox);
@@ -94,6 +105,7 @@ class AquaComboBoxPopup extends BasicComboPopup implements AquaExtendedPopup {
         // The combo box popup scroll pane is used only if the combo box is editable and has too many items.
 
         if (list != null) {
+
             if (currentDisplayType == PopupDisplayType.EDITABLE_SCROLL) {
                 remove(list);
                 if (remove) {
@@ -111,6 +123,15 @@ class AquaComboBoxPopup extends BasicComboPopup implements AquaExtendedPopup {
                 add(list);
                 list.setOpaque(false);
                 setOpaque(false);
+            }
+
+            // The following is a workaround for bad behavior in BasicPopupMenuUI. If we do not consume a mouse wheel
+            // event over the list, then BasicPopupMenuUI will dismiss the popup in response to the event. Even though
+            // the mouse wheel event has no useful behavior on a non-scrollable list (on a native combo box it will
+            // bounce scroll the list), the event should not dismiss the popup.
+            list.removeMouseWheelListener(mouseWheelEventConsumer);
+            if (currentDisplayType == PopupDisplayType.EDITABLE_NO_SCROLL) {
+                list.addMouseWheelListener(mouseWheelEventConsumer);
             }
 
             if (currentDisplayType == PopupDisplayType.EDITABLE_SCROLL || currentDisplayType == PopupDisplayType.EDITABLE_NO_SCROLL) {
