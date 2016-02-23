@@ -104,6 +104,10 @@ public class AquaButtonExtendedTypes {
         return null;
     }
 
+    public static WidgetInfo getTabWidgetInfo(AquaUIPainter.Size sz, Position pos) {
+        return widgetDefinitions.get().get(BUTTON_TAB);
+    }
+
     protected static String getRealPositionForLogicalPosition(String logicalPosition, boolean leftToRight) {
         if (!leftToRight) {
             if ("first".equalsIgnoreCase(logicalPosition)) return "last";
@@ -501,12 +505,15 @@ public class AquaButtonExtendedTypes {
                 .withActiveDefaultButtonForeground(defaultWhite)
         );
 
-        result.put(BUTTON_SEGMENTED, new WidgetInfo(true)
-                .withMargin(5)
-                .withForeground(black34, white, null, null)
-                .withDisabledForeground(new GrayUIResource(172), dark64)
-                .withInactiveForeground(black34, null)
-        );
+        WidgetInfo segmentedRounded = new WidgetInfo(true)
+                        .withMargin(9)
+                        .withForeground(black34, white, null, null)
+                        .withDisabledForeground(new GrayUIResource(172), dark64)
+                        .withInactiveForeground(black34, null);
+
+        result.put(BUTTON_SEGMENTED, segmentedRounded);
+        result.put(BUTTON_TAB, segmentedRounded);
+        result.put(BUTTON_SEGMENTED_SEPARATED, segmentedRounded);
 
         WidgetInfo gradient = new WidgetInfo().withForeground(dark220, dark220, dark64, null);
         result.put(BUTTON_GRADIENT, gradient.withMargin(2));
@@ -542,10 +549,18 @@ public class AquaButtonExtendedTypes {
         result.put(BUTTON_TEXTURED, textured);
         result.put(BUTTON_TEXTURED_TOOLBAR, textured);
         result.put(BUTTON_ROUND_TEXTURED, textured);
-        result.put(BUTTON_SEGMENTED_TEXTURED, textured);
-        result.put(BUTTON_SEGMENTED_TEXTURED_SEPARATED, textured);
-        result.put(BUTTON_SEGMENTED_TEXTURED_TOOLBAR, textured);
-        result.put(BUTTON_SEGMENTED_TEXTURED_SEPARATED_TOOLBAR, textured);
+
+        WidgetInfo segmentedTextured = textured.withMargin(9);
+
+        result.put(BUTTON_SEGMENTED_TEXTURED, segmentedTextured);
+        result.put(BUTTON_SEGMENTED_TEXTURED_SEPARATED, segmentedTextured);
+        result.put(BUTTON_SEGMENTED_TEXTURED_TOOLBAR, segmentedTextured);
+        result.put(BUTTON_SEGMENTED_TEXTURED_SEPARATED_TOOLBAR, segmentedTextured);
+
+        WidgetInfo segmentedGradient = gradient.withMargin(9);
+        result.put(BUTTON_SEGMENTED_INSET, segmentedGradient);
+        result.put(BUTTON_SEGMENTED_SCURVE, segmentedGradient);
+        result.put(BUTTON_SEGMENTED_SMALL_SQUARE, segmentedGradient);
 
         result.put(BUTTON_RECESSED, new WidgetInfo()
                 .withFont(UIManager.getFont("Button.recessed.font"))

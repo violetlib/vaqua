@@ -188,31 +188,13 @@ public class AquaTabbedPaneUI extends AquaTabbedPaneCopyFromBasicUI implements A
         LayoutInfo layoutInfo = painter.getLayoutInfo().getLayoutInfo(g);
         fixedTabHeight = (int) layoutInfo.getFixedVisualHeight();
 
-        Insetter s;
-        Insets n;
-
         // The renderer does not know about right to left orientation, because the rendering is symmetric.
         // Therefore the First position is always on the left side.
 
-        g = new SegmentedButtonLayoutConfiguration(buttonWidget, sizeVariant, ONLY);
-        s = painter.getLayoutInfo().getSegmentedButtonLabelInsets(g);
-        n = s.asInsets();
-        onlyTabInsets = n != null ? n : new Insets(3, 10, 3, 10);
-
-        g = new SegmentedButtonLayoutConfiguration(buttonWidget, sizeVariant, FIRST);
-        s = painter.getLayoutInfo().getSegmentedButtonLabelInsets(g);
-        n = s.asInsets();
-        leftTabInsets = n != null ? n : new Insets(3, 10, 3, 10);
-
-        g = new SegmentedButtonLayoutConfiguration(buttonWidget, sizeVariant, LAST);
-        s = painter.getLayoutInfo().getSegmentedButtonLabelInsets(g);
-        n = s.asInsets();
-        rightTabInsets = n != null ? n : new Insets(3, 10, 3, 10);
-
-        g = new SegmentedButtonLayoutConfiguration(buttonWidget, sizeVariant, MIDDLE);
-        s = painter.getLayoutInfo().getSegmentedButtonLabelInsets(g);
-        n = s.asInsets();
-        middleTabInsets = n != null ? n : new Insets(3, 10, 3, 10);
+        onlyTabInsets = getTabInsets(ONLY);
+        leftTabInsets = getTabInsets(FIRST);
+        rightTabInsets = getTabInsets(LAST);
+        middleTabInsets = getTabInsets(MIDDLE);
 
         // Icon size is less than text height because having icons touch the border is uglier...
         int delta = onlyTabInsets.top + onlyTabInsets.bottom + 1;
@@ -220,6 +202,18 @@ public class AquaTabbedPaneUI extends AquaTabbedPaneCopyFromBasicUI implements A
             delta++;
         }
         maxIconSize = fixedTabHeight - delta;
+    }
+
+    protected Insets getTabInsets(Position pos) {
+        SegmentedButtonLayoutConfiguration g = new SegmentedButtonLayoutConfiguration(buttonWidget, sizeVariant, pos);
+        Insetter s = painter.getLayoutInfo().getSegmentedButtonLabelInsets(g);
+        Insets n = s.asInsets();
+        if (n == null) {
+            n = new Insets(3, 0, 3, 0);
+        }
+        AquaButtonExtendedTypes.WidgetInfo info = AquaButtonExtendedTypes.getTabWidgetInfo(sizeVariant, pos);
+        int margin = info.getMargin();
+        return new Insets(n.top, n.left + margin, n.bottom, n.right + margin);
     }
 
     protected void assureRectsCreated(final int tabCount) {
