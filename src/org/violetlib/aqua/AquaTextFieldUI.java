@@ -1,5 +1,5 @@
 /*
- * Changes Copyright (c) 2015 Alan Snyder.
+ * Changes Copyright (c) 2015-2016 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -128,6 +128,9 @@ public class AquaTextFieldUI extends BasicTextFieldUI implements FocusRingOutlin
             final String prop = e.getPropertyName();
             if (isStyleProperty(prop) || AquaCellEditorPolicy.isCellEditorProperty(prop)) {
                 updateStyle();
+            } else if (AquaFocusHandler.FRAME_ACTIVE_PROPERTY.equals(prop)) {
+                // Starting in 10.11, toolbar search and round styles look different when the window is inactive
+                editor.repaint();
             }
         }
     }
