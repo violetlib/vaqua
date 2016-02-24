@@ -619,8 +619,10 @@ public class AquaButtonExtendedTypes {
             new BorderDefinedTypeSpecifier("toolbarItem", BUTTON_TOOLBAR_ITEM),
             new BorderDefinedTypeSpecifier("help", BUTTON_HELP),
             new BorderDefinedTypeSpecifier("round", BUTTON_ROUND),
+            new BorderDefinedTypeSpecifier("round-onToolbar", OSXSystemProperties.OSVersion >= 1011 ? BUTTON_ROUND_TOOLBAR : BUTTON_ROUND),
             new BorderDefinedTypeSpecifier("texturedRound", BUTTON_ROUND_INSET),   // TBD: this is not correct, but the button type is undocumented
             new BorderDefinedTypeSpecifier("roundTextured", BUTTON_ROUND_TEXTURED),
+            new BorderDefinedTypeSpecifier("roundTextured-onToolbar", OSXSystemProperties.OSVersion >= 1011 ? BUTTON_ROUND_TOOLBAR : BUTTON_ROUND_TEXTURED),
             new BorderDefinedTypeSpecifier("roundInset", BUTTON_ROUND_INSET),
             new BorderDefinedTypeSpecifier("colorWell", BUTTON_COLOR_WELL),
 

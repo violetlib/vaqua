@@ -76,6 +76,7 @@ public class AquaToolBarUI extends BasicToolBarUI implements SwingConstants {
         if (originalLayoutManager instanceof UIResource) {
             toolBar.setLayout(new AquaToolBarLayout());
         }
+        toolBar.setFloatable(false);
     }
 
     @Override

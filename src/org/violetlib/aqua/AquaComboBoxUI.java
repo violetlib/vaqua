@@ -515,6 +515,9 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements AquaUtilControlSi
 
             //setBackground(new Color(255, 200, 0, 128)); // debug
 
+            setBackground(new Color(0, 0, 0, 0));
+            setOpaque(false);
+
             final InputMap inputMap = getInputMap();
             inputMap.put(KeyStroke.getKeyStroke("DOWN"), highlightNextAction);
             inputMap.put(KeyStroke.getKeyStroke("KP_DOWN"), highlightNextAction);
