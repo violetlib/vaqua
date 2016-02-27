@@ -243,6 +243,9 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements AquaUtilControlSi
         if (type == AquaComboBoxType.PULL_DOWN_MENU_BUTTON) {
             Object value = comboBox.getClientProperty(TITLE_CLIENT_PROPERTY_KEY);
             if (value != null) {
+                if (value instanceof Icon) {
+                    value = arrowButton.getIcon((Icon) value);
+                }
                 displayedItem = value;
             }
         } else {

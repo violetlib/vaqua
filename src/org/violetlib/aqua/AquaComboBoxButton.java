@@ -73,6 +73,9 @@ class AquaComboBoxButton extends JButton {
     protected Size sizeVariant;
     protected boolean isRollover;
 
+    protected ImageIcon lastTestedIcon;
+    protected boolean lastTestedIconIsTemplate;
+
     @SuppressWarnings("serial") // anonymous class
     protected AquaComboBoxButton(final AquaComboBoxUI ui,
                                  final JComboBox<Object> comboBox,
@@ -305,6 +308,39 @@ class AquaComboBoxButton extends JButton {
         }
 
         return existingColor;
+    }
+
+    /**
+     * Modify the title icon if necessary based on the combo box (button) style and state.
+     * @param icon The supplied icon.
+     * @return the icon to use.
+     */
+    public Icon getIcon(Icon icon) {
+        if (icon instanceof ImageIcon) {
+            ImageIcon ii = (ImageIcon) icon;
+            if (isTemplateIconEnabled(ii)) {
+                Object widget = getWidget(getLayoutConfiguration());
+                AquaButtonExtendedTypes.WidgetInfo info = AquaButtonExtendedTypes.getWidgetInfo(widget);
+                Color color = comboBox.isEnabled() ? info.getTemplateUnselectedColor() : info.getTemplateDisabledUnselectedColor();
+                if (color != null) {
+                    Image im = ii.getImage();
+                    im = AquaImageFactory.createImageFromTemplate(im, color);
+                    if (im != null) {
+                        return new ImageIconUIResource(im);
+                    }
+                }
+            }
+        }
+        return icon;
+    }
+
+    private boolean isTemplateIconEnabled(ImageIcon ii) {
+        if (ii == lastTestedIcon) {
+            return lastTestedIconIsTemplate;
+        }
+        lastTestedIcon = ii;
+        lastTestedIconIsTemplate = AquaImageFactory.isTemplateImage(ii.getImage());
+        return lastTestedIconIsTemplate;
     }
 
     protected State getState() {
