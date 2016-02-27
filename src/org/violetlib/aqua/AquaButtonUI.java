@@ -571,45 +571,16 @@ public class AquaButtonUI extends BasicButtonUI implements AquaUtilControlSize.S
         return text;
     }
 
+    /**
+     * Paint the appropriate icon based on the button state.
+     * This method should not be called unless the button has an icon.
+     */
     protected void paintIcon(Graphics g, AbstractButton b, Rectangle localIconRect) {
-        Icon icon = b.getIcon();
-        final ButtonModel model = b.getModel();
-        Icon specialIcon = null;
-
-        if (!model.isEnabled()) {
-            if (model.isSelected()) {
-                specialIcon = b.getDisabledSelectedIcon();
-            } else {
-                specialIcon = b.getDisabledIcon();
-            }
-        } else if (model.isPressed() && model.isArmed()) {
-            specialIcon = getPressedIcon(b);
-        } else if (b.isRolloverEnabled() && model.isRollover()) {
-            if (model.isSelected()) {
-                specialIcon = b.getRolloverSelectedIcon();
-            } else {
-                specialIcon = b.getRolloverIcon();
-            }
-        } else if (model.isSelected()) {
-            specialIcon = getSelectedIcon(b);
-        } else {
-            specialIcon = getUnselectedIcon(b);
-        }
-
-//        if (model.isEnabled() && b.isFocusOwner() && AquaButtonUI.isOnToolbar(b)) {
-//            if (specialIcon == null) specialIcon = icon;
-//            if (specialIcon instanceof ImageIcon) {
-//                specialIcon = AquaFocus.createFocusedIcon(specialIcon, b, 3);
-//                specialIcon.paintIcon(b, g, localIconRect.x - 3, localIconRect.y - 3);
-//                return;
-//            }
-//        }
+        Icon icon = getIcon(b);
 
         Graphics2D gg = null;
 
-        if (specialIcon != null) {
-            icon = specialIcon;
-        } else if (icon.getIconWidth() != localIconRect.width || icon.getIconHeight() != localIconRect.height) {
+        if (icon.getIconWidth() != localIconRect.width || icon.getIconHeight() != localIconRect.height) {
             gg = (Graphics2D) g.create();
             g = gg;
             gg.translate(localIconRect.x, localIconRect.y);
@@ -621,6 +592,47 @@ public class AquaButtonUI extends BasicButtonUI implements AquaUtilControlSize.S
 
         if (gg != null) {
             gg.dispose();
+        }
+    }
+
+    /**
+     * Obtain the icon to use based on the button state.
+     * This method should not be called unless the button has an icon.
+     * @param b The button.
+     * @return the icon to use.
+     */
+    protected Icon getIcon(AbstractButton b) {
+        Icon icon = getSpecialIcon(b);
+        return icon != null ? icon : b.getIcon();
+    }
+
+    /**
+     * Obtain a special icon to use based on the button state.
+     * This method should not be called unless the button has an icon.
+     * @param b The button.
+     * @return the icon to use, or null if no special icon is needed.
+     */
+    protected Icon getSpecialIcon(AbstractButton b) {
+        final ButtonModel model = b.getModel();
+
+        if (!model.isEnabled()) {
+            if (model.isSelected()) {
+                return b.getDisabledSelectedIcon();
+            } else {
+                return b.getDisabledIcon();
+            }
+        } else if (model.isPressed() && model.isArmed()) {
+            return getPressedIcon(b);
+        } else if (b.isRolloverEnabled() && model.isRollover()) {
+            if (model.isSelected()) {
+                return b.getRolloverSelectedIcon();
+            } else {
+                return b.getRolloverIcon();
+            }
+        } else if (model.isSelected()) {
+            return getSelectedIcon(b);
+        } else {
+            return getUnselectedIcon(b);
         }
     }
 
