@@ -177,7 +177,7 @@ public class AquaSplitPaneDivider extends BasicSplitPaneDivider {
             final Image arrowImage = AquaImageFactory.getArrowImageForDirection(direction);
             final int h = (arrowImage.getHeight(null) * 5) / 7;
             final int w = (arrowImage.getWidth(null) * 5) / 7;
-            return AquaUtils.generateLightenedImage(arrowImage.getScaledInstance(w, h, Image.SCALE_SMOOTH), 50);
+            return AquaImageFactory.generateLightenedImage(arrowImage.getScaledInstance(w, h, Image.SCALE_SMOOTH), 50);
         }
     };
 

@@ -41,7 +41,6 @@ public class OSXFile {
      */
     private static volatile Color[][] labelColors;
 
-    private static Icon computerIcon;
     private static String computerModel;
     private static boolean computerModelInitialized;
     private static Icon computerSidebarIcon;
@@ -165,7 +164,7 @@ public class OSXFile {
         }
 
         @Override
-        public Image map(Image source, int scaleFactor) {
+        public BufferedImage map(Image source, int scaleFactor) {
             BufferedImage img = Images.toBufferedImage(source);
             return basicCreateSidebarImage(img, color);
         }
@@ -175,7 +174,7 @@ public class OSXFile {
      * Create a sidebar icon image for Yosemite. Light areas remain transparent. Dark areas are mapped to the specified
      * color.
      */
-    protected static Image basicCreateSidebarImage(BufferedImage img, Color color) {
+    protected static BufferedImage basicCreateSidebarImage(BufferedImage img, Color color) {
         int width = img.getWidth();
         int height = img.getHeight();
         BufferedImage iconImg = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB_PRE);
@@ -774,47 +773,6 @@ public class OSXFile {
 
     public static boolean isSavedSearch(File f) {
         return f.getName().endsWith(".savedSearch");
-    }
-
-    public static Icon getComputerIcon() {
-        if (computerIcon == null) {
-
-            Image im = Toolkit.getDefaultToolkit().getImage("NSImage://NSComputer");
-            if (im != null) {
-                int height = im.getHeight(null);
-                if (height > 0) {
-                    BufferedImage b = Images.toBufferedImage(im);
-                    im = AquaMultiResolutionImage.createImage2x(b);
-                    return computerIcon = new ImageIcon(im);
-                }
-            }
-
-            String model = getComputerModel();
-            if (model != null) {
-                if (model.startsWith("MacBookAir")) {
-                    computerIcon = UIManager.getIcon("FileView.macbookAirIcon");
-                } else if (model.startsWith("MacBookPro")) {
-                    computerIcon = UIManager.getIcon("FileView.macbookProIcon");
-                } else if (model.startsWith("MacBook")) {
-                    computerIcon = UIManager.getIcon("FileView.macbookIcon");
-                } else if (model.startsWith("MacPro")) {
-                    computerIcon = UIManager.getIcon("FileView.macproIcon");
-                } else if (model.startsWith("Macmini")) {
-                    computerIcon = UIManager.getIcon("FileView.macminiIcon");
-                } else if (model.startsWith("iMac")) {
-                    computerIcon = UIManager.getIcon("FileView.imacIcon");
-                }
-            }
-
-            if (computerIcon == null) {
-                computerIcon = UIManager.getIcon("FileView.imacIcon");
-            }
-
-            if (computerIcon == null) {
-                computerIcon = UIManager.getIcon("FileView.computerIcon");
-            }
-        }
-        return computerIcon;
     }
 
     public static Icon getSidebarComputerIcon() {

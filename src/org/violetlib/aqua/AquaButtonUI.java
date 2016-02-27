@@ -74,6 +74,8 @@ public class AquaButtonUI extends BasicButtonUI implements AquaUtilControlSize.S
     public static final String LAYOUT_CONFIGURATION_PROPERTY = "Aqua.Button.LayoutConfiguration";
     public static final String DEFAULT_FONT_PROPERTY = "Aqua.Button.DefaultFont";
     protected static final String COLOR_CHOOSER_OWNER_PROPERTY = "Aqua.Button.ColorChooserOwner";
+    protected static final String UNSELECTED_ICON_PROPERTY = "Aqua.Button.UnselectedIcon";
+    protected static final String TEMPLATE_ICON_PROPERTY = "Aqua.Button.IsTemplateIcon";
 
     protected static final RecyclableSingleton<AquaButtonUI> buttonUI = new RecyclableSingletonFromDefaultConstructor<AquaButtonUI>(AquaButtonUI.class);
     public static ComponentUI createUI(final JComponent c) {
@@ -81,6 +83,12 @@ public class AquaButtonUI extends BasicButtonUI implements AquaUtilControlSize.S
     }
 
     private AquaButtonExtendedTypes.ColorDefaults colorDefaults;
+
+    @Override
+    public void installUI(JComponent c) {
+        super.installUI(c);
+        removeCachedIcons((AbstractButton) c);
+    }
 
     protected void installDefaults(final AbstractButton b) {
         // load shared instance defaults
@@ -145,10 +153,67 @@ public class AquaButtonUI extends BasicButtonUI implements AquaUtilControlSize.S
             AquaUtilControlSize.installDefaultFont(b, df);
         }
 
+        updateTemplateIconStatus(b);
+
         b.setRequestFocusEnabled(false);
 
         b.revalidate();
         b.repaint();
+    }
+
+    /**
+     * Indicate whether a button is eligible for painting the icon as a template.
+     */
+    public static boolean isTemplateIconEnabled(AbstractButton b) {
+        Object o = b.getClientProperty(TEMPLATE_ICON_PROPERTY);
+        return Boolean.TRUE.equals(o);
+    }
+
+    /**
+     * Update the client property that marks a button that is eligible for painting the icon as a template.
+     */
+    protected void updateTemplateIconStatus(AbstractButton b) {
+        if (determineTemplateIconStatus(b)) {
+            b.putClientProperty(TEMPLATE_ICON_PROPERTY, true);
+        } else {
+            b.putClientProperty(TEMPLATE_ICON_PROPERTY, null);
+        }
+    }
+
+    /**
+     * Determine whether or not the button is eligible for painting the icon as a template.
+     * To be eligible, the button must define an icon that is a template image, and it must not have any other
+     * application provided icon.
+     */
+    protected boolean determineTemplateIconStatus(AbstractButton b) {
+        Icon standardIcon = b.getIcon();
+        if (standardIcon instanceof ImageIcon) {
+            ImageIcon im = (ImageIcon) standardIcon;
+            Image image = im.getImage();
+
+            // It is unfortunate that there is no way to ask for a disabled icon without risking creating one via the
+            // LAF. We use a static variable to temporarily inhibit our LAF from creating an icon.
+
+            boolean oldValue = AquaLookAndFeel.suppressCreationOfDisabledButtonIcons;
+            AquaLookAndFeel.suppressCreationOfDisabledButtonIcons = true;
+
+            try {
+                return !isApplicationDefined(b.getPressedIcon())
+                  && !isApplicationDefined(b.getDisabledIcon())
+                  && !isApplicationDefined(b.getSelectedIcon())
+                  && !isApplicationDefined(b.getDisabledSelectedIcon())
+                  && !isApplicationDefined(b.getRolloverIcon())
+                  && !isApplicationDefined(b.getRolloverSelectedIcon())
+                  && AquaImageFactory.isTemplateImage(image);
+            } finally {
+                AquaLookAndFeel.suppressCreationOfDisabledButtonIcons = oldValue;
+            }
+        }
+        return false;
+    }
+
+    protected boolean isApplicationDefined(Icon ic) {
+        return ic != null && !(ic instanceof UIResource);
     }
 
     /**
@@ -308,6 +373,7 @@ public class AquaButtonUI extends BasicButtonUI implements AquaUtilControlSize.S
         uninstallListeners((AbstractButton)c);
         uninstallDefaults((AbstractButton)c);
         //BasicHTML.updateRenderer(c, "");
+        removeCachedIcons((AbstractButton) c);
     }
 
     protected void uninstallKeyboardActions(final AbstractButton b) {
@@ -335,6 +401,45 @@ public class AquaButtonUI extends BasicButtonUI implements AquaUtilControlSize.S
     protected void uninstallDefaults(final AbstractButton b) {
         LookAndFeel.uninstallBorder(b);
         AquaUtilControlSize.uninstallDefaultFont(b);
+    }
+
+    protected void removeCachedIcons(AbstractButton b) {
+
+        // It is unfortunate that there is no way to ask for a disabled icon without risking creating one via the
+        // LAF. We use a static variable to temporarily inhibit our LAF from creating an icon.
+
+        boolean oldValue = AquaLookAndFeel.suppressCreationOfDisabledButtonIcons;
+        AquaLookAndFeel.suppressCreationOfDisabledButtonIcons = true;
+
+        try {
+            if (b.getSelectedIcon() instanceof UIResource) {
+                b.setSelectedIcon(null);
+            }
+
+            if (b.getDisabledIcon() instanceof UIResource) {
+                b.setDisabledIcon(null);
+            }
+
+            if (b.getDisabledSelectedIcon() instanceof UIResource) {
+                b.setDisabledSelectedIcon(null);
+            }
+
+            if (b.getPressedIcon() instanceof UIResource) {
+                b.setPressedIcon(null);
+            }
+
+            if (b.getRolloverIcon() instanceof UIResource) {
+                b.setRolloverIcon(null);
+            }
+
+            if (b.getRolloverSelectedIcon() instanceof UIResource) {
+                b.setRolloverSelectedIcon(null);
+            }
+
+            b.putClientProperty(UNSELECTED_ICON_PROPERTY, null);
+        } finally {
+            AquaLookAndFeel.suppressCreationOfDisabledButtonIcons = oldValue;
+        }
     }
 
     // Create Listeners
@@ -478,10 +583,7 @@ public class AquaButtonUI extends BasicButtonUI implements AquaUtilControlSize.S
                 specialIcon = b.getDisabledIcon();
             }
         } else if (model.isPressed() && model.isArmed()) {
-            specialIcon = b.getPressedIcon();
-            if (specialIcon == null) {
-                icon = getDarkenedIcon(icon);
-            }
+            specialIcon = getPressedIcon(b);
         } else if (b.isRolloverEnabled() && model.isRollover()) {
             if (model.isSelected()) {
                 specialIcon = b.getRolloverSelectedIcon();
@@ -489,7 +591,9 @@ public class AquaButtonUI extends BasicButtonUI implements AquaUtilControlSize.S
                 specialIcon = b.getRolloverIcon();
             }
         } else if (model.isSelected()) {
-            specialIcon = b.getSelectedIcon();
+            specialIcon = getSelectedIcon(b);
+        } else {
+            specialIcon = getUnselectedIcon(b);
         }
 
 //        if (model.isEnabled() && b.isFocusOwner() && AquaButtonUI.isOnToolbar(b)) {
@@ -520,16 +624,161 @@ public class AquaButtonUI extends BasicButtonUI implements AquaUtilControlSize.S
         }
     }
 
-    protected Icon getDarkenedIcon(Icon icon) {
-        int width = icon.getIconWidth();
-        int height = icon.getIconHeight();
+    /**
+     * Obtain a special icon to use when a button is selected.
+     * @param b The button.
+     * @return the icon to use, or null if no special icon is needed.
+     */
+    protected Icon getSelectedIcon(AbstractButton b) {
+        Icon icon = b.getSelectedIcon();
+        if (icon != null) {
+            return icon;
+        }
+
+        icon = createSelectedIcon(b, b.getIcon());
+        if (icon != null) {
+            b.setSelectedIcon(icon);
+        }
+
+        return icon;
+    }
+
+    /**
+     * Create a special icon to use when a button is selected, if appropriate.
+     * @param b The button.
+     * @param source The button icon.
+     * @return the icon to use, or null if no special icon is needed.
+     */
+    protected Icon createSelectedIcon(AbstractButton b, Icon source) {
+        Border border = b.getBorder();
+        if (border instanceof AquaButtonBorder) {
+            AquaButtonBorder bb = (AquaButtonBorder) border;
+            return bb.createSelectedIcon(b, source);
+        }
+        return null;
+    }
+
+    /**
+     * Obtain a special icon to use when a button is not selected.
+     * @param b The button.
+     * @return the icon to use, or null if no special icon is needed.
+     */
+    protected Icon getUnselectedIcon(AbstractButton b) {
+        Object o = b.getClientProperty(UNSELECTED_ICON_PROPERTY);
+        if (o instanceof Icon) {
+            return (Icon) o;
+        }
+
+        Icon icon = createUnselectedIcon(b, b.getIcon());
+        if (icon == null) {
+            icon = b.getIcon();
+        }
+        b.putClientProperty(UNSELECTED_ICON_PROPERTY, icon);
+        return icon;
+    }
+
+    /**
+     * Create a special icon to use when a button is not selected, if appropriate.
+     * @param b The button.
+     * @param source The button icon.
+     * @return the icon to use, or null if no special icon is needed.
+     */
+    protected Icon createUnselectedIcon(AbstractButton b, Icon source) {
+        Border border = b.getBorder();
+        if (border instanceof AquaButtonBorder) {
+            AquaButtonBorder bb = (AquaButtonBorder) border;
+            return bb.createUnselectedIcon(b, source);
+        }
+        return null;
+    }
+
+    /**
+     * Obtain a special icon to use when a button is pressed.
+     * @param b The button.
+     * @return the icon to use, or null if no special icon is needed.
+     */
+    protected Icon getPressedIcon(AbstractButton b) {
+        Icon icon = b.getPressedIcon();
+        if (icon != null) {
+            return icon;
+        }
+
+        icon = createPressedIcon(b, b.getIcon());
+        if (icon != null) {
+            b.setPressedIcon(icon);
+        }
+
+        return icon;
+    }
+
+    /**
+     * Create a special icon to use when a button is pressed, if appropriate.
+     * @param b The button.
+     * @param source The button icon.
+     * @return the icon to use, or null if no special icon is needed.
+     */
+    protected Icon createPressedIcon(AbstractButton b, Icon source) {
+        Border border = b.getBorder();
+        if (border instanceof AquaButtonBorder) {
+            AquaButtonBorder bb = (AquaButtonBorder) border;
+            return bb.createPressedIcon(b, source);
+        }
+
+        return createDefaultPressedIcon(source);
+    }
+
+    protected ImageIcon createDefaultPressedIcon(Icon source) {
+        int width = source.getIconWidth();
+        int height = source.getIconHeight();
         BufferedImage im = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB_PRE);
         Graphics2D g = im.createGraphics();
-        icon.paintIcon(null, g, 0, 0);
+        source.paintIcon(null, g, 0, 0);
         g.setColor(new Color(0, 0, 0, 128));
         g.setComposite(AlphaComposite.SrcAtop);
         g.fillRect(0, 0, width, height);
         return new ImageIcon(im);
+    }
+
+    /**
+     * This method is called by AbstractButton via the LAF to obtain an icon to use when a button is disabled.
+     * @param b The button.
+     * @param source The button icon.
+     * @return the icon to use.
+     */
+    public Icon createDisabledIcon(AbstractButton b, ImageIcon source) {
+        Border border = b.getBorder();
+        if (border instanceof AquaButtonBorder) {
+            AquaButtonBorder bb = (AquaButtonBorder) border;
+            Icon icon = bb.createDisabledIcon(b, source);
+            if (icon != null) {
+                return icon;
+            }
+        }
+        return createDefaultDisabledIcon(source);
+    }
+
+    /**
+     * This method is called by AbstractButton via the LAF to obtain an icon to use when a button is disabled and
+     * selected.
+     * @param b The button.
+     * @param source The button selected icon.
+     * @return the icon to use.
+     */
+    public Icon createDisabledSelectedIcon(AbstractButton b, ImageIcon source) {
+        Border border = b.getBorder();
+        if (border instanceof AquaButtonBorder) {
+            AquaButtonBorder bb = (AquaButtonBorder) border;
+            Icon icon = bb.createDisabledSelectedIcon(b, source);
+            if (icon != null) {
+                return icon;
+            }
+        }
+        return createDefaultDisabledIcon(source);
+    }
+
+    protected ImageIcon createDefaultDisabledIcon(ImageIcon source) {
+        GrayFilter filter = new GrayFilter(true, 50);
+        return new ImageIconUIResource(AquaImageFactory.applyFilter(source.getImage(), filter));
     }
 
     protected void paintText(final Graphics g, final AbstractButton b, final Rectangle localTextRect, final String text) {
@@ -693,6 +942,11 @@ public class AquaButtonUI extends BasicButtonUI implements AquaUtilControlSize.S
 
             if ("icon".equals(propertyName) || "text".equals(propertyName)) {
                 configure(b);
+                return;
+            }
+
+            if (propertyName != null && !propertyName.contains(".") && propertyName.endsWith("Icon")) {
+                updateTemplateIconStatus(b);
                 return;
             }
 

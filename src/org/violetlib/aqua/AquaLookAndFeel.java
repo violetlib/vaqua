@@ -64,6 +64,8 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
     private PropertyChangeListener uiChangeListener;
     private AquaPopupFactory popupFactory;
 
+    public static boolean suppressCreationOfDisabledButtonIcons;
+
     public String getName() {
         return "VAqua";
     }
@@ -123,6 +125,42 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
         popupFactory.setActive(false);
 
         super.uninitialize();
+    }
+
+    @Override
+    public Icon getDisabledIcon(JComponent component, Icon icon) {
+        if (!suppressCreationOfDisabledButtonIcons) {
+            if (icon instanceof ImageIcon) {
+                if (component instanceof AbstractButton) {
+                    AquaButtonUI ui = AquaUtils.getUI(component, AquaButtonUI.class);
+                    if (ui != null) {
+                        return ui.createDisabledIcon((AbstractButton) component, (ImageIcon) icon);
+                    }
+                }
+            }
+
+            return super.getDisabledIcon(component, icon);
+        } else {
+            return null;
+        }
+    }
+
+    @Override
+    public Icon getDisabledSelectedIcon(JComponent component, Icon icon) {
+        if (!suppressCreationOfDisabledButtonIcons) {
+            if (icon instanceof ImageIcon) {
+                if (component instanceof AbstractButton) {
+                    AquaButtonUI ui = AquaUtils.getUI(component, AquaButtonUI.class);
+                    if (ui != null) {
+                        return ui.createDisabledSelectedIcon((AbstractButton) component, (ImageIcon) icon);
+                    }
+                }
+            }
+
+            return super.getDisabledSelectedIcon(component, icon);
+        } else {
+            return null;
+        }
     }
 
     protected class MyUIChangeListener implements PropertyChangeListener {
@@ -363,6 +401,11 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
         final Color tabBackgroundColor = windowBackgroundColor;
         final Color controlBackgroundColor = windowBackgroundColor;
 
+        final Color texturedButtonSelectedColor = new ColorUIResource(Color.WHITE);
+        final Color texturedButtonDisabledSelectedColor = new ColorUIResource(new Color(255, 255, 255, 155));
+        final Color texturedButtonUnselectedColor = new ColorUIResource(new Color(0, 0, 0, 165));
+        final Color texturedButtonDisabledUnselectedColor = new ColorUIResource(new Color(0, 0, 0, 75));
+
         final LazyValue controlFont = t -> AquaFonts.getControlTextFont();
         final LazyValue controlSmallFont = t -> AquaFonts.getControlTextSmallFont();
         final LazyValue controlMiniFont = t -> AquaFonts.getControlTextMiniFont();
@@ -469,6 +512,10 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
             "Button.opaque", false,
             "Button.recessed.font", recessedFont,
             "Button.inline.font", inlineFont,
+            "Button.texturedSelectedColor", texturedButtonSelectedColor,
+            "Button.texturedDisabledSelectedColor", texturedButtonDisabledSelectedColor,
+            "Button.texturedUnselectedColor", texturedButtonUnselectedColor,
+            "Button.texturedDisabledUnselectedColor", texturedButtonDisabledUnselectedColor,
 
             "CheckBox.background", controlBackgroundColor,
             "CheckBox.foreground", black,
@@ -598,7 +645,7 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
             "FileChooser.sideBarIcon.TimeMachineVolume", OSXFile.getTimeMachineSidebarIcon(),
 
             "FileView.aliasBadgeIcon", OSXFile.getAliasBadgeIcon(),
-            "FileView.computerIcon", OSXFile.getComputerIcon(),
+            "FileView.computerIcon", AquaImageFactory.getComputerIcon(),
             "FileView.directoryIcon", OSXFile.getDirectoryIcon(),
             "FileView.fileIcon", OSXFile.getFileIcon(),
             //"FileView.hardDriveIcon", OSXFile.getHardDriveIcon(),

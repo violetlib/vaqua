@@ -300,57 +300,6 @@ final public class AquaUtils extends SwingUtilitiesModified {
         }
     }
 
-    static Image generateSelectedDarkImage(final Image image) {
-        final ImageProducer prod = new FilteredImageSource(image.getSource(), new IconImageFilter() {
-            @Override
-            int getGreyFor(final int gray) {
-                return gray * 75 / 100;
-            }
-        });
-        return Toolkit.getDefaultToolkit().createImage(prod);
-    }
-
-    static Image generateDisabledImage(final Image image) {
-        final ImageProducer prod = new FilteredImageSource(image.getSource(), new IconImageFilter() {
-            @Override
-            int getGreyFor(final int gray) {
-                return 255 - ((255 - gray) * 65 / 100);
-            }
-        });
-        return Toolkit.getDefaultToolkit().createImage(prod);
-    }
-
-    static Image generateLightenedImage(final Image image, final int percent) {
-        final GrayFilter filter = new GrayFilter(true, percent);
-        return AquaMultiResolutionImage.apply(image, filter);
-    }
-
-    private abstract static class IconImageFilter extends RGBImageFilter {
-        IconImageFilter() {
-            super();
-            canFilterIndexColorModel = true;
-        }
-
-        @Override
-        public final int filterRGB(final int x, final int y, final int rgb) {
-            final int red = (rgb >> 16) & 0xff;
-            final int green = (rgb >> 8) & 0xff;
-            final int blue = rgb & 0xff;
-            final int gray = getGreyFor((int) ((0.30 * red + 0.59 * green + 0.11 * blue) / 3));
-
-            return (rgb & 0xff000000) | (grayTransform(red, gray) << 16) | (grayTransform(green, gray) << 8) | (grayTransform(blue, gray) << 0);
-        }
-
-        private static int grayTransform(final int color, final int gray) {
-            int result = color - gray;
-            if (result < 0) result = 0;
-            if (result > 255) result = 255;
-            return result;
-        }
-
-        abstract int getGreyFor(int gray);
-    }
-
     abstract static class RecyclableObject<T> {
         private SoftReference<T> objectRef;
 

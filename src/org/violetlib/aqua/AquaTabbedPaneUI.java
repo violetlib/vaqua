@@ -397,7 +397,7 @@ public class AquaTabbedPaneUI extends AquaTabbedPaneCopyFromBasicUI implements A
         Image image = AquaImageFactory.getArrowImageForDirection(direction);
         assert image != null;
         if (!enabled) {
-            image = AquaUtils.generateDisabledImage(image);
+            image = AquaImageFactory.generateDisabledImage(image);
         }
 
         if (sizeVariant == Size.MINI) {

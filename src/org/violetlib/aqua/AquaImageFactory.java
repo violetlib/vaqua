@@ -34,7 +34,7 @@
 package org.violetlib.aqua;
 
 import java.awt.*;
-import java.awt.image.BufferedImage;
+import java.awt.image.*;
 import java.io.File;
 import java.net.URL;
 import java.security.PrivilegedAction;
@@ -56,6 +56,14 @@ public class AquaImageFactory {
     private static InvertableImageIcon regularPopupMenuCheckIcon;
     private static InvertableImageIcon smallPopupMenuCheckIcon;
     private static InvertableImageIcon miniPopupMenuCheckIcon;
+
+    public static IconUIResource getComputerIcon() {
+        return new IconUIResource(new AquaIcon.CachingScalingIcon(16, 16) {
+            Image createImage() {
+                return getNSIcon("NSComputer");
+            }
+        });
+    }
 
     public static IconUIResource getConfirmImageIcon() {
         // public, because UIDefaults.ProxyLazyValue uses reflection to get this value
@@ -102,7 +110,7 @@ public class AquaImageFactory {
 
     private static class AppIconCompositor implements AquaMultiResolutionImage.Mapper {
         @Override
-        public Image map(Image source, int scaleFactor) {
+        public BufferedImage map(Image source, int scaleFactor) {
             return getAppIconImageCompositedOn(source, scaleFactor);
         }
    }
@@ -261,7 +269,7 @@ public class AquaImageFactory {
         @Override
         public Icon getInvertedIcon() {
             if (invertedImage != null) return invertedImage;
-            return invertedImage = new IconUIResource(new ImageIcon(AquaUtils.generateLightenedImage(getImage(), 100)));
+            return invertedImage = new IconUIResource(new ImageIcon(generateLightenedImage(getImage(), 100)));
         }
     }
 
@@ -303,7 +311,7 @@ public class AquaImageFactory {
     }
 
     public static Icon getMenuArrowIcon() {
-        return new InvertableImageIcon(AquaUtils.generateLightenedImage(eastArrow.get(), 25));
+        return new InvertableImageIcon(generateLightenedImage(eastArrow.get(), 25));
     }
 
     public static Icon getPopupMenuItemCheckIcon(Size sizeVariant) {
@@ -343,11 +351,11 @@ public class AquaImageFactory {
     }
 
     public static Icon getMenuItemCheckIcon() {
-        return new InvertableImageIcon(AquaUtils.generateLightenedImage(getNSIcon("NSMenuCheckmark"), 25));
+        return new InvertableImageIcon(generateLightenedImage(getNSIcon("NSMenuCheckmark"), 25));
     }
 
     public static Icon getMenuItemDashIcon() {
-        return new InvertableImageIcon(AquaUtils.generateLightenedImage(getNSIcon("NSMenuMixedState"), 25));
+        return new InvertableImageIcon(generateLightenedImage(getNSIcon("NSMenuMixedState"), 25));
     }
 
     private static Image getNSImage(String imageName, int width, int height) {
@@ -576,4 +584,123 @@ public class AquaImageFactory {
      * @return true if successful, false otherwise.
      */
     private static native boolean nativeRenderImageFile(String path, int[][] buffers, int w, int h);
+
+    public static Image generateSelectedDarkImage(final Image image) {
+        return applyFilter(image, new GenerateSelectedDarkFilter());
+    }
+
+    private static class GenerateSelectedDarkFilter extends IconImageFilter {
+        @Override
+        int getGreyFor(final int gray) {
+            return gray * 75 / 100;
+        }
+    }
+
+    public static Image generateDisabledImage(final Image image) {
+        return applyFilter(image, new GenerateDisabledFilter());
+    }
+
+    private static class GenerateDisabledFilter extends IconImageFilter {
+      @Override
+      int getGreyFor(final int gray) {
+          return 255 - ((255 - gray) * 65 / 100);
+      }
+    }
+
+    public static Image generateLightenedImage(final Image image, final int percent) {
+        final GrayFilter filter = new GrayFilter(true, percent);
+        return AquaMultiResolutionImage.apply(image, filter);
+    }
+
+    private abstract static class IconImageFilter extends RGBImageFilter {
+        IconImageFilter() {
+            super();
+            canFilterIndexColorModel = true;
+        }
+
+        @Override
+        public final int filterRGB(final int x, final int y, final int rgb) {
+            final int red = (rgb >> 16) & 0xff;
+            final int green = (rgb >> 8) & 0xff;
+            final int blue = rgb & 0xff;
+            final int gray = getGreyFor((int) ((0.30 * red + 0.59 * green + 0.11 * blue) / 3));
+
+            return (rgb & 0xff000000) | (grayTransform(red, gray) << 16) | (grayTransform(green, gray) << 8) | (grayTransform(blue, gray) << 0);
+        }
+
+        private static int grayTransform(final int color, final int gray) {
+            int result = color - gray;
+            if (result < 0) result = 0;
+            if (result > 255) result = 255;
+            return result;
+        }
+
+        abstract int getGreyFor(int gray);
+    }
+
+    /**
+     * Determine whether an image is a template image. A template image is an image that contains only clear or
+     * (possibly translucent) black pixels.
+     */
+    public static boolean isTemplateImage(Image image) {
+        // Run the template filter in a special way that allows us to observe its behavior.
+        TemplateFilter filter = new TemplateFilter(Color.BLACK, true);
+        Image im = applyFilter(image, filter);
+        // force the image to be created
+        new ImageIcon(im);
+        return filter.isTemplate();
+    }
+
+    /**
+     * Create an image by replacing the visible pixels in a template image with the specified color. A template image
+     * is an image that contains only clear or (possibly translucent) black pixels.
+     * @param image The template image.
+     * @param replacementColor The replacement color.
+     * @return the new image, or null if the source image is not a template image.
+     */
+    public static Image createImageFromTemplate(Image image, Color replacementColor) {
+        return applyFilter(image, new TemplateFilter(replacementColor, false));
+    }
+
+    public static Image applyFilter(Image image, ImageFilter filter) {
+        return Aqua8MultiResolutionImage.apply(image, filter);
+    }
+
+    private static class TemplateFilter extends RGBImageFilter {
+        private final int replacementAlpha;
+        private final int replacementRGB;
+        private final boolean isForTesting;
+        private boolean isTemplate;
+
+        public TemplateFilter(Color replacementColor, boolean isForTesting) {
+            this.replacementRGB = replacementColor.getRGB() & 0xffffff;
+            this.replacementAlpha = replacementColor.getAlpha();
+            this.isForTesting = isForTesting;
+            canFilterIndexColorModel = true;
+            isTemplate = true;
+        }
+
+        @Override
+        public Object clone() {
+            if (isForTesting) {
+              return this;  // special case for filter used once, we need to retain access to the isTemplate flag
+            }
+          return super.clone();
+        }
+
+        public boolean isTemplate() {
+            return isTemplate;
+        }
+
+        @Override
+        public int filterRGB(int x, int y, int rgb) {
+            int alpha = rgb >> 24 & 0xff;
+            int color = rgb & 0xffffff;
+            if (alpha != 0 && color != 0) {
+                isTemplate = false;
+            }
+            alpha = alpha * replacementAlpha / 255;
+            return alpha << 24 | replacementRGB;
+        }
+    }
 }

@@ -96,8 +96,7 @@ public class Images {
      * http://javaalmanac.com/egs/java.awt.image/Image2Buf.html?l=rel
      */
     private static Image toGraphite(Image image) {
-        return Toolkit.getDefaultToolkit().
-                createImage(new FilteredImageSource(image.getSource(), getGraphiteFilter()));
+        return AquaImageFactory.applyFilter(image, getGraphiteFilter());
     }
 
     /**
@@ -162,7 +161,7 @@ public class Images {
             hasAlpha = hasAlpha(image);
         } catch (IllegalAccessError e) {
             // If we can't determine this, we assume that we have an alpha,
-            // in order not to loose data.
+            // in order not to lose data.
             hasAlpha = true;
         }
 

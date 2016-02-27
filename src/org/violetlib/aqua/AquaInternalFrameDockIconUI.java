@@ -210,7 +210,7 @@ public class AquaInternalFrameDockIconUI extends DesktopIconUI implements MouseL
             }
 
             final ImageIcon prev = (ImageIcon)getIcon();
-            final ImageIcon pressedIcon = new ImageIcon(AquaUtils.generateSelectedDarkImage(prev.getImage()));
+            final ImageIcon pressedIcon = new ImageIcon(AquaImageFactory.generateSelectedDarkImage(prev.getImage()));
             setIcon(pressedIcon);
             super.paint(g);
             setIcon(prev);

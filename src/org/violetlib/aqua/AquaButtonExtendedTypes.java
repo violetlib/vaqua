@@ -229,7 +229,7 @@ public class AquaButtonExtendedTypes {
     }
 
     protected final static WidgetInfo defaultButtonWidgetInfo = new WidgetInfo();
-    protected final static WidgetInfo defaultSegmentedButtonWidgetInfo = new WidgetInfo(true);
+    protected final static WidgetInfo defaultSegmentedButtonWidgetInfo = new WidgetInfo(true, false);
 
     public static WidgetInfo getWidgetInfo(Object widget) {
         WidgetInfo info = widgetDefinitions.get().get(widget);
@@ -252,11 +252,12 @@ public class AquaButtonExtendedTypes {
     };
 
     protected interface FontFinder {
-        public Font getFont(AquaUIPainter.Size size);
+        Font getFont(AquaUIPainter.Size size);
     }
 
     public static class WidgetInfo {
         private boolean isSegmented;
+        private boolean isTextured;
         private Color foreground;
         private Color selectedForeground;
         private Color inactiveForeground;
@@ -278,8 +279,14 @@ public class AquaButtonExtendedTypes {
         WidgetInfo() {
         }
 
-        WidgetInfo(boolean isSegmented) {
+        WidgetInfo(boolean isSegmented, boolean isTextured) {
             this.isSegmented = isSegmented;
+            this.isTextured = isTextured;
+        }
+
+        WidgetInfo withSegmented() {
+            this.isSegmented = true;
+            return this;
         }
 
         WidgetInfo withFont(Font f) {
@@ -473,6 +480,22 @@ public class AquaButtonExtendedTypes {
             }
         }
 
+        public Color getTemplateSelectedColor() {
+            return isTextured ? UIManager.getColor("Button.texturedSelectedColor") : null;
+        }
+
+        public Color getTemplateDisabledSelectedColor() {
+            return isTextured ? UIManager.getColor("Button.texturedDisabledSelectedColor") : null;
+        }
+
+        public Color getTemplateUnselectedColor() {
+            return isTextured ? UIManager.getColor("Button.texturedUnselectedColor") : null;
+        }
+
+        public Color getTemplateDisabledUnselectedColor() {
+            return isTextured ? UIManager.getColor("Button.texturedDisabledUnselectedColor") : null;
+        }
+
         public boolean isSegmented() {
             return isSegmented;
         }
@@ -505,7 +528,7 @@ public class AquaButtonExtendedTypes {
                 .withActiveDefaultButtonForeground(defaultWhite)
         );
 
-        WidgetInfo segmentedRounded = new WidgetInfo(true)
+        WidgetInfo segmentedRounded = new WidgetInfo(true, false)
                         .withMargin(9)
                         .withForeground(black34, white, null, null)
                         .withDisabledForeground(new GrayUIResource(172), dark64)
@@ -539,7 +562,7 @@ public class AquaButtonExtendedTypes {
                 .withFont(UIManager.getFont("Button.inline.font"))
                 .withForeground(white, new GrayUIResource(240 /* 208 */)));  // 208 is unreadable
 
-        WidgetInfo textured = new WidgetInfo()
+        WidgetInfo textured = new WidgetInfo(false, true)
                 .withForeground(dark170, white, black34)
                 .withDisabledForeground(light180, dark140)
                 .withInactiveForeground(new GrayUIResource(161), new GrayUIResource(170))
@@ -550,7 +573,7 @@ public class AquaButtonExtendedTypes {
         result.put(BUTTON_TEXTURED_TOOLBAR, textured);
         result.put(BUTTON_ROUND_TEXTURED, textured);
 
-        WidgetInfo segmentedTextured = textured.withMargin(9);
+        WidgetInfo segmentedTextured = textured.withSegmented().withMargin(9);
 
         result.put(BUTTON_SEGMENTED_TEXTURED, segmentedTextured);
         result.put(BUTTON_SEGMENTED_TEXTURED_SEPARATED, segmentedTextured);
