@@ -1,5 +1,5 @@
 /*
- * Changes Copyright (c) 2015 Alan Snyder.
+ * Changes Copyright (c) 2015-2016 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -360,11 +360,11 @@ public class AquaRootPaneUI extends BasicRootPaneUI implements AncestorListener,
     public void ancestorMoved(final AncestorEvent event) { }
 
     public void windowActivated(final WindowEvent e) {
-        updateComponentTreeUIActivation((Component)e.getSource(), Boolean.TRUE);
+        updateWindowActivation(e, Boolean.TRUE);
     }
 
     public void windowDeactivated(final WindowEvent e) {
-        updateComponentTreeUIActivation((Component)e.getSource(), Boolean.FALSE);
+        updateWindowActivation(e, Boolean.FALSE);
     }
 
     public void windowOpened(final WindowEvent e) { }
@@ -381,6 +381,12 @@ public class AquaRootPaneUI extends BasicRootPaneUI implements AncestorListener,
     public void windowStateChanged(final WindowEvent e) { }
     public void windowGainedFocus(final WindowEvent e) { }
     public void windowLostFocus(final WindowEvent e) { }
+
+    private static void updateWindowActivation(WindowEvent e, Object active) {
+        Component c = (Component) e.getSource();
+        c.repaint(); // much faster to make one repaint call rather than repainting individual components
+        updateComponentTreeUIActivation(c, active);
+    }
 
     private static void updateComponentTreeUIActivation(final Component c, Object active) {
         if (c instanceof javax.swing.JInternalFrame) {
