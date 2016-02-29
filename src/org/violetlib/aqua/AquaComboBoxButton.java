@@ -301,7 +301,7 @@ class AquaComboBoxButton extends JButton {
             Object widget = getWidget(getLayoutConfiguration());
             AquaButtonExtendedTypes.WidgetInfo info = AquaButtonExtendedTypes.getWidgetInfo(widget);
             State state = getState();
-            Color c = info.getForeground(state, AquaUIPainter.ButtonState.STATELESS, colorDefaults);
+            Color c = info.getForeground(state, AquaUIPainter.ButtonState.STATELESS, colorDefaults, false);
             if (c != null) {
                 return c;
             }

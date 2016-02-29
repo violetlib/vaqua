@@ -89,6 +89,17 @@ public class AquaSegmentedButtonBorder extends AquaButtonBorder implements Focus
         // right.
 
         boolean isSelected = model.isSelected();
+
+        if (isSelected) {
+            // Special case for nonexclusive selected textured segmented buttons. Use the same background as the
+            // non-selected button.
+            AquaButtonExtendedTypes.WidgetInfo info = getWidgetInfo(b);
+            boolean useNonexclusive = shouldUseNonexclusiveStyle(b, info);
+            if (useNonexclusive) {
+                isSelected = false;
+            }
+        }
+
         AquaUIPainter.Direction d = AquaUIPainter.Direction.NONE;
         DividerState leftState = AquaSegmentedButtonBorder.getDividerState(false, false);
         DividerState rightState = AquaSegmentedButtonBorder.getDividerState(true, false);

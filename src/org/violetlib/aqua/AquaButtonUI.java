@@ -310,17 +310,17 @@ public class AquaButtonUI extends BasicButtonUI implements AquaUtilControlSize.S
     }
 
     protected Color getForegroundColor(AbstractButton b) {
+        Border border = b.getBorder();
+        if (border instanceof AquaButtonBorder) {
+            AquaButtonBorder bb = (AquaButtonBorder) border;
+            return bb.getTextColor(b, colorDefaults);
+        }
+
         boolean isEnabled = b.getModel().isEnabled();
         Color existingColor = b.getForeground();
         if (existingColor == null || existingColor instanceof UIResource || !isEnabled) {
-            Border border = b.getBorder();
-            if (border instanceof AquaButtonBorder) {
-                AquaButtonBorder bb = (AquaButtonBorder) border;
-                return bb.getTextColor(b, colorDefaults);
-            }
-
             // Most buttons do not display text differently when the window is inactive
-            boolean isSelected = b.isSelected();
+            boolean isSelected = b.getModel().isSelected();
             return colorDefaults.getTextColor(isEnabled, isSelected);
         }
         return existingColor;

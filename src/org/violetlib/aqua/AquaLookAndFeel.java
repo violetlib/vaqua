@@ -405,6 +405,8 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
         final Color texturedButtonDisabledSelectedColor = new ColorUIResource(new Color(255, 255, 255, 155));
         final Color texturedButtonUnselectedColor = new ColorUIResource(new Color(0, 0, 0, 165));
         final Color texturedButtonDisabledUnselectedColor = new ColorUIResource(new Color(0, 0, 0, 75));
+        final Color texturedButtonNonexclusiveSelectedColor = new ColorUIResource(0, 122, 255);
+        final Color texturedButtonDisabledNonexclusiveSelectedColor = new ColorUIResource(new Color(0, 122, 255, 120));
 
         final LazyValue controlFont = t -> AquaFonts.getControlTextFont();
         final LazyValue controlSmallFont = t -> AquaFonts.getControlTextSmallFont();
@@ -516,6 +518,8 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
             "Button.texturedDisabledSelectedColor", texturedButtonDisabledSelectedColor,
             "Button.texturedUnselectedColor", texturedButtonUnselectedColor,
             "Button.texturedDisabledUnselectedColor", texturedButtonDisabledUnselectedColor,
+            "Button.texturedNonexclusiveSelectedColor", texturedButtonNonexclusiveSelectedColor,
+            "Button.texturedDisabledNonexclusiveSelectedColor", texturedButtonDisabledNonexclusiveSelectedColor,
 
             "CheckBox.background", controlBackgroundColor,
             "CheckBox.foreground", black,

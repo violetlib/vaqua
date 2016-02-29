@@ -183,9 +183,30 @@ public abstract class AquaButtonBorder extends AquaBorder implements BackgroundP
 
     public Color getTextColor(AbstractButton b, AquaButtonExtendedTypes.ColorDefaults colorDefaults) {
         AquaButtonExtendedTypes.WidgetInfo info = getWidgetInfo(b);
-        State state = getState(b);
-        AquaUIPainter.ButtonState bs = getButtonState(b);
-        return info.getForeground(state, bs, colorDefaults);
+        boolean isEnabled = b.getModel().isEnabled();
+        boolean useNonexclusive = shouldUseNonexclusiveStyle(b, info);
+        Color existingColor = b.getForeground();
+        if (existingColor == null || existingColor instanceof UIResource || !isEnabled || useNonexclusive) {
+            State state = getState(b);
+            AquaUIPainter.ButtonState bs = getButtonState(b);
+            return info.getForeground(state, bs, colorDefaults, useNonexclusive);
+        } else {
+            return existingColor;
+        }
+    }
+
+    protected boolean shouldUseNonexclusiveStyle(AbstractButton b, AquaButtonExtendedTypes.WidgetInfo info) {
+        // A textured segmented button that is not in a button group uses a special style when selected.
+        if (info.isSegmented() && info.isTextured() && b.getModel().isSelected()) {
+            ButtonModel m = b.getModel();
+            if (m instanceof DefaultButtonModel) {
+                DefaultButtonModel dm = (DefaultButtonModel) m;
+                if (dm.getGroup() == null) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     public int getIconTextGap(AbstractButton b) {
@@ -298,7 +319,8 @@ public abstract class AquaButtonBorder extends AquaBorder implements BackgroundP
         if (source instanceof ImageIcon) {
             if (AquaButtonUI.isTemplateIconEnabled(b)) {
                 AquaButtonExtendedTypes.WidgetInfo info = getWidgetInfo(b);
-                Color color = info.getTemplateSelectedColor();
+                boolean useNonexclusive = shouldUseNonexclusiveStyle(b, info);
+                Color color = info.getTemplateSelectedColor(useNonexclusive);
                 if (color != null) {
                     Image im = ((ImageIcon) source).getImage();
                     im = AquaImageFactory.createImageFromTemplate(im, color);
@@ -377,7 +399,8 @@ public abstract class AquaButtonBorder extends AquaBorder implements BackgroundP
         if (source instanceof ImageIcon) {
             if (AquaButtonUI.isTemplateIconEnabled(b)) {
                 AquaButtonExtendedTypes.WidgetInfo info = getWidgetInfo(b);
-                Color color = info.getTemplateDisabledSelectedColor();
+                boolean useNonexclusive = shouldUseNonexclusiveStyle(b, info);
+                Color color = info.getTemplateDisabledSelectedColor(useNonexclusive);
                 if (color != null) {
                     Image im = ((ImageIcon) source).getImage();
                     im = AquaImageFactory.createImageFromTemplate(im, color);
