@@ -42,23 +42,23 @@ import org.violetlib.jnr.aqua.AquaUIPainter.Size;
 @SuppressWarnings("serial") // Superclass is not serializable across versions
 public class AquaComboBoxRendererInternal<E> extends JLabel implements ListCellRenderer<E> {
     final JComboBox<?> fComboBox;
-    boolean fSelected;
-    boolean fChecked;
-    boolean fInList;
-    boolean fEditable;
-    boolean fDrawCheckedItem = true;
+    protected boolean fSelected;
+    protected boolean fChecked;
+    protected boolean fInList;
+    protected boolean fEditable;
+    protected boolean fDrawCheckedItem = true;
 
-    private static int checkMarkLeftInset = 5;
-    private static int checkMarkTopInset = 3;
-    private static int menuLabelLeftInset = 21;
-    private static int buttonLabelLeftInset = 0;    // already determined using content area and padding
-    private static int menuLabelTopInset = 0;
-    private static int menuLabelBottomInset = 1;
-    private static int buttonLabelTopInset = 0;     // already determined using content area
-    private static int buttonLabelBottomInset = 0;    // already determined using content area
-    private static int buttonLabelRightInset = 0;    // already determined using content area and padding
-    private static int miniMenuLabelTopInset = 1;
-    private static int miniMenuLabelBottomInset = 0;
+    protected static int checkMarkLeftInset = 5;
+    protected static int checkMarkTopInset = 3;
+    protected static int menuLabelLeftInset = 21;
+    protected static int buttonLabelLeftInset = 0;    // already determined using content area and padding
+    protected static int menuLabelTopInset = 0;
+    protected static int menuLabelBottomInset = 1;
+    protected static int buttonLabelTopInset = 0;     // already determined using content area
+    protected static int buttonLabelBottomInset = 0;    // already determined using content area
+    protected static int buttonLabelRightInset = 0;    // already determined using content area and padding
+    protected static int miniMenuLabelTopInset = 1;
+    protected static int miniMenuLabelBottomInset = 0;
 
     // Provides space for a checkbox, and is translucent
     public AquaComboBoxRendererInternal(final JComboBox<?> comboBox) {
@@ -71,16 +71,9 @@ public class AquaComboBoxRendererInternal<E> extends JLabel implements ListCellR
     public Dimension getPreferredSize() {
         // From BasicComboBoxRenderer - trick to avoid zero-height items
 
-        Icon icon = getIcon();
-        if (icon != null) {
-            int width = icon.getIconWidth();
-            int height = icon.getIconHeight();
-            return new Dimension(width, height);
-        }
-
-        String text = getText();
         Dimension size;
-        if ((text == null) || ("".equals(text))) {
+        String text = getText();
+        if (text == null || text.isEmpty()) {
             setText(" ");
             size = super.getPreferredSize();
             setText("");

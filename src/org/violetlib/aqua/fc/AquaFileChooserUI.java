@@ -2,7 +2,7 @@
  * @(#AquaFileChooserUI.java
  *
  * Copyright (c) 2011-2013 Werner Randelshofer, Switzerland.
- * Copyright (c) 2014-2015 Alan Snyder.
+ * Copyright (c) 2014-2016 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the
@@ -2410,13 +2410,22 @@ public class AquaFileChooserUI extends BasicFileChooserUI {
      */
     static class DirectoryComboBoxRenderer extends AquaComboBoxRendererInternal {
 
-        private Border border = new EmptyBorder(1, 0, 1, 0);
         IndentIcon ii = new IndentIcon();
         private JSeparator separator = new JSeparator();
 
         public DirectoryComboBoxRenderer(JComboBox cb) {
             super(cb);
             separator.setPreferredSize(new Dimension(9, 9));
+        }
+
+        @Override
+        public Insets getInsets(Insets insets) {
+            Insets s = super.getInsets(insets);
+            if (fInList) {
+                s.top++;
+                s.bottom++;
+            }
+            return s;
         }
 
         @Override
@@ -2452,7 +2461,6 @@ public class AquaFileChooserUI extends BasicFileChooserUI {
             }
             ii.depth = 0;
             setIcon(ii);
-            setBorder(border);
             return this;
         }
     }
