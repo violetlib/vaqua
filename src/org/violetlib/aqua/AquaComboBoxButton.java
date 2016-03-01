@@ -162,6 +162,11 @@ class AquaComboBoxButton extends JButton {
         if (isEditable) {
             ComboBoxWidget widget = getComboBoxWidget();
             layoutConfiguration = new ComboBoxLayoutConfiguration(widget, sizeVariant, ld);
+            ComboBoxEditor editor = comboBox.getEditor();
+            if (editor instanceof AquaComboBoxUI.AquaComboBoxEditor) {
+                AquaComboBoxUI.AquaComboBoxEditor e = (AquaComboBoxUI.AquaComboBoxEditor) editor;
+                e.configure(widget);
+            }
         } else {
             PopupButtonWidget widget = getPopupButtonWidget();
             sizeVariant = canonicalize(sizeVariant, widget);

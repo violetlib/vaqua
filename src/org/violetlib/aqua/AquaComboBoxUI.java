@@ -464,6 +464,13 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements AquaUtilControlSi
             editor.getDocument().addDocumentListener(this);
         }
 
+        public void configure(AquaUIPainter.ComboBoxWidget widget) {
+            if (editor instanceof AquaCustomComboTextField) {
+                AquaCustomComboTextField f = (AquaCustomComboTextField) editor;
+                f.configure(widget);
+            }
+        }
+
         @Override
         protected JTextField createEditorComponent() {
             return new AquaCustomComboTextField();
@@ -518,9 +525,6 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements AquaUtilControlSi
 
             //setBackground(new Color(255, 200, 0, 128)); // debug
 
-            setBackground(new Color(0, 0, 0, 0));
-            setOpaque(false);
-
             final InputMap inputMap = getInputMap();
             inputMap.put(KeyStroke.getKeyStroke("DOWN"), highlightNextAction);
             inputMap.put(KeyStroke.getKeyStroke("KP_DOWN"), highlightNextAction);
@@ -546,6 +550,17 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements AquaUtilControlSi
                     }
                 }
             });
+        }
+
+        public void configure(AquaUIPainter.ComboBoxWidget widget) {
+            if (widget == AquaUIPainter.ComboBoxWidget.BUTTON_COMBO_BOX_CELL) {
+                setBackground(Color.WHITE);
+                setOpaque(true);
+            } else {
+                // On 10.11, a textured editable combo box has a gradient background. See TextEdit.
+                setBackground(new Color(0, 0, 0, 0));
+                setOpaque(false);
+            }
         }
 
         // workaround for 4530952
