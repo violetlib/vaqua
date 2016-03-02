@@ -354,6 +354,12 @@ public class AquaButtonExtendedTypes {
             return this;
         }
 
+        WidgetInfo withEnabledForeground(Color selected, Color unselected) {
+            foreground = unselected;
+            selectedForeground = selected;
+            return this;
+        }
+
         WidgetInfo withDisabledForeground(Color selected, Color unselected) {
             disabledSelectedForeground = selected;
             disabledForeground = unselected;
@@ -543,15 +549,18 @@ public class AquaButtonExtendedTypes {
         Color black = new ColorUIResource(Color.BLACK);
         Color black34 = new ColorUIResource(new Color(34, 34, 34));
         Color dark64 = new ColorUIResource(new Color(0, 0, 0, 64));
-        Color dark75 = new ColorUIResource(new Color(0, 0, 0, 75));
         Color dark140 = new ColorUIResource(new Color(0, 0, 0, 140));
         Color dark170 = new ColorUIResource(new Color(0, 0, 0, 170));
         Color dark220 = new ColorUIResource(new Color(0, 0, 0, 220));
-        Color light160 = new ColorUIResource(new Color(255, 255, 255, 160));
         Color light180 = new ColorUIResource(new Color(255, 255, 255, 180));
         Color white = new ColorUIResource(Color.WHITE);
         Color pressedWhite = new ColorUIResource(new Color(247, 247, 247, 224));
         Color defaultWhite = new ColorUIResource(250, 250, 250);
+
+        Color texturedUnselected = UIManager.getColor("Button.texturedUnselectedColor");
+        Color texturedSelected = UIManager.getColor("Button.texturedSelectedColor");
+        Color texturedDisabledUnselected = UIManager.getColor("Button.texturedDisabledUnselectedColor");
+        Color texturedDisabledSelected = UIManager.getColor("Button.texturedDisabledSelectedColor");
 
         result.put(BUTTON_CHECK_BOX, new WidgetInfo());
         result.put(BUTTON_RADIO, new WidgetInfo());
@@ -597,10 +606,14 @@ public class AquaButtonExtendedTypes {
                 .withFont(UIManager.getFont("Button.inline.font"))
                 .withForeground(white, new GrayUIResource(240 /* 208 */)));  // 208 is unreadable
 
+        // Textured toggle push buttons and segmented buttons are not identical, but they are getting closer and
+        // probably should be identical.
+
         WidgetInfo textured = new WidgetInfo()
                 .withTextured()
-                .withForeground(dark170, white, black34)
-                .withDisabledForeground(light160, dark75)
+                .withEnabledForeground(texturedSelected, texturedUnselected)
+                .withPressed(black34)
+                .withDisabledForeground(texturedDisabledSelected, texturedDisabledUnselected)
                 .withInactiveForeground(new GrayUIResource(164), new GrayUIResource(178))
                 .withInactiveDisabledForeground(new GrayUIResource(195), new GrayUIResource(211)
                 );

@@ -401,12 +401,14 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
         final Color tabBackgroundColor = windowBackgroundColor;
         final Color controlBackgroundColor = windowBackgroundColor;
 
+        final Color texturedButtonUnselectedColor = new ColorUIResource(new Color(0, 0, 0, 170));
+        final Color texturedButtonDisabledUnselectedColor = new ColorUIResource(new Color(0, 0, 0, 75));
         final Color texturedButtonSelectedColor = new ColorUIResource(Color.WHITE);
         final Color texturedButtonDisabledSelectedColor = new ColorUIResource(new Color(255, 255, 255, 155));
-        final Color texturedButtonUnselectedColor = new ColorUIResource(new Color(0, 0, 0, 165));
-        final Color texturedButtonDisabledUnselectedColor = new ColorUIResource(new Color(0, 0, 0, 75));
-        final Color texturedButtonNonexclusiveSelectedColor = new ColorUIResource(0, 122, 255);
-        final Color texturedButtonDisabledNonexclusiveSelectedColor = new ColorUIResource(new Color(0, 122, 255, 120));
+        final Color texturedButtonNonexclusiveSelectedColor
+                = OSXSystemProperties.OSVersion >= 1011 ? new ColorUIResource(37, 125, 252) : new ColorUIResource(0, 122, 255);
+        final Color texturedButtonDisabledNonexclusiveSelectedColor
+                = OSXSystemProperties.OSVersion >= 1011 ? new ColorUIResource(new Color(37, 125, 252, 120)) : new ColorUIResource(new Color(0, 122, 255, 120));
 
         final LazyValue controlFont = t -> AquaFonts.getControlTextFont();
         final LazyValue controlSmallFont = t -> AquaFonts.getControlTextSmallFont();

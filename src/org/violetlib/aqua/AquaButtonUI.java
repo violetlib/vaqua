@@ -617,6 +617,8 @@ public class AquaButtonUI extends BasicButtonUI implements AquaUtilControlSize.S
 
         if (!model.isEnabled()) {
             if (model.isSelected()) {
+                // AbstractButton will not ask us for a disabled selected icon unless a selected icon is defined
+                getSelectedIcon(b);
                 return b.getDisabledSelectedIcon();
             } else {
                 return b.getDisabledIcon();
