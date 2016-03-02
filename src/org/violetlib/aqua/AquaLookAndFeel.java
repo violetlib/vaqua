@@ -210,6 +210,14 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
         AquaSheetSupport.showFileChooserAsSheet(owner, fc, resultConsumer);
     }
 
+    /**
+     * Set the debugging option to force all windows to display as active. Used to compare a Java window with a native
+     * active window.
+     */
+    public void setForceActiveWindowDisplay(boolean b) {
+        AquaRootPaneUI.setForceActiveWindowDisplay(b);
+    }
+
     @Override
     protected ActionMap getAudioActionMap() {
         ActionMap audioActionMap = (ActionMap)UIManager.get("AuditoryCues.actionMap");

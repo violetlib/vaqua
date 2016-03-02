@@ -61,6 +61,8 @@ public class AquaRootPaneUI extends BasicRootPaneUI implements AncestorListener,
         return new AquaRootPaneUI();
     }
 
+    private static boolean forceActiveWindowDisplay;
+
     protected JRootPane rootPane;
     protected WindowHierarchyListener hierarchyListener;
     protected AncestorChangeListener ancestorChangeListener;
@@ -68,6 +70,32 @@ public class AquaRootPaneUI extends BasicRootPaneUI implements AncestorListener,
     protected boolean isInitialized;
     protected AquaCustomStyledWindow customStyledWindow;
     protected int vibrantStyle = -1;
+
+    /**
+     * Set the debugging option to force all windows to display as active. Used to compare a Java window with a native
+     * active window.
+     */
+    public static void setForceActiveWindowDisplay(boolean b) {
+        if (b != forceActiveWindowDisplay) {
+            forceActiveWindowDisplay = b;
+            Window[] windows = Window.getWindows();
+            for (Window w : windows) {
+                if (w instanceof RootPaneContainer) {
+                    RootPaneContainer rpc = (RootPaneContainer) w;
+                    JRootPane rp = rpc.getRootPane();
+                    AquaRootPaneUI ui = AquaUtils.getUI(rp, AquaRootPaneUI.class);
+                    if (ui != null) {
+                        boolean shouldBeActive = b || w.isActive();
+                        boolean isActiveStyle = Boolean.TRUE.equals(rp.getClientProperty(AquaFocusHandler.FRAME_ACTIVE_PROPERTY));
+                        if (shouldBeActive != isActiveStyle) {
+                            rp.repaint();
+                            updateComponentTreeUIActivation(rp, shouldBeActive);
+                        }
+                    }
+                }
+            }
+        }
+    }
 
     public void installUI(final JComponent c) {
 
@@ -383,6 +411,9 @@ public class AquaRootPaneUI extends BasicRootPaneUI implements AncestorListener,
     public void windowLostFocus(final WindowEvent e) { }
 
     private static void updateWindowActivation(WindowEvent e, Object active) {
+        if (forceActiveWindowDisplay) {
+            active = Boolean.TRUE;
+        }
         Component c = (Component) e.getSource();
         c.repaint(); // much faster to make one repaint call rather than repainting individual components
         updateComponentTreeUIActivation(c, active);
