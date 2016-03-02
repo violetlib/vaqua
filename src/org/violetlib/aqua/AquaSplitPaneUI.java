@@ -93,11 +93,9 @@ public class AquaSplitPaneUI extends BasicSplitPaneUI implements MouseListener, 
         splitPane.addPropertyChangeListener(SPLIT_PANE_STYLE_KEY, this);
         splitPane.addPropertyChangeListener(QUAQUA_SPLIT_PANE_STYLE_KEY, this);
         splitPane.addContainerListener(this);
-        divider.addMouseListener(this);
     }
 
     protected void uninstallListeners() {
-        divider.removeMouseListener(this);
         splitPane.removeContainerListener(this);
         splitPane.removePropertyChangeListener(DIVIDER_PAINTER_KEY, this);
         splitPane.removePropertyChangeListener(SPLIT_PANE_STYLE_KEY, this);
