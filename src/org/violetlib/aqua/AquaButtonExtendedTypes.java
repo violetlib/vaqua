@@ -91,11 +91,25 @@ public class AquaButtonExtendedTypes {
 
             if (segmentPositionProperty instanceof String) {
                 String segmentPosition = (String) segmentPositionProperty;
+                if (buttonType.equals("segmented")) {
+                    if (AquaButtonUI.isOnToolbar(b)) {
+                        buttonType = "segmentedTextured";
+                    }
+                } else if (buttonType.equals("segmentedSeparated")) {
+                    if (AquaButtonUI.isOnToolbar(b)) {
+                        buttonType = "segmentedTexturedSeparated";
+                    }
+                }
+
                 String typeName = buttonType + "-" + getRealPositionForLogicalPosition(segmentPosition, b.getComponentOrientation().isLeftToRight());
                 final TypeSpecifier specifier = getSpecifierByName(b, typeName);
                 if (specifier != null) {
                     return specifier;
                 }
+            }
+
+            if (buttonType.equals("round") && AquaButtonUI.isOnToolbar(b)) {
+                buttonType = "roundTextured";
             }
 
             return getSpecifierByName(b, buttonType);

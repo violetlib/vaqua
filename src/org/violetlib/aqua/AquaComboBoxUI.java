@@ -82,6 +82,7 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements AquaUtilControlSi
     protected Size sizeVariant;
     protected Dimension cachedPreferredSize = new Dimension( 0, 0 );
     protected AquaComboBoxButton arrowButton;
+    protected HierarchyListener hierarchyListener;
 
     public void installUI(final JComponent c) {
         super.installUI(c);
@@ -114,9 +115,13 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements AquaUtilControlSi
 
         comboBox.putClientProperty(AquaFullKeyboardFocusableHandler.OPTIONAL_FOCUSABILITY_HANDLER_KEY, focusHandler);
         AquaFullKeyboardFocusableHandler.addListener(comboBox);
+        hierarchyListener = new MyHierarchyListener();
+        comboBox.addHierarchyListener(hierarchyListener);
     }
 
     protected void uninstallListeners() {
+        comboBox.removeHierarchyListener(hierarchyListener);
+        hierarchyListener = null;
         AquaUtilControlSize.removeSizePropertyListener(comboBox);
         AquaFullKeyboardFocusableHandler.removeListener(comboBox);
         super.uninstallListeners();
@@ -133,6 +138,16 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements AquaUtilControlSi
     protected void uninstallComponents() {
         getApplicator().removeFrom(comboBox);
         super.uninstallComponents();
+    }
+
+    private class MyHierarchyListener implements HierarchyListener {
+        @Override
+        public void hierarchyChanged(HierarchyEvent e) {
+            AquaComboBoxUI ui = AquaUtils.getUI(comboBox, AquaComboBoxUI.class);
+            if (ui != null) {
+                ui.configure(null);
+            }
+        }
     }
 
     private static class MyOptionalFocusHandler implements OptionallyFocusableComponentHandler {

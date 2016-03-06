@@ -247,6 +247,10 @@ class AquaComboBoxButton extends JButton {
             }
         }
 
+        if (isOnToolbar(comboBox)) {
+            return BUTTON_COMBO_BOX_TEXTURED_TOOLBAR;
+        }
+
         return BUTTON_COMBO_BOX;
     }
 
@@ -281,6 +285,11 @@ class AquaComboBoxButton extends JButton {
                     return isPopDown ? BUTTON_POP_DOWN_GRADIENT : BUTTON_POP_UP_GRADIENT;
             }
         }
+
+        if (isOnToolbar(comboBox)) {
+            return isPopDown ? BUTTON_POP_DOWN_TEXTURED_TOOLBAR : BUTTON_POP_UP_TEXTURED_TOOLBAR;
+        }
+
         return isPopDown ? BUTTON_POP_DOWN : BUTTON_POP_UP;
     }
 
@@ -349,8 +358,14 @@ class AquaComboBoxButton extends JButton {
     }
 
     protected State getState() {
+        boolean isActive = AquaFocusHandler.isActive(comboBox);
+
         if (!comboBox.isEnabled()) {
-            return AquaFocusHandler.isActive(comboBox) ? State.DISABLED : State.DISABLED_INACTIVE;
+            return isActive ? State.DISABLED : State.DISABLED_INACTIVE;
+        }
+
+        if (!isActive) {
+            return State.INACTIVE;
         }
 
         ButtonModel model = getModel();
@@ -362,7 +377,7 @@ class AquaComboBoxButton extends JButton {
             return State.ROLLOVER;
         }
 
-        return AquaFocusHandler.isActive(comboBox) ? State.ACTIVE : State.INACTIVE;
+        return State.ACTIVE;
     }
 
     @Override

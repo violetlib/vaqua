@@ -296,7 +296,9 @@ public class AquaButtonUI extends BasicButtonUI implements AquaUtilControlSize.S
     }
 
     protected static boolean shouldUseIconFont(AbstractButton b) {
-        return b.getIcon() != null || b.getComponentCount() > 0 || isOnToolbar(b);
+        // Aqua LAF used the icon font for buttons on the toolbar.
+        // Commented out because this does not match the behavior of native buttons on Yosemite or El Capitan.
+        return b.getIcon() != null || b.getComponentCount() > 0 /* || isOnToolbar(b) */;
     }
 
     protected Font getCustomDefaultFont(AbstractButton b, Size size, Font df) {

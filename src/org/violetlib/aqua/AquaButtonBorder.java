@@ -123,8 +123,10 @@ public abstract class AquaButtonBorder extends AquaBorder implements BackgroundP
     }
 
     protected State getState(final AbstractButton b) {
+        boolean isActive = AquaFocusHandler.isActive(b);
+
         if (!b.isEnabled()) {
-            return AquaFocusHandler.isActive(b) ? State.DISABLED : State.DISABLED_INACTIVE;
+            return isActive ? State.DISABLED : State.DISABLED_INACTIVE;
         }
 
         // The default button shouldn't draw its color when the window is inactive.
@@ -134,7 +136,7 @@ public abstract class AquaButtonBorder extends AquaBorder implements BackgroundP
         // if we set dimmed we would appear disabled despite being enabled and click through
         // works so this now matches the text drawing and most importantly the HIG
 
-        if (!AquaFocusHandler.isActive(b)) {
+        if (!isActive) {
             return State.INACTIVE;
         }
 
@@ -142,12 +144,15 @@ public abstract class AquaButtonBorder extends AquaBorder implements BackgroundP
         if (model.isArmed() && model.isPressed()) {
             return State.PRESSED;
         }
+
         if (model.isRollover()) {
             return State.ROLLOVER;
         }
+
         if ((b instanceof JButton) && ((JButton)b).isDefaultButton()) {
             return State.ACTIVE_DEFAULT;
         }
+
         return State.ACTIVE;
     }
 

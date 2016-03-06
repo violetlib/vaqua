@@ -1,5 +1,5 @@
 /*
- * Changes Copyright (c) 2015 Alan Snyder.
+ * Changes Copyright (c) 2015-2016 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -220,6 +220,8 @@ public class AquaTextFieldBorder extends AquaBorder implements FocusRingOutlineP
         Object o = tc.getClientProperty(AquaTextFieldUI.TEXT_FIELD_STYLE_KEY);
         if ("round".equals(o)) {
             return isOnToolbar(tc) ? TextFieldWidget.TEXT_FIELD_ROUND_TOOLBAR : TextFieldWidget.TEXT_FIELD_ROUND;
+        } else if (isOnToolbar(tc)) {
+            return TextFieldWidget.TEXT_FIELD_ROUND_TOOLBAR;
         }
         return TextFieldWidget.TEXT_FIELD;
     }
