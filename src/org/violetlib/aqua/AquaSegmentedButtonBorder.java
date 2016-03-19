@@ -101,8 +101,9 @@ public class AquaSegmentedButtonBorder extends AquaButtonBorder implements Focus
         }
 
         AquaUIPainter.Direction d = AquaUIPainter.Direction.NONE;
+        Position pos = g.getPosition();
         DividerState leftState = AquaSegmentedButtonBorder.getDividerState(false, false);
-        DividerState rightState = AquaSegmentedButtonBorder.getDividerState(true, false);
+        DividerState rightState = AquaSegmentedButtonBorder.getDividerState(pos == Position.FIRST || pos == Position.MIDDLE, false);
         return new SegmentedButtonConfiguration(g, state, isSelected, isFocused, d, leftState, rightState);
     }
 
