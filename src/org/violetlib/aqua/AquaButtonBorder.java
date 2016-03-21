@@ -186,7 +186,9 @@ public abstract class AquaButtonBorder extends AquaBorder implements BackgroundP
         }
     }
 
-    public Color getTextColor(AbstractButton b, AquaButtonExtendedTypes.ColorDefaults colorDefaults) {
+    public Color getForegroundColor(AbstractButton b,
+                                    AquaButtonExtendedTypes.ColorDefaults colorDefaults,
+                                    boolean isIcon) {
         AquaButtonExtendedTypes.WidgetInfo info = getWidgetInfo(b);
         boolean isEnabled = b.getModel().isEnabled();
         boolean useNonexclusive = shouldUseNonexclusiveStyle(b, info);
@@ -194,7 +196,7 @@ public abstract class AquaButtonBorder extends AquaBorder implements BackgroundP
         if (existingColor == null || existingColor instanceof UIResource || !isEnabled || useNonexclusive) {
             State state = getState(b);
             AquaUIPainter.ButtonState bs = getButtonState(b);
-            return info.getForeground(state, bs, colorDefaults, useNonexclusive);
+            return info.getForeground(state, bs, colorDefaults, useNonexclusive, isIcon);
         } else {
             return existingColor;
         }
@@ -320,12 +322,12 @@ public abstract class AquaButtonBorder extends AquaBorder implements BackgroundP
      * @param source The button icon.
      * @return the icon to use, or null if no special icon is needed.
      */
-    public Icon createSelectedIcon(AbstractButton b, Icon source) {
+    public Icon createSelectedIcon(AbstractButton b, Icon source, AquaButtonExtendedTypes.ColorDefaults colorDefaults) {
         if (source instanceof ImageIcon) {
             if (AquaButtonUI.isTemplateIconEnabled(b)) {
                 AquaButtonExtendedTypes.WidgetInfo info = getWidgetInfo(b);
                 boolean useNonexclusive = shouldUseNonexclusiveStyle(b, info);
-                Color color = info.getTemplateSelectedColor(useNonexclusive);
+                Color color = info.getTemplateSelectedColor(useNonexclusive, colorDefaults);
                 if (color != null) {
                     Image im = ((ImageIcon) source).getImage();
                     im = AquaImageFactory.createImageFromTemplate(im, color);
@@ -344,11 +346,11 @@ public abstract class AquaButtonBorder extends AquaBorder implements BackgroundP
      * @param source The button icon.
      * @return the icon to use, or null if no special icon is needed.
      */
-    public Icon createUnselectedIcon(AbstractButton b, Icon source) {
+    public Icon createUnselectedIcon(AbstractButton b, Icon source, AquaButtonExtendedTypes.ColorDefaults colorDefaults) {
         if (source instanceof ImageIcon) {
             if (AquaButtonUI.isTemplateIconEnabled(b)) {
                 AquaButtonExtendedTypes.WidgetInfo info = getWidgetInfo(b);
-                Color color = info.getTemplateUnselectedColor();
+                Color color = info.getTemplateUnselectedColor(colorDefaults);
                 if (color != null) {
                     Image im = ((ImageIcon) source).getImage();
                     im = AquaImageFactory.createImageFromTemplate(im, color);
@@ -367,8 +369,20 @@ public abstract class AquaButtonBorder extends AquaBorder implements BackgroundP
      * @param source The button icon.
      * @return the icon to use, or null if no special icon is needed.
      */
-    public Icon createPressedIcon(AbstractButton b, Icon source) {
-        return null;
+    public Icon createPressedIcon(AbstractButton b, Icon source, AquaButtonExtendedTypes.ColorDefaults colorDefaults) {
+        if (source instanceof ImageIcon) {
+            if (AquaButtonUI.isTemplateIconEnabled(b)) {
+                Color color = getForegroundColor(b, colorDefaults, true);
+                if (color != null) {
+                    Image im = ((ImageIcon) source).getImage();
+                    im = AquaImageFactory.createImageFromTemplate(im, color);
+                    if (im != null) {
+                        return new ImageIconUIResource(im);
+                    }
+                }
+            }
+        }
+        return AquaIcon.createPressedDarkIcon(source);
     }
 
     /**
@@ -377,11 +391,11 @@ public abstract class AquaButtonBorder extends AquaBorder implements BackgroundP
      * @param source The button icon.
      * @return the icon to use, or null if no special icon is needed.
      */
-    public Icon createDisabledIcon(AbstractButton b, Icon source) {
+    public Icon createDisabledIcon(AbstractButton b, Icon source, AquaButtonExtendedTypes.ColorDefaults colorDefaults) {
         if (source instanceof ImageIcon) {
             if (AquaButtonUI.isTemplateIconEnabled(b)) {
                 AquaButtonExtendedTypes.WidgetInfo info = getWidgetInfo(b);
-                Color color = info.getTemplateDisabledUnselectedColor();
+                Color color = info.getTemplateDisabledUnselectedColor(colorDefaults);
                 if (color != null) {
                     Image im = ((ImageIcon) source).getImage();
                     im = AquaImageFactory.createImageFromTemplate(im, color);
@@ -400,12 +414,12 @@ public abstract class AquaButtonBorder extends AquaBorder implements BackgroundP
      * @param source The button icon.
      * @return the icon to use, or null if no special icon is needed.
      */
-    public Icon createDisabledSelectedIcon(AbstractButton b, Icon source) {
+    public Icon createDisabledSelectedIcon(AbstractButton b, Icon source, AquaButtonExtendedTypes.ColorDefaults colorDefaults) {
         if (source instanceof ImageIcon) {
             if (AquaButtonUI.isTemplateIconEnabled(b)) {
                 AquaButtonExtendedTypes.WidgetInfo info = getWidgetInfo(b);
                 boolean useNonexclusive = shouldUseNonexclusiveStyle(b, info);
-                Color color = info.getTemplateDisabledSelectedColor(useNonexclusive);
+                Color color = info.getTemplateDisabledSelectedColor(useNonexclusive, colorDefaults);
                 if (color != null) {
                     Image im = ((ImageIcon) source).getImage();
                     im = AquaImageFactory.createImageFromTemplate(im, color);

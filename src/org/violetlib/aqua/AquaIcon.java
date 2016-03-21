@@ -1,5 +1,5 @@
 /*
- * Changes copyright (c) 2015 Alan Snyder.
+ * Changes copyright (c) 2015-2016 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -89,6 +89,16 @@ public class AquaIcon {
         i.paintIcon(null, g, 0, 0);
         g.dispose();
         return image;
+    }
+
+    public static Icon createPressedDarkIcon(Icon ic) {
+        Image im = getImageForIcon(ic);
+        if (im != null) {
+            Image pressedImage = AquaImageFactory.generatePressedDarkImage(im);
+            return new ImageIcon(pressedImage);
+        } else {
+            return ic;
+        }
     }
 
     public static abstract class CachingScalingIcon implements Icon, UIResource {

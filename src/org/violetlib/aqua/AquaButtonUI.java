@@ -36,7 +36,6 @@ package org.violetlib.aqua;
 import java.awt.*;
 import java.awt.event.*;
 import java.awt.geom.RoundRectangle2D;
-import java.awt.image.BufferedImage;
 import java.beans.PropertyChangeEvent;
 import javax.swing.*;
 import javax.swing.border.Border;
@@ -315,7 +314,7 @@ public class AquaButtonUI extends BasicButtonUI implements AquaUtilControlSize.S
         Border border = b.getBorder();
         if (border instanceof AquaButtonBorder) {
             AquaButtonBorder bb = (AquaButtonBorder) border;
-            return bb.getTextColor(b, colorDefaults);
+            return bb.getForegroundColor(b, colorDefaults, false);
         }
 
         boolean isEnabled = b.getModel().isEnabled();
@@ -669,7 +668,7 @@ public class AquaButtonUI extends BasicButtonUI implements AquaUtilControlSize.S
         Border border = b.getBorder();
         if (border instanceof AquaButtonBorder) {
             AquaButtonBorder bb = (AquaButtonBorder) border;
-            return bb.createSelectedIcon(b, source);
+            return bb.createSelectedIcon(b, source, colorDefaults);
         }
         return null;
     }
@@ -703,7 +702,7 @@ public class AquaButtonUI extends BasicButtonUI implements AquaUtilControlSize.S
         Border border = b.getBorder();
         if (border instanceof AquaButtonBorder) {
             AquaButtonBorder bb = (AquaButtonBorder) border;
-            return bb.createUnselectedIcon(b, source);
+            return bb.createUnselectedIcon(b, source, colorDefaults);
         }
         return null;
     }
@@ -737,22 +736,14 @@ public class AquaButtonUI extends BasicButtonUI implements AquaUtilControlSize.S
         Border border = b.getBorder();
         if (border instanceof AquaButtonBorder) {
             AquaButtonBorder bb = (AquaButtonBorder) border;
-            return bb.createPressedIcon(b, source);
+            return bb.createPressedIcon(b, source, colorDefaults);
         }
 
         return createDefaultPressedIcon(source);
     }
 
-    protected ImageIcon createDefaultPressedIcon(Icon source) {
-        int width = source.getIconWidth();
-        int height = source.getIconHeight();
-        BufferedImage im = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB_PRE);
-        Graphics2D g = im.createGraphics();
-        source.paintIcon(null, g, 0, 0);
-        g.setColor(new Color(0, 0, 0, 128));
-        g.setComposite(AlphaComposite.SrcAtop);
-        g.fillRect(0, 0, width, height);
-        return new ImageIcon(im);
+    protected Icon createDefaultPressedIcon(Icon source) {
+        return AquaIcon.createPressedDarkIcon(source);
     }
 
     /**
@@ -765,7 +756,7 @@ public class AquaButtonUI extends BasicButtonUI implements AquaUtilControlSize.S
         Border border = b.getBorder();
         if (border instanceof AquaButtonBorder) {
             AquaButtonBorder bb = (AquaButtonBorder) border;
-            Icon icon = bb.createDisabledIcon(b, source);
+            Icon icon = bb.createDisabledIcon(b, source, colorDefaults);
             if (icon != null) {
                 return icon;
             }
@@ -784,7 +775,7 @@ public class AquaButtonUI extends BasicButtonUI implements AquaUtilControlSize.S
         Border border = b.getBorder();
         if (border instanceof AquaButtonBorder) {
             AquaButtonBorder bb = (AquaButtonBorder) border;
-            Icon icon = bb.createDisabledSelectedIcon(b, source);
+            Icon icon = bb.createDisabledSelectedIcon(b, source, colorDefaults);
             if (icon != null) {
                 return icon;
             }

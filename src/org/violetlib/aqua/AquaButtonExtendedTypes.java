@@ -282,6 +282,8 @@ public class AquaButtonExtendedTypes {
         private Color inactiveDisabledSelectedForeground;
         private Color rolloverForeground;
         private Color pressedForeground;
+        private Color selectedPressedForeground;
+        private Color iconPressedForeground;
         private Color activeDefaultButtonForeground;
         private Font font;
         private FontFinder fontFinder;
@@ -339,6 +341,17 @@ public class AquaButtonExtendedTypes {
 
         WidgetInfo withPressed(Color pressed) {
             pressedForeground = pressed;
+            return this;
+        }
+
+        WidgetInfo withPressed(Color selected, Color unselected) {
+            selectedPressedForeground = selected;
+            pressedForeground = unselected;
+            return this;
+        }
+
+        WidgetInfo withIconPressed(Color pressed) {
+            iconPressedForeground = pressed;
             return this;
         }
 
@@ -439,7 +452,8 @@ public class AquaButtonExtendedTypes {
         public Color getForeground(AquaUIPainter.State state,
                                    AquaUIPainter.ButtonState bs,
                                    ColorDefaults colorDefaults,
-                                   boolean useNonexclusiveStyle) {
+                                   boolean useNonexclusiveStyle,
+                                   boolean isIcon) {
 
             // Special case for a textured segmented button that is not in a button group.
             if (useNonexclusiveStyle) {
@@ -454,8 +468,16 @@ public class AquaButtonExtendedTypes {
                 return rolloverForeground;
             }
 
-            if (state == AquaUIPainter.State.PRESSED && pressedForeground != null) {
-                return pressedForeground;
+            if (state == AquaUIPainter.State.PRESSED) {
+                if (isIcon && iconPressedForeground != null) {
+                    return iconPressedForeground;
+                }
+                if (bs == AquaUIPainter.ButtonState.ON && selectedPressedForeground != null) {
+                    return selectedPressedForeground;
+                }
+                if (pressedForeground != null) {
+                    return pressedForeground;
+                }
             }
 
             if (state == AquaUIPainter.State.DISABLED_INACTIVE) {
@@ -522,26 +544,20 @@ public class AquaButtonExtendedTypes {
             }
         }
 
-        public Color getTemplateSelectedColor(boolean useNonexclusive) {
-            if (isTextured) {
-                return useNonexclusive ? UIManager.getColor("Button.texturedNonexclusiveSelectedColor") : UIManager.getColor("Button.texturedSelectedColor");
-            }
-            return null;
+        public Color getTemplateSelectedColor(boolean useNonexclusive, ColorDefaults colorDefaults) {
+            return getForeground(AquaUIPainter.State.ACTIVE, AquaUIPainter.ButtonState.ON, colorDefaults, useNonexclusive, true);
         }
 
-        public Color getTemplateDisabledSelectedColor(boolean useNonexclusive) {
-            if (isTextured) {
-                return useNonexclusive ? UIManager.getColor("Button.texturedDisabledNonexclusiveSelectedColor") : UIManager.getColor("Button.texturedDisabledSelectedColor");
-            }
-            return null;
+        public Color getTemplateDisabledSelectedColor(boolean useNonexclusive, ColorDefaults colorDefaults) {
+            return getForeground(AquaUIPainter.State.DISABLED, AquaUIPainter.ButtonState.ON, colorDefaults, useNonexclusive, true);
         }
 
-        public Color getTemplateUnselectedColor() {
-            return isTextured ? UIManager.getColor("Button.texturedUnselectedColor") : null;
+        public Color getTemplateUnselectedColor(ColorDefaults colorDefaults) {
+            return getForeground(AquaUIPainter.State.ACTIVE, AquaUIPainter.ButtonState.OFF, colorDefaults, false, true);
         }
 
-        public Color getTemplateDisabledUnselectedColor() {
-            return isTextured ? UIManager.getColor("Button.texturedDisabledUnselectedColor") : null;
+        public Color getTemplateDisabledUnselectedColor(ColorDefaults colorDefaults) {
+            return getForeground(AquaUIPainter.State.DISABLED, AquaUIPainter.ButtonState.OFF, colorDefaults, false, true);
         }
 
         public boolean isSegmented() {
@@ -560,15 +576,15 @@ public class AquaButtonExtendedTypes {
     protected static Map<Object, WidgetInfo> getAllWidgets() {
         final Map<Object, WidgetInfo> result = new HashMap<>();
 
-        Color black = new ColorUIResource(Color.BLACK);
         Color black34 = new ColorUIResource(new Color(34, 34, 34));
         Color dark64 = new ColorUIResource(new Color(0, 0, 0, 64));
         Color dark140 = new ColorUIResource(new Color(0, 0, 0, 140));
         Color dark170 = new ColorUIResource(new Color(0, 0, 0, 170));
         Color dark220 = new ColorUIResource(new Color(0, 0, 0, 220));
+        Color light150 = new ColorUIResource(new Color(255, 255, 255, 150));
         Color light180 = new ColorUIResource(new Color(255, 255, 255, 180));
         Color white = new ColorUIResource(Color.WHITE);
-        Color pressedWhite = new ColorUIResource(new Color(247, 247, 247, 224));
+        Color pressedWhite = new ColorUIResource(new Color(255, 255, 255, 220));
         Color defaultWhite = new ColorUIResource(250, 250, 250);
 
         Color texturedUnselected = UIManager.getColor("Button.texturedUnselectedColor");
@@ -590,7 +606,8 @@ public class AquaButtonExtendedTypes {
                 .withMargin(9)
                 .withForeground(black34, white, null, null)
                 .withDisabledForeground(new GrayUIResource(172), dark64)
-                .withInactiveForeground(black34, null);
+                .withInactiveForeground(black34, null)
+                ;
 
         result.put(BUTTON_SEGMENTED, segmentedRounded);
         result.put(BUTTON_TAB, segmentedRounded);
@@ -618,7 +635,9 @@ public class AquaButtonExtendedTypes {
 
         result.put(BUTTON_INLINE, new WidgetInfo()
                 .withFont(UIManager.getFont("Button.inline.font"))
-                .withForeground(white, new GrayUIResource(240 /* 208 */)));  // 208 is unreadable
+                .withForeground(white, new GrayUIResource(240 /* 208 */))  // 208 is unreadable
+                .withIconPressed(pressedWhite)
+        );
 
         // Textured toggle push buttons and segmented buttons are not identical, but they are getting closer and
         // probably should be identical.
@@ -626,11 +645,11 @@ public class AquaButtonExtendedTypes {
         WidgetInfo textured = new WidgetInfo()
                 .withTextured()
                 .withEnabledForeground(texturedSelected, texturedUnselected)
-                .withPressed(black34)
+                .withPressed(white, black34)
                 .withDisabledForeground(texturedDisabledSelected, texturedDisabledUnselected)
                 .withInactiveForeground(new GrayUIResource(164), new GrayUIResource(178))
-                .withInactiveDisabledForeground(new GrayUIResource(195), new GrayUIResource(211)
-                );
+                .withInactiveDisabledForeground(new GrayUIResource(195), new GrayUIResource(211))
+                ;
 
         result.put(BUTTON_TEXTURED, textured);
         result.put(BUTTON_TEXTURED_TOOLBAR, textured);
@@ -652,11 +671,19 @@ public class AquaButtonExtendedTypes {
                 .withFont(UIManager.getFont("Button.recessed.font"))
                 .withRolloverEnabled(UIManager.getColor("Button.recessed.rolloverText"))
                 .withForeground(dark170, white)
-                .withDisabledForeground(light180, dark140)
+                .withDisabledForeground(light150, dark64)
                 .withInactiveForeground(dark64)
                 .withInactiveDisabledForeground(light180, dark64 /* dark140 */) // dark140 looks wrong
                 .withPressed(white)
         );
+
+        WidgetInfo pushPopUp = new WidgetInfo()
+                .withMargin(5)
+                .withForeground(black34, dark64, dark220)
+                ;
+
+        result.put(BUTTON_POP_DOWN, pushPopUp);
+        result.put(BUTTON_POP_UP, pushPopUp);
 
         result.put(BUTTON_POP_DOWN_BEVEL, result.get(BUTTON_BEVEL));
         result.put(BUTTON_POP_UP_BEVEL, result.get(BUTTON_BEVEL));

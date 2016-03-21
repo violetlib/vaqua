@@ -305,7 +305,10 @@ class AquaComboBoxButton extends JButton {
     }
 
     public Color getForeground() {
+        return getForeground(false);
+    }
 
+    protected Color getForeground(boolean isIcon) {
         if (comboBox == null) {
             return super.getForeground();
         }
@@ -315,7 +318,7 @@ class AquaComboBoxButton extends JButton {
             Object widget = getWidget(getLayoutConfiguration());
             AquaButtonExtendedTypes.WidgetInfo info = AquaButtonExtendedTypes.getWidgetInfo(widget);
             State state = getState();
-            Color c = info.getForeground(state, AquaUIPainter.ButtonState.STATELESS, colorDefaults, false);
+            Color c = info.getForeground(state, AquaUIPainter.ButtonState.STATELESS, colorDefaults, false, isIcon);
             if (c != null) {
                 return c;
             }
@@ -330,12 +333,12 @@ class AquaComboBoxButton extends JButton {
      * @return the icon to use.
      */
     public Icon getIcon(Icon icon) {
+        State st = getState();
+
         if (icon instanceof ImageIcon) {
             ImageIcon ii = (ImageIcon) icon;
             if (isTemplateIconEnabled(ii)) {
-                Object widget = getWidget(getLayoutConfiguration());
-                AquaButtonExtendedTypes.WidgetInfo info = AquaButtonExtendedTypes.getWidgetInfo(widget);
-                Color color = comboBox.isEnabled() ? info.getTemplateUnselectedColor() : info.getTemplateDisabledUnselectedColor();
+                Color color = getForeground(true);
                 if (color != null) {
                     Image im = ii.getImage();
                     im = AquaImageFactory.createImageFromTemplate(im, color);
@@ -345,6 +348,11 @@ class AquaComboBoxButton extends JButton {
                 }
             }
         }
+
+        if (st == State.PRESSED) {
+            return AquaIcon.createPressedDarkIcon(icon);
+        }
+
         return icon;
     }
 
