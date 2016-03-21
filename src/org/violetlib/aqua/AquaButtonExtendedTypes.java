@@ -655,6 +655,7 @@ public class AquaButtonExtendedTypes {
                 .withDisabledForeground(light180, dark140)
                 .withInactiveForeground(dark64)
                 .withInactiveDisabledForeground(light180, dark64 /* dark140 */) // dark140 looks wrong
+                .withPressed(white)
         );
 
         result.put(BUTTON_POP_DOWN_BEVEL, result.get(BUTTON_BEVEL));

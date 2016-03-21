@@ -523,6 +523,7 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
             "Button.margin", new InsetsUIResource(0, 0, 0, 0),
             "Button.opaque", false,
             "Button.recessed.font", recessedFont,
+            "Button.recessed.rolloverText", white,
             "Button.inline.font", inlineFont,
             "Button.texturedSelectedColor", texturedButtonSelectedColor,
             "Button.texturedDisabledSelectedColor", texturedButtonDisabledSelectedColor,
