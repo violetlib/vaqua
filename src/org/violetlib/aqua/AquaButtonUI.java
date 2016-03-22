@@ -73,8 +73,7 @@ public class AquaButtonUI extends BasicButtonUI implements AquaUtilControlSize.S
     public static final String LAYOUT_CONFIGURATION_PROPERTY = "Aqua.Button.LayoutConfiguration";
     public static final String DEFAULT_FONT_PROPERTY = "Aqua.Button.DefaultFont";
     protected static final String COLOR_CHOOSER_OWNER_PROPERTY = "Aqua.Button.ColorChooserOwner";
-    protected static final String UNSELECTED_ICON_PROPERTY = "Aqua.Button.UnselectedIcon";
-    protected static final String TEMPLATE_ICON_PROPERTY = "Aqua.Button.IsTemplateIcon";
+    protected static final String SPECIAL_ICON_PROPERTY = "Aqua.Button.SpecialIcon";
 
     protected static final RecyclableSingleton<AquaButtonUI> buttonUI = new RecyclableSingletonFromDefaultConstructor<AquaButtonUI>(AquaButtonUI.class);
     public static ComponentUI createUI(final JComponent c) {
@@ -161,21 +160,17 @@ public class AquaButtonUI extends BasicButtonUI implements AquaUtilControlSize.S
     }
 
     /**
-     * Indicate whether a button is eligible for painting the icon as a template.
-     */
-    public static boolean isTemplateIconEnabled(AbstractButton b) {
-        Object o = b.getClientProperty(TEMPLATE_ICON_PROPERTY);
-        return Boolean.TRUE.equals(o);
-    }
-
-    /**
-     * Update the client property that marks a button that is eligible for painting the icon as a template.
+     * Invalidate the cached special icon if the template icon status has changed.
      */
     protected void updateTemplateIconStatus(AbstractButton b) {
-        if (determineTemplateIconStatus(b)) {
-            b.putClientProperty(TEMPLATE_ICON_PROPERTY, true);
-        } else {
-            b.putClientProperty(TEMPLATE_ICON_PROPERTY, null);
+        Object o = b.getClientProperty(SPECIAL_ICON_PROPERTY);
+        if (o instanceof AquaButtonIcon) {
+            AquaButtonIcon icon = (AquaButtonIcon) o;
+            boolean isTemplate = determineTemplateIconStatus(b);
+            if (icon.isTemplate != isTemplate) {
+                // Force a new icon to be created with the new status
+                removeCachedIcons(b);
+            }
         }
     }
 
@@ -437,7 +432,7 @@ public class AquaButtonUI extends BasicButtonUI implements AquaUtilControlSize.S
                 b.setRolloverSelectedIcon(null);
             }
 
-            b.putClientProperty(UNSELECTED_ICON_PROPERTY, null);
+            b.putClientProperty(SPECIAL_ICON_PROPERTY, null);
         } finally {
             AquaLookAndFeel.suppressCreationOfDisabledButtonIcons = oldValue;
         }
@@ -604,28 +599,19 @@ public class AquaButtonUI extends BasicButtonUI implements AquaUtilControlSize.S
      */
     protected Icon getIcon(AbstractButton b) {
         Icon icon = getSpecialIcon(b);
-        return icon != null ? icon : b.getIcon();
-    }
+        if (icon != null) {
+            return icon;
+        }
 
-    /**
-     * Obtain a special icon to use based on the button state.
-     * This method should not be called unless the button has an icon.
-     * @param b The button.
-     * @return the icon to use, or null if no special icon is needed.
-     */
-    protected Icon getSpecialIcon(AbstractButton b) {
-        final ButtonModel model = b.getModel();
-
+        ButtonModel model = b.getModel();
         if (!model.isEnabled()) {
             if (model.isSelected()) {
-                // AbstractButton will not ask us for a disabled selected icon unless a selected icon is defined
-                getSelectedIcon(b);
                 return b.getDisabledSelectedIcon();
             } else {
                 return b.getDisabledIcon();
             }
         } else if (model.isPressed() && model.isArmed()) {
-            return getPressedIcon(b);
+            return b.getPressedIcon();
         } else if (b.isRolloverEnabled() && model.isRollover()) {
             if (model.isSelected()) {
                 return b.getRolloverSelectedIcon();
@@ -633,117 +619,32 @@ public class AquaButtonUI extends BasicButtonUI implements AquaUtilControlSize.S
                 return b.getRolloverIcon();
             }
         } else if (model.isSelected()) {
-            return getSelectedIcon(b);
+            return b.getSelectedIcon();
         } else {
-            return getUnselectedIcon(b);
+            return b.getIcon();
         }
     }
 
     /**
-     * Obtain a special icon to use when a button is selected.
+     * Obtain a special icon to use for a button. The special icon rendering may be state dependent.
+     * This method should not be called unless the button has an icon.
      * @param b The button.
-     * @return the icon to use, or null if no special icon is needed.
+     * @return the special icon for the button, or null if no special icon is defined for the button.
      */
-    protected Icon getSelectedIcon(AbstractButton b) {
-        Icon icon = b.getSelectedIcon();
-        if (icon != null) {
+    protected AquaButtonIcon getSpecialIcon(AbstractButton b) {
+        Object o = b.getClientProperty(SPECIAL_ICON_PROPERTY);
+        if (o instanceof AquaButtonIcon) {
+            return (AquaButtonIcon) o;
+        }
+        Border border = b.getBorder();
+        if (border instanceof AquaButtonBorder) {
+            AquaButtonBorder bb = (AquaButtonBorder) border;
+            boolean isTemplate = determineTemplateIconStatus(b);
+            AquaButtonIcon icon = bb.createIcon(b, isTemplate, colorDefaults);
+            b.putClientProperty(SPECIAL_ICON_PROPERTY, icon);
             return icon;
         }
-
-        icon = createSelectedIcon(b, b.getIcon());
-        if (icon != null) {
-            b.setSelectedIcon(icon);
-        }
-
-        return icon;
-    }
-
-    /**
-     * Create a special icon to use when a button is selected, if appropriate.
-     * @param b The button.
-     * @param source The button icon.
-     * @return the icon to use, or null if no special icon is needed.
-     */
-    protected Icon createSelectedIcon(AbstractButton b, Icon source) {
-        Border border = b.getBorder();
-        if (border instanceof AquaButtonBorder) {
-            AquaButtonBorder bb = (AquaButtonBorder) border;
-            return bb.createSelectedIcon(b, source, colorDefaults);
-        }
         return null;
-    }
-
-    /**
-     * Obtain a special icon to use when a button is not selected.
-     * @param b The button.
-     * @return the icon to use, or null if no special icon is needed.
-     */
-    protected Icon getUnselectedIcon(AbstractButton b) {
-        Object o = b.getClientProperty(UNSELECTED_ICON_PROPERTY);
-        if (o instanceof Icon) {
-            return (Icon) o;
-        }
-
-        Icon icon = createUnselectedIcon(b, b.getIcon());
-        if (icon == null) {
-            icon = b.getIcon();
-        }
-        b.putClientProperty(UNSELECTED_ICON_PROPERTY, icon);
-        return icon;
-    }
-
-    /**
-     * Create a special icon to use when a button is not selected, if appropriate.
-     * @param b The button.
-     * @param source The button icon.
-     * @return the icon to use, or null if no special icon is needed.
-     */
-    protected Icon createUnselectedIcon(AbstractButton b, Icon source) {
-        Border border = b.getBorder();
-        if (border instanceof AquaButtonBorder) {
-            AquaButtonBorder bb = (AquaButtonBorder) border;
-            return bb.createUnselectedIcon(b, source, colorDefaults);
-        }
-        return null;
-    }
-
-    /**
-     * Obtain a special icon to use when a button is pressed.
-     * @param b The button.
-     * @return the icon to use, or null if no special icon is needed.
-     */
-    protected Icon getPressedIcon(AbstractButton b) {
-        Icon icon = b.getPressedIcon();
-        if (icon != null) {
-            return icon;
-        }
-
-        icon = createPressedIcon(b, b.getIcon());
-        if (icon != null) {
-            b.setPressedIcon(icon);
-        }
-
-        return icon;
-    }
-
-    /**
-     * Create a special icon to use when a button is pressed, if appropriate.
-     * @param b The button.
-     * @param source The button icon.
-     * @return the icon to use, or null if no special icon is needed.
-     */
-    protected Icon createPressedIcon(AbstractButton b, Icon source) {
-        Border border = b.getBorder();
-        if (border instanceof AquaButtonBorder) {
-            AquaButtonBorder bb = (AquaButtonBorder) border;
-            return bb.createPressedIcon(b, source, colorDefaults);
-        }
-
-        return createDefaultPressedIcon(source);
-    }
-
-    protected Icon createDefaultPressedIcon(Icon source) {
-        return AquaIcon.createPressedDarkIcon(source);
     }
 
     /**
@@ -753,13 +654,9 @@ public class AquaButtonUI extends BasicButtonUI implements AquaUtilControlSize.S
      * @return the icon to use.
      */
     public Icon createDisabledIcon(AbstractButton b, ImageIcon source) {
-        Border border = b.getBorder();
-        if (border instanceof AquaButtonBorder) {
-            AquaButtonBorder bb = (AquaButtonBorder) border;
-            Icon icon = bb.createDisabledIcon(b, source, colorDefaults);
-            if (icon != null) {
-                return icon;
-            }
+        AquaButtonIcon specialIcon = getSpecialIcon(b);
+        if (specialIcon != null) {
+            return specialIcon;
         }
         return createDefaultDisabledIcon(source);
     }
@@ -772,20 +669,15 @@ public class AquaButtonUI extends BasicButtonUI implements AquaUtilControlSize.S
      * @return the icon to use.
      */
     public Icon createDisabledSelectedIcon(AbstractButton b, ImageIcon source) {
-        Border border = b.getBorder();
-        if (border instanceof AquaButtonBorder) {
-            AquaButtonBorder bb = (AquaButtonBorder) border;
-            Icon icon = bb.createDisabledSelectedIcon(b, source, colorDefaults);
-            if (icon != null) {
-                return icon;
-            }
+        AquaButtonIcon specialIcon = getSpecialIcon(b);
+        if (specialIcon != null) {
+            return specialIcon;
         }
         return createDefaultDisabledIcon(source);
     }
 
     protected ImageIcon createDefaultDisabledIcon(ImageIcon source) {
-        GrayFilter filter = new GrayFilter(true, 50);
-        return new ImageIconUIResource(AquaImageFactory.applyFilter(source.getImage(), filter));
+        return new ImageIconUIResource(AquaImageFactory.generateDisabledLightImage(source.getImage()));
     }
 
     protected void paintText(final Graphics g, final AbstractButton b, final Rectangle localTextRect, final String text) {

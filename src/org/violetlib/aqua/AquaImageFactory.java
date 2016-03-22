@@ -596,7 +596,7 @@ public class AquaImageFactory {
         }
     }
 
-    public static Image generatePressedDarkImage(final Image image) {
+    public static Image generatePressedDarkImage(Image image) {
         return applyFilter(image, new GeneratePressedDarkFilter());
     }
 
@@ -622,7 +622,33 @@ public class AquaImageFactory {
         }
     }
 
-    public static Image generateDisabledImage(final Image image) {
+    public static Image generateDisabledLightImage(Image image) {
+        return applyFilter(image, new GenerateDisabledLightFilter());
+    }
+
+    private static class GenerateDisabledLightFilter extends RGBImageFilter {
+        public GenerateDisabledLightFilter() {
+            canFilterIndexColorModel = true;
+        }
+
+        @Override
+        public int filterRGB(int x, int y, int rgb) {
+            int red = (rgb >> 16) & 0xff;
+            int green = (rgb >> 8) & 0xff;
+            int blue = rgb & 0xff;
+
+            return (rgb & 0xff000000) | (transform(red) << 16) | (transform(green) << 8) | (transform(blue) << 0);
+        }
+
+        protected int transform(int c) {
+            int result = (c * 120) / 100;
+            if (result < 0) result = 0;
+            if (result > 255) result = 255;
+            return result;
+        }
+    }
+
+  public static Image generateDisabledImage(final Image image) {
         return applyFilter(image, new GenerateDisabledFilter());
     }
 

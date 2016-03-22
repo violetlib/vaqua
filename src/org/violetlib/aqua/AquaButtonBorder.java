@@ -317,119 +317,37 @@ public abstract class AquaButtonBorder extends AquaBorder implements BackgroundP
     }
 
     /**
-     * Create a special icon to use when a button is selected, if appropriate.
-     * @param b The button.
-     * @param source The button icon.
-     * @return the icon to use, or null if no special icon is needed.
+     * Create a special icon to use for a button. The icon rendering may be state dependent.
      */
-    public Icon createSelectedIcon(AbstractButton b, Icon source, AquaButtonExtendedTypes.ColorDefaults colorDefaults) {
-        if (source instanceof ImageIcon) {
-            if (AquaButtonUI.isTemplateIconEnabled(b)) {
-                AquaButtonExtendedTypes.WidgetInfo info = getWidgetInfo(b);
-                boolean useNonexclusive = shouldUseNonexclusiveStyle(b, info);
-                Color color = info.getTemplateSelectedColor(useNonexclusive, colorDefaults);
-                if (color != null) {
-                    Image im = ((ImageIcon) source).getImage();
-                    im = AquaImageFactory.createImageFromTemplate(im, color);
-                    if (im != null) {
-                        return new ImageIconUIResource(im);
-                    }
-                }
-            }
-        }
-        return null;
+    public AquaButtonIcon createIcon(AbstractButton b, boolean isTemplate, AquaButtonExtendedTypes.ColorDefaults colorDefaults) {
+        return new MyButtonIcon(b, isTemplate, colorDefaults);
     }
 
-    /**
-     * Create a special icon to use when a button is not selected, if appropriate.
-     * @param b The button.
-     * @param source The button icon.
-     * @return the icon to use, or null if no special icon is needed.
-     */
-    public Icon createUnselectedIcon(AbstractButton b, Icon source, AquaButtonExtendedTypes.ColorDefaults colorDefaults) {
-        if (source instanceof ImageIcon) {
-            if (AquaButtonUI.isTemplateIconEnabled(b)) {
-                AquaButtonExtendedTypes.WidgetInfo info = getWidgetInfo(b);
-                Color color = info.getTemplateUnselectedColor(colorDefaults);
-                if (color != null) {
-                    Image im = ((ImageIcon) source).getImage();
-                    im = AquaImageFactory.createImageFromTemplate(im, color);
-                    if (im != null) {
-                        return new ImageIconUIResource(im);
-                    }
-                }
-            }
-        }
-        return null;
-    }
+    protected class MyButtonIcon extends AquaButtonIcon {
+        protected final AbstractButton b;
 
-    /**
-     * Create a special icon to use when a button is pressed, if appropriate.
-     * @param b The button.
-     * @param source The button icon.
-     * @return the icon to use, or null if no special icon is needed.
-     */
-    public Icon createPressedIcon(AbstractButton b, Icon source, AquaButtonExtendedTypes.ColorDefaults colorDefaults) {
-        if (source instanceof ImageIcon) {
-            if (AquaButtonUI.isTemplateIconEnabled(b)) {
-                Color color = getForegroundColor(b, colorDefaults, true);
-                if (color != null) {
-                    Image im = ((ImageIcon) source).getImage();
-                    im = AquaImageFactory.createImageFromTemplate(im, color);
-                    if (im != null) {
-                        return new ImageIconUIResource(im);
-                    }
-                }
-            }
+        public MyButtonIcon(AbstractButton b, boolean isTemplate, AquaButtonExtendedTypes.ColorDefaults colorDefaults) {
+            super(AquaIcon.getImageForIcon(b.getIcon()), isTemplate, colorDefaults);
+            this.b = b;
         }
-        return AquaIcon.createPressedDarkIcon(source);
-    }
 
-    /**
-     * Create a special icon to use when a button is disabled, if appropriate.
-     * @param b The button.
-     * @param source The button icon.
-     * @return the icon to use, or null if no special icon is needed.
-     */
-    public Icon createDisabledIcon(AbstractButton b, Icon source, AquaButtonExtendedTypes.ColorDefaults colorDefaults) {
-        if (source instanceof ImageIcon) {
-            if (AquaButtonUI.isTemplateIconEnabled(b)) {
-                AquaButtonExtendedTypes.WidgetInfo info = getWidgetInfo(b);
-                Color color = info.getTemplateDisabledUnselectedColor(colorDefaults);
-                if (color != null) {
-                    Image im = ((ImageIcon) source).getImage();
-                    im = AquaImageFactory.createImageFromTemplate(im, color);
-                    if (im != null) {
-                        return new ImageIconUIResource(im);
-                    }
-                }
-            }
+        @Override
+        protected Color getExistingColor() {
+            return b.getForeground();
         }
-        return null;
-    }
 
-    /**
-     * Create a special icon to use when a button is disabled and selected, if appropriate.
-     * @param b The button.
-     * @param source The button icon.
-     * @return the icon to use, or null if no special icon is needed.
-     */
-    public Icon createDisabledSelectedIcon(AbstractButton b, Icon source, AquaButtonExtendedTypes.ColorDefaults colorDefaults) {
-        if (source instanceof ImageIcon) {
-            if (AquaButtonUI.isTemplateIconEnabled(b)) {
-                AquaButtonExtendedTypes.WidgetInfo info = getWidgetInfo(b);
-                boolean useNonexclusive = shouldUseNonexclusiveStyle(b, info);
-                Color color = info.getTemplateDisabledSelectedColor(useNonexclusive, colorDefaults);
-                if (color != null) {
-                    Image im = ((ImageIcon) source).getImage();
-                    im = AquaImageFactory.createImageFromTemplate(im, color);
-                    if (im != null) {
-                        return new ImageIconUIResource(im);
-                    }
-                }
-            }
+        @Override
+        protected Key getRenderingKey() {
+            AquaButtonExtendedTypes.WidgetInfo info = getWidgetInfo(b);
+            State state = getState(b);
+            AquaUIPainter.ButtonState bs = getButtonState(b);
+            return new Key(info, state, bs);
         }
-        return null;
+
+        @Override
+        protected boolean isNonexclusiveStyle(Key key) {
+            return shouldUseNonexclusiveStyle(b, key.getWidgetInfo());
+        }
     }
 
     public Dimension getMinimumButtonSize(AbstractButton b) {

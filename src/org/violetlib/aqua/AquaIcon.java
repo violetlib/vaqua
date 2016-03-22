@@ -74,8 +74,16 @@ public class AquaIcon {
     private static final RecyclableIconImageSingleton stopIcon = new RecyclableIconImageSingleton(alertStopImageCreator);
     private static final RecyclableIconImageSingleton openFolderIcon = new RecyclableIconImageSingleton(openFolderImageCreator);
 
-    // converts an object that is an icon into an image so we can hand it off to AppKit
+    /**
+     * Create an image for an icon, if possible.
+     * @param i The icon (may be null).
+     * @return the corresponding image, or null if not possible.
+     */
     public static Image getImageForIcon(final Icon i) {
+        if (i == null) {
+            return null;
+        }
+
         if (i instanceof ImageIcon) return ((ImageIcon)i).getImage();
 
         final int w = i.getIconWidth();
