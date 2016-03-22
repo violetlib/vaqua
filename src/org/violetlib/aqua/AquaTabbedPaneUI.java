@@ -397,7 +397,7 @@ public class AquaTabbedPaneUI extends AquaTabbedPaneCopyFromBasicUI implements A
         Image image = AquaImageFactory.getArrowImageForDirection(direction);
         assert image != null;
         if (!enabled) {
-            image = AquaImageFactory.generateDisabledImage(image);
+            image = AquaImageFactory.generateDisabledLightImage(image);
         }
 
         if (sizeVariant == Size.MINI) {
@@ -527,7 +527,7 @@ public class AquaTabbedPaneUI extends AquaTabbedPaneCopyFromBasicUI implements A
 
         if (isScrollTabIndex(tabIndex)) {
             title = null;
-            icon = getIconForScrollTab(tabPlacement, tabIndex, true);
+            icon = getIconForScrollTab(tabPlacement, tabIndex, tabPane.isEnabled());
         } else {
             Component component = getTabComponentAt(tabIndex);
             if (component != null) {

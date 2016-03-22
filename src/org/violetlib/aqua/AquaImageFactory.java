@@ -113,7 +113,7 @@ public class AquaImageFactory {
         public BufferedImage map(Image source, int scaleFactor) {
             return getAppIconImageCompositedOn(source, scaleFactor);
         }
-   }
+    }
 
     static BufferedImage getAppIconImageCompositedOn(final Image background, int scaleFactor) {
         final int scaledAlertIconSize = background.getWidth(null) * scaleFactor;
@@ -121,10 +121,10 @@ public class AquaImageFactory {
         final int kAlertSubIconInset = scaledAlertIconSize - kAlertSubIconSize;
         final Icon smallAppIconScaled = new AquaIcon.CachingScalingIcon(
                 kAlertSubIconSize, kAlertSubIconSize) {
-                    Image createImage() {
-                        return getGenericJavaIcon();
-                    }
-                };
+            Image createImage() {
+                return getGenericJavaIcon();
+            }
+        };
 
         final BufferedImage image = new BufferedImage(scaledAlertIconSize,
                 scaledAlertIconSize, BufferedImage.TYPE_INT_ARGB_PRE);
@@ -144,8 +144,8 @@ public class AquaImageFactory {
     }
 
     public static Image loadResource(String resource) {
-      URL u = AquaImageFactory.class.getResource(resource);
-      return u != null ? Toolkit.getDefaultToolkit().createImage(u) : null;
+        URL u = AquaImageFactory.class.getResource(resource);
+        return u != null ? Toolkit.getDefaultToolkit().createImage(u) : null;
     }
 
     public static Image getImage(File file, int size) {
@@ -359,7 +359,7 @@ public class AquaImageFactory {
     }
 
     private static Image getNSImage(String imageName, int width, int height) {
-      return getNativeImage(imageName, width, height);
+        return getNativeImage(imageName, width, height);
     }
 
     private static Image getNSIcon(String imageName) {
@@ -641,22 +641,11 @@ public class AquaImageFactory {
         }
 
         protected int transform(int c) {
-            int result = (c * 120) / 100;
+            int result = 255 - ((255 - c) * 50) / 100;
             if (result < 0) result = 0;
             if (result > 255) result = 255;
             return result;
         }
-    }
-
-  public static Image generateDisabledImage(final Image image) {
-        return applyFilter(image, new GenerateDisabledFilter());
-    }
-
-    private static class GenerateDisabledFilter extends IconImageFilter {
-      @Override
-      int getGreyFor(final int gray) {
-          return 255 - ((255 - gray) * 65 / 100);
-      }
     }
 
     public static Image generateLightenedImage(final Image image, final int percent) {
@@ -735,9 +724,9 @@ public class AquaImageFactory {
         @Override
         public Object clone() {
             if (isForTesting) {
-              return this;  // special case for filter used once, we need to retain access to the isTemplate flag
+                return this;  // special case for filter used once, we need to retain access to the isTemplate flag
             }
-          return super.clone();
+            return super.clone();
         }
 
         public boolean isTemplate() {
