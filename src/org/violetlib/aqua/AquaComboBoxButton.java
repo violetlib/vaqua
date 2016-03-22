@@ -352,6 +352,9 @@ class AquaComboBoxButton extends JButton {
         if (st == State.PRESSED) {
             return AquaIcon.createPressedDarkIcon(icon);
         }
+        if (st == State.DISABLED || st == State.DISABLED_INACTIVE) {
+            return AquaIcon.createDisabledLightIcon(icon);
+        }
 
         return icon;
     }

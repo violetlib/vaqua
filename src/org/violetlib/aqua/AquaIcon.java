@@ -109,6 +109,16 @@ public class AquaIcon {
         }
     }
 
+    public static Icon createDisabledLightIcon(Icon ic) {
+        Image im = getImageForIcon(ic);
+        if (im != null) {
+            Image disabledImage = AquaImageFactory.generateDisabledLightImage(im);
+            return new ImageIcon(disabledImage);
+        } else {
+            return ic;
+        }
+    }
+
     public static abstract class CachingScalingIcon implements Icon, UIResource {
         int width;
         int height;
