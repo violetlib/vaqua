@@ -873,7 +873,7 @@ public class AquaFileChooserUI extends BasicFileChooserUI {
 
         filterComboBoxModel = createFilterComboBoxModel();
         filterComboBox.setModel(filterComboBoxModel);
-        filterComboBox.setRenderer(createFilterComboBoxRenderer());
+        filterComboBox.setRenderer(createFilterComboBoxRenderer(filterComboBox));
         // Model and Renderer assignment
 
         // Listener assignment
@@ -2682,28 +2682,29 @@ public class AquaFileChooserUI extends BasicFileChooserUI {
     //
     // Renderer for Types ComboBox
     //
-    protected FilterComboBoxRenderer createFilterComboBoxRenderer() {
-        return new FilterComboBoxRenderer();
+    protected FilterComboBoxRenderer createFilterComboBoxRenderer(JComboBox cb) {
+        return new FilterComboBoxRenderer(cb);
     }
 
     /**
      * Render different type sizes and styles.
      */
-    protected static class FilterComboBoxRenderer extends DefaultListCellRenderer {
+    protected static class FilterComboBoxRenderer extends AquaComboBoxRendererInternal {
 
-        private Border border = new EmptyBorder(1, 0, 1, 0);
+        public FilterComboBoxRenderer(JComboBox cb) {
+            super(cb);
+        }
 
         @Override
         public Component getListCellRendererComponent(JList list,
                 Object value, int index, boolean isSelected,
                 boolean cellHasFocus) {
 
-            super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
-
             if (value != null && value instanceof FileFilter) {
-                setText(((FileFilter) value).getDescription());
+                value = ((FileFilter) value).getDescription();
             }
-            setBorder(border);
+
+            super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
 
             return this;
         }
