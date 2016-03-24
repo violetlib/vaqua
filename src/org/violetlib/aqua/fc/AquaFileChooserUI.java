@@ -2775,19 +2775,25 @@ public class AquaFileChooserUI extends BasicFileChooserUI {
               code, so I guess it is too late to change except as a configurable option.
             */
 
-            FileFilter currentFilter = fc.getFileFilter();
-            boolean found = false;
-            if (currentFilter != null) {
-                for (int i = 0; i < filters.length; i++) {
-                    if (filters[i] == currentFilter) {
-                        found = true;
+            // If no list of choosable filters is currently displayable, then we do not want to start displaying one.
+
+            FileFilter[] filters = fc.getChoosableFileFilters();
+            if (filters.length > 1) {
+                FileFilter currentFilter = fc.getFileFilter();
+                boolean found = false;
+                if (currentFilter != null) {
+                    for (int i = 0; i < filters.length; i++) {
+                        if (filters[i] == currentFilter) {
+                            found = true;
+                        }
+                    }
+                    if (!found) {
+                        // Here we want to respond to a change event
+                        fc.addChoosableFileFilter(currentFilter);
                     }
                 }
-                if (!found) {
-                    // Here we want to respond to a change event
-                    fc.addChoosableFileFilter(currentFilter);
-                }
             }
+
             return fc.getFileFilter();
         }
 
