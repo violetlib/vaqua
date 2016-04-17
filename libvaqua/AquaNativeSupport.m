@@ -2,7 +2,7 @@
  * @(#)AquaNativeSupport.m
  *
  * Copyright (c) 2004-2007 Werner Randelshofer, Switzerland.
- * Copyright (c) 2014-2015 Alan Snyder.
+ * Copyright (c) 2014-2016 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this software, except in
@@ -44,11 +44,13 @@ static JavaVM *vm;
 static jint javaVersion;
 static jobject synchronizeCallback;
 
-NSString *createIndentation(int indent) {
+NSString *createIndentation(int indent)
+{
     return [@"                                   " substringToIndex: indent];
 }
 
-NSString *createLayerDescription(CALayer *layer) {
+NSString *createLayerDescription(CALayer *layer)
+{
     if (layer) {
         NSString *description = [layer debugDescription];
         NSRect frame = layer.frame;
@@ -61,7 +63,8 @@ NSString *createLayerDescription(CALayer *layer) {
     }
 }
 
-NSString *createViewDescription(NSView *v) {
+NSString *createViewDescription(NSView *v)
+{
     if (v) {
         NSString *description = [v debugDescription];
         if ([v isKindOfClass: [NSVisualEffectView class]]) {
@@ -74,7 +77,8 @@ NSString *createViewDescription(NSView *v) {
     }
 }
 
-void viewDebug(NSView *v, NSString *title, int indent) {
+void viewDebug(NSView *v, NSString *title, int indent)
+{
     NSString *titleString = title ? [NSString stringWithFormat: @"%@: ", title] : @"";
     NSString *layerDescription = createLayerDescription(v.layer);
     NSString *od = v.opaque ? @" Opaque" : @"";
@@ -103,7 +107,8 @@ void viewDebug(NSView *v, NSString *title, int indent) {
     }
 }
 
-NSView *getTopView(NSWindow *w) {
+NSView *getTopView(NSWindow *w)
+{
     NSView *view = w.contentView;
     while (view != nil) {
         NSView *parent = view.superview;
@@ -115,7 +120,8 @@ NSView *getTopView(NSWindow *w) {
     return nil;
 }
 
-void windowDebug(NSWindow *w) {
+void windowDebug(NSWindow *w)
+{
     NSString *od = w.opaque ? @" Opaque" : @"";
     NSRect frame = w.frame;
     NSLog(@"Window: %@%@ %f %f %f %f", [w description], od, frame.origin.x, frame.origin.y, frame.size.width, frame.size.height);
@@ -125,7 +131,8 @@ void windowDebug(NSWindow *w) {
     }
 }
 
-void setupLayers(NSView *v) {
+void setupLayers(NSView *v)
+{
     NSView *vv = v;
     while (vv) {
         vv.wantsLayer = YES;
@@ -133,7 +140,8 @@ void setupLayers(NSView *v) {
     }
 }
 
-AquaWrappedAWTView *ensureWrapper(NSWindow *w) {
+AquaWrappedAWTView *ensureWrapper(NSWindow *w)
+{
     NSView *contentView = w.contentView;
     if ([contentView isKindOfClass: [AquaWrappedAWTView class]]) {
         return (AquaWrappedAWTView *) contentView;
@@ -146,7 +154,8 @@ AquaWrappedAWTView *ensureWrapper(NSWindow *w) {
     return wrapper;
 }
 
-AquaWrappedAWTView *getWrapper(NSWindow *w) {
+AquaWrappedAWTView *getWrapper(NSWindow *w)
+{
     NSView *contentView = w.contentView;
     if ([contentView isKindOfClass: [AquaWrappedAWTView class]]) {
         return (AquaWrappedAWTView *) contentView;
@@ -154,7 +163,8 @@ AquaWrappedAWTView *getWrapper(NSWindow *w) {
     return nil;
 }
 
-NSView *getAWTView(NSWindow *w) {
+NSView *getAWTView(NSWindow *w)
+{
     NSView *contentView = w.contentView;
     if ([contentView isKindOfClass: [AquaWrappedAWTView class]]) {
         AquaWrappedAWTView *wrapper = (AquaWrappedAWTView *) contentView;
@@ -211,8 +221,8 @@ NSView *getAWTView(NSWindow *w) {
  * Signature: ()Z
  */
 JNIEXPORT jboolean JNICALL Java_org_violetlib_aqua_OSXSystemProperties_nativeGetFullKeyboardAccessEnabled
-  (JNIEnv *env, jclass cl) {
-
+    (JNIEnv *env, jclass cl)
+{
     jboolean result = NO;
 
     JNF_COCOA_ENTER(env);
@@ -232,8 +242,8 @@ JNIEXPORT jboolean JNICALL Java_org_violetlib_aqua_OSXSystemProperties_nativeGet
  * Signature: ()Z
  */
 JNIEXPORT jboolean JNICALL Java_org_violetlib_aqua_OSXSystemProperties_nativeGetShowAllFiles
-  (JNIEnv *env, jclass cl) {
-
+    (JNIEnv *env, jclass cl)
+{
     jboolean result = NO;
 
     JNF_COCOA_ENTER(env);
@@ -255,7 +265,8 @@ JNIEXPORT jboolean JNICALL Java_org_violetlib_aqua_OSXSystemProperties_nativeGet
  * Signature: ()Z
  */
 JNIEXPORT jboolean JNICALL Java_org_violetlib_aqua_OSXSystemProperties_nativeGetScrollToClick
-  (JNIEnv *env, jclass cl) {
+    (JNIEnv *env, jclass cl)
+{
 
     jboolean result = NO;
 
@@ -275,8 +286,8 @@ JNIEXPORT jboolean JNICALL Java_org_violetlib_aqua_OSXSystemProperties_nativeGet
  * Signature: ()Z
  */
 JNIEXPORT jboolean JNICALL Java_org_violetlib_aqua_OSXSystemProperties_nativeGetUseOverlayScrollBars
-  (JNIEnv *env, jclass cl) {
-
+    (JNIEnv *env, jclass cl)
+{
     jboolean result = NO;
 
     JNF_COCOA_ENTER(env);
@@ -296,8 +307,8 @@ JNIEXPORT jboolean JNICALL Java_org_violetlib_aqua_OSXSystemProperties_nativeGet
  * Signature: ()Z
  */
 JNIEXPORT jboolean JNICALL Java_org_violetlib_aqua_OSXSystemProperties_nativeGetReduceTransparency
-  (JNIEnv *env, jclass cl) {
-
+    (JNIEnv *env, jclass cl)
+{
     jboolean result = NO;
 
     JNF_COCOA_ENTER(env);
@@ -316,8 +327,8 @@ JNIEXPORT jboolean JNICALL Java_org_violetlib_aqua_OSXSystemProperties_nativeGet
  * Signature: (Ljava/lang/Runnable;)V
  */
 JNIEXPORT void JNICALL Java_org_violetlib_aqua_OSXSystemProperties_enableCallback
-  (JNIEnv *env, jclass cl, jobject jrunnable) {
-
+    (JNIEnv *env, jclass cl, jobject jrunnable)
+{
     JNF_COCOA_ENTER(env);
 
     synchronizeCallback = JNFNewGlobalRef(env, jrunnable);
@@ -356,8 +367,8 @@ JNIEXPORT void JNICALL Java_org_violetlib_aqua_OSXSystemProperties_enableCallbac
  * Signature: (Ljava/lang/String;)I
  */
 JNIEXPORT jint JNICALL Java_org_violetlib_aqua_fc_OSXFile_nativeGetFileType
-  (JNIEnv *env, jclass instance, jstring pathJ) {
-
+    (JNIEnv *env, jclass instance, jstring pathJ)
+{
     // Assert arguments
     if (pathJ == NULL) return false;
 
@@ -400,7 +411,7 @@ JNIEXPORT jint JNICALL Java_org_violetlib_aqua_fc_OSXFile_nativeGetFileType
  * Signature: (Ljava/lang/String;Z)Ljava/lang/String;
  */
 JNIEXPORT jstring JNICALL Java_org_violetlib_aqua_fc_OSXFile_nativeResolveAlias__Ljava_lang_String_2Z
- (JNIEnv *env, jclass instance, jstring aliasPathJ, jboolean noUI)
+    (JNIEnv *env, jclass instance, jstring aliasPathJ, jboolean noUI)
 {
     // Assert arguments
     if (aliasPathJ == NULL) return false;
@@ -435,7 +446,7 @@ JNIEXPORT jstring JNICALL Java_org_violetlib_aqua_fc_OSXFile_nativeResolveAlias_
  * Signature: ([BZ)Ljava/lang/String;
  */
 JNIEXPORT jstring JNICALL Java_org_violetlib_aqua_fc_OSXFile_nativeResolveAlias___3BZ
-  (JNIEnv *env, jclass instance, jbyteArray serializedAlias, jboolean noUI)
+    (JNIEnv *env, jclass instance, jbyteArray serializedAlias, jboolean noUI)
 {
     // Assert arguments
     if (serializedAlias == NULL) return false;
@@ -480,7 +491,8 @@ JNIEXPORT jstring JNICALL Java_org_violetlib_aqua_fc_OSXFile_nativeResolveAlias_
  * Signature: (Ljava/lang/String;)I
  */
 JNIEXPORT jint JNICALL Java_org_violetlib_aqua_fc_OSXFile_nativeGetLabel
-  (JNIEnv *env, jclass instance, jstring pathJ) {
+    (JNIEnv *env, jclass instance, jstring pathJ)
+{
 
     // Assert arguments
     if (pathJ == NULL) return -1;
@@ -519,8 +531,8 @@ JNIEXPORT jint JNICALL Java_org_violetlib_aqua_fc_OSXFile_nativeGetLabel
  * Signature: (Ljava/lang/String;)Ljava/lang/String;
  */
 JNIEXPORT jstring JNICALL Java_org_violetlib_aqua_fc_OSXFile_nativeGetKindString
-  (JNIEnv *env, jclass instance, jstring pathJ) {
-
+    (JNIEnv *env, jclass instance, jstring pathJ)
+{
     // Assert arguments
     if (pathJ == NULL) return NULL;
 
@@ -564,8 +576,8 @@ JNIEXPORT jstring JNICALL Java_org_violetlib_aqua_fc_OSXFile_nativeGetKindString
 // scaleFactor is the scaleFactor of the display for which this rendering is intended
 // return NULL if scaleFactor is greater than 1 and the image has only one representation
 
-static jintArray renderImageIntoBufferForDisplay(JNIEnv *env, NSImage *image, jint w, jint h, jfloat scaleFactor) {
-
+static jintArray renderImageIntoBufferForDisplay(JNIEnv *env, NSImage *image, jint w, jint h, jfloat scaleFactor)
+{
     if (scaleFactor > 1 && [[image representations] count] < 2) {
         return NULL;
     }
@@ -575,39 +587,41 @@ static jintArray renderImageIntoBufferForDisplay(JNIEnv *env, NSImage *image, ji
 
     jboolean isCopy = JNI_FALSE;
     jintArray jdata = (*env)->NewIntArray(env, rw * rh);
-    void *data = (*env)->GetPrimitiveArrayCritical(env, jdata, &isCopy);
-    if (data != nil) {
-        CGColorSpaceRef colorspace = CGColorSpaceCreateDeviceRGB();
-        CGContextRef cg = CGBitmapContextCreate(data, rw, rh, 8, rw * 4, colorspace, kCGImageAlphaPremultipliedFirst | kCGBitmapByteOrder32Host);
-        CGColorSpaceRelease(colorspace);
+    if (jdata != NULL) {
+        void *data = (*env)->GetPrimitiveArrayCritical(env, jdata, &isCopy);
+        if (data != nil) {
+            CGColorSpaceRef colorspace = CGColorSpaceCreateDeviceRGB();
+            CGContextRef cg = CGBitmapContextCreate(data, rw, rh, 8, rw * 4, colorspace, kCGImageAlphaPremultipliedFirst | kCGBitmapByteOrder32Host);
+            CGColorSpaceRelease(colorspace);
 
-        // The following method is deprecated in OS 10.10
-        // NSGraphicsContext *ng = [NSGraphicsContext graphicsContextWithGraphicsPort:cg flipped:NO];
+            // The following method is deprecated in OS 10.10
+            // NSGraphicsContext *ng = [NSGraphicsContext graphicsContextWithGraphicsPort:cg flipped:NO];
 
-        NSGraphicsContext *ng = [NSGraphicsContext graphicsContextWithCGContext:cg flipped:NO];
+            NSGraphicsContext *ng = [NSGraphicsContext graphicsContextWithCGContext:cg flipped:NO];
 
-        CGContextRelease(cg);
+            CGContextRelease(cg);
 
-        //NSLog(@"Rendering image into %dx%d %fx: %@", w, h, scaleFactor, image);
+            //NSLog(@"Rendering image into %dx%d %fx: %@", w, h, scaleFactor, image);
 
-        NSGraphicsContext *old = [[NSGraphicsContext currentContext] retain];
-        [NSGraphicsContext setCurrentContext:ng];
+            NSGraphicsContext *old = [[NSGraphicsContext currentContext] retain];
+            [NSGraphicsContext setCurrentContext:ng];
 
-        NSAffineTransform *tr = [NSAffineTransform transform];
-        [tr scaleBy: scaleFactor];
-        NSDictionary *hints = [NSDictionary dictionaryWithObject:tr forKey:NSImageHintCTM];
-        NSRect frame = NSMakeRect(0, 0, w, h);
-        NSImageRep *rep = [image bestRepresentationForRect:frame context:nil hints:hints];
-        NSRect toRect = NSMakeRect(0, 0, rw, rh);
+            NSAffineTransform *tr = [NSAffineTransform transform];
+            [tr scaleBy: scaleFactor];
+            NSDictionary *hints = [NSDictionary dictionaryWithObject:tr forKey:NSImageHintCTM];
+            NSRect frame = NSMakeRect(0, 0, w, h);
+            NSImageRep *rep = [image bestRepresentationForRect:frame context:nil hints:hints];
+            NSRect toRect = NSMakeRect(0, 0, rw, rh);
 
-        //NSLog(@"Rendering image into %dx%d %fx using rep: %@", w, h, scaleFactor, rep);
+            //NSLog(@"Rendering image into %dx%d %fx using rep: %@", w, h, scaleFactor, rep);
 
-        [rep drawInRect:toRect];
+            [rep drawInRect:toRect];
 
-        [NSGraphicsContext setCurrentContext:old];
-        [old release];
-        (*env)->ReleasePrimitiveArrayCritical(env, jdata, data, 0);
-        return jdata;
+            [NSGraphicsContext setCurrentContext:old];
+            [old release];
+            (*env)->ReleasePrimitiveArrayCritical(env, jdata, data, 0);
+            return jdata;
+        }
     }
 
     return NULL;
@@ -616,8 +630,8 @@ static jintArray renderImageIntoBufferForDisplay(JNIEnv *env, NSImage *image, ji
 // Render an image into a Java array
 // rw and rh are the actual size of the raster
 
-static jboolean renderImageIntoBuffers(JNIEnv *env, NSImage *image, jobjectArray joutput, jint w, jint h) {
-
+static jboolean renderImageIntoBuffers(JNIEnv *env, NSImage *image, jobjectArray joutput, jint w, jint h)
+{
     //NSLog(@"Render image into buffers: %@", image);
 
     jboolean result = NO;
@@ -636,8 +650,8 @@ static jboolean renderImageIntoBuffers(JNIEnv *env, NSImage *image, jobjectArray
 
 typedef long (*QuickLookRequest)(CFAllocatorRef, CFURLRef, CGSize, CFDictionaryRef);
 
-static NSImage *getFileImage(NSString *path, jboolean isQuickLook, jboolean isIconMode, jint w, jint h) {
-
+static NSImage *getFileImage(NSString *path, jboolean isQuickLook, jboolean isIconMode, jint w, jint h)
+{
     //NSLog(@"getFileImage %d %@", isQuickLook, path);
 
     NSImage *result = nil;
@@ -672,7 +686,7 @@ static NSImage *getFileImage(NSString *path, jboolean isQuickLook, jboolean isIc
         }
     } else {
         result = [[NSWorkspace sharedWorkspace] iconForFile:path];
-  }
+    }
 
     //NSLog(@"getFileImage result %@", result);
 
@@ -685,8 +699,8 @@ static NSImage *getFileImage(NSString *path, jboolean isQuickLook, jboolean isIc
  * Signature: (Ljava/lang/String;ZZ[[III)Z
  */
 JNIEXPORT jboolean JNICALL Java_org_violetlib_aqua_fc_OSXFile_nativeRenderFileImage
-  (JNIEnv *env, jclass cl, jstring jpath, jboolean isQuickLook, jboolean isIconMode, jobjectArray output, jint w, jint h) {
-
+    (JNIEnv *env, jclass cl, jstring jpath, jboolean isQuickLook, jboolean isIconMode, jobjectArray output, jint w, jint h)
+{
     jboolean result = NO;
 
     JNF_COCOA_ENTER(env);
@@ -709,8 +723,8 @@ JNIEXPORT jboolean JNICALL Java_org_violetlib_aqua_fc_OSXFile_nativeRenderFileIm
  * Signature: (Ljava/lang/String;[[III)Z
  */
 JNIEXPORT jboolean JNICALL Java_org_violetlib_aqua_AquaImageFactory_nativeRenderImageFile
-  (JNIEnv *env, jclass cl, jstring jpath, jobjectArray buffers, jint w, jint h) {
-
+    (JNIEnv *env, jclass cl, jstring jpath, jobjectArray buffers, jint w, jint h)
+{
     jboolean result = NO;
 
     JNF_COCOA_ENTER(env);
@@ -724,7 +738,7 @@ JNIEXPORT jboolean JNICALL Java_org_violetlib_aqua_AquaImageFactory_nativeRender
 
     JNF_COCOA_EXIT(env);
 
-  return result;
+    return result;
 }
 
 /*
@@ -733,8 +747,8 @@ JNIEXPORT jboolean JNICALL Java_org_violetlib_aqua_AquaImageFactory_nativeRender
  * Signature: (Ljava/lang/String;II)Ljava/awt/Image;
  */
 JNIEXPORT jobject JNICALL Java_org_violetlib_aqua_AquaImageFactory_getNativeImage
-  (JNIEnv *env, jclass cl, jstring jname, jint w, jint h) {
-
+    (JNIEnv *env, jclass cl, jstring jname, jint w, jint h)
+{
     jobject result = NULL;
 
     static JNF_CLASS_CACHE(jc_CImage, "sun/lwawt/macosx/CImage");
@@ -760,8 +774,8 @@ JNIEXPORT jobject JNICALL Java_org_violetlib_aqua_AquaImageFactory_getNativeImag
  * Signature: (I[[II)Z
  */
 JNIEXPORT jboolean JNICALL Java_org_violetlib_aqua_AquaIcon_nativeRenderIcon
-  (JNIEnv *env, jclass cl, jint osType, jobjectArray buffers, jint size) {
-
+    (JNIEnv *env, jclass cl, jint osType, jobjectArray buffers, jint size)
+{
     jboolean result = NO;
 
     JNF_COCOA_ENTER(env);
@@ -774,7 +788,7 @@ JNIEXPORT jboolean JNICALL Java_org_violetlib_aqua_AquaIcon_nativeRenderIcon
 
     JNF_COCOA_EXIT(env);
 
-  return result;
+    return result;
 }
 
 // Many deprecated functions but no replacement as of OS X 10.11
@@ -788,7 +802,8 @@ JNIEXPORT jboolean JNICALL Java_org_violetlib_aqua_AquaIcon_nativeRenderIcon
  * Signature: (Ljava/lang/String;)I
  */
 JNIEXPORT jint JNICALL Java_org_violetlib_aqua_fc_OSXFile_nativeGetBasicItemInfoFlags
-  (JNIEnv *env, jclass javaClass, jstring pathJ) {
+    (JNIEnv *env, jclass javaClass, jstring pathJ)
+{
     // Assert arguments
     if (pathJ == NULL) return -1;
 
@@ -821,7 +836,8 @@ JNIEXPORT jint JNICALL Java_org_violetlib_aqua_fc_OSXFile_nativeGetBasicItemInfo
 }
 
 JNIEXPORT jstring JNICALL Java_org_violetlib_aqua_fc_OSXFile_nativeGetDisplayName
-  (JNIEnv *env, jclass javaClass, jstring pathJ) {
+    (JNIEnv *env, jclass javaClass, jstring pathJ)
+{
 
     // Assert arguments
     if (pathJ == NULL) return NULL;
@@ -855,7 +871,8 @@ JNIEXPORT jstring JNICALL Java_org_violetlib_aqua_fc_OSXFile_nativeGetDisplayNam
  * Signature: (Ljava/lang/String;)Z
  */
 JNIEXPORT jlong JNICALL Java_org_violetlib_aqua_fc_OSXFile_nativeGetLastUsedDate
-  (JNIEnv *env, jclass javaClass, jstring pathJ) {
+    (JNIEnv *env, jclass javaClass, jstring pathJ)
+{
 
     // Assert arguments
     if (pathJ == NULL) return 0;
@@ -900,7 +917,8 @@ JNIEXPORT jlong JNICALL Java_org_violetlib_aqua_fc_OSXFile_nativeGetLastUsedDate
  * Signature: (Ljava/lang/String)[Ljava/lang/String
  */
 JNIEXPORT jobjectArray JNICALL Java_org_violetlib_aqua_fc_OSXFile_nativeExecuteSavedSearch
-(JNIEnv *env, jclass javaClass, jstring pathJ) {
+    (JNIEnv *env, jclass javaClass, jstring pathJ)
+{
     // Assert arguments
     if (pathJ == NULL) return NULL;
 
@@ -964,7 +982,7 @@ JNIEXPORT jobjectArray JNICALL Java_org_violetlib_aqua_fc_OSXFile_nativeExecuteS
  * Signature: (I)[Ljava/lang/String;
  */
 JNIEXPORT jobjectArray JNICALL Java_org_violetlib_aqua_fc_OSXFile_nativeGetSidebarFiles
-  (JNIEnv *env, jclass cl, jint which, jint iconSize, jint lastSeed)
+    (JNIEnv *env, jclass cl, jint which, jint iconSize, jint lastSeed)
 {
     CFStringRef listID = which > 0 ? kLSSharedFileListFavoriteVolumes : kLSSharedFileListFavoriteItems;
 
@@ -1009,7 +1027,7 @@ JNIEXPORT jobjectArray JNICALL Java_org_violetlib_aqua_fc_OSXFile_nativeGetSideb
             jstring displayNameJ = (*env)->NewStringUTF(env, [displayNameNS UTF8String]);
             CFRelease(displayName);
 
-      UInt32 itemId = LSSharedFileListItemGetID(item);
+            UInt32 itemId = LSSharedFileListItemGetID(item);
             jobject itemIdJ = (*env)->NewObject(env, integerClass, newIntegerMethodID, itemId);
 
             CFTypeRef hiddenProperty = LSSharedFileListItemCopyProperty(item, kLSSharedFileListItemHidden);
@@ -1173,7 +1191,7 @@ static void setColorPanelVisible(jboolean isShow)
  * Signature: (Lorg/violetlib/aqua/AquaSharedColorChooser/Owner;)Z
  */
 JNIEXPORT jboolean JNICALL Java_org_violetlib_aqua_AquaNativeColorChooser_create
-  (JNIEnv *env, jclass cl, jobject ownerCallback)
+    (JNIEnv *env, jclass cl, jobject ownerCallback)
 {
     colorPanelCallback = JNFNewGlobalRef(env, ownerCallback);
 
@@ -1225,7 +1243,7 @@ static void showHideColorChooser(JNIEnv *env, jboolean isShow)
  * Signature: ()V
  */
 JNIEXPORT void JNICALL Java_org_violetlib_aqua_AquaNativeColorChooser_show
-  (JNIEnv *env, jclass cl)
+    (JNIEnv *env, jclass cl)
 {
     showHideColorChooser(env, YES);
 }
@@ -1236,7 +1254,7 @@ JNIEXPORT void JNICALL Java_org_violetlib_aqua_AquaNativeColorChooser_show
  * Signature: ()V
  */
 JNIEXPORT void JNICALL Java_org_violetlib_aqua_AquaNativeColorChooser_hide
-  (JNIEnv *env, jclass cl)
+    (JNIEnv *env, jclass cl)
 {
     showHideColorChooser(env, NO);
 }
@@ -1274,7 +1292,7 @@ static const jint TITLEBAR_OVERLAY = 4;
  * Signature: (Ljava/awt/Window;I)I
  */
 JNIEXPORT jint JNICALL Java_org_violetlib_aqua_AquaUtils_nativeSetTitleBarStyle
-  (JNIEnv *env, jclass cl, jobject window, jint style)
+    (JNIEnv *env, jclass cl, jobject window, jint style)
 {
     // This method uses API introduced in Yosemite
 
@@ -1392,7 +1410,7 @@ JNIEXPORT jint JNICALL Java_org_violetlib_aqua_AquaUtils_nativeSetTitleBarStyle
  * Signature: (Ljava/awt/Window;)I
  */
 JNIEXPORT jint JNICALL Java_org_violetlib_aqua_AquaUtils_nativeAddToolbarToWindow
-  (JNIEnv *env, jclass cl, jobject window)
+    (JNIEnv *env, jclass cl, jobject window)
 {
     jint result = -1;
 
@@ -1419,7 +1437,7 @@ JNIEXPORT jint JNICALL Java_org_violetlib_aqua_AquaUtils_nativeAddToolbarToWindo
  * Signature: (Ljava/awt/Window;)I
  */
 JNIEXPORT jint JNICALL Java_org_violetlib_aqua_AquaSheetSupport_nativeDisplayAsSheet
-  (JNIEnv *env, jclass cl, jobject window)
+    (JNIEnv *env, jclass cl, jobject window)
 {
     static JNF_CLASS_CACHE(jc_Window, "java/awt/Window");
     static JNF_MEMBER_CACHE(jm_getOwner, jc_Window, "getOwner", "()Ljava/awt/Window;");
@@ -1459,7 +1477,7 @@ JNIEXPORT jint JNICALL Java_org_violetlib_aqua_AquaSheetSupport_nativeDisplayAsS
  * Signature: (Ljava/awt/Window;F)I
  */
 JNIEXPORT jint JNICALL Java_org_violetlib_aqua_AquaUtils_nativeSetWindowCornerRadius
-  (JNIEnv *env, jclass cl, jobject window, jfloat radius)
+    (JNIEnv *env, jclass cl, jobject window, jfloat radius)
 {
     __block jint result = -1;
 
@@ -1562,7 +1580,7 @@ static NSVisualEffectMaterial getVibrantMaterial(jint style)
  * Signature: (Ljava/awt/Window;IZ)I
  */
 JNIEXPORT jint JNICALL Java_org_violetlib_aqua_AquaVibrantSupport_setupVisualEffectWindow
-  (JNIEnv *env, jclass cl, jobject window, jint style, jboolean forceActive)
+    (JNIEnv *env, jclass cl, jobject window, jint style, jboolean forceActive)
 {
     jint result = -1;
 
@@ -1599,7 +1617,7 @@ JNIEXPORT jint JNICALL Java_org_violetlib_aqua_AquaVibrantSupport_setupVisualEff
  * Signature: (Ljava/awt/Window;)I
  */
 JNIEXPORT jint JNICALL Java_org_violetlib_aqua_AquaVibrantSupport_removeVisualEffectWindow
-  (JNIEnv *env, jclass cl, jobject window)
+    (JNIEnv *env, jclass cl, jobject window)
 {
     jint result = -1;
 
@@ -1627,7 +1645,7 @@ JNIEXPORT jint JNICALL Java_org_violetlib_aqua_AquaVibrantSupport_removeVisualEf
  * Signature: (Ljava/awt/Window;IZ)J
  */
 JNIEXPORT jlong JNICALL Java_org_violetlib_aqua_AquaVibrantSupport_nativeCreateVisualEffectView
-  (JNIEnv *env, jclass cl, jobject window, jint style, jboolean supportSelections)
+    (JNIEnv *env, jclass cl, jobject window, jint style, jboolean supportSelections)
 {
     __block jlong result = 0;
 
@@ -1665,7 +1683,7 @@ JNIEXPORT jlong JNICALL Java_org_violetlib_aqua_AquaVibrantSupport_nativeCreateV
  * Signature: (JIIIII)I
  */
 JNIEXPORT jint JNICALL Java_org_violetlib_aqua_AquaVibrantSupport_setViewFrame
-  (JNIEnv *env, jclass cl, jlong ptr, jint x, jint y, jint w, jint h, jint yflipped)
+    (JNIEnv *env, jclass cl, jlong ptr, jint x, jint y, jint w, jint h, jint yflipped)
 {
     __block jint result = -1;
 
@@ -1700,7 +1718,7 @@ JNIEXPORT jint JNICALL Java_org_violetlib_aqua_AquaVibrantSupport_setViewFrame
  * Signature: (J[I)I
  */
 JNIEXPORT jint JNICALL Java_org_violetlib_aqua_AquaVibrantSupport_nativeUpdateSelectionBackgrounds
-  (JNIEnv *env, jclass cl, jlong ptr, jintArray jdata)
+    (JNIEnv *env, jclass cl, jlong ptr, jintArray jdata)
 {
     __block jint result = -1;
 
@@ -1740,7 +1758,7 @@ JNIEXPORT jint JNICALL Java_org_violetlib_aqua_AquaVibrantSupport_nativeUpdateSe
  * Signature: (J)I
  */
 JNIEXPORT jint JNICALL Java_org_violetlib_aqua_AquaVibrantSupport_disposeVisualEffectView
-  (JNIEnv *env, jclass cl, jlong ptr)
+    (JNIEnv *env, jclass cl, jlong ptr)
 {
     __block jint result = -1;
 
@@ -1772,7 +1790,7 @@ JNIEXPORT jint JNICALL Java_org_violetlib_aqua_AquaVibrantSupport_disposeVisualE
  * Signature: (Ljava/lang/Window;Z)V
  */
 JNIEXPORT void JNICALL Java_org_violetlib_aqua_AquaUtils_nativeSetAWTViewVisibility
-  (JNIEnv *env, jclass cl, jobject window, jboolean isVisible)
+    (JNIEnv *env, jclass cl, jobject window, jboolean isVisible)
 {
     JNF_COCOA_ENTER(env);
 
@@ -1793,7 +1811,7 @@ JNIEXPORT void JNICALL Java_org_violetlib_aqua_AquaUtils_nativeSetAWTViewVisibil
  * Signature: (Ljava/lang/Window;)V
  */
 JNIEXPORT void JNICALL Java_org_violetlib_aqua_AquaUtils_nativeSyncAWTView
-  (JNIEnv *env, jclass cl, jobject window)
+    (JNIEnv *env, jclass cl, jobject window)
 {
     JNF_COCOA_ENTER(env);
 
@@ -1816,7 +1834,7 @@ JNIEXPORT void JNICALL Java_org_violetlib_aqua_AquaUtils_nativeSyncAWTView
  * Signature: (Ljava/lang/Window;)V
  */
 JNIEXPORT void JNICALL Java_org_violetlib_aqua_AquaUtils_debugWindow
-  (JNIEnv *env, jclass cl, jobject window)
+    (JNIEnv *env, jclass cl, jobject window)
 {
     JNF_COCOA_ENTER(env);
 
@@ -1836,7 +1854,7 @@ JNIEXPORT void JNICALL Java_org_violetlib_aqua_AquaUtils_debugWindow
  * Signature: (Ljava/lang/String;)V
  */
 JNIEXPORT void JNICALL Java_org_violetlib_aqua_AquaUtils_syslog
-  (JNIEnv *env, jclass cl, jstring msg)
+    (JNIEnv *env, jclass cl, jstring msg)
 {
     jsize slen = (*env) -> GetStringLength(env, msg);
     const jchar *schars = (*env) -> GetStringChars(env, msg, NULL);
@@ -1852,7 +1870,7 @@ JNIEXPORT void JNICALL Java_org_violetlib_aqua_AquaUtils_syslog
  * Signature: (I)V
  */
 JNIEXPORT void JNICALL Java_org_violetlib_aqua_AquaNativeSupport_setup
-  (JNIEnv *env, jclass cl, jint jv)
+    (JNIEnv *env, jclass cl, jint jv)
 {
     javaVersion = jv;
 }
@@ -1863,7 +1881,7 @@ JNIEXPORT void JNICALL Java_org_violetlib_aqua_AquaNativeSupport_setup
  * Signature: ()I
  */
 JNIEXPORT jint JNICALL Java_org_violetlib_aqua_AquaNativeSupport_nativeGetNativeCodeVersion
-  (JNIEnv *env, jclass javaClass)
+    (JNIEnv *env, jclass javaClass)
 {
     return VERSION;
 }
