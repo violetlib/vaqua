@@ -9,10 +9,7 @@
 package org.violetlib.aqua;
 
 import java.awt.*;
-import java.awt.image.BufferedImage;
-import java.awt.image.FilteredImageSource;
-import java.awt.image.ImageFilter;
-import java.awt.image.ImageProducer;
+import java.awt.image.*;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -70,7 +67,35 @@ public class Aqua8MultiResolutionImage extends AquaMultiResolutionImage implemen
 
     private static Image createFilteredImage(Image image, ImageFilter filter) {
         final ImageProducer prod = new FilteredImageSource(image.getSource(), filter);
-        return Toolkit.getDefaultToolkit().createImage(prod);
+        return waitForImage(Toolkit.getDefaultToolkit().createImage(prod));
+    }
+
+    // The following is a workaround for a JDK 8 problem - trying to draw a MultiResolutionImage that is not ready
+    // throws an exception.
+
+    private static Image waitForImage(Image image) {
+        final boolean[] mutex = new boolean[] { false };
+        ImageObserver observer = (Image img, int infoflags, int x, int y, int width, int height) -> {
+            if ((width != -1 && height != -1 && (infoflags & ImageObserver.ALLBITS) != 0) || (infoflags & ImageObserver.ABORT) != 0) {
+                synchronized (mutex) {
+                    mutex[0] = true;
+                    mutex.notify();
+                }
+                return false;
+            } else {
+                return true;
+            }
+        };
+        synchronized (mutex) {
+            while (!mutex[0] && image.getWidth(observer) == -1) {
+                try {
+                    mutex.wait();
+                } catch (InterruptedException e) {
+                    break;
+                }
+            }
+        }
+        return image;
     }
 
     /**
