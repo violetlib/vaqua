@@ -63,6 +63,11 @@ public class AquaButtonUI extends BasicButtonUI implements AquaUtilControlSize.S
     // Button borders may also be shared.
     // All button configuration state must be in the button itself.
 
+    // Important programming note:
+    //
+    // Do not call b.getDisabledIcon() or b.getDisabledSelectedIcon().
+    // Use the static methods defined here instead.
+
     public static final String BUTTON_TYPE = "JButton.buttonType";
     public static final String SEGMENTED_BUTTON_POSITION = "JButton.segmentPosition";
     public static final String SELECTED_STATE_KEY = "JButton.selectedState";
@@ -185,23 +190,13 @@ public class AquaButtonUI extends BasicButtonUI implements AquaUtilControlSize.S
             ImageIcon im = (ImageIcon) standardIcon;
             Image image = im.getImage();
 
-            // It is unfortunate that there is no way to ask for a disabled icon without risking creating one via the
-            // LAF. We use a static variable to temporarily inhibit our LAF from creating an icon.
-
-            boolean oldValue = AquaLookAndFeel.suppressCreationOfDisabledButtonIcons;
-            AquaLookAndFeel.suppressCreationOfDisabledButtonIcons = true;
-
-            try {
-                return !isApplicationDefined(b.getPressedIcon())
-                  && !isApplicationDefined(b.getDisabledIcon())
-                  && !isApplicationDefined(b.getSelectedIcon())
-                  && !isApplicationDefined(b.getDisabledSelectedIcon())
-                  && !isApplicationDefined(b.getRolloverIcon())
-                  && !isApplicationDefined(b.getRolloverSelectedIcon())
-                  && AquaImageFactory.isTemplateImage(image);
-            } finally {
-                AquaLookAndFeel.suppressCreationOfDisabledButtonIcons = oldValue;
-            }
+            return !isApplicationDefined(b.getPressedIcon())
+                    && !isApplicationDefined(getDisabledIcon(b))
+                    && !isApplicationDefined(b.getSelectedIcon())
+                    && !isApplicationDefined(getDisabledSelectedIcon(b))
+                    && !isApplicationDefined(b.getRolloverIcon())
+                    && !isApplicationDefined(b.getRolloverSelectedIcon())
+                    && AquaImageFactory.isTemplateImage(image);
         }
         return false;
     }
@@ -401,41 +396,31 @@ public class AquaButtonUI extends BasicButtonUI implements AquaUtilControlSize.S
 
     protected void removeCachedIcons(AbstractButton b) {
 
-        // It is unfortunate that there is no way to ask for a disabled icon without risking creating one via the
-        // LAF. We use a static variable to temporarily inhibit our LAF from creating an icon.
-
-        boolean oldValue = AquaLookAndFeel.suppressCreationOfDisabledButtonIcons;
-        AquaLookAndFeel.suppressCreationOfDisabledButtonIcons = true;
-
-        try {
-            if (b.getSelectedIcon() instanceof UIResource) {
-                b.setSelectedIcon(null);
-            }
-
-            if (b.getDisabledIcon() instanceof UIResource) {
-                b.setDisabledIcon(null);
-            }
-
-            if (b.getDisabledSelectedIcon() instanceof UIResource) {
-                b.setDisabledSelectedIcon(null);
-            }
-
-            if (b.getPressedIcon() instanceof UIResource) {
-                b.setPressedIcon(null);
-            }
-
-            if (b.getRolloverIcon() instanceof UIResource) {
-                b.setRolloverIcon(null);
-            }
-
-            if (b.getRolloverSelectedIcon() instanceof UIResource) {
-                b.setRolloverSelectedIcon(null);
-            }
-
-            b.putClientProperty(SPECIAL_ICON_PROPERTY, null);
-        } finally {
-            AquaLookAndFeel.suppressCreationOfDisabledButtonIcons = oldValue;
+        if (b.getSelectedIcon() instanceof UIResource) {
+            b.setSelectedIcon(null);
         }
+
+        if (getDisabledIcon(b) instanceof UIResource) {
+            b.setDisabledIcon(null);
+        }
+
+        if (getDisabledSelectedIcon(b) instanceof UIResource) {
+            b.setDisabledSelectedIcon(null);
+        }
+
+        if (b.getPressedIcon() instanceof UIResource) {
+            b.setPressedIcon(null);
+        }
+
+        if (b.getRolloverIcon() instanceof UIResource) {
+            b.setRolloverIcon(null);
+        }
+
+        if (b.getRolloverSelectedIcon() instanceof UIResource) {
+            b.setRolloverSelectedIcon(null);
+        }
+
+        b.putClientProperty(SPECIAL_ICON_PROPERTY, null);
     }
 
     // Create Listeners
@@ -598,30 +583,79 @@ public class AquaButtonUI extends BasicButtonUI implements AquaUtilControlSize.S
      * @return the icon to use.
      */
     protected Icon getIcon(AbstractButton b) {
+        ButtonIconState bs = getIconState(b);
+        Icon definedIcon = getDefinedIcon(b, bs);
+
+        if (definedIcon != null && bs != ButtonIconState.DEFAULT) {
+            return definedIcon;
+        }
+
+        // The special icon creates state specific renderings based on the button default icon.
         Icon icon = getSpecialIcon(b);
         if (icon != null) {
             return icon;
         }
 
+        return definedIcon;
+    }
+
+    /**
+     * Button states that can have different icons in Swing.
+     */
+    enum ButtonIconState {
+        DISABLED,
+        DISABLED_SELECTED,
+        PRESSED,
+        ROLLOVER,
+        ROLLOVER_SELECTED,
+        SELECTED,
+        DEFAULT
+    }
+
+    /**
+     * Return a value that can be used to select an appropriate icon based on the current state of the specified button.
+     * @param b The button.
+     * @return the button icon state.
+     */
+
+    public static ButtonIconState getIconState(AbstractButton b) {
         ButtonModel model = b.getModel();
         if (!model.isEnabled()) {
             if (model.isSelected()) {
-                return b.getDisabledSelectedIcon();
+                return ButtonIconState.DISABLED_SELECTED;
             } else {
-                return b.getDisabledIcon();
+                return ButtonIconState.DISABLED;
             }
         } else if (model.isPressed() && model.isArmed()) {
-            return b.getPressedIcon();
+            return ButtonIconState.PRESSED;
         } else if (b.isRolloverEnabled() && model.isRollover()) {
             if (model.isSelected()) {
-                return b.getRolloverSelectedIcon();
+                return ButtonIconState.ROLLOVER_SELECTED;
             } else {
-                return b.getRolloverIcon();
+                return ButtonIconState.ROLLOVER;
             }
         } else if (model.isSelected()) {
-            return b.getSelectedIcon();
+            return ButtonIconState.SELECTED;
         } else {
-            return b.getIcon();
+            return ButtonIconState.DEFAULT;
+        }
+    }
+
+    /**
+     * Obtain the explicitly defined icon for a button based on the specified button state.
+     * If the button uses this class for its UI, then this method will not install any default icons on the button.
+     * @param b The button.
+     * @return the icon defined on that button for the specified button state (may return null).
+     */
+    public static Icon getDefinedIcon(AbstractButton b, ButtonIconState bs) {
+        switch (bs) {
+            case DISABLED:              return getDisabledIcon(b);
+            case DISABLED_SELECTED:     return getDisabledSelectedIcon(b);
+            case PRESSED:               return b.getPressedIcon();
+            case ROLLOVER_SELECTED:     return b.getRolloverSelectedIcon();
+            case ROLLOVER:              return b.getRolloverIcon();
+            case SELECTED:              return b.getSelectedIcon();
+            default:                    return b.getIcon();
         }
     }
 
@@ -942,6 +976,44 @@ public class AquaButtonUI extends BasicButtonUI implements AquaUtilControlSize.S
             b.putClientProperty(COLOR_CHOOSER_OWNER_PROPERTY, owner);
             b.setSelected(true);
         }
+    }
+
+    /**
+     * Return the disabled icon explicitly assigned to a button. This method is useful only for buttons that use this
+     * class for their UI. It inhibits the automatic creation of a disabled icon by the UI when none is defined on the
+     * button.
+     *
+     * @param b the button.
+     *
+     * @return the disabled icon explicitly assigned to the button.
+     */
+    public static Icon getDisabledIcon(AbstractButton b) {
+        boolean oldValue = AquaLookAndFeel.suppressCreationOfDisabledButtonIcons;
+        AquaLookAndFeel.suppressCreationOfDisabledButtonIcons = true;
+        try {
+            return b.getDisabledIcon();
+        } finally {
+            AquaLookAndFeel.suppressCreationOfDisabledButtonIcons = oldValue;
+        }
+    }
+
+    /**
+      * Return the disabled selected icon explicitly assigned to a button. This method is useful only for buttons that
+      * use this class for their UI. It inhibits the automatic creation of a disabled selected icon by the UI when none
+      * is defined on the button.
+      *
+      * @param b the button.
+      *
+      * @return the disabled selected icon explicitly assigned to the button.
+      */
+    public static Icon getDisabledSelectedIcon(AbstractButton b) {
+         boolean oldValue = AquaLookAndFeel.suppressCreationOfDisabledButtonIcons;
+         AquaLookAndFeel.suppressCreationOfDisabledButtonIcons = true;
+         try {
+             return b.getDisabledSelectedIcon();
+         } finally {
+             AquaLookAndFeel.suppressCreationOfDisabledButtonIcons = oldValue;
+         }
     }
 
     public static Dimension getPreferredButtonSize(AbstractButton b, int textIconGap, Icon substituteIcon) {

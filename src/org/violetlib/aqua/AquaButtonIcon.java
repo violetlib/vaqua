@@ -22,6 +22,8 @@ import static org.violetlib.aqua.AquaButtonExtendedTypes.ColorDefaults;
 
 /**
  * An icon for a specific button whose rendering may depend upon the widget, state, and button state.
+ * The rendering is based on a specified source image. For most buttons, that image is defined by the button's
+ * default icon.
  */
 
 public abstract class AquaButtonIcon implements Icon, UIResource {
