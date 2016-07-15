@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015 Alan Snyder.
+ * Copyright (c) 2015=2016 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -18,8 +18,8 @@ import javax.swing.event.MouseInputAdapter;
  */
 public class WindowDraggingMouseListener extends MouseInputAdapter {
     private Window w;
-    private Point windowStartPosition;
-    private Point initialDragPosition;
+    private int xOffset;
+    private int yOffset;
 
     public void attach(JComponent c) {
         if (c != null) {
@@ -43,9 +43,8 @@ public class WindowDraggingMouseListener extends MouseInputAdapter {
             Point p = e.getPoint();
             if (isDragArea(c, p)) {
                 w = ancestor;
-                windowStartPosition = w.getLocation();
-                SwingUtilities.convertPointToScreen(p, c);
-                initialDragPosition = p;
+                xOffset = e.getX();
+                yOffset = e.getY();
                 e.consume();
             }
         }
@@ -55,8 +54,6 @@ public class WindowDraggingMouseListener extends MouseInputAdapter {
     public void mouseReleased(MouseEvent e) {
         if (w != null) {
             w = null;
-            windowStartPosition = null;
-            initialDragPosition = null;
             e.consume();
         }
     }
@@ -64,11 +61,10 @@ public class WindowDraggingMouseListener extends MouseInputAdapter {
     @Override
     public void mouseDragged(MouseEvent e) {
         if (w != null) {
-            Point p = e.getPoint();
-            SwingUtilities.convertPointToScreen(p, e.getComponent());
-            int deltaX = p.x - initialDragPosition.x;
-            int deltaY = p.y - initialDragPosition.y;
-            w.setLocation(windowStartPosition.x + deltaX, windowStartPosition.y + deltaY);
+            Point p = MouseInfo.getPointerInfo().getLocation();
+            int x = p.x - xOffset;
+            int y = p.y - yOffset;
+            w.setLocation(x, y);
             e.consume();
         }
     }
