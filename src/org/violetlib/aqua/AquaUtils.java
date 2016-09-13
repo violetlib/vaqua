@@ -63,6 +63,7 @@ import sun.swing.SwingUtilities2;
 final public class AquaUtils extends SwingUtilitiesModified {
 
     private static final String ANIMATIONS_PROPERTY = "swing.enableAnimations";
+    public static final String SUPPRESS_TOOLBAR_STYLES = "Aqua.suppressToolbarStyles";
 
     private static final int javaVersion = obtainJavaVersion();
 
@@ -286,6 +287,19 @@ final public class AquaUtils extends SwingUtilitiesModified {
                 enforceComponentOrientation(child, orientation);
             }
         }
+    }
+
+    public static boolean isOnToolbar(JComponent b) {
+        Component parent = b.getParent();
+        while (parent != null) {
+            if (parent instanceof JToolBar) {
+                JToolBar tb = (JToolBar) parent;
+                Object o = tb.getClientProperty(SUPPRESS_TOOLBAR_STYLES);
+                return !Boolean.TRUE.equals(o);
+            }
+            parent = parent.getParent();
+        }
+        return false;
     }
 
     public static void paintImmediately(JComponent c) {

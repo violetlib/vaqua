@@ -294,14 +294,7 @@ class AquaComboBoxButton extends JButton {
     }
 
     public static boolean isOnToolbar(JComboBox b) {
-        Component parent = b.getParent();
-        while (parent != null) {
-            if (parent instanceof JToolBar) {
-                return true;
-            }
-            parent = parent.getParent();
-        }
-        return false;
+        return AquaUtils.isOnToolbar(b);
     }
 
     public Color getForeground() {

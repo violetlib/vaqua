@@ -492,6 +492,8 @@ public class AquaFileChooserUI extends BasicFileChooserUI {
             setLayout(new BoxLayout(this, BoxLayout.X_AXIS));
             setMargin(new Insets(7, 10, 7, 10));
             setBorderPainted(false);
+            // oddly, an Open Panel does not use the toolbar button heights for its toolbar buttons
+            putClientProperty(AquaUtils.SUPPRESS_TOOLBAR_STYLES, true);
         }
     }
 
