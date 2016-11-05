@@ -51,6 +51,8 @@ import javax.swing.plaf.basic.BasicRootPaneUI;
 public class AquaRootPaneUI extends BasicRootPaneUI implements AncestorListener, WindowListener, ContainerListener {
 
     public final static String AQUA_WINDOW_STYLE_KEY = "Aqua.windowStyle";
+    public final static String AQUA_WINDOW_TOP_MARGIN_KEY = "Aqua.windowTopMargin";
+    public final static String AQUA_WINDOW_BOTTOM_MARGIN_KEY = "Aqua.windowBottomMargin";
 
     //final static int kDefaultButtonPaintDelayBetweenFrames = 50;
 //    JButton fCurrentDefaultButton = null;
@@ -142,11 +144,7 @@ public class AquaRootPaneUI extends BasicRootPaneUI implements AncestorListener,
 //        stopTimer();
         c.removeAncestorListener(this);
 
-        if (customStyledWindow != null) {
-            customStyledWindow.dispose();
-            customStyledWindow = null;
-        }
-
+        uninstallCustomWindowStyle();
         removeVisualEffectView();
 
 //        if (sUseScreenMenuBar) {
@@ -267,6 +265,9 @@ public class AquaRootPaneUI extends BasicRootPaneUI implements AncestorListener,
         } else if (AquaVibrantSupport.BACKGROUND_STYLE_KEY.equals(prop)) {
             Object o = e.getNewValue();
             setupBackgroundStyle(o, true);
+        } else if (AQUA_WINDOW_STYLE_KEY.equals(prop)) {
+            uninstallCustomWindowStyle();
+            installCustomWindowStyle();
         }
     }
 
@@ -566,6 +567,17 @@ public class AquaRootPaneUI extends BasicRootPaneUI implements AncestorListener,
         }
     }
 
+    protected void uninstallCustomWindowStyle() {
+        if (customStyledWindow != null) {
+            customStyledWindow.dispose();
+            customStyledWindow = null;
+        }
+    }
+
+    public AquaCustomStyledWindow getCustomStyledWindow() {
+        return customStyledWindow;
+    }
+
     protected int getCustomWindowStyle() {
         Object o = rootPane.getClientProperty(AQUA_WINDOW_STYLE_KEY);
         if (o instanceof String) {
@@ -586,6 +598,9 @@ public class AquaRootPaneUI extends BasicRootPaneUI implements AncestorListener,
             }
             if ("noTitleBar".equals(o)) {
                 return AquaCustomStyledWindow.STYLE_HIDDEN;
+            }
+            if ("texturedMargins".equals(o)) {
+                return AquaCustomStyledWindow.STYLE_HIDDEN_WITH_MARGINS;
             }
         }
 

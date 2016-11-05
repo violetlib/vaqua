@@ -47,10 +47,11 @@ import java.security.PrivilegedAction;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.StringTokenizer;
+import java.util.WeakHashMap;
 import java.util.function.Supplier;
 import javax.swing.*;
 import javax.swing.border.Border;
-import javax.swing.plaf.InsetsUIResource;
+import javax.swing.plaf.ColorUIResource;
 import javax.swing.plaf.UIResource;
 
 import org.violetlib.aqua.AquaImageFactory.SlicedImageControl;
@@ -63,7 +64,6 @@ import sun.swing.SwingUtilities2;
 final public class AquaUtils extends SwingUtilitiesModified {
 
     private static final String ANIMATIONS_PROPERTY = "swing.enableAnimations";
-    public static final String SUPPRESS_TOOLBAR_STYLES = "Aqua.suppressToolbarStyles";
 
     private static final int javaVersion = obtainJavaVersion();
 
@@ -293,9 +293,7 @@ final public class AquaUtils extends SwingUtilitiesModified {
         Component parent = b.getParent();
         while (parent != null) {
             if (parent instanceof JToolBar) {
-                JToolBar tb = (JToolBar) parent;
-                Object o = tb.getClientProperty(SUPPRESS_TOOLBAR_STYLES);
-                return !Boolean.TRUE.equals(o);
+                return true;
             }
             parent = parent.getParent();
         }
@@ -699,6 +697,22 @@ final public class AquaUtils extends SwingUtilitiesModified {
         return null;
     }
 
+    public static Integer getIntegerProperty(JComponent c, String... props) {
+        for (String prop : props) {
+            Object o = c.getClientProperty(prop);
+            if (o instanceof String) {
+                String s = (String) o;
+                try {
+                    return Integer.parseInt(s);
+                } catch (NumberFormatException ex) {
+                }
+            } else if (o instanceof Integer) {
+                return (Integer) o;
+            }
+        }
+        return null;
+    }
+
     public static String getProperty(String key) {
         try {
             return System.getProperty(key);
@@ -789,6 +803,53 @@ final public class AquaUtils extends SwingUtilitiesModified {
                     oldHints);
         }
     }
+
+    private static final WeakHashMap<Graphics,Integer> scaleMap = new WeakHashMap<>();
+
+    public static int getScaleFactor(Graphics g)
+   	{
+   		// A public API will be provided in JDK 9
+
+   		// Is it fair to assume that a graphics context always is associated with the same device,
+   		// in other words, they are not reused in some sneaky way?
+   		Integer n = scaleMap.get(g);
+   		if (n != null) {
+   			return n;
+   		}
+
+   		int scaleFactor;
+   		if (g instanceof Graphics2D) {
+   			Graphics2D gg = (Graphics2D) g;
+   			GraphicsConfiguration gc = gg.getDeviceConfiguration();
+   			scaleFactor = getScaleFactor(gc);
+   		} else {
+   			scaleFactor = 1;
+   		}
+
+   		scaleMap.put(g, scaleFactor);
+
+   		return scaleFactor;
+   	}
+
+   	public static int getScaleFactor(GraphicsConfiguration gc)
+   	{
+   		GraphicsDevice device = gc.getDevice();
+   		Object scale = null;
+
+   		try {
+            Method m = device.getClass().getMethod("getScaleFactor");
+            if (m != null) {
+                m.setAccessible(true);
+                scale = m.invoke(device);
+            }
+   		} catch (Exception ignore) {}
+
+   		if (scale instanceof Integer) {
+   			return (Integer) scale;
+   		}
+
+   		return 1;
+   	}
 
     public static void drawHLine(Graphics g, int x1, int x2, int y) {
          if (x2 < x1) {
@@ -914,58 +975,67 @@ final public class AquaUtils extends SwingUtilitiesModified {
         }
     }
 
-    public static int unsetTitledWindowStyle(Window w) {
+    /**
+     * Make a titled window untitled. This method is used when displaying a window as a sheet.
+     * @param w The window.
+     * @throws UnsupportedOperationException on error.
+     */
+    public static void unsetTitledWindowStyle(Window w) throws UnsupportedOperationException {
         Rectangle oldBounds = w.getBounds();
         Insets oldInsets = w.getInsets();
         int top = oldInsets.top;
 
-        if (top > 0) {
-            int newHeight = oldBounds.height - oldInsets.top;
-
-            try {
-                Method m = w.getClass().getMethod("getPeer");
-                m.setAccessible(true);
-                Object peer = m.invoke(w);
-                if (peer != null) {
-                    m = peer.getClass().getDeclaredMethod("getPlatformWindow");
-                    m.setAccessible(true);
-                    Object platformWindow = m.invoke(peer);
-                    if (platformWindow != null) {
-                        m = platformWindow.getClass().getDeclaredMethod("setStyleBits", Integer.TYPE, Boolean.TYPE);
-                        m.setAccessible(true);
-                        int DECORATED = 1 << 1;
-                        m.invoke(platformWindow, DECORATED, false);
-
-                        // Java eventually will be informed of the new window size and insets, but we need to update now so
-                        // that the initial painting of the root pane will be positioned correctly.
-
-                        Field f = Component.class.getDeclaredField("height");
-                        f.setAccessible(true);
-                        f.setInt(w, newHeight);
-
-                        m = peer.getClass().getDeclaredMethod("updateInsets", Insets.class);
-                        m.setAccessible(true);
-                        m.invoke(peer, new Insets(0, 0, 0, 0));
-
-                        w.invalidate();
-                        w.validate();
-                        return top;
-                    } else {
-                        System.err.println("Unable to unset titled window style: no platform window");
-                    }
-                } else {
-                    System.err.println("Unable to unset titled window style: no peer");
-                }
-            } catch (Exception ex) {
-                System.err.println("Unable to unset titled window style: " + ex);
-            }
+        if (top == 0) {
+            // This method should be called only on a decorated window.
+            throw new UnsupportedOperationException("Unable to unset titled window style: no top inset");
         }
-        return top;
+
+        int newHeight = oldBounds.height - top;
+
+        String errorMessage;
+
+        try {
+            Method m = w.getClass().getMethod("getPeer");
+            m.setAccessible(true);
+            Object peer = m.invoke(w);
+            if (peer != null) {
+                m = peer.getClass().getDeclaredMethod("getPlatformWindow");
+                m.setAccessible(true);
+                Object platformWindow = m.invoke(peer);
+                if (platformWindow != null) {
+                    m = platformWindow.getClass().getDeclaredMethod("setStyleBits", Integer.TYPE, Boolean.TYPE);
+                    m.setAccessible(true);
+                    int DECORATED = 1 << 1;
+                    m.invoke(platformWindow, DECORATED, false);
+
+                    // Java eventually will be informed of the new window size and insets, but we need to update now so
+                    // that the initial painting of the root pane will be positioned correctly.
+
+                    Field f = Component.class.getDeclaredField("height");
+                    f.setAccessible(true);
+                    f.setInt(w, newHeight);
+
+                    m = peer.getClass().getDeclaredMethod("updateInsets", Insets.class);
+                    m.setAccessible(true);
+                    m.invoke(peer, new Insets(0, 0, 0, 0));
+
+                    w.invalidate();
+                    w.validate();
+                    return;
+                } else {
+                    errorMessage = "no platform window";
+                }
+            } else {
+                errorMessage = "no peer";
+            }
+        } catch (Exception ex) {
+            errorMessage = ex.toString();
+        }
+        throw new UnsupportedOperationException(errorMessage);
     }
 
     public static void restoreTitledWindowStyle(Window w, int top) {
         Rectangle oldBounds = w.getBounds();
-        Insets oldInsets = w.getInsets();
         int newHeight = oldBounds.height + top;
 
         try {
@@ -1001,6 +1071,23 @@ final public class AquaUtils extends SwingUtilitiesModified {
         } catch (Exception ex) {
             System.err.println("Unable to restore titled window style: " + ex);
         }
+    }
+
+    /**
+     * Return the object representing a custom styled window.
+     * @param w The window.
+     * @return the custom styled window object for {@code w}, or null if {@code w} does not use one of our custom window
+     * styles.
+     */
+    public static AquaCustomStyledWindow getCustomStyledWindow(Window w) {
+        JRootPane rp = getRootPane(w);
+        if (rp != null) {
+            AquaRootPaneUI ui = getUI(rp, AquaRootPaneUI.class);
+            if (ui != null) {
+                return ui.getCustomStyledWindow();
+            }
+        }
+        return null;
     }
 
     /**
@@ -1150,4 +1237,10 @@ final public class AquaUtils extends SwingUtilitiesModified {
 
     public static native void debugWindow(Window w);
     public static native void syslog(String msg);
+
+    public static class GrayUIResource extends ColorUIResource {
+        public GrayUIResource(int c) {
+            super(new Color(c, c, c));
+        }
+    }
 }

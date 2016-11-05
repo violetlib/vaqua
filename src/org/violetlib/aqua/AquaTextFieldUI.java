@@ -112,8 +112,15 @@ public class AquaTextFieldUI extends BasicTextFieldUI implements FocusRingOutlin
 
     protected class AquaTextFieldFocusHandler extends AquaFocusHandler {
         @Override
+        public void focusGained(FocusEvent ev) {
+            super.focusGained(ev);
+            updateFocusStyle(editor, true);
+        }
+
+        @Override
         public void focusLost(FocusEvent ev) {
             super.focusLost(ev);
+            updateFocusStyle(editor, false);
             if (!ev.isTemporary()) {
                 Caret c = editor.getCaret();
                 if (c != null) {
@@ -123,16 +130,23 @@ public class AquaTextFieldUI extends BasicTextFieldUI implements FocusRingOutlin
         }
     }
 
+    protected void updateFocusStyle(JTextComponent c, boolean hasFocus) {
+    }
+
     protected class AquaPropertyChangeHandler implements PropertyChangeListener {
         public void propertyChange(final PropertyChangeEvent e) {
             final String prop = e.getPropertyName();
             if (isStyleProperty(prop) || AquaCellEditorPolicy.isCellEditorProperty(prop)) {
                 updateStyle();
             } else if (AquaFocusHandler.FRAME_ACTIVE_PROPERTY.equals(prop)) {
-                // Starting in 10.11, toolbar search and round styles look different when the window is inactive
-                editor.repaint();
+                updateActiveStyle();
             }
         }
+    }
+
+    protected void updateActiveStyle() {
+        // Starting in 10.11, toolbar search and round styles look different when the window is inactive
+        editor.repaint();
     }
 
     protected class AquaHierarchyListener implements HierarchyListener {
@@ -157,6 +171,7 @@ public class AquaTextFieldUI extends BasicTextFieldUI implements FocusRingOutlin
             int textMargin = getTextMargin();
             v.setMargin(textMargin);
         }
+
         editor.revalidate();
         editor.repaint();
     }

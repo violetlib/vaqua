@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015 Alan Snyder.
+ * Copyright (c) 2015-2016 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -77,6 +77,9 @@ public class AquaVibrantSupport {
         return -1;
     }
 
+    /**
+     * Test a component to see if the background style is vibrant.
+     */
     public static boolean isVibrant(JComponent c) {
         Object o = c.getClientProperty(AquaVibrantSupport.VIBRANT_EFFECTS_KEY);
         if (o != null) {

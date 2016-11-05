@@ -18,17 +18,19 @@ import javax.swing.event.MouseInputAdapter;
  */
 public class WindowDraggingMouseListener extends MouseInputAdapter {
     private Window w;
+    private JComponent c;
     private int xOffset;
     private int yOffset;
 
     public void attach(JComponent c) {
         if (c != null) {
+            this.c = c;
             c.addMouseListener(this);
             c.addMouseMotionListener(this);
         }
     }
 
-    public void detach(JComponent c) {
+    public void detach() {
         if (c != null) {
             c.removeMouseListener(this);
             c.removeMouseMotionListener(this);
@@ -41,7 +43,7 @@ public class WindowDraggingMouseListener extends MouseInputAdapter {
         Window ancestor = SwingUtilities.getWindowAncestor(c);
         if (ancestor != null) {
             Point p = e.getPoint();
-            if (isDragArea(c, p)) {
+            if (isDragArea(c, p) && !AquaSheetSupport.isSheet(ancestor)) {
                 w = ancestor;
                 xOffset = e.getX();
                 yOffset = e.getY();
