@@ -1308,12 +1308,15 @@ JNIEXPORT jint JNICALL Java_org_violetlib_aqua_AquaUtils_nativeSetTitleBarStyle
             NSOperatingSystemVersion osv = [pi operatingSystemVersion];
             BOOL isElCapitan = osv.majorVersion >= 10 && osv.minorVersion >= 11;
 
-            // Because this method is used by component UIs, it updates the same set of
-            // properties regardless of the style. It never does a partial update.
+            // Because this method is used by component UIs, it updates the same set of properties regardless of the
+            // style. It never does a partial update.
 
-            // On Yosemite, if the window is not Movable, mouse events over the title bar never get
-            // to the Java window. If we want some control over title bar mouse events (which
-            // we do when the title bar is transparent), we must make the window Movable.
+            // We need to make the window Movable if we want the user to be able to drag the window from the window
+            // title, which we do when the title bar is transparent.
+
+            // On Yosemite, if the window is not Movable, mouse events over the title bar never get to the Java window.
+            // If we want some control over title bar mouse events (which we do when the title bar is hidden), we must
+            // make the window Movable.
 
             NSUInteger originalStyleMask = nw.styleMask;
             NSUInteger styleMask = originalStyleMask;
@@ -1336,7 +1339,6 @@ JNIEXPORT jint JNICALL Java_org_violetlib_aqua_AquaUtils_nativeSetTitleBarStyle
                 case TITLEBAR_TRANSPARENT:
                     styleMask |= (NSTitledWindowMask | NSFullSizeContentViewWindowMask);
                     isTransparent = YES;
-                    isMovable = !isElCapitan;
                     isMovableByBackground = NO;
                     isFixNeeded = YES;
                     break;

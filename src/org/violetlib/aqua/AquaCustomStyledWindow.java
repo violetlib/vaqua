@@ -293,6 +293,10 @@ public class AquaCustomStyledWindow {
     }
 
     protected class WindowMarginDraggingMouseListener extends WindowDraggingMouseListener {
+        public WindowMarginDraggingMouseListener() {
+            super(0);
+        }
+
         @Override
         protected boolean isDragArea(Component c, Point p) {
             int y = p.y;
@@ -313,8 +317,12 @@ public class AquaCustomStyledWindow {
     protected void attachWindowDraggingMouseListener(JComponent c, boolean isMarginOnly) {
         if (c != null) {
             if (windowDraggingMouseListener == null) {
-                windowDraggingMouseListener
-                        = isMarginOnly ? new WindowMarginDraggingMouseListener() : new WindowDraggingMouseListener();
+                if (isMarginOnly) {
+                    windowDraggingMouseListener = new WindowMarginDraggingMouseListener();
+                } else {
+                    int topExclude = titleBarStyle == TITLE_BAR_TRANSPARENT ? TITLE_BAR_HEIGHT : 0;
+                    windowDraggingMouseListener = new WindowDraggingMouseListener(topExclude);
+                }
                 windowDraggingMouseListener.attach(c);
             }
         }
@@ -492,8 +500,7 @@ public class AquaCustomStyledWindow {
         }
     }
 
-    public static class CustomToolbarBorder extends AbstractBorder implements UIResource
-    {
+    public static class CustomToolbarBorder extends AbstractBorder implements UIResource {
         protected int extraTop;
         protected int extraLeft;
         protected int extraBottom;
