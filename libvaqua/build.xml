@@ -8,31 +8,31 @@
 
 	<target name="headers">
 		<javah class="org.violetlib.aqua.fc.OSXFile"
-           classpath="/Users/alan/build/working/VAqua/classes"
+           classpath="/Users/alan/build/idea/production/VAqua/"
            destdir="."/>
 		<javah class="org.violetlib.aqua.OSXSystemProperties"
-           classpath="/Users/alan/build/working/VAqua/classes"
+           classpath="/Users/alan/build/idea/production/VAqua/"
            destdir="."/>
 		<javah class="org.violetlib.aqua.AquaNativeSupport"
-           classpath="/Users/alan/build/working/VAqua/classes"
+           classpath="/Users/alan/build/idea/production/VAqua/"
            destdir="."/>
 		<javah class="org.violetlib.aqua.AquaIcon"
-           classpath="/Users/alan/build/working/VAqua/classes"
+           classpath="/Users/alan/build/idea/production/VAqua/"
            destdir="."/>
 		<javah class="org.violetlib.aqua.AquaImageFactory"
-           classpath="/Users/alan/build/working/VAqua/classes"
+           classpath="/Users/alan/build/idea/production/VAqua/:/Users/alan/build/idea/production/VAquaRendering/"
            destdir="."/>
 		<javah class="org.violetlib.aqua.AquaNativeColorChooser"
-           classpath="/Users/alan/build/working/VAqua/classes"
+           classpath="/Users/alan/build/idea/production/VAqua/"
            destdir="."/>
 		<javah class="org.violetlib.aqua.AquaUtils"
-           classpath="/Users/alan/build/working/VAqua/classes"
+           classpath="/Users/alan/build/idea/production/VAqua/:/Users/alan/build/idea/production/VAquaRendering/"
            destdir="."/>
 		<javah class="org.violetlib.aqua.AquaVibrantSupport"
-           classpath="/Users/alan/build/working/VAqua/classes"
+           classpath="/Users/alan/build/idea/production/VAqua/"
            destdir="."/>
 		<javah class="org.violetlib.aqua.AquaSheetSupport"
-           classpath="/Users/alan/build/working/VAqua/classes"
+           classpath="/Users/alan/build/idea/production/VAqua/"
            destdir="."/>
 	</target>
 

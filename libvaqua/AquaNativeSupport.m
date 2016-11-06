@@ -1280,6 +1280,31 @@ static NSWindow *getNativeWindow(JNIEnv *env, jobject w)
     return nw;
 }
 
+/*
+ * Class:     org_violetlib_aqua_AquaUtils
+ * Method:    nativeIsFullScreenWindow
+ * Signature: (Ljava/awt/Window;)Z
+ */
+JNIEXPORT jboolean JNICALL Java_org_violetlib_aqua_AquaUtils_nativeIsFullScreenWindow
+  (JNIEnv *env, jclass cl, jobject window)
+{
+    jboolean result = 0;
+
+    JNF_COCOA_ENTER(env);
+
+    NSWindow *nw = getNativeWindow(env, window);
+    if (nw != nil) {
+        NSUInteger mask = [nw styleMask];
+        if (mask & NSFullScreenWindowMask) {
+            result = 1;
+        }
+    }
+
+    JNF_COCOA_EXIT(env);
+
+    return result;
+}
+
 static const jint TITLEBAR_NONE = 0;
 static const jint TITLEBAR_ORDINARY = 1;
 static const jint TITLEBAR_TRANSPARENT = 2;

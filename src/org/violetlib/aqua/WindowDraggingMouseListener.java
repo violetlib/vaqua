@@ -48,7 +48,8 @@ public class WindowDraggingMouseListener extends MouseInputAdapter {
         Window ancestor = SwingUtilities.getWindowAncestor(c);
         if (ancestor != null) {
             Point p = e.getPoint();
-            if (p.y >= topExclude && isDragArea(c, p) && !AquaSheetSupport.isSheet(ancestor)) {
+            if (p.y >= topExclude && isDragArea(c, p)
+                    && !AquaSheetSupport.isSheet(ancestor) && !AquaUtils.isFullScreenWindow(ancestor)) {
                 w = ancestor;
                 xOffset = e.getX();
                 yOffset = e.getY();
@@ -71,7 +72,6 @@ public class WindowDraggingMouseListener extends MouseInputAdapter {
             Point p = MouseInfo.getPointerInfo().getLocation();
             int x = p.x - xOffset;
             int y = p.y - yOffset;
-            AquaUtils.syslog("Moving window");  // debug
             w.setLocation(x, y);
             e.consume();
         }

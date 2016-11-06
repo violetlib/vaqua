@@ -300,6 +300,17 @@ final public class AquaUtils extends SwingUtilitiesModified {
         return false;
     }
 
+    public static boolean isFullScreenWindow(Window w) {
+        GraphicsConfiguration gc = w.getGraphicsConfiguration();
+        GraphicsDevice gd = gc.getDevice();
+        Window fsw = gd.getFullScreenWindow();
+        if (fsw != null) {
+            return fsw == w;
+        }
+        // It seems that windows made full screen using a title bar button do not get registered as such with Java...
+        return nativeIsFullScreenWindow(w);
+    }
+
     public static void paintImmediately(JComponent c) {
         // a possible workaround... the goal is to paint to the AWT view before the window becomes visible
         // Note that the public paintImmediately() method does nothing if it believes that the component is not visible.
@@ -1229,6 +1240,7 @@ final public class AquaUtils extends SwingUtilitiesModified {
         nativeSyncAWTView(w);
     }
 
+    private static native boolean nativeIsFullScreenWindow(Window w);
     private static native int nativeSetTitleBarStyle(Window w, int style);
     private static native int nativeAddToolbarToWindow(Window w);
     private static native int nativeSetWindowCornerRadius(Window w, float radius);
