@@ -996,7 +996,7 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
             "SplitPane.border", null,
             "SplitPane.continuousLayout", Boolean.TRUE,
             "SplitPane.dividerSize", 9, // will be replaced by AquaSplitPaneUI
-            "SplitPane.dividerColor", new ColorUIResource(Color.GRAY),  // used for too-thin divider
+            "SplitPane.dividerColor", separator,  // used for too-thin divider
             "SplitPaneDivider.border", null, // AquaSplitPaneDividerUI draws it
 
             // *** TabbedPane
