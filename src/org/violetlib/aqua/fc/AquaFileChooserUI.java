@@ -112,6 +112,7 @@ public class AquaFileChooserUI extends BasicFileChooserUI {
     private SidebarTreeModel sidebarTreeModel;
     private HierarchyListener hierarchyListener;
     private ComponentListener componentListener;
+    private IsSheetChangeListener isSheetChangeListener;
     /**
      * This listener is used to handle files that were dropped on the dir chooser.
      */
@@ -1074,6 +1075,10 @@ public class AquaFileChooserUI extends BasicFileChooserUI {
 
         // undo workaround installed in configureDialog()
         uninstallWindowDraggingListener();
+
+        if (isSheetChangeListener != null) {
+            isSheetChangeListener.dispose();
+        }
     }
 
     private Locale getLocale() {
@@ -3442,6 +3447,11 @@ public class AquaFileChooserUI extends BasicFileChooserUI {
 
         isUnifiedDialog = false;
 
+        if (isSheetChangeListener != null) {
+            isSheetChangeListener.dispose();
+            isSheetChangeListener = null;
+        }
+
         JDialog d = getStandardDialog();
         if (d != null) {
 
@@ -3456,7 +3466,7 @@ public class AquaFileChooserUI extends BasicFileChooserUI {
                     topMargin = navigationPanel.getHeight();
                     bottomMargin = buttonsPanel.getHeight();
                     if (topMargin > 0 || bottomMargin > 0) {
-                        style = "texturedMargins";
+                        style = "noTitleBar";
                         workaroundNeeded = true;
                     }
                 } else {
@@ -3473,11 +3483,38 @@ public class AquaFileChooserUI extends BasicFileChooserUI {
             } else {
                 uninstallWindowDraggingListener();
             }
+
+            // Install a change listener to detect the dialog being displayed as a sheet. A listener is needed
+            // because the dialog is created first, and only later is the decision made to display it as a sheet.
+            // We need to know, because when displayed as a sheet, we do not use window margins.
+
+            isSheetChangeListener = new IsSheetChangeListener(rp);
+            AquaSheetSupport.registerIsSheetChangeListener(rp, isSheetChangeListener);
         }
 
         {
             Color divider = new Color(0, 0, 0, 25);
             splitPane.setBorder(BorderFactory.createMatteBorder(isUnifiedDialog ? 0 : 1, 0, 1, 0, divider));
+        }
+    }
+
+    private class IsSheetChangeListener implements ChangeListener {
+
+        JRootPane rp;
+
+        public IsSheetChangeListener(JRootPane rp) {
+            this.rp = rp;
+        }
+
+        @Override
+        public void stateChanged(ChangeEvent e) {
+            configureDialog();
+        }
+
+        public void dispose() {
+            if (rp != null) {
+                AquaSheetSupport.unregisterIsSheetChangeListener(rp, this);
+            }
         }
     }
 

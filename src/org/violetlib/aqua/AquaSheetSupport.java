@@ -10,10 +10,14 @@ package org.violetlib.aqua;
 
 import java.awt.*;
 import java.awt.event.*;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import java.util.function.Consumer;
 import javax.accessibility.AccessibleContext;
 import javax.swing.*;
 import javax.swing.border.Border;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 import javax.swing.plaf.FileChooserUI;
 
 import static org.violetlib.aqua.AquaCustomStyledWindow.STYLE_UNIFIED;
@@ -301,7 +305,46 @@ public class AquaSheetSupport {
      */
     public static boolean isSheet(JRootPane rp) {
         Object style = rp.getClientProperty(AquaVibrantSupport.BACKGROUND_STYLE_KEY);
-        return "vibrantSheet".equals(style);
+        return isSheetFromBackgroundStyle(style);
+    }
+
+    public static void registerIsSheetChangeListener(JRootPane rp, ChangeListener l) {
+        rp.addPropertyChangeListener(AquaVibrantSupport.BACKGROUND_STYLE_KEY, new SheetPropertyChangeListener(rp, l));
+    }
+
+    public static void unregisterIsSheetChangeListener(JRootPane rp, ChangeListener l) {
+        PropertyChangeListener[] pcls = rp.getPropertyChangeListeners(AquaVibrantSupport.BACKGROUND_STYLE_KEY);
+        for (PropertyChangeListener pcl : pcls) {
+            if (pcl instanceof SheetPropertyChangeListener) {
+                SheetPropertyChangeListener spcl = (SheetPropertyChangeListener) pcl;
+                if (spcl.rp == rp && spcl.l == l) {
+                    rp.removePropertyChangeListener(AquaVibrantSupport.BACKGROUND_STYLE_KEY, spcl);
+                }
+            }
+        }
+    }
+
+    private static class SheetPropertyChangeListener implements PropertyChangeListener {
+        private JRootPane rp;
+        private ChangeListener l;
+
+        public SheetPropertyChangeListener(JRootPane rp, ChangeListener l) {
+            this.rp = rp;
+            this.l = l;
+        }
+
+        @Override
+        public void propertyChange(PropertyChangeEvent evt) {
+            boolean wasSheet = isSheetFromBackgroundStyle(evt.getOldValue());
+            boolean isSheet = isSheetFromBackgroundStyle(evt.getNewValue());
+            if (isSheet != wasSheet) {
+                l.stateChanged(new ChangeEvent(rp));
+            }
+        }
+    }
+
+    private static boolean isSheetFromBackgroundStyle(Object o) {
+        return "vibrantSheet".equals(o);
     }
 
     /**

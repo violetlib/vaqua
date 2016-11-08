@@ -265,7 +265,7 @@ public class AquaRootPaneUI extends BasicRootPaneUI implements AncestorListener,
         } else if (AquaVibrantSupport.BACKGROUND_STYLE_KEY.equals(prop)) {
             Object o = e.getNewValue();
             setupBackgroundStyle(o, true);
-        } else if (AQUA_WINDOW_STYLE_KEY.equals(prop)) {
+        } else if (AQUA_WINDOW_STYLE_KEY.equals(prop) || AQUA_WINDOW_TOP_MARGIN_KEY.equals(prop) || AQUA_WINDOW_BOTTOM_MARGIN_KEY.equals(prop)) {
             uninstallCustomWindowStyle();
             installCustomWindowStyle();
         }
@@ -559,6 +559,9 @@ public class AquaRootPaneUI extends BasicRootPaneUI implements AncestorListener,
                 if (w != null) {
                     try {
                         customStyledWindow = new AquaCustomStyledWindow(w, style);
+                    } catch (AquaCustomStyledWindow.RequiredToolBarNotFoundException ex) {
+                        // This exception would be thrown if the window style is set before adding the tool bar to the
+                        // content pane, which would not be an error.
                     } catch (IllegalArgumentException ex) {
                         AquaUtils.syslog("Unable to install custom window style: " + ex.getMessage());
                     }
@@ -598,9 +601,6 @@ public class AquaRootPaneUI extends BasicRootPaneUI implements AncestorListener,
             }
             if ("noTitleBar".equals(o)) {
                 return AquaCustomStyledWindow.STYLE_HIDDEN;
-            }
-            if ("texturedMargins".equals(o)) {
-                return AquaCustomStyledWindow.STYLE_HIDDEN_WITH_MARGINS;
             }
         }
 
