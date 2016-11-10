@@ -3492,9 +3492,12 @@ public class AquaFileChooserUI extends BasicFileChooserUI {
             AquaSheetSupport.registerIsSheetChangeListener(rp, isSheetChangeListener);
         }
 
-        {
+        if (isUnifiedDialog) {
+            Color divider = new Color(191, 191, 191);
+            splitPane.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, divider));
+        } else {
             Color divider = new Color(0, 0, 0, 25);
-            splitPane.setBorder(BorderFactory.createMatteBorder(isUnifiedDialog ? 0 : 1, 0, 1, 0, divider));
+            splitPane.setBorder(BorderFactory.createMatteBorder(1, 0, 1, 0, divider));
         }
     }
 
