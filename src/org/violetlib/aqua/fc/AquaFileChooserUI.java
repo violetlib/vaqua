@@ -474,6 +474,10 @@ public class AquaFileChooserUI extends BasicFileChooserUI {
     //protected JButton nextButton;
     //protected JButton previousButton;
 
+    private interface Reconfigurable {
+        void reconfigure();
+    }
+
     public static ComponentUI createUI(JComponent c) {
         return new AquaFileChooserUI((JFileChooser) c);
     }
@@ -491,20 +495,36 @@ public class AquaFileChooserUI extends BasicFileChooserUI {
         installSelectedView(false, true);
     }
 
-    private class NavigationToolbar extends JToolBar {
+    private class NavigationToolbar extends JToolBar implements Reconfigurable {
         public NavigationToolbar() {
             setFloatable(false);
             setLayout(new BoxLayout(this, BoxLayout.X_AXIS));
-            setMargin(new Insets(9, 7, 3, 7));
             setBorderPainted(false);
+            reconfigure();
+        }
+
+        public void reconfigure() {
+            if (fc.getDialogType() == JFileChooser.SAVE_DIALOG) {
+                setMargin(new Insets(9, 7, 4, 7));
+            } else {
+                setMargin(new Insets(9, 7, 3, 7));
+            }
         }
     }
 
-    private class NavigationPanel extends JPanel {
+    private class NavigationPanel extends JPanel implements Reconfigurable {
         public NavigationPanel() {
             setLayout(new BoxLayout(this, BoxLayout.X_AXIS));
-            setBorder(new EmptyBorder(8, 8, 6, 8));
             setOpaque(false);
+            reconfigure();
+        }
+
+        public void reconfigure() {
+            if (fc.getDialogType() == JFileChooser.SAVE_DIALOG) {
+                setBorder(new EmptyBorder(8+6, 8+3, 6+3, 8+3));
+            } else {
+                setBorder(new EmptyBorder(8, 8, 6, 8));
+            }
         }
     }
 
@@ -3435,6 +3455,10 @@ public class AquaFileChooserUI extends BasicFileChooserUI {
      * Reconfigure the file chooser layout based on a change to the dialog type.
      */
     protected void reconfigureChooser() {
+        if (navigationPanel instanceof Reconfigurable) {
+            Reconfigurable r = (Reconfigurable) navigationPanel;
+            r.reconfigure();
+        }
         if (buttonsPanel != null) {
             buttonsPanel.reconfigure();
         }
