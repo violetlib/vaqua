@@ -2023,11 +2023,6 @@ public class AquaFileChooserUI extends BasicFileChooserUI {
         reconfigureView();
     }
 
-    private void doBackgroundStyleChanged(PropertyChangeEvent e) {
-        // A change in the background style may indicate that the chooser dialog is being displayed as a sheet.
-        configureDialog();
-    }
-
     protected void reconfigureView() {
         if (activeView != null) {
             activeView.reconfigure();
@@ -2089,8 +2084,6 @@ public class AquaFileChooserUI extends BasicFileChooserUI {
                 doApplicationTraversableChanged(e);
             } else if (s.equals("Aqua.FileChooser.preview")) {
                 doPreviewComponentChanged(e);
-            } else if (s.equals(AquaVibrantSupport.BACKGROUND_STYLE_KEY)) {
-                doBackgroundStyleChanged(e);
             }
         }
     }
