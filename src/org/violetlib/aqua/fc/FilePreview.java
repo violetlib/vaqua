@@ -37,7 +37,7 @@ import org.violetlib.aqua.OSXSystemProperties;
  * @author  Werner Randelshofer
  * @version $Id$
  */
-public class FilePreview extends JPanel implements BrowserPreviewRenderer {
+public class FilePreview extends JComponent implements BrowserPreviewRenderer {
 
     private JFileChooser fileChooser;
     private JPanel emptyPreview;
@@ -184,6 +184,16 @@ public class FilePreview extends JPanel implements BrowserPreviewRenderer {
         Component[] c = getComponents();
         for (int i = 0; i < c.length; i++) {
             c[i].addMouseListener(mouseHandler);
+        }
+    }
+
+    @Override
+    protected void paintComponent(Graphics g) {
+        // Avoid the magic eraser when displayed as a sheet
+        if (isOpaque()) {
+            Color c = getBackground();
+            g.setColor(c);
+            g.fillRect(0, 0, getWidth(), getHeight());
         }
     }
 
