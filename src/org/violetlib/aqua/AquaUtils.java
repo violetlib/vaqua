@@ -818,49 +818,49 @@ final public class AquaUtils extends SwingUtilitiesModified {
     private static final WeakHashMap<Graphics,Integer> scaleMap = new WeakHashMap<>();
 
     public static int getScaleFactor(Graphics g)
-   	{
-   		// A public API will be provided in JDK 9
+    {
+        // A public API will be provided in JDK 9
 
-   		// Is it fair to assume that a graphics context always is associated with the same device,
-   		// in other words, they are not reused in some sneaky way?
-   		Integer n = scaleMap.get(g);
-   		if (n != null) {
-   			return n;
-   		}
+        // Is it fair to assume that a graphics context always is associated with the same device,
+        // in other words, they are not reused in some sneaky way?
+        Integer n = scaleMap.get(g);
+        if (n != null) {
+            return n;
+        }
 
-   		int scaleFactor;
-   		if (g instanceof Graphics2D) {
-   			Graphics2D gg = (Graphics2D) g;
-   			GraphicsConfiguration gc = gg.getDeviceConfiguration();
-   			scaleFactor = getScaleFactor(gc);
-   		} else {
-   			scaleFactor = 1;
-   		}
+        int scaleFactor;
+        if (g instanceof Graphics2D) {
+            Graphics2D gg = (Graphics2D) g;
+            GraphicsConfiguration gc = gg.getDeviceConfiguration();
+            scaleFactor = getScaleFactor(gc);
+        } else {
+            scaleFactor = 1;
+        }
 
-   		scaleMap.put(g, scaleFactor);
+        scaleMap.put(g, scaleFactor);
 
-   		return scaleFactor;
-   	}
+        return scaleFactor;
+    }
 
-   	public static int getScaleFactor(GraphicsConfiguration gc)
-   	{
-   		GraphicsDevice device = gc.getDevice();
-   		Object scale = null;
+    public static int getScaleFactor(GraphicsConfiguration gc)
+    {
+        GraphicsDevice device = gc.getDevice();
+        Object scale = null;
 
-   		try {
+        try {
             Method m = device.getClass().getMethod("getScaleFactor");
             if (m != null) {
                 m.setAccessible(true);
                 scale = m.invoke(device);
             }
-   		} catch (Exception ignore) {}
+        } catch (Exception ignore) {}
 
-   		if (scale instanceof Integer) {
-   			return (Integer) scale;
-   		}
+        if (scale instanceof Integer) {
+            return (Integer) scale;
+        }
 
-   		return 1;
-   	}
+        return 1;
+    }
 
     public static void drawHLine(Graphics g, int x1, int x2, int y) {
          if (x2 < x1) {
