@@ -98,12 +98,17 @@ public class AquaCustomStyledWindow {
      * If true, a bottom margin background is painted.
      */
     protected final boolean isBottomMarginPainted;
+    /**
+     * If true, a textured background is painted.
+     */
+    protected final boolean isTextured;
 
     protected JComponent contentPane;   // the window content pane
     protected JToolBar windowToolBar;   // the window tool bar, if we care about it -- depends on the style
 
     protected WindowPropertyChangeListener propertyChangeListener;
     protected WindowDraggingMouseListener windowDraggingMouseListener;
+    protected WindowMarginDraggingMouseListener windowMarginDraggingMouseListener;
     protected HierarchyListener toolbarHierarchyListener;
 
     /**
@@ -141,31 +146,37 @@ public class AquaCustomStyledWindow {
                 titleBarStyle = TITLE_BAR_OVERLAY;
                 isTopMarginPainted = false;
                 isBottomMarginPainted = false;
+                isTextured = false;
                 break;
             case STYLE_TRANSPARENT:
                 titleBarStyle = TITLE_BAR_TRANSPARENT;
-                isTopMarginPainted = false;
-                isBottomMarginPainted = false;
+                isTopMarginPainted = getTopMarginHeight() > 0;
+                isBottomMarginPainted = getBottomMarginHeight() > 0;
+                isTextured = false;
                 break;
             case STYLE_HIDDEN:
                 titleBarStyle = TITLE_BAR_HIDDEN;
                 isTopMarginPainted = getTopMarginHeight() > 0;
                 isBottomMarginPainted = getBottomMarginHeight() > 0;
+                isTextured = false;
                 break;
             case STYLE_UNIFIED:
                 titleBarStyle = TITLE_BAR_TRANSPARENT;
                 isTopMarginPainted = true;
-                isBottomMarginPainted = false;
+                isBottomMarginPainted = getBottomMarginHeight() > 0;
+                isTextured = true;
                 break;
             case STYLE_TEXTURED_HIDDEN:
                 titleBarStyle = TITLE_BAR_HIDDEN;
                 isTopMarginPainted = true;
-                isBottomMarginPainted = false;
+                isBottomMarginPainted = getBottomMarginHeight() > 0;
+                isTextured = true;
                 break;
             case STYLE_COMBINED:
                 titleBarStyle = TITLE_BAR_TRANSPARENT;
                 isTopMarginPainted = true;
-                isBottomMarginPainted = false;
+                isBottomMarginPainted = getBottomMarginHeight() > 0;
+                isTextured = true;
                 break;
             default:
                 throw new IllegalArgumentException("Invalid style");
@@ -177,7 +188,7 @@ public class AquaCustomStyledWindow {
             throw new IllegalArgumentException("Window content pane is not a Swing component");
         }
 
-        if (isTopMarginPainted && style != STYLE_HIDDEN) {
+        if (isTextured) {
             windowToolBar = getWindowToolbar();
             if (windowToolBar == null) {
                 throw new RequiredToolBarNotFoundException();
@@ -230,6 +241,10 @@ public class AquaCustomStyledWindow {
                 windowDraggingMouseListener.detach();
                 windowDraggingMouseListener = null;
             }
+            if (windowMarginDraggingMouseListener != null) {
+                windowMarginDraggingMouseListener.detach();
+                windowMarginDraggingMouseListener = null;
+            }
             resetBorder(contentPane);
             w = null;
             contentPane = null;
@@ -244,7 +259,7 @@ public class AquaCustomStyledWindow {
     }
 
     protected void setupContentPane(JComponent cp) {
-        if (style == STYLE_NORMAL || style == STYLE_TRANSPARENT) {
+        if ((style == STYLE_NORMAL || style == STYLE_TRANSPARENT) && !isTopMarginPainted) {
             installBorder(cp, TITLE_BAR_HEIGHT, 0, 0, 0);
         } else {
             installBorder(cp, 0, 0, 0, 0);
@@ -252,7 +267,7 @@ public class AquaCustomStyledWindow {
 
         if (isTopMarginPainted || isBottomMarginPainted) {
             cp.setOpaque(false);
-            attachWindowDraggingMouseListener(cp, true);
+            attachWindowMarginDraggingMouseListener(cp);
         }
     }
 
@@ -267,7 +282,7 @@ public class AquaCustomStyledWindow {
         }
 
         installToolbarBorder(tb);
-        attachWindowDraggingMouseListener(tb, false);
+        attachWindowDraggingMouseListener(tb);
         attachHierarchyListener(tb);
     }
 
@@ -328,16 +343,21 @@ public class AquaCustomStyledWindow {
         }
     }
 
-    protected void attachWindowDraggingMouseListener(JComponent c, boolean isMarginOnly) {
+    protected void attachWindowDraggingMouseListener(JComponent c) {
         if (c != null) {
             if (windowDraggingMouseListener == null) {
-                if (isMarginOnly) {
-                    windowDraggingMouseListener = new WindowMarginDraggingMouseListener();
-                } else {
-                    int topExclude = titleBarStyle == TITLE_BAR_TRANSPARENT ? TITLE_BAR_HEIGHT : 0;
-                    windowDraggingMouseListener = new WindowDraggingMouseListener(topExclude);
-                }
+                int topExclude = titleBarStyle == TITLE_BAR_TRANSPARENT ? TITLE_BAR_HEIGHT : 0;
+                windowDraggingMouseListener = new WindowDraggingMouseListener(topExclude);
                 windowDraggingMouseListener.attach(c);
+            }
+        }
+    }
+
+    protected void attachWindowMarginDraggingMouseListener(JComponent c) {
+        if (c != null) {
+            if (windowMarginDraggingMouseListener == null) {
+                windowMarginDraggingMouseListener = new WindowMarginDraggingMouseListener();
+                windowMarginDraggingMouseListener.attach(c);
             }
         }
     }
@@ -366,9 +386,9 @@ public class AquaCustomStyledWindow {
         Graphics2D gg = (Graphics2D) g.create();
         try {
             int width = rp.getWidth();
-            int height = rp.getHeight();
 
             int y = getTopMarginHeight();
+            int height = isTextured ? rp.getHeight() : y;
             boolean isActive = AquaFocusHandler.isActive(rp);
             if (isActive) {
                 Color c1 = new Color(230, 230, 230);
@@ -420,6 +440,7 @@ public class AquaCustomStyledWindow {
             case STYLE_COMBINED:
                 return Math.max(windowToolBar.getHeight(), TITLE_BAR_HEIGHT);
             case STYLE_HIDDEN:
+            case STYLE_TRANSPARENT:
                 if (rp != null) {
                     Integer n = AquaUtils.getIntegerProperty(rp, AquaRootPaneUI.AQUA_WINDOW_TOP_MARGIN_KEY);
                     return n != null ? n : -1;
@@ -432,6 +453,10 @@ public class AquaCustomStyledWindow {
     protected int getBottomMarginHeight() {
         switch (style) {
             case STYLE_HIDDEN:
+            case STYLE_TRANSPARENT:
+            case STYLE_UNIFIED:
+            case STYLE_TEXTURED_HIDDEN:
+            case STYLE_COMBINED:
                 if (rp != null) {
                     Integer n = AquaUtils.getIntegerProperty(rp, AquaRootPaneUI.AQUA_WINDOW_BOTTOM_MARGIN_KEY);
                     return n != null ? n : -1;
