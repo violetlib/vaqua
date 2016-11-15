@@ -27,47 +27,34 @@ public abstract class AquaMultiResolutionImage extends Image {
      * Create a multi-resolution image from a 1x raster and a 2x raster (created by native code).
      */
     public static Image createImage(int width, int height, int[] data1x, int[] data2x) {
-        BufferedImage im1x = createImage(width, height, data1x);
+        BufferedImage im1x = JavaSupport.createImage(width, height, data1x);
         if (data2x != null) {
-            BufferedImage im2x = createImage(width * 2, height * 2, data2x);
-            return new Aqua8MultiResolutionImage2(im1x, im2x);
+            BufferedImage im2x = JavaSupport.createImage(width * 2, height * 2, data2x);
+            return JavaSupport.createMultiResolutionImage(im1x, im2x);
         } else {
-            return new Aqua8MultiResolutionImage(im1x);
+            return JavaSupport.createMultiResolutionImage(im1x);
         }
-    }
-
-    /**
-     * Create a buffered image from a raster (created by native code).
-     */
-    private static BufferedImage createImage(int width, int height, int[] data) {
-        BufferedImage b = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB_PRE);
-        final WritableRaster raster = b.getRaster();
-        final DataBufferInt buffer = (DataBufferInt) raster.getDataBuffer();
-        int[] rasterdata = sun.awt.image.SunWritableRaster.stealData(buffer, 0);
-        System.arraycopy(data, 0, rasterdata, 0, width * height);
-        sun.awt.image.SunWritableRaster.markDirty(buffer);
-        return b;
     }
 
     /**
      * Create an image by applying a generic mapper. Supports multi-resolution images.
      */
     public static Image apply(Image source, Function<Image,Image> mapper) {
-        return Aqua8MultiResolutionImage.apply(source, mapper);
+        return JavaSupport.applyMapper(source, mapper);
     }
 
     /**
      * Create an image by applying a specialized mapper. Supports multi-resolution images.
      */
     public static Image apply(Image source, AquaMultiResolutionImage.Mapper mapper) {
-        return Aqua8MultiResolutionImage.apply(source, mapper);
+        return JavaSupport.applyMapper(source, mapper);
     }
 
     /**
      * Create an image by applying a filter. Supports multi-resolution images.
      */
     public static Image apply(Image image, ImageFilter filter) {
-        return Aqua8MultiResolutionImage.apply(image, filter);
+        return JavaSupport.applyFilter(image, filter);
     }
 
     protected final Image baseImage;

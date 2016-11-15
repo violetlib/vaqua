@@ -1222,7 +1222,7 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
 
         table.putDefaults(defaults);
 
-        AquaUtils.installAATextInfo(table);
+        JavaSupport.installAATextInfo(table);
     }
 
     protected void initSystemColorDefaults(final UIDefaults table) {

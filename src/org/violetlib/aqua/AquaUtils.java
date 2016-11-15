@@ -58,8 +58,6 @@ import org.violetlib.aqua.AquaImageFactory.SlicedImageControl;
 import org.violetlib.jnr.Insets2D;
 import org.violetlib.jnr.Insetter;
 import org.violetlib.jnr.aqua.AquaUIPainter;
-import sun.java2d.opengl.OGLRenderQueue;
-import sun.swing.SwingUtilities2;
 
 final public class AquaUtils extends SwingUtilitiesModified {
 
@@ -80,12 +78,18 @@ final public class AquaUtils extends SwingUtilitiesModified {
     private static int obtainJavaVersion()
     {
         String s = System.getProperty("java.version");
+        if (s.startsWith("1.")) {
+            s = s.substring(2);
+        }
         int version = 0;
         int tokenCount = 0;
         StringTokenizer st = new StringTokenizer(s, "._");
         try {
             while (st.hasMoreTokens()) {
                 String token = st.nextToken();
+                if (token.endsWith("-internal")) {
+                    token = token.substring(0, token.length() - 9);
+                }
                 int n = Integer.parseInt(token);
                 ++tokenCount;
                 int limit = tokenCount < 4 ? 100 : 1000;
@@ -97,6 +101,13 @@ final public class AquaUtils extends SwingUtilitiesModified {
         } catch (NumberFormatException ex) {
             return 0;
         }
+
+        while (tokenCount < 4) {
+            ++tokenCount;
+            int limit = tokenCount < 4 ? 100 : 1000;
+            version = version * limit;
+        }
+
         if (tokenCount != 4) {
             return 0;
         }
@@ -771,32 +782,6 @@ final public class AquaUtils extends SwingUtilitiesModified {
         return object;
     }
 
-    public static void drawString(JComponent c, Graphics g,
-                           String text,
-                           int x,
-                           int y) {
-        SwingUtilities2.drawString(c, g, text, x, y);
-    }
-
-    public static void drawStringUnderlineCharAt(JComponent c, Graphics g, String text, int underlinedIndex, int x, int y) {
-        SwingUtilities2.drawStringUnderlineCharAt(c, g, text, underlinedIndex, x, y);
-    }
-
-    public static String clipStringIfNecessary(JComponent c, FontMetrics fm,
-                                                String string,
-                                                int availTextWidth) {
-        return SwingUtilities2.clipStringIfNecessary(c, fm, string, availTextWidth);
-    }
-
-    public static int stringWidth(JComponent c, FontMetrics fm, String string){
-        return SwingUtilities2.stringWidth(c, fm, string);
-    }
-
-    public static void installAATextInfo(UIDefaults table) {
-        Object aaTextInfo = SwingUtilities2.AATextInfo.getAATextInfo(true);
-        table.put(SwingUtilities2.AA_TEXT_PROPERTY_KEY, aaTextInfo);
-    }
-
     /** Turns on common rendering hints for UI delegates. */
     public static Object beginGraphics(Graphics2D graphics2d) {
         Object object = graphics2d.getRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING);
@@ -1191,8 +1176,7 @@ final public class AquaUtils extends SwingUtilitiesModified {
 
         // The following lock is an attempt to work around bug JDK-8046290, which causes the transient display of
         // garbage pixels.
-        OGLRenderQueue rq = OGLRenderQueue.getInstance();
-        rq.lock();
+        JavaSupport.lockRenderQueue();
 
         try {
             // The following is possible only on undecorated windows
@@ -1221,7 +1205,7 @@ final public class AquaUtils extends SwingUtilitiesModified {
                 System.err.println("Unable to set window background: " + th);
             }
         } finally {
-            rq.unlock();
+            JavaSupport.unlockRenderQueue();
         }
     }
 

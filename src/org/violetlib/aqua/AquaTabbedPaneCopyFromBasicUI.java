@@ -883,9 +883,9 @@ public class AquaTabbedPaneCopyFromBasicUI extends TabbedPaneUI implements Swing
                     tabScroller.croppedEdge.getTabIndex() == tabIndex && isHorizontalTabPlacement()) {
                 int availTextWidth = tabScroller.croppedEdge.getCropline() -
                         (textRect.x - tabRect.x) - tabScroller.croppedEdge.getCroppedSideWidth();
-                clippedTitle = AquaUtils.clipStringIfNecessary(null, metrics, title, availTextWidth);
+                clippedTitle = JavaSupport.getClippedString(null, metrics, title, availTextWidth);
             } else if (!scrollableTabLayoutEnabled() && isHorizontalTabPlacement()) {
-                clippedTitle = AquaUtils.clipStringIfNecessary(null, metrics, title, textRect.width);
+                clippedTitle = JavaSupport.getClippedString(null, metrics, title, textRect.width);
             }
 
             paintText(g, tabPlacement, font, metrics,
@@ -1087,17 +1087,17 @@ public class AquaTabbedPaneCopyFromBasicUI extends TabbedPaneUI implements Swing
                     }
                 }
                 g.setColor(fg);
-                AquaUtils.drawStringUnderlineCharAt(tabPane, g,
+                JavaSupport.drawStringUnderlineCharAt(tabPane, (Graphics2D) g,
                         title, mnemIndex,
                         textRect.x, textRect.y + metrics.getAscent());
 
             } else { // tab disabled
                 g.setColor(tabPane.getBackgroundAt(tabIndex).brighter());
-                AquaUtils.drawStringUnderlineCharAt(tabPane, g,
+                JavaSupport.drawStringUnderlineCharAt(tabPane, (Graphics2D) g,
                         title, mnemIndex,
                         textRect.x, textRect.y + metrics.getAscent());
                 g.setColor(tabPane.getBackgroundAt(tabIndex).darker());
-                AquaUtils.drawStringUnderlineCharAt(tabPane, g,
+                JavaSupport.drawStringUnderlineCharAt(tabPane, (Graphics2D) g,
                         title, mnemIndex,
                         textRect.x - 1, textRect.y + metrics.getAscent() - 1);
 
@@ -1770,7 +1770,7 @@ public class AquaTabbedPaneCopyFromBasicUI extends TabbedPaneUI implements Swing
             } else {
                 // plain text
                 String title = tabPane.getTitleAt(tabIndex);
-                width += AquaUtils.stringWidth(tabPane, metrics, title);
+                width += JavaSupport.getStringWidth(tabPane, metrics, title);
             }
         }
         return width;

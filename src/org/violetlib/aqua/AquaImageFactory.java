@@ -93,7 +93,7 @@ public class AquaImageFactory {
     static Image getGenericJavaIcon() {
         return java.security.AccessController.doPrivileged(new PrivilegedAction<Image>() {
             public Image run() {
-                return com.apple.eawt.Application.getApplication().getDockIconImage();
+                return JavaSupport.getDockIconImage();
             }
         });
     }
@@ -704,7 +704,7 @@ public class AquaImageFactory {
     }
 
     public static Image applyFilter(Image image, ImageFilter filter) {
-        return Aqua8MultiResolutionImage.apply(image, filter);
+        return JavaSupport.applyFilter(image, filter);
     }
 
     private static class TemplateFilter extends RGBImageFilter {

@@ -42,8 +42,6 @@ import javax.swing.*;
 import javax.swing.border.Border;
 import javax.swing.plaf.basic.BasicComboPopup;
 
-import org.jcp.xml.dsig.internal.dom.Utils;
-
 @SuppressWarnings("serial") // Superclass is not serializable across versions
 class AquaComboBoxPopup extends BasicComboPopup implements AquaExtendedPopup {
 

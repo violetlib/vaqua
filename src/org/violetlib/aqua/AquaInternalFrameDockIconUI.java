@@ -274,9 +274,9 @@ public class AquaInternalFrameDockIconUI extends DesktopIconUI implements MouseL
             }
 
             g.setColor(Color.black);
-            AquaUtils.drawString(this, g, text, x, 2 + ascent);
+            JavaSupport.drawString(this, (Graphics2D) g, text, x, 2 + ascent);
             g.setColor(Color.white);
-            AquaUtils.drawString(this, g, text, x, 1 + ascent);
+            JavaSupport.drawString(this, (Graphics2D) g, text, x, 1 + ascent);
         }
 
         public void show(final Component invoker) {

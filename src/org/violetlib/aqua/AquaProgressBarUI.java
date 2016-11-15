@@ -232,7 +232,7 @@ public class AquaProgressBarUI extends ProgressBarUI implements ChangeListener, 
 
         if (isHorizontal()) {
             g2.setColor(selectionForeground);
-            AquaUtils.drawString(progressBar, g2, progressString, renderLocation.x, renderLocation.y);
+            JavaSupport.drawString(progressBar, g2, progressString, renderLocation.x, renderLocation.y);
         } else { // VERTICAL
             // We rotate it -90 degrees, then translate it down since we are going to be bottom up.
             final AffineTransform savedAT = g2.getTransform();
@@ -242,7 +242,7 @@ public class AquaProgressBarUI extends ProgressBarUI implements ChangeListener, 
             // 0,0 is now the bottom left of the viewable area, so we just draw our image at
             // the render location since that calculation knows about rotation.
             g2.setColor(selectionForeground);
-            AquaUtils.drawString(progressBar, g2, progressString, renderLocation.x, renderLocation.y);
+            JavaSupport.drawString(progressBar, g2, progressString, renderLocation.x, renderLocation.y);
 
             g2.setTransform(savedAT);
         }
