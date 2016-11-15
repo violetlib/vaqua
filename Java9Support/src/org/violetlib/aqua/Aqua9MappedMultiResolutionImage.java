@@ -34,61 +34,65 @@
 package org.violetlib.aqua;
 
 import java.awt.*;
-import java.awt.geom.Dimension2D;
 import java.awt.image.ImageObserver;
 import java.awt.image.ImageProducer;
 import java.awt.image.MultiResolutionImage;
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.function.BiFunction;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 
 /**
- * Basically, a copy of MultiResolutionCachedImage.
+ * This class supports mapping of arbitrary multiresolution images in Java 9. Note that caching is a necessity in the
+ * current AWT design. If a new deferred image is returned each time a resolution variant is asked for by the graphics
+ * context, the result is endless repainting that never succeeds. With caching, the image contents will eventually be
+ * ready. Based in part on MultiResolutionCachedImage.
  */
+public class Aqua9MappedMultiResolutionImage extends Image implements MultiResolutionImage {
 
-public class Aqua9MappedMultiResolutionImage
-        extends Image
-        implements MultiResolutionImage
-{
-    private final int baseImageWidth;
-    private final int baseImageHeight;
-    private final Dimension2D[] sizes;
-    private final BiFunction<Integer, Integer, Image> mapper;
+    private final Image baseImage;
+    private final MyVariantMapper mapper;
     private int availableInfo;
 
-    public Aqua9MappedMultiResolutionImage(int baseImageWidth, int baseImageHeight, BiFunction<Integer, Integer, Image> mapper) {
-        this(baseImageWidth, baseImageHeight, new Dimension[] {new Dimension( baseImageWidth, baseImageHeight)}, mapper);
+    public Aqua9MappedMultiResolutionImage(MultiResolutionImage source, Function<Image,Image> mapper) {
+        this.baseImage = (Image) source;
+        this.mapper = new MyVariantMapper(source, mapper);
     }
 
-    public Aqua9MappedMultiResolutionImage(int baseImageWidth, int baseImageHeight,
-                                           Dimension2D[] sizes,
-                                           BiFunction<Integer, Integer, Image> mapper) {
-        this(baseImageWidth, baseImageHeight, sizes, mapper, true);
+    private static class MyVariantMapper implements BiFunction<Integer,Integer,Image> {
+        private final MultiResolutionImage source;
+        private final Function<Image,Image> mapper;
+
+        public MyVariantMapper(MultiResolutionImage source, Function<Image,Image> mapper) {
+            this.source = source;
+            this.mapper = mapper;
+        }
+
+        @Override
+        public Image apply(Integer width, Integer height) {
+            Image sourceVariant = source.getResolutionVariant(width, height);
+            return mapper.apply(sourceVariant);
+        }
     }
 
-//    public Aqua9MappedMultiResolutionImage(MultiResolutionImage source, Function<Image,Image> mapper) {
-//
-//    }
-
-
-    private Aqua9MappedMultiResolutionImage(int baseImageWidth, int baseImageHeight,
-                                            Dimension2D[] sizes,
-                                            BiFunction<Integer, Integer, Image> mapper,
-                                            boolean copySizes)
-    {
-        this.baseImageWidth = baseImageWidth;
-        this.baseImageHeight = baseImageHeight;
-        this.sizes = (copySizes && sizes != null)
-                ? Arrays.copyOf(sizes, sizes.length)
-                : sizes;
-        this.mapper = mapper;
+    @Override
+    public List<Image> getResolutionVariants() {
+        List<Image> result = new ArrayList<>();
+        MultiResolutionImage source = (MultiResolutionImage) baseImage;
+        for (Image sourceVariant : source.getResolutionVariants()) {
+            int width = sourceVariant.getWidth(null);
+            int height = sourceVariant.getHeight(null);
+            if (width > 0 && height > 0) {
+                Image mappedVariant = mapper.apply(width, height);
+                result.add(mappedVariant);
+            }
+        }
+        return result;
     }
 
     @Override
     public ImageProducer getSource() {
-        return getBaseImage().getSource();
+        return baseImage.getSource();
     }
 
     @Override
@@ -98,9 +102,12 @@ public class Aqua9MappedMultiResolutionImage
 
     @Override
     public Image getResolutionVariant(double destWidth, double destHeight) {
-        checkSize(destWidth, destHeight);
         int width = (int) Math.ceil(destWidth);
         int height = (int) Math.ceil(destHeight);
+        if (width <= 0 || height <= 0) {
+            throw new IllegalArgumentException("Invalid image size: " + width + "x" + height);
+        }
+
         VImageCache cache = VImageCache.getInstance();
         ImageCacheKey key = new ImageCacheKey(this, width, height);
         Image resolutionVariant = cache.getImage(key);
@@ -112,63 +119,20 @@ public class Aqua9MappedMultiResolutionImage
         return resolutionVariant;
     }
 
-    private static void checkSize(double width, double height) {
-        if (width <= 0 || height <= 0) {
-            throw new IllegalArgumentException(String.format(
-                    "Width (%s) or height (%s) cannot be <= 0", width, height));
-        }
-
-        if (!Double.isFinite(width) || !Double.isFinite(height)) {
-            throw new IllegalArgumentException(String.format(
-                    "Width (%s) or height (%s) is not finite", width, height));
-        }
-    }
-
-    @Override
-    public List<Image> getResolutionVariants() {
-        return Arrays.stream(sizes).map((Function<Dimension2D, Image>) size
-                -> getResolutionVariant(size.getWidth(), size.getHeight())).collect(Collectors.toList());
-    }
-
     public Aqua9MappedMultiResolutionImage map(Function<Image, Image> mapper) {
-        return new Aqua9MappedMultiResolutionImage(baseImageWidth, baseImageHeight,
-                sizes, (width, height) -> mapper.apply(getResolutionVariant(width, height)));
-    }
-
-    public static Image map(MultiResolutionImage mrImage, Function<Image, Image> mapper) {
-
-        // Special case for MultiResolutionToolkitImage cannot be supported outside the JDK
-
-        BiFunction<Integer, Integer, Image> sizeMapper
-                = (w, h) -> mapper.apply(mrImage.getResolutionVariant(w, h));
-
-        if (mrImage instanceof Aqua9MappedMultiResolutionImage) {
-            Aqua9MappedMultiResolutionImage mrcImage
-                    = (Aqua9MappedMultiResolutionImage) mrImage;
-
-            return new Aqua9MappedMultiResolutionImage(mrcImage.baseImageWidth,
-                    mrcImage.baseImageHeight,
-                    mrcImage.sizes,
-                    sizeMapper,
-                    false);
-        }
-
-        Image image = (Image) mrImage;
-        int width = image.getWidth(null);
-        int height = image.getHeight(null);
-        return new Aqua9MappedMultiResolutionImage(width, height, sizeMapper);
+        return new Aqua9MappedMultiResolutionImage(this, mapper);
     }
 
     @Override
     public int getWidth(ImageObserver observer) {
         updateInfo(observer, ImageObserver.WIDTH);
-        return baseImageWidth;
+        return baseImage.getWidth(observer);
     }
 
     @Override
     public int getHeight(ImageObserver observer) {
         updateInfo(observer, ImageObserver.HEIGHT);
-        return baseImageHeight;
+        return baseImage.getHeight(observer);
     }
 
     @Override
@@ -180,10 +144,6 @@ public class Aqua9MappedMultiResolutionImage
     @Override
     public Image getScaledInstance(int width, int height, int hints) {
         return getResolutionVariant(width, height);
-    }
-
-    protected Image getBaseImage() {
-        return getResolutionVariant(baseImageWidth, baseImageHeight);
     }
 
     private void updateInfo(ImageObserver observer, int info) {
