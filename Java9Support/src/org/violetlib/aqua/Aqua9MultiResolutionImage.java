@@ -111,10 +111,10 @@ public class Aqua9MultiResolutionImage extends AquaMultiResolutionImage implemen
             return s.map(mapper);
         }
 
-//        if (source instanceof MultiResolutionImage) {
-//            MultiResolutionImage s = (MultiResolutionImage) source;
-//            return new Aqua9MappedMultiResolutionImage(s, mapper);
-//        }
+        if (source instanceof MultiResolutionImage) {
+            MultiResolutionImage s = (MultiResolutionImage) source;
+            return new Aqua9MappedMultiResolutionImage(s, mapper);
+        }
 
         return mapper.apply(source);
     }

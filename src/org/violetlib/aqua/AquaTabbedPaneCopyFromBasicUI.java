@@ -2164,7 +2164,7 @@ public class AquaTabbedPaneCopyFromBasicUI extends TabbedPaneUI implements Swing
     // protected in the next release where
     // API changes are allowed
     boolean requestFocusForVisibleComponent() {
-        return AquaUtils.tabbedPaneChangeFocusTo(getVisibleComponent());
+        return tabbedPaneChangeFocusTo(getVisibleComponent());
     }
 
     private static class Actions extends UIAction {
@@ -3952,5 +3952,56 @@ public class AquaTabbedPaneCopyFromBasicUI extends TabbedPaneUI implements Swing
                 g2.translate(-cropx, -cropy);
             }
         }
+    }
+
+    // The following is copied from SwingUtilities2
+
+    /**
+     * Change focus to the visible component in {@code JTabbedPane}.
+     * This is not a general-purpose method and is here only to permit
+     * sharing code.
+     */
+    private static boolean tabbedPaneChangeFocusTo(Component comp) {
+        if (comp != null) {
+            if (comp.isFocusable()) {
+                compositeRequestFocus(comp);
+                return true;
+            } else if (comp instanceof JComponent
+                       && ((JComponent)comp).requestDefaultFocus()) {
+
+                 return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static Component compositeRequestFocus(Component component) {
+        if (component instanceof Container) {
+            Container container = (Container)component;
+            if (container.isFocusCycleRoot()) {
+                FocusTraversalPolicy policy = container.getFocusTraversalPolicy();
+                Component comp = policy.getDefaultComponent(container);
+                if (comp!=null) {
+                    comp.requestFocus();
+                    return comp;
+                }
+            }
+            Container rootAncestor = container.getFocusCycleRootAncestor();
+            if (rootAncestor!=null) {
+                FocusTraversalPolicy policy = rootAncestor.getFocusTraversalPolicy();
+                Component comp = policy.getComponentAfter(rootAncestor, container);
+
+                if (comp!=null && SwingUtilities.isDescendingFrom(comp, container)) {
+                    comp.requestFocus();
+                    return comp;
+                }
+            }
+        }
+        if (component.isFocusable()) {
+            component.requestFocus();
+            return component;
+        }
+        return null;
     }
 }

@@ -401,7 +401,7 @@ public class AquaCustomStyledWindow {
             gg.fillRect(0, 0, width, height);
 
             if (y > 0) {
-                int scale = AquaUtils.getScaleFactor(gg);
+                int scale = JavaSupport.getScaleFactor(gg);
                 paintUnifiedDivider(gg, 0, width, isActive, true, scale);
                 paintUnifiedDivider(gg, y-1, width, isActive, false, scale);
             }

@@ -40,7 +40,6 @@ import java.awt.geom.Rectangle2D;
 import java.awt.image.*;
 import java.lang.ref.SoftReference;
 import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
@@ -53,13 +52,17 @@ import javax.swing.*;
 import javax.swing.border.Border;
 import javax.swing.plaf.ColorUIResource;
 import javax.swing.plaf.UIResource;
+import javax.swing.text.View;
 
 import org.violetlib.aqua.AquaImageFactory.SlicedImageControl;
 import org.violetlib.jnr.Insets2D;
 import org.violetlib.jnr.Insetter;
 import org.violetlib.jnr.aqua.AquaUIPainter;
 
-final public class AquaUtils extends SwingUtilitiesModified {
+import static javax.swing.SwingConstants.*;
+import static javax.swing.SwingConstants.RIGHT;
+
+final public class AquaUtils {
 
     private static final String ANIMATIONS_PROPERTY = "swing.enableAnimations";
 
@@ -92,7 +95,7 @@ final public class AquaUtils extends SwingUtilitiesModified {
                 }
                 int n = Integer.parseInt(token);
                 ++tokenCount;
-                int limit = tokenCount < 4 ? 100 : 1000;
+                int limit = tokenCount < 3 ? 100 : 1000;
                 if (n < 0 || n >= limit) {
                     return 0;
                 }
@@ -102,13 +105,13 @@ final public class AquaUtils extends SwingUtilitiesModified {
             return 0;
         }
 
-        while (tokenCount < 4) {
+        while (tokenCount < 3) {
             ++tokenCount;
-            int limit = tokenCount < 4 ? 100 : 1000;
+            int limit = tokenCount < 3 ? 100 : 1000;
             version = version * limit;
         }
 
-        if (tokenCount != 4) {
+        if (tokenCount != 3) {
             return 0;
         }
         return version;
@@ -320,6 +323,296 @@ final public class AquaUtils extends SwingUtilitiesModified {
         }
         // It seems that windows made full screen using a title bar button do not get registered as such with Java...
         return nativeIsFullScreenWindow(w);
+    }
+
+    // The following are copied from SwingUtililties, with modification.
+
+    /**
+     * Compute and return the location of the icons origin, the
+     * location of origin of the text baseline, and a possibly clipped
+     * version of the compound labels string.  Locations are computed
+     * relative to the viewR rectangle.
+     * The JComponents orientation (LEADING/TRAILING) will also be taken
+     * into account and translated into LEFT/RIGHT values accordingly.
+     *
+     * @param c the component
+     * @param fm the instance of {@code FontMetrics}
+     * @param text the text
+     * @param icon the icon
+     * @param verticalAlignment the vertical alignment
+     * @param horizontalAlignment the horizontal alignment
+     * @param verticalTextPosition the vertical text position
+     * @param horizontalTextPosition the horizontal text position
+     * @param viewR the available rectangle
+     * @param iconR the rectangle for the icon
+     * @param textR the rectangle for the text
+     * @param textIconGap the gap between text and icon
+     *
+     * @return the possibly clipped version of the compound labels string
+     */
+    public static String layoutCompoundLabel(JComponent c,
+            FontMetrics fm,
+            String text,
+            Icon icon,
+            int verticalAlignment,
+            int horizontalAlignment,
+            int verticalTextPosition,
+            int horizontalTextPosition,
+            Rectangle viewR,
+            Rectangle iconR,
+            Rectangle textR,
+            int textIconGap)
+    {
+        boolean orientationIsLeftToRight = true;
+        int hAlign = horizontalAlignment;
+        int hTextPos = horizontalTextPosition;
+
+        if (c != null) {
+            if (!(c.getComponentOrientation().isLeftToRight())) {
+                orientationIsLeftToRight = false;
+            }
+        }
+
+        // Translate LEADING/TRAILING values in horizontalAlignment
+        // to LEFT/RIGHT values depending on the components orientation
+        switch (horizontalAlignment) {
+            case LEADING:
+                hAlign = (orientationIsLeftToRight) ? LEFT : RIGHT;
+                break;
+            case TRAILING:
+                hAlign = (orientationIsLeftToRight) ? RIGHT : LEFT;
+                break;
+        }
+
+        // Translate LEADING/TRAILING values in horizontalTextPosition
+        // to LEFT/RIGHT values depending on the components orientation
+        switch (horizontalTextPosition) {
+            case LEADING:
+                hTextPos = (orientationIsLeftToRight) ? LEFT : RIGHT;
+                break;
+            case TRAILING:
+                hTextPos = (orientationIsLeftToRight) ? RIGHT : LEFT;
+                break;
+        }
+
+        return layoutCompoundLabelImpl(c,
+                fm,
+                text,
+                icon,
+                verticalAlignment,
+                hAlign,
+                verticalTextPosition,
+                hTextPos,
+                viewR,
+                iconR,
+                textR,
+                textIconGap);
+    }
+
+    /**
+     * Compute and return the location of the icons origin, the
+     * location of origin of the text baseline, and a possibly clipped
+     * version of the compound labels string.  Locations are computed
+     * relative to the viewR rectangle.
+     * This layoutCompoundLabel() does not know how to handle LEADING/TRAILING
+     * values in horizontalTextPosition (they will default to RIGHT) and in
+     * horizontalAlignment (they will default to CENTER).
+     * Use the other version of layoutCompoundLabel() instead.
+     *
+     * This is the same as SwingUtilities.layoutCompoundLabelImpl, except for
+     * the algorithm for clipping the text. If a text is too long, "..." are
+     * inserted at the middle of the text instead of at the end.
+     */
+    private static String layoutCompoundLabelImpl(
+            JComponent c,
+            FontMetrics fm,
+            String text,
+            Icon icon,
+            int verticalAlignment,
+            int horizontalAlignment,
+            int verticalTextPosition,
+            int horizontalTextPosition,
+            Rectangle viewR,
+            Rectangle iconR,
+            Rectangle textR,
+            int textIconGap)
+    {
+        /* Initialize the icon bounds rectangle iconR.
+         */
+
+        if (icon != null) {
+            iconR.width = icon.getIconWidth();
+            iconR.height = icon.getIconHeight();
+        } else {
+            iconR.width = iconR.height = 0;
+        }
+
+        /* Initialize the text bounds rectangle textR.  If a null
+         * or and empty String was specified we substitute "" here
+         * and use 0,0,0,0 for textR.
+         */
+
+        boolean textIsEmpty = (text == null) || text.equals("");
+        int lsb = 0;
+
+        View v = null;
+        if (textIsEmpty) {
+            textR.width = textR.height = 0;
+            text = "";
+        } else {
+            v = (c != null) ? (View) c.getClientProperty("html") : null;
+            if (v != null) {
+                textR.width = (int) v.getPreferredSpan(View.X_AXIS);
+                textR.height = (int) v.getPreferredSpan(View.Y_AXIS);
+            } else {
+                textR.width = SwingUtilities.computeStringWidth(fm, text);
+
+                lsb = getLeftSideBearing(c, fm, text);
+                if (lsb < 0) {
+                    // If lsb is negative, add it to the width, the
+                    // text bounds will later be adjusted accordingly.
+                    textR.width -= lsb;
+                }
+                textR.height = fm.getHeight();
+            }
+        }
+
+        /* Unless both text and icon are non-null, we effectively ignore
+         * the value of textIconGap.  The code that follows uses the
+         * value of gap instead of textIconGap.
+         */
+
+        int gap = (textIsEmpty || (icon == null)) ? 0 : textIconGap;
+
+        if (!textIsEmpty) {
+
+            /* If the label text string is too wide to fit within the available
+             * space "..." and as many characters as will fit will be
+             * displayed instead.
+             */
+
+            int availTextWidth;
+
+            if (horizontalTextPosition == CENTER) {
+                availTextWidth = viewR.width;
+            } else {
+                availTextWidth = viewR.width - (iconR.width + gap);
+            }
+
+            if (textR.width > availTextWidth) {
+                if (v != null) {
+                    textR.width = availTextWidth;
+                } else {
+                    String clipString = "...";
+                    int totalWidth = SwingUtilities.computeStringWidth(fm, clipString);
+                    int nChars;
+                    int len = text.length();
+                    for (nChars = 0; nChars < len; nChars++) {
+                        int charIndex = (nChars % 2 == 0) ? nChars / 2 : len - 1 - nChars / 2;
+                        totalWidth += fm.charWidth(text.charAt(charIndex));
+                        if (totalWidth > availTextWidth) {
+                            break;
+                        }
+                    }
+                    text = text.substring(0, nChars / 2) + clipString + text.substring(len - nChars / 2);
+                    textR.width = SwingUtilities.computeStringWidth(fm, text);
+                }
+            }
+        }
+
+
+        /* Compute textR.x,y given the verticalTextPosition and
+         * horizontalTextPosition properties
+         */
+
+        if (verticalTextPosition == TOP) {
+            if (horizontalTextPosition != CENTER) {
+                textR.y = 0;
+            } else {
+                textR.y = -(textR.height + gap);
+            }
+        } else if (verticalTextPosition == CENTER) {
+            textR.y = (iconR.height / 2) - (textR.height / 2);
+        } else { // (verticalTextPosition == BOTTOM)
+
+            if (horizontalTextPosition != CENTER) {
+                textR.y = iconR.height - textR.height;
+            } else {
+                textR.y = (iconR.height + gap);
+            }
+        }
+
+        if (horizontalTextPosition == LEFT) {
+            textR.x = -(textR.width + gap);
+        } else if (horizontalTextPosition == CENTER) {
+            textR.x = (iconR.width / 2) - (textR.width / 2);
+        } else { // (horizontalTextPosition == RIGHT)
+
+            textR.x = (iconR.width + gap);
+        }
+
+        /* labelR is the rectangle that contains iconR and textR.
+         * Move it to its proper position given the labelAlignment
+         * properties.
+         *
+         * To avoid actually allocating a Rectangle, Rectangle.union
+         * has been inlined below.
+         */
+        int labelR_x = Math.min(iconR.x, textR.x);
+        int labelR_width = Math.max(iconR.x + iconR.width,
+                textR.x + textR.width) - labelR_x;
+        int labelR_y = Math.min(iconR.y, textR.y);
+        int labelR_height = Math.max(iconR.y + iconR.height,
+                textR.y + textR.height) - labelR_y;
+
+        int dx, dy;
+
+        if (verticalAlignment == TOP) {
+            dy = viewR.y - labelR_y;
+        } else if (verticalAlignment == CENTER) {
+            dy = (viewR.y + (viewR.height / 2)) - (labelR_y + (labelR_height / 2));
+        } else { // (verticalAlignment == BOTTOM)
+
+            dy = (viewR.y + viewR.height) - (labelR_y + labelR_height);
+        }
+
+        if (horizontalAlignment == LEFT) {
+            dx = viewR.x - labelR_x;
+        } else if (horizontalAlignment == RIGHT) {
+            dx = (viewR.x + viewR.width) - (labelR_x + labelR_width);
+        } else { // (horizontalAlignment == CENTER)
+
+            dx = (viewR.x + (viewR.width / 2))
+                    - (labelR_x + (labelR_width / 2));
+        }
+
+        /* Translate textR and glypyR by dx,dy.
+         */
+
+        textR.x += dx;
+        textR.y += dy;
+
+        iconR.x += dx;
+        iconR.y += dy;
+
+        if (lsb < 0) {
+            // lsb is negative. We previously adjusted the bounds by lsb,
+            // we now need to shift the x location so that the text is
+            // drawn at the right location. The result is textR does not
+            // line up with the actual bounds (on the left side), but we will
+            // have provided enough space for the text.
+            textR.width += lsb;
+            textR.x -= lsb;
+        }
+
+        return text;
+    }
+
+    private static int getLeftSideBearing(JComponent c, FontMetrics fm, String string) {
+        if ((string == null) || (string.length() == 0)) {
+            return 0;
+        }
+        return nativeGetLeftSideBearing(c, fm, string.charAt(0));
     }
 
     public static void paintImmediately(JComponent c) {
@@ -802,51 +1095,6 @@ final public class AquaUtils extends SwingUtilitiesModified {
 
     private static final WeakHashMap<Graphics,Integer> scaleMap = new WeakHashMap<>();
 
-    public static int getScaleFactor(Graphics g)
-    {
-        // A public API will be provided in JDK 9
-
-        // Is it fair to assume that a graphics context always is associated with the same device,
-        // in other words, they are not reused in some sneaky way?
-        Integer n = scaleMap.get(g);
-        if (n != null) {
-            return n;
-        }
-
-        int scaleFactor;
-        if (g instanceof Graphics2D) {
-            Graphics2D gg = (Graphics2D) g;
-            GraphicsConfiguration gc = gg.getDeviceConfiguration();
-            scaleFactor = getScaleFactor(gc);
-        } else {
-            scaleFactor = 1;
-        }
-
-        scaleMap.put(g, scaleFactor);
-
-        return scaleFactor;
-    }
-
-    public static int getScaleFactor(GraphicsConfiguration gc)
-    {
-        GraphicsDevice device = gc.getDevice();
-        Object scale = null;
-
-        try {
-            Method m = device.getClass().getMethod("getScaleFactor");
-            if (m != null) {
-                m.setAccessible(true);
-                scale = m.invoke(device);
-            }
-        } catch (Exception ignore) {}
-
-        if (scale instanceof Integer) {
-            return (Integer) scale;
-        }
-
-        return 1;
-    }
-
     public static void drawHLine(Graphics g, int x1, int x2, int y) {
          if (x2 < x1) {
              final int temp = x2;
@@ -986,48 +1234,16 @@ final public class AquaUtils extends SwingUtilitiesModified {
             throw new UnsupportedOperationException("Unable to unset titled window style: no top inset");
         }
 
-        int newHeight = oldBounds.height - top;
-
-        String errorMessage;
-
         try {
-            Method m = w.getClass().getMethod("getPeer");
-            m.setAccessible(true);
-            Object peer = m.invoke(w);
-            if (peer != null) {
-                m = peer.getClass().getDeclaredMethod("getPlatformWindow");
-                m.setAccessible(true);
-                Object platformWindow = m.invoke(peer);
-                if (platformWindow != null) {
-                    m = platformWindow.getClass().getDeclaredMethod("setStyleBits", Integer.TYPE, Boolean.TYPE);
-                    m.setAccessible(true);
-                    int DECORATED = 1 << 1;
-                    m.invoke(platformWindow, DECORATED, false);
-
-                    // Java eventually will be informed of the new window size and insets, but we need to update now so
-                    // that the initial painting of the root pane will be positioned correctly.
-
-                    Field f = Component.class.getDeclaredField("height");
-                    f.setAccessible(true);
-                    f.setInt(w, newHeight);
-
-                    m = peer.getClass().getDeclaredMethod("updateInsets", Insets.class);
-                    m.setAccessible(true);
-                    m.invoke(peer, new Insets(0, 0, 0, 0));
-
-                    w.invalidate();
-                    w.validate();
-                    return;
-                } else {
-                    errorMessage = "no platform window";
-                }
-            } else {
-                errorMessage = "no peer";
-            }
+            int DECORATED = 1 << 1;
+            int newHeight = oldBounds.height - top;
+            nativeSetTitledWindowStyle(w, false, newHeight, new Insets(0, 0, 0, 0));
+            w.invalidate();
+            w.validate();
         } catch (Exception ex) {
-            errorMessage = ex.toString();
+            String errorMessage = ex.toString();
+            throw new UnsupportedOperationException(errorMessage);
         }
-        throw new UnsupportedOperationException(errorMessage);
     }
 
     public static void restoreTitledWindowStyle(Window w, int top) {
@@ -1035,35 +1251,10 @@ final public class AquaUtils extends SwingUtilitiesModified {
         int newHeight = oldBounds.height + top;
 
         try {
-            Method m = w.getClass().getMethod("getPeer");
-            m.setAccessible(true);
-            Object peer = m.invoke(w);
-            if (peer != null) {
-                m = peer.getClass().getDeclaredMethod("getPlatformWindow");
-                m.setAccessible(true);
-                Object platformWindow = m.invoke(peer);
-                if (platformWindow != null) {
-                    m = platformWindow.getClass().getDeclaredMethod("setStyleBits", Integer.TYPE, Boolean.TYPE);
-                    m.setAccessible(true);
-                    int DECORATED = 1 << 1;
-                    m.invoke(platformWindow, DECORATED, true);
-
-                    Field f = Component.class.getDeclaredField("height");
-                    f.setAccessible(true);
-                    f.setInt(w, newHeight);
-
-                    m = peer.getClass().getDeclaredMethod("updateInsets", Insets.class);
-                    m.setAccessible(true);
-                    m.invoke(peer, new Insets(top, 0, 0, 0));
-
-                    w.invalidate();
-                    w.validate();
-                } else {
-                    System.err.println("Unable to restore titled window style: no platform window");
-                }
-            } else {
-                System.err.println("Unable to restore titled window style: no peer");
-            }
+            int DECORATED = 1 << 1;
+            nativeSetTitledWindowStyle(w, true, newHeight, new Insets(top, 0, 0, 0));
+            w.invalidate();
+            w.validate();
         } catch (Exception ex) {
             System.err.println("Unable to restore titled window style: " + ex);
         }
@@ -1143,20 +1334,8 @@ final public class AquaUtils extends SwingUtilitiesModified {
     private static void setWindowTextured(Window w, boolean isTextured) {
 
         try {
-            Method mp = w.getClass().getMethod("getPeer");
-            mp.setAccessible(true);
-            Object peer = mp.invoke(w);
-
-            if (peer == null) {
-                System.err.println("Unable to set window textured: no peer for " + w);
-                return;
-            }
-
-            Method m = peer.getClass().getDeclaredMethod("setTextured", Boolean.TYPE);
-            m.setAccessible(true);
-            m.invoke(peer, isTextured);
-
-        } catch (Exception ex) {
+            nativeSetWindowTextured(w, isTextured);
+        } catch (Throwable ex) {
             System.err.println("Unable to set textured: " + ex);
         }
     }
@@ -1183,25 +1362,8 @@ final public class AquaUtils extends SwingUtilitiesModified {
             w.setBackground(c);
         } catch (Throwable e) {
             try {
-                Method mp = w.getClass().getMethod("getPeer");
-                mp.setAccessible(true);
-                Object peer = mp.invoke(w);
-
-                if (peer == null) {
-                    System.err.println("Unable to set window background: no peer for " + w);
-                    return;
-                }
-
-                Method mb = peer.getClass().getDeclaredMethod("setBackground", Color.class);
-                mb.setAccessible(true);
-                mb.invoke(peer, c);
-                Method mo = peer.getClass().getDeclaredMethod("setOpaque", Boolean.TYPE);
-                mo.setAccessible(true);
-                mo.invoke(peer, c.getAlpha() == 255);
+                nativeSetWindowBackground(w, c);
             } catch (Throwable th) {
-                if (th instanceof InvocationTargetException) {
-                    th = ((InvocationTargetException) th).getTargetException();
-                }
                 System.err.println("Unable to set window background: " + th);
             }
         } finally {
@@ -1224,12 +1386,18 @@ final public class AquaUtils extends SwingUtilitiesModified {
         nativeSyncAWTView(w);
     }
 
+    private static native void nativeSetTitledWindowStyle(Window w, boolean isDecorated, int height, Insets insets);
+    private static native void nativeSetWindowTextured(Window w, boolean isTextured);
+    private static native void nativeSetWindowBackground(Window w, Color color);
     private static native boolean nativeIsFullScreenWindow(Window w);
     private static native int nativeSetTitleBarStyle(Window w, int style);
     private static native int nativeAddToolbarToWindow(Window w);
     private static native int nativeSetWindowCornerRadius(Window w, float radius);
     private static native void nativeSetAWTViewVisibility(Window w, boolean isVisible);
     private static native void nativeSyncAWTView(Window w);
+    private static native int nativeGetLeftSideBearing(JComponent c, FontMetrics fm, char firstChar);
+    public static native void nativeInstallAATextInfo(UIDefaults table);
+    public static native Image nativeGetDockIconImage();
 
     public static native void debugWindow(Window w);
     public static native void syslog(String msg);

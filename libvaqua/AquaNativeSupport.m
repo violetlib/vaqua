@@ -1259,25 +1259,113 @@ JNIEXPORT void JNICALL Java_org_violetlib_aqua_AquaNativeColorChooser_hide
     showHideColorChooser(env, NO);
 }
 
-static NSWindow *getNativeWindow(JNIEnv *env, jobject w)
+static jobject getWindowPeer(JNIEnv *env, jobject w)
 {
     static JNF_CLASS_CACHE(jc_Window, "java/awt/Window");
-    static JNF_MEMBER_CACHE(jm_getPeer, jc_Window, "getPeer", "()Ljava/awt/peer/ComponentPeer;");
+    static JNF_MEMBER_CACHE(jf_peer, jc_Window, "peer", "Ljava/awt/peer/ComponentPeer;");
+    return JNFGetObjectField(env, w, jf_peer);
+}
+
+static jobject getPlatformWindow(JNIEnv *env, jobject windowPeer)
+{
     static JNF_CLASS_CACHE(jc_LWWindowPeer, "sun/lwawt/LWWindowPeer");
     static JNF_MEMBER_CACHE(jm_getPlatformWindow, jc_LWWindowPeer, "getPlatformWindow", "()Lsun/lwawt/PlatformWindow;");
+    return windowPeer != NULL ? JNFCallObjectMethod(env, windowPeer, jm_getPlatformWindow) : NULL;
+}
+
+static NSWindow *getNativeWindow(JNIEnv *env, jobject w)
+{
     static JNF_CLASS_CACHE(jc_CPlatformWindow, "sun/lwawt/macosx/CPlatformWindow");
     static JNF_MEMBER_CACHE(jm_getNSWindow, jc_CPlatformWindow, "getNSWindowPtr", "()J");
 
-    jobject peer = JNFCallObjectMethod(env, w, jm_getPeer);
-    if (peer == NULL) {
-        return NULL;
-    }
-    jobject platformWindow = JNFCallObjectMethod(env, peer, jm_getPlatformWindow);
+    jobject peer = getWindowPeer(env, w);
+    jobject platformWindow = getPlatformWindow(env, peer);
     if (platformWindow == NULL) {
         return NULL;
     }
     NSWindow *nw = (NSWindow *) JNFCallLongMethod(env, platformWindow, jm_getNSWindow);
     return nw;
+}
+
+/*
+ * Class:     org_violetlib_aqua_AquaUtils
+ * Method:    nativeSetTitledWindowStyle
+ * Signature: (Ljava/awt/Window;ZILjava/awt/Insets;)V
+ */
+JNIEXPORT void JNICALL Java_org_violetlib_aqua_AquaUtils_nativeSetTitledWindowStyle
+  (JNIEnv *env, jclass cl, jobject w, jboolean isDecorated, jint height, jobject insets)
+{
+    static JNF_CLASS_CACHE(jc_CPlatformWindow, "sun/lwawt/macosx/CPlatformWindow");
+    static JNF_MEMBER_CACHE(jm_setStyleBits, jc_CPlatformWindow, "setStyleBits", "(IZ)V");
+    static JNF_CLASS_CACHE(jc_Window, "java/awt/Window");
+    static JNF_MEMBER_CACHE(jf_height, jc_Window, "height", "I");
+    static JNF_CLASS_CACHE(jc_LWWindowPeer, "sun/lwawt/LWWindowPeer");
+    static JNF_MEMBER_CACHE(jm_updateInsets, jc_LWWindowPeer, "updateInsets", "(Ljava/awt/Insets;)Z");
+
+    JNF_COCOA_ENTER(env);
+
+    jobject peer = getWindowPeer(env, w);
+    jobject platformWindow = getPlatformWindow(env, peer);
+    if (platformWindow == NULL) {
+        return;
+    }
+    int DECORATED = 1 << 1;
+    JNFCallVoidMethod(env, platformWindow, jm_setStyleBits, DECORATED, isDecorated);
+
+    // Java eventually will be informed of the new window size and insets, but we need to update now so
+    // that the initial painting of the root pane will be positioned correctly.
+
+    JNFSetIntField(env, w, jf_height, height);
+    JNFCallBooleanMethod(env, peer, jm_updateInsets, insets);
+
+    JNF_COCOA_EXIT(env);
+}
+
+/*
+ * Class:     org_violetlib_aqua_AquaUtils
+ * Method:    nativeSetWindowTextured
+ * Signature: (Ljava/awt/Window;Z)V
+ */
+JNIEXPORT void JNICALL Java_org_violetlib_aqua_AquaUtils_nativeSetWindowTextured
+  (JNIEnv *env, jclass cl, jobject w, jboolean isTextured)
+{
+    static JNF_CLASS_CACHE(jc_LWWindowPeer, "sun/lwawt/LWWindowPeer");
+    static JNF_MEMBER_CACHE(jm_setTextured, jc_LWWindowPeer, "setTextured", "(Z)V");
+
+    JNF_COCOA_ENTER(env);
+
+    jobject peer = getWindowPeer(env, w);
+    if (peer != nil) {
+        JNFCallVoidMethod(env, peer, jm_setTextured, isTextured);
+    }
+
+    JNF_COCOA_EXIT(env);
+}
+
+/*
+ * Class:     org_violetlib_aqua_AquaUtils
+ * Method:    nativeSetWindowBackground
+ * Signature: (Ljava/awt/Window;Ljava/awt/Color;)V
+ */
+JNIEXPORT void JNICALL Java_org_violetlib_aqua_AquaUtils_nativeSetWindowBackground
+  (JNIEnv *env, jclass cl, jobject w, jobject color)
+{
+    static JNF_CLASS_CACHE(jc_LWWindowPeer, "sun/lwawt/LWWindowPeer");
+    static JNF_MEMBER_CACHE(jm_setBackground, jc_LWWindowPeer, "setBackground", "(Ljava/awt/Color;)V");
+    static JNF_MEMBER_CACHE(jm_setOpaque, jc_LWWindowPeer, "setOpaque", "(Z)V");
+    static JNF_CLASS_CACHE(jc_Color, "java/awt/Color");
+    static JNF_MEMBER_CACHE(jm_getAlpha, jc_Color, "getAlpha", "()I");
+
+    JNF_COCOA_ENTER(env);
+
+    jobject peer = getWindowPeer(env, w);
+    if (peer != nil) {
+        JNFCallVoidMethod(env, peer, jm_setBackground, color);
+        int alpha = JNFCallIntMethod(env, color, jm_getAlpha);
+        JNFCallVoidMethod(env, peer, jm_setOpaque, alpha == 255);
+    }
+
+    JNF_COCOA_EXIT(env);
 }
 
 /*
@@ -1853,6 +1941,75 @@ JNIEXPORT void JNICALL Java_org_violetlib_aqua_AquaUtils_nativeSyncAWTView
     }
 
     JNF_COCOA_EXIT(env);
+}
+
+/*
+ * Class:     org_violetlib_aqua_AquaUtils
+ * Method:    nativeGetLeftSideBearing
+ * Signature: (Ljavax/swing/JComponent;Ljava/awt/FontMetrics;C)I
+ */
+JNIEXPORT jint JNICALL Java_org_violetlib_aqua_AquaUtils_nativeGetLeftSideBearing
+  (JNIEnv *env, jclass cl, jobject comp, jobject fm, jchar firstChar)
+{
+    static JNF_CLASS_CACHE(jc_SwingUtilities2, "sun/swing/SwingUtilities2");
+    static JNF_STATIC_MEMBER_CACHE(jm_getLeftSideBearing, jc_SwingUtilities2, "getLeftSideBearing", "(Ljavax/swing/JComponent;Ljava/awt/FontMetrics;C)I");
+
+    jint result = 0;
+
+    JNF_COCOA_ENTER(env);
+
+    result = JNFCallStaticIntMethod(env, jm_getLeftSideBearing, comp, fm, firstChar);
+
+    JNF_COCOA_EXIT(env);
+
+    return result;
+}
+
+/*
+ * Class:     org_violetlib_aqua_AquaUtils
+ * Method:    nativeInstallAATextInfo
+ * Signature: (Ljavax/swing/UIDefaults;)V
+ */
+JNIEXPORT void JNICALL Java_org_violetlib_aqua_AquaUtils_nativeInstallAATextInfo
+  (JNIEnv *env, jclass cl, jobject table)
+{
+    // This implementation is valid in Java 9 (not in Java 8).
+    // SwingUtilities2.putAATextInfo(true, table);
+
+    static JNF_CLASS_CACHE(jc_SwingUtilities2, "sun/swing/SwingUtilities2");
+    static JNF_STATIC_MEMBER_CACHE(jm_putAATextInfo, jc_SwingUtilities2, "putAATextInfo", "(ZLjava/util/Map;)V");
+
+    JNF_COCOA_ENTER(env);
+
+    JNFCallStaticVoidMethod(env, jm_putAATextInfo, JNI_TRUE, table);
+
+    JNF_COCOA_EXIT(env);
+}
+
+/*
+ * Class:     org_violetlib_aqua_AquaUtils
+ * Method:    nativeGetDockIconImage
+ * Signature: ()Ljava/awt/Image;
+ */
+JNIEXPORT jobject JNICALL Java_org_violetlib_aqua_AquaUtils_nativeGetDockIconImage
+  (JNIEnv *env, jclass cl)
+{
+    // return com.apple.eawt.Application.getApplication().getDockIconImage();
+
+    static JNF_CLASS_CACHE(jc_Application, "com/apple/eawt/Application");
+    static JNF_STATIC_MEMBER_CACHE(jm_getApplication, jc_Application, "getApplication", "()Lcom/apple/eawt/Application;");
+    static JNF_MEMBER_CACHE(jm_getDockIconImage, jc_Application, "getDockIconImage", "()Ljava/awt/Image;");
+
+    jobject result = NULL;
+
+    JNF_COCOA_ENTER(env);
+
+    jobject application = JNFCallStaticObjectMethod(env, jm_getApplication);
+    result = JNFCallObjectMethod(env, application, jm_getDockIconImage);
+
+    JNF_COCOA_EXIT(env);
+
+    return result;
 }
 
 /*

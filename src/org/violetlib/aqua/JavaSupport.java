@@ -22,6 +22,7 @@ import javax.swing.*;
 public class JavaSupport {
 
     public interface JavaSupportImpl {
+        int getScaleFactor(Graphics g);
         Image getDockIconImage();
         void drawString(JComponent c, Graphics2D g, String string, float x, float y);
         void drawStringUnderlineCharAt(JComponent c, Graphics2D g, String string, int underlinedIndex,
@@ -41,6 +42,11 @@ public class JavaSupport {
     }
 
     private final static JavaSupportImpl impl = findImpl();
+
+    public static int getScaleFactor(Graphics g)
+   	{
+   		return impl.getScaleFactor(g);
+   	}
 
     public static Image getDockIconImage() {
         return impl.getDockIconImage();
@@ -109,9 +115,8 @@ public class JavaSupport {
 
     private static JavaSupportImpl findImpl() {
         int version = AquaUtils.getJavaVersion();
-        System.err.println("Java version: " + version);
         String className;
-        if (version >= 90000000) {
+        if (version >= 900000) {
             className = "Java9Support";
         } else {
             className = "Java8Support";

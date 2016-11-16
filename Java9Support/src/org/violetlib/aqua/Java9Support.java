@@ -10,6 +10,7 @@ package org.violetlib.aqua;
 
 import java.awt.*;
 import java.awt.color.ColorSpace;
+import java.awt.geom.AffineTransform;
 import java.awt.image.*;
 import java.util.function.Function;
 import javax.swing.*;
@@ -21,9 +22,20 @@ import javax.swing.plaf.basic.BasicGraphicsUtils;
 
 public class Java9Support implements JavaSupport.JavaSupportImpl {
     @Override
+   	public int getScaleFactor(Graphics g)
+   	{
+   		// This works in Java 9. Before that, it returned 1.
+   		Graphics2D gg = (Graphics2D) g;
+   		GraphicsConfiguration gc = gg.getDeviceConfiguration();
+   		AffineTransform t = gc.getDefaultTransform();
+   		double sx = t.getScaleX();
+   		double sy = t.getScaleY();
+   		return (int) Math.max(sx, sy);
+   	}
+
+    @Override
     public Image getDockIconImage() {
-        // TBD: requires native support at present
-        return new BufferedImage(256, 256, BufferedImage.TYPE_INT_ARGB_PRE);
+        return AquaUtils.nativeGetDockIconImage();
     }
 
     @Override
@@ -48,7 +60,7 @@ public class Java9Support implements JavaSupport.JavaSupportImpl {
 
     @Override
     public void installAATextInfo(UIDefaults table) {
-        System.err.println("Antialiased text properties are not supported");
+        AquaUtils.nativeInstallAATextInfo(table);
     }
 
     @Override
@@ -90,7 +102,7 @@ public class Java9Support implements JavaSupport.JavaSupportImpl {
                              DataBuffer.TYPE_INT
                              );
         WritableRaster raster = colorModel.createCompatibleWritableRaster(width, height);
-        raster.setPixels(0, 0, width, height, data);
+        raster.setDataElements(0, 0, width, height, data);
         BufferedImage b = new BufferedImage(colorModel, raster, true, null);
         return b;
     }

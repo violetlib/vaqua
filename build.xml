@@ -1,17 +1,24 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<project name="VAqua" basedir=".">
+<project name="VAqua" default="jar" basedir=".">
 
 	<property name="homebin" location="${user.home}/bin"/>
 
 	<import file="../build/library.xml"/>
-	<import file="../build/releases.xml"/>
 
 	<filelist id="lib.jars" dir="${lib}">
+		<file name="VAquaJava8Support.jar"/>
+		<file name="VAquaJava9Support.jar"/>
 		<file name="VAquaRendering.jar"/>
 	</filelist>
 
 	<classpath/>
+
+  <target name="jar"
+          depends="clean, compile"
+          description="Build the development version of the JAR">
+    <define-library combined="true"/>
+  </target>
 
   <target name="testRelease">
   <java
