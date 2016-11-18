@@ -1988,32 +1988,6 @@ JNIEXPORT void JNICALL Java_org_violetlib_aqua_AquaUtils_nativeInstallAATextInfo
 
 /*
  * Class:     org_violetlib_aqua_AquaUtils
- * Method:    nativeGetDockIconImage
- * Signature: ()Ljava/awt/Image;
- */
-JNIEXPORT jobject JNICALL Java_org_violetlib_aqua_AquaUtils_nativeGetDockIconImage
-  (JNIEnv *env, jclass cl)
-{
-    // return com.apple.eawt.Application.getApplication().getDockIconImage();
-
-    static JNF_CLASS_CACHE(jc_Application, "com/apple/eawt/Application");
-    static JNF_STATIC_MEMBER_CACHE(jm_getApplication, jc_Application, "getApplication", "()Lcom/apple/eawt/Application;");
-    static JNF_MEMBER_CACHE(jm_getDockIconImage, jc_Application, "getDockIconImage", "()Ljava/awt/Image;");
-
-    jobject result = NULL;
-
-    JNF_COCOA_ENTER(env);
-
-    jobject application = JNFCallStaticObjectMethod(env, jm_getApplication);
-    result = JNFCallObjectMethod(env, application, jm_getDockIconImage);
-
-    JNF_COCOA_EXIT(env);
-
-    return result;
-}
-
-/*
- * Class:     org_violetlib_aqua_AquaUtils
  * Method:    debugWindow
  * Signature: (Ljava/lang/Window;)V
  */

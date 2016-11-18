@@ -1397,7 +1397,6 @@ final public class AquaUtils {
     private static native void nativeSyncAWTView(Window w);
     private static native int nativeGetLeftSideBearing(JComponent c, FontMetrics fm, char firstChar);
     public static native void nativeInstallAATextInfo(UIDefaults table);
-    public static native Image nativeGetDockIconImage();
 
     public static native void debugWindow(Window w);
     public static native void syslog(String msg);

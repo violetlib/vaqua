@@ -35,7 +35,8 @@ public class Java9Support implements JavaSupport.JavaSupportImpl {
 
     @Override
     public Image getDockIconImage() {
-        return AquaUtils.nativeGetDockIconImage();
+        Taskbar t = Taskbar.getTaskbar();
+        return t.getIconImage();
     }
 
     @Override
