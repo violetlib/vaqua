@@ -1588,6 +1588,24 @@ JNIEXPORT jint JNICALL Java_org_violetlib_aqua_AquaSheetSupport_nativeDisplayAsS
 
 /*
  * Class:     org_violetlib_aqua_AquaUtils
+ * Method:    nativeSetWindowVisibleField
+ * Signature: (Ljava/awt/Window;Z)V
+ */
+JNIEXPORT void JNICALL Java_org_violetlib_aqua_AquaUtils_nativeSetWindowVisibleField
+    (JNIEnv *env, jclass cl, jobject window, jboolean isVisible)
+{
+    static JNF_CLASS_CACHE(jc_Window, "java/awt/Window");
+    static JNF_MEMBER_CACHE(jf_visible, jc_Window, "visible", "Z");
+
+    JNF_COCOA_ENTER(env);
+
+    JNFSetBooleanField(env, window, jf_visible, isVisible);
+
+    JNF_COCOA_EXIT(env);
+}
+
+/*
+ * Class:     org_violetlib_aqua_AquaUtils
  * Method:    nativeSetWindowCornerRadius
  * Signature: (Ljava/awt/Window;F)I
  */

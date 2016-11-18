@@ -182,7 +182,7 @@ public class AquaVibrantSupport {
             AquaUtils.setWindowBackgroundClear(w, true); // suppress Java window background
             if (rp != null) {
                 rp.putClientProperty(VIBRANT_WINDOW_KEY, Boolean.TRUE);
-                AquaUtils.paintImmediately(rp);
+                AquaUtils.paintImmediately(w, rp);
                 // The goal of the following is to transfer the new clear background to the AWTView layer immediately so
                 // that when a vibrant window is first made visible, it shows the vibrant background immediately instead
                 // of showing the default window background first and an instant later replacing it with the vibrant

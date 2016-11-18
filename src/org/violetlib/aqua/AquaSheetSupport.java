@@ -256,7 +256,7 @@ public class AquaSheetSupport {
             w.validate();
 
             //syslog("About to paint sheet");
-            AquaUtils.paintImmediately(rp);
+            AquaUtils.paintImmediately(w, rp);
         }
 
         // It would be better to dismiss a sheet by calling endSheet. Using endSheet supports deferred and critical
