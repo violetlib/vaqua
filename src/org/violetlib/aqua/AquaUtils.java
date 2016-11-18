@@ -311,16 +311,12 @@ final public class AquaUtils extends SwingUtilitiesModified {
         return nativeIsFullScreenWindow(w);
     }
 
-    public static void paintImmediately(JComponent c) {
+    public static void paintImmediately(Window w, JComponent c) {
         // a possible workaround... the goal is to paint to the AWT view before the window becomes visible
-        // Note that the public paintImmediately() method does nothing if it believes that the component is not visible.
-        try {
-            Method m = JComponent.class.getDeclaredMethod("_paintImmediately", Integer.TYPE, Integer.TYPE, Integer.TYPE, Integer.TYPE);
-            m.setAccessible(true);
-            m.invoke(c, 0, 0, c.getWidth(), c.getHeight());
-        } catch (Exception ex) {
-            System.err.println("Unable to paint immediately: " + ex);
-        }
+        // Note that the paintImmediately() method does nothing if it believes that the component is not visible.
+        nativeSetWindowVisibleField(w, true);
+        c.paintImmediately(0, 0, c.getWidth(), c.getHeight());
+        nativeSetWindowVisibleField(w, false);
     }
 
     abstract static class RecyclableObject<T> {
@@ -1246,6 +1242,7 @@ final public class AquaUtils extends SwingUtilitiesModified {
     private static native int nativeSetWindowCornerRadius(Window w, float radius);
     private static native void nativeSetAWTViewVisibility(Window w, boolean isVisible);
     private static native void nativeSyncAWTView(Window w);
+    private static native void nativeSetWindowVisibleField(Window w, boolean isVisible);
 
     public static native void debugWindow(Window w);
     public static native void syslog(String msg);
