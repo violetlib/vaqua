@@ -79,8 +79,9 @@
       </resourceexists>
     </condition>
 
-    <target name="compile8">
+    <target name="compile8" depends="unjarRenderingLibrary, copyResources">
         <mkdir dir="${classesdir}"/>
+        <mkdir dir="${headersdir}"/>
 
         <javac source="1.8" target="1.8"
             bootclasspath="${bootclasspath}"
@@ -92,6 +93,8 @@
             optimize="true"
             includeantruntime="false"
             >
+            <compilerarg value="-h"/>
+            <compilerarg path="${headersdir}"/>
             <patternset>
               <include name="org/violetlib/aqua/**/*.java"/>
             </patternset>
@@ -133,35 +136,10 @@
             </javac>
     </target>
 
-    <target name="compile-VAqua-Java" depends="unjarRenderingLibrary, copyResources, compile8, compile9">
+    <target name="compile-VAqua-Java" depends="compile8, compile9">
     </target>
     
-    <target name="compile-VAqua-JNI-headers" depends="compile-VAqua-Java, unjarRenderingLibrary">
-        <mkdir dir="${headersdir}"/>
-
-        <javac source="1.8" target="1.8"
-            bootclasspath="${bootclasspath}"
-            classpath="${libpath}:${classesdir}"
-            encoding="UTF-8"
-            srcdir="${src}"
-            destdir="${classesdir}"
-            includeantruntime="false"
-            >
-            <compilerarg value="-h"/>
-            <compilerarg path="${headersdir}"/>
-            <patternset>
-              <include name="org/violetlib/aqua/fc/OSXFile.java"/>
-              <include name="org/violetlib/aqua/OSXSystemProperties.java"/>
-              <include name="org/violetlib/aqua/AquaVibrantSupport.java"/>
-              <include name="org/violetlib/aqua/AquaUtils.java"/>
-              <include name="org/violetlib/aqua/AquaSheetSupport.java"/>
-              <include name="org/violetlib/aqua/AquaNativeColorChooser.java"/>
-              <include name="org/violetlib/aqua/AquaIcon.java"/>
-              </patternset>
-            </javac>
-    </target>
-
-    <target name="compile-VAqua-JNI" depends="compile-VAqua-JNI-headers">
+    <target name="compile-VAqua-JNI" depends="compile8">
         <mkdir dir="${jnidir}"/>
 
         <exec executable="${cc}" failonerror="true" >
