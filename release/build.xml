@@ -144,6 +144,7 @@
             classpath="${libpath}:${classesdir}"
             encoding="UTF-8"
             srcdir="${src}"
+            destdir="${classesdir}"
             includeantruntime="false"
             >
             <compilerarg value="-h"/>
