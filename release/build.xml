@@ -84,45 +84,44 @@
     </target>
 
     <target name="compile8" depends="unjarRenderingLibrary, copyResources">
-        <mkdir dir="${classesdir}"/>
-        <mkdir dir="${headersdir}"/>
+      <mkdir dir="${classesdir}"/>
+      <mkdir dir="${headersdir}"/>
 
-        <javac source="1.8" target="1.8"
-            bootclasspath="${bootclasspath}"
-            classpath="${libpath}"
-            encoding="UTF-8"
-            srcdir="${src}"
-            destdir="${classesdir}"
-            debug="${debug}"
-            optimize="true"
-            includeantruntime="false"
-            >
-            <compilerarg value="-h"/>
-            <compilerarg path="${headersdir}"/>
-            <patternset>
-              <include name="org/violetlib/aqua/**/*.java"/>
-            </patternset>
-        </javac>
-
+      <javac source="1.8" target="1.8"
+          bootclasspath="${bootclasspath}"
+          classpath="${libpath}"
+          encoding="UTF-8"
+          srcdir="${src}"
+          destdir="${classesdir}"
+          debug="${debug}"
+          optimize="true"
+          includeantruntime="false"
+          >
+          <compilerarg value="-h"/>
+          <compilerarg path="${headersdir}"/>
+          <patternset>
+            <include name="org/violetlib/aqua/**/*.java"/>
+          </patternset>
+      </javac>
     </target>
 
     <target name="compile9" if="javac9exists">
-        <mkdir dir="${classesdir}"/>
-        <javac source="1.8" target="1.8"
-            classpath="${libpath}"
-            encoding="UTF-8"
-            srcdir="${src9}"
-            destdir="${classesdir}"
-            debug="${debug}"
-            optimize="true"
-            includeantruntime="false"
-            fork="true"
-            executable="${javac9}"
-            >
-            <patternset>
-              <include name="org/violetlib/aqua/**/*.java"/>
-              </patternset>
-            </javac>
+      <mkdir dir="${classesdir}"/>
+      <javac source="1.8" target="1.8"
+          classpath="${libpath}"
+          encoding="UTF-8"
+          srcdir="${src9}"
+          destdir="${classesdir}"
+          debug="${debug}"
+          optimize="true"
+          includeantruntime="false"
+          fork="true"
+          executable="${javac9}"
+          >
+          <patternset>
+            <include name="org/violetlib/aqua/**/*.java"/>
+          </patternset>
+        </javac>
     </target>
 
     <target name="compile-VAqua-Java" depends="compile8, compile9, missing9">
