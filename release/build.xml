@@ -20,7 +20,7 @@
         <arg value="9"/>
     </exec>
 
-    <property name="javac9" value="${jdk9}/Contents/Home/bin/javac"/>
+    <property name="javac9" value="${jdk9}/bin/javac"/>
 
     <property name="bootclasspath" value="${jdk8}/jre/lib/rt.jar" />
 
@@ -99,21 +99,6 @@
             >
             <compilerarg value="-h"/>
             <compilerarg path="${headersdir}"/>
-            <patternset>
-              <include name="org/violetlib/aqua/**/*.java"/>
-            </patternset>
-        </javac>
-
-        <javac source="1.8" target="1.8"
-            bootclasspath="${bootclasspath}"
-            classpath="${libpath}"
-            encoding="UTF-8"
-            srcdir="${src8}"
-            destdir="${classesdir}"
-            debug="${debug}"
-            optimize="true"
-            includeantruntime="false"
-            >
             <patternset>
               <include name="org/violetlib/aqua/**/*.java"/>
             </patternset>
