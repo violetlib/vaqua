@@ -79,6 +79,10 @@
       </resourceexists>
     </condition>
 
+    <target name="missing9" unless="javac9exists">
+      <echo message="Java 9 compiler not found at ${javac9}"/>
+    </target>
+
     <target name="compile8" depends="unjarRenderingLibrary, copyResources">
         <mkdir dir="${classesdir}"/>
         <mkdir dir="${headersdir}"/>
@@ -136,7 +140,7 @@
             </javac>
     </target>
 
-    <target name="compile-VAqua-Java" depends="compile8, compile9">
+    <target name="compile-VAqua-Java" depends="compile8, compile9, missing9">
     </target>
     
     <target name="compile-VAqua-JNI" depends="compile8">
@@ -176,7 +180,7 @@
 
     </target>
 
-    <target name="VAqua" depends="compile-VAqua-JNI,saveIDs">
+    <target name="VAqua" depends="compile-VAqua-JNI,compile-VAqua-Java,saveIDs">
 
         <echo level="info" message="Building VAqua ${fullReleaseName}"/>
 
