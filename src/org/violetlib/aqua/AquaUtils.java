@@ -92,6 +92,8 @@ final public class AquaUtils {
                 String token = st.nextToken();
                 if (token.endsWith("-internal")) {
                     token = token.substring(0, token.length() - 9);
+                } else if (token.endsWith("-ea")) {
+                    token = token.substring(0, token.length() - 3);
                 }
                 int n = Integer.parseInt(token);
                 ++tokenCount;
