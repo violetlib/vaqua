@@ -125,7 +125,7 @@ public class JavaSupport {
             Class c = Class.forName("org.violetlib.aqua." + className);
             return (JavaSupportImpl) c.getDeclaredConstructor().newInstance();
         } catch (Exception ex) {
-            throw new UnsupportedOperationException("Unsupported Java version: " + version);
+            throw new UnsupportedOperationException("Unsupported Java version: " + version, ex);
         }
     }
 }

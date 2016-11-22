@@ -103,6 +103,23 @@
             <include name="org/violetlib/aqua/**/*.java"/>
           </patternset>
       </javac>
+
+      <javac source="1.8" target="1.8"
+          bootclasspath="${bootclasspath}"
+          classpath="${libpath}"
+          encoding="UTF-8"
+          srcdir="${src8}"
+          destdir="${classesdir}"
+          debug="${debug}"
+          optimize="true"
+          includeantruntime="false"
+          >
+          <compilerarg value="-h"/>
+          <compilerarg path="${headersdir}"/>
+          <patternset>
+            <include name="org/violetlib/aqua/**/*.java"/>
+          </patternset>
+      </javac>
     </target>
 
     <target name="compile9" if="javac9exists">
