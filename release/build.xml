@@ -41,7 +41,7 @@
 
     <property name="renderingLibraryJAR" value="${base}/lib/VAquaRendering.jar"/>
 
-    <property name="SDKversion" value="10.11"/>
+    <property name="SDKversion" value="10.12"/>
     <property name="SDKroot" value="/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX${SDKversion}.sdk" />
     <property name="libpath" value="${base}/lib/IdeaAnnotations.jar"/>
     <property name="cc" value="/usr/bin/cc"/>
