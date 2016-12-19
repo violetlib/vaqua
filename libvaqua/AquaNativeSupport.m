@@ -1022,10 +1022,14 @@ JNIEXPORT jobjectArray JNICALL Java_org_violetlib_aqua_fc_OSXFile_nativeGetSideb
 
             // Collect six elements: display name, UID, hidden flag, resolved path, 1x rendering, 2x rendering
 
+            jstring displayNameJ = NULL;
+
             CFStringRef displayName = LSSharedFileListItemCopyDisplayName(item);
             NSString *displayNameNS = (NSString *) displayName;
-            jstring displayNameJ = (*env)->NewStringUTF(env, [displayNameNS UTF8String]);
-            CFRelease(displayName);
+            if (displayNameNS) {
+                displayNameJ = (*env)->NewStringUTF(env, [displayNameNS UTF8String]);
+                CFRelease(displayName);
+            }
 
             UInt32 itemId = LSSharedFileListItemGetID(item);
             jobject itemIdJ = (*env)->NewObject(env, integerClass, newIntegerMethodID, itemId);
