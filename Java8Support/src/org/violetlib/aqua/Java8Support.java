@@ -1,5 +1,5 @@
 /*
- * Changes copyright (c) 2016 Alan Snyder.
+ * Changes copyright (c) 2016-2017 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -176,5 +176,10 @@ public class Java8Support implements JavaSupport.JavaSupportImpl {
     public void unlockRenderQueue() {
         OGLRenderQueue rq = OGLRenderQueue.getInstance();
         rq.unlock();
+    }
+
+    @Override
+    public AquaPopupFactory createPopupFactory() {
+        return new Aqua8PopupFactory();
     }
 }

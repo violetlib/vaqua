@@ -1,5 +1,5 @@
 /*
- * Changes copyright (c) 2016 Alan Snyder.
+ * Changes copyright (c) 2016-2017 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -122,5 +122,10 @@ public class Java9Support implements JavaSupport.JavaSupportImpl {
     @Override
     public void unlockRenderQueue() {
         // TBD
+    }
+
+    @Override
+    public AquaPopupFactory createPopupFactory() {
+        return new Aqua9PopupFactory();
     }
 }

@@ -2,7 +2,7 @@
  * @(#)AquaNativeSupport.m
  *
  * Copyright (c) 2004-2007 Werner Randelshofer, Switzerland.
- * Copyright (c) 2014-2016 Alan Snyder.
+ * Copyright (c) 2014-2017 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this software, except in
@@ -16,7 +16,7 @@
  * @version $Id$
  */
 
-static int VERSION = 2;
+static int VERSION = 3;
 
 #include <stdio.h>
 #include <jni.h>
@@ -2006,6 +2006,20 @@ JNIEXPORT void JNICALL Java_org_violetlib_aqua_AquaUtils_nativeInstallAATextInfo
     JNFCallStaticVoidMethod(env, jm_putAATextInfo, JNI_TRUE, table);
 
     JNF_COCOA_EXIT(env);
+}
+
+/*
+ * Class:     org_violetlib_aqua_AquaUtils
+ * Method:    disablePopupCache
+ * Signature: (Ljavax/swing/Popup;)V
+ */
+JNIEXPORT void JNICALL Java_org_violetlib_aqua_AquaUtils_disablePopupCache
+    (JNIEnv *env, jclass cl, jobject popup)
+{
+    static JNF_CLASS_CACHE(jc_HeavyWeightPopup, "javax/swing/PopupFactory$HeavyWeightPopup");
+    static JNF_MEMBER_CACHE(jm_setCacheEnabled, jc_HeavyWeightPopup, "setCacheEnabled", "(Z)V");
+
+		JNFCallVoidMethod(env, popup, jm_setCacheEnabled, JNI_FALSE);
 }
 
 /*

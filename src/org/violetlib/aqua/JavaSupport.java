@@ -1,5 +1,5 @@
 /*
- * Changes copyright (c) 2016 Alan Snyder.
+ * Changes copyright (c) 2016-2017 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -39,6 +39,7 @@ public class JavaSupport {
         void preload(Image image, int availableInfo);
         void lockRenderQueue();
         void unlockRenderQueue();
+        AquaPopupFactory createPopupFactory();
     }
 
     private final static JavaSupportImpl impl = findImpl();
@@ -111,6 +112,10 @@ public class JavaSupport {
 
     public static void unlockRenderQueue() {
         impl.unlockRenderQueue();
+    }
+
+    public static AquaPopupFactory createPopupFactory() {
+        return impl.createPopupFactory();
     }
 
     private static JavaSupportImpl findImpl() {

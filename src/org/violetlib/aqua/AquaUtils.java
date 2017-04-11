@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2016 Alan Snyder.
+ * Copyright (c) 2015-2017 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -1396,6 +1396,7 @@ final public class AquaUtils {
     private static native int nativeGetLeftSideBearing(JComponent c, FontMetrics fm, char firstChar);
     public static native void nativeInstallAATextInfo(UIDefaults table);
     private static native void nativeSetWindowVisibleField(Window w, boolean isVisible);
+    public static native void disablePopupCache(Popup p);
 
     public static native void debugWindow(Window w);
     public static native void syslog(String msg);
