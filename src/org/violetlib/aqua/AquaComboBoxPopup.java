@@ -1,5 +1,5 @@
 /*
- * Changes Copyright (c) 2015-2016 Alan Snyder.
+ * Changes Copyright (c) 2015-2017 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -40,10 +40,12 @@ import java.awt.event.MouseWheelEvent;
 import java.awt.event.MouseWheelListener;
 import javax.swing.*;
 import javax.swing.border.Border;
+import javax.swing.event.ListDataEvent;
+import javax.swing.event.ListDataListener;
 import javax.swing.plaf.basic.BasicComboPopup;
 
 @SuppressWarnings("serial") // Superclass is not serializable across versions
-class AquaComboBoxPopup extends BasicComboPopup implements AquaExtendedPopup {
+class AquaComboBoxPopup extends BasicComboPopup implements AquaExtendedPopup, ListDataListener {
 
     protected static final String uiClassID = "ComboBoxPopupMenuUI";
     protected static AquaCellEditorPolicy cellEditorPolicy = AquaCellEditorPolicy.getInstance();
@@ -90,7 +92,36 @@ class AquaComboBoxPopup extends BasicComboPopup implements AquaExtendedPopup {
         putClientProperty("apple.awt._windowFadeOut", new Integer(150));
     }
 
-    // There are several different presentations:
+    @Override
+    protected ListDataListener createListDataListener() {
+        return this;
+    }
+
+    @Override
+    public void intervalAdded(ListDataEvent e) {
+        possiblyUpdatePopup();
+    }
+
+    @Override
+    public void intervalRemoved(ListDataEvent e) {
+        possiblyUpdatePopup();
+    }
+
+    @Override
+    public void contentsChanged(ListDataEvent e) {
+    }
+
+    /**
+     * If the number of menu items change, we may need to change the size of the popup menu, and we many need to
+     * install or remove a scroll pane.
+     */
+    private void possiblyUpdatePopup() {
+        Rectangle newBounds = adjustPopupAndGetBounds();
+        list.setSize(newBounds.width, newBounds.height);
+        pack();
+    }
+
+// There are several different presentations:
     //
     // An editable combo box uses a list. The list has a maximum number of displayed rows. If there are more elements,
     // then a scroll bar is used.
