@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2016 Alan Snyder.
+ * Copyright (c) 2015-2017 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -21,6 +21,7 @@ import javax.swing.event.ChangeListener;
 import javax.swing.plaf.FileChooserUI;
 
 import static org.violetlib.aqua.AquaCustomStyledWindow.STYLE_UNIFIED;
+import static org.violetlib.aqua.AquaUtils.execute;
 import static org.violetlib.aqua.AquaUtils.syslog;
 
 /**
@@ -270,7 +271,7 @@ public class AquaSheetSupport {
             System.err.println("Injected failure to display sheet");
             result = -1;
         } else {
-            result = nativeDisplayAsSheet(w);
+            result = (int) execute(w, ptr -> displayAsSheet(ptr, owner));
         }
 
         if (result != 0) {
@@ -285,6 +286,10 @@ public class AquaSheetSupport {
         }
 
         w.setVisible(true); // cause the lightweight components to be painted -- this method blocks on a modal dialog
+    }
+
+    private static long displayAsSheet(long wptr, Window owner) {
+        return execute(owner, owner_wptr -> nativeDisplayAsSheet(wptr, owner_wptr));
     }
 
     /**
@@ -399,5 +404,5 @@ public class AquaSheetSupport {
         }
     }
 
-    private static native int nativeDisplayAsSheet(Window w);
+    private static native int nativeDisplayAsSheet(long wptr, long owner_wptr);
 }
