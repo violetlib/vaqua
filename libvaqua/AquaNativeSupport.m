@@ -140,15 +140,36 @@ void setupLayers(NSView *v)
     }
 }
 
+// Ensure that our wrapper view is installed as the parent of the AWT view.
+
 AquaWrappedAWTView *ensureWrapper(NSWindow *w)
 {
     NSView *contentView = w.contentView;
     if ([contentView isKindOfClass: [AquaWrappedAWTView class]]) {
         return (AquaWrappedAWTView *) contentView;
     }
+
+    float cornerRadius = -1;
+    {
+        CALayer *layer = [contentView layer];
+        if (layer != nil) {
+            cornerRadius = [layer cornerRadius];
+        }
+    }
+
     NSView *view = [contentView retain];
     AquaWrappedAWTView *wrapper = [[AquaWrappedAWTView alloc] initWithFrame: view.frame];
+    wrapper.wantsLayer = YES;
+
     w.contentView = wrapper;
+
+    if (cornerRadius > 0) {
+        CALayer *layer = [wrapper layer];
+        if (layer != nil) {
+            [layer setCornerRadius: cornerRadius];
+        }
+    }
+
     [wrapper installAWTView: view];
     [contentView release];
     return wrapper;
@@ -1510,12 +1531,12 @@ JNIEXPORT jint JNICALL Java_org_violetlib_aqua_AquaUtils_nativeSetTitleBarStyle
                 // The corner radius is not set, so painting happens outside the rounded corners.
                 NSView *topView = getTopView(w);
                 if (topView != nil) {
-                    CALayer *layer = [ topView layer ];
+                    CALayer *layer = [topView layer];
                     if (layer != nil) {
-                        CGFloat radius = [ layer cornerRadius ];
+                        CGFloat radius = [layer cornerRadius];
                         if (radius == 0) {
                             //NSLog(@"Fixing corner radius of %@", layer);
-                            [ layer setCornerRadius: 6 ];
+                            [layer setCornerRadius: 6];
                         }
                     } else {
                         NSLog(@"Unable to fix corner radius: no layer");
@@ -1638,13 +1659,13 @@ JNIEXPORT jint JNICALL Java_org_violetlib_aqua_AquaUtils_nativeSetWindowCornerRa
         NSView *topView = getTopView(w);
         if (topView != nil) {
             topView.wantsLayer = YES;
-            CALayer *layer = [ topView layer ];
+            CALayer *layer = [topView layer];
             if (layer != nil) {
                 if (![w hasShadow]) {
                     NSLog(@"Window %@ has no shadow", w);
                 }
-                [ layer setCornerRadius: radius ];
-                [ w invalidateShadow ];
+                [layer setCornerRadius: radius];
+                [w invalidateShadow];
                 result = 0;
             } else {
                 NSLog(@"Unable to set corner radius: no layer");
@@ -2028,10 +2049,10 @@ JNIEXPORT void JNICALL Java_org_violetlib_aqua_AquaUtils_disablePopupCache
 
 /*
  * Class:     org_violetlib_aqua_AquaUtils
- * Method:    debugWindow
+ * Method:    nativeDebugWindow
  * Signature: (J)V
  */
-JNIEXPORT int JNICALL Java_org_violetlib_aqua_AquaUtils_debugWindow
+JNIEXPORT int JNICALL Java_org_violetlib_aqua_AquaUtils_nativeDebugWindow
     (JNIEnv *env, jclass cl, jlong wptr)
 {
     JNF_COCOA_ENTER(env);

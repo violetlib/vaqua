@@ -1427,6 +1427,10 @@ final public class AquaUtils {
         }
     }
 
+    public static void debugWindow(Window w) {
+        execute(w, AquaUtils::nativeDebugWindow);
+    }
+
     /**
      * Obtain the native window pointer and associated information for a window.
      * @param w The window.
@@ -1450,7 +1454,7 @@ final public class AquaUtils {
     private static native void nativeSetWindowVisibleField(Window w, boolean isVisible);
     public static native void disablePopupCache(Popup p);
 
-    public static native int debugWindow(long w);
+    public static native int nativeDebugWindow(long w);
     public static native void syslog(String msg);
 
     public static class GrayUIResource extends ColorUIResource {
