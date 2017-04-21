@@ -39,7 +39,6 @@ import java.awt.event.ActionListener;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.*;
 import java.lang.ref.SoftReference;
-import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
@@ -47,6 +46,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.StringTokenizer;
 import java.util.WeakHashMap;
+import java.util.concurrent.locks.Lock;
 import java.util.function.Supplier;
 import javax.swing.*;
 import javax.swing.border.Border;
@@ -324,7 +324,8 @@ final public class AquaUtils {
             return fsw == w;
         }
         // It seems that windows made full screen using a title bar button do not get registered as such with Java...
-        return nativeIsFullScreenWindow(w);
+        long result = execute(w, nw -> nativeIsFullScreenWindow(nw) ? 1 : 0);
+        return result != 0;
     }
 
     // The following are copied from SwingUtililties, with modification.
@@ -1181,12 +1182,17 @@ final public class AquaUtils {
      */
     public static void setTitleBarStyle(Window w, int style) {
         ensureWindowPeer(w);
-        int result = nativeSetTitleBarStyle(w, style);
+        execute(w, ptr -> setTitleBarStyle(w, ptr, style));
+    }
+
+    private static long setTitleBarStyle(Window w, long wptr, int style) {
+        int result = nativeSetTitleBarStyle(wptr, style);
         if (result != 0) {
             throw new UnsupportedOperationException("Unable to set window title bar style");
         } else if (style == TITLE_BAR_HIDDEN) {
             setWindowTitle(w, "");
         }
+        return 0;
     }
 
     public static void setWindowTitle(Window w, String title) {
@@ -1199,10 +1205,15 @@ final public class AquaUtils {
 
     public static void addNativeToolbarToWindow(Window w) throws UnsupportedOperationException {
         ensureWindowPeer(w);
-        int result = nativeAddToolbarToWindow(w);
+        execute(w, AquaUtils::addNativeToolbarToWindow);
+    }
+
+    private static long addNativeToolbarToWindow(long wptr) throws UnsupportedOperationException {
+        int result = nativeAddToolbarToWindow(wptr);
         if (result != 0) {
             throw new UnsupportedOperationException("Unable to add native toolbar to window");
         }
+        return 0;
     }
 
     /**
@@ -1370,35 +1381,76 @@ final public class AquaUtils {
     }
 
     public static void setCornerRadius(Window w, float radius) {
-        nativeSetWindowCornerRadius(w, radius);
+        execute(w, ptr -> nativeSetWindowCornerRadius(ptr, radius));
     }
 
     // for debugging
     public static void setAWTViewVisibility(Window w, boolean isVisible) {
-        nativeSetAWTViewVisibility(w, isVisible);
+        execute(w, ptr -> nativeSetAWTViewVisibility(ptr, isVisible));
     }
 
     public static void syncAWTView(Window w) {
         // Both calls appear to be necessary to ensure that the pixels are ready when the window is made visible.
         Toolkit.getDefaultToolkit().sync();
-        nativeSyncAWTView(w);
+        execute (w, AquaUtils::nativeSyncAWTView);
     }
+
+    /**
+     * Perform an action that requires a native pointer.
+     */
+
+    public interface NativeAction {
+        long run(long wptr);
+    }
+
+    /**
+     * Perform an action that requires the native NSWindow pointer for a window.
+     */
+
+    public static long execute(Window w, NativeAction action) {
+        Object[] data = new Object[1];
+        long ptr = nativeGetNativeWindow(w, data);
+        if (ptr == 0) {
+            throw new UnsupportedOperationException("Unable to get NSWindow for window " + w.getName());
+        } else {
+            Lock lock = (Lock) data[0];
+            if (lock != null) {
+                lock.lock();
+                try {
+                    return action.run(ptr);
+                } finally {
+                    lock.unlock();
+                }
+            } else {
+                return action.run(ptr);
+            }
+        }
+    }
+
+    /**
+     * Obtain the native window pointer and associated information for a window.
+     * @param w The window.
+     * @param data The ReadWriteLock used to control access to the native window pointer is stored in the first element
+     *               (null if not available).
+     * @return the native window pointer, or zero if not available.
+     */
+    public static native long nativeGetNativeWindow(Window w, Object[] data);
 
     private static native void nativeSetTitledWindowStyle(Window w, boolean isDecorated, int height, Insets insets);
     private static native void nativeSetWindowTextured(Window w, boolean isTextured);
     private static native void nativeSetWindowBackground(Window w, Color color);
-    private static native boolean nativeIsFullScreenWindow(Window w);
-    private static native int nativeSetTitleBarStyle(Window w, int style);
-    private static native int nativeAddToolbarToWindow(Window w);
-    private static native int nativeSetWindowCornerRadius(Window w, float radius);
-    private static native void nativeSetAWTViewVisibility(Window w, boolean isVisible);
-    private static native void nativeSyncAWTView(Window w);
+    private static native boolean nativeIsFullScreenWindow(long w);
+    private static native int nativeSetTitleBarStyle(long w, int style);
+    private static native int nativeAddToolbarToWindow(long w);
+    private static native int nativeSetWindowCornerRadius(long w, float radius);
+    private static native int nativeSetAWTViewVisibility(long w, boolean isVisible);
+    private static native int nativeSyncAWTView(long w);
     private static native int nativeGetLeftSideBearing(JComponent c, FontMetrics fm, char firstChar);
     public static native void nativeInstallAATextInfo(UIDefaults table);
     private static native void nativeSetWindowVisibleField(Window w, boolean isVisible);
     public static native void disablePopupCache(Popup p);
 
-    public static native void debugWindow(Window w);
+    public static native int debugWindow(long w);
     public static native void syslog(String msg);
 
     public static class GrayUIResource extends ColorUIResource {
