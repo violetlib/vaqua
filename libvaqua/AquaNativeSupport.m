@@ -1387,7 +1387,7 @@ JNIEXPORT jboolean JNICALL Java_org_violetlib_aqua_AquaUtils_nativeIsFullScreenW
     NSWindow *nw = getNativeWindow(env, window);
     if (nw != nil) {
         NSUInteger mask = [nw styleMask];
-        if (mask & NSFullScreenWindowMask) {
+        if (mask & NSWindowStyleMaskFullScreen) {
             result = 1;
         }
     }
@@ -1437,7 +1437,7 @@ JNIEXPORT jint JNICALL Java_org_violetlib_aqua_AquaUtils_nativeSetTitleBarStyle
 
             NSUInteger originalStyleMask = nw.styleMask;
             NSUInteger styleMask = originalStyleMask;
-            BOOL isTextured = (styleMask & NSTexturedBackgroundWindowMask) != 0;
+            BOOL isTextured = (styleMask & NSWindowStyleMaskTexturedBackground) != 0;
             BOOL isMovable = true;
             BOOL isMovableByBackground = isTextured;
             BOOL isTransparent = NO;
@@ -1446,21 +1446,21 @@ JNIEXPORT jint JNICALL Java_org_violetlib_aqua_AquaUtils_nativeSetTitleBarStyle
 
             switch (style) {
                 case TITLEBAR_NONE:
-                    styleMask &= ~(NSTitledWindowMask | NSFullSizeContentViewWindowMask);
+                    styleMask &= ~(NSWindowStyleMaskTitled | NSWindowStyleMaskFullSizeContentView);
                     break;
                 case TITLEBAR_ORDINARY:
                 default:
-                    styleMask |= NSTitledWindowMask;
-                    styleMask &= ~NSFullSizeContentViewWindowMask;
+                    styleMask |= NSWindowStyleMaskTitled;
+                    styleMask &= ~NSWindowStyleMaskFullSizeContentView;
                     break;
                 case TITLEBAR_TRANSPARENT:
-                    styleMask |= (NSTitledWindowMask | NSFullSizeContentViewWindowMask);
+                    styleMask |= (NSWindowStyleMaskTitled | NSWindowStyleMaskFullSizeContentView);
                     isTransparent = YES;
                     isMovableByBackground = NO;
                     isFixNeeded = YES;
                     break;
                 case TITLEBAR_HIDDEN:
-                    styleMask |= (NSTitledWindowMask | NSFullSizeContentViewWindowMask);
+                    styleMask |= (NSWindowStyleMaskTitled | NSWindowStyleMaskFullSizeContentView);
                     isTransparent = YES;
                     isHidden = YES;
                     isMovable = !isElCapitan;
@@ -1468,7 +1468,7 @@ JNIEXPORT jint JNICALL Java_org_violetlib_aqua_AquaUtils_nativeSetTitleBarStyle
                     isFixNeeded = YES;
                     break;
                 case TITLEBAR_OVERLAY:
-                    styleMask |= (NSTitledWindowMask | NSFullSizeContentViewWindowMask);
+                    styleMask |= (NSWindowStyleMaskTitled | NSWindowStyleMaskFullSizeContentView);
                     isFixNeeded = YES;
                     break;
                 }
