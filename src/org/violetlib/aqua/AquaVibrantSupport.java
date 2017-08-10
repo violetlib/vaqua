@@ -254,11 +254,13 @@ public class AquaVibrantSupport {
         @Override
         public void dispose() {
             if (nativeNSViewPointer != 0) {
-                int rc = disposeVisualEffectView(nativeNSViewPointer);
-                nativeNSViewPointer = 0;
-                if (rc != 0) {
-                    System.err.println("disposeVisualEffectView failed");
+                if (w.isDisplayable()) {
+                    int rc = disposeVisualEffectView(nativeNSViewPointer);
+                    if (rc != 0) {
+                        System.err.println("disposeVisualEffectView failed");
+                    }
                 }
+                nativeNSViewPointer = 0;
                 AquaUtils.setWindowBackgroundClear(w, false); // restore Java window background
             }
         }
