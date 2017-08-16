@@ -41,12 +41,9 @@ import javax.swing.*;
 import javax.swing.event.AncestorEvent;
 import javax.swing.event.AncestorListener;
 import javax.swing.plaf.ComponentUI;
+import javax.swing.plaf.MenuBarUI;
 import javax.swing.plaf.UIResource;
 import javax.swing.plaf.basic.BasicRootPaneUI;
-
-// I have commented out the code that refers to AquaMenuBarUI, as that class at present cannot be cloned without losing
-// support for the screen menu bar. The commented out code appears to handle the case where the application installs
-// its own layered pane.
 
 public class AquaRootPaneUI extends BasicRootPaneUI implements AncestorListener, WindowListener, ContainerListener {
 
@@ -57,7 +54,7 @@ public class AquaRootPaneUI extends BasicRootPaneUI implements AncestorListener,
     //final static int kDefaultButtonPaintDelayBetweenFrames = 50;
 //    JButton fCurrentDefaultButton = null;
 //    Timer fTimer = null;
-    //static final boolean sUseScreenMenuBar = AquaMenuBarUI.getScreenMenuBarProperty();
+    static final boolean sUseScreenMenuBar = AquaUtils.getScreenMenuBarProperty();
 
     public static ComponentUI createUI(final JComponent c) {
         return new AquaRootPaneUI();
@@ -131,13 +128,13 @@ public class AquaRootPaneUI extends BasicRootPaneUI implements AncestorListener,
             }
         }
 
-//        // for <rdar://problem/3750909> OutOfMemoryError swapping menus.
-//        // Listen for layered pane/JMenuBar updates if the screen menu bar is active.
-//        if (sUseScreenMenuBar) {
-//            final JRootPane root = (JRootPane)c;
-//            root.addContainerListener(this);
-//            root.getLayeredPane().addContainerListener(this);
-//        }
+        // for <rdar://problem/3750909> OutOfMemoryError swapping menus.
+        // Listen for layered pane/JMenuBar updates if the screen menu bar is active.
+        if (sUseScreenMenuBar) {
+            final JRootPane root = (JRootPane)c;
+            root.addContainerListener(this);
+            root.getLayeredPane().addContainerListener(this);
+        }
     }
 
     public void uninstallUI(final JComponent c) {
@@ -147,11 +144,11 @@ public class AquaRootPaneUI extends BasicRootPaneUI implements AncestorListener,
         uninstallCustomWindowStyle();
         removeVisualEffectView();
 
-//        if (sUseScreenMenuBar) {
-//            final JRootPane root = (JRootPane)c;
-//            root.removeContainerListener(this);
-//            root.getLayeredPane().removeContainerListener(this);
-//        }
+        if (sUseScreenMenuBar) {
+            final JRootPane root = (JRootPane)c;
+            root.removeContainerListener(this);
+            root.getLayeredPane().removeContainerListener(this);
+        }
 
         isInitialized = false;
 
@@ -190,20 +187,21 @@ public class AquaRootPaneUI extends BasicRootPaneUI implements AncestorListener,
                 final JLayeredPane layered = root.getLayeredPane();
                 layered.addContainerListener(this);
             }
-//        } else {
-//            if (e.getChild() instanceof JMenuBar) {
-//                final JMenuBar jmb = (JMenuBar)e.getChild();
-//                final MenuBarUI mbui = jmb.getUI();
-//
-//                if (mbui instanceof AquaMenuBarUI) {
-//                    final Window owningWindow = SwingUtilities.getWindowAncestor(jmb);
-//
-//                    // Could be a JDialog, and may have been added to a JRootPane not yet in a window.
-//                    if (owningWindow != null && owningWindow instanceof JFrame) {
-//                        ((AquaMenuBarUI)mbui).setScreenMenuBar((JFrame)owningWindow);
-//                    }
-//                }
-//            }
+        } else {
+            if (e.getChild() instanceof JMenuBar) {
+                final JMenuBar jmb = (JMenuBar)e.getChild();
+                final MenuBarUI mbui = jmb.getUI();
+
+                if (mbui.getClass().getName().equals("com.apple.laf.AquaMenuBarUI")) {
+                    final Window owningWindow = SwingUtilities.getWindowAncestor(jmb);
+
+                    // Could be a JDialog, and may have been added to a JRootPane not yet in a window.
+                    if (owningWindow instanceof JFrame) {
+                        JFrame fr = (JFrame)owningWindow;
+                        AquaUtils.setScreenMenuBar(fr, mbui);
+                    }
+                }
+            }
         }
     }
 
@@ -218,20 +216,21 @@ public class AquaRootPaneUI extends BasicRootPaneUI implements AncestorListener,
                 final JLayeredPane layered = root.getLayeredPane();
                 layered.removeContainerListener(this);
             }
-//        } else {
-//            if (e.getChild() instanceof JMenuBar) {
-//                final JMenuBar jmb = (JMenuBar)e.getChild();
-//                final MenuBarUI mbui = jmb.getUI();
-//
-//                if (mbui instanceof AquaMenuBarUI) {
-//                    final Window owningWindow = SwingUtilities.getWindowAncestor(jmb);
-//
-//                    // Could be a JDialog, and may have been added to a JRootPane not yet in a window.
-//                    if (owningWindow != null && owningWindow instanceof JFrame) {
-//                        ((AquaMenuBarUI)mbui).clearScreenMenuBar((JFrame)owningWindow);
-//                    }
-//                }
-//            }
+        } else {
+            if (e.getChild() instanceof JMenuBar) {
+                final JMenuBar jmb = (JMenuBar)e.getChild();
+                final MenuBarUI mbui = jmb.getUI();
+
+                if (mbui.getClass().getName().equals("com.apple.laf.AquaMenuBarUI")) {
+                    final Window owningWindow = SwingUtilities.getWindowAncestor(jmb);
+
+                    // Could be a JDialog, and may have been added to a JRootPane not yet in a window.
+                    if (owningWindow instanceof JFrame) {
+                        JFrame fr = (JFrame)owningWindow;
+                        AquaUtils.clearScreenMenuBar(fr, mbui);
+                    }
+                }
+            }
         }
     }
 

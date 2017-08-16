@@ -51,6 +51,7 @@ import java.util.function.Supplier;
 import javax.swing.*;
 import javax.swing.border.Border;
 import javax.swing.plaf.ColorUIResource;
+import javax.swing.plaf.MenuBarUI;
 import javax.swing.plaf.UIResource;
 import javax.swing.text.View;
 
@@ -1457,6 +1458,9 @@ final public class AquaUtils {
     public static native void nativeInstallAATextInfo(UIDefaults table);
     private static native void nativeSetWindowVisibleField(Window w, boolean isVisible);
     public static native void disablePopupCache(Popup p);
+    public static native boolean getScreenMenuBarProperty();
+    public static native void setScreenMenuBar(JFrame frame, MenuBarUI menuBarUI);
+    public static native void clearScreenMenuBar(JFrame frame, MenuBarUI menuBarUI);
 
     public static native int nativeDebugWindow(long w);
     public static native void syslog(String msg);

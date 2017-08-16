@@ -1546,7 +1546,7 @@ JNIEXPORT jint JNICALL Java_org_violetlib_aqua_AquaUtils_nativeSetTitleBarStyle
                 }
             }
 
-            if (((originalStyleMask ^ styleMask) & NSFullSizeContentViewWindowMask) != 0) {
+            if (((originalStyleMask ^ styleMask) & NSWindowStyleMaskFullSizeContentView) != 0) {
                 // The full size content view option has changed.
                 // We need to get Java to recompute the window insets.
                 // This should do it...
@@ -2044,7 +2044,49 @@ JNIEXPORT void JNICALL Java_org_violetlib_aqua_AquaUtils_disablePopupCache
     static JNF_CLASS_CACHE(jc_HeavyWeightPopup, "javax/swing/PopupFactory$HeavyWeightPopup");
     static JNF_MEMBER_CACHE(jm_setCacheEnabled, jc_HeavyWeightPopup, "setCacheEnabled", "(Z)V");
 
-		JNFCallVoidMethod(env, popup, jm_setCacheEnabled, JNI_FALSE);
+	JNFCallVoidMethod(env, popup, jm_setCacheEnabled, JNI_FALSE);
+}
+
+/*
+ * Class:     org_violetlib_aqua_AquaUtils
+ * Method:    getScreenMenuBarProperty
+ * Signature: ()Z
+ */
+JNIEXPORT jboolean JNICALL Java_org_violetlib_aqua_AquaUtils_getScreenMenuBarProperty
+  (JNIEnv *env, jclass cl)
+{
+    static JNF_CLASS_CACHE(jc_AquaMenuBarUI, "com/apple/laf/AquaMenuBarUI");
+    static JNF_STATIC_MEMBER_CACHE(jm_getScreenMenuBarProperty, jc_AquaMenuBarUI, "getScreenMenuBarProperty", "()Z");
+
+	return JNFCallStaticBooleanMethod(env, jm_getScreenMenuBarProperty);
+}
+
+/*
+ * Class:     org_violetlib_aqua_AquaUtils
+ * Method:    setScreenMenuBar
+ * Signature: (Ljavax/swing/JFrame;Ljavax/swing/plaf/MenuBarUI;)V
+ */
+JNIEXPORT void JNICALL Java_org_violetlib_aqua_AquaUtils_setScreenMenuBar
+  (JNIEnv *env, jclass cl, jobject frame, jobject menuBarUI)
+{
+    static JNF_CLASS_CACHE(jc_AquaMenuBarUI, "com/apple/laf/AquaMenuBarUI");
+    static JNF_MEMBER_CACHE(jm_setScreenMenuBar, jc_AquaMenuBarUI, "setScreenMenuBar", "(Ljavax/swing/JFrame;)Z");
+
+	JNFCallBooleanMethod(env, menuBarUI, jm_setScreenMenuBar, frame);
+}
+
+/*
+ * Class:     org_violetlib_aqua_AquaUtils
+ * Method:    clearScreenMenuBar
+ * Signature: (Ljavax/swing/JFrame;Ljavax/swing/plaf/MenuBarUI;)V
+ */
+JNIEXPORT void JNICALL Java_org_violetlib_aqua_AquaUtils_clearScreenMenuBar
+  (JNIEnv *env, jclass cl, jobject frame, jobject menuBarUI)
+{
+    static JNF_CLASS_CACHE(jc_AquaMenuBarUI, "com/apple/laf/AquaMenuBarUI");
+    static JNF_MEMBER_CACHE(jm_clearScreenMenuBar, jc_AquaMenuBarUI, "clearScreenMenuBar", "(Ljavax/swing/JFrame;)V");
+
+	JNFCallVoidMethod(env, menuBarUI, jm_clearScreenMenuBar, frame);
 }
 
 /*
