@@ -45,9 +45,9 @@ public class JavaSupport {
     private final static JavaSupportImpl impl = findImpl();
 
     public static int getScaleFactor(Graphics g)
-   	{
-   		return impl.getScaleFactor(g);
-   	}
+    {
+        return impl.getScaleFactor(g);
+    }
 
     public static Image getDockIconImage() {
         return impl.getDockIconImage();

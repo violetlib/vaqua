@@ -22,16 +22,16 @@ import javax.swing.plaf.basic.BasicGraphicsUtils;
 
 public class Java9Support implements JavaSupport.JavaSupportImpl {
     @Override
-   	public int getScaleFactor(Graphics g)
-   	{
-   		// This works in Java 9. Before that, it returned 1.
-   		Graphics2D gg = (Graphics2D) g;
-   		GraphicsConfiguration gc = gg.getDeviceConfiguration();
-   		AffineTransform t = gc.getDefaultTransform();
-   		double sx = t.getScaleX();
-   		double sy = t.getScaleY();
-   		return (int) Math.max(sx, sy);
-   	}
+    public int getScaleFactor(Graphics g)
+    {
+        // This works in Java 9. Before that, it returned 1.
+        Graphics2D gg = (Graphics2D) g;
+        GraphicsConfiguration gc = gg.getDeviceConfiguration();
+        AffineTransform t = gc.getDefaultTransform();
+        double sx = t.getScaleX();
+        double sy = t.getScaleY();
+        return (int) Math.max(sx, sy);
+    }
 
     @Override
     public Image getDockIconImage() {
@@ -93,15 +93,15 @@ public class Java9Support implements JavaSupport.JavaSupportImpl {
     public BufferedImage createImage(int width, int height, int[] data) {
         ColorModel colorModel = new
                 DirectColorModel(
-                             ColorSpace.getInstance(ColorSpace.CS_sRGB),
-                             32,
-                             0x00ff0000,// Red
-                             0x0000ff00,// Green
-                             0x000000ff,// Blue
-                             0xff000000,// Alpha
-                             true,       // Alpha Premultiplied
-                             DataBuffer.TYPE_INT
-                             );
+                ColorSpace.getInstance(ColorSpace.CS_sRGB),
+                32,
+                0x00ff0000,// Red
+                0x0000ff00,// Green
+                0x000000ff,// Blue
+                0xff000000,// Alpha
+                true,       // Alpha Premultiplied
+                DataBuffer.TYPE_INT
+        );
         WritableRaster raster = colorModel.createCompatibleWritableRaster(width, height);
         raster.setDataElements(0, 0, width, height, data);
         BufferedImage b = new BufferedImage(colorModel, raster, true, null);

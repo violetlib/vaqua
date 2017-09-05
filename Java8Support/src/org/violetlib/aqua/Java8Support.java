@@ -25,50 +25,50 @@ import sun.swing.SwingUtilities2;
 
 public class Java8Support implements JavaSupport.JavaSupportImpl {
     @Override
-   	public int getScaleFactor(Graphics g)
-   	{
-   		// Is it fair to assume that a graphics context always is associated with the same device,
-   		// in other words, they are not reused in some sneaky way?
-   		Integer n = scaleMap.get(g);
-   		if (n != null) {
-   			return n;
-   		}
+    public int getScaleFactor(Graphics g)
+    {
+        // Is it fair to assume that a graphics context always is associated with the same device,
+        // in other words, they are not reused in some sneaky way?
+        Integer n = scaleMap.get(g);
+        if (n != null) {
+            return n;
+        }
 
-   		int scaleFactor;
-   		if (g instanceof Graphics2D) {
-   			Graphics2D gg = (Graphics2D) g;
-   			GraphicsConfiguration gc = gg.getDeviceConfiguration();
-   			scaleFactor = getScaleFactor(gc);
-   		} else {
-   			scaleFactor = 1;
-   		}
+        int scaleFactor;
+        if (g instanceof Graphics2D) {
+            Graphics2D gg = (Graphics2D) g;
+            GraphicsConfiguration gc = gg.getDeviceConfiguration();
+            scaleFactor = getScaleFactor(gc);
+        } else {
+            scaleFactor = 1;
+        }
 
-   		scaleMap.put(g, scaleFactor);
+        scaleMap.put(g, scaleFactor);
 
-   		return scaleFactor;
-   	}
+        return scaleFactor;
+    }
 
-   	private static final WeakHashMap<Graphics,Integer> scaleMap = new WeakHashMap<>();
+    private static final WeakHashMap<Graphics,Integer> scaleMap = new WeakHashMap<>();
 
-   	private static int getScaleFactor(GraphicsConfiguration gc)
-   	{
-   		GraphicsDevice device = gc.getDevice();
-   		Object scale = null;
+    private static int getScaleFactor(GraphicsConfiguration gc)
+    {
+        GraphicsDevice device = gc.getDevice();
+        Object scale = null;
 
-   		try {
-   			Field field = device.getClass().getDeclaredField("scale");
-   			if (field != null) {
-   				field.setAccessible(true);
-   				scale = field.get(device);
-   			}
-   		} catch (Exception ignore) {}
+        try {
+            Field field = device.getClass().getDeclaredField("scale");
+            if (field != null) {
+                field.setAccessible(true);
+                scale = field.get(device);
+            }
+        } catch (Exception ignore) {}
 
-   		if (scale instanceof Integer) {
-   			return (Integer) scale;
-   		}
+        if (scale instanceof Integer) {
+            return (Integer) scale;
+        }
 
-   		return 1;
-   	}
+        return 1;
+    }
 
     @Override
     public Image getDockIconImage() {

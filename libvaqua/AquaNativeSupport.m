@@ -2044,7 +2044,7 @@ JNIEXPORT void JNICALL Java_org_violetlib_aqua_AquaUtils_disablePopupCache
     static JNF_CLASS_CACHE(jc_HeavyWeightPopup, "javax/swing/PopupFactory$HeavyWeightPopup");
     static JNF_MEMBER_CACHE(jm_setCacheEnabled, jc_HeavyWeightPopup, "setCacheEnabled", "(Z)V");
 
-	JNFCallVoidMethod(env, popup, jm_setCacheEnabled, JNI_FALSE);
+    JNFCallVoidMethod(env, popup, jm_setCacheEnabled, JNI_FALSE);
 }
 
 /*
@@ -2058,7 +2058,7 @@ JNIEXPORT jboolean JNICALL Java_org_violetlib_aqua_AquaUtils_getScreenMenuBarPro
     static JNF_CLASS_CACHE(jc_AquaMenuBarUI, "com/apple/laf/AquaMenuBarUI");
     static JNF_STATIC_MEMBER_CACHE(jm_getScreenMenuBarProperty, jc_AquaMenuBarUI, "getScreenMenuBarProperty", "()Z");
 
-	return JNFCallStaticBooleanMethod(env, jm_getScreenMenuBarProperty);
+    return JNFCallStaticBooleanMethod(env, jm_getScreenMenuBarProperty);
 }
 
 /*
@@ -2072,7 +2072,7 @@ JNIEXPORT void JNICALL Java_org_violetlib_aqua_AquaUtils_setScreenMenuBar
     static JNF_CLASS_CACHE(jc_AquaMenuBarUI, "com/apple/laf/AquaMenuBarUI");
     static JNF_MEMBER_CACHE(jm_setScreenMenuBar, jc_AquaMenuBarUI, "setScreenMenuBar", "(Ljavax/swing/JFrame;)Z");
 
-	JNFCallBooleanMethod(env, menuBarUI, jm_setScreenMenuBar, frame);
+    JNFCallBooleanMethod(env, menuBarUI, jm_setScreenMenuBar, frame);
 }
 
 /*
@@ -2086,7 +2086,7 @@ JNIEXPORT void JNICALL Java_org_violetlib_aqua_AquaUtils_clearScreenMenuBar
     static JNF_CLASS_CACHE(jc_AquaMenuBarUI, "com/apple/laf/AquaMenuBarUI");
     static JNF_MEMBER_CACHE(jm_clearScreenMenuBar, jc_AquaMenuBarUI, "clearScreenMenuBar", "(Ljavax/swing/JFrame;)V");
 
-	JNFCallVoidMethod(env, menuBarUI, jm_clearScreenMenuBar, frame);
+    JNFCallVoidMethod(env, menuBarUI, jm_clearScreenMenuBar, frame);
 }
 
 /*
