@@ -41,7 +41,7 @@
 
     <property name="renderingLibraryJAR" value="${base}/lib/VAquaRendering.jar"/>
 
-    <property name="SDKversion" value="10.12"/>
+    <property name="SDKversion" value="10.13"/>
     <property name="SDKroot" value="/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX${SDKversion}.sdk" />
     <property name="libpath" value="${base}/lib/IdeaAnnotations.jar"/>
     <property name="cc" value="/usr/bin/cc"/>
@@ -51,7 +51,7 @@
     <target name="init">
         <echo level="info" message="${fullReleaseName}"/>
     </target>
-        
+
     <target name="clean" description="Remove build directories">
         <delete includeEmptyDirs="true" failonerror="false"><fileset dir="${builddir}"/></delete>
     </target>
@@ -143,7 +143,7 @@
 
     <target name="compile-VAqua-Java" depends="compile8, compile9, missing9">
     </target>
-    
+
     <target name="compile-VAqua-JNI" depends="compile8">
         <mkdir dir="${jnidir}"/>
 

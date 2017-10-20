@@ -19,7 +19,7 @@
 static int VERSION = 3;
 
 #include <stdio.h>
-#include <jni.h>
+#include "JNI.h"
 #include "org_violetlib_aqua_fc_OSXFile.h"
 #include "org_violetlib_aqua_OSXSystemProperties.h"
 #include "org_violetlib_aqua_AquaNativeSupport.h"
