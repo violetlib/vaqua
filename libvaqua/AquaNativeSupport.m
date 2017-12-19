@@ -19,7 +19,7 @@
 static int VERSION = 3;
 
 #include <stdio.h>
-#include "JNI.h"
+#include "jni.h"
 #include "org_violetlib_aqua_fc_OSXFile.h"
 #include "org_violetlib_aqua_OSXSystemProperties.h"
 #include "org_violetlib_aqua_AquaNativeSupport.h"
@@ -1106,6 +1106,7 @@ JNIEXPORT jobjectArray JNICALL Java_org_violetlib_aqua_fc_OSXFile_nativeGetSideb
 
 static NSColorPanel *colorPanel;
 static jobject colorPanelCallback;
+static jboolean colorPanelBeingConfigured;
 
 @interface MyColorPanelDelegate : NSObject <NSWindowDelegate> {}
 - (void) colorChanged: (id) sender;
@@ -1147,6 +1148,10 @@ static jobject colorPanelCallback;
 
 - (void) colorChanged: (id) sender
 {
+		if (colorPanelBeingConfigured) {
+			return;
+		}
+
     NSColor *color = [colorPanel color];
 
     JNIEnv *env;
@@ -1199,17 +1204,6 @@ static jboolean setupColorPanel()
     return YES;
 }
 
-static void setColorPanelVisible(jboolean isShow)
-{
-    if (colorPanel) {
-        if (isShow) {
-            [colorPanel makeKeyAndOrderFront: nil];
-        } else {
-            [colorPanel close];
-        }
-    }
-}
-
 /*
  * Class:     org_violetlib_aqua_AquaNativeColorChooser
  * Method:    display
@@ -1243,13 +1237,27 @@ JNIEXPORT jboolean JNICALL Java_org_violetlib_aqua_AquaNativeColorChooser_create
     return result;
 }
 
-static void showHideColorChooser(JNIEnv *env, jboolean isShow)
+/*
+ * Class:     org_violetlib_aqua_AquaNativeColorChooser
+ * Method:    show
+ * Signature: (FFFFZ)V
+ */
+JNIEXPORT void JNICALL Java_org_violetlib_aqua_AquaNativeColorChooser_show
+    (JNIEnv *env, jclass cl, jfloat red, jfloat green, jfloat blue, jfloat alpha, jboolean wantAlpha)
 {
-    if (colorPanel) {
+		if (colorPanel) {
         JNF_COCOA_ENTER(env);
 
         void (^block)() = ^(){
-            setColorPanelVisible(isShow);
+        		colorPanelBeingConfigured = YES;
+						NSColor *color = [NSColor colorWithSRGBRed:(CGFloat)red
+                                                 green:(CGFloat)green 
+                                                  blue:(CGFloat)blue 
+                                                 alpha:(CGFloat)alpha];
+            colorPanel.showsAlpha = wantAlpha;
+            colorPanel.color = color;
+            [colorPanel makeKeyAndOrderFront: nil];
+            colorPanelBeingConfigured = NO;
         };
 
         if ([NSThread isMainThread]) {
@@ -1264,24 +1272,27 @@ static void showHideColorChooser(JNIEnv *env, jboolean isShow)
 
 /*
  * Class:     org_violetlib_aqua_AquaNativeColorChooser
- * Method:    show
- * Signature: ()V
- */
-JNIEXPORT void JNICALL Java_org_violetlib_aqua_AquaNativeColorChooser_show
-    (JNIEnv *env, jclass cl)
-{
-    showHideColorChooser(env, YES);
-}
-
-/*
- * Class:     org_violetlib_aqua_AquaNativeColorChooser
  * Method:    hide
  * Signature: ()V
  */
 JNIEXPORT void JNICALL Java_org_violetlib_aqua_AquaNativeColorChooser_hide
     (JNIEnv *env, jclass cl)
 {
-    showHideColorChooser(env, NO);
+		if (colorPanel) {
+        JNF_COCOA_ENTER(env);
+
+        void (^block)() = ^(){
+            [colorPanel close];
+        };
+
+        if ([NSThread isMainThread]) {
+            block();
+        } else {
+            [JNFRunLoop performOnMainThreadWaiting:YES withBlock:block];
+        }
+
+        JNF_COCOA_EXIT(env);
+    }
 }
 
 static jobject getWindowPeer(JNIEnv *env, jobject w)

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015 Alan Snyder.
+ * Copyright (c) 2015-2017 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -21,7 +21,7 @@ public class AquaNativeColorChooser {
 
     private static SharedColorChooserOwner myOwner;
 
-    public static boolean display(SharedColorChooserOwner owner) {
+    public static boolean display(SharedColorChooserOwner owner, Color initialColor, boolean enableTranslucentColors) {
         if (!isInitialized) {
             isInitialized = true;
 
@@ -51,7 +51,9 @@ public class AquaNativeColorChooser {
 
         if (isCreated) {
             currentOwner = owner;
-            show();
+            float[] cs = initialColor.getRGBComponents(null);
+            float alpha = enableTranslucentColors ? cs[3] : 0;
+            show(cs[0], cs[1], cs[2], alpha, enableTranslucentColors);
             return true;
         }
 
@@ -64,6 +66,6 @@ public class AquaNativeColorChooser {
     }
 
     private static native boolean create(SharedColorChooserOwner owner);
-    private static native void show();
+    private static native void show(float r, float g, float b, float a, boolean isAlpha);
     private static native void hide();
 }

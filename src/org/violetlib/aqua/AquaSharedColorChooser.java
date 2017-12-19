@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015 Alan Snyder.
+ * Copyright (c) 2015-2017 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -12,6 +12,7 @@ import javax.swing.*;
 import javax.swing.colorchooser.ColorSelectionModel;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
+import java.awt.*;
 import java.awt.event.*;
 
 /**
@@ -31,9 +32,9 @@ public class AquaSharedColorChooser {
      *          owner. Otherwise, the owner should disconnect from the chooser when the connection is no longer desired.
      * @return true if successful, false otherwise.
      */
-    public static boolean connect(SharedColorChooserOwner o) {
+    public static boolean connect(SharedColorChooserOwner o, Color initialColor, boolean enableTranslucentColors) {
         AquaSharedColorChooser c = getInstance();
-        return c.connectToOwner(o);
+        return c.connectToOwner(o, initialColor, enableTranslucentColors);
     }
 
     /**
@@ -74,7 +75,7 @@ public class AquaSharedColorChooser {
      *          owner. Otherwise, the owner should disconnect from the chooser when the connection is no longer desired.
      * @return true if successful, false otherwise.
      */
-    public boolean connectToOwner(SharedColorChooserOwner o) {
+    public boolean connectToOwner(SharedColorChooserOwner o, Color initialColor, boolean enableTranslucentColors) {
         if (currentOwner == o) {
             return true;
         }
@@ -89,48 +90,44 @@ public class AquaSharedColorChooser {
 
             isInitialized = true;
 
-            if (useNativeChooser) {
-                if (AquaNativeColorChooser.display(o)) {
-                    currentOwner = o;
-                    return true;
-                }
+            if (!useNativeChooser) {
+
+                windowListener = new WindowAdapter() {
+                    @Override
+                    public void windowClosed(WindowEvent e) {
+                        dismiss();
+                    }
+
+                    @Override
+                    public void windowIconified(WindowEvent e) {
+                        dismiss();
+                    }
+                };
+
+                componentListener = new ComponentAdapter() {
+                    @Override
+                    public void componentHidden(ComponentEvent e) {
+                        super.componentHidden(e);
+                        dismiss();
+                    }
+                };
+
+                changeListener = new ChangeListener() {
+                    @Override
+                    public void stateChanged(ChangeEvent e) {
+                        apply();
+                    }
+                };
+
+                sharedChooser = new JColorChooser();
+
+                ColorSelectionModel model = sharedChooser.getSelectionModel();
+                model.addChangeListener(changeListener);
+
+                sharedDialog = new AquaColorChooserDialog((JFrame) null, "", false, null, sharedChooser);
+                sharedDialog.addWindowListener(windowListener);
+                sharedDialog.addComponentListener(componentListener);
             }
-
-            windowListener = new WindowAdapter() {
-                @Override
-                public void windowClosed(WindowEvent e) {
-                    dismiss();
-                }
-
-                @Override
-                public void windowIconified(WindowEvent e) {
-                    dismiss();
-                }
-            };
-
-            componentListener = new ComponentAdapter() {
-                @Override
-                public void componentHidden(ComponentEvent e) {
-                    super.componentHidden(e);
-                    dismiss();
-                }
-            };
-
-            changeListener = new ChangeListener() {
-                @Override
-                public void stateChanged(ChangeEvent e) {
-                    apply();
-                }
-            };
-
-            sharedChooser = new JColorChooser();
-
-            ColorSelectionModel model = sharedChooser.getSelectionModel();
-            model.addChangeListener(changeListener);
-
-            sharedDialog = new AquaColorChooserDialog((JFrame) null, "", false, null, sharedChooser);
-            sharedDialog.addWindowListener(windowListener);
-            sharedDialog.addComponentListener(componentListener);
         }
 
         currentOwner = o;
@@ -140,7 +137,7 @@ public class AquaSharedColorChooser {
             return true;
         }
 
-        return AquaNativeColorChooser.display(o);
+        return AquaNativeColorChooser.display(o, initialColor, enableTranslucentColors);
     }
 
     /**
