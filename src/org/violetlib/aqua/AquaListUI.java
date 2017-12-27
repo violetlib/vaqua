@@ -1,5 +1,5 @@
 /*
- * Changes Copyright (c) 2015 Alan Snyder.
+ * Changes Copyright (c) 2015-2017 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -165,8 +165,8 @@ public class AquaListUI extends BasicListUI {
 
         AquaFocusHandler.swapSelectionColors("List", list, AquaFocusHandler.hasFocus(list));
 
-        java.util.List cells = list.getSelectedValuesList();
-        if (cells.size() > 1) {
+        ListSelectionModel sm = list.getSelectionModel();
+        if (!sm.isSelectionEmpty()) {
             list.repaint();
             return;
         }
