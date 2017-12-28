@@ -160,6 +160,11 @@ public class AquaButtonUI extends BasicButtonUI implements AquaUtilControlSize.S
 
         updateTemplateIconStatus(b);
 
+        AquaUIPainter.ButtonWidget widget = getButtonWidget(b);
+        if (widget != AquaUIPainter.ButtonWidget.BUTTON_COLOR_WELL) {
+            disconnectColorChooser(b);
+        }
+
         b.setRequestFocusEnabled(false);
 
         b.revalidate();
@@ -357,6 +362,7 @@ public class AquaButtonUI extends BasicButtonUI implements AquaUtilControlSize.S
 
     // Uninstall PLAF
     public void uninstallUI(final JComponent c) {
+        disconnectColorChooser((AbstractButton)c);
         uninstallKeyboardActions((AbstractButton)c);
         uninstallListeners((AbstractButton)c);
         uninstallDefaults((AbstractButton)c);
@@ -928,6 +934,12 @@ public class AquaButtonUI extends BasicButtonUI implements AquaUtilControlSize.S
                     configure(b);
                 }
             }
+
+            if ("ancestor".equals(propertyName)) {
+                if (!b.isDisplayable()) {
+                    disconnectColorChooser(b);
+                }
+            }
         }
 
         public void ancestorMoved(final AncestorEvent e) {}
@@ -969,6 +981,16 @@ public class AquaButtonUI extends BasicButtonUI implements AquaUtilControlSize.S
     }
 
     protected void didHandleButtonPress(AbstractButton b, Object data) {
+    }
+
+    protected void disconnectColorChooser(AbstractButton b)
+    {
+        Object o = b.getClientProperty(COLOR_CHOOSER_OWNER_PROPERTY);
+        if (o instanceof SharedColorChooserOwner) {
+            SharedColorChooserOwner owner = (SharedColorChooserOwner) o;
+            AquaSharedColorChooser.disconnect(owner);
+            b.putClientProperty(COLOR_CHOOSER_OWNER_PROPERTY, null);
+        }
     }
 
     protected void toggleColorChooser(AbstractButton b) {
