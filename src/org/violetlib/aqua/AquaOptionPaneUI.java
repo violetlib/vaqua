@@ -359,5 +359,6 @@ public class AquaOptionPaneUI extends BasicOptionPaneUI {
         if (messageFont != null) {
             label.setFont(messageFont);
         }
+        label.setOpaque(false); // to work correctly when the option pane has a vibrant background
     }
 }
