@@ -267,6 +267,12 @@ public class AquaRootPaneUI extends BasicRootPaneUI implements AncestorListener,
         } else if (AQUA_WINDOW_STYLE_KEY.equals(prop) || AQUA_WINDOW_TOP_MARGIN_KEY.equals(prop) || AQUA_WINDOW_BOTTOM_MARGIN_KEY.equals(prop)) {
             uninstallCustomWindowStyle();
             installCustomWindowStyle();
+        } else if ("ancestor".equals(prop)) {
+            Component parent = rootPane.getParent();
+            if (parent instanceof Window) {
+                Window w = (Window) parent;
+                AquaUtils.ensureWindowDelegateInstalled(w);
+            }
         }
     }
 

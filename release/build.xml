@@ -173,10 +173,16 @@
             <arg value="-F/${SDKroot}/System/Library/Frameworks/JavaVM.framework/Versions/A/Frameworks"/>
             <arg value="-framework"/>
             <arg value="JavaNativeFoundation"/>
+            
+            <arg value="-L/Library/Java/JavaVirtualMachines/jdk-9.0.1.jdk/Contents/Home/lib"/>
+            <arg value="-lawt_lwawt"/>
+            <arg value="-losxapp"/>
 
             <arg value="${jnisrc}/AquaNativeSupport.m"/>
             <arg value="${jnisrc}/AquaSidebarBackground.m"/>
             <arg value="${jnisrc}/AquaWrappedAWTView.m"/>
+            <arg value="${jnisrc}/AquaWrappedWindowDelegate.m"/>
+            <arg value="${jnisrc}/CMenuItemCategory.m"/>
         </exec>
 
     </target>

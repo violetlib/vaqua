@@ -37,7 +37,9 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.geom.Rectangle2D;
-import java.awt.image.*;
+import java.awt.image.BufferedImage;
+import java.awt.image.ConvolveOp;
+import java.awt.image.Kernel;
 import java.lang.ref.SoftReference;
 import java.lang.reflect.Method;
 import java.security.AccessController;
@@ -61,7 +63,6 @@ import org.violetlib.jnr.Insetter;
 import org.violetlib.jnr.aqua.AquaUIPainter;
 
 import static javax.swing.SwingConstants.*;
-import static javax.swing.SwingConstants.RIGHT;
 
 final public class AquaUtils {
 
@@ -1147,6 +1148,17 @@ final public class AquaUtils {
         return v != null && v.getView() == view ? p : null;
     }
 
+    public static void ensureWindowDelegateInstalled(Window w)
+    {
+        ensureWindowPeer(w);
+        execute(w, ptr -> ensureWindowDelegateInstalled(w, ptr));
+    }
+
+    private static long ensureWindowDelegateInstalled(Window w, long wptr)
+    {
+       return nativeEnsureWindowDelegateInstalled(wptr);
+    }
+
     public final static int TITLE_BAR_NONE = 0;
     public final static int TITLE_BAR_ORDINARY = 1;
     public final static int TITLE_BAR_TRANSPARENT = 2;
@@ -1445,6 +1457,7 @@ final public class AquaUtils {
      */
     public static native long nativeGetNativeWindow(Window w, Object[] data);
 
+    private static native int nativeEnsureWindowDelegateInstalled(long w);
     private static native void nativeSetTitledWindowStyle(Window w, boolean isDecorated, int height, Insets insets);
     private static native void nativeSetWindowTextured(Window w, boolean isTextured);
     private static native void nativeSetWindowBackground(Window w, Color color);

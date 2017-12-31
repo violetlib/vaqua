@@ -39,6 +39,8 @@ static int VERSION = 3;
 
 #import "AquaSidebarBackground.h"
 #import "AquaWrappedAWTView.h"
+#import "AquaWrappedWindowDelegate.h"
+#import "CMenuItemCategory.h"
 
 static JavaVM *vm;
 static jint javaVersion;
@@ -194,6 +196,44 @@ NSView *getAWTView(NSWindow *w)
     return contentView;
 }
 
+void ensureWindowDelegateWrapper(NSWindow *w);
+
+/*
+ * Class:     org_violetlib_aqua_AquaUtils
+ * Method:    nativeEnsureWindowDelegateInstalled
+ * Signature: (J)I
+ */
+JNIEXPORT jint JNICALL Java_org_violetlib_aqua_AquaUtils_nativeEnsureWindowDelegateInstalled
+  (JNIEnv *env, jclass cl, jlong wptr)
+{
+		JNF_COCOA_ENTER(env);
+
+		void (^block)() = ^(){
+			NSWindow *w = (NSWindow *) wptr;
+			ensureWindowDelegateWrapper(w);
+		};
+
+		if ([NSThread isMainThread]) {
+				block();
+		} else {
+				[JNFRunLoop performOnMainThreadWaiting:YES withBlock:block];
+		}
+
+		JNF_COCOA_EXIT(env);
+}
+
+// Ensure that our wrapper window delegate is installed.
+
+void ensureWindowDelegateWrapper(NSWindow *w)
+{
+		id delegate = [w delegate];
+    if (![delegate isKindOfClass: [AquaWrappedWindowDelegate class]]) {
+    		NSLog(@"Installing window delegate: %@", [w title]);
+				delegate = [[AquaWrappedWindowDelegate alloc] initWithObject: delegate];
+				[w setDelegate: delegate];
+		}
+}
+
 @interface MyDefaultResponder : NSObject
 - (void)defaultsChanged:(NSNotification *)notification;
 @end
@@ -288,7 +328,6 @@ JNIEXPORT jboolean JNICALL Java_org_violetlib_aqua_OSXSystemProperties_nativeGet
 JNIEXPORT jboolean JNICALL Java_org_violetlib_aqua_OSXSystemProperties_nativeGetScrollToClick
     (JNIEnv *env, jclass cl)
 {
-
     jboolean result = NO;
 
     JNF_COCOA_ENTER(env);
@@ -728,10 +767,10 @@ JNIEXPORT jboolean JNICALL Java_org_violetlib_aqua_fc_OSXFile_nativeRenderFileIm
 
     NSString *path = JNFNormalizedNSStringForPath(env, jpath);
 
-        NSImage *image = getFileImage(path, isQuickLook, isIconMode, w, h);
-        if (image != nil) {
-            result = renderImageIntoBuffers(env, image, output, w, h);
-        }
+		NSImage *image = getFileImage(path, isQuickLook, isIconMode, w, h);
+		if (image != nil) {
+				result = renderImageIntoBuffers(env, image, output, w, h);
+		}
 
     JNF_COCOA_EXIT(env);
 
