@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2017 Alan Snyder.
+ * Copyright (c) 2015-2018 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -578,25 +578,25 @@ public class AquaButtonUI extends BasicButtonUI implements AquaUtilControlSize.S
 
     /**
      * Paint the appropriate icon based on the button state.
-     * This method should not be called unless the button has an icon.
      */
     protected void paintIcon(Graphics g, AbstractButton b, Rectangle localIconRect) {
         Icon icon = getIcon(b);
+        if (icon != null) {
+            Graphics2D gg = null;
 
-        Graphics2D gg = null;
+            if (icon.getIconWidth() != localIconRect.width || icon.getIconHeight() != localIconRect.height) {
+                gg = (Graphics2D) g.create();
+                g = gg;
+                gg.translate(localIconRect.x, localIconRect.y);
+                gg.scale(localIconRect.getWidth() / icon.getIconWidth(), localIconRect.getHeight() / icon.getIconHeight());
+                gg.translate(-localIconRect.x, -localIconRect.y);
+            }
 
-        if (icon.getIconWidth() != localIconRect.width || icon.getIconHeight() != localIconRect.height) {
-            gg = (Graphics2D) g.create();
-            g = gg;
-            gg.translate(localIconRect.x, localIconRect.y);
-            gg.scale(localIconRect.getWidth() / icon.getIconWidth(), localIconRect.getHeight() / icon.getIconHeight());
-            gg.translate(-localIconRect.x, -localIconRect.y);
-        }
+            icon.paintIcon(b, g, localIconRect.x, localIconRect.y);
 
-        icon.paintIcon(b, g, localIconRect.x, localIconRect.y);
-
-        if (gg != null) {
-            gg.dispose();
+            if (gg != null) {
+                gg.dispose();
+            }
         }
     }
 
