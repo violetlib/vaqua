@@ -175,7 +175,9 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
                     // display a focus ring for the current focus owner, if any.
                     SwingUtilities.invokeLater(new Runnable() {
                         public void run() {
-                            focusRingManager.install();
+                            if (focusRingManager != null) {
+                                focusRingManager.install();
+                            }
                         }
                     });
                 }
