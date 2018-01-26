@@ -2069,7 +2069,21 @@ JNIEXPORT jboolean JNICALL Java_org_violetlib_aqua_AquaUtils_getScreenMenuBarPro
     static JNF_CLASS_CACHE(jc_AquaMenuBarUI, "com/apple/laf/AquaMenuBarUI");
     static JNF_STATIC_MEMBER_CACHE(jm_getScreenMenuBarProperty, jc_AquaMenuBarUI, "getScreenMenuBarProperty", "()Z");
 
-    return JNFCallStaticBooleanMethod(env, jm_getScreenMenuBarProperty);
+    static JNF_CLASS_CACHE(jc_LWCToolkit, "sun/lwawt/macosx/LWCToolkit");
+    static JNF_STATIC_MEMBER_CACHE(jm_isSystemMenuBarSupported, jc_LWCToolkit, "isSystemMenuBarSupported", "()Z");
+
+    jboolean result = JNFCallStaticBooleanMethod(env, jm_getScreenMenuBarProperty);
+
+    if ((*env)->ExceptionOccurred(env)) {
+        (*env)->ExceptionClear(env);
+        result = JNFCallStaticBooleanMethod(env, jm_isSystemMenuBarSupported);
+        if ((*env)->ExceptionOccurred(env)) {
+            (*env)->ExceptionClear(env);
+            result = 0;
+        }
+    }
+
+    return result;
 }
 
 /*
