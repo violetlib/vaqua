@@ -12,6 +12,8 @@
 
 static unichar CHAR_UNDEFINED = 0xFFFF;
 
+static BOOL debugFlag = NO;
+
 // The following functions and class are located in JDK dynamic libraries.
 
 extern unichar NsCharToJavaChar(unichar nsChar, NSUInteger modifiers);
@@ -22,17 +24,16 @@ jlong UTC(NSEvent *event);
 + (JNIEnv*)getJNIEnv;
 @end
 
-
 @implementation CMenuItem (CMenuItemCategory)
 
-- (void)handleAction:(NSMenuItem *)sender {
-
-    NSLog(@"Patched CMenuItem called");
+- (void)handleAction:(NSMenuItem *)sender
+{
+    if (debugFlag) NSLog(@"Patched CMenuItem called");
 
     //AWT_ASSERT_APPKIT_THREAD;
     JNIEnv *env = [ThreadUtilities getJNIEnv];
     JNF_COCOA_ENTER(env);
-    
+
     // If we are called as a result of user pressing a shortcut, do nothing,
     // because AVTView has already sent corresponding key event to the Java
     // layer from performKeyEquivalent.
@@ -46,7 +47,7 @@ jlong UTC(NSEvent *event);
     if (fIsCheckbox) {
         static JNF_CLASS_CACHE(jc_CCheckboxMenuItem, "sun/lwawt/macosx/CCheckboxMenuItem");
         static JNF_MEMBER_CACHE(jm_ckHandleAction, jc_CCheckboxMenuItem, "handleAction", "(Z)V");
-        
+
         // Send the opposite of what's currently checked -- the action
         // indicates what state we're going to.
         NSInteger state = [sender state];
@@ -82,7 +83,7 @@ jlong UTC(NSEvent *event);
                 return;
             }
 		}
-		
+
         static JNF_CLASS_CACHE(jc_CMenuItem, "sun/lwawt/macosx/CMenuItem");
         static JNF_MEMBER_CACHE(jm_handleAction, jc_CMenuItem, "handleAction", "(JI)V"); // AWT_THREADING Safe (event)
 
@@ -92,7 +93,6 @@ jlong UTC(NSEvent *event);
         JNFCallVoidMethod(env, fPeer, jm_handleAction, UTC(currEvent), javaModifiers); // AWT_THREADING Safe (event)
     }
     JNF_COCOA_EXIT(env);
-	
 }
 
 @end

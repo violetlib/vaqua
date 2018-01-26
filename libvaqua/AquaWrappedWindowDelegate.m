@@ -8,6 +8,8 @@
 
 #import "AquaWrappedWindowDelegate.h"
 
+static BOOL debugFlag = NO;
+
 @implementation AquaWrappedWindowDelegate
 {
   id delegate;
@@ -19,6 +21,17 @@
   return self;
 }
 
+- (BOOL)isKindOfClass:(Class)aClass
+{
+  // called to test for the need to wrap the delegate
+  return aClass == [AquaWrappedWindowDelegate class];
+}
+
+- (BOOL)respondsToSelector:(SEL)aSelector
+{
+  return aSelector == @selector(windowDidResignMain:) || [delegate respondsToSelector:aSelector];
+}
+
 - (NSMethodSignature *)methodSignatureForSelector:(SEL)selector
 {
   return [delegate methodSignatureForSelector:selector];
@@ -27,41 +40,58 @@
 - (void)forwardInvocation:(NSInvocation *)invocation
 {
   NSString *selectorString = NSStringFromSelector(invocation.selector);
-  //NSLog(@"%@: %@", selectorString, [[delegate nsWindow] title]);
+  if (debugFlag) NSLog(@"%@: %@", selectorString, [[delegate nsWindow] title]);
   [invocation invokeWithTarget:delegate];
 }
 
 - (void) windowDidBecomeKey: (NSNotification *) notification
 {
-  NSLog(@"windowDidBecomeKey: %@", [[delegate nsWindow] title]);
+  if (debugFlag) NSLog(@"windowDidBecomeKey: %@", [[delegate nsWindow] title]);
   [delegate windowDidBecomeKey: notification];
 }
 
 - (void) windowDidResignKey: (NSNotification *) notification
 {
-  NSLog(@"windowDidResignKey: %@", [[delegate nsWindow] title]);
+  if (debugFlag) NSLog(@"windowDidResignKey: %@", [[delegate nsWindow] title]);
   // The implementation of windowDidResignKey is appropriate for an inactive window
   if (![[delegate nsWindow] isMainWindow]) {
+    if (debugFlag) NSLog(@"  deactivating window: %@", [[delegate nsWindow] title]);
     [delegate windowDidResignKey: notification];
+  } else {
+    if (debugFlag) NSLog(@"  not deactivating window: %@", [[delegate nsWindow] title]);
   }
 }
 
 - (void) windowDidBecomeMain: (NSNotification *) notification
 {
-  NSLog(@"windowDidBecomeMain: %@", [[delegate nsWindow] title]);
+  if (debugFlag) NSLog(@"windowDidBecomeMain: %@", [[delegate nsWindow] title]);
   [delegate windowDidBecomeMain: notification];
 }
 
 - (void) windowDidResignMain: (NSNotification *) notification
 {
-  NSLog(@"windowDidResignMain: %@", [[delegate nsWindow] title]);
+  if (debugFlag) NSLog(@"windowDidResignMain: %@", [[delegate nsWindow] title]);
   // The implementation of windowDidResignKey is appropriate for an inactive window
   if (![[delegate nsWindow] isKeyWindow]) {
+    if (debugFlag) NSLog(@"  deactivating window: %@", [[delegate nsWindow] title]);
     [delegate windowDidResignKey: notification];
+  } else {
+    if (debugFlag) NSLog(@"  not deactivating window: %@", [[delegate nsWindow] title]);
   }
 }
 
+- (BOOL) canBecomeKeyWindow
+{
+  BOOL result = [delegate canBecomeKeyWindow];
+  if (debugFlag) NSLog(@"canBecomeKeyWindow: %@ %s", [[delegate nsWindow] title], result ? "true" : "false");
+  return result;
+}
 
-
+- (BOOL) canBecomeMainWindow
+{
+  BOOL result = [delegate canBecomeMainWindow];
+  if (debugFlag) NSLog(@"canBecomeMainWindow: %@ %s", [[delegate nsWindow] title], result ? "true" : "false");
+  return result;
+}
 
 @end

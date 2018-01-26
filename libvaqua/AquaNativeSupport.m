@@ -2,7 +2,7 @@
  * @(#)AquaNativeSupport.m
  *
  * Copyright (c) 2004-2007 Werner Randelshofer, Switzerland.
- * Copyright (c) 2014-2017 Alan Snyder.
+ * Copyright (c) 2014-2018 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this software, except in
@@ -216,7 +216,8 @@ JNIEXPORT jint JNICALL Java_org_violetlib_aqua_AquaUtils_nativeEnsureWindowDeleg
 		if ([NSThread isMainThread]) {
 				block();
 		} else {
-				[JNFRunLoop performOnMainThreadWaiting:YES withBlock:block];
+		        // Not waiting because there might be a deadlock situation
+				[JNFRunLoop performOnMainThreadWaiting:NO withBlock:block];
 		}
 
 		JNF_COCOA_EXIT(env);
@@ -226,11 +227,11 @@ JNIEXPORT jint JNICALL Java_org_violetlib_aqua_AquaUtils_nativeEnsureWindowDeleg
 
 void ensureWindowDelegateWrapper(NSWindow *w)
 {
-		id delegate = [w delegate];
+	id delegate = [w delegate];
     if (![delegate isKindOfClass: [AquaWrappedWindowDelegate class]]) {
-    		NSLog(@"Installing window delegate: %@", [w title]);
-				delegate = [[AquaWrappedWindowDelegate alloc] initWithObject: delegate];
-				[w setDelegate: delegate];
+    	NSLog(@"Installing window delegate: %@ %@", [w title], delegate);
+		delegate = [[AquaWrappedWindowDelegate alloc] initWithObject: delegate];
+		[w setDelegate: delegate];
 		}
 }
 
@@ -1070,7 +1071,7 @@ JNIEXPORT jobjectArray JNICALL Java_org_violetlib_aqua_fc_OSXFile_nativeGetSideb
     (*env)->SetObjectArrayElement(env, result, j++, (*env)->NewObject(env, integerClass, newIntegerMethodID, seed));
 
     if (which >= 2) {    // testing
-        NSLog(@"%ld elements for %@", count, list);
+        //NSLog(@"%ld elements for %@", count, list);
     }
 
     if (count > 0) {
@@ -1290,8 +1291,8 @@ JNIEXPORT void JNICALL Java_org_violetlib_aqua_AquaNativeColorChooser_show
         void (^block)() = ^(){
         		colorPanelBeingConfigured = YES;
 						NSColor *color = [NSColor colorWithSRGBRed:(CGFloat)red
-                                                 green:(CGFloat)green 
-                                                  blue:(CGFloat)blue 
+                                                 green:(CGFloat)green
+                                                  blue:(CGFloat)blue
                                                  alpha:(CGFloat)alpha];
             colorPanel.showsAlpha = wantAlpha;
             colorPanel.color = color;
