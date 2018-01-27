@@ -12,6 +12,7 @@
 
 #import <Cocoa/Cocoa.h>
 
+#import "KeyWindowPatch.h"
 #import "AquaWrappedWindowDelegate.h"
 #import "CMenuItemCategory.h"
 #import "CMenuBarCategory.h"
@@ -50,7 +51,9 @@ void ensureWindowDelegateWrapper(NSWindow *w)
 {
 	id delegate = [w delegate];
     if (![delegate isKindOfClass: [AquaWrappedWindowDelegate class]]) {
+#ifdef DEBUG_PATCH
     	NSLog(@"Installing window delegate: %@ %@", [w title], delegate);
+#endif
 		delegate = [[AquaWrappedWindowDelegate alloc] initWithObject: delegate];
 		[w setDelegate: delegate];
 	}

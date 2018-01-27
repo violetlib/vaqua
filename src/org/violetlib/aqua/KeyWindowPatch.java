@@ -66,6 +66,7 @@ public class KeyWindowPatch
 
             System.load(fn);
             isInstalled = true;
+            System.err.println("VAqua: installed patch for main/key window support");
         } catch (UnsatisfiedLinkError e) {
             reportError(e.getMessage());
         } catch (AccessControlException e) {
