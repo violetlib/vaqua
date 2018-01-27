@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2017 Alan Snyder.
+ * Copyright (c) 2015-2018 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -247,7 +247,7 @@ final public class AquaUtils {
         int left = insets.left;
         int right = insets.right;
         return new Rectangle(bounds.x + left, bounds.y + top, bounds.width - left - right,
-                bounds.height - top - bottom);
+          bounds.height - top - bottom);
     }
 
     /**
@@ -356,17 +356,17 @@ final public class AquaUtils {
      * @return the possibly clipped version of the compound labels string
      */
     public static String layoutCompoundLabel(JComponent c,
-            FontMetrics fm,
-            String text,
-            Icon icon,
-            int verticalAlignment,
-            int horizontalAlignment,
-            int verticalTextPosition,
-            int horizontalTextPosition,
-            Rectangle viewR,
-            Rectangle iconR,
-            Rectangle textR,
-            int textIconGap)
+                                             FontMetrics fm,
+                                             String text,
+                                             Icon icon,
+                                             int verticalAlignment,
+                                             int horizontalAlignment,
+                                             int verticalTextPosition,
+                                             int horizontalTextPosition,
+                                             Rectangle viewR,
+                                             Rectangle iconR,
+                                             Rectangle textR,
+                                             int textIconGap)
     {
         boolean orientationIsLeftToRight = true;
         int hAlign = horizontalAlignment;
@@ -401,17 +401,17 @@ final public class AquaUtils {
         }
 
         return layoutCompoundLabelImpl(c,
-                fm,
-                text,
-                icon,
-                verticalAlignment,
-                hAlign,
-                verticalTextPosition,
-                hTextPos,
-                viewR,
-                iconR,
-                textR,
-                textIconGap);
+          fm,
+          text,
+          icon,
+          verticalAlignment,
+          hAlign,
+          verticalTextPosition,
+          hTextPos,
+          viewR,
+          iconR,
+          textR,
+          textIconGap);
     }
 
     /**
@@ -429,18 +429,18 @@ final public class AquaUtils {
      * inserted at the middle of the text instead of at the end.
      */
     private static String layoutCompoundLabelImpl(
-            JComponent c,
-            FontMetrics fm,
-            String text,
-            Icon icon,
-            int verticalAlignment,
-            int horizontalAlignment,
-            int verticalTextPosition,
-            int horizontalTextPosition,
-            Rectangle viewR,
-            Rectangle iconR,
-            Rectangle textR,
-            int textIconGap)
+      JComponent c,
+      FontMetrics fm,
+      String text,
+      Icon icon,
+      int verticalAlignment,
+      int horizontalAlignment,
+      int verticalTextPosition,
+      int horizontalTextPosition,
+      Rectangle viewR,
+      Rectangle iconR,
+      Rectangle textR,
+      int textIconGap)
     {
         /* Initialize the icon bounds rectangle iconR.
          */
@@ -565,10 +565,10 @@ final public class AquaUtils {
          */
         int labelR_x = Math.min(iconR.x, textR.x);
         int labelR_width = Math.max(iconR.x + iconR.width,
-                textR.x + textR.width) - labelR_x;
+          textR.x + textR.width) - labelR_x;
         int labelR_y = Math.min(iconR.y, textR.y);
         int labelR_height = Math.max(iconR.y + iconR.height,
-                textR.y + textR.height) - labelR_y;
+          textR.y + textR.height) - labelR_y;
 
         int dx, dy;
 
@@ -588,7 +588,7 @@ final public class AquaUtils {
         } else { // (horizontalAlignment == CENTER)
 
             dx = (viewR.x + (viewR.width / 2))
-                    - (labelR_x + (labelR_width / 2));
+                   - (labelR_x + (labelR_width / 2));
         }
 
         /* Translate textR and glypyR by dx,dy.
@@ -693,7 +693,7 @@ final public class AquaUtils {
         @Override
         protected Boolean getInstance() {
             final String sizeProperty = (String) AccessController.doPrivileged((PrivilegedAction<String>) () -> System.getProperty(
-                    ANIMATIONS_PROPERTY));
+              ANIMATIONS_PROPERTY));
             return !"false".equals(sizeProperty); // should be true by default
         }
     };
@@ -823,19 +823,19 @@ final public class AquaUtils {
         @Override
         protected Method getInstance() {
             return AccessController.doPrivileged(
-                    new PrivilegedAction<Method>() {
-                        @Override
-                        public Method run() {
-                            try {
-                                final Method method = JComponent.class.getDeclaredMethod(
-                                        "getFlag", new Class<?>[]{int.class});
-                                method.setAccessible(true);
-                                return method;
-                            } catch (final Throwable ignored) {
-                                return null;
-                            }
-                        }
-                    }
+              new PrivilegedAction<Method>() {
+                  @Override
+                  public Method run() {
+                      try {
+                          final Method method = JComponent.class.getDeclaredMethod(
+                            "getFlag", new Class<?>[]{int.class});
+                          method.setAccessible(true);
+                          return method;
+                      } catch (final Throwable ignored) {
+                          return null;
+                      }
+                  }
+              }
             );
         }
     };
@@ -1080,9 +1080,9 @@ final public class AquaUtils {
     public static Object beginGraphics(Graphics2D graphics2d) {
         Object object = graphics2d.getRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING);
         graphics2d.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING,
-                RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+          RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
         graphics2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
-                RenderingHints.VALUE_ANTIALIAS_ON);
+          RenderingHints.VALUE_ANTIALIAS_ON);
         return object;
     }
 
@@ -1090,20 +1090,20 @@ final public class AquaUtils {
     public static void endGraphics(Graphics2D graphics2d, Object oldHints) {
         if (oldHints != null) {
             graphics2d.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING,
-                    oldHints);
+              oldHints);
         }
     }
 
     private static final WeakHashMap<Graphics,Integer> scaleMap = new WeakHashMap<>();
 
     public static void drawHLine(Graphics g, int x1, int x2, int y) {
-         if (x2 < x1) {
-             final int temp = x2;
-             x2 = x1;
-             x1 = temp;
-         }
-         g.fillRect(x1, y, x2 - x1 + 1, 1);
-     }
+        if (x2 < x1) {
+            final int temp = x2;
+            x2 = x1;
+            x1 = temp;
+        }
+        g.fillRect(x1, y, x2 - x1 + 1, 1);
+    }
 
     @SuppressWarnings("deprecation")
     public static FontMetrics getFontMetrics(JComponent c, Graphics g, Font font) {
@@ -1146,17 +1146,6 @@ final public class AquaUtils {
         // an implementor of fixed columns might do this.
         JViewport v = p.getViewport();
         return v != null && v.getView() == view ? p : null;
-    }
-
-    public static void ensureWindowDelegateInstalled(Window w)
-    {
-        ensureWindowPeer(w);
-        execute(w, ptr -> ensureWindowDelegateInstalled(w, ptr));
-    }
-
-    private static long ensureWindowDelegateInstalled(Window w, long wptr)
-    {
-       return nativeEnsureWindowDelegateInstalled(wptr);
     }
 
     public final static int TITLE_BAR_NONE = 0;
@@ -1457,7 +1446,6 @@ final public class AquaUtils {
      */
     public static native long nativeGetNativeWindow(Window w, Object[] data);
 
-    private static native int nativeEnsureWindowDelegateInstalled(long w);
     private static native void nativeSetTitledWindowStyle(Window w, boolean isDecorated, int height, Insets insets);
     private static native void nativeSetWindowTextured(Window w, boolean isTextured);
     private static native void nativeSetWindowBackground(Window w, Color color);

@@ -32,6 +32,7 @@
     <property name="src8" value="${base}/Java8Support/src"/>
     <property name="src9" value="${base}/Java9Support/src"/>
     <property name="jnisrc" value="${base}/libvaqua"/>
+    <property name="libkeywindowpatchsrc" value="${base}/libkeywindowpatch"/>
     <property name="resources" value="${base}/resources"/>
     <property name="builddir" value="out"/>
     <property name="classesdir" value="${builddir}/classes"/>
@@ -181,13 +182,52 @@
             <arg value="${jnisrc}/AquaNativeSupport.m"/>
             <arg value="${jnisrc}/AquaSidebarBackground.m"/>
             <arg value="${jnisrc}/AquaWrappedAWTView.m"/>
-            <arg value="${jnisrc}/AquaWrappedWindowDelegate.m"/>
-            <arg value="${jnisrc}/CMenuItemCategory.m"/>
         </exec>
 
     </target>
 
-    <target name="VAqua" depends="compile-VAqua-JNI,compile-VAqua-Java,saveIDs">
+    <target name="compile-KeyWindowPatch" depends="compile8">
+        <mkdir dir="${jnidir}"/>
+
+        <exec executable="${cc}" failonerror="true" >
+            <arg value="-arch"/>
+            <arg value="x86_64"/>
+
+            <arg value="-isysroot"/>
+            <arg value="${SDKroot}"/>
+            <env key="MACOSX_DEPLOYMENT_TARGET" value="10.7"/>
+
+            <arg value="-o"/>
+            <arg value="${jnidir}/libkeywindowpatch.dylib"/>
+
+            <arg value="-I${SDKroot}/System/Library/Frameworks/JavaVM.framework/Headers"/>
+            <arg value="-I${SDKroot}/System/Library/Frameworks/JavaVM.framework/Frameworks/JavaNativeFoundation.framework/Headers"/>
+            <arg value="-I${headersdir}"/>
+
+            <arg value="-dynamiclib"/>
+            <arg value="-ObjC"/>
+
+            <arg value="-framework"/>
+            <arg value="JavaVM"/>
+            <arg value="-framework"/>
+            <arg value="Cocoa"/>
+
+            <arg value="-F/${SDKroot}/System/Library/Frameworks/JavaVM.framework/Versions/A/Frameworks"/>
+            <arg value="-framework"/>
+            <arg value="JavaNativeFoundation"/>
+            
+            <arg value="-L/Library/Java/JavaVirtualMachines/jdk-9.0.1.jdk/Contents/Home/lib"/>
+            <arg value="-lawt_lwawt"/>
+            <arg value="-losxapp"/>
+
+            <arg value="${libkeywindowpatchsrc}/KeyWindowPatch.m"/>
+            <arg value="${libkeywindowpatchsrc}/AquaWrappedWindowDelegate.m"/>
+            <arg value="${libkeywindowpatchsrc}/CMenuItemCategory.m"/>
+        </exec>
+
+    </target>
+
+    <target name="VAqua" depends="compile-VAqua-JNI,compile-KeyWindowPatch,compile-VAqua-Java,saveIDs">
 
         <echo level="info" message="Building VAqua ${fullReleaseName}"/>
 

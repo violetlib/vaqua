@@ -77,7 +77,7 @@ public class AquaNativeSupport {
         System.err.println(s);
     }
 
-    private static String findNativeLibrary(Class<?> root, String name) throws IllegalArgumentException {
+    public static String findNativeLibrary(Class<?> root, String name) throws IllegalArgumentException {
         File lf = findNativeLibraryOnPath(name);
         if (lf != null) {
             return lf.getPath();

@@ -8,11 +8,12 @@
 
 #import <Cocoa/Cocoa.h>
 #import <JavaNativeFoundation/JavaNativeFoundation.h>
+#include <Carbon/Carbon.h>
 #import "CMenuItemCategory.h"
 
 static unichar CHAR_UNDEFINED = 0xFFFF;
 
-static BOOL debugFlag = NO;
+static BOOL debugFlag = YES;
 
 // The following functions and class are located in JDK dynamic libraries.
 

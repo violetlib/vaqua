@@ -39,8 +39,6 @@ static int VERSION = 3;
 
 #import "AquaSidebarBackground.h"
 #import "AquaWrappedAWTView.h"
-#import "AquaWrappedWindowDelegate.h"
-#import "CMenuItemCategory.h"
 
 static JavaVM *vm;
 static jint javaVersion;
@@ -194,45 +192,6 @@ NSView *getAWTView(NSWindow *w)
         return [wrapper awtView];
     }
     return contentView;
-}
-
-void ensureWindowDelegateWrapper(NSWindow *w);
-
-/*
- * Class:     org_violetlib_aqua_AquaUtils
- * Method:    nativeEnsureWindowDelegateInstalled
- * Signature: (J)I
- */
-JNIEXPORT jint JNICALL Java_org_violetlib_aqua_AquaUtils_nativeEnsureWindowDelegateInstalled
-  (JNIEnv *env, jclass cl, jlong wptr)
-{
-		JNF_COCOA_ENTER(env);
-
-		void (^block)() = ^(){
-			NSWindow *w = (NSWindow *) wptr;
-			ensureWindowDelegateWrapper(w);
-		};
-
-		if ([NSThread isMainThread]) {
-				block();
-		} else {
-		        // Not waiting because there might be a deadlock situation
-				[JNFRunLoop performOnMainThreadWaiting:NO withBlock:block];
-		}
-
-		JNF_COCOA_EXIT(env);
-}
-
-// Ensure that our wrapper window delegate is installed.
-
-void ensureWindowDelegateWrapper(NSWindow *w)
-{
-	id delegate = [w delegate];
-    if (![delegate isKindOfClass: [AquaWrappedWindowDelegate class]]) {
-    	NSLog(@"Installing window delegate: %@ %@", [w title], delegate);
-		delegate = [[AquaWrappedWindowDelegate alloc] initWithObject: delegate];
-		[w setDelegate: delegate];
-		}
 }
 
 @interface MyDefaultResponder : NSObject

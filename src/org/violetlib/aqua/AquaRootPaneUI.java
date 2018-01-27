@@ -271,7 +271,7 @@ public class AquaRootPaneUI extends BasicRootPaneUI implements AncestorListener,
             Component parent = rootPane.getParent();
             if (parent instanceof Window) {
                 Window w = (Window) parent;
-                AquaUtils.ensureWindowDelegateInstalled(w);
+                KeyWindowPatch.applyPatchIfNeeded(w);
             }
         }
     }
