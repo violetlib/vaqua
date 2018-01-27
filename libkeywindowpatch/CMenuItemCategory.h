@@ -8,8 +8,7 @@
 
 #import <Cocoa/Cocoa.h>
 
-// The following are minimal definitions to allow our altered methods to access the instance variables
-// it needs.
+// The following are minimal definitions to allow our altered methods to access the instance variables it needs.
 
 @interface CMenuComponent : NSObject {
 @public
@@ -20,19 +19,6 @@
 @interface CMenuItem : CMenuComponent
 {
     BOOL fIsCheckbox;
-}
-@end
-
-@interface CMenu : CMenuItem {
-    NSMenu *fMenu;
-}
-@end
-
-@interface CMenuBar : CMenuComponent {
-@public
-    NSMutableArray *fMenuList;
-    BOOL fModallyDisabled;
-    CMenu *fHelpMenu;
 }
 @end
 

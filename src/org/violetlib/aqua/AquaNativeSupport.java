@@ -36,6 +36,9 @@ public class AquaNativeSupport {
         if (!isInitialized) {
             isInitialized = true;
             loadNativeSupport();
+            if (isAvailable) {
+                KeyWindowPatch.installIfNeeded();
+            }
         }
         return isAvailable;
     }

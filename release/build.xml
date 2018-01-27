@@ -223,6 +223,7 @@
             <arg value="${libkeywindowpatchsrc}/KeyWindowPatch.m"/>
             <arg value="${libkeywindowpatchsrc}/AquaWrappedWindowDelegate.m"/>
             <arg value="${libkeywindowpatchsrc}/CMenuItemCategory.m"/>
+            <arg value="${libkeywindowpatchsrc}/CMenuBarCategory.m"/>
         </exec>
 
     </target>

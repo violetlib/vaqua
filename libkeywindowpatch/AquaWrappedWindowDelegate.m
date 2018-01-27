@@ -6,9 +6,8 @@
  * accompanying license terms.
  */
 
+#import "KeyWindowPatch.h"
 #import "AquaWrappedWindowDelegate.h"
-
-static BOOL debugFlag = NO;
 
 @interface CMenuBar { }
 @end
@@ -24,59 +23,65 @@ static BOOL debugFlag = NO;
 
 @implementation AquaWrappedWindowDelegate
 {
-  id delegate;
+    id delegate;
 }
 
 - (instancetype)initWithObject:(id)object
 {
-  delegate = object;
-  return self;
+    delegate = object;
+    return self;
 }
 
 - (BOOL)isKindOfClass:(Class)aClass
 {
-  // called to test for the need to wrap the delegate
-  return aClass == [AquaWrappedWindowDelegate class];
+    // called to test for the need to wrap the delegate
+    return aClass == [AquaWrappedWindowDelegate class];
 }
 
 - (BOOL)respondsToSelector:(SEL)aSelector
 {
-  return aSelector == @selector(windowDidResignMain:) || [delegate respondsToSelector:aSelector];
+    return aSelector == @selector(windowDidResignMain:) || [delegate respondsToSelector:aSelector];
 }
 
 - (NSMethodSignature *)methodSignatureForSelector:(SEL)selector
 {
-  return [delegate methodSignatureForSelector:selector];
+    return [delegate methodSignatureForSelector:selector];
 }
 
 - (void)forwardInvocation:(NSInvocation *)invocation
 {
-  NSString *selectorString = NSStringFromSelector(invocation.selector);
-  if (debugFlag) NSLog(@"%@: %@", selectorString, [[delegate nsWindow] title]);
-  [invocation invokeWithTarget:delegate];
+    NSString *selectorString = NSStringFromSelector(invocation.selector);
+    // NSLog(@"%@: %@", selectorString, [[delegate nsWindow] title]);
+    [invocation invokeWithTarget:delegate];
 }
 
 - (void) windowDidBecomeKey: (NSNotification *) notification
 {
-  if (debugFlag) NSLog(@"windowDidBecomeKey: %@", [[delegate nsWindow] title]);
+#ifdef DEBUG_PATCH
+  NSLog(@"windowDidBecomeKey: %@", [[delegate nsWindow] title]);
+#endif
+
     if (![[delegate nsWindow] isMainWindow]) {
         [self activateWindowMenuBar];
     }
-  [delegate windowDidBecomeKey: notification];
+    [delegate windowDidBecomeKey: notification];
 }
 
 - (void) windowDidBecomeMain: (NSNotification *) notification
 {
-  if (debugFlag) NSLog(@"windowDidBecomeMain: %@", [[delegate nsWindow] title]);
+#ifdef DEBUG_PATCH
+    NSLog(@"windowDidBecomeMain: %@", [[delegate nsWindow] title]);
+#endif
+
     if (![[delegate nsWindow] isKeyWindow]) {
         [self activateWindowMenuBar];
     }
-  [delegate windowDidBecomeMain: notification];
+    [delegate windowDidBecomeMain: notification];
 }
 
 - (void) activateWindowMenuBar {
 //AWT_ASSERT_APPKIT_THREAD;
-    // Finds appropriate menubar in our hierarchy
+    // Finds appropriate menu bar in our hierarchy
     AWTWindow *awtWindow = delegate;
     while ([awtWindow ownerWindow] != nil) {
         awtWindow = [awtWindow ownerWindow];
@@ -99,27 +104,34 @@ static BOOL debugFlag = NO;
 
 - (void) windowDidResignKey: (NSNotification *) notification
 {
-  if (debugFlag) NSLog(@"windowDidResignKey: %@", [[delegate nsWindow] title]);
-  [AWTToolkit eventCountPlusPlus];
-  if (![[delegate nsWindow] isMainWindow]) {
-    [self deactivateWindow];
-  }
+#ifdef DEBUG_PATCH
+    NSLog(@"windowDidResignKey: %@", [[delegate nsWindow] title]);
+#endif
+
+    [AWTToolkit eventCountPlusPlus];
+    if (![[delegate nsWindow] isMainWindow]) {
+        [self deactivateWindow];
+    }
 }
 
 - (void) windowDidResignMain: (NSNotification *) notification
 {
-  if (debugFlag) NSLog(@"windowDidResignMain: %@", [[delegate nsWindow] title]);
-  [AWTToolkit eventCountPlusPlus];
-  if (![[delegate nsWindow] isKeyWindow]) {
-    [self deactivateWindow];
-  }
+#ifdef DEBUG_PATCH
+    NSLog(@"windowDidResignMain: %@", [[delegate nsWindow] title]);
+#endif
+
+    [AWTToolkit eventCountPlusPlus];
+    if (![[delegate nsWindow] isKeyWindow]) {
+      [self deactivateWindow];
+    }
 }
 
 - (void) deactivateWindow {
 //AWT_ASSERT_APPKIT_THREAD;
-#ifdef DEBUG
-    NSLog(@"deactivating window: %@", [self.nsWindow title]);
+#ifdef DEBUG_PATCH
+    NSLog(@"deactivating window: %@", [[self nsWindow] title]);
 #endif
+
     [[delegate javaMenuBar] deactivate];
 
     // the new key window
@@ -138,16 +150,16 @@ static BOOL debugFlag = NO;
 
 - (BOOL) canBecomeKeyWindow
 {
-  BOOL result = [delegate canBecomeKeyWindow];
-  if (debugFlag) NSLog(@"canBecomeKeyWindow: %@ %s", [[delegate nsWindow] title], result ? "true" : "false");
-  return result;
+    BOOL result = [delegate canBecomeKeyWindow];
+    // NSLog(@"canBecomeKeyWindow: %@ %s", [[delegate nsWindow] title], result ? "true" : "false");
+    return result;
 }
 
 - (BOOL) canBecomeMainWindow
 {
-  BOOL result = [delegate canBecomeMainWindow];
-  if (debugFlag) NSLog(@"canBecomeMainWindow: %@ %s", [[delegate nsWindow] title], result ? "true" : "false");
-  return result;
+    BOOL result = [delegate canBecomeMainWindow];
+    // NSLog(@"canBecomeMainWindow: %@ %s", [[delegate nsWindow] title], result ? "true" : "false");
+    return result;
 }
 
 @end

@@ -9,48 +9,23 @@
 #import <Cocoa/Cocoa.h>
 #import <JavaNativeFoundation/JavaNativeFoundation.h>
 #include <Carbon/Carbon.h>
+#import "KeyWindowPatch.h"
+#import "CMenuBarCategory.h"
+
+@interface ApplicationDelegate { }
+@end
+
+@interface ThreadUtilities { }
++ (JNIEnv*)getJNIEnv;
+@end
 
 static unichar CHAR_UNDEFINED = 0xFFFF;
-
-static BOOL debugFlag = YES;
 
 static CMenuBar *sActiveMenuBar = nil;
 
 __attribute__((visibility("default")))
 NSString *CMenuBarDidReuseItemNotification =
     @"CMenuBarDidReuseItemNotification";
-
-@interface CMenuComponent : NSObject {
-@public
-    jobject fPeer;
-}
-@end
-
-@interface CMenuItem : CMenuComponent
-{
-    BOOL fIsCheckbox;
-}
-@end
-
-@interface CMenu : CMenuItem {
-    NSMenu *fMenu;
-}
-@end
-
-@interface CMenuBar : CMenuComponent {
-@public
-    NSMutableArray *fMenuList;
-    BOOL fModallyDisabled;
-    CMenu *fHelpMenu;
-}
-@end
-
-@interface CMenuItem (CMenuItemCategory)
-- (void)handleAction:(NSMenuItem *)sender;
-@end
-
-@interface ApplicationDelegate { }
-@end
 
 @implementation CMenuBar (CMenuBarCategory)
 
@@ -66,7 +41,7 @@ NSString *CMenuBarDidReuseItemNotification =
         return;
     }
 
-#ifdef DEBUG
+#ifdef DEBUG_PATCH
     NSLog(@"activating menu bar: %@", menubar);
 #endif
 
@@ -162,7 +137,7 @@ NSString *CMenuBarDidReuseItemNotification =
     }
 
     if (isDeactivated) {
-#ifdef DEBUG
+#ifdef DEBUG_PATCH
         NSLog(@"deactivating menu bar: %@", self);
 #endif
 

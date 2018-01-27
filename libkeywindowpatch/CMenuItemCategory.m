@@ -9,11 +9,10 @@
 #import <Cocoa/Cocoa.h>
 #import <JavaNativeFoundation/JavaNativeFoundation.h>
 #include <Carbon/Carbon.h>
+#import "KeyWindowPatch.h"
 #import "CMenuItemCategory.h"
 
 static unichar CHAR_UNDEFINED = 0xFFFF;
-
-static BOOL debugFlag = YES;
 
 // The following functions and class are located in JDK dynamic libraries.
 
@@ -29,7 +28,9 @@ jlong UTC(NSEvent *event);
 
 - (void)handleAction:(NSMenuItem *)sender
 {
-    if (debugFlag) NSLog(@"Patched CMenuItem called");
+#ifdef DEBUG_PATCH
+    NSLog(@"Patched CMenuItem called");
+#endif
 
     //AWT_ASSERT_APPKIT_THREAD;
     JNIEnv *env = [ThreadUtilities getJNIEnv];

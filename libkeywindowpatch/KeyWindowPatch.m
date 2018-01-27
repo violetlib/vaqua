@@ -14,30 +14,10 @@
 
 #import "AquaWrappedWindowDelegate.h"
 #import "CMenuItemCategory.h"
+#import "CMenuBarCategory.h"
 #import <JavaNativeFoundation.h>
 
 void ensureWindowDelegateWrapper(NSWindow *w);
-
-/*
- * Class:     org_violetlib_aqua_KeyWindowPatch
- * Method:    nativeIsPatchNeeded
- * Signature: (J)I
- */
-JNIEXPORT jint JNICALL Java_org_violetlib_aqua_KeyWindowPatch_nativeIsPatchNeeded
-  (JNIEnv *env, jclass cl, jlong wptr)
-{
-    jint result = 0;
-    
-    JNF_COCOA_ENTER(env);
-
-    NSWindow *w = (NSWindow *) wptr;
-    id delegate = [w delegate];
-    result = ![delegate respondsToSelector: @selector(windowDidResignMain:)];
-
-    JNF_COCOA_EXIT(env);
-
-    return result;
-}
 
 /*
  * Class:     org_violetlib_aqua_KeyWindowPatch

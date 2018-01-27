@@ -9,5 +9,5 @@
 #import <Cocoa/Cocoa.h>
 
 @interface AquaWrappedWindowDelegate : NSProxy <NSWindowDelegate>
-  - (instancetype)initWithObject:(id)object;
+- (instancetype)initWithObject:(id)object;
 @end

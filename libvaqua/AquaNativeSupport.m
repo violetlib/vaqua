@@ -40,6 +40,17 @@ static int VERSION = 3;
 #import "AquaSidebarBackground.h"
 #import "AquaWrappedAWTView.h"
 
+@interface AWTWindow
+@end
+
+// Not sure if this works, but try to ensure that patched classes are loaded before the patch.
+
+@interface CMenuBar
+@end
+
+@interface CMenuItem
+@end
+
 static JavaVM *vm;
 static jint javaVersion;
 static jobject synchronizeCallback;
@@ -727,10 +738,10 @@ JNIEXPORT jboolean JNICALL Java_org_violetlib_aqua_fc_OSXFile_nativeRenderFileIm
 
     NSString *path = JNFNormalizedNSStringForPath(env, jpath);
 
-		NSImage *image = getFileImage(path, isQuickLook, isIconMode, w, h);
-		if (image != nil) {
-				result = renderImageIntoBuffers(env, image, output, w, h);
-		}
+        NSImage *image = getFileImage(path, isQuickLook, isIconMode, w, h);
+        if (image != nil) {
+                result = renderImageIntoBuffers(env, image, output, w, h);
+        }
 
     JNF_COCOA_EXIT(env);
 
@@ -1147,9 +1158,9 @@ static jboolean colorPanelBeingConfigured;
 
 - (void) colorChanged: (id) sender
 {
-		if (colorPanelBeingConfigured) {
-			return;
-		}
+        if (colorPanelBeingConfigured) {
+            return;
+        }
 
     NSColor *color = [colorPanel color];
 
@@ -1244,12 +1255,12 @@ JNIEXPORT jboolean JNICALL Java_org_violetlib_aqua_AquaNativeColorChooser_create
 JNIEXPORT void JNICALL Java_org_violetlib_aqua_AquaNativeColorChooser_show
     (JNIEnv *env, jclass cl, jfloat red, jfloat green, jfloat blue, jfloat alpha, jboolean wantAlpha)
 {
-		if (colorPanel) {
+        if (colorPanel) {
         JNF_COCOA_ENTER(env);
 
         void (^block)() = ^(){
-        		colorPanelBeingConfigured = YES;
-						NSColor *color = [NSColor colorWithSRGBRed:(CGFloat)red
+                colorPanelBeingConfigured = YES;
+                        NSColor *color = [NSColor colorWithSRGBRed:(CGFloat)red
                                                  green:(CGFloat)green
                                                   blue:(CGFloat)blue
                                                  alpha:(CGFloat)alpha];
@@ -1277,7 +1288,7 @@ JNIEXPORT void JNICALL Java_org_violetlib_aqua_AquaNativeColorChooser_show
 JNIEXPORT void JNICALL Java_org_violetlib_aqua_AquaNativeColorChooser_hide
     (JNIEnv *env, jclass cl)
 {
-		if (colorPanel) {
+        if (colorPanel) {
         JNF_COCOA_ENTER(env);
 
         void (^block)() = ^(){
@@ -2132,6 +2143,25 @@ JNIEXPORT int JNICALL Java_org_violetlib_aqua_AquaUtils_nativeDebugWindow
 
     JNF_COCOA_EXIT(env);
     return 0;
+}
+
+/*
+ * Class:     org_violetlib_aqua_KeyWindowPatch
+ * Method:    nativeIsPatchNeeded
+ * Signature: ()I
+ */
+JNIEXPORT jint JNICALL Java_org_violetlib_aqua_KeyWindowPatch_nativeIsPatchNeeded
+  (JNIEnv *env, jclass cl)
+{
+    jint result = 0;
+    
+    JNF_COCOA_ENTER(env);
+
+    result = ![[AWTWindow class] instancesRespondToSelector: @selector(windowDidResignMain:)];
+
+    JNF_COCOA_EXIT(env);
+
+    return result;
 }
 
 /*
