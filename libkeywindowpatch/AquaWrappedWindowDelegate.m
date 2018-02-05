@@ -9,6 +9,8 @@
 #import "KeyWindowPatch.h"
 #import "AquaWrappedWindowDelegate.h"
 
+#import <JavaNativeFoundation/JavaNativeFoundation.h>
+
 @interface CMenuBar { }
 @end
 
@@ -160,6 +162,23 @@
     BOOL result = [delegate canBecomeMainWindow];
     // NSLog(@"canBecomeMainWindow: %@ %s", [[delegate nsWindow] title], result ? "true" : "false");
     return result;
+}
+
+// The following methods are defined to improve performance
+
+- (void)sendEvent:(NSEvent *)event
+{
+    [delegate sendEvent:event];
+}
+
+- (JNFWeakJObjectWrapper *) javaPlatformWindow
+{
+    return [delegate javaPlatformWindow];
+}
+
+- (BOOL) isEnabled
+{
+    return [delegate isEnabled];
 }
 
 @end
