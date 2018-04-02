@@ -558,7 +558,7 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements AquaUtilControlSi
 
         protected boolean isTextured() {
             if (arrowButton != null) {
-                arrowButton.configure(null);
+                //arrowButton.configure(null);
                 return arrowButton.isTextured();
             }
             return false;
