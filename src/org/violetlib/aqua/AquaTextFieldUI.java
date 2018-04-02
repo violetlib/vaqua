@@ -95,7 +95,7 @@ public class AquaTextFieldUI extends BasicTextFieldUI implements FocusRingOutlin
         hierarchyListener = new AquaHierarchyListener();
         editor.addHierarchyListener(hierarchyListener);
 
-        LookAndFeel.installProperty(editor, "opaque", UIManager.getBoolean(getPropertyPrefix() + "opaque"));
+        LookAndFeel.installProperty(editor, "opaque", UIManager.getBoolean(getPropertyPrefix() + ".opaque"));
         AquaUtilControlSize.addSizePropertyListener(editor);
     }
 
@@ -408,13 +408,20 @@ public class AquaTextFieldUI extends BasicTextFieldUI implements FocusRingOutlin
 
         if (!(b instanceof AquaTextFieldBorder)) {
             // developer must have set a custom border
-            if (!isOpaque && JavaSupport.hasOpaqueBeenExplicitlySet(editor)) return;
+            if (!isOpaque && JavaSupport.hasOpaqueBeenExplicitlySet(editor)) {
+                // debug
+                // AquaUtils.syslog("Text field without our border has been set to not-opaque: " + this);
+                return;
+            }
 
             // The effect of this code is to make isOpaque=true the default when a custom border is used.
+            // This code comes from Aqua LAF.
+            // TBD: why is this a good idea?
+
             // debug
-            if (!isOpaque) {
-                AquaUtils.syslog("Overriding default not-opaque for " + this);
-            }
+//            if (!isOpaque) {
+//                AquaUtils.syslog("Overriding default not-opaque for " + this);
+//            }
 
             // must fill whole region with background color if opaque
             g.setColor(editor.getBackground());
