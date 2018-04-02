@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2016 Alan Snyder.
+ * Copyright (c) 2015-2018 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -699,12 +699,12 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements AquaUtilControlSi
 
         public void configure(AquaUIPainter.ComboBoxWidget widget) {
             if (widget == AquaUIPainter.ComboBoxWidget.BUTTON_COMBO_BOX_CELL) {
-                setBackground(Color.WHITE);
-                setOpaque(true);
+                setBackground(new ColorUIResource(Color.WHITE));
+                LookAndFeel.installProperty(this, "opaque", Boolean.TRUE);
             } else {
                 // On 10.11, a textured editable combo box has a gradient background. See TextEdit.
-                setBackground(new Color(0, 0, 0, 0));
-                setOpaque(false);
+                setBackground(new ColorUIResource(new Color(0, 0, 0, 0)));
+                LookAndFeel.installProperty(this, "opaque", Boolean.FALSE);
             }
         }
 

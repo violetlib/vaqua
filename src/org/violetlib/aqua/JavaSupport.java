@@ -1,5 +1,5 @@
 /*
- * Changes copyright (c) 2016-2017 Alan Snyder.
+ * Changes copyright (c) 2016-2018 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -12,7 +12,6 @@ import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.awt.image.ImageFilter;
 import java.util.function.Function;
-
 import javax.swing.*;
 
 /**
@@ -23,6 +22,7 @@ public class JavaSupport {
 
     public interface JavaSupportImpl {
         int getScaleFactor(Graphics g);
+        boolean hasOpaqueBeenExplicitlySet(final JComponent c);
         Image getDockIconImage();
         void drawString(JComponent c, Graphics2D g, String string, float x, float y);
         void drawStringUnderlineCharAt(JComponent c, Graphics2D g, String string, int underlinedIndex,
@@ -47,6 +47,10 @@ public class JavaSupport {
     public static int getScaleFactor(Graphics g)
     {
         return impl.getScaleFactor(g);
+    }
+
+    public static boolean hasOpaqueBeenExplicitlySet(final JComponent c) {
+        return impl.hasOpaqueBeenExplicitlySet(c);
     }
 
     public static Image getDockIconImage() {

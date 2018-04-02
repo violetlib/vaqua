@@ -1,5 +1,5 @@
 /*
- * Changes Copyright (c) 2015-2016 Alan Snyder.
+ * Changes Copyright (c) 2015-2018 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -408,7 +408,13 @@ public class AquaTextFieldUI extends BasicTextFieldUI implements FocusRingOutlin
 
         if (!(b instanceof AquaTextFieldBorder)) {
             // developer must have set a custom border
-            if (!isOpaque && AquaUtils.hasOpaqueBeenExplicitlySet(editor)) return;
+            if (!isOpaque && JavaSupport.hasOpaqueBeenExplicitlySet(editor)) return;
+
+            // The effect of this code is to make isOpaque=true the default when a custom border is used.
+            // debug
+            if (!isOpaque) {
+                AquaUtils.syslog("Overriding default not-opaque for " + this);
+            }
 
             // must fill whole region with background color if opaque
             g.setColor(editor.getBackground());

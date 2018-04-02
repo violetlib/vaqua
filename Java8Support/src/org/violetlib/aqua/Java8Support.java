@@ -1,5 +1,5 @@
 /*
- * Changes copyright (c) 2016-2017 Alan Snyder.
+ * Changes copyright (c) 2016-2018 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -12,6 +12,8 @@ import java.awt.*;
 import java.awt.image.*;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.WeakHashMap;
 import java.util.function.Function;
 import javax.swing.*;
@@ -69,6 +71,41 @@ public class Java8Support implements JavaSupport.JavaSupportImpl {
 
         return 1;
     }
+
+    @Override
+    public boolean hasOpaqueBeenExplicitlySet(JComponent c) {
+        final Method method = getJComponentGetFlagMethod.get();
+        if (method == null) return false;
+        try {
+            return Boolean.TRUE.equals(method.invoke(c, OPAQUE_SET_FLAG));
+        } catch (final Throwable ignored) {
+            return false;
+        }
+    }
+
+    private static final AquaUtils.RecyclableSingleton<Method> getJComponentGetFlagMethod
+            = new AquaUtils.RecyclableSingleton<Method>() {
+        @Override
+        protected Method getInstance() {
+            return AccessController.doPrivileged(
+              new PrivilegedAction<Method>() {
+                  @Override
+                  public Method run() {
+                      try {
+                          final Method method = JComponent.class.getDeclaredMethod(
+                            "getFlag", new Class<?>[]{int.class});
+                          method.setAccessible(true);
+                          return method;
+                      } catch (final Throwable ignored) {
+                          return null;
+                      }
+                  }
+              }
+            );
+        }
+    };
+
+    private static final Integer OPAQUE_SET_FLAG = 24; // private int JComponent.OPAQUE_SET
 
     @Override
     public Image getDockIconImage() {

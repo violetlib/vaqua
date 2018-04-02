@@ -2,7 +2,7 @@
  * @(#)AquaNativeSupport.m
  *
  * Copyright (c) 2004-2007 Werner Randelshofer, Switzerland.
- * Copyright (c) 2014-2017 Alan Snyder.
+ * Copyright (c) 2014-2018 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this software, except in
@@ -288,7 +288,6 @@ JNIEXPORT jboolean JNICALL Java_org_violetlib_aqua_OSXSystemProperties_nativeGet
 JNIEXPORT jboolean JNICALL Java_org_violetlib_aqua_OSXSystemProperties_nativeGetScrollToClick
     (JNIEnv *env, jclass cl)
 {
-
     jboolean result = NO;
 
     JNF_COCOA_ENTER(env);
@@ -730,7 +729,7 @@ JNIEXPORT jboolean JNICALL Java_org_violetlib_aqua_fc_OSXFile_nativeRenderFileIm
 
         NSImage *image = getFileImage(path, isQuickLook, isIconMode, w, h);
         if (image != nil) {
-            result = renderImageIntoBuffers(env, image, output, w, h);
+                result = renderImageIntoBuffers(env, image, output, w, h);
         }
 
     JNF_COCOA_EXIT(env);
@@ -1031,7 +1030,7 @@ JNIEXPORT jobjectArray JNICALL Java_org_violetlib_aqua_fc_OSXFile_nativeGetSideb
     (*env)->SetObjectArrayElement(env, result, j++, (*env)->NewObject(env, integerClass, newIntegerMethodID, seed));
 
     if (which >= 2) {    // testing
-        NSLog(@"%ld elements for %@", count, list);
+        //NSLog(@"%ld elements for %@", count, list);
     }
 
     if (count > 0) {
@@ -1148,9 +1147,9 @@ static jboolean colorPanelBeingConfigured;
 
 - (void) colorChanged: (id) sender
 {
-		if (colorPanelBeingConfigured) {
-			return;
-		}
+        if (colorPanelBeingConfigured) {
+            return;
+        }
 
     NSColor *color = [colorPanel color];
 
@@ -1245,14 +1244,14 @@ JNIEXPORT jboolean JNICALL Java_org_violetlib_aqua_AquaNativeColorChooser_create
 JNIEXPORT void JNICALL Java_org_violetlib_aqua_AquaNativeColorChooser_show
     (JNIEnv *env, jclass cl, jfloat red, jfloat green, jfloat blue, jfloat alpha, jboolean wantAlpha)
 {
-		if (colorPanel) {
+        if (colorPanel) {
         JNF_COCOA_ENTER(env);
 
         void (^block)() = ^(){
-        		colorPanelBeingConfigured = YES;
-						NSColor *color = [NSColor colorWithSRGBRed:(CGFloat)red
-                                                 green:(CGFloat)green 
-                                                  blue:(CGFloat)blue 
+                colorPanelBeingConfigured = YES;
+                        NSColor *color = [NSColor colorWithSRGBRed:(CGFloat)red
+                                                 green:(CGFloat)green
+                                                  blue:(CGFloat)blue
                                                  alpha:(CGFloat)alpha];
             colorPanel.showsAlpha = wantAlpha;
             colorPanel.color = color;
@@ -1278,7 +1277,7 @@ JNIEXPORT void JNICALL Java_org_violetlib_aqua_AquaNativeColorChooser_show
 JNIEXPORT void JNICALL Java_org_violetlib_aqua_AquaNativeColorChooser_hide
     (JNIEnv *env, jclass cl)
 {
-		if (colorPanel) {
+        if (colorPanel) {
         JNF_COCOA_ENTER(env);
 
         void (^block)() = ^(){
@@ -2073,7 +2072,7 @@ JNIEXPORT jboolean JNICALL Java_org_violetlib_aqua_AquaUtils_getScreenMenuBarPro
     static JNF_STATIC_MEMBER_CACHE(jm_isSystemMenuBarSupported, jc_LWCToolkit, "isSystemMenuBarSupported", "()Z");
 
     jboolean result = 0;
-    
+
     @try {
         result = JNFCallStaticBooleanMethod(env, jm_getScreenMenuBarProperty);
     }
@@ -2114,6 +2113,20 @@ JNIEXPORT void JNICALL Java_org_violetlib_aqua_AquaUtils_clearScreenMenuBar
     static JNF_MEMBER_CACHE(jm_clearScreenMenuBar, jc_AquaMenuBarUI, "clearScreenMenuBar", "(Ljavax/swing/JFrame;)V");
 
     JNFCallVoidMethod(env, menuBarUI, jm_clearScreenMenuBar, frame);
+}
+
+/*
+ * Class:     org_violetlib_aqua_AquaUtils
+ * Method:    nativeHasOpaqueBeenExplicitlySet
+ * Signature: (Ljavax/swing/JComponent;)Z
+ */
+JNIEXPORT jboolean JNICALL Java_org_violetlib_aqua_AquaUtils_nativeHasOpaqueBeenExplicitlySet
+  (JNIEnv *env, jclass cl, jobject c)
+{
+    static JNF_CLASS_CACHE(jc_JComponent, "javax/swing/JComponent");
+    static JNF_MEMBER_CACHE(jm_getFlag, jc_JComponent, "getFlag", "(I)Z");
+
+    return JNFCallBooleanMethod(env, c, jm_getFlag, 24);    // 24 is JComponent.OPAQUE_SET
 }
 
 /*
