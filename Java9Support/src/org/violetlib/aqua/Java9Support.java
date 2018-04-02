@@ -37,7 +37,7 @@ public class Java9Support implements JavaSupport.JavaSupportImpl {
     public boolean hasOpaqueBeenExplicitlySet(JComponent c) {
         boolean result = AquaUtils.nativeHasOpaqueBeenExplicitlySet(c);
         if (result) {
-            AquaUtils.syslog("HasOpaqueBeenExplicitlySet: " + c);
+            //AquaUtils.syslog("HasOpaqueBeenExplicitlySet: " + c);
         }
         return result;
     }
