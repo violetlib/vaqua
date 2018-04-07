@@ -1326,17 +1326,25 @@ JNIEXPORT jlong JNICALL Java_org_violetlib_aqua_AquaUtils_nativeGetNativeWindow
     JNF_COCOA_ENTER(env);
 
     jobject peer = getWindowPeer(env, w);
-    jobject platformWindow = getPlatformWindow(env, peer);
-    if (platformWindow != NULL) {
-
-        result = JNFGetLongField(env, platformWindow, jf_ptr);
-
-        jclass c = (*env)->GetObjectClass(env, platformWindow);
-        jfieldID f_readLock = (*env)->GetFieldID(env, c, "readLock", "Ljava/util/concurrent/locks/Lock;");
-        if (f_readLock != NULL) {
-            readLock = JNFGetObjectField(env, platformWindow, jf_readLock);
+    if (peer != NULL) {
+        jobject platformWindow = getPlatformWindow(env, peer);
+        if (platformWindow != NULL) {
+            result = JNFGetLongField(env, platformWindow, jf_ptr);
+            if (result != 0) {
+                jclass c = (*env)->GetObjectClass(env, platformWindow);
+                jfieldID f_readLock = (*env)->GetFieldID(env, c, "readLock", "Ljava/util/concurrent/locks/Lock;");
+                if (f_readLock != NULL) {
+                    readLock = JNFGetObjectField(env, platformWindow, jf_readLock);
+                }
+                (*env)->ExceptionClear(env);
+            } else {
+                NSLog(@"nativeGetNativeWindow: No pointer");
+            }
+        } else {
+            NSLog(@"nativeGetNativeWindow: No platform window");
         }
-        (*env)->ExceptionClear(env);
+    } else {
+        NSLog(@"nativeGetNativeWindow: No window peer");
     }
 
     (*env)->SetObjectArrayElement(env, data, 0, readLock);

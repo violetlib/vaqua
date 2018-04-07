@@ -1384,7 +1384,14 @@ final public class AquaUtils {
         Object[] data = new Object[1];
         long ptr = nativeGetNativeWindow(w, data);
         if (ptr == 0) {
-            throw new UnsupportedOperationException("Unable to get NSWindow for window " + w.getName());
+            String name = w.getName();
+            if (w instanceof Frame) {
+                Frame fr = (Frame) w;
+                name = fr.getTitle() + " " + name;
+            }
+            UnsupportedOperationException ex = new UnsupportedOperationException("Unable to get NSWindow for window " + name);
+            ex.printStackTrace();
+            throw ex;
         } else {
             Lock lock = (Lock) data[0];
             if (lock != null) {
