@@ -1359,12 +1359,14 @@ final public class AquaUtils {
     }
 
     public static void syncAWTView(Window w) {
-        // Both calls appear to be necessary to ensure that the pixels are ready when the window is made visible.
-        Toolkit.getDefaultToolkit().sync();
-        try {
-            execute(w, AquaUtils::nativeSyncAWTView);
-        } catch (UnsupportedOperationException ex) {
-            // native window may no longer exist (esp when called from ShadowMaker)
+        if (w.isDisplayable()) {
+            // Both calls appear to be necessary to ensure that the pixels are ready when the window is made visible.
+            Toolkit.getDefaultToolkit().sync();
+            try {
+                execute(w, AquaUtils::nativeSyncAWTView);
+            } catch (UnsupportedOperationException ex) {
+                // native window may no longer exist (esp when called from ShadowMaker)
+            }
         }
     }
 
