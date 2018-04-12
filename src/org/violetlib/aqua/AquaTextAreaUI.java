@@ -97,10 +97,7 @@ public class AquaTextAreaUI extends BasicTextAreaUI implements FocusRingOutlineP
     }
 
     protected Caret createCaret() {
-        final JTextComponent c = getComponent();
-        final Window owningWindow = SwingUtilities.getWindowAncestor(c);
-        final AquaCaret returnValue = new AquaCaret(owningWindow, c);
-        return returnValue;
+        return new AquaCaret();
     }
 
     protected Highlighter createHighlighter() {

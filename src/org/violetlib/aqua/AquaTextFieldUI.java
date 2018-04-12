@@ -457,8 +457,7 @@ public class AquaTextFieldUI extends BasicTextFieldUI implements FocusRingOutlin
     }
 
     protected Caret createCaret() {
-        final Window owningWindow = SwingUtilities.getWindowAncestor(editor);
-        return new AquaCaret(owningWindow, editor);
+        return new AquaCaret();
     }
 
     protected Highlighter createHighlighter() {

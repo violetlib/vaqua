@@ -84,10 +84,8 @@ public class AquaEditorPaneUI extends BasicEditorPaneUI implements FocusRingOutl
         return new AquaFocusHandler();
     }
 
-    protected Caret createCaret(){
-        final Window owningWindow = SwingUtilities.getWindowAncestor(getComponent());
-        final AquaCaret returnValue = new AquaCaret(owningWindow, getComponent());
-        return returnValue;
+    protected Caret createCaret() {
+        return new AquaCaret();
     }
 
     protected Highlighter createHighlighter(){
