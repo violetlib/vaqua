@@ -33,29 +33,33 @@
 
 package org.violetlib.aqua;
 
-import java.awt.event.*;
-import java.beans.*;
-
+import java.awt.event.FocusEvent;
+import java.awt.event.MouseEvent;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import javax.swing.*;
 import javax.swing.plaf.UIResource;
-import javax.swing.text.*;
+import javax.swing.text.DefaultCaret;
+import javax.swing.text.Highlighter;
+import javax.swing.text.JTextComponent;
 
 @SuppressWarnings("serial") // Superclass is not serializable across versions
 public class AquaCaret extends DefaultCaret
         implements UIResource, PropertyChangeListener {
 
+    private final static String SELECT_CONTENT_ON_FOCUS_GAINED_KEY = "JTextComponent.selectContentOnFocusGained";
+
     private boolean isMultiLineEditor;
-    private boolean mFocused = false;
 
     @Override
-    public void install(final JTextComponent c) {
+    public void install(JTextComponent c) {
         super.install(c);
         isMultiLineEditor = c instanceof JTextArea || c instanceof JEditorPane;
         c.addPropertyChangeListener(this);
     }
 
     @Override
-    public void deinstall(final JTextComponent c) {
+    public void deinstall(JTextComponent c) {
         c.removePropertyChangeListener(this);
         super.deinstall(c);
     }
@@ -76,21 +80,22 @@ public class AquaCaret extends DefaultCaret
 
     @Override
     protected void fireStateChanged() {
-        // If we have focus the caret should only flash if the range length is zero
-        if (mFocused) setVisible(getComponent().isEditable());
+        // Changing caret position may change caret visibility.
+        JTextComponent c = getComponent();
+        setVisible(c.isEnabled() && c.isEditable() && c.isFocusOwner());
 
         super.fireStateChanged();
     }
 
     @Override
-    public void propertyChange(final PropertyChangeEvent evt) {
+    public void propertyChange(PropertyChangeEvent evt) {
         final String propertyName = evt.getPropertyName();
 
         if (AquaFocusHandler.FRAME_ACTIVE_PROPERTY.equals(propertyName)) {
             final JTextComponent comp = ((JTextComponent)evt.getSource());
 
             if (evt.getNewValue() == Boolean.TRUE) {
-                setVisible(comp.hasFocus());
+                setVisible(comp.isFocusOwner());
             } else {
                 setVisible(false);
             }
@@ -101,63 +106,65 @@ public class AquaCaret extends DefaultCaret
 
     // --- FocusListener methods --------------------------
 
-    private boolean shouldSelectAllOnFocus = true;
+    private boolean temporaryInhibitSelectAllOnFocusGained = false;
+
     @Override
-    public void focusGained(final FocusEvent e) {
-        final JTextComponent component = getComponent();
-        if (!component.isEnabled() || !component.isEditable()) {
-            super.focusGained(e);
-            return;
-        }
+    public void focusGained(FocusEvent e) {
 
-        mFocused = true;
-        if (!shouldSelectAllOnFocus) {
-            shouldSelectAllOnFocus = true;
-            super.focusGained(e);
-            return;
-        }
-
-        if (isMultiLineEditor) {
-            super.focusGained(e);
-            return;
-        }
-
-        final int end = component.getDocument().getLength();
-        final int dot = getDot();
-        final int mark = getMark();
-        if (dot == mark) {
-            if (dot == 0) {
-                component.setCaretPosition(end);
-                component.moveCaretPosition(0);
-            } else if (dot == end) {
-                component.setCaretPosition(0);
-                component.moveCaretPosition(end);
+        if (shouldSelectAllOnFocusGained()) {
+            JTextComponent c = getComponent();
+            final int end = c.getDocument().getLength();
+            final int dot = getDot();
+            final int mark = getMark();
+            if (dot == mark) {
+                if (dot == 0) {
+                    c.setCaretPosition(end);
+                    c.moveCaretPosition(0);
+                } else if (dot == end) {
+                    c.setCaretPosition(0);
+                    c.moveCaretPosition(end);
+                }
             }
         }
 
         super.focusGained(e);
     }
 
-    @Override
-    public void focusLost(final FocusEvent e) {
-        mFocused = false;
-        shouldSelectAllOnFocus = true;
-        if (isMultiLineEditor) {
-            setVisible(false);
-            getComponent().repaint();
-        } else {
-            super.focusLost(e);
+    private boolean shouldSelectAllOnFocusGained() {
+
+        if (temporaryInhibitSelectAllOnFocusGained) {
+            // inhibited by mouse pressed
+            temporaryInhibitSelectAllOnFocusGained = false;
+            return false;
         }
+
+        JTextComponent c = getComponent();
+        if (!c.isEnabled() || !c.isEditable()) {
+            return false;
+        }
+
+        Object o = c.getClientProperty(SELECT_CONTENT_ON_FOCUS_GAINED_KEY);
+        if (isMultiLineEditor) {
+            return Boolean.TRUE.equals(o);
+        } else {
+            return !Boolean.FALSE.equals(o);
+        }
+    }
+
+    @Override
+    public void focusLost(FocusEvent e) {
+        temporaryInhibitSelectAllOnFocusGained = false;
+        super.focusLost(e);
     }
 
     // This fixes the problem where when on the mac you have to ctrl left click to
     // get popup triggers the caret has code that only looks at button number.
     // see radar # 3125390
     @Override
-    public void mousePressed(final MouseEvent e) {
+    public void mousePressed(MouseEvent e) {
         if (!e.isPopupTrigger()) {
             super.mousePressed(e);
-            shouldSelectAllOnFocus = false;
+            temporaryInhibitSelectAllOnFocusGained = true;
         }
     }
 
