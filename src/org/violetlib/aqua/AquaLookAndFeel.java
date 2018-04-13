@@ -1,5 +1,5 @@
 /*
- * Changes copyright (c) 2015-2017 Alan Snyder.
+ * Changes copyright (c) 2015-2018 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -96,6 +96,9 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
         // Popups must be heavy to use the vibrant background
         if (popupFactory == null) {
             popupFactory = JavaSupport.createPopupFactory();
+        }
+
+        if (PopupFactory.getSharedInstance() != popupFactory) {
             PopupFactory.setSharedInstance(popupFactory);
         }
 
