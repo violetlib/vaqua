@@ -8,11 +8,12 @@
 
 package org.violetlib.aqua;
 
-import java.awt.Window;
+import java.awt.*;
 import java.security.AccessControlException;
 
 /**
  * A very hairy patch to support coexistence with native key-only windows, such as the NSColorPanel.
+ * This problem is fixed in Java 11.
  */
 
 public class KeyWindowPatch
@@ -51,8 +52,8 @@ public class KeyWindowPatch
     }
 
     private static Boolean computeIfNeeded() {
-        int result = nativeIsPatchNeeded();
-        return result != 0;
+        int version = AquaUtils.getJavaVersion();
+        return version < 1100000;
     }
 
     private static void loadNativeSupport() {
@@ -87,6 +88,5 @@ public class KeyWindowPatch
         return nativeEnsureWindowDelegateInstalled(wptr);
     }
 
-    private static native int nativeIsPatchNeeded();
     private static native int nativeEnsureWindowDelegateInstalled(long w);
 }

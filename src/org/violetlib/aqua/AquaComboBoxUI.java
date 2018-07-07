@@ -83,6 +83,11 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements AquaUtilControlSi
     protected Dimension cachedPreferredSize = new Dimension( 0, 0 );
     protected AquaComboBoxButton arrowButton;
     protected HierarchyListener hierarchyListener;
+    protected JList currentValueListBox;
+
+    public AquaComboBoxUI() {
+        currentValueListBox = new JList();
+    }
 
     public void installUI(final JComponent c) {
         super.installUI(c);
@@ -291,12 +296,11 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements AquaUtilControlSi
         }
 
         // fake it out! not renderPressed
-        Component c = renderer.getListCellRendererComponent(listBox, displayedItem, -1, false, false);
+        currentValueListBox.setBackground(new Color(0, 0, 0, 0));
+        currentValueListBox.setForeground(comboBox.getForeground());
+        Component c = renderer.getListCellRendererComponent(currentValueListBox, displayedItem, -1, false, false);
         // System.err.println("Renderer: " + renderer);
         c.setFont(currentValuePane.getFont());
-
-        Color foreground = arrowButton.getForeground();
-        c.setForeground(foreground);
 
         // Sun Fix for 4238829: should lay out the JPanel.
         boolean shouldValidate = false;

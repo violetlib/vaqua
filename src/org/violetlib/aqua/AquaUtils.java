@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2017 Alan Snyder.
+ * Copyright (c) 2015-2018 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -37,7 +37,9 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.geom.Rectangle2D;
-import java.awt.image.*;
+import java.awt.image.BufferedImage;
+import java.awt.image.ConvolveOp;
+import java.awt.image.Kernel;
 import java.lang.ref.SoftReference;
 import java.lang.reflect.Method;
 import java.security.AccessController;
@@ -123,6 +125,7 @@ final public class AquaUtils {
      * Return the UI of a component if it satisfies the specified class or interface.
      */
     public static <T> T getUI(JComponent c, Class<T> requestedClass) {
+        // The getUI() method is public as of Java 9
         try {
             final Class<? extends JComponent> clazz = c.getClass();
             final Method getUIMethod = clazz.getMethod("getUI");
@@ -131,6 +134,24 @@ final public class AquaUtils {
         } catch (Throwable th) {
             return null;
         }
+    }
+
+    public static String getWindowNameForDebugging(Window w) {
+        String name = w.getName();
+        if (name == null) {
+            name = w.getClass().getName() + "@" + Integer.toHexString(w.hashCode());
+        }
+        if (w instanceof Frame) {
+            Frame fr = (Frame) w;
+            String title = fr.getTitle();
+            if (title != null) {
+                if (title.length() > 20) {
+                    title = title.substring(0, 20) + "...";
+                }
+                name += " \"" + title + "\"";
+            }
+        }
+        return name;
     }
 
     public static Insets combineAsInsets(Insetter s, Insets adjustments) {
@@ -621,23 +642,17 @@ final public class AquaUtils {
     public static void paintImmediately(Window w, JComponent c) {
         // a possible workaround... the goal is to paint to the AWT view before the window becomes visible
         // Note that the paintImmediately() method does nothing if it believes that the component is not visible.
-        nativeSetWindowVisibleField(w, true);
-        c.paintImmediately(0, 0, c.getWidth(), c.getHeight());
-        nativeSetWindowVisibleField(w, false);
-    }
-
-    abstract static class RecyclableObject<T> {
-        private SoftReference<T> objectRef;
-
-        T get() {
-            T referent;
-            if (objectRef != null && (referent = objectRef.get()) != null) return referent;
-            referent = create();
-            objectRef = new SoftReference<T>(referent);
-            return referent;
+        boolean wasVisible = w.isVisible();
+        if (!wasVisible) {
+            nativeSetWindowVisibleField(w, true);
         }
-
-        protected abstract T create();
+        try {
+            c.paintImmediately(0, 0, c.getWidth(), c.getHeight());
+        } finally {
+            if (!wasVisible) {
+                nativeSetWindowVisibleField(w, false);
+            }
+        }
     }
 
     public abstract static class RecyclableSingleton<T> {
@@ -817,39 +832,6 @@ final public class AquaUtils {
         }
     }
 
-    private static final RecyclableSingleton<Method> getJComponentGetFlagMethod = new RecyclableSingleton<Method>() {
-        @Override
-        protected Method getInstance() {
-            return AccessController.doPrivileged(
-                    new PrivilegedAction<Method>() {
-                        @Override
-                        public Method run() {
-                            try {
-                                final Method method = JComponent.class.getDeclaredMethod(
-                                        "getFlag", new Class<?>[]{int.class});
-                                method.setAccessible(true);
-                                return method;
-                            } catch (final Throwable ignored) {
-                                return null;
-                            }
-                        }
-                    }
-            );
-        }
-    };
-
-    private static final Integer OPAQUE_SET_FLAG = 24; // private int JComponent.OPAQUE_SET
-
-    static boolean hasOpaqueBeenExplicitlySet(final JComponent c) {
-        final Method method = getJComponentGetFlagMethod.get();
-        if (method == null) return false;
-        try {
-            return Boolean.TRUE.equals(method.invoke(c, OPAQUE_SET_FLAG));
-        } catch (final Throwable ignored) {
-            return false;
-        }
-    }
-
     // options for when to use a magic eraser
     public final static int ERASE_IF_TEXTURED = 1<<0;
     public final static int ERASE_IF_VIBRANT = 1<<1;
@@ -964,7 +946,7 @@ final public class AquaUtils {
         }
     }
 
-    static final Map<Object, Object> appContextMap = new HashMap<Object, Object>();
+    static final Map<Object,Object> appContextMap = new HashMap<>();
 
     public static boolean isProperty(String s, String... props) {
         if (s != null) {
@@ -1390,12 +1372,14 @@ final public class AquaUtils {
     }
 
     public static void syncAWTView(Window w) {
-        // Both calls appear to be necessary to ensure that the pixels are ready when the window is made visible.
-        Toolkit.getDefaultToolkit().sync();
-        try {
-            execute(w, AquaUtils::nativeSyncAWTView);
-        } catch (UnsupportedOperationException ex) {
-            // native window may no longer exist (esp when called from ShadowMaker)
+        if (w.isDisplayable()) {
+            // Both calls appear to be necessary to ensure that the pixels are ready when the window is made visible.
+            Toolkit.getDefaultToolkit().sync();
+            try {
+                execute(w, AquaUtils::nativeSyncAWTView);
+            } catch (UnsupportedOperationException ex) {
+                // native window may no longer exist (esp when called from ShadowMaker)
+            }
         }
     }
 
@@ -1415,7 +1399,10 @@ final public class AquaUtils {
         Object[] data = new Object[1];
         long ptr = nativeGetNativeWindow(w, data);
         if (ptr == 0) {
-            throw new UnsupportedOperationException("Unable to get NSWindow for window " + w.getName());
+            String name = getWindowNameForDebugging(w);
+            UnsupportedOperationException ex = new UnsupportedOperationException("Unable to get NSWindow for window " + name);
+            ex.printStackTrace();
+            throw ex;
         } else {
             Lock lock = (Lock) data[0];
             if (lock != null) {
@@ -1454,6 +1441,7 @@ final public class AquaUtils {
     private static native int nativeSetAWTViewVisibility(long w, boolean isVisible);
     private static native int nativeSyncAWTView(long w);
     private static native int nativeGetLeftSideBearing(JComponent c, FontMetrics fm, char firstChar);
+    public static native boolean nativeHasOpaqueBeenExplicitlySet(JComponent c);
     public static native void nativeInstallAATextInfo(UIDefaults table);
     private static native void nativeSetWindowVisibleField(Window w, boolean isVisible);
     public static native void disablePopupCache(Popup p);

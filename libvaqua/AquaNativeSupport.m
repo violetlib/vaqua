@@ -136,6 +136,16 @@ void windowDebug(NSWindow *w)
     NSString *od = w.opaque ? @" Opaque" : @"";
     NSRect frame = w.frame;
     NSLog(@"Window: %@%@ %f %f %f %f", [w description], od, frame.origin.x, frame.origin.y, frame.size.width, frame.size.height);
+
+    NSAppearance *appearance = w.appearance;
+    if (appearance) {
+        NSLog(@"  Appearance: %@", [appearance name]);
+    }
+    appearance = w.effectiveAppearance;
+    if (appearance) {
+        NSLog(@"  Effective appearance: %@", [appearance name]);
+    }
+
     NSView *v = getTopView(w);
     if (v != nil) {
         viewDebug(v, @"", 2);
@@ -2165,25 +2175,6 @@ JNIEXPORT int JNICALL Java_org_violetlib_aqua_AquaUtils_nativeDebugWindow
 
     JNF_COCOA_EXIT(env);
     return 0;
-}
-
-/*
- * Class:     org_violetlib_aqua_KeyWindowPatch
- * Method:    nativeIsPatchNeeded
- * Signature: ()I
- */
-JNIEXPORT jint JNICALL Java_org_violetlib_aqua_KeyWindowPatch_nativeIsPatchNeeded
-  (JNIEnv *env, jclass cl)
-{
-    jint result = 0;
-    
-    JNF_COCOA_ENTER(env);
-
-    result = ![[AWTWindow class] instancesRespondToSelector: @selector(windowDidResignMain:)];
-
-    JNF_COCOA_EXIT(env);
-
-    return result;
 }
 
 /*
