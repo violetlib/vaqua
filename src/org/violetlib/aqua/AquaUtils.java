@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2018 Alan Snyder.
+ * Copyright (c) 2015-2017 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -37,9 +37,7 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.geom.Rectangle2D;
-import java.awt.image.BufferedImage;
-import java.awt.image.ConvolveOp;
-import java.awt.image.Kernel;
+import java.awt.image.*;
 import java.lang.ref.SoftReference;
 import java.lang.reflect.Method;
 import java.security.AccessController;
@@ -247,7 +245,7 @@ final public class AquaUtils {
         int left = insets.left;
         int right = insets.right;
         return new Rectangle(bounds.x + left, bounds.y + top, bounds.width - left - right,
-          bounds.height - top - bottom);
+                bounds.height - top - bottom);
     }
 
     /**
@@ -356,17 +354,17 @@ final public class AquaUtils {
      * @return the possibly clipped version of the compound labels string
      */
     public static String layoutCompoundLabel(JComponent c,
-                                             FontMetrics fm,
-                                             String text,
-                                             Icon icon,
-                                             int verticalAlignment,
-                                             int horizontalAlignment,
-                                             int verticalTextPosition,
-                                             int horizontalTextPosition,
-                                             Rectangle viewR,
-                                             Rectangle iconR,
-                                             Rectangle textR,
-                                             int textIconGap)
+            FontMetrics fm,
+            String text,
+            Icon icon,
+            int verticalAlignment,
+            int horizontalAlignment,
+            int verticalTextPosition,
+            int horizontalTextPosition,
+            Rectangle viewR,
+            Rectangle iconR,
+            Rectangle textR,
+            int textIconGap)
     {
         boolean orientationIsLeftToRight = true;
         int hAlign = horizontalAlignment;
@@ -401,17 +399,17 @@ final public class AquaUtils {
         }
 
         return layoutCompoundLabelImpl(c,
-          fm,
-          text,
-          icon,
-          verticalAlignment,
-          hAlign,
-          verticalTextPosition,
-          hTextPos,
-          viewR,
-          iconR,
-          textR,
-          textIconGap);
+                fm,
+                text,
+                icon,
+                verticalAlignment,
+                hAlign,
+                verticalTextPosition,
+                hTextPos,
+                viewR,
+                iconR,
+                textR,
+                textIconGap);
     }
 
     /**
@@ -429,18 +427,18 @@ final public class AquaUtils {
      * inserted at the middle of the text instead of at the end.
      */
     private static String layoutCompoundLabelImpl(
-      JComponent c,
-      FontMetrics fm,
-      String text,
-      Icon icon,
-      int verticalAlignment,
-      int horizontalAlignment,
-      int verticalTextPosition,
-      int horizontalTextPosition,
-      Rectangle viewR,
-      Rectangle iconR,
-      Rectangle textR,
-      int textIconGap)
+            JComponent c,
+            FontMetrics fm,
+            String text,
+            Icon icon,
+            int verticalAlignment,
+            int horizontalAlignment,
+            int verticalTextPosition,
+            int horizontalTextPosition,
+            Rectangle viewR,
+            Rectangle iconR,
+            Rectangle textR,
+            int textIconGap)
     {
         /* Initialize the icon bounds rectangle iconR.
          */
@@ -565,10 +563,10 @@ final public class AquaUtils {
          */
         int labelR_x = Math.min(iconR.x, textR.x);
         int labelR_width = Math.max(iconR.x + iconR.width,
-          textR.x + textR.width) - labelR_x;
+                textR.x + textR.width) - labelR_x;
         int labelR_y = Math.min(iconR.y, textR.y);
         int labelR_height = Math.max(iconR.y + iconR.height,
-          textR.y + textR.height) - labelR_y;
+                textR.y + textR.height) - labelR_y;
 
         int dx, dy;
 
@@ -588,7 +586,7 @@ final public class AquaUtils {
         } else { // (horizontalAlignment == CENTER)
 
             dx = (viewR.x + (viewR.width / 2))
-                   - (labelR_x + (labelR_width / 2));
+                    - (labelR_x + (labelR_width / 2));
         }
 
         /* Translate textR and glypyR by dx,dy.
@@ -693,7 +691,7 @@ final public class AquaUtils {
         @Override
         protected Boolean getInstance() {
             final String sizeProperty = (String) AccessController.doPrivileged((PrivilegedAction<String>) () -> System.getProperty(
-              ANIMATIONS_PROPERTY));
+                    ANIMATIONS_PROPERTY));
             return !"false".equals(sizeProperty); // should be true by default
         }
     };
@@ -819,6 +817,39 @@ final public class AquaUtils {
         }
     }
 
+    private static final RecyclableSingleton<Method> getJComponentGetFlagMethod = new RecyclableSingleton<Method>() {
+        @Override
+        protected Method getInstance() {
+            return AccessController.doPrivileged(
+                    new PrivilegedAction<Method>() {
+                        @Override
+                        public Method run() {
+                            try {
+                                final Method method = JComponent.class.getDeclaredMethod(
+                                        "getFlag", new Class<?>[]{int.class});
+                                method.setAccessible(true);
+                                return method;
+                            } catch (final Throwable ignored) {
+                                return null;
+                            }
+                        }
+                    }
+            );
+        }
+    };
+
+    private static final Integer OPAQUE_SET_FLAG = 24; // private int JComponent.OPAQUE_SET
+
+    static boolean hasOpaqueBeenExplicitlySet(final JComponent c) {
+        final Method method = getJComponentGetFlagMethod.get();
+        if (method == null) return false;
+        try {
+            return Boolean.TRUE.equals(method.invoke(c, OPAQUE_SET_FLAG));
+        } catch (final Throwable ignored) {
+            return false;
+        }
+    }
+
     // options for when to use a magic eraser
     public final static int ERASE_IF_TEXTURED = 1<<0;
     public final static int ERASE_IF_VIBRANT = 1<<1;
@@ -933,7 +964,7 @@ final public class AquaUtils {
         }
     }
 
-    static final Map<Object,Object> appContextMap = new HashMap<>();
+    static final Map<Object, Object> appContextMap = new HashMap<Object, Object>();
 
     public static boolean isProperty(String s, String... props) {
         if (s != null) {
@@ -1047,9 +1078,9 @@ final public class AquaUtils {
     public static Object beginGraphics(Graphics2D graphics2d) {
         Object object = graphics2d.getRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING);
         graphics2d.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING,
-          RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+                RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
         graphics2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
-          RenderingHints.VALUE_ANTIALIAS_ON);
+                RenderingHints.VALUE_ANTIALIAS_ON);
         return object;
     }
 
@@ -1057,20 +1088,20 @@ final public class AquaUtils {
     public static void endGraphics(Graphics2D graphics2d, Object oldHints) {
         if (oldHints != null) {
             graphics2d.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING,
-              oldHints);
+                    oldHints);
         }
     }
 
     private static final WeakHashMap<Graphics,Integer> scaleMap = new WeakHashMap<>();
 
     public static void drawHLine(Graphics g, int x1, int x2, int y) {
-        if (x2 < x1) {
-            final int temp = x2;
-            x2 = x1;
-            x1 = temp;
-        }
-        g.fillRect(x1, y, x2 - x1 + 1, 1);
-    }
+         if (x2 < x1) {
+             final int temp = x2;
+             x2 = x1;
+             x1 = temp;
+         }
+         g.fillRect(x1, y, x2 - x1 + 1, 1);
+     }
 
     @SuppressWarnings("deprecation")
     public static FontMetrics getFontMetrics(JComponent c, Graphics g, Font font) {
@@ -1359,14 +1390,12 @@ final public class AquaUtils {
     }
 
     public static void syncAWTView(Window w) {
-        if (w.isDisplayable()) {
-            // Both calls appear to be necessary to ensure that the pixels are ready when the window is made visible.
-            Toolkit.getDefaultToolkit().sync();
-            try {
-                execute(w, AquaUtils::nativeSyncAWTView);
-            } catch (UnsupportedOperationException ex) {
-                // native window may no longer exist (esp when called from ShadowMaker)
-            }
+        // Both calls appear to be necessary to ensure that the pixels are ready when the window is made visible.
+        Toolkit.getDefaultToolkit().sync();
+        try {
+            execute(w, AquaUtils::nativeSyncAWTView);
+        } catch (UnsupportedOperationException ex) {
+            // native window may no longer exist (esp when called from ShadowMaker)
         }
     }
 
@@ -1386,14 +1415,7 @@ final public class AquaUtils {
         Object[] data = new Object[1];
         long ptr = nativeGetNativeWindow(w, data);
         if (ptr == 0) {
-            String name = w.getName();
-            if (w instanceof Frame) {
-                Frame fr = (Frame) w;
-                name = fr.getTitle() + " " + name;
-            }
-            UnsupportedOperationException ex = new UnsupportedOperationException("Unable to get NSWindow for window " + name);
-            ex.printStackTrace();
-            throw ex;
+            throw new UnsupportedOperationException("Unable to get NSWindow for window " + w.getName());
         } else {
             Lock lock = (Lock) data[0];
             if (lock != null) {
@@ -1432,7 +1454,6 @@ final public class AquaUtils {
     private static native int nativeSetAWTViewVisibility(long w, boolean isVisible);
     private static native int nativeSyncAWTView(long w);
     private static native int nativeGetLeftSideBearing(JComponent c, FontMetrics fm, char firstChar);
-    public static native boolean nativeHasOpaqueBeenExplicitlySet(JComponent c);
     public static native void nativeInstallAATextInfo(UIDefaults table);
     private static native void nativeSetWindowVisibleField(Window w, boolean isVisible);
     public static native void disablePopupCache(Popup p);

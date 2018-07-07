@@ -40,6 +40,17 @@ static int VERSION = 3;
 #import "AquaSidebarBackground.h"
 #import "AquaWrappedAWTView.h"
 
+@interface AWTWindow
+@end
+
+// Not sure if this works, but try to ensure that patched classes are loaded before the patch.
+
+@interface CMenuBar
+@end
+
+@interface CMenuItem
+@end
+
 static JavaVM *vm;
 static jint javaVersion;
 static jobject synchronizeCallback;
@@ -2154,6 +2165,25 @@ JNIEXPORT int JNICALL Java_org_violetlib_aqua_AquaUtils_nativeDebugWindow
 
     JNF_COCOA_EXIT(env);
     return 0;
+}
+
+/*
+ * Class:     org_violetlib_aqua_KeyWindowPatch
+ * Method:    nativeIsPatchNeeded
+ * Signature: ()I
+ */
+JNIEXPORT jint JNICALL Java_org_violetlib_aqua_KeyWindowPatch_nativeIsPatchNeeded
+  (JNIEnv *env, jclass cl)
+{
+    jint result = 0;
+    
+    JNF_COCOA_ENTER(env);
+
+    result = ![[AWTWindow class] instancesRespondToSelector: @selector(windowDidResignMain:)];
+
+    JNF_COCOA_EXIT(env);
+
+    return result;
 }
 
 /*
