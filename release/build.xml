@@ -14,7 +14,7 @@
         <arg value="9+"/>
     </exec>
 
-    <property name="javac" value="${jdk}/bin/javac"/>
+    <property name="javac" location="${jdk}/bin/javac"/>
 
     <!-- A Java 8 boot class path is required -->
 
@@ -24,34 +24,34 @@
         <arg value="1.8"/>
     </exec>
 
-    <property name="bootclasspath" value="${jdk8}/jre/lib/rt.jar" />
+    <property name="bootclasspath" location="${jdk8}/jre/lib/rt.jar" />
 
     <!-- A JDK lib directory is required -->
 
-    <property name="jdklibdir" value="/Library/Java/JavaVirtualMachines/jdk-9.0.4.jdk/Contents/Home/lib"/>
+    <property name="jdklibdir" location="/Library/Java/JavaVirtualMachines/jdk-9.0.4.jdk/Contents/Home/lib"/>
 
     <property name="RELEASE" value="0.9"/>
     <property name="fullReleaseName" value="${RELEASE} ${NOW}"/>
 
-    <property name="base" value=".."/>
-    <property name="src" value="${base}/src"/>
-    <property name="src8" value="${base}/Java8Support/src"/>
-    <property name="src9" value="${base}/Java9Support/src"/>
-    <property name="jnisrc" value="${base}/libvaqua"/>
-    <property name="libkeywindowpatchsrc" value="${base}/libkeywindowpatch"/>
-    <property name="resources" value="${base}/resources"/>
-    <property name="builddir" value="out"/>
-    <property name="classesdir" value="${builddir}/classes"/>
-    <property name="headersdir" value="${builddir}/headers"/>
-    <property name="jnidir" value="${builddir}/jni"/>
-    <property name="distdir" value="dist"/>
+    <property name="base" location=".."/>
+    <property name="src" location="${base}/src"/>
+    <property name="src8" location="${base}/Java8Support/src"/>
+    <property name="src9" location="${base}/Java9Support/src"/>
+    <property name="jnisrc" location="${base}/libvaqua"/>
+    <property name="libkeywindowpatchsrc" location="${base}/libkeywindowpatch"/>
+    <property name="resources" location="${base}/resources"/>
+    <property name="builddir" location="out"/>
+    <property name="classesdir" location="${builddir}/classes"/>
+    <property name="headersdir" location="${builddir}/headers"/>
+    <property name="jnidir" location="${builddir}/jni"/>
+    <property name="distdir" location="dist"/>
 
-    <property name="renderingLibraryJAR" value="${base}/lib/VAquaRendering.jar"/>
+    <property name="renderingLibraryJAR" location="${base}/lib/VAquaRendering.jar"/>
 
     <property name="SDKversion" value="10.13"/>
-    <property name="SDKroot" value="/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX${SDKversion}.sdk" />
-    <property name="libpath" value="${base}/lib/IdeaAnnotations.jar"/>
-    <property name="cc" value="/usr/bin/cc"/>
+    <property name="SDKroot" location="/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX${SDKversion}.sdk" />
+    <property name="libpath" location="${base}/lib/IdeaAnnotations.jar"/>
+    <property name="cc" location="/usr/bin/cc"/>
 
     <property name="debug" value="false"/>
 
