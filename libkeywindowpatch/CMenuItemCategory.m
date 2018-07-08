@@ -84,7 +84,7 @@ jlong UTC(NSEvent *event);
             if (keyWindow != nil && [[keyWindow delegate] respondsToSelector: @selector(sendEvent:)]) {
                 return;
             }
-		}
+        }
 
         static JNF_CLASS_CACHE(jc_CMenuItem, "sun/lwawt/macosx/CMenuItem");
         static JNF_MEMBER_CACHE(jm_handleAction, jc_CMenuItem, "handleAction", "(JI)V"); // AWT_THREADING Safe (event)
