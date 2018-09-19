@@ -36,9 +36,8 @@ package org.violetlib.aqua;
 import java.awt.*;
 import java.awt.event.*;
 import java.awt.geom.RoundRectangle2D;
-import javax.accessibility.Accessible;
-import javax.accessibility.AccessibleContext;
-import javax.accessibility.AccessibleState;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import javax.swing.*;
 import javax.swing.border.Border;
 import javax.swing.event.DocumentEvent;
@@ -49,19 +48,27 @@ import javax.swing.plaf.basic.BasicComboBoxUI;
 import javax.swing.plaf.basic.ComboPopup;
 import javax.swing.text.JTextComponent;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.violetlib.aqua.AquaUtils.RecyclableSingleton;
 import org.violetlib.aqua.ClientPropertyApplicator.Property;
 import org.violetlib.geom.ExpandableOutline;
 import org.violetlib.jnr.Insetter;
 import org.violetlib.jnr.LayoutInfo;
 import org.violetlib.jnr.aqua.*;
+import org.violetlib.jnr.aqua.AquaUIPainter.ComboBoxWidget;
+import org.violetlib.jnr.aqua.AquaUIPainter.PopupButtonWidget;
 import org.violetlib.jnr.aqua.AquaUIPainter.Size;
+import org.violetlib.jnr.aqua.AquaUIPainter.State;
 
+import static org.violetlib.jnr.aqua.AquaUIPainter.ComboBoxWidget.*;
 import static org.violetlib.jnr.aqua.AquaUIPainter.PopupButtonWidget.*;
 
 // Inspired by MetalComboBoxUI, which also has a combined text-and-arrow button for noneditables
-public class AquaComboBoxUI extends BasicComboBoxUI implements AquaUtilControlSize.Sizeable, FocusRingOutlineProvider {
-    public static ComponentUI createUI(final JComponent c) {
+public class AquaComboBoxUI extends BasicComboBoxUI
+        implements AquaUtilControlSize.Sizeable, FocusRingOutlineProvider, AquaComponentUI {
+
+    public static ComponentUI createUI(JComponent c) {
         return new AquaComboBoxUI();
     }
 
@@ -75,21 +82,36 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements AquaUtilControlSi
     public static final String TITLE_CLIENT_PROPERTY_KEY = "JComboBox.title";
 
     private static AquaUIPainter painter = AquaPainting.create();
-    private static AquaCellEditorPolicy cellEditorPolicy = AquaCellEditorPolicy.getInstance();
     private static OptionallyFocusableComponentHandler focusHandler = new MyOptionalFocusHandler();
 
     private int oldMaximumRowCount;
-    protected Size sizeVariant;
     protected Dimension cachedPreferredSize = new Dimension( 0, 0 );
     protected AquaComboBoxButton arrowButton;
     protected HierarchyListener hierarchyListener;
-    protected JList currentValueListBox;
+    protected @NotNull BasicContextualColors colors;
+    protected @Nullable AppearanceContext appearanceContext;
+    protected @NotNull JList currentValueListBox;
+    private final PropertyChangeListener propertyChangeListener = new AquaPropertyChangeListener();
+    private final DocumentListener documentListener = new MyDocumentListener();
+    private final HierarchyListener popupListener = new MyPopupListener();
+
+    // derived configuration attributes
+    protected Size sizeVariant;
+    protected boolean isPopDown;
+    protected String style;
+    protected @Nullable AquaCellEditorPolicy.CellStatus cellStatus;
+    protected boolean isTextured;
+    protected boolean isToolbar;
+
+    // cached attributes
+    protected AbstractComboBoxLayoutConfiguration layoutConfiguration;
 
     public AquaComboBoxUI() {
+        colors = AquaColors.CLEAR_CONTROL_COLORS;
         currentValueListBox = new JList();
     }
 
-    public void installUI(final JComponent c) {
+    public void installUI(JComponent c) {
         super.installUI(c);
 
         LookAndFeel.installProperty(c, "opaque", false);
@@ -103,7 +125,7 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements AquaUtilControlSi
         configure(null);
     }
 
-    public void uninstallUI(final JComponent c) {
+    public void uninstallUI(JComponent c) {
         comboBox.setMaximumRowCount(oldMaximumRowCount);
         super.uninstallUI(c);
     }
@@ -122,9 +144,17 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements AquaUtilControlSi
         AquaFullKeyboardFocusableHandler.addListener(comboBox);
         hierarchyListener = new MyHierarchyListener();
         comboBox.addHierarchyListener(hierarchyListener);
+        comboBox.addPropertyChangeListener(propertyChangeListener);
+        AquaComboBoxPopup popup = (AquaComboBoxPopup) getPopup();
+        popup.addHierarchyListener(popupListener);
+        AppearanceManager.installListener(comboBox);
     }
 
     protected void uninstallListeners() {
+        AppearanceManager.uninstallListener(comboBox);
+        AquaComboBoxPopup popup = (AquaComboBoxPopup) getPopup();
+        popup.removeHierarchyListener(popupListener);
+        comboBox.removePropertyChangeListener(propertyChangeListener);
         comboBox.removeHierarchyListener(hierarchyListener);
         hierarchyListener = null;
         AquaUtilControlSize.removeSizePropertyListener(comboBox);
@@ -134,7 +164,6 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements AquaUtilControlSi
 
     protected void installComponents() {
         super.installComponents();
-
         // client properties must be applied after the components have been installed,
         // because isSquare and isPopdown are applied to the installed button
         getApplicator().attachAndApplyClientProperties(comboBox);
@@ -150,7 +179,7 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements AquaUtilControlSi
         public void hierarchyChanged(HierarchyEvent e) {
             AquaComboBoxUI ui = AquaUtils.getUI(comboBox, AquaComboBoxUI.class);
             if (ui != null) {
-                ui.configure(null);
+                ui.respondToHierarchyChange();
             }
         }
     }
@@ -168,33 +197,106 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements AquaUtilControlSi
     protected ItemListener createItemListener() {
         return new ItemListener() {
             long lastBlink = 0L;
-            public void itemStateChanged(final ItemEvent e) {
+            public void itemStateChanged(ItemEvent e) {
                 if (e.getStateChange() != ItemEvent.SELECTED) return;
                 if (!popup.isVisible()) return;
 
                 // sometimes, multiple selection changes can occur while the popup is up,
                 // and blinking more than "once" (in a second) is not desirable
-                final long now = System.currentTimeMillis();
+                long now = System.currentTimeMillis();
                 if (now - 1000 < lastBlink) return;
                 lastBlink = now;
 
-                final JList<Object> itemList = popup.getList();
-                final ListUI listUI = itemList.getUI();
+                JList<Object> itemList = popup.getList();
+                ListUI listUI = itemList.getUI();
                 if (!(listUI instanceof AquaListUI)) return;
-                final AquaListUI aquaListUI = (AquaListUI)listUI;
+                AquaListUI aquaListUI = (AquaListUI)listUI;
 
-                final int selectedIndex = comboBox.getSelectedIndex();
-                final ListModel<Object> dataModel = itemList.getModel();
+                int selectedIndex = comboBox.getSelectedIndex();
+                ListModel<Object> dataModel = itemList.getModel();
                 if (dataModel == null) return;
 
-                final Object value = dataModel.getElementAt(selectedIndex);
+                Object value = dataModel.getElementAt(selectedIndex);
                 AquaUtils.blinkMenu(new AquaUtils.Selectable() {
-                    public void paintSelected(final boolean selected) {
+                    public void paintSelected(boolean selected) {
                         aquaListUI.repaintCell(value, selectedIndex, selected);
                     }
                 });
             }
         };
+    }
+
+    class AquaPropertyChangeListener implements PropertyChangeListener {
+        public void propertyChange(PropertyChangeEvent e) {
+            String name = e.getPropertyName();
+            if (name.equals("enabled")) {
+                configureAppearanceContext(null);
+            }
+        }
+    }
+
+    @Override
+    public void appearanceChanged(@NotNull JComponent c, @NotNull AquaAppearance appearance) {
+        configureAppearanceContext(appearance);
+    }
+
+    @Override
+    public void activeStateChanged(@NotNull JComponent c, boolean isActive) {
+        configureAppearanceContext(null);
+    }
+
+    protected void configureAppearanceContext(@Nullable AquaAppearance appearance) {
+        if (appearance == null) {
+            appearance = AppearanceManager.ensureAppearance(comboBox);
+        }
+        AquaUIPainter.State state = getState();
+        appearanceContext = new AppearanceContext(appearance, state, false, false);
+        // If the combo box is being used as a cell renderer component, it is up to the cell renderer to configure
+        // its colors.
+        if (cellStatus == null) {
+            AquaColors.installColors(comboBox, appearanceContext, colors);
+        }
+        comboBox.repaint();
+    }
+
+    protected AquaUIPainter.State getState() {
+        boolean isActive = AquaFocusHandler.isActive(comboBox);
+        if (!comboBox.isEnabled()) {
+            return isActive ? State.DISABLED : State.DISABLED_INACTIVE;
+        }
+
+        if (isActive && arrowButton != null) {
+            if (comboBox.isPopupVisible()) {
+                return State.PRESSED;
+            }
+
+            ButtonModel model = arrowButton.getModel();
+            if (model.isArmed() && model.isPressed()) {
+                return State.PRESSED;
+            }
+
+            if (arrowButton.isRollover) {
+                return State.ROLLOVER;
+            }
+        }
+
+        // Most combo boxes do not display differently when inactive.
+        // The exceptions:
+        // Default style buttons lose their colored arrow button.
+        // Textured buttons display dimmed.
+
+        if (!isActive) {
+            Object w = getWidget();
+            if (w == BUTTON_POP_DOWN || w == BUTTON_POP_UP || w == BUTTON_COMBO_BOX || isTextured) {
+                return State.INACTIVE;
+            }
+        }
+
+        return State.ACTIVE;
+    }
+
+    private boolean isTemplateIconEnabled(ImageIcon ii) {
+        return AquaImageFactory.isTemplateImage(ii.getImage());
     }
 
     @Override
@@ -209,53 +311,116 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements AquaUtilControlSi
         isMinimumSizeDirty = true;  // workaround for bug in BasicComboBoxUI, editable change does not set this flag
     }
 
-    public void paint(final Graphics g, final JComponent c) {
-        // If this is an editable combo box with a border, we paint the component background here.
-        // Otherwise, we let the button do the painting.
+    @Override
+    public void update(Graphics g, JComponent c) {
+        AquaAppearance appearance = AppearanceManager.registerCurrentAppearance(c);
+        super.update(g, c);
+        AppearanceManager.restoreCurrentAppearance(appearance);
+    }
 
-        final boolean editable = comboBox.isEditable();
-        final boolean isCell = cellEditorPolicy.isCellEditor(comboBox);
+    @Override
+    public void paint(Graphics g, JComponent c) {
 
-        if (isCell) {
-            // Our foreground color may have been configured for a particular cell.
-            // Transfer that color to the text field so that it paints the text using that color.
-            Component ed = comboBox.getEditor().getEditorComponent();
-            ed.setForeground(c.getForeground());
-        } else if (editable && arrowButton != null) {
-            Configuration bg = arrowButton.getConfiguration();
-            painter.configure(c.getWidth(), c.getHeight());
-            painter.getPainter(bg).paint(g, 0, 0);
+        int width = comboBox.getWidth();
+        int height = comboBox.getHeight();
+
+        if (height <= 0 || width <= 0) {
+            return;
+        }
+
+        // paint the button
+
+        Configuration bg = getConfiguration();
+        AquaUtils.configure(painter, comboBox, width, height);
+        painter.getPainter(bg).paint(g, 0, 0);
+
+        if (!comboBox.isEditable()) {
+            paintValue(g);
         }
     }
 
-    protected AbstractComboBoxLayoutConfiguration getLayoutConfiguration() {
-        return arrowButton != null ? arrowButton.getLayoutConfiguration() : null;
+    public Configuration getConfiguration() {
+
+        State state = getState();
+
+        LayoutConfiguration g = getLayoutConfiguration();
+        if (g instanceof PopupButtonLayoutConfiguration) {
+            PopupButtonLayoutConfiguration bg = (PopupButtonLayoutConfiguration) g;
+            return new PopupButtonConfiguration(bg, state);
+
+        } else if (g instanceof ComboBoxLayoutConfiguration) {
+            ComboBoxLayoutConfiguration bg = (ComboBoxLayoutConfiguration) g;
+            boolean isFocused = false; // comboBox.hasFocus() || comboBox.getEditor().getEditorComponent().hasFocus();
+            return new ComboBoxConfiguration(bg, state, isFocused);
+        } else {
+            return null;
+        }
+    }
+
+    private boolean determineIsTextured() {
+        Object w = getWidget();
+        return w == BUTTON_POP_DOWN_TEXTURED
+                || w == BUTTON_POP_UP_TEXTURED
+                || w == BUTTON_COMBO_BOX_TEXTURED
+                || w == BUTTON_POP_DOWN_TEXTURED_TOOLBAR
+                || w == BUTTON_POP_UP_TEXTURED_TOOLBAR
+                || w == BUTTON_COMBO_BOX_TEXTURED_TOOLBAR;
+    }
+
+    private boolean determineIsToolbar() {
+        Object w = getWidget();
+        return w == BUTTON_POP_DOWN_TEXTURED_TOOLBAR
+                || w == BUTTON_POP_UP_TEXTURED_TOOLBAR
+                || w == BUTTON_COMBO_BOX_TEXTURED_TOOLBAR;
+    }
+
+    private @Nullable AquaCellEditorPolicy.CellStatus determineCellStatus() {
+        return AquaCellEditorPolicy.getInstance().getCellStatus(comboBox);
+    }
+
+    /**
+     * Modify the title icon if necessary based on the combo box (button) style and state.
+     * @param icon The supplied icon.
+     * @return the icon to use.
+     */
+    public Icon getIcon(@NotNull Icon icon) {
+        State st = getState();
+
+        if (icon instanceof ImageIcon) {
+            ImageIcon ii = (ImageIcon) icon;
+            if (isTemplateIconEnabled(ii)) {
+                Color color = comboBox.getForeground();
+                if (color != null) {
+                    Image im = ii.getImage();
+                    im = AquaImageFactory.getProcessedImage(im, color);
+                    return new ImageIconUIResource(im);
+                }
+            }
+        }
+
+        if (st == State.PRESSED) {
+            return AquaIcon.createPressedDarkIcon(icon);
+        }
+        if (st == State.DISABLED) {
+            return AquaIcon.createDisabledLightIcon(icon);
+        }
+
+        return icon;
     }
 
     @Override
     public Shape getFocusRingOutline(JComponent c) {
         LayoutConfiguration g = getLayoutConfiguration();
         if (g != null) {
-            painter.configure(c.getWidth(), c.getHeight());
+            AquaUtils.configure(painter, comboBox, c.getWidth(), c.getHeight());
             return painter.getOutline(g);
         } else {
             return null;
         }
     }
 
-//    /**
-//     * Return the default font for a combo box independent of the style and configuration.
-//     */
-//    public static Font getGenericDefaultFont(JComboBox b) {
-//        Font f = (Font) b.getClientProperty(DEFAULT_FONT_PROPERTY);
-//        if (f != null) {
-//            return f;
-//        }
-//        return b.getFont();
-//    }
-
-    public void paintValue(final Graphics g) {
-        final ListCellRenderer<Object> renderer = comboBox.getRenderer();
+    public void paintValue(Graphics g) {
+        ListCellRenderer<Object> renderer = comboBox.getRenderer();
 
         Object displayedItem = null;
 
@@ -264,7 +429,7 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements AquaUtilControlSi
             Object value = comboBox.getClientProperty(TITLE_CLIENT_PROPERTY_KEY);
             if (value != null) {
                 if (value instanceof Icon) {
-                    value = arrowButton.getIcon((Icon) value);
+                    value = getIcon((Icon) value);
                 }
                 displayedItem = value;
             }
@@ -296,11 +461,12 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements AquaUtilControlSi
         }
 
         // fake it out! not renderPressed
-        currentValueListBox.setBackground(new Color(0, 0, 0, 0));
+        currentValueListBox.setBackground(AquaColors.CLEAR);
         currentValueListBox.setForeground(comboBox.getForeground());
         Component c = renderer.getListCellRendererComponent(currentValueListBox, displayedItem, -1, false, false);
         // System.err.println("Renderer: " + renderer);
         c.setFont(currentValuePane.getFont());
+        updateRendererStyle(c);
 
         // Sun Fix for 4238829: should lay out the JPanel.
         boolean shouldValidate = false;
@@ -308,17 +474,11 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements AquaUtilControlSi
             shouldValidate = true;
         }
 
-        // It doesn't need to draw its background, we handled it
-        final Color background = c.getBackground();
-        c.setBackground(new Color(0, 0, 0, 0));
-
         currentValuePane.paintComponent(g, c, comboBox, left, top, width, height, shouldValidate);
-
-        c.setBackground(background);
     }
 
     protected Rectangle getContentBounds(LayoutConfiguration g) {
-        painter.configure(comboBox.getWidth(), comboBox.getHeight());
+        AquaUtils.configure(painter, comboBox, comboBox.getWidth(), comboBox.getHeight());
         if (g instanceof ComboBoxLayoutConfiguration) {
             return AquaUtils.toMinimumRectangle(painter.getComboBoxEditorBounds((ComboBoxLayoutConfiguration) g));
         } else if (g instanceof PopupButtonLayoutConfiguration) {
@@ -338,20 +498,37 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements AquaUtilControlSi
         }
     }
 
+    @Override
     protected ListCellRenderer<Object> createRenderer() {
         return new AquaComboBoxRenderer(comboBox);
     }
 
-    protected ComboPopup createPopup() {
+    @Override
+   protected ComboPopup createPopup() {
         return new AquaComboBoxPopup(comboBox);
     }
 
+    @Override
     protected JButton createArrowButton() {
-        return arrowButton = new AquaComboBoxButton(this, comboBox, currentValuePane, listBox);
+        return arrowButton = new AquaComboBoxButton(this, comboBox);
     }
 
+    @Override
     protected ComboBoxEditor createEditor() {
         return new AquaComboBoxEditor();
+    }
+
+    private class MyPopupListener implements HierarchyListener {
+        @Override
+        public void hierarchyChanged(HierarchyEvent e) {
+            if ((e.getChangeFlags() & HierarchyEvent.SHOWING_CHANGED) != 0) {
+                popupVisibilityChanged();
+            }
+        }
+     }
+
+    protected void popupVisibilityChanged() {
+        configureAppearanceContext(null); // the arrow button may need to be repainted with a new state
     }
 
     @Override
@@ -362,10 +539,18 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements AquaUtilControlSi
 
         comboBox.setFocusable(true);
 
-        if (editor instanceof JTextField && !(editor instanceof AquaCustomComboTextField)) {
+        if (editor instanceof JTextField) {
             JTextField tf = (JTextField) editor;
-            tf.setUI(new AquaComboBoxEditorUI());
-            tf.setBorder(null);
+
+            if (!(editor instanceof AquaCustomComboTextField)) {
+                tf.setUI(new AquaComboBoxEditorUI());
+                tf.setBorder(null);
+            }
+        }
+
+        if (editor instanceof JTextComponent) {
+            JTextComponent tc = (JTextComponent) editor;
+            tc.getDocument().addDocumentListener(documentListener);
         }
     }
 
@@ -378,18 +563,28 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements AquaUtilControlSi
         if (!comboBox.isEditable()) {
             comboBox.setFocusable(OSXSystemProperties.isFullKeyboardAccessEnabled());
         }
+
+        if (editor instanceof JTextComponent) {
+            JTextComponent tc = (JTextComponent) editor;
+            tc.getDocument().removeDocumentListener(documentListener);
+        }
     }
 
+    // return true if the operation was "completed"
     public boolean updateListSelectionFromEditor() {
-        if (editor instanceof JTextField) {
-            JTextField tf = (JTextField) editor;
-            updateListSelectionFromEditor(tf);
+        if (editor instanceof JTextComponent) {
+            JTextComponent tf = (JTextComponent) editor;
+            if (!isTextured) {
+                updateListSelectionFromEditor(tf);
+            } else {
+                popup.getList().clearSelection();
+            }
             return true;
         }
         return false;
     }
 
-    protected void updateListSelectionFromEditor(JTextField editor) {
+    protected void updateListSelectionFromEditor(@NotNull JTextComponent editor) {
         String text = editor.getText();
         ListModel<Object> model = listBox.getModel();
         int items = model.getSize();
@@ -407,25 +602,62 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements AquaUtilControlSi
         popup.getList().clearSelection();
     }
 
+    /**
+     * Provide style related information to a cell renderer.
+     */
+    protected void updateRendererStyle(@NotNull Component c) {
+        if (c instanceof JComponent) {
+            JComponent jc = (JComponent) c;
+            BasicContextualColors colors = getRendererStyleColors();
+            jc.putClientProperty(AquaColors.COMPONENT_COLORS_KEY, colors);
+        }
+    }
+
+    /**
+     * Provide style related information to a cell editor.
+     */
+    protected void updateEditorStyle(@NotNull Component c) {
+        if (c instanceof JComponent) {
+            JComponent jc = (JComponent) c;
+            BasicContextualColors colors = getEditorStyleColors();
+            jc.putClientProperty(AquaColors.COMPONENT_COLORS_KEY, colors);
+        }
+    }
+
+    /**
+     * Return style dependent colors for rendering.
+     */
+    protected @NotNull BasicContextualColors getRendererStyleColors() {
+        if (isToolbar) {
+            return AquaColors.TEXTURED_TOOLBAR_COLORS;
+        } else if (isTextured) {
+            return AquaColors.TEXTURED_COLORS;
+        } else {
+            return AquaColors.CLEAR_CONTROL_COLORS;
+        }
+    }
+
+    /**
+     * Return style dependent colors for editing.
+     */
+    protected @NotNull BasicContextualColors getEditorStyleColors() {
+        if (isToolbar) {
+            return AquaColors.TEXTURED_TOOLBAR_COLORS;
+        } else if (isTextured) {
+            return AquaColors.TEXTURED_COLORS;
+        } else if (cellStatus == AquaCellEditorPolicy.CellStatus.CELL_EDITOR) {
+            return AquaColors.CELL_TEXT_COLORS;
+        } else {
+            return AquaColors.CLEAR_CONTROL_COLORS;
+        }
+    }
+
     final class AquaComboBoxEditorUI extends AquaTextFieldUI implements FocusRingOutlineProvider {
 
         @Override
         protected void installDefaults() {
             super.installDefaults();
-
             JTextComponent c = getComponent();
-
-            if (c instanceof AquaCustomComboTextField) {
-                AquaCustomComboTextField e = (AquaCustomComboTextField) c;
-                String prefix = getPropertyPrefix();
-                e.focusedForeground = UIManager.getColor(prefix + ".foreground");
-                e.inactiveForeground = UIManager.getColor(prefix + ".inactiveForeground");
-                e.inactiveSelectionForeground = UIManager.getColor(prefix + ".selectionForeground");
-                e.inactiveSelectionBackground = UIManager.getColor(prefix + ".selectionBackground");
-                e.isTextured = isTextured();
-            }
-
-            LookAndFeel.installProperty(c, "opaque", true);
             Border b = c.getBorder();
             if (b == null || b instanceof UIDefaults) {
                 c.setBorder(null);
@@ -433,139 +665,30 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements AquaUtilControlSi
         }
 
         @Override
-        protected void updateFocusStyle(JTextComponent c, boolean hasFocus) {
-            super.updateFocusStyle(c, hasFocus);
-            if (c instanceof AquaCustomComboTextField) {
-                AquaCustomComboTextField e = (AquaCustomComboTextField) c;
-                if (e.isTextured) {
-                    String prefix = "ComboBox.textured";
-                    Color fg = e.getForeground();
-                    if ((fg == null) || (fg instanceof UIResource)) {
-                        e.setForeground(hasFocus ? e.focusedForeground : UIManager.getColor(prefix + ".foreground"));
-                    }
-                }
-            }
-        }
-
-        @Override
-        protected void updateActiveStyle() {
-            super.updateActiveStyle();
-
-            if (editor instanceof AquaCustomComboTextField) {
-                AquaCustomComboTextField e = (AquaCustomComboTextField) editor;
-                updateActiveStyle(e);
-            }
-        }
-
-        @Override
         public void updateStyle() {
             super.updateStyle();
-
-            if (editor instanceof AquaCustomComboTextField) {
-                AquaCustomComboTextField e = (AquaCustomComboTextField) editor;
-                updateStyle(e);
-            }
+            updateEditorStyle();
         }
 
-        protected void updateStyle(AquaCustomComboTextField e) {
-            boolean shouldBeTextured = isTextured();
-            if (shouldBeTextured != e.isTextured) {
-                setTextured(e, shouldBeTextured);
-            }
+        protected void updateEditorStyle() {
+            AquaComboBoxUI.this.updateEditorStyle(editor);
         }
 
-        protected void updateActiveStyle(AquaCustomComboTextField e) {
+        @Override
+        protected void paintBackgroundSafely(@NotNull Graphics g, @Nullable Color background) {
+            int width = editor.getWidth();
+            int height = editor.getHeight();
 
-            if (e.isTextured) {
-                boolean showInactive = false;
-                if (arrowButton != null) {
-                    AquaUIPainter.State state = arrowButton.getState();
-                    showInactive = (state == AquaUIPainter.State.INACTIVE);
-                }
-
-                String prefix = "ComboBox.textured";
-                Color fg = e.getForeground();
-                if ((fg == null) || (fg instanceof UIResource)) {
-                    e.setForeground(UIManager.getColor(prefix + (showInactive ? ".inactiveForeground" : ".foreground")));
-                }
-
-                Color s = editor.getSelectionColor();
-                if ((s == null) || (s instanceof UIResource)) {
-                    editor.setSelectionColor(UIManager.getColor(prefix + (showInactive ? ".inactiveSelectionBackground" : ".selectionBackground")));
-                }
-
-                Color sfg = editor.getSelectedTextColor();
-                if ((sfg == null) || (sfg instanceof UIResource)) {
-                    editor.setSelectedTextColor(UIManager.getColor(prefix + (showInactive ? ".inactiveSelectionForeground" : ".selectionForeground")));
-                }
-            }
-        }
-
-        protected void setTextured(AquaCustomComboTextField e, boolean isTextured) {
-            e.isTextured = isTextured;
-
-            String prefix = isTextured ? "ComboBox.textured" : getPropertyPrefix();
-
-            Color fg = e.getForeground();
-            if ((fg == null) || (fg instanceof UIResource)) {
-                e.setForeground(UIManager.getColor(prefix + ".foreground"));
-            }
-
-            Color s = editor.getSelectionColor();
-            if ((s == null) || (s instanceof UIResource)) {
-                editor.setSelectionColor(UIManager.getColor(prefix + ".selectionBackground"));
-            }
-
-            Color sfg = editor.getSelectedTextColor();
-            if ((sfg == null) || (sfg instanceof UIResource)) {
-                editor.setSelectedTextColor(UIManager.getColor(prefix + ".selectionForeground"));
-            }
-
-            Color dfg = editor.getDisabledTextColor();
-            if ((dfg == null) || (dfg instanceof UIResource)) {
-                editor.setDisabledTextColor(UIManager.getColor(prefix + ".disabledForeground"));
-            }
-
-            if (isTextured) {
-                e.focusedForeground = UIManager.getColor(prefix + ".focusedForeground");
-                e.inactiveForeground = UIManager.getColor(prefix + ".inactiveForeground");
-                e.inactiveSelectionForeground = UIManager.getColor(prefix + ".inactiveSelectionForeground");
-                e.inactiveSelectionBackground = UIManager.getColor(prefix + ".inactiveSelectionBackground");
-            } else {
-                e.focusedForeground = UIManager.getColor(prefix + ".foreground");
-                e.inactiveForeground = UIManager.getColor(prefix + ".inactiveForeground");
-                e.inactiveSelectionForeground = UIManager.getColor(prefix + ".selectionForeground");
-                e.inactiveSelectionBackground = UIManager.getColor(prefix + ".selectionBackground");
+            if (background != null && background.getAlpha() > 0) {
+                g.setColor(background);
+                g.fillRect(0, 0, width, height);
             }
         }
 
         @Override
-        protected void paintBackgroundSafely(Graphics g) {
-            if (comboBox.getParent() instanceof CellRendererPane) {
-                return;
-            }
-
-            if (arrowButton != null) {
-                if (arrowButton.getState() == AquaUIPainter.State.INACTIVE && isTextured()) {
-                    // Textured combo boxes change background color when inactive
-                    int width = editor.getWidth();
-                    int height = editor.getHeight();
-                    Color c = new Color(245, 245, 245);
-                    g.setColor(c);
-                    g.fillRect(0, 0, width, height);
-                    return;
-                }
-            }
-
-            super.paintBackgroundSafely(g);
-        }
-
-        protected boolean isTextured() {
-            if (arrowButton != null) {
-                //arrowButton.configure(null);
-                return arrowButton.isTextured();
-            }
-            return false;
+        public int getTextMargin()
+        {
+            return 3;
         }
 
         @Override
@@ -599,57 +722,41 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements AquaUtilControlSi
         }
     }
 
-    final class AquaComboBoxEditor extends BasicComboBoxEditor implements UIResource, DocumentListener {
+    final class AquaComboBoxEditor extends BasicComboBoxEditor implements UIResource {
 
         AquaComboBoxEditor() {
-            editor.addFocusListener(this);
-            editor.getDocument().addDocumentListener(this);
-        }
-
-        public void configure(AquaUIPainter.ComboBoxWidget widget) {
-            if (editor instanceof AquaCustomComboTextField) {
-                AquaCustomComboTextField f = (AquaCustomComboTextField) editor;
-                f.configure(widget);
-            }
         }
 
         @Override
         protected JTextField createEditorComponent() {
             return new AquaCustomComboTextField();
         }
+    }
 
+    private class MyDocumentListener implements DocumentListener {
         @Override
-        public void focusGained(final FocusEvent e) {
-            if (arrowButton != null) {
-                arrowButton.repaint();
-            }
-        }
-
-        @Override
-        public void focusLost(final FocusEvent e) {
-            if (arrowButton != null) {
-                arrowButton.repaint();
-            }
-        }
-
-        @Override
-        public void changedUpdate(final DocumentEvent e) {
+        public void insertUpdate(DocumentEvent e)
+        {
             editorTextChanged();
         }
 
         @Override
-        public void insertUpdate(final DocumentEvent e) {
+        public void removeUpdate(DocumentEvent e)
+        {
             editorTextChanged();
         }
 
         @Override
-        public void removeUpdate(final DocumentEvent e) {
+        public void changedUpdate(DocumentEvent e)
+        {
             editorTextChanged();
         }
+    }
 
-        private void editorTextChanged() {
-            if (popup.isVisible()) {
-                updateListSelectionFromEditor(editor);
+    protected void editorTextChanged() {
+        if (popup.isVisible()) {
+            if (!isTextured) {
+                updateListSelectionFromEditor((JTextComponent) editor);
             }
         }
     }
@@ -657,12 +764,6 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements AquaUtilControlSi
     @SuppressWarnings("serial") // Superclass is not serializable across versions
     class AquaCustomComboTextField extends JTextField {
         @SuppressWarnings("serial") // anonymous class
-
-        boolean isTextured;
-        Color inactiveForeground;
-        Color focusedForeground;
-        Color inactiveSelectionForeground;
-        Color inactiveSelectionBackground;
 
         public AquaCustomComboTextField() {
 
@@ -674,7 +775,7 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements AquaUtilControlSi
 
             //setBackground(new Color(255, 200, 0, 128)); // debug
 
-            final InputMap inputMap = getInputMap();
+            InputMap inputMap = getInputMap();
             inputMap.put(KeyStroke.getKeyStroke("DOWN"), highlightNextAction);
             inputMap.put(KeyStroke.getKeyStroke("KP_DOWN"), highlightNextAction);
             inputMap.put(KeyStroke.getKeyStroke("UP"), highlightPreviousAction);
@@ -685,11 +786,11 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements AquaUtilControlSi
             inputMap.put(KeyStroke.getKeyStroke("PAGE_UP"), highlightPageUpAction);
             inputMap.put(KeyStroke.getKeyStroke("PAGE_DOWN"), highlightPageDownAction);
 
-            final Action action = getActionMap().get(JTextField.notifyAction);
+            Action action = getActionMap().get(JTextField.notifyAction);
             inputMap.put(KeyStroke.getKeyStroke("ENTER"), new AbstractAction() {
-                public void actionPerformed(final ActionEvent e) {
+                public void actionPerformed(ActionEvent e) {
                     if (popup.isVisible()) {
-                        triggerSelectionEvent(comboBox, e);
+                        triggerSelectionEvent(comboBox, cellStatus, e);
 
                         if (editor instanceof AquaCustomComboTextField) {
                             ((AquaCustomComboTextField)editor).selectAll();
@@ -701,19 +802,16 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements AquaUtilControlSi
             });
         }
 
-        public void configure(AquaUIPainter.ComboBoxWidget widget) {
-            if (widget == AquaUIPainter.ComboBoxWidget.BUTTON_COMBO_BOX_CELL) {
-                setBackground(new ColorUIResource(Color.WHITE));
-                LookAndFeel.installProperty(this, "opaque", Boolean.TRUE);
-            } else {
-                // On 10.11, a textured editable combo box has a gradient background. See TextEdit.
-                setBackground(new ColorUIResource(new Color(0, 0, 0, 0)));
-                LookAndFeel.installProperty(this, "opaque", Boolean.FALSE);
+        @Override
+        public Color getForeground() {
+            if (!hasFocus && cellStatus != null) {
+                return comboBox.getForeground();
             }
+            return super.getForeground();
         }
 
         // workaround for 4530952
-        public void setText(final String s) {
+        public void setText(String s) {
             if (getText().equals(s)) {
                 return;
             }
@@ -721,28 +819,54 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements AquaUtilControlSi
         }
     }
 
-    /**
-     * This listener hides the popup when the focus is lost.  It also repaints
-     * when focus is gained or lost.
-     *
-     * This override is necessary because the Basic L&F for the combo box is working
-     * around a Solaris-only bug that we don't have on Mac OS X.  So, remove the lightweight
-     * popup check here. rdar://Problem/3518582
-     */
     protected FocusListener createFocusListener() {
-        return new BasicComboBoxUI.FocusHandler() {
-            public void focusLost(final FocusEvent e) {
-                hasFocus = false;
-                if (!e.isTemporary()) {
-                    setPopupVisible(comboBox, false);
-                }
-                comboBox.repaint();
 
-                // Notify assistive technologies that the combo box lost focus
-                final AccessibleContext ac = ((Accessible)comboBox).getAccessibleContext();
-                if (ac != null) {
-                    ac.firePropertyChange(AccessibleContext.ACCESSIBLE_STATE_PROPERTY, AccessibleState.FOCUSED, null);
+        // Note that this listener is attached to the combo box and the combo box editor component.
+
+        return new BasicComboBoxUI.FocusHandler() {
+
+            @Override
+            public void focusGained(FocusEvent e) {
+
+                if ((editor != null) && (e.getSource() == editor)) {
+                    if (arrowButton != null) {
+                        arrowButton.repaint();
+                    }
                 }
+
+                super.focusGained(e);
+            }
+
+            @Override
+            public void focusLost(FocusEvent e) {
+
+                if ((editor != null) && (e.getSource() == editor)) {
+                    if (arrowButton != null) {
+                        arrowButton.repaint();
+                    }
+                }
+
+                // TBD: According to the original comment,
+                // this override is necessary because the Basic L&F for the combo box is working
+                // around a Solaris-only bug that we don't have on Mac OS X.  So, remove the lightweight
+                // popup check here. rdar://Problem/3518582.
+                // However, the current code in BasicComboBoxUI is quite different and does not have a lightweight
+                // popup check.
+                // Therefore, do not override.
+
+//                hasFocus = false;
+//                if (!e.isTemporary()) {
+//                    setPopupVisible(comboBox, false);
+//                }
+//                comboBox.repaint();
+//
+//                // Notify assistive technologies that the combo box lost focus
+//                AccessibleContext ac = ((Accessible)comboBox).getAccessibleContext();
+//                if (ac != null) {
+//                    ac.firePropertyChange(AccessibleContext.ACCESSIBLE_STATE_PROPERTY, AccessibleState.FOCUSED, null);
+//                }
+
+                super.focusLost(e);
             }
         };
     }
@@ -769,20 +893,20 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements AquaUtilControlSi
 
     @SuppressWarnings("serial") // Superclass is not serializable across versions
     private abstract class ComboBoxAction extends AbstractAction {
-        public void actionPerformed(final ActionEvent e) {
+        public void actionPerformed(ActionEvent e) {
             if (!comboBox.isEnabled() || !comboBox.isShowing()) {
                 return;
             }
 
             if (comboBox.isPopupVisible()) {
-                final AquaComboBoxUI ui = (AquaComboBoxUI)comboBox.getUI();
+                AquaComboBoxUI ui = (AquaComboBoxUI)comboBox.getUI();
                 performComboBoxAction(ui);
             } else {
                 comboBox.setPopupVisible(true);
             }
         }
 
-        abstract void performComboBoxAction(final AquaComboBoxUI ui);
+        abstract void performComboBoxAction(AquaComboBoxUI ui);
     }
 
     /**
@@ -792,7 +916,7 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements AquaUtilControlSi
     private Action highlightNextAction = new ComboBoxAction() {
         @Override
         public void performComboBoxAction(AquaComboBoxUI ui) {
-            final int si = listBox.getSelectedIndex();
+            int si = listBox.getSelectedIndex();
 
             if (si < comboBox.getModel().getSize() - 1) {
                 listBox.setSelectedIndex(si + 1);
@@ -808,8 +932,8 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements AquaUtilControlSi
     @SuppressWarnings("serial") // anonymous class
     private Action highlightPreviousAction = new ComboBoxAction() {
         @Override
-        void performComboBoxAction(final AquaComboBoxUI ui) {
-            final int si = listBox.getSelectedIndex();
+        void performComboBoxAction(AquaComboBoxUI ui) {
+            int si = listBox.getSelectedIndex();
             if (si > 0) {
                 listBox.setSelectedIndex(si - 1);
                 listBox.ensureIndexIsVisible(si - 1);
@@ -821,7 +945,7 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements AquaUtilControlSi
     @SuppressWarnings("serial") // anonymous class
     private Action highlightFirstAction = new ComboBoxAction() {
         @Override
-        void performComboBoxAction(final AquaComboBoxUI ui) {
+        void performComboBoxAction(AquaComboBoxUI ui) {
             listBox.setSelectedIndex(0);
             listBox.ensureIndexIsVisible(0);
         }
@@ -830,8 +954,8 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements AquaUtilControlSi
     @SuppressWarnings("serial") // anonymous class
     private Action highlightLastAction = new ComboBoxAction() {
         @Override
-        void performComboBoxAction(final AquaComboBoxUI ui) {
-            final int size = listBox.getModel().getSize();
+        void performComboBoxAction(AquaComboBoxUI ui) {
+            int size = listBox.getModel().getSize();
             listBox.setSelectedIndex(size - 1);
             listBox.ensureIndexIsVisible(size - 1);
         }
@@ -840,16 +964,16 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements AquaUtilControlSi
     @SuppressWarnings("serial") // anonymous class
     private Action highlightPageUpAction = new ComboBoxAction() {
         @Override
-        void performComboBoxAction(final AquaComboBoxUI ui) {
-            final int current = listBox.getSelectedIndex();
-            final int first = listBox.getFirstVisibleIndex();
+        void performComboBoxAction(AquaComboBoxUI ui) {
+            int current = listBox.getSelectedIndex();
+            int first = listBox.getFirstVisibleIndex();
 
             if (current != first) {
                 listBox.setSelectedIndex(first);
                 return;
             }
 
-            final int page = listBox.getVisibleRect().height / listBox.getCellBounds(0, 0).height;
+            int page = listBox.getVisibleRect().height / listBox.getCellBounds(0, 0).height;
             int target = first - page;
             if (target < 0) target = 0;
 
@@ -861,17 +985,17 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements AquaUtilControlSi
     @SuppressWarnings("serial") // anonymous class
     private Action highlightPageDownAction = new ComboBoxAction() {
         @Override
-        void performComboBoxAction(final AquaComboBoxUI ui) {
-            final int current = listBox.getSelectedIndex();
-            final int last = listBox.getLastVisibleIndex();
+        void performComboBoxAction(AquaComboBoxUI ui) {
+            int current = listBox.getSelectedIndex();
+            int last = listBox.getLastVisibleIndex();
 
             if (current != last) {
                 listBox.setSelectedIndex(last);
                 return;
             }
 
-            final int page = listBox.getVisibleRect().height / listBox.getCellBounds(0, 0).height;
-            final int end = listBox.getModel().getSize() - 1;
+            int page = listBox.getVisibleRect().height / listBox.getCellBounds(0, 0).height;
+            int end = listBox.getModel().getSize() - 1;
             int target = last + page;
             if (target > end) target = end;
 
@@ -894,13 +1018,13 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements AquaUtilControlSi
 
     class AquaComboBoxLayoutManager extends BasicComboBoxUI.ComboBoxLayoutManager {
 
-        public void layoutContainer(final Container parent) {
-            final int width = comboBox.getWidth();
-            final int height = comboBox.getHeight();
+        public void layoutContainer(Container parent) {
+            int width = comboBox.getWidth();
+            int height = comboBox.getHeight();
 
             if (comboBox.isEditable()) {
-                ComboBoxConfiguration g = (ComboBoxConfiguration) arrowButton.getConfiguration();
-                painter.configure(width, height);
+                ComboBoxConfiguration g = (ComboBoxConfiguration) getConfiguration();
+                AquaUtils.configure(painter, comboBox, width, height);
                 if (editor != null) {
                     Rectangle editorBounds = AquaUtils.toMinimumRectangle(painter.getComboBoxEditorBounds(g));
                     editor.setBounds(editorBounds);
@@ -915,7 +1039,7 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements AquaUtilControlSi
         }
     }
 
-    public static AquaComboBoxType getComboBoxType(final JComboBox<?> c) {
+    public static AquaComboBoxType getComboBoxType(JComboBox<?> c) {
         if (c.isEditable()) {
             return AquaComboBoxType.EDITABLE_COMBO_BOX;
         } else if (Boolean.TRUE.equals(c.getClientProperty(AquaComboBoxUI.POPDOWN_CLIENT_PROPERTY_KEY))) {
@@ -925,16 +1049,19 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements AquaUtilControlSi
         }
     }
 
-    protected static void triggerSelectionEvent(final JComboBox<?> comboBox, final ActionEvent e) {
-        if (!comboBox.isEnabled()) return;
+    protected static void triggerSelectionEvent(JComboBox<?> comboBox,
+                                                @Nullable AquaCellEditorPolicy.CellStatus cellStatus, ActionEvent e) {
+        if (!comboBox.isEnabled()) {
+            return;
+        }
 
-        final AquaComboBoxUI aquaUi = (AquaComboBoxUI)comboBox.getUI();
+        AquaComboBoxUI aquaUi = (AquaComboBoxUI)comboBox.getUI();
 
         if (aquaUi.getPopup().getList().getSelectedIndex() < 0) {
             comboBox.setPopupVisible(false);
         }
 
-        if (cellEditorPolicy.isCellEditor(comboBox)) {
+        if (cellStatus == null) {
             // The original code below from AquaComboBoxUI has the effect of setting the text to the empty string. Seems
             // like a bug. Instead, do what BasicComboBoxUI does:
 
@@ -954,17 +1081,17 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements AquaUtilControlSi
 
         // Call the default button binding.
         // This is a pretty messy way of passing an event through to the root pane
-        final JRootPane root = SwingUtilities.getRootPane(comboBox);
+        JRootPane root = SwingUtilities.getRootPane(comboBox);
         if (root == null) return;
 
-        final InputMap im = root.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW);
-        final ActionMap am = root.getActionMap();
+        InputMap im = root.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW);
+        ActionMap am = root.getActionMap();
         if (im == null || am == null) return;
 
-        final Object obj = im.get(KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, 0));
+        Object obj = im.get(KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, 0));
         if (obj == null) return;
 
-        final Action action = am.get(obj);
+        Action action = am.get(obj);
         if (action == null) return;
 
         action.actionPerformed(new ActionEvent(root, e.getID(), e.getActionCommand(), e.getWhen(), e.getModifiers()));
@@ -973,9 +1100,9 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements AquaUtilControlSi
     // This is somewhat messy.  The difference here from BasicComboBoxUI.EnterAction is that
     // arrow up or down does not automatically select the
     @SuppressWarnings("serial") // anonymous class
-    private final Action triggerSelectionAction = new AbstractAction() {
-        public void actionPerformed(final ActionEvent e) {
-            triggerSelectionEvent((JComboBox)e.getSource(), e);
+    private Action triggerSelectionAction = new AbstractAction() {
+        public void actionPerformed(ActionEvent e) {
+            triggerSelectionEvent(comboBox, cellStatus, e);
         }
 
         @Override
@@ -986,12 +1113,12 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements AquaUtilControlSi
 
     @SuppressWarnings("serial") // anonymous class
     private static final Action toggleSelectionAction = new AbstractAction() {
-        public void actionPerformed(final ActionEvent e) {
-            final JComboBox<?> comboBox = (JComboBox<?>) e.getSource();
+        public void actionPerformed(ActionEvent e) {
+            JComboBox<?> comboBox = (JComboBox<?>) e.getSource();
             if (!comboBox.isEnabled()) return;
             if (comboBox.isEditable()) return;
 
-            final AquaComboBoxUI aquaUi = (AquaComboBoxUI)comboBox.getUI();
+            AquaComboBoxUI aquaUi = (AquaComboBoxUI)comboBox.getUI();
 
             if (comboBox.isPopupVisible()) {
                 comboBox.setSelectedIndex(aquaUi.getPopup().getList().getSelectedIndex());
@@ -1006,8 +1133,8 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements AquaUtilControlSi
     @SuppressWarnings("serial") // anonymous class
     private final Action hideAction = new AbstractAction() {
         @Override
-        public void actionPerformed(final ActionEvent e) {
-            final JComboBox<?> comboBox = (JComboBox<?>) e.getSource();
+        public void actionPerformed(ActionEvent e) {
+            JComboBox<?> comboBox = (JComboBox<?>) e.getSource();
             comboBox.firePopupMenuCanceled();
             comboBox.setPopupVisible(false);
         }
@@ -1042,7 +1169,7 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements AquaUtilControlSi
                 // TBD: ideally, should get this information from the LayoutInfo
                 Size size = g.getSize();
                 if (size == Size.MINI) {
-                    AquaUIPainter.PopupButtonWidget w = getPopupButtonWidget();
+                    Object w = getWidget();
                     if (w == BUTTON_POP_UP_SQUARE || w == BUTTON_POP_DOWN_SQUARE || w == BUTTON_POP_UP_CELL || w == BUTTON_POP_DOWN_CELL) {
                         size = Size.SMALL;
                     }
@@ -1055,20 +1182,20 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements AquaUtilControlSi
     }
 
     protected Size determineDefaultSize(Size size) {
-        if (size == Size.REGULAR && cellEditorPolicy.isCellEditor(comboBox) && comboBox.getHeight() < 16) {
+        if (size == Size.REGULAR && cellStatus != null && comboBox.getHeight() < 16) {
             return Size.SMALL;
         }
         return size;
     }
 
-    public Dimension getMinimumSize(final JComponent c) {
+    public Dimension getMinimumSize(JComponent c) {
         if (isMinimumSizeDirty) {
             calculateLayoutSizes();
         }
         return new Dimension(cachedMinimumSize);
     }
 
-    public Dimension getPreferredSize(final JComponent c) {
+    public Dimension getPreferredSize(JComponent c) {
         if (isMinimumSizeDirty) {
             calculateLayoutSizes();
         }
@@ -1104,7 +1231,7 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements AquaUtilControlSi
             boolean editable = comboBox.isEditable();
             if (editable && arrowButton != null && editor != null) {
                 size = super.getMinimumSize(comboBox);
-                final Insets margin = arrowButton.getMargin();
+                Insets margin = arrowButton.getMargin();
                 size.height += margin.top + margin.bottom;
             } else {
                 size = super.getMinimumSize(comboBox);
@@ -1135,18 +1262,244 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements AquaUtilControlSi
         return new Dimension(d.width, d.height);
     }
 
+    protected void respondToHierarchyChange() {
+        // Avoid losing the configuration of a combo box cell renderer/editor when the renderer/editor is installed in
+        // the cell renderer pane or the cell container.
+
+        if (cellStatus == null) {
+            configure(null);
+        }
+    }
+
     /**
      * Style related configuration affecting layout
      *
      * @param size Optional new size variant to install
      */
-    protected void configure(Size size) {
-        if (arrowButton != null) {
-            arrowButton.configure(size);
+    protected void configure(@Nullable Size size) {
 
-        } else if (comboBox != null) {
-            comboBox.repaint();
+        if (comboBox == null) {
+            return;
         }
+
+        {
+            Object o = comboBox.getClientProperty(AquaComboBoxUI.POPDOWN_CLIENT_PROPERTY_KEY);
+            isPopDown = Boolean.TRUE.equals(o);
+        }
+
+        {
+            String style = null;
+
+            Object o = comboBox.getClientProperty(AquaComboBoxUI.STYLE_CLIENT_PROPERTY_KEY);
+            if (o instanceof String) {
+                style = (String) o;
+            } else {
+                o = comboBox.getClientProperty(AquaComboBoxUI.ISSQUARE_CLIENT_PROPERTY_KEY);
+                if (Boolean.TRUE.equals(o)) {
+                    // old client property gets the old square style
+                    style = "old_square";
+                }
+            }
+
+            if ("textured".equals(style) && isOnToolbar(comboBox)) {
+                style = "textured-onToolbar";
+            }
+
+            this.style = style;
+        }
+
+        if (size != null) {
+            sizeVariant = size;
+        }
+
+        if (sizeVariant == null) {
+            sizeVariant = Size.REGULAR;
+        }
+
+        boolean isEditable = comboBox.isEditable();
+        AquaUIPainter.UILayoutDirection ld = AquaUtils.getLayoutDirection(comboBox);
+
+        cellStatus = determineCellStatus();
+        isTextured = determineIsTextured();
+        isToolbar = determineIsToolbar();
+
+        if (isEditable) {
+            ComboBoxWidget widget = determineComboBoxWidget(cellStatus);
+            layoutConfiguration = new ComboBoxLayoutConfiguration(widget, sizeVariant, ld);
+            colors = getRendererStyleColors();
+            updateEditorStyle(editor);
+        } else {
+            PopupButtonWidget widget = determinePopupButtonWidget(cellStatus);
+            sizeVariant = canonicalize(sizeVariant, widget);
+            layoutConfiguration = new PopupButtonLayoutConfiguration(widget, sizeVariant, ld);
+            AquaButtonExtendedTypes.WidgetInfo info = AquaButtonExtendedTypes.getWidgetInfo(widget);
+            colors = info.getColors();
+        }
+
+        if (AquaUtilControlSize.isOKToInstallDefaultFont(comboBox)) {
+            Font df = getDefaultFont();
+            AquaUtilControlSize.installDefaultFont(comboBox, df);
+        }
+
+        configureAppearanceContext(null);
+        comboBox.revalidate();
+        comboBox.repaint();
+        isMinimumSizeDirty = true;
+    }
+
+    /**
+     * Return the layout configuration. A configuration is always defined while the UI is installed.
+     */
+    public AbstractComboBoxLayoutConfiguration getLayoutConfiguration() {
+        return layoutConfiguration;
+    }
+
+    /**
+     * Convert size to the standard size for those styles with only one size.
+     * This affects the default font.
+     */
+    protected Size canonicalize(Size size, PopupButtonWidget widget) {
+        switch (widget) {
+            case BUTTON_POP_UP_BEVEL:
+            case BUTTON_POP_DOWN_BEVEL:
+            case BUTTON_POP_UP_SQUARE:
+            case BUTTON_POP_DOWN_SQUARE:
+            case BUTTON_POP_UP_GRADIENT:
+            case BUTTON_POP_DOWN_GRADIENT:
+                return Size.REGULAR;
+        }
+
+        return size;
+    }
+
+    protected Font getDefaultFont() {
+        Font font = comboBox.getFont();
+
+        Object widget = getWidget();
+        if (widget != null) {
+            return AquaButtonExtendedTypes.getFont(font, widget, sizeVariant);
+        }
+
+        return font;
+    }
+
+    /**
+     * Return the nominal Y offset of the popup relative to the top of the combo box.
+     * The nominal offset may be replaced if there is not enough room on the screen.
+     */
+    public int getNominalPopupYOffset() {
+        AquaComboBoxType type = getComboBoxType(comboBox);
+
+        if (type == AquaComboBoxType.POP_UP_MENU_BUTTON) {
+            // A pop up menu button wants the selected item to appear over the button.
+            JList<Object> list = popup.getList();
+            if (list != null) {
+                int selectedIndex = comboBox.getSelectedIndex();
+                if (selectedIndex >= 0) {
+                    Rectangle cellBounds = list.getCellBounds(selectedIndex, selectedIndex);
+                    Border border = AquaContextualPopup.getContextualMenuBorder();
+                    Insets s = border.getBorderInsets(null);
+                    return -(cellBounds.y + s.top);
+                }
+            }
+        } else {
+            int bottomGap = 0;
+            Object widget = getWidget();
+            if (widget != null) {
+                AquaButtonExtendedTypes.WidgetInfo info = AquaButtonExtendedTypes.getWidgetInfo(widget);
+                bottomGap = info.getBottomMenuGap();
+                if (OSXSystemProperties.OSVersion >= 1014 && isTextured) {
+                    // If no focus ring is shown, then we need less room.
+                    bottomGap -= 2;
+                }
+            }
+            return comboBox.getHeight() + bottomGap;
+        }
+
+        return comboBox.getHeight() + 2;
+    }
+
+    /**
+     * Return the widget. A widget is always defined while the UI is installed.
+     */
+    protected Object getWidget() {
+        if (layoutConfiguration instanceof ComboBoxLayoutConfiguration) {
+            ComboBoxLayoutConfiguration bg = (ComboBoxLayoutConfiguration) layoutConfiguration;
+            return bg.getWidget();
+        } else if (layoutConfiguration instanceof PopupButtonLayoutConfiguration) {
+            PopupButtonLayoutConfiguration bg = (PopupButtonLayoutConfiguration) layoutConfiguration;
+            return bg.getPopupButtonWidget();
+        } else {
+            return null;
+        }
+    }
+
+    protected ComboBoxWidget determineComboBoxWidget(@Nullable AquaCellEditorPolicy.CellStatus cellStatus) {
+        if (cellStatus != null) {
+            return BUTTON_COMBO_BOX_CELL;
+        }
+
+        if (style != null) {
+            switch (style) {
+                case "tableHeader":
+                case "cell":
+                case "borderless":
+                    return BUTTON_COMBO_BOX_CELL;
+                case "textured":
+                    return BUTTON_COMBO_BOX_TEXTURED;
+                case "textured-onToolbar":
+                    return BUTTON_COMBO_BOX_TEXTURED_TOOLBAR;
+            }
+        }
+
+        if (isOnToolbar(comboBox)) {
+            return BUTTON_COMBO_BOX_TEXTURED_TOOLBAR;
+        }
+
+        return BUTTON_COMBO_BOX;
+    }
+
+    protected PopupButtonWidget determinePopupButtonWidget(@Nullable AquaCellEditorPolicy.CellStatus cellStatus) {
+        if (cellStatus != null) {
+            return isPopDown ? BUTTON_POP_DOWN_CELL : BUTTON_POP_UP_CELL;
+        }
+
+        if (style != null) {
+            switch (style) {
+                case "tableHeader":
+                case "cell":
+                case "borderless":
+                    return isPopDown ? BUTTON_POP_DOWN_CELL : BUTTON_POP_UP_CELL;
+                case "square":
+                    // Gradient is the new Square
+                    return isPopDown ? BUTTON_POP_DOWN_GRADIENT : BUTTON_POP_UP_GRADIENT;
+                case "old_square":
+                    // Old API gets the old style (if available)
+                    return isPopDown ? BUTTON_POP_DOWN_SQUARE : BUTTON_POP_UP_SQUARE;
+                case "bevel":
+                    return isPopDown ? BUTTON_POP_DOWN_BEVEL : BUTTON_POP_UP_BEVEL;
+                case "roundRect":
+                    return isPopDown ? BUTTON_POP_DOWN_ROUND_RECT : BUTTON_POP_UP_ROUND_RECT;
+                case "recessed":
+                    return isPopDown ? BUTTON_POP_DOWN_RECESSED : BUTTON_POP_UP_RECESSED;
+                case "textured":
+                    return isPopDown ? BUTTON_POP_DOWN_TEXTURED : BUTTON_POP_UP_TEXTURED;
+                case "textured-onToolbar":
+                    return isPopDown ? BUTTON_POP_DOWN_TEXTURED_TOOLBAR : BUTTON_POP_UP_TEXTURED_TOOLBAR;
+                case "gradient":
+                    return isPopDown ? BUTTON_POP_DOWN_GRADIENT : BUTTON_POP_UP_GRADIENT;
+            }
+        }
+
+        if (isOnToolbar(comboBox)) {
+            return isPopDown ? BUTTON_POP_DOWN_TEXTURED_TOOLBAR : BUTTON_POP_UP_TEXTURED_TOOLBAR;
+        }
+
+        return isPopDown ? BUTTON_POP_DOWN : BUTTON_POP_UP;
+    }
+
+    public static boolean isOnToolbar(JComboBox b) {
+        return AquaUtils.isOnToolbar(b);
     }
 
     /**
@@ -1169,7 +1522,7 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements AquaUtilControlSi
             labelXOffset -= 8;
             labelYOffset = 1;
 
-            AquaUIPainter.PopupButtonWidget w = getPopupButtonWidget();
+            Object w = getWidget();
             if (w != AquaUIPainter.PopupButtonWidget.BUTTON_POP_UP) {
                 labelXOffset -= 2;
                 labelYOffset = 2;
@@ -1179,68 +1532,59 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements AquaUtilControlSi
         return labelXOffset != 0 || labelYOffset != 0 ? new Point(labelXOffset, labelYOffset) : null;
     }
 
-    public AquaUIPainter.PopupButtonWidget getPopupButtonWidget() {
-        AbstractComboBoxLayoutConfiguration g = getLayoutConfiguration();
-        if (g instanceof PopupButtonLayoutConfiguration) {
-            PopupButtonLayoutConfiguration pg = (PopupButtonLayoutConfiguration) g;
-            return pg.getPopupButtonWidget();
-        }
-        return null;
-    }
-
     @SuppressWarnings("unchecked")
     static final RecyclableSingleton<ClientPropertyApplicator<JComboBox<?>, AquaComboBoxUI>> APPLICATOR = new
             RecyclableSingleton<ClientPropertyApplicator<JComboBox<?>, AquaComboBoxUI>>() {
         @Override
         protected ClientPropertyApplicator<JComboBox<?>, AquaComboBoxUI> getInstance() {
             return new ClientPropertyApplicator<JComboBox<?>, AquaComboBoxUI>(
-                new Property<AquaComboBoxUI>(AquaFocusHandler.FRAME_ACTIVE_PROPERTY) {
-                    public void applyProperty(final AquaComboBoxUI target, final Object value) {
-                        if (Boolean.FALSE.equals(value)) {
-                            if (target.comboBox != null) target.comboBox.hidePopup();
-                        }
-                        if (target.listBox != null) target.listBox.repaint();
-                        if (target.comboBox != null) {
-                            target.comboBox.repaint();
-                        }
-                    }
-                },
+//                new Property<AquaComboBoxUI>(AquaFocusHandler.FRAME_ACTIVE_PROPERTY) {
+//                    public void applyProperty(AquaComboBoxUI target, Object value) {
+//                        if (Boolean.FALSE.equals(value)) {
+//                            if (target.comboBox != null) target.comboBox.hidePopup();
+//                        }
+//                        if (target.listBox != null) target.listBox.repaint();
+//                        if (target.comboBox != null) {
+//                            target.comboBox.repaint();
+//                        }
+//                    }
+//                },
                 new Property<AquaComboBoxUI>("editable") {
-                    public void applyProperty(final AquaComboBoxUI target, final Object value) {
+                    public void applyProperty(AquaComboBoxUI target, Object value) {
                         target.configure(null);
                     }
                 },
                 new Property<AquaComboBoxUI>("background") {
-                    public void applyProperty(final AquaComboBoxUI target, final Object value) {
-                        final Color color = (Color)value;
+                    public void applyProperty(AquaComboBoxUI target, Object value) {
+                        Color color = (Color)value;
                         if (target.arrowButton != null) target.arrowButton.setBackground(color);
-                        if (target.listBox != null) target.listBox.setBackground(color);
+                        //if (target.listBox != null) target.listBox.setBackground(color);
                     }
                 },
                 new Property<AquaComboBoxUI>("foreground") {
-                    public void applyProperty(final AquaComboBoxUI target, final Object value) {
-                        final Color color = (Color)value;
+                    public void applyProperty(AquaComboBoxUI target, Object value) {
+                        Color color = (Color)value;
                         if (target.arrowButton != null) target.arrowButton.setForeground(color);
-                        if (target.listBox != null) target.listBox.setForeground(color);
+                        //if (target.listBox != null) target.listBox.setForeground(color);
                     }
                 },
                 new Property<AquaComboBoxUI>(POPDOWN_CLIENT_PROPERTY_KEY) {
-                    public void applyProperty(final AquaComboBoxUI target, final Object value) {
+                    public void applyProperty(AquaComboBoxUI target, Object value) {
                         target.configure(null);
                     }
                 },
                 new Property<AquaComboBoxUI>(ISSQUARE_CLIENT_PROPERTY_KEY) {
-                    public void applyProperty(final AquaComboBoxUI target, final Object value) {
+                    public void applyProperty(AquaComboBoxUI target, Object value) {
                         target.configure(null);
                     }
                 },
                 new Property<AquaComboBoxUI>(STYLE_CLIENT_PROPERTY_KEY) {
-                    public void applyProperty(final AquaComboBoxUI target, final Object value) {
+                    public void applyProperty(AquaComboBoxUI target, Object value) {
                         target.configure(null);
                     }
                 },
                 new Property<AquaComboBoxUI>(TITLE_CLIENT_PROPERTY_KEY) {
-                    public void applyProperty(final AquaComboBoxUI target, final Object value) {
+                    public void applyProperty(AquaComboBoxUI target, Object value) {
                         if (target.comboBox != null) {
                             AquaComboBoxType type = getComboBoxType(target.comboBox);
                             if (type == AquaComboBoxType.PULL_DOWN_MENU_BUTTON) {
@@ -1251,14 +1595,15 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements AquaUtilControlSi
                     }
                 }
             ) {
-                public AquaComboBoxUI convertJComponentToTarget(final JComboBox<?> combo) {
-                    final ComboBoxUI comboUI = combo.getUI();
+                public AquaComboBoxUI convertJComponentToTarget(JComboBox<?> combo) {
+                    ComboBoxUI comboUI = combo.getUI();
                     if (comboUI instanceof AquaComboBoxUI) return (AquaComboBoxUI)comboUI;
                     return null;
                 }
             };
         }
     };
+
     static ClientPropertyApplicator<JComboBox<?>, AquaComboBoxUI> getApplicator() {
         return APPLICATOR.get();
     }

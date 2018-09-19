@@ -1,5 +1,5 @@
 /*
- * Changes Copyright (c) 2015 Alan Snyder.
+ * Changes Copyright (c) 2015-2018 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -50,26 +50,30 @@ public abstract class AquaBorder implements Border, UIResource {
     protected AquaBorder() {
     }
 
-    public static void repaintBorder(final JComponent c) {
+    public static void repaintBorder(JComponent c) {
         JComponent borderedComponent = c;
         Border border = c.getBorder();
         if (border == null) {
             // See if it's inside a JScrollpane or something
-            final Container p = c.getParent();
+            Container p = c.getParent();
             if (p instanceof JViewport) {
                 borderedComponent = (JComponent)p.getParent();
-                if (borderedComponent != null) border = borderedComponent.getBorder();
+                if (borderedComponent != null) {
+                    border = borderedComponent.getBorder();
+                }
             }
         }
 
         // If we really don't have a border, then bail
         // It might be a compound border with a ThemeBorder inside
         // The check for that case is tricky, so we just go ahead and repaint any border
-        if (border == null || borderedComponent == null) return;
+        if (border == null || borderedComponent == null) {
+            return;
+        }
 
-        final int width = borderedComponent.getWidth();
-        final int height = borderedComponent.getHeight();
-        final Insets i = borderedComponent.getInsets();
+        int width = borderedComponent.getWidth();
+        int height = borderedComponent.getHeight();
+        Insets i = borderedComponent.getInsets();
 
         borderedComponent.repaint(0, 0, width, i.top); // Top edge
         borderedComponent.repaint(0, 0, i.left, height); // Left edge

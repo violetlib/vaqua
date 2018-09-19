@@ -1,7 +1,6 @@
 /*
- * @(#)AquaFileSystemView.java
- *
  * Copyright (c) 2005-2013 Werner Randelshofer, Switzerland.
+ * Copyright (c) 2018 Alan Snyder.
  * All rights reserved.
  *
  * The copyright of this software is owned by Werner Randelshofer.
@@ -12,18 +11,16 @@
 
 package org.violetlib.aqua.fc;
 
+import java.io.File;
 import javax.swing.*;
 import javax.swing.filechooser.FileView;
-import java.awt.*;
-import java.io.File;
+
+import org.jetbrains.annotations.NotNull;
 
 /**
  * An enhanced FileSystemView, which provides additional information about a file system required for Aqua file
  * choosers. This class acts as a wrapper on platform specific file system views. The resulting view is an Aqua-style
  * view on the file system.
- *
- * @author  Werner Randelshofer
- * @version $Id$
  */
 public abstract class AquaFileSystemView extends DelegatedFileSystemViewBase {
 
@@ -54,7 +51,7 @@ public abstract class AquaFileSystemView extends DelegatedFileSystemViewBase {
     /**
      * Creates a system specific file view for the specified JFileChooser.
      */
-    public FileView createFileView(JFileChooser chooser) {
+    public @NotNull FileView createFileView(JFileChooser chooser) {
         return new AquaFileView(this);
     }
 
@@ -63,67 +60,21 @@ public abstract class AquaFileSystemView extends DelegatedFileSystemViewBase {
     /**
      * Returns a FileSystemView that can be cast into AquaFileSystemView.
      */
-    public static AquaFileSystemView getAquaFileSystemView() {
+    public static @NotNull AquaFileSystemView getAquaFileSystemView() {
         if (fileSystemView == null) {
             fileSystemView = new OSXFileSystemView();
         }
         return fileSystemView;
     }
 
-    @Override
-    public Icon getSystemIcon(File f) {
-        if (f.equals(getComputer())) {
-            return UIManager.getIcon("FileView.computerIcon");
-        } else {
-            if (OSXFile.isAvailable()) {
-                try {
-                    Image im = OSXFile.getIconImage(f, 16, false);
-                    return new ImageIcon(im);
-                } catch (UnsupportedOperationException ex) {
-                }
-            }
-
-            return target.getSystemIcon(f);
-        }
-    }
-
-    @Override
-    public String getSystemTypeDescription(File f) {
-        if (OSXFile.isAvailable()) {
-            return OSXFile.getKindString(f);
-        } else {
-        return target.getSystemTypeDescription(f);
-        }
-    }
-
-    @Override
-    public Boolean isTraversable(File f) {
-        if (OSXFile.isAvailable()) {
-            return OSXFile.isTraversable(f);
-        } else {
-            return target.isTraversable(f);
-        }
-    }
-
-    public Boolean isTraversable(File f, boolean isPackageTraversable, boolean isApplicationTraversable) {
-        if (OSXFile.isAvailable()) {
-            return OSXFile.isTraversable(f, isPackageTraversable, isApplicationTraversable);
-        } else {
-            return target.isTraversable(f);
-        }
-    }
-
-    @Override
-    public String getSystemDisplayName(File f) {
-        if (f.equals(getComputer())) {
-            String name = OSXFile.getComputerName();
-            return name != null ? name : getSystemVolume().getName();
-        } else {
-            if (OSXFile.isAvailable()) {
-                return OSXFile.getDisplayName(f);
-            } else {
-                return target.getSystemDisplayName(f);
-            }
-        }
+    /**
+     * Indicate whether a file (directory) can be visited.
+     * @param f The file.
+     * @param isPackageTraversable True if packages should be traversable.
+     * @param isApplicationTraversable True if bundled applications should be traversable.
+     * @return true if and only if the file can be visited.
+     */
+    public @NotNull Boolean isTraversable(File f, boolean isPackageTraversable, boolean isApplicationTraversable) {
+        return target.isTraversable(f);
     }
 }

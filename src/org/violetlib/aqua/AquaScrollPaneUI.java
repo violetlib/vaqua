@@ -1,5 +1,5 @@
 /*
- * Changes Copyright (c) 2015 Alan Snyder.
+ * Changes Copyright (c) 2015-2018 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -37,7 +37,6 @@ import java.awt.*;
 import java.awt.event.*;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
-
 import javax.swing.*;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
@@ -45,11 +44,13 @@ import javax.swing.plaf.ComponentUI;
 import javax.swing.plaf.UIResource;
 import javax.swing.plaf.basic.BasicScrollPaneUI;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.violetlib.jnr.aqua.AquaUIPainter;
 
-public class AquaScrollPaneUI extends BasicScrollPaneUI implements AquaUtilControlSize.Sizeable {
+public class AquaScrollPaneUI extends BasicScrollPaneUI implements AquaUtilControlSize.Sizeable, AquaComponentUI {
 
-    public static ComponentUI createUI(final JComponent x) {
+    public static ComponentUI createUI(JComponent x) {
         return new AquaScrollPaneUI();
     }
 
@@ -86,10 +87,10 @@ public class AquaScrollPaneUI extends BasicScrollPaneUI implements AquaUtilContr
     /** non-null when using the intermediate container hack to properly paint overlay scroll bars */
     protected OverlayScrollPaneHack overlayScrollPaneHack;
 
-
-
     /** the layout manager used for legacy scroll bars */
     protected LayoutManager legacyLayoutManager;
+
+    protected @Nullable AppearanceContext appearanceContext;
 
     protected PropertyChangeListener propertyChangeListener;
     protected ChangeListener preferenceChangeListener;
@@ -108,6 +109,7 @@ public class AquaScrollPaneUI extends BasicScrollPaneUI implements AquaUtilContr
         }
         setScrollBarStyle(shouldUseOverlayScrollBars());
         scrollpane.putClientProperty(SCROLL_PANE_AQUA_OVERLAY_SCROLL_BARS_KEY, isOverlayScrollBars);
+        configureAppearanceContext(null);
     }
 
     @Override
@@ -128,6 +130,7 @@ public class AquaScrollPaneUI extends BasicScrollPaneUI implements AquaUtilContr
         preferenceChangeListener = new PreferenceChangeListener();
         OSXSystemProperties.addChangeListener(preferenceChangeListener);
         AquaUtilControlSize.addSizePropertyListener(c);
+        AppearanceManager.installListener(c);
     }
 
     @Override
@@ -140,6 +143,7 @@ public class AquaScrollPaneUI extends BasicScrollPaneUI implements AquaUtilContr
             overlayScrollPaneHack.dispose();
             overlayScrollPaneHack = null;
         }
+        AppearanceManager.uninstallListener(c);
         AquaUtilControlSize.removeSizePropertyListener(c);
         OSXSystemProperties.removeChangeListener(preferenceChangeListener);
         preferenceChangeListener = null;
@@ -161,16 +165,44 @@ public class AquaScrollPaneUI extends BasicScrollPaneUI implements AquaUtilContr
     }
 
     @Override
+    public void appearanceChanged(@NotNull JComponent c, @NotNull AquaAppearance appearance) {
+        configureAppearanceContext(null);
+    }
+
+    @Override
+    public void activeStateChanged(@NotNull JComponent c, boolean isActive) {
+    }
+
+    protected void configureAppearanceContext(@Nullable AquaAppearance appearance) {
+        if (appearance == null) {
+            appearance = AppearanceManager.ensureAppearance(scrollpane);
+        }
+        AquaUIPainter.State state = getState();
+        appearanceContext = new AppearanceContext(appearance, state, false, false);
+        updateThumbStyle();
+        scrollpane.repaint();
+    }
+
+    protected @NotNull AquaUIPainter.State getState() {
+        return AquaUIPainter.State.ACTIVE;
+    }
+
+    @Override
     public void update(Graphics g, JComponent c) {
+        AquaAppearance appearance = AppearanceManager.registerCurrentAppearance(c);
         if (c.isOpaque()) {
-            // If using the sidebar style, must erase the background to allow the vibrant background to show.
-            if (isSideBar()) {
-                AquaUtils.fillRect(g, (Color) null, 0, 0, c.getWidth(), c.getHeight());
-            } else {
-                AquaUtils.fillRect(g, c, AquaUtils.ERASE_IF_VIBRANT);
-            }
+            Color background = AquaColors.getBackground(c, "controlBackground");
+            AquaUtils.fillRect(g, c, background, AquaUtils.ERASE_IF_VIBRANT);
+
+//            // If using the sidebar style, must erase the background to allow the vibrant background to show.
+//            if (isSideBar()) {
+//                AquaUtils.fillRect(g, (Color) null, 0, 0, c.getWidth(), c.getHeight());
+//            } else {
+//                AquaUtils.fillRect(g, c, AquaUtils.ERASE_IF_VIBRANT);
+//            }
         }
         paint(g, c);
+        AppearanceManager.restoreCurrentAppearance(appearance);
     }
 
     @Override
@@ -203,16 +235,27 @@ public class AquaScrollPaneUI extends BasicScrollPaneUI implements AquaUtilContr
                 int x2 = vb.getX() + vb.getWidth();
                 int y1 = hb.getY();
                 int y2 = hb.getY() + hb.getHeight();
-                g.setColor(new Color(250, 250, 250));
-                g.fillRect(x1, y1, x2 - x1, y2 - y1);
-                g.setColor(new Color(237, 237, 237));
-                g.fillRect(x1, y2 - 1, x2 - x1, 1);
+
+                assert appearanceContext != null;
+                AquaAppearance appearance = appearanceContext.getAppearance();
+
+                Color trackColor = appearance.getColor("scrollPaneTrack");
+                Color outerBorderColor = appearance.getColor("scrollPaneTrackBorder");
+
+                int w = x2 - x1;
+                int h = y2 - y1;
+
+                g.setColor(trackColor);
+                g.fillRect(x1, y1, w-1, h-1);
+
+                g.setColor(outerBorderColor);
+                g.fillRect(x1, y2 - 1, w, 1);
 
                 if (AquaUtils.isLeftToRight(scrollpane) || !isRTLSupported) {
-                    g.fillRect(x2-1, y1, 1, y2-y1);
+                    g.fillRect(x2-1, y1, 1, h-1);
                     g.fillRect(x1, y1, 1, 1);
                 } else {
-                    g.fillRect(x1, y1, 1, y2 - y1);
+                    g.fillRect(x1, y1, 1, h-1);
                     g.fillRect(x2-1, y1, 1, 1);
                 }
             }
@@ -237,14 +280,14 @@ public class AquaScrollPaneUI extends BasicScrollPaneUI implements AquaUtilContr
 
     protected void setSidebarStyle(JScrollBar sb, boolean b) {
         if (sb != null) {
-            Object o = sb.getClientProperty(AquaScrollBarUI.STYLE_CLIENT_PROPERTY_KEY);
+            Object o = sb.getClientProperty(AquaScrollBarUI.INTERNAL_STYLE_CLIENT_PROPERTY_KEY);
             if (o == null) {
                 if (b) {
-                    sb.putClientProperty(AquaScrollBarUI.STYLE_CLIENT_PROPERTY_KEY, "sidebar");
+                    sb.putClientProperty(AquaScrollBarUI.INTERNAL_STYLE_CLIENT_PROPERTY_KEY, "sidebar");
                 }
             } else if (o.equals("sidebar")) {
                 if (!b) {
-                    sb.putClientProperty(AquaScrollBarUI.STYLE_CLIENT_PROPERTY_KEY, null);
+                    sb.putClientProperty(AquaScrollBarUI.INTERNAL_STYLE_CLIENT_PROPERTY_KEY, null);
                 }
             }
         }
@@ -380,7 +423,8 @@ public class AquaScrollPaneUI extends BasicScrollPaneUI implements AquaUtilContr
     }
 
     protected void updateScrollBar(JScrollBar bar) {
-        // Called to initialize and when the scroll pane size variant or style or thumb style may have changed
+        // Called to initialize and when the scroll pane size variant or style or thumb style may have changed.
+        // An appearance change may change the default thumb style.
         if (bar != null) {
             bar.revalidate();
             bar.repaint();
@@ -388,12 +432,16 @@ public class AquaScrollPaneUI extends BasicScrollPaneUI implements AquaUtilContr
             if (isOverlayScrollBars) {
                 Object o = scrollpane.getClientProperty(SCROLL_PANE_THUMB_STYLE_KEY);
                 if (THUMB_STYLE_LIGHT.equals(o)) {
-                    bar.putClientProperty(AquaScrollBarUI.THUMB_STYLE_CLIENT_PROPERTY_KEY, "overlayLight");
+                    bar.putClientProperty(AquaScrollBarUI.INTERNAL_THUMB_STYLE_CLIENT_PROPERTY_KEY, "overlayLight");
+                } else if (THUMB_STYLE_DARK.equals(o)) {
+                    bar.putClientProperty(AquaScrollBarUI.INTERNAL_THUMB_STYLE_CLIENT_PROPERTY_KEY, "overlayDark");
                 } else {
-                    bar.putClientProperty(AquaScrollBarUI.THUMB_STYLE_CLIENT_PROPERTY_KEY, "overlayDark");
+                    AquaAppearance appearance = AppearanceManager.ensureAppearance(scrollpane);
+                    String style = appearance.isDark() ? "overlayLight" : "overlayDark";
+                    bar.putClientProperty(AquaScrollBarUI.INTERNAL_THUMB_STYLE_CLIENT_PROPERTY_KEY, style);
                 }
             } else {
-                bar.putClientProperty(AquaScrollBarUI.THUMB_STYLE_CLIENT_PROPERTY_KEY, null);
+                bar.putClientProperty(AquaScrollBarUI.INTERNAL_THUMB_STYLE_CLIENT_PROPERTY_KEY, null);
             }
         }
     }
@@ -475,7 +523,7 @@ public class AquaScrollPaneUI extends BasicScrollPaneUI implements AquaUtilContr
     // shown.
 
     protected class XYMouseWheelHandler extends BasicScrollPaneUI.MouseWheelHandler {
-        public void mouseWheelMoved(final MouseWheelEvent e) {
+        public void mouseWheelMoved(MouseWheelEvent e) {
 
             boolean isHorizontalScroll = e.isShiftDown();
 

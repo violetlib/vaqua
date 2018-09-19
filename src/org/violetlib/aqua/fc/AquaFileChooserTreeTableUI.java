@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014-2015 Alan Snyder.
+ * Copyright (c) 2014-2018 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -24,7 +24,7 @@ public abstract class AquaFileChooserTreeTableUI extends AquaTreeTableUI {
 
     protected AquaFileChooserListMouseBehavior mouseBehavior;
 
-    public AquaFileChooserTreeTableUI(JFileChooser fc, final TreeTable tt) {
+    public AquaFileChooserTreeTableUI(JFileChooser fc, TreeTable tt) {
         mouseBehavior = new AquaFileChooserListMouseBehavior(fc, new TreeTableModel(tt));
         mouseBehavior.setFileSelectionHandler(new AquaFileChooserListMouseBehavior.FileSelectionHandler() {
             @Override

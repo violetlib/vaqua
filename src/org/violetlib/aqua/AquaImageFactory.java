@@ -1,5 +1,5 @@
 /*
- * Changes copyright (c) 2015-2016 Alan Snyder.
+ * Changes copyright (c) 2015-2018 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -34,28 +34,62 @@
 package org.violetlib.aqua;
 
 import java.awt.*;
-import java.awt.image.*;
+import java.awt.image.BufferedImage;
+import java.awt.image.ImageFilter;
+import java.awt.image.ImageObserver;
+import java.awt.image.RGBImageFilter;
 import java.io.File;
 import java.net.URL;
 import java.security.PrivilegedAction;
+import java.util.Objects;
 import javax.swing.*;
-import javax.swing.plaf.ColorUIResource;
 import javax.swing.plaf.IconUIResource;
-import javax.swing.plaf.UIResource;
 
-import org.violetlib.aqua.AquaIcon.InvertableIcon;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.violetlib.aqua.AquaUtils.RecyclableSingleton;
 import org.violetlib.aqua.fc.OSXFile;
 import org.violetlib.jnr.aqua.AquaUIPainter.Size;
 
 public class AquaImageFactory {
 
+    public static final Object DARKEN_FOR_SELECTION = new Object();
+    public static final Object DARKEN_FOR_PRESSED = new Object();
+    public static final Object LIGHTEN_FOR_DISABLED = new Object();
+    public static final Object LIGHTEN_100 = new LightenOperator(100);
+    public static final Object LIGHTEN_50 = new LightenOperator(50);
+    public static final Object LIGHTEN_25 = new LightenOperator(25);
+    public static final Object INVERT_FOR_DARK_MODE = new Object();
+
     public static boolean debugNativeRendering = false;
     private static final int kAlertIconSize = 64;
 
-    private static InvertableImageIcon regularPopupMenuCheckIcon;
-    private static InvertableImageIcon smallPopupMenuCheckIcon;
-    private static InvertableImageIcon miniPopupMenuCheckIcon;
+    // Template images are used with a variety of colors depending upon context.
+    // They also need to be identified as such.
+    // To avoid recomputation, we soft cache this information.
+
+    private static final AquaImageCache imageCache = new AquaImageCache();
+
+    static class AquaImageCache extends ProcessedImageCache {
+        @Override
+        protected boolean determineTemplateImage(@NotNull Image source) {
+            return AquaImageFactory.determineTemplateImageStatus(source);
+        }
+
+        @Override
+        protected @NotNull Image createImageFromTemplate(@NotNull Image source, @NotNull Color color) {
+            return AquaImageFactory.createImageFromTemplate(source, color);
+        }
+
+        @Override
+        protected @NotNull Image createProcessedImage(@NotNull Image source, @NotNull Object operator) {
+            return AquaImageFactory.createProcessedImage(source, operator);
+        }
+    }
+
+    private static ImageIcon regularPopupMenuCheckIcon;
+    private static ImageIcon smallPopupMenuCheckIcon;
+    private static ImageIcon miniPopupMenuCheckIcon;
 
     public static IconUIResource getComputerIcon() {
         return new IconUIResource(new AquaIcon.CachingScalingIcon(16, 16) {
@@ -74,19 +108,19 @@ public class AquaImageFactory {
         });
     }
 
-    public static IconUIResource getCautionImageIcon() {
+    public static ImageIconUIResource getCautionImageIcon() {
         // public, because UIDefaults.ProxyLazyValue uses reflection to get this value
         return getAppIconCompositedOn(AquaIcon.getCautionIconImage());
     }
 
-    public static IconUIResource getStopImageIcon() {
+    public static ImageIconUIResource getStopImageIcon() {
         // public, because UIDefaults.ProxyLazyValue uses reflection to get this value
         return getAppIconCompositedOn(AquaIcon.getStopIconImage());
     }
 
-    public static IconUIResource getLockImageIcon() {
+    public static ImageIconUIResource getLockImageIcon() {
         // public, because UIDefaults.ProxyLazyValue uses reflection to get this value
-        final Image lockIcon = Toolkit.getDefaultToolkit().getImage("NSImage://NSSecurity");
+        Image lockIcon = Toolkit.getDefaultToolkit().getImage("NSImage://NSSecurity");
         return getAppIconCompositedOn(lockIcon);
     }
 
@@ -98,8 +132,8 @@ public class AquaImageFactory {
         });
     }
 
-    protected static IconUIResource getAppIconCompositedOn(final Image background) {
-        return new IconUIResource(new ImageIcon(applyMapper(background, appIconCompositor)));
+    protected static ImageIconUIResource getAppIconCompositedOn(Image background) {
+        return new ImageIconUIResource(applyMapper(background, appIconCompositor));
     }
 
     public static Image applyMapper(Image source, AquaMultiResolutionImage.Mapper mapper) {
@@ -115,20 +149,20 @@ public class AquaImageFactory {
         }
     }
 
-    static BufferedImage getAppIconImageCompositedOn(final Image background, int scaleFactor) {
-        final int scaledAlertIconSize = background.getWidth(null) * scaleFactor;
-        final int kAlertSubIconSize = (int) (scaledAlertIconSize * 0.5);
-        final int kAlertSubIconInset = scaledAlertIconSize - kAlertSubIconSize;
-        final Icon smallAppIconScaled = new AquaIcon.CachingScalingIcon(
+    private static BufferedImage getAppIconImageCompositedOn(Image background, int scaleFactor) {
+        int scaledAlertIconSize = background.getWidth(null) * scaleFactor;
+        int kAlertSubIconSize = (int) (scaledAlertIconSize * 0.5);
+        int kAlertSubIconInset = scaledAlertIconSize - kAlertSubIconSize;
+        Icon smallAppIconScaled = new AquaIcon.CachingScalingIcon(
                 kAlertSubIconSize, kAlertSubIconSize) {
             Image createImage() {
                 return getGenericJavaIcon();
             }
         };
 
-        final BufferedImage image = new BufferedImage(scaledAlertIconSize,
+        BufferedImage image = new BufferedImage(scaledAlertIconSize,
                 scaledAlertIconSize, BufferedImage.TYPE_INT_ARGB_PRE);
-        final Graphics g = image.getGraphics();
+        Graphics g = image.getGraphics();
         g.drawImage(background, 0, 0,
                 scaledAlertIconSize, scaledAlertIconSize, null);
         if (g instanceof Graphics2D) {
@@ -148,7 +182,7 @@ public class AquaImageFactory {
         return u != null ? Toolkit.getDefaultToolkit().createImage(u) : null;
     }
 
-    public static Image getImage(File file, int size) {
+    public static @Nullable Image getImage(@Nullable File file, int size) {
         if (file != null) {
             ImageFileIconCreator r = new ImageFileIconCreator(file, size, size);
             return r.getImage();
@@ -189,54 +223,54 @@ public class AquaImageFactory {
         }
     }
 
-    public static IconUIResource getTreeFolderIcon() {
+    public static ImageIconUIResource getTreeFolderIcon() {
         // public, because UIDefaults.ProxyLazyValue uses reflection to get this value
         return treeFolderIconResource.getInstance();
     }
 
-    public static IconUIResource getTreeOpenFolderIcon() {
+    public static ImageIconUIResource getTreeOpenFolderIcon() {
         // public, because UIDefaults.ProxyLazyValue uses reflection to get this value
         return treeOpenFolderIconResource.getInstance();
     }
 
-    public static IconUIResource getTreeDocumentIcon() {
+    public static ImageIconUIResource getTreeDocumentIcon() {
         // public, because UIDefaults.ProxyLazyValue uses reflection to get this value
         return treeDocumentIconResource.getInstance();
     }
 
     private static final TreeFolderIconUIResourceSingleton treeFolderIconResource = new TreeFolderIconUIResourceSingleton();
 
-    private static class TreeFolderIconUIResourceSingleton extends RecyclableSingleton<IconUIResource> {
+    private static class TreeFolderIconUIResourceSingleton extends RecyclableSingleton<ImageIconUIResource> {
         @Override
-        protected IconUIResource getInstance() {
+        protected ImageIconUIResource getInstance() {
             Image im = OSXFile.getDirectoryIconImage(20);
-            return new IconUIResource(new ImageIcon(im));
+            return new ImageIconUIResource(im);
         }
     }
 
     private static final TreeOpenFolderIconUIResourceSingleton treeOpenFolderIconResource = new TreeOpenFolderIconUIResourceSingleton();
 
-    private static class TreeOpenFolderIconUIResourceSingleton extends RecyclableSingleton<IconUIResource> {
+    private static class TreeOpenFolderIconUIResourceSingleton extends RecyclableSingleton<ImageIconUIResource> {
         @Override
-        protected IconUIResource getInstance() {
+        protected ImageIconUIResource getInstance() {
             return AquaIcon.getOpenFolderIcon();
         }
     }
 
     private static final TreeDocumentIconUIResourceSingleton treeDocumentIconResource = new TreeDocumentIconUIResourceSingleton();
 
-    private static class TreeDocumentIconUIResourceSingleton extends RecyclableSingleton<IconUIResource> {
+    private static class TreeDocumentIconUIResourceSingleton extends RecyclableSingleton<ImageIconUIResource> {
         @Override
-        protected IconUIResource getInstance() {
+        protected ImageIconUIResource getInstance() {
             Image im = OSXFile.getFileIconImage(20);
-            return new IconUIResource(new ImageIcon(im));
+            return new ImageIconUIResource(im);
         }
     }
 
     static class NamedImageSingleton extends RecyclableSingleton<Image> {
-        final String namedImage;
+        protected final String namedImage;
 
-        NamedImageSingleton(final String namedImage) {
+        NamedImageSingleton(String namedImage) {
             this.namedImage = namedImage;
         }
 
@@ -246,30 +280,16 @@ public class AquaImageFactory {
         }
     }
 
-    static class IconUIResourceSingleton extends RecyclableSingleton<IconUIResource> {
-        final NamedImageSingleton holder;
+    static class IconUIResourceSingleton extends RecyclableSingleton<ImageIconUIResource> {
+        protected final NamedImageSingleton holder;
 
-        public IconUIResourceSingleton(final NamedImageSingleton holder) {
+        public IconUIResourceSingleton(NamedImageSingleton holder) {
             this.holder = holder;
         }
 
         @Override
-        protected IconUIResource getInstance() {
-            return new IconUIResource(new ImageIcon(holder.get()));
-        }
-    }
-
-    @SuppressWarnings("serial") // Superclass is not serializable across versions
-    static class InvertableImageIcon extends ImageIcon implements InvertableIcon, UIResource {
-        Icon invertedImage;
-        public InvertableImageIcon(final Image image) {
-            super(image);
-        }
-
-        @Override
-        public Icon getInvertedIcon() {
-            if (invertedImage != null) return invertedImage;
-            return invertedImage = new IconUIResource(new ImageIcon(generateLightenedImage(getImage(), 100)));
+        protected ImageIconUIResource getInstance() {
+            return new ImageIconUIResource(holder.get());
         }
     }
 
@@ -282,22 +302,12 @@ public class AquaImageFactory {
     protected static final NamedImageSingleton eastArrow = new NamedImageSingleton("NSMenuSubmenu");
     protected static final IconUIResourceSingleton eastArrowIcon = new IconUIResourceSingleton(eastArrow);
 
-    static Image getArrowImageForDirection(final int direction) {
+    public static @Nullable Image getArrowImageForDirection(int direction) {
         switch(direction) {
             case SwingConstants.NORTH: return northArrow.get();
             case SwingConstants.SOUTH: return southArrow.get();
             case SwingConstants.EAST: return eastArrow.get();
             case SwingConstants.WEST: return westArrow.get();
-        }
-        return null;
-    }
-
-    static Icon getArrowIconForDirection(int direction) {
-        switch(direction) {
-            case SwingConstants.NORTH: return northArrowIcon.get();
-            case SwingConstants.SOUTH: return southArrowIcon.get();
-            case SwingConstants.EAST: return eastArrowIcon.get();
-            case SwingConstants.WEST: return westArrowIcon.get();
         }
         return null;
     }
@@ -311,7 +321,7 @@ public class AquaImageFactory {
     }
 
     public static Icon getMenuArrowIcon() {
-        return new InvertableImageIcon(generateLightenedImage(eastArrow.get(), 25));
+        return new ImageIcon(getProcessedImage(eastArrow.get(), LIGHTEN_25));
     }
 
     public static Icon getPopupMenuItemCheckIcon(Size sizeVariant) {
@@ -345,20 +355,20 @@ public class AquaImageFactory {
         return miniPopupMenuCheckIcon;
     }
 
-    private static InvertableImageIcon getPopupMenuItemCheckIcon(int size) {
+    private static ImageIcon getPopupMenuItemCheckIcon(int size) {
         Image im = getNSImage("NSMenuCheckmark", size, size);
-        return new InvertableImageIcon(im);
+        return new ImageIcon(im);
     }
 
     public static Icon getMenuItemCheckIcon() {
-        return new InvertableImageIcon(generateLightenedImage(getNSIcon("NSMenuCheckmark"), 25));
+        return new ImageIcon(getProcessedImage(getNSIcon("NSMenuCheckmark"), LIGHTEN_25));
     }
 
     public static Icon getMenuItemDashIcon() {
-        return new InvertableImageIcon(generateLightenedImage(getNSIcon("NSMenuMixedState"), 25));
+        return new ImageIcon(getProcessedImage(getNSIcon("NSMenuMixedState"), LIGHTEN_25));
     }
 
-    private static Image getNSImage(String imageName, int width, int height) {
+    private static @Nullable Image getNSImage(@NotNull String imageName, int width, int height) {
         return getNativeImage(imageName, width, height);
     }
 
@@ -372,15 +382,15 @@ public class AquaImageFactory {
         public final int minW, minH;
         public final boolean showMiddle, stretchH, stretchV;
 
-        public NineSliceMetrics(final int minWidth, final int minHeight, final int westCut, final int eastCut, final int northCut, final int southCut) {
+        public NineSliceMetrics(int minWidth, int minHeight, int westCut, int eastCut, int northCut, int southCut) {
             this(minWidth, minHeight, westCut, eastCut, northCut, southCut, true);
         }
 
-        public NineSliceMetrics(final int minWidth, final int minHeight, final int westCut, final int eastCut, final int northCut, final int southCut, final boolean showMiddle) {
+        public NineSliceMetrics(int minWidth, int minHeight, int westCut, int eastCut, int northCut, int southCut, boolean showMiddle) {
             this(minWidth, minHeight, westCut, eastCut, northCut, southCut, showMiddle, true, true);
         }
 
-        public NineSliceMetrics(final int minWidth, final int minHeight, final int westCut, final int eastCut, final int northCut, final int southCut, final boolean showMiddle, final boolean stretchHorizontally, final boolean stretchVertically) {
+        public NineSliceMetrics(int minWidth, int minHeight, int westCut, int eastCut, int northCut, int southCut, boolean showMiddle, boolean stretchHorizontally, boolean stretchVertically) {
             this.wCut = westCut; this.eCut = eastCut; this.nCut = northCut; this.sCut = southCut;
             this.minW = minWidth; this.minH = minHeight;
             this.showMiddle = showMiddle; this.stretchH = stretchHorizontally; this.stretchV = stretchVertically;
@@ -392,28 +402,28 @@ public class AquaImageFactory {
      * image that can be stretched from its middles.
      */
     public static class SlicedImageControl {
-        final BufferedImage NW, N, NE;
-        final BufferedImage W, C, E;
-        final BufferedImage SW, S, SE;
+        protected final BufferedImage NW, N, NE;
+        protected final BufferedImage W, C, E;
+        protected final BufferedImage SW, S, SE;
 
-        final NineSliceMetrics metrics;
+        protected final NineSliceMetrics metrics;
 
-        final int totalWidth, totalHeight;
-        final int centerColWidth, centerRowHeight;
+        protected final int totalWidth, totalHeight;
+        protected final int centerColWidth, centerRowHeight;
 
-        public SlicedImageControl(final Image img, final int westCut, final int eastCut, final int northCut, final int southCut) {
+        public SlicedImageControl(Image img, int westCut, int eastCut, int northCut, int southCut) {
             this(img, westCut, eastCut, northCut, southCut, true);
         }
 
-        public SlicedImageControl(final Image img, final int westCut, final int eastCut, final int northCut, final int southCut, final boolean useMiddle) {
+        public SlicedImageControl(Image img, int westCut, int eastCut, int northCut, int southCut, boolean useMiddle) {
             this(img, westCut, eastCut, northCut, southCut, useMiddle, true, true);
         }
 
-        public SlicedImageControl(final Image img, final int westCut, final int eastCut, final int northCut, final int southCut, final boolean useMiddle, final boolean stretchHorizontally, final boolean stretchVertically) {
+        public SlicedImageControl(Image img, int westCut, int eastCut, int northCut, int southCut, boolean useMiddle, boolean stretchHorizontally, boolean stretchVertically) {
             this(img, new NineSliceMetrics(img.getWidth(null), img.getHeight(null), westCut, eastCut, northCut, southCut, useMiddle, stretchHorizontally, stretchVertically));
         }
 
-        public SlicedImageControl(final Image img, final NineSliceMetrics metrics) {
+        public SlicedImageControl(Image img, NineSliceMetrics metrics) {
             this.metrics = metrics;
 
             if (img.getWidth(null) != metrics.minW || img.getHeight(null) != metrics.minH) {
@@ -436,18 +446,18 @@ public class AquaImageFactory {
             SE = createSlice(img, totalWidth - metrics.eCut, totalHeight - metrics.sCut, metrics.eCut, metrics.sCut);
         }
 
-        static BufferedImage createSlice(final Image img, final int x, final int y, final int w, final int h) {
+        static BufferedImage createSlice(Image img, int x, int y, int w, int h) {
             if (w == 0 || h == 0) return null;
 
-            final BufferedImage slice = new BufferedImage(w, h, BufferedImage.TYPE_INT_ARGB_PRE);
-            final Graphics2D g2d = slice.createGraphics();
+            BufferedImage slice = new BufferedImage(w, h, BufferedImage.TYPE_INT_ARGB_PRE);
+            Graphics2D g2d = slice.createGraphics();
             g2d.drawImage(img, 0, 0, w, h, x, y, x + w, y + h, null);
             g2d.dispose();
 
             return slice;
         }
 
-        public void paint(final Graphics g, final int x, final int y, final int w, final int h) {
+        public void paint(Graphics g, int x, int y, int w, int h) {
             g.translate(x, y);
 
             if (w < totalWidth || h < totalHeight) {
@@ -459,7 +469,7 @@ public class AquaImageFactory {
             g.translate(-x, -y);
         }
 
-        void paintStretchedMiddles(final Graphics g, final int w, final int h) {
+        void paintStretchedMiddles(Graphics g, int w, int h) {
             int baseX = metrics.stretchH ? 0 : ((w / 2) - (totalWidth / 2));
             int baseY = metrics.stretchV ? 0 : ((h / 2) - (totalHeight / 2));
             int adjustedWidth = metrics.stretchH ? w : totalWidth;
@@ -488,17 +498,17 @@ public class AquaImageFactory {
             */
         }
 
-        void paintCompressed(final Graphics g, final int w, final int h) {
-            final double heightRatio = h > totalHeight ? 1.0 : (double)h / (double)totalHeight;
-            final double widthRatio = w > totalWidth ? 1.0 : (double)w / (double)totalWidth;
+        void paintCompressed(Graphics g, int w, int h) {
+            double heightRatio = h > totalHeight ? 1.0 : (double)h / (double)totalHeight;
+            double widthRatio = w > totalWidth ? 1.0 : (double)w / (double)totalWidth;
 
-            final int northHeight = (int)(metrics.nCut * heightRatio);
-            final int southHeight = (int)(metrics.sCut * heightRatio);
-            final int centerHeight = h - northHeight - southHeight;
+            int northHeight = (int)(metrics.nCut * heightRatio);
+            int southHeight = (int)(metrics.sCut * heightRatio);
+            int centerHeight = h - northHeight - southHeight;
 
-            final int westWidth = (int)(metrics.wCut * widthRatio);
-            final int eastWidth = (int)(metrics.eCut * widthRatio);
-            final int centerWidth = w - westWidth - eastWidth;
+            int westWidth = (int)(metrics.wCut * widthRatio);
+            int eastWidth = (int)(metrics.eCut * widthRatio);
+            int centerWidth = w - westWidth - eastWidth;
 
             if (NW != null) g.drawImage(NW, 0, 0, westWidth, northHeight, null);
             if (N != null) g.drawImage(N, westWidth, 0, centerWidth, northHeight, null);
@@ -512,67 +522,10 @@ public class AquaImageFactory {
         }
     }
 
-    // We cannot change the system colors
-    private static Color windowBackgroundColor = new ColorUIResource(236, 236, 236); // new SystemColorProxy(SystemColor.window);
-    private static Color desktopBackgroundColor = new ColorUIResource(65, 105, 170); //SystemColor.desktop
-    private static Color textSelectionBackgroundColor = new ColorUIResource(179, 215, 255); // new SystemColorProxy(SystemColor.textHighlight);
-    private static Color textSelectionForegroundColor = new ColorUIResource(0, 0, 0); // new SystemColorProxy(SystemColor.textHighlightText);
-    private static Color selectionBackgroundColor = new ColorUIResource(0, 104, 217); // new SystemColorProxy(SystemColor.controlHighlight);
-    private static Color selctionForegroundColor = new ColorUIResource(255, 255, 255); // new SystemColorProxy(SystemColor.controlLtHighlight);
-    private static Color comboBoxSelectionBackgroundColor = new ColorUIResource(0, 104, 217);
-    private static Color comboBoxSelectionForegroundColor = new ColorUIResource(217, 233, 250);
-    private static Color focusRingColor = new Color(62, 156, 246, 128); // new SystemColorProxy(LWCToolkit.getAppleColor(LWCToolkit.KEYBOARD_FOCUS_COLOR));
-    private static Color selectionInactiveBackgroundColor = new ColorUIResource(220, 220, 220);
-    private static Color selectionInactiveForegroundColor = new ColorUIResource(0, 0, 0); // new SystemColorProxy(LWCToolkit.getAppleColor(LWCToolkit.INACTIVE_SELECTION_FOREGROUND_COLOR));
-
-    public static Color getWindowBackgroundColorUIResource() {
-        return windowBackgroundColor;
-    }
-
-    public static Color getDesktopBackgroundColorUIResource() {
-        return desktopBackgroundColor;
-    }
-
-    public static Color getTextSelectionBackgroundColorUIResource() {
-        return textSelectionBackgroundColor;
-    }
-
-    public static Color getTextSelectionForegroundColorUIResource() {
-        return textSelectionForegroundColor;
-    }
-
-    public static Color getSelectionBackgroundColorUIResource() {
-        return selectionBackgroundColor;
-    }
-
-    public static Color getSelectionForegroundColorUIResource() {
-        return selctionForegroundColor;
-    }
-
-    public static Color getComboBoxSelectionBackgroundColorUIResource() {
-        return comboBoxSelectionBackgroundColor;
-    }
-
-    public static Color getComboBoxSelectionForegroundColorUIResource() {
-        return comboBoxSelectionForegroundColor;
-    }
-
-    public static Color getFocusRingColorUIResource() {
-        return focusRingColor;
-    }
-
-    public static Color getSelectionInactiveBackgroundColorUIResource() {
-        return selectionInactiveBackgroundColor;
-    }
-
-    public static Color getSelectionInactiveForegroundColorUIResource() {
-        return selectionInactiveForegroundColor;
-    }
-
     /**
      * Obtain a native image with a specified logical size.
      */
-    private static native Image getNativeImage(String name, int width, int height);
+    private static native @Nullable Image getNativeImage(String name, int width, int height);
 
     /**
      * Render an image file.
@@ -585,19 +538,60 @@ public class AquaImageFactory {
      */
     private static native boolean nativeRenderImageFile(String path, int[][] buffers, int w, int h);
 
-    public static Image generateSelectedDarkImage(final Image image) {
-        return applyFilter(image, new GenerateSelectedDarkFilter());
+    public static @NotNull Object getLightenOperator(int percent) {
+        return new LightenOperator(percent);
+    }
+
+    private static class LightenOperator {
+        int percent;
+
+        public LightenOperator(int percent) {
+            this.percent = percent;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            LightenOperator that = (LightenOperator) o;
+            return percent == that.percent;
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(percent);
+        }
+    }
+
+    private static @NotNull Image createProcessedImage(@NotNull Image source, @NotNull Object operator) {
+        if (operator == DARKEN_FOR_SELECTION) {
+            return applyFilter(source, new GenerateSelectedDarkFilter());
+        }
+        if (operator == DARKEN_FOR_PRESSED) {
+            return applyFilter(source, new GeneratePressedDarkFilter());
+        }
+        if (operator == LIGHTEN_FOR_DISABLED) {
+            return applyFilter(source, new GenerateDisabledLightFilter());
+        }
+        if (operator instanceof LightenOperator) {
+            int percent = ((LightenOperator) operator).percent;
+            GrayFilter filter = new GrayFilter(true, percent);
+            return AquaMultiResolutionImage.apply(source, filter);
+        }
+        if (operator == INVERT_FOR_DARK_MODE) {
+            if (isTemplateImage(source)) {
+                return source;
+            }
+            return applyFilter(source, new InvertImageForDarkModeFilter());
+        }
+        return source;
     }
 
     private static class GenerateSelectedDarkFilter extends IconImageFilter {
         @Override
-        int getGreyFor(final int gray) {
+        int getGreyFor(int gray) {
             return gray * 75 / 100;
         }
-    }
-
-    public static Image generatePressedDarkImage(Image image) {
-        return applyFilter(image, new GeneratePressedDarkFilter());
     }
 
     private static class GeneratePressedDarkFilter extends RGBImageFilter {
@@ -622,10 +616,6 @@ public class AquaImageFactory {
         }
     }
 
-    public static Image generateDisabledLightImage(Image image) {
-        return applyFilter(image, new GenerateDisabledLightFilter());
-    }
-
     private static class GenerateDisabledLightFilter extends RGBImageFilter {
         public GenerateDisabledLightFilter() {
             canFilterIndexColorModel = true;
@@ -648,28 +638,22 @@ public class AquaImageFactory {
         }
     }
 
-    public static Image generateLightenedImage(final Image image, final int percent) {
-        final GrayFilter filter = new GrayFilter(true, percent);
-        return AquaMultiResolutionImage.apply(image, filter);
-    }
-
     private abstract static class IconImageFilter extends RGBImageFilter {
         IconImageFilter() {
-            super();
             canFilterIndexColorModel = true;
         }
 
         @Override
-        public final int filterRGB(final int x, final int y, final int rgb) {
-            final int red = (rgb >> 16) & 0xff;
-            final int green = (rgb >> 8) & 0xff;
-            final int blue = rgb & 0xff;
-            final int gray = getGreyFor((int) ((0.30 * red + 0.59 * green + 0.11 * blue) / 3));
+        public final int filterRGB(int x, int y, int rgb) {
+            int red = (rgb >> 16) & 0xff;
+            int green = (rgb >> 8) & 0xff;
+            int blue = rgb & 0xff;
+            int gray = getGreyFor((int) ((0.30 * red + 0.59 * green + 0.11 * blue) / 3));
 
             return (rgb & 0xff000000) | (grayTransform(red, gray) << 16) | (grayTransform(green, gray) << 8) | (grayTransform(blue, gray) << 0);
         }
 
-        private static int grayTransform(final int color, final int gray) {
+        private static int grayTransform(int color, int gray) {
             int result = color - gray;
             if (result < 0) result = 0;
             if (result > 255) result = 255;
@@ -684,12 +668,46 @@ public class AquaImageFactory {
      * (possibly translucent) black pixels.
      */
     public static boolean isTemplateImage(Image image) {
+        return imageCache.isTemplateImage(image);
+    }
+
+    private static boolean determineTemplateImageStatus(@NotNull Image image) {
         // Run the template filter in a special way that allows us to observe its behavior.
         TemplateFilter filter = new TemplateFilter(Color.BLACK, true);
-        Image im = applyFilter(image, filter);
+        // The following is to force a lazy mapped image to run the filter
+        // Multiresolution toolkit images return themselves unless the requested size is greater than the nominal size
+        new ImageIcon(image);
+        int width = image.getWidth(null);
+        int height = image.getHeight(null);
+        Image source = JavaSupport.getResolutionVariant(image, width * 2, height * 2);
+        Image im = applyFilter(source, filter);
         // force the image to be created
         new ImageIcon(im);
         return filter.isTemplate();
+    }
+
+    public static @NotNull Image generateTemplateImage(@NotNull Image image) {
+        return applyFilter(image, new GenerateTemplateFilter());
+    }
+
+    /**
+     * Return the processed version of the specified image.
+     * @param image The source image.
+     * @param operator The operation to be performed on the image.
+     * @return the processed version of {@code image}.
+     */
+    public static @NotNull Image getProcessedImage(@NotNull Image image, @NotNull Object operator) {
+        return imageCache.getProcessedImage(image, operator);
+    }
+
+    /**
+     * Return the processed version of the specified icon image.
+     * @param icon The source icon.
+     * @param operator The operation to be performed on the icon image, or null to return the actual icon image.
+     * @return the processed version of {@code icon}, or null if the icon is not valid.
+     */
+    public static @Nullable Image getProcessedImage(@NotNull Icon icon, @Nullable Object operator) {
+        return imageCache.getProcessedImage(icon, operator);
     }
 
     /**
@@ -699,14 +717,25 @@ public class AquaImageFactory {
      * @param replacementColor The replacement color.
      * @return the new image, or null if the source image is not a template image.
      */
-    public static Image createImageFromTemplate(Image image, Color replacementColor) {
-        return applyFilter(image, new TemplateFilter(replacementColor, false));
+    private static Image createImageFromTemplate(Image image, Color replacementColor) {
+        int width = image.getWidth(null);
+        int height = image.getHeight(null);
+        BufferedImage result = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB_PRE);
+        Graphics2D g = result.createGraphics();
+        g.setComposite(AlphaComposite.Src);
+        g.drawImage(image, 0, 0, null);
+        g.setComposite(AlphaComposite.SrcIn);
+        g.setColor(replacementColor);
+        g.fillRect(0, 0, width, height);
+        g.dispose();
+        return result;
     }
 
     public static Image applyFilter(Image image, ImageFilter filter) {
         return JavaSupport.applyFilter(image, filter);
     }
 
+    // This filter is now used only for testing whether an image is a template image
     private static class TemplateFilter extends RGBImageFilter {
         private final int replacementAlpha;
         private final int replacementRGB;
@@ -743,5 +772,64 @@ public class AquaImageFactory {
             alpha = alpha * replacementAlpha / 255;
             return alpha << 24 | replacementRGB;
         }
+    }
+
+    private static class GenerateTemplateFilter extends RGBImageFilter {
+
+        public GenerateTemplateFilter() {
+            canFilterIndexColorModel = true;
+        }
+
+        @Override
+        public int filterRGB(int x, int y, int rgb) {
+            int alpha = rgb >> 24 & 0xff;
+            int color = rgb & 0xffffff;
+            if (color > 0) {
+                color = color & 0xff;
+                alpha = alpha * color / 255;
+            }
+            return alpha << 24;
+        }
+    }
+
+    private static class InvertImageForDarkModeFilter extends RGBImageFilter {
+
+        public InvertImageForDarkModeFilter() {
+            canFilterIndexColorModel = true;
+        }
+
+        public int filterRGB(int x, int y, int rgb) {
+            // Use NTSC conversion formula.
+            int gray = (int)((0.30 * ((rgb >> 16) & 0xff) + 0.59 * ((rgb >> 8) & 0xff) + 0.11 * (rgb & 0xff)) / 3);
+            gray = (int) ((255 - gray) * 0.7);
+            if (gray < 0) gray = 0;
+            if (gray > 255) gray = 255;
+            return (rgb & 0xff000000) | (gray << 16) | (gray << 8) | (gray << 0);
+        }
+    }
+
+    private static @NotNull Image waitForImage(@NotNull Image image) {
+        boolean[] mutex = new boolean[] { false };
+        ImageObserver observer = (Image img, int infoflags, int x, int y, int width, int height) -> {
+            if ((width != -1 && height != -1 && (infoflags & ImageObserver.ALLBITS) != 0) || (infoflags & ImageObserver.ABORT) != 0) {
+                synchronized (mutex) {
+                    mutex[0] = true;
+                    mutex.notify();
+                }
+                return false;
+            } else {
+                return true;
+            }
+        };
+        synchronized (mutex) {
+            while (!mutex[0] && image.getWidth(observer) == -1) {
+                try {
+                    mutex.wait();
+                } catch (InterruptedException e) {
+                    break;
+                }
+            }
+        }
+        return image;
     }
 }

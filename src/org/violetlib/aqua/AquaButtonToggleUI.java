@@ -1,4 +1,12 @@
 /*
+ * Changes copyright (c) 2018 Alan Snyder.
+ * All rights reserved.
+ *
+ * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
+ * accompanying license terms.
+ */
+
+/*
  * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -34,7 +42,8 @@ import org.violetlib.aqua.AquaUtils.RecyclableSingletonFromDefaultConstructor;
 public class AquaButtonToggleUI extends AquaButtonUI {
 
     static final RecyclableSingleton<AquaButtonToggleUI> aquaToggleButtonUI = new RecyclableSingletonFromDefaultConstructor<AquaButtonToggleUI>(AquaButtonToggleUI.class);
-    public static ComponentUI createUI(final JComponent b) {
+
+    public static ComponentUI createUI(JComponent b) {
         return aquaToggleButtonUI.get();
     }
 

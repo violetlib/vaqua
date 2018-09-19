@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2016 Alan Snyder.
+ * Copyright (c) 2015-2018 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -7,6 +7,9 @@
  */
 
 package org.violetlib.aqua;
+
+import java.awt.*;
+import javax.swing.*;
 
 import org.violetlib.geom.ExpandableOutline;
 import org.violetlib.jnr.LayoutInfo;
@@ -18,9 +21,6 @@ import org.violetlib.jnr.aqua.ButtonLayoutConfiguration;
 import org.violetlib.jnr.aqua.LayoutConfiguration;
 
 import static org.violetlib.jnr.aqua.AquaUIPainter.ButtonState.*;
-
-import javax.swing.*;
-import java.awt.*;
 
 /**
  * The base class for a radio button or check box button border.
@@ -35,7 +35,8 @@ public abstract class AquaLabeledButtonBorder extends AquaNamedButtonBorder {
         // The focus ring is drawn around the icon, not the entire component
         LayoutConfiguration g = getLayoutConfiguration(b);
         if (g != null) {
-            painter.configure(iconBounds.width, iconBounds.height);
+            AppearanceManager.ensureAppearance(b);
+            AquaUtils.configure(painter, b, iconBounds.width, iconBounds.height);
             Shape s = painter.getOutline(g);
             if (s != null) {
                 return ExpandableOutline.createTranslatedShape(s, iconBounds.x, iconBounds.y);
@@ -63,7 +64,7 @@ public abstract class AquaLabeledButtonBorder extends AquaNamedButtonBorder {
         return null;
     }
 
-    static boolean isIndeterminate(final AbstractButton b) {
+    static boolean isIndeterminate(AbstractButton b) {
         return "indeterminate".equals(b.getClientProperty(AquaButtonUI.SELECTED_STATE_KEY));
     }
 }

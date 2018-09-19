@@ -1,4 +1,12 @@
 /*
+ * Copyright (c) 2018 Alan Snyder.
+ * All rights reserved.
+ *
+ * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
+ * accompanying license terms.
+ */
+
+/*
  * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -34,6 +42,8 @@ import java.beans.PropertyVetoException;
 import javax.swing.*;
 import javax.swing.plaf.*;
 
+import org.jetbrains.annotations.NotNull;
+
 /**
  * From MacDockIconUI
  *
@@ -41,7 +51,8 @@ import javax.swing.plaf.*;
  * @author
  * @version
  */
-public class AquaInternalFrameDockIconUI extends DesktopIconUI implements MouseListener, MouseMotionListener, ComponentListener {
+public class AquaInternalFrameDockIconUI extends DesktopIconUI
+        implements MouseListener, MouseMotionListener, ComponentListener, AquaComponentUI {
     private static final String CACHED_FRAME_ICON_KEY = "apple.laf.internal.frameIcon";
 
     protected JInternalFrame.JDesktopIcon fDesktopIcon;
@@ -50,17 +61,17 @@ public class AquaInternalFrameDockIconUI extends DesktopIconUI implements MouseL
     protected DockLabel fDockLabel;
     protected boolean fTrackingIcon = false;
 
-    public static ComponentUI createUI(final JComponent c) {
+    public static ComponentUI createUI(JComponent c) {
         return new AquaInternalFrameDockIconUI();
     }
 
-    public void installUI(final JComponent c) {
+    public void installUI(JComponent c) {
         fDesktopIcon = (JInternalFrame.JDesktopIcon)c;
         installComponents();
         installListeners();
     }
 
-    public void uninstallUI(final JComponent c) {
+    public void uninstallUI(JComponent c) {
         uninstallComponents();
         uninstallListeners();
         fDesktopIcon = null;
@@ -91,19 +102,34 @@ public class AquaInternalFrameDockIconUI extends DesktopIconUI implements MouseL
         fDesktopIcon.removeMouseListener(this);
     }
 
-    public Dimension getMinimumSize(final JComponent c) {
+    @Override
+    public void appearanceChanged(@NotNull JComponent c, @NotNull AquaAppearance appearance) {
+    }
+
+    @Override
+    public void activeStateChanged(@NotNull JComponent c, boolean isActive) {
+    }
+
+    @Override
+    public void update(Graphics g, JComponent c) {
+        AquaAppearance appearance = AppearanceManager.registerCurrentAppearance(c);
+        super.update(g, c);
+        AppearanceManager.restoreCurrentAppearance(appearance);
+    }
+
+    public Dimension getMinimumSize(JComponent c) {
         return new Dimension(32, 32);
     }
 
-    public Dimension getMaximumSize(final JComponent c) {
+    public Dimension getMaximumSize(JComponent c) {
         return new Dimension(128, 128);
     }
 
-    public Dimension getPreferredSize(final JComponent c) {
+    public Dimension getPreferredSize(JComponent c) {
         return new Dimension(64, 64); //$ Dock preferred size
     }
 
-    public Insets getInsets(final JComponent c) {
+    public Insets getInsets(JComponent c) {
         return new Insets(0, 0, 0, 0);
     }
 
@@ -111,12 +137,12 @@ public class AquaInternalFrameDockIconUI extends DesktopIconUI implements MouseL
         fIconPane.updateIcon();
     }
 
-    public void mousePressed(final MouseEvent e) {
+    public void mousePressed(MouseEvent e) {
         fTrackingIcon = fIconPane.mouseInIcon(e);
         if (fTrackingIcon) fIconPane.repaint();
     }
 
-    public void mouseReleased(final MouseEvent e) {// only when it's actually in the image
+    public void mouseReleased(MouseEvent e) {// only when it's actually in the image
         if (fFrame.isIconifiable() && fFrame.isIcon()) {
             if (fTrackingIcon) {
                 fTrackingIcon = false;
@@ -124,7 +150,7 @@ public class AquaInternalFrameDockIconUI extends DesktopIconUI implements MouseL
                     if (fDockLabel != null) fDockLabel.hide();
                     try {
                         fFrame.setIcon(false);
-                    } catch(final PropertyVetoException e2) {}
+                    } catch(PropertyVetoException e2) {}
                 } else {
                     fIconPane.repaint();
                 }
@@ -135,7 +161,7 @@ public class AquaInternalFrameDockIconUI extends DesktopIconUI implements MouseL
         if (fDockLabel != null && !fIconPane.getBounds().contains(e.getX(), e.getY())) fDockLabel.hide();
     }
 
-    public void mouseEntered(final MouseEvent e) {
+    public void mouseEntered(MouseEvent e) {
         if ((e.getModifiers() & InputEvent.BUTTON1_MASK) != 0) return;
         String title = fFrame.getTitle();
         if (title == null || title.equals("")) title = "Untitled";
@@ -143,25 +169,25 @@ public class AquaInternalFrameDockIconUI extends DesktopIconUI implements MouseL
         fDockLabel.show(fDesktopIcon);
     }
 
-    public void mouseExited(final MouseEvent e) {
+    public void mouseExited(MouseEvent e) {
         if (fDockLabel != null && (e.getModifiers() & InputEvent.BUTTON1_MASK) == 0) fDockLabel.hide();
     }
 
-    public void mouseClicked(final MouseEvent e) { }
+    public void mouseClicked(MouseEvent e) { }
 
-    public void mouseDragged(final MouseEvent e) { }
+    public void mouseDragged(MouseEvent e) { }
 
-    public void mouseMoved(final MouseEvent e) { }
+    public void mouseMoved(MouseEvent e) { }
 
-    public void componentHidden(final ComponentEvent e) { }
+    public void componentHidden(ComponentEvent e) { }
 
-    public void componentMoved(final ComponentEvent e) { }
+    public void componentMoved(ComponentEvent e) { }
 
-    public void componentResized(final ComponentEvent e) {
+    public void componentResized(ComponentEvent e) {
         fFrame.putClientProperty(CACHED_FRAME_ICON_KEY, null);
     }
 
-    public void componentShown(final ComponentEvent e) {
+    public void componentShown(ComponentEvent e) {
         fFrame.putClientProperty(CACHED_FRAME_ICON_KEY, null);
     }
 
@@ -172,7 +198,7 @@ public class AquaInternalFrameDockIconUI extends DesktopIconUI implements MouseL
         }
 
         void updateIcon() {
-            final Object priorIcon = fFrame.getClientProperty(CACHED_FRAME_ICON_KEY);
+            Object priorIcon = fFrame.getClientProperty(CACHED_FRAME_ICON_KEY);
             if (priorIcon instanceof ImageIcon) {
                 setIcon((ImageIcon)priorIcon);
                 return;
@@ -187,19 +213,19 @@ public class AquaInternalFrameDockIconUI extends DesktopIconUI implements MouseL
                 height = 128;
             }
 
-            final Image fImage = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB_PRE);
-            final Graphics g = fImage.getGraphics();
+            Image fImage = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB_PRE);
+            Graphics g = fImage.getGraphics();
             fFrame.paint(g);
             g.dispose();
 
-            final float scale = (float)fDesktopIcon.getWidth() / (float)Math.max(width, height) * 0.89f;
+            float scale = (float)fDesktopIcon.getWidth() / (float)Math.max(width, height) * 0.89f;
             // Sending in -1 for width xor height causes it to maintain aspect ratio
-            final ImageIcon icon = new ImageIcon(fImage.getScaledInstance((int)(width * scale), -1, Image.SCALE_SMOOTH));
+            ImageIcon icon = new ImageIcon(fImage.getScaledInstance((int)(width * scale), -1, Image.SCALE_SMOOTH));
             fFrame.putClientProperty(CACHED_FRAME_ICON_KEY, icon);
             setIcon(icon);
         }
 
-        public void paint(final Graphics g) {
+        public void paint(Graphics g) {
             if (getIcon() == null) updateIcon();
 
             g.translate(0, 2);
@@ -209,14 +235,16 @@ public class AquaInternalFrameDockIconUI extends DesktopIconUI implements MouseL
                 return;
             }
 
-            final ImageIcon prev = (ImageIcon)getIcon();
-            final ImageIcon pressedIcon = new ImageIcon(AquaImageFactory.generateSelectedDarkImage(prev.getImage()));
+            ImageIcon prev = (ImageIcon)getIcon();
+            Image prevImage = prev.getImage();
+            Image image = AquaImageFactory.getProcessedImage(prevImage, AquaImageFactory.DARKEN_FOR_SELECTION);
+            ImageIcon pressedIcon = new ImageIcon(image);
             setIcon(pressedIcon);
             super.paint(g);
             setIcon(prev);
         }
 
-        boolean mouseInIcon(final MouseEvent e) {
+        boolean mouseInIcon(MouseEvent e) {
             return getBounds().contains(e.getX(), e.getY());
         }
 
@@ -231,43 +259,43 @@ public class AquaInternalFrameDockIconUI extends DesktopIconUI implements MouseL
         final static int ROUND_ADDITIONAL_HEIGHT = 8;
         final static int ROUND_ADDITIONAL_WIDTH = 12;
 
-        DockLabel(final String text) {
+        DockLabel(String text) {
             super(text);
             setBorder(null);
             setOpaque(false);
             setFont(AquaFonts.getDockIconFont());
 
-            final FontMetrics metrics = getFontMetrics(getFont());
+            FontMetrics metrics = getFontMetrics(getFont());
             setSize(SwingUtilities.computeStringWidth(metrics, getText()) + ROUND_ADDITIONAL_WIDTH * 2, metrics.getAscent() + NUB_HEIGHT + ROUND_ADDITIONAL_HEIGHT);
         }
 
-        public void paint(final Graphics g) {
-            final int width = getWidth();
-            final int height = getHeight();
+        public void paint(Graphics g) {
+            int width = getWidth();
+            int height = getHeight();
 
-            final Font font = getFont();
-            final FontMetrics metrics = getFontMetrics(font);
+            Font font = getFont();
+            FontMetrics metrics = getFontMetrics(font);
             g.setFont(font);
 
-            final String text = getText().trim();
-            final int ascent = metrics.getAscent();
+            String text = getText().trim();
+            int ascent = metrics.getAscent();
 
-            final Rectangle2D stringBounds = metrics.getStringBounds(text, g);
-            final int halfway = width / 2;
+            Rectangle2D stringBounds = metrics.getStringBounds(text, g);
+            int halfway = width / 2;
 
-            final int x = (halfway - (int)stringBounds.getWidth() / 2);
+            int x = (halfway - (int)stringBounds.getWidth() / 2);
 
-            final Graphics2D g2d = g instanceof Graphics2D ? (Graphics2D)g : null;
+            Graphics2D g2d = g instanceof Graphics2D ? (Graphics2D)g : null;
             if (g2d != null) {
                 g.setColor(UIManager.getColor("DesktopIcon.labelBackground"));
-                final Object origAA = g2d.getRenderingHint(RenderingHints.KEY_ANTIALIASING);
+                Object origAA = g2d.getRenderingHint(RenderingHints.KEY_ANTIALIASING);
                 g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
-                final int roundHeight = height - ROUND_ADDITIONAL_HEIGHT + 1;
+                int roundHeight = height - ROUND_ADDITIONAL_HEIGHT + 1;
                 g.fillRoundRect(0, 0, width, roundHeight, roundHeight, roundHeight);
 
-                final int[] xpts = { halfway, halfway + NUB_HEIGHT, halfway - NUB_HEIGHT };
-                final int[] ypts = { height, height - NUB_HEIGHT, height - NUB_HEIGHT };
+                int[] xpts = { halfway, halfway + NUB_HEIGHT, halfway - NUB_HEIGHT };
+                int[] ypts = { height, height - NUB_HEIGHT, height - NUB_HEIGHT };
                 g.fillPolygon(xpts, ypts, 3);
 
                 g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, origAA);
@@ -279,9 +307,9 @@ public class AquaInternalFrameDockIconUI extends DesktopIconUI implements MouseL
             JavaSupport.drawString(this, (Graphics2D) g, text, x, 1 + ascent);
         }
 
-        public void show(final Component invoker) {
-            final int desiredLocationX = (invoker.getWidth() - getWidth()) / 2;
-            final int desiredLocationY = -(getHeight() + 6);
+        public void show(Component invoker) {
+            int desiredLocationX = (invoker.getWidth() - getWidth()) / 2;
+            int desiredLocationY = -(getHeight() + 6);
 
             Container parent = invoker.getParent();
 
@@ -294,7 +322,7 @@ public class AquaInternalFrameDockIconUI extends DesktopIconUI implements MouseL
                 }
             }
 
-            final Point p = SwingUtilities.convertPoint(invoker, desiredLocationX, desiredLocationY, parent);
+            Point p = SwingUtilities.convertPoint(invoker, desiredLocationX, desiredLocationY, parent);
             setLocation(p.x, p.y);
             if (parent instanceof JLayeredPane) {
                 ((JLayeredPane)parent).add(this, JLayeredPane.POPUP_LAYER, 0);
@@ -303,8 +331,8 @@ public class AquaInternalFrameDockIconUI extends DesktopIconUI implements MouseL
 
         @SuppressWarnings("deprecation")
         public void hide() {
-            final Container parent = getParent();
-            final Rectangle r = this.getBounds();
+            Container parent = getParent();
+            Rectangle r = this.getBounds();
             if (parent == null) return;
             parent.remove(this);
             parent.repaint(r.x, r.y, r.width, r.height);

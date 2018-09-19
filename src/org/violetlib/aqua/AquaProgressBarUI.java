@@ -1,5 +1,5 @@
 /*
- * Changes Copyright (c) 2015 Alan Snyder.
+ * Changes Copyright (c) 2015-2018 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -34,55 +34,65 @@
 package org.violetlib.aqua;
 
 import java.awt.*;
-import java.awt.event.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.geom.AffineTransform;
-import java.beans.*;
-
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import javax.swing.*;
-import javax.swing.event.*;
-import javax.swing.plaf.*;
+import javax.swing.event.AncestorEvent;
+import javax.swing.event.AncestorListener;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
+import javax.swing.plaf.ComponentUI;
+import javax.swing.plaf.ProgressBarUI;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.violetlib.aqua.AquaUtilControlSize.Sizeable;
 import org.violetlib.jnr.LayoutInfo;
 import org.violetlib.jnr.aqua.*;
-import org.violetlib.jnr.aqua.AquaUIPainter.Size;
-import org.violetlib.jnr.aqua.AquaUIPainter.State;
 import org.violetlib.jnr.aqua.AquaUIPainter.Orientation;
 import org.violetlib.jnr.aqua.AquaUIPainter.ProgressWidget;
+import org.violetlib.jnr.aqua.AquaUIPainter.Size;
+import org.violetlib.jnr.aqua.AquaUIPainter.State;
 
-import org.violetlib.aqua.AquaUtilControlSize.*;
-
-public class AquaProgressBarUI extends ProgressBarUI implements ChangeListener, PropertyChangeListener, AncestorListener, Sizeable {
+public class AquaProgressBarUI
+        extends ProgressBarUI
+        implements ChangeListener, PropertyChangeListener, AncestorListener, Sizeable, AquaComponentUI {
 
     public static final String PROGRESS_BAR_STYLE_KEY = "JProgressBar.style";
 
     private static final boolean ADJUSTTIMER = true;
 
-    protected Size sizeVariant = Size.REGULAR;
+    public static ComponentUI createUI(JComponent x) {
+        return new AquaProgressBarUI();
+    }
 
-    protected Color selectionForeground;
+    protected JProgressBar progressBar;
+    protected Size sizeVariant = Size.REGULAR;
+    protected @NotNull BasicContextualColors colors;
+    protected boolean isCircular;
 
     private Animator animator;
     protected boolean isAnimating;
-    protected boolean isCircular;
     protected int repaintInterval;  // depends upon isCircular
 
     protected final AquaUIPainter painter = AquaPainting.create();
 
-    protected JProgressBar progressBar;
-
-    public static ComponentUI createUI(final JComponent x) {
-        return new AquaProgressBarUI();
+    protected AquaProgressBarUI() {
+        colors = AquaColors.CLEAR_CONTROL_COLORS;
     }
 
-    protected AquaProgressBarUI() { }
-
-    public void installUI(final JComponent c) {
+    @Override
+    public void installUI(JComponent c) {
         progressBar = (JProgressBar)c;
         installDefaults();
         installListeners();
     }
 
-    public void uninstallUI(final JComponent c) {
+    @Override
+    public void uninstallUI(JComponent c) {
         uninstallDefaults();
         uninstallListeners();
         stopAnimationTimer();
@@ -92,8 +102,8 @@ public class AquaProgressBarUI extends ProgressBarUI implements ChangeListener, 
     protected void installDefaults() {
         LookAndFeel.installProperty(progressBar, "opaque", false);
         LookAndFeel.installBorder(progressBar, "ProgressBar.border");
-        LookAndFeel.installColorsAndFont(progressBar, "ProgressBar.background", "ProgressBar.foreground", "ProgressBar.font");
-        selectionForeground = UIManager.getColor("ProgressBar.selectionForeground");
+        AquaUtils.installFont(progressBar, "ProgressBar.font");
+        configureAppearanceContext(null);
     }
 
     protected void uninstallDefaults() {
@@ -105,21 +115,35 @@ public class AquaProgressBarUI extends ProgressBarUI implements ChangeListener, 
         progressBar.addPropertyChangeListener(this); // Listen for changes between determinate and indeterminate state
         progressBar.addAncestorListener(this);
         AquaUtilControlSize.addSizePropertyListener(progressBar);
+        AppearanceManager.installListener(progressBar);
     }
 
     protected void uninstallListeners() {
+        AppearanceManager.uninstallListener(progressBar);
         AquaUtilControlSize.removeSizePropertyListener(progressBar);
         progressBar.removeAncestorListener(this);
         progressBar.removePropertyChangeListener(this);
         progressBar.removeChangeListener(this);
     }
 
-    public void stateChanged(final ChangeEvent e) {
+    @Override
+    public void appearanceChanged(@NotNull JComponent c, @NotNull AquaAppearance appearance) {
+        configureAppearanceContext(appearance);
+    }
+
+    @Override
+    public void activeStateChanged(@NotNull JComponent c, boolean isActive) {
+        configureAppearanceContext(null);
+    }
+
+    @Override
+    public void stateChanged(ChangeEvent e) {
         progressBar.repaint();
     }
 
-    public void propertyChange(final PropertyChangeEvent e) {
-        final String prop = e.getPropertyName();
+    @Override
+    public void propertyChange(PropertyChangeEvent e) {
+        String prop = e.getPropertyName();
 
         if (AquaFocusHandler.FRAME_ACTIVE_PROPERTY.equals(prop)) {
             progressBar.repaint();
@@ -148,30 +172,56 @@ public class AquaProgressBarUI extends ProgressBarUI implements ChangeListener, 
     }
 
     // listen for Ancestor events to stop our timer when we are no longer visible
-    // <rdar://problem/5405035> JProgressBar: UI in Aqua look and feel causes memory leaks
-    public void ancestorRemoved(final AncestorEvent e) {
+    @Override
+    public void ancestorRemoved(AncestorEvent e) {
         stopAnimationTimer();
     }
 
-    public void ancestorAdded(final AncestorEvent e) {
-        if (!progressBar.isIndeterminate()) return;
+    @Override
+    public void ancestorAdded(AncestorEvent e) {
+        if (!progressBar.isIndeterminate()) {
+            return;
+        }
         startAnimationTimer();
     }
 
-    public void ancestorMoved(final AncestorEvent e) { }
+    @Override
+    public void ancestorMoved(AncestorEvent e) {
+    }
 
-    public void paint(final Graphics g, final JComponent c) {
+    protected void configureAppearanceContext(@Nullable AquaAppearance appearance) {
+        if (appearance == null) {
+            appearance = AppearanceManager.ensureAppearance(progressBar);
+        }
+        AquaUIPainter.State state = getState();
+        AppearanceContext appearanceContext = new AppearanceContext(appearance, state, false, false);
+        AquaColors.installColors(progressBar, appearanceContext, colors);
+        progressBar.repaint();
+    }
+
+    protected @NotNull AquaUIPainter.State getState() {
+        if (!progressBar.isEnabled()) {
+            return State.INACTIVE;
+        }
+        if (!AquaFocusHandler.isActive(progressBar)) {
+            return State.INACTIVE;
+        }
+        return State.ACTIVE;
+    }
+
+    @Override
+    public void paint(Graphics g, JComponent c) {
+
         revalidateAnimationTimers(); // revalidate to turn on/off timers when values change
 
         // this is questionable. We may want the insets to mean something different.
-        final Insets i = progressBar.getInsets();
-        final int width = progressBar.getWidth() - (i.right + i.left);
-        final int height = progressBar.getHeight() - (i.bottom + i.top);
-        final int x = i.left;
-        final int y = i.top;
+        Insets i = progressBar.getInsets();
+        int width = progressBar.getWidth() - (i.right + i.left);
+        int height = progressBar.getHeight() - (i.bottom + i.top);
+        int x = i.left;
+        int y = i.top;
 
-        painter.configure(width, height);
-
+        AquaUtils.configure(painter, progressBar, width, height);
         Configuration pg = getConfiguration();
         painter.getPainter(pg).paint(g, x, y);
 
@@ -180,74 +230,67 @@ public class AquaProgressBarUI extends ProgressBarUI implements ChangeListener, 
         }
 
         if (progressBar.isStringPainted()) {
-            paintString(g, i.left, i.top, width, height);
+            paintString((Graphics2D) g, i.left, i.top, width, height);
         }
     }
 
     protected ProgressIndicatorLayoutConfiguration getLayoutConfiguration() {
         Orientation orientation = isHorizontal() ? Orientation.HORIZONTAL : Orientation.VERTICAL;
         if (progressBar.isIndeterminate()) {
-            AquaUIPainter.ProgressWidget w = isCircular ? ProgressWidget.SPINNER : ProgressWidget.INDETERMINATE_BAR;
+            AquaUIPainter.ProgressWidget w = isCircular ? ProgressWidget.INDETERMINATE_SPINNER : ProgressWidget.INDETERMINATE_BAR;
             return new ProgressIndicatorLayoutConfiguration(w, sizeVariant, orientation);
         } else {
-            return new ProgressIndicatorLayoutConfiguration(ProgressWidget.BAR, sizeVariant, orientation);
+            AquaUIPainter.ProgressWidget w = isCircular ? ProgressWidget.SPINNER : ProgressWidget.BAR;
+            return new ProgressIndicatorLayoutConfiguration(w, sizeVariant, orientation);
         }
     }
 
-    protected Configuration getConfiguration() {
-        State state = getState(progressBar);
+    protected @NotNull Configuration getConfiguration() {
+        State state = getState();
         Orientation orientation = isHorizontal() ? Orientation.HORIZONTAL : Orientation.VERTICAL;
         if (progressBar.isIndeterminate()) {
             int frameCount = isCircular ? 15 : 90;
             long intervals = System.currentTimeMillis() / (repaintInterval > 0 ? repaintInterval : 100);
             int speed = isCircular ? 1 : 4;
             int animationFrame = (int) (speed * intervals % frameCount);
-            AquaUIPainter.ProgressWidget w = isCircular ? ProgressWidget.SPINNER : ProgressWidget.INDETERMINATE_BAR;
+            AquaUIPainter.ProgressWidget w = isCircular ? ProgressWidget.INDETERMINATE_SPINNER : ProgressWidget.INDETERMINATE_BAR;
             return new IndeterminateProgressIndicatorConfiguration(w, sizeVariant, state, orientation, animationFrame);
         } else {
             double value = checkValue(progressBar.getPercentComplete());
             AquaUIPainter.UILayoutDirection ld = AquaUtils.getLayoutDirection(progressBar);
-            return new ProgressIndicatorConfiguration(AquaUIPainter.ProgressWidget.BAR, sizeVariant, state, orientation, value, ld);
+            AquaUIPainter.ProgressWidget w = isCircular ? ProgressWidget.SPINNER : ProgressWidget.BAR;
+            return new ProgressIndicatorConfiguration(w, sizeVariant, state, orientation, value, ld);
         }
     }
 
-    static double checkValue(final double value) {
+    private static double checkValue(double value) {
         return Double.isNaN(value) ? 0 : value;
     }
 
-    protected State getState(final JComponent c) {
-        if (!c.isEnabled()) return State.INACTIVE;
-        if (!AquaFocusHandler.isActive(c)) return State.INACTIVE;
-        return State.ACTIVE;
-    }
+    protected void paintString(@NotNull Graphics2D g, int x, int y, int width, int height) {
 
-    protected void paintString(final Graphics g, final int x, final int y, final int width, final int height) {
-        if (!(g instanceof Graphics2D)) return;
-
-        final Graphics2D g2 = (Graphics2D)g;
-        final String progressString = progressBar.getString();
-        g2.setFont(progressBar.getFont());
-        final Point renderLocation = getStringPlacement(g2, progressString, x, y, width, height);
-        final Rectangle oldClip = g2.getClipBounds();
+        String progressString = progressBar.getString();
+        g.setFont(progressBar.getFont());
+        Point renderLocation = getStringPlacement(g, progressString, x, y, width, height);
+        Rectangle oldClip = g.getClipBounds();
+        g.setColor(progressBar.getForeground());
 
         if (isHorizontal()) {
-            g2.setColor(selectionForeground);
-            JavaSupport.drawString(progressBar, g2, progressString, renderLocation.x, renderLocation.y);
+            JavaSupport.drawString(progressBar, g, progressString, renderLocation.x, renderLocation.y);
         } else { // VERTICAL
             // We rotate it -90 degrees, then translate it down since we are going to be bottom up.
-            final AffineTransform savedAT = g2.getTransform();
-            g2.transform(AffineTransform.getRotateInstance(0.0f - (Math.PI / 2.0f), 0, 0));
-            g2.translate(-progressBar.getHeight(), 0);
+            AffineTransform savedAT = g.getTransform();
+            g.transform(AffineTransform.getRotateInstance(0.0f - (Math.PI / 2.0f), 0, 0));
+            g.translate(-progressBar.getHeight(), 0);
 
             // 0,0 is now the bottom left of the viewable area, so we just draw our image at
             // the render location since that calculation knows about rotation.
-            g2.setColor(selectionForeground);
-            JavaSupport.drawString(progressBar, g2, progressString, renderLocation.x, renderLocation.y);
+            JavaSupport.drawString(progressBar, g, progressString, renderLocation.x, renderLocation.y);
 
-            g2.setTransform(savedAT);
+            g.setTransform(savedAT);
         }
 
-        g2.setClip(oldClip);
+        g.setClip(oldClip);
     }
 
     /**
@@ -255,18 +298,18 @@ public class AquaProgressBarUI extends ProgressBarUI implements ChangeListener, 
      * progress bar (in both x and y). Override this if you want to right, left, top, or bottom align the progress
      * string or if you need to nudge it around for any reason.
      */
-    protected Point getStringPlacement(final Graphics g, final String progressString, int x, int y, int width, int height) {
-        final FontMetrics fontSizer = progressBar.getFontMetrics(progressBar.getFont());
-        final int stringWidth = fontSizer.stringWidth(progressString);
+    protected @NotNull Point getStringPlacement(Graphics g, String progressString, int x, int y, int width, int height) {
+        FontMetrics fontSizer = progressBar.getFontMetrics(progressBar.getFont());
+        int stringWidth = fontSizer.stringWidth(progressString);
 
         if (!isHorizontal()) {
             // Calculate the location for the rotated text in real component coordinates.
             // swapping x & y and width & height
-            final int oldH = height;
+            int oldH = height;
             height = width;
             width = oldH;
 
-            final int oldX = x;
+            int oldX = x;
             x = y;
             y = oldX;
         }
@@ -274,7 +317,7 @@ public class AquaProgressBarUI extends ProgressBarUI implements ChangeListener, 
         return new Point(x + Math.round(width / 2 - stringWidth / 2), y + ((height + fontSizer.getAscent() - fontSizer.getLeading() - fontSizer.getDescent()) / 2) - 1);
     }
 
-    protected Dimension getCircularPreferredSize() {
+    protected @NotNull Dimension getCircularPreferredSize() {
         LayoutConfiguration g = getLayoutConfiguration();
         LayoutInfo layoutInfo = painter.getLayoutInfo().getLayoutInfo(g);
         int width = (int) layoutInfo.getFixedVisualWidth();
@@ -288,33 +331,34 @@ public class AquaProgressBarUI extends ProgressBarUI implements ChangeListener, 
         return new Dimension(width, height);
     }
 
-    public Dimension getPreferredSize(final JComponent c) {
+    @Override
+    public @NotNull Dimension getPreferredSize(JComponent c) {
         if (isCircular) {
             return getCircularPreferredSize();
         }
 
-        final FontMetrics metrics = progressBar.getFontMetrics(progressBar.getFont());
+        FontMetrics metrics = progressBar.getFontMetrics(progressBar.getFont());
         ProgressIndicatorLayoutConfiguration g = getLayoutConfiguration();
         LayoutInfo layoutInfo = painter.getLayoutInfo().getLayoutInfo(g);
 
-        final Dimension size = isHorizontal() ? getPreferredHorizontalSize(layoutInfo, metrics) : getPreferredVerticalSize(layoutInfo, metrics);
-        final Insets insets = progressBar.getInsets();
+        Dimension size = isHorizontal() ? getPreferredHorizontalSize(layoutInfo, metrics) : getPreferredVerticalSize(layoutInfo, metrics);
+        Insets insets = progressBar.getInsets();
 
         size.width += insets.left + insets.right;
         size.height += insets.top + insets.bottom;
         return size;
     }
 
-    protected Dimension getPreferredHorizontalSize(LayoutInfo layoutInfo, final FontMetrics metrics) {
+    protected @NotNull Dimension getPreferredHorizontalSize(LayoutInfo layoutInfo, FontMetrics metrics) {
         int width = sizeVariant == Size.REGULAR ? 146 : 140;
         int height = sizeVariant == Size.REGULAR ? 20 : 14;
         height = (int) Math.max(height, layoutInfo.getMinimumVisualHeight());
-        final Dimension size = new Dimension(width, height);
+        Dimension size = new Dimension(width, height);
         if (!progressBar.isStringPainted()) return size;
 
         // Ensure that the progress string will fit
-        final String progString = progressBar.getString();
-        final int stringWidth = metrics.stringWidth(progString);
+        String progString = progressBar.getString();
+        int stringWidth = metrics.stringWidth(progString);
         if (stringWidth > size.width) {
             size.width = stringWidth;
         }
@@ -324,41 +368,42 @@ public class AquaProgressBarUI extends ProgressBarUI implements ChangeListener, 
         // for everything.
         // This does have a strange dependency on
         // getStringPlacememnt() in a funny way.
-        final int stringHeight = metrics.getHeight() + metrics.getDescent();
+        int stringHeight = metrics.getHeight() + metrics.getDescent();
         if (stringHeight > size.height) {
             size.height = stringHeight;
         }
         return size;
     }
 
-    protected Dimension getPreferredVerticalSize(LayoutInfo layoutInfo, final FontMetrics metrics) {
+    protected @NotNull Dimension getPreferredVerticalSize(LayoutInfo layoutInfo, FontMetrics metrics) {
         int width = sizeVariant == Size.REGULAR ? 20 : 14;
         int height = sizeVariant == Size.REGULAR ? 146 : 140;
         width = (int) Math.max(width, layoutInfo.getMinimumVisualWidth());
-        final Dimension size = new Dimension(width, height);
+        Dimension size = new Dimension(width, height);
         if (!progressBar.isStringPainted()) return size;
 
         // Ensure that the progress string will fit.
-        final String progString = progressBar.getString();
-        final int stringHeight = metrics.getHeight() + metrics.getDescent();
+        String progString = progressBar.getString();
+        int stringHeight = metrics.getHeight() + metrics.getDescent();
         if (stringHeight > size.width) {
             size.width = stringHeight;
         }
 
         // This is also for completeness.
-        final int stringWidth = metrics.stringWidth(progString);
+        int stringWidth = metrics.stringWidth(progString);
         if (stringWidth > size.height) {
             size.height = stringWidth;
         }
         return size;
     }
 
-    public Dimension getMinimumSize(final JComponent c) {
+    @Override
+    public @NotNull Dimension getMinimumSize(JComponent c) {
         if (isCircular) {
             return getCircularPreferredSize();
         }
 
-        final Dimension pref = getPreferredSize(progressBar);
+        Dimension pref = getPreferredSize(progressBar);
 
         // The Minimum size for this component is 10.
         // The rationale here is that there should be at least one pixel per 10 percent.
@@ -371,12 +416,13 @@ public class AquaProgressBarUI extends ProgressBarUI implements ChangeListener, 
         return pref;
     }
 
-    public Dimension getMaximumSize(final JComponent c) {
+    @Override
+    public @NotNull Dimension getMaximumSize(JComponent c) {
         if (isCircular) {
             return getCircularPreferredSize();
         }
 
-        final Dimension pref = getPreferredSize(progressBar);
+        Dimension pref = getPreferredSize(progressBar);
 
         if (isHorizontal()) {
             pref.width = Short.MAX_VALUE;
@@ -387,6 +433,7 @@ public class AquaProgressBarUI extends ProgressBarUI implements ChangeListener, 
         return pref;
     }
 
+    @Override
     public void applySizeFor(JComponent c, Size size, boolean isDefaultSize) {
         sizeVariant = size;
         AquaUtilControlSize.configureFontFromSize(c, size);
@@ -410,7 +457,7 @@ public class AquaProgressBarUI extends ProgressBarUI implements ChangeListener, 
     }
 
     protected void revalidateAnimationTimers() {
-        if (!progressBar.isIndeterminate() || getState(progressBar) == State.INACTIVE) {
+        if (!progressBar.isIndeterminate() || getState() == State.INACTIVE) {
             stopAnimationTimer();
         } else {
             if (!isAnimating) {
@@ -452,13 +499,13 @@ public class AquaProgressBarUI extends ProgressBarUI implements ChangeListener, 
             timer.stop();
         }
 
-        public void actionPerformed(final ActionEvent e) {
+        public void actionPerformed(ActionEvent e) {
             if (!ADJUSTTIMER) {
                 progressBar.repaint();
                 return;
             }
 
-            final long time = System.currentTimeMillis();
+            long time = System.currentTimeMillis();
 
             if (lastCall > 0) {
                 // adjust nextDelay

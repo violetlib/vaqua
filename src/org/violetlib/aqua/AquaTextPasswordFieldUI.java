@@ -1,4 +1,12 @@
 /*
+ * Copyright (c) 2018 Alan Snyder.
+ * All rights reserved.
+ *
+ * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
+ * accompanying license terms.
+ */
+
+/*
  * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -34,6 +42,8 @@ import javax.swing.border.Border;
 import javax.swing.plaf.*;
 import javax.swing.text.*;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.violetlib.aqua.AquaUtils.RecyclableSingleton;
 import org.violetlib.aqua.AquaUtils.RecyclableSingletonFromDefaultConstructor;
 
@@ -43,7 +53,7 @@ public class AquaTextPasswordFieldUI extends AquaTextFieldUI {
         return capsLockPainter.get();
     }
 
-    public static ComponentUI createUI(final JComponent c) {
+    public static ComponentUI createUI(JComponent c) {
         return new AquaTextPasswordFieldUI();
     }
 
@@ -53,7 +63,7 @@ public class AquaTextPasswordFieldUI extends AquaTextFieldUI {
     }
 
     @Override
-    protected View createBasicView(final Element elem) {
+    protected View createBasicView(Element elem) {
         return new AquaPasswordView(elem);
     }
 
@@ -70,29 +80,29 @@ public class AquaTextPasswordFieldUI extends AquaTextFieldUI {
     }
 
     @Override
-    protected void paintBackgroundSafely(final Graphics g) {
-        super.paintBackgroundSafely(g);
+    protected void paintBackgroundSafely(@NotNull Graphics g, @Nullable Color background) {
+        super.paintBackgroundSafely(g, background);
 
-        final JTextComponent component = getComponent();
+        JTextComponent component = getComponent();
         if (component == null) return;
         if (!component.isFocusOwner()) return;
 
-        final boolean capsLockDown = Toolkit.getDefaultToolkit().getLockingKeyState(KeyEvent.VK_CAPS_LOCK);
+        boolean capsLockDown = Toolkit.getDefaultToolkit().getLockingKeyState(KeyEvent.VK_CAPS_LOCK);
         if (!capsLockDown) return;
 
-        final Rectangle bounds = component.getBounds();
+        Rectangle bounds = component.getBounds();
         getCapsLockPainter().paintBorder(component, g, bounds.x, bounds.y, bounds.width, bounds.height);
     }
 
     protected class AquaPasswordView extends PasswordView {
-        public AquaPasswordView(final Element elem) {
+        public AquaPasswordView(Element elem) {
             super(elem);
             setupDefaultEchoCharacter();
         }
 
         protected void setupDefaultEchoCharacter() {
             // this allows us to change the echo character in CoreAquaLookAndFeel.java
-            final Character echoChar = (Character)UIManager.getDefaults().get(getPropertyPrefix() + ".echoChar");
+            Character echoChar = (Character)UIManager.getDefaults().get(getPropertyPrefix() + ".echoChar");
             if (echoChar != null) {
                 LookAndFeel.installProperty(getComponent(), "echoChar", echoChar);
             }
@@ -104,8 +114,8 @@ public class AquaTextPasswordFieldUI extends AquaTextFieldUI {
         protected Shape getCapsLockShape() {
             if (capsLockShape != null) return capsLockShape;
 
-            final RoundRectangle2D rect = new RoundRectangle2D.Double(0.5, 0.5, 16, 16, 8, 8);
-            final GeneralPath shape = new GeneralPath(rect);
+            RoundRectangle2D rect = new RoundRectangle2D.Double(0.5, 0.5, 16, 16, 8, 8);
+            GeneralPath shape = new GeneralPath(rect);
             shape.setWindingRule(Path2D.WIND_EVEN_ODD);
 
             // arrow
@@ -129,7 +139,7 @@ public class AquaTextPasswordFieldUI extends AquaTextFieldUI {
         }
 
         @Override
-        public Insets getBorderInsets(final Component c) {
+        public Insets getBorderInsets(Component c) {
             return new Insets(0, 0, 0, 0);
         }
 
@@ -139,26 +149,29 @@ public class AquaTextPasswordFieldUI extends AquaTextFieldUI {
         }
 
         @Override
-        public void paintBorder(final Component c, Graphics g, final int x, final int y, final int width, final int height) {
-            g = g.create(width - 23, height / 2 - 8, 18, 18);
+        public void paintBorder(Component c, Graphics g, int x, int y, int width, int height) {
 
-            g.setColor(UIManager.getColor("PasswordField.capsLockIconColor"));
+            AquaAppearance appearance = AppearanceManager.ensureAppearance(c);
+            Color color = appearance.getColor("capsLockIcon");
+
+            g = g.create(width - 23, height / 2 - 8, 18, 18);
+            g.setColor(color);
             ((Graphics2D)g).setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
             ((Graphics2D)g).fill(getCapsLockShape());
             g.dispose();
         }
 
         @Override
-        public void keyPressed(final KeyEvent e) {
+        public void keyPressed(KeyEvent e) {
             update(e);
         }
 
         @Override
-        public void keyReleased(final KeyEvent e) {
+        public void keyReleased(KeyEvent e) {
             update(e);
         }
 
-        void update(final KeyEvent e) {
+        void update(KeyEvent e) {
             if (KeyEvent.VK_CAPS_LOCK != e.getKeyCode()) return;
             e.getComponent().repaint();
         }

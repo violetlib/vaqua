@@ -2,7 +2,7 @@
  * @(#AquaFileChooserUI.java
  *
  * Copyright (c) 2011-2013 Werner Randelshofer, Switzerland.
- * Copyright (c) 2014-2016 Alan Snyder.
+ * Copyright (c) 2014-2018 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the
@@ -35,11 +35,13 @@ import javax.swing.tree.DefaultTreeSelectionModel;
 import javax.swing.tree.TreeNode;
 import javax.swing.tree.TreePath;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.violetlib.aqua.*;
 
-import static org.violetlib.aqua.AquaRootPaneUI.AQUA_WINDOW_BOTTOM_MARGIN_KEY;
-import static org.violetlib.aqua.AquaRootPaneUI.AQUA_WINDOW_STYLE_KEY;
-import static org.violetlib.aqua.AquaRootPaneUI.AQUA_WINDOW_TOP_MARGIN_KEY;
+import static org.violetlib.aqua.AquaButtonUI.BUTTON_TYPE;
+import static org.violetlib.aqua.AquaRootPaneUI.*;
+import static org.violetlib.aqua.OSXSystemProperties.OSVersion;
 
 /**
  * Provides a list view and a column view similar to the one provided with the native Aqua user interface.
@@ -47,7 +49,7 @@ import static org.violetlib.aqua.AquaRootPaneUI.AQUA_WINDOW_TOP_MARGIN_KEY;
  * @author Werner Randelshofer
  * @version $Id$
  */
-public class AquaFileChooserUI extends BasicFileChooserUI {
+public class AquaFileChooserUI extends BasicFileChooserUI implements AquaComponentUI {
     // Implementation derived from MetalFileChooserUI
     /* Models. */
 
@@ -78,9 +80,10 @@ public class AquaFileChooserUI extends BasicFileChooserUI {
     private FileSystemTreeModel model = null;
     private SubtreeTreeModel subtreeModel = null;
 
-    private final static boolean isOptionsAvailable = OSXSystemProperties.OSVersion >= 1011;
+    private final static boolean isOptionsAvailable = OSVersion >= 1011;
     private boolean isOptionsEnabled = !isOptionsAvailable;
-    private boolean isUnifiedDialog;
+    private @Nullable String windowStyle;
+    private boolean useToolBar; // true if the top panel should act like a tool bar when the textured window style is used
 
     /**
      * Each saved search has its own file system tree model.
@@ -111,8 +114,6 @@ public class AquaFileChooserUI extends BasicFileChooserUI {
     private String defaultInitialSaveFileName;
     private SidebarTreeModel sidebarTreeModel;
     private HierarchyListener hierarchyListener;
-    private ComponentListener componentListener;
-    private IsSheetChangeListener isSheetChangeListener;
     /**
      * This listener is used to handle files that were dropped on the dir chooser.
      */
@@ -260,19 +261,19 @@ public class AquaFileChooserUI extends BasicFileChooserUI {
     protected void requestFileSelectionPath(String initialText) {
         Window parent = SwingUtilities.getWindowAncestor(fc);
 
-        final String prompt = goToFolderDialogPrompt;
-        final String cancelLabel = goToFolderCancelButtonText;
-        final String acceptLabel = goToFolderAcceptButtonText;
-        final String errorText = goToFolderErrorText;
+        String prompt = goToFolderDialogPrompt;
+        String cancelLabel = goToFolderCancelButtonText;
+        String acceptLabel = goToFolderAcceptButtonText;
+        String errorText = goToFolderErrorText;
 
-        final JDialog dialog;
+        JDialog dialog;
         if (parent instanceof Frame) {
             dialog = new JDialog((Frame) parent);
         } else {
             dialog = new JDialog((Dialog) parent);
         }
 
-        final RequestFileSelectionPathPane pane
+        RequestFileSelectionPathPane pane
                 = new RequestFileSelectionPathPane(dialog, initialText, prompt, cancelLabel, acceptLabel, errorText) {
             @Override
             protected void canceled() {
@@ -311,12 +312,12 @@ public class AquaFileChooserUI extends BasicFileChooserUI {
         private JButton acceptButton;
         private File selection;
 
-        public RequestFileSelectionPathPane(final JDialog parent,
+        public RequestFileSelectionPathPane(JDialog parent,
                                             String initialText,
                                             String message,
                                             String cancelLabel,
                                             String acceptLabel,
-                                            final String errorText) {
+                                            String errorText) {
             messageLabel = new JLabel(message);
             errorLabel = new JLabel();
             inputField = createTextField("Request File Input Field");
@@ -443,25 +444,27 @@ public class AquaFileChooserUI extends BasicFileChooserUI {
 
     private AbstractAction keyListenerAction = new KeyListenerAction();
 
-    protected JPanel fileNamePanel;
-    protected   JPanel fileNameLine;
-    protected     JLabel fileNameLabel;
-    protected     JTextField fileNameTextField;
-    protected     JPanel fileNameSpringPanel;
-    protected   JSeparator separator;
-    protected JComponent navigationPanel;
-    protected   ViewModeControl viewModeControl;
-    protected   JComboBox directoryComboBox;
+    protected TopPanel topPanel;
+    protected   JPanel fileNamePanel;
+    protected     JPanel fileNameLine;
+    protected       JLabel fileNameLabel;
+    protected       JTextField fileNameTextField;
+    protected       JPanel fileNameSpringPanel;
+    protected     JSeparator separator;
+    protected   JComponent navigationPanel;
+    protected     ViewModeControl viewModeControl;
+    protected     JComboBox directoryComboBox;
     protected JSplitPane splitPane;
     protected   JScrollPane sidebarScrollPane;
     protected   JPanel viewsPanel;
     protected JPanel controlsPanel;
-    protected   JPanel accessoryViewPanel;
+    protected   OptionsPanel optionsPanel;
     protected     JPanel accessoryPanel;
     protected     JPanel formatPanel;
     protected       JLabel filesOfTypeLabel;
     protected       JComboBox filterComboBox;
     protected       JPanel formatSpringPanel;
+    protected     JSeparator optionsSeparator;
     protected   ButtonPanel buttonsPanel;
     protected     JButton newFolderButton;
     protected     JButton optionsButton;
@@ -495,22 +498,37 @@ public class AquaFileChooserUI extends BasicFileChooserUI {
         installSelectedView(false, true);
     }
 
-    private class NavigationToolbar extends JToolBar implements Reconfigurable {
-        public NavigationToolbar() {
-            setFloatable(false);
-            setLayout(new BoxLayout(this, BoxLayout.X_AXIS));
-            setBorderPainted(false);
-            reconfigure();
+    private void configureTopPanel() {
+       topPanel.setToolBar(useToolBar);
+    }
+
+    private class TopPanel extends JPanel {
+        public TopPanel() {
+            setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
+            setOpaque(false);
+            setBorder(new EmptyBorder(4, 4, 4, 0));
         }
 
-        public void reconfigure() {
-            if (fc.getDialogType() == JFileChooser.SAVE_DIALOG) {
-                setMargin(new Insets(9, 7, 4, 7));
-            } else {
-                setMargin(new Insets(9, 7, 3, 7));
+        public boolean isToolBar() {
+            return Boolean.TRUE.equals(getClientProperty("Aqua.isToolBarPanel"));
+        }
+
+        public void setToolBar(boolean b) {
+            if (b != isToolBar()) {
+                putClientProperty("Aqua.isToolBarPanel", b);
+                revalidate();
+                repaint();
             }
         }
+
+        @Override
+        public void doLayout() {
+            super.doLayout();
+            updateWindowStyleParameters();
+        }
     }
+
+    // Navigation panel: depends upon Open/Save dialog type
 
     private class NavigationPanel extends JPanel implements Reconfigurable {
         public NavigationPanel() {
@@ -521,24 +539,73 @@ public class AquaFileChooserUI extends BasicFileChooserUI {
 
         public void reconfigure() {
             if (fc.getDialogType() == JFileChooser.SAVE_DIALOG) {
-                setBorder(new EmptyBorder(8+6, 8+3, 6+3, 8+3));
+                setBorder(new EmptyBorder(8-2, 8+3, 6+5, 8+3));
             } else {
-                setBorder(new EmptyBorder(8, 8, 6, 8));
+                //setBorder(new EmptyBorder(8, 8, 6, 8));
+                setBorder(new EmptyBorder(3, 8, 2, 8));
             }
         }
     }
 
-    private class ButtonPanel extends JPanel {
+    // Options panel: depends upon Open/Save dialog type, sheet status, active status
+
+    private class OptionsPanel extends JPanel implements Reconfigurable {
+        public OptionsPanel() {
+            setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
+            reconfigure();
+        }
+
+        @Override
+        public void reconfigure() {
+            setOpaque(false);
+            if (useGroupBox()) {
+                Border b = new AquaGroupBorder(new Insets(10, 10, 1, 10), new Insets(18, 22, 18, 22));
+                setBorder(b);
+                optionsSeparator.setVisible(false);
+            } else {
+                setBorder(null);
+                optionsSeparator.setVisible(true);
+                // Use a transparent background when displayed in a sheet.
+                if (!AquaSheetSupport.isSheet(fc)) {
+                    AquaAppearance appearance = AppearanceManager.getRegisteredAppearance(fc);
+                    if (appearance != null) {
+                        boolean isSave = fc.getDialogType() == JFileChooser.SAVE_DIALOG;
+                        String name = isSave ? "saveOptionsArea" : "openOptionsArea";
+                        EffectName effect = AquaFocusHandler.isActive(fc) ? EffectName.EFFECT_NONE : EffectName.EFFECT_DISABLED;
+                        Color color = appearance.getColorForEffect(name, effect);
+                        if (color != null) {
+                            // Must not use a UI color, as this color should override a vibrant ancestor.
+                            setOpaque(true);
+                            setBackground(AquaColors.getOrdinaryColor(color));
+                        }
+                    }
+                }
+            }
+        }
+
+        boolean useGroupBox() {
+            if (OSVersion < 1013) {
+                return OSVersion == 1010 || fc.getDialogType() == JFileChooser.SAVE_DIALOG;
+            } else {
+                return false;
+            }
+        }
+    }
+
+    // Button panel: depends upon Open/Save dialog type
+
+    private class ButtonPanel extends JPanel implements Reconfigurable {
         public ButtonPanel() {
             setLayout(new BoxLayout(this, BoxLayout.X_AXIS));
             reconfigure();
         }
 
+        @Override
         public void reconfigure() {
             // The margins were decreased in El Capitan, except for save dialogs.
             // One wonders if save dialogs were not changed intentionally or by omission.
 
-            if (fc.getDialogType() == JFileChooser.SAVE_DIALOG || OSXSystemProperties.OSVersion < 1011) {
+            if (fc.getDialogType() == JFileChooser.SAVE_DIALOG || OSVersion < 1011) {
                 setBorder(BorderFactory.createEmptyBorder(10, 23, 9, 10));
             } else {
                 setBorder(BorderFactory.createEmptyBorder(8, 8, 9, 8));
@@ -570,16 +637,17 @@ public class AquaFileChooserUI extends BasicFileChooserUI {
 
         java.awt.GridBagConstraints gridBagConstraints;
 
+        topPanel = new TopPanel();
         fileNamePanel = new JPanel();
         fileNameLine = new JPanel();
         fileNameLabel = new JLabel();
         fileNameTextField = createTextField("File Name Text Field");
         fileNameSpringPanel = new JPanel();
         separator = createSeparator();
-        navigationPanel = OSXSystemProperties.OSVersion >= 1011 ? new NavigationPanel() : new NavigationToolbar();
+        navigationPanel = new NavigationPanel();
         //previousButton = createButton();
         //nextButton = createButton();
-        directoryComboBox = createComboBox();
+        directoryComboBox = createDirectoryComboBox();
         splitPane = new JSplitPane();
         sidebarScrollPane = new JScrollPane();
         viewsPanel = new JPanel();
@@ -587,7 +655,8 @@ public class AquaFileChooserUI extends BasicFileChooserUI {
         viewModeControl = ViewModeControl.create();
         listView = ListView.create(fc);
         controlsPanel = new JPanel();
-        accessoryViewPanel = new JPanel();
+        optionsSeparator = createOptionsSeparator();    // create before options panel
+        optionsPanel = new OptionsPanel();
         accessoryPanel = new JPanel();
         formatPanel = new JPanel();
         filesOfTypeLabel = new JLabel();
@@ -635,12 +704,7 @@ public class AquaFileChooserUI extends BasicFileChooserUI {
         fileNamePanel.add(fileNameLine);
         fileNamePanel.add(separator);
 
-        gridBagConstraints = new GridBagConstraints();
-        gridBagConstraints.gridx = 0;
-        gridBagConstraints.fill = GridBagConstraints.HORIZONTAL;
-        gridBagConstraints.weightx = 1.0;
-        gridBagConstraints.insets = new Insets(16, 0, 0, 0);
-        fc.add(fileNamePanel, gridBagConstraints);
+        fileNamePanel.setBorder(new EmptyBorder(10, 0, 0, 0));
 
         viewsPanel.setLayout(new CardLayout());
 
@@ -660,29 +724,26 @@ public class AquaFileChooserUI extends BasicFileChooserUI {
             viewsPanel.add(listView, "list");
         }
 
-        directoryComboBox.putClientProperty("JComboBox.style", "textured");
-        directoryComboBox.setAlignmentY(0.5f);
-        // native is 200 wide but we have more room so why not use it
-        Dimension dp = directoryComboBox.getPreferredSize();
-        directoryComboBox.setPreferredSize(new Dimension(300, dp.height));
-        directoryComboBox.setMaximumSize(directoryComboBox.getPreferredSize());
-        directoryComboBox.putClientProperty("Quaqua.Component.visualMargin", new Insets(1, 1, 1, 1));
-
         navigationPanel.add(directoryComboBox);
         navigationPanel.add(Box.createHorizontalGlue());
         navigationPanel.add(Box.createRigidArea(new Dimension(42, 0))); // make up for the search field we do not have
 
-        gridBagConstraints = new GridBagConstraints();
+        configureTopPanel();
+
+        topPanel.add(fileNamePanel);
+        topPanel.add(navigationPanel);
         gridBagConstraints.gridx = 0;
+        gridBagConstraints.gridy = 0;
         gridBagConstraints.fill = GridBagConstraints.HORIZONTAL;
         gridBagConstraints.weightx = 1.0;
-        fc.add(navigationPanel, gridBagConstraints);
+        fc.add(topPanel, gridBagConstraints);
 
         int w = UIManager.getInt("FileChooser.sideBarWidth");
-        final int sidebarWidth = w > 0 ? w : 134;
+        int sidebarWidth = w > 0 ? w : 134;
         sidebarScrollPane.setMinimumSize(new Dimension(sidebarWidth, 0));
         splitPane.setDividerLocation(sidebarWidth); // used by subclass
         splitPane.putClientProperty("JSplitPane.style", "thin");
+
         sidebarScrollPane.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 0));
         sidebarScrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
         sidebarTree.setRootVisible(false);
@@ -697,29 +758,23 @@ public class AquaFileChooserUI extends BasicFileChooserUI {
 
         gridBagConstraints = new GridBagConstraints();
         gridBagConstraints.gridx = 0;
+        gridBagConstraints.gridy = 1;
         gridBagConstraints.fill = GridBagConstraints.BOTH;
         gridBagConstraints.weightx = 1.0;
         gridBagConstraints.weighty = 1.0;
         fc.add(splitPane, gridBagConstraints);
 
         controlsPanel.setLayout(new BoxLayout(controlsPanel, BoxLayout.Y_AXIS));
+        controlsPanel.setBorder(new EmptyBorder(1, 0, 0, 0));   // allow divider to show
 
-        accessoryViewPanel.setLayout(new BoxLayout(accessoryViewPanel, BoxLayout.Y_AXIS));
         accessoryPanel.setLayout(new java.awt.BorderLayout());
-        accessoryViewPanel.add(accessoryPanel);
-        controlsPanel.add(accessoryViewPanel);
+        optionsPanel.add(accessoryPanel);
+        controlsPanel.add(optionsPanel);
 
-        if (OSXSystemProperties.OSVersion < 1011) {
-            Border b = new AquaGroupBorder(new Insets(10, 10, 1, 10), new Insets(18, 22, 18, 22));
-            accessoryViewPanel.setBorder(b);
-            accessoryViewPanel.setOpaque(false);
-            accessoryPanel.setOpaque(false);
-            formatPanel.setOpaque(false);
-        } else {
-            Color c = new Color(233, 233, 233);
-            accessoryViewPanel.setBackground(c);
-            formatPanel.setBackground(c);
-        }
+        accessoryPanel.setOpaque(false);
+        formatPanel.setOpaque(false);
+        controlsPanel.setOpaque(false);
+        buttonsPanel.setOpaque(false);
 
         formatPanel.setLayout(new java.awt.GridBagLayout());
         formatPanel.setBorder(BorderFactory.createEmptyBorder(6, 0, 6, 0));
@@ -745,7 +800,8 @@ public class AquaFileChooserUI extends BasicFileChooserUI {
         gridBagConstraints.insets = new java.awt.Insets(0, 6, 0, 0);
         formatPanel.add(formatSpringPanel, gridBagConstraints);
 
-        accessoryViewPanel.add(formatPanel);
+        optionsPanel.add(formatPanel);
+        optionsPanel.add(optionsSeparator);
 
         newFolderButton.setText("New Folder");
         optionsButton.setText("Options");
@@ -765,6 +821,7 @@ public class AquaFileChooserUI extends BasicFileChooserUI {
 
         gridBagConstraints = new GridBagConstraints();
         gridBagConstraints.gridx = 0;
+        gridBagConstraints.gridy = 2;
         gridBagConstraints.fill = GridBagConstraints.HORIZONTAL;
         gridBagConstraints.weightx = 1.0;
         fc.add(controlsPanel, gridBagConstraints);
@@ -923,12 +980,6 @@ public class AquaFileChooserUI extends BasicFileChooserUI {
 
         KeyListener kl = new TextKeyListener();
 
-        if (OSXSystemProperties.OSVersion >= 1011) {
-            // Allow textured or vibrant background to show through
-            controlsPanel.setOpaque(false);
-            buttonsPanel.setOpaque(false);
-        }
-
         Component[] dropComponents = {
             fc,
             accessoryPanel,
@@ -978,7 +1029,7 @@ public class AquaFileChooserUI extends BasicFileChooserUI {
 
         // Button state
         updateApproveButtonState();
-        updateAccessoryViewPanel(); // also update buttons
+        updateOptionsPanel(); // also update buttons
 
         // Configure size of split pane
         int columnWidth = 207 + 16;
@@ -1012,7 +1063,7 @@ public class AquaFileChooserUI extends BasicFileChooserUI {
     /**
      * Create a text field.
      */
-    protected JTextField createTextField(final String theName) {
+    protected JTextField createTextField(String theName) {
         JTextField t = new JTextField() {
             @Override
             public String toString() {
@@ -1038,6 +1089,35 @@ public class AquaFileChooserUI extends BasicFileChooserUI {
         return b;
     }
 
+    protected JComboBox createDirectoryComboBox() {
+        return new DirectoryComboBox();
+    }
+
+    private class DirectoryComboBox extends JComboBox {
+
+        public DirectoryComboBox() {
+            putClientProperty("JComboBox.style", "textured");
+            setAlignmentY(0.5f);
+            putClientProperty("Quaqua.Component.visualMargin", new Insets(1, 1, 1, 1));
+        }
+
+        @Override
+        public Dimension getPreferredSize()
+        {
+            // native is 200 wide but we have more room so why not use it
+            // The trick here is that we cannot predict the preferred height
+            Dimension d = super.getPreferredSize();
+            int width = Math.max(d.width, 300);
+            int height = d.height;
+            return new Dimension(width, height);
+        }
+
+        @Override
+        public Dimension getMaximumSize() {
+            return getPreferredSize();
+        }
+    }
+
     protected JComboBox createComboBox() {
         JComboBox b = new JComboBox();
         return b;
@@ -1045,7 +1125,13 @@ public class AquaFileChooserUI extends BasicFileChooserUI {
 
     protected JSeparator createSeparator() {
         JSeparator s = new JSeparator();
-        s.setBorder(new EmptyBorder(14, 0, 4, 0));
+        s.setBorder(new EmptyBorder(7, 0, 4, 0));
+        return s;
+    }
+
+    protected JSeparator createOptionsSeparator() {
+        JSeparator s = new JSeparator();
+        s.setBorder(new EmptyBorder(0, 0, 0, 0));
         return s;
     }
 
@@ -1073,32 +1159,18 @@ public class AquaFileChooserUI extends BasicFileChooserUI {
         if (hierarchyListener != null) {
             fc.addHierarchyListener(hierarchyListener);
         }
-        componentListener = createComponentListener(fc);
-        if (componentListener != null) {
-            navigationPanel.addComponentListener(componentListener);
-            buttonsPanel.addComponentListener(componentListener);
-        }
         fc.addPropertyChangeListener(filterComboBoxModel);
+        AppearanceManager.installListener(fc);
     }
 
     @Override
     protected void uninstallListeners(JFileChooser fc) {
         super.uninstallListeners(fc);
+        AppearanceManager.uninstallListener(fc);
         if (hierarchyListener != null) {
             fc.removeHierarchyListener(hierarchyListener);
         }
-        if (componentListener != null) {
-            navigationPanel.removeComponentListener(componentListener);
-            buttonsPanel.removeComponentListener(componentListener);
-        }
         fc.removePropertyChangeListener(filterComboBoxModel);
-
-        // undo workaround installed in configureDialog()
-        uninstallWindowDraggingListener();
-
-        if (isSheetChangeListener != null) {
-            isSheetChangeListener.dispose();
-        }
     }
 
     private Locale getLocale() {
@@ -1130,7 +1202,6 @@ public class AquaFileChooserUI extends BasicFileChooserUI {
         } catch (IllegalComponentStateException e) {
             l = Locale.getDefault();
         }
-
 
         // FIXME - We must not read these strings from the UIManager, as long
         //         as we don't provide them with our own Look and Feel. This
@@ -1194,8 +1265,14 @@ public class AquaFileChooserUI extends BasicFileChooserUI {
         return new FileChooserHierarchyListener();
     }
 
-    protected ComponentListener createComponentListener(JFileChooser fc) {
-        return new FileChooserComponentListener();
+    @Override
+    public void appearanceChanged(@NotNull JComponent c, @NotNull AquaAppearance appearance) {
+        reconfigureChooser();
+    }
+
+    @Override
+    public void activeStateChanged(@NotNull JComponent c, boolean isActive) {
+        reconfigure(optionsPanel);
     }
 
     public int getViewMode() {
@@ -1238,7 +1315,7 @@ public class AquaFileChooserUI extends BasicFileChooserUI {
                 model.invalidateAll();
             }
 
-            final int source = oldView != null ? SELECT_DIRECTORY_NEW_VIEW : SELECT_DIRECTORY_TO_INITIALIZE;
+            int source = oldView != null ? SELECT_DIRECTORY_NEW_VIEW : SELECT_DIRECTORY_TO_INITIALIZE;
             updateSelection(source);
         }
     }
@@ -1307,7 +1384,7 @@ public class AquaFileChooserUI extends BasicFileChooserUI {
      * If the view is displaying a smart folder (saved search), we display the file selection in the the smart folder
      * if possible. Otherwise, we switch to the file system model.
      */
-    private void updateSelection(final int source) {
+    private void updateSelection(int source) {
 
         if (activeView == null) {
             return;
@@ -1344,8 +1421,8 @@ public class AquaFileChooserUI extends BasicFileChooserUI {
             files = getNormalizedChooserSelection();      // ensures files are absolute
         }
 
-        final java.util.List<File> originalFiles = files;
-        final java.util.List<TreePath> list = new ArrayList<TreePath>(files.size());
+        java.util.List<File> originalFiles = files;
+        java.util.List<TreePath> list = new ArrayList<TreePath>(files.size());
 
         TreePath commonParentPath = null;
         for (int i = 0; i < files.size(); i++) {
@@ -1370,7 +1447,7 @@ public class AquaFileChooserUI extends BasicFileChooserUI {
 
         if (directoryPath != null) {
 
-            final Runnable r = new Runnable() {
+            Runnable r = new Runnable() {
                 @Override
                 public void run() {
                     java.util.List<TreePath> subtreePaths = getSubtreePaths(list);
@@ -1380,7 +1457,7 @@ public class AquaFileChooserUI extends BasicFileChooserUI {
             };
 
             FileSystemTreeModel.Node n = (FileSystemTreeModel.Node) directoryPath.getLastPathComponent();
-            final File dir = n != null ? n.getResolvedFile() : new File("/");
+            File dir = n != null ? n.getResolvedFile() : new File("/");
 
                 /*
                   Because this method may be called from a property change listener, it is better to defer any change to
@@ -1399,7 +1476,7 @@ public class AquaFileChooserUI extends BasicFileChooserUI {
             // Update the view selection based on the current directory. We can not assume that a change event will
             // be delivered for the current directory because it might not have changed.
 
-            final Runnable r = new Runnable() {
+            Runnable r = new Runnable() {
                 @Override
                 public void run() {
                     updateSelectedFiles(null);
@@ -1912,7 +1989,7 @@ public class AquaFileChooserUI extends BasicFileChooserUI {
         formatPanel.setVisible(ffs.length > 1);
         accessoryPanel.revalidate();
         accessoryPanel.repaint();
-        updateAccessoryViewPanel();
+        updateOptionsPanel();
     }
 
     private void installAccessory(JComponent c) {
@@ -1932,17 +2009,17 @@ public class AquaFileChooserUI extends BasicFileChooserUI {
                 wrapper.revalidate();
                 accessoryPanel.add(wrapper, BorderLayout.CENTER);
             }
-            accessoryPanel.revalidate();
-            accessoryPanel.repaint();
             accessoryPanel.setVisible(c != null);
-            updateAccessoryViewPanel();
+            updateOptionsPanel();
         }
     }
 
-    private void updateAccessoryViewPanel() {
-        accessoryViewPanel.setVisible(
+    private void updateOptionsPanel() {
+        optionsPanel.setVisible(
           (!isOptionsAvailable || fc.getDialogType() != JFileChooser.OPEN_DIALOG || isOptionsEnabled)
             && (accessoryPanel.isVisible() || formatPanel.isVisible()));
+        topPanel.revalidate();
+        topPanel.repaint();
         updateButtons();
     }
 
@@ -1958,10 +2035,9 @@ public class AquaFileChooserUI extends BasicFileChooserUI {
         fileNameTextField.setEnabled(isSave);
         fileNamePanel.setVisible(isSave);
         updateApproveButtonState();
-        updateAccessoryViewPanel(); // also updates buttons
-        reconfigureView();
-        reconfigureChooser(); // some display properties are different for open and save dialogs
-        configureDialog();  // dialog window properties are different for open and save dialogs
+        updateOptionsPanel(); // also updates buttons
+        reconfigureChooser();   // some display properties are different for open and save dialogs
+        configureDialog();      // dialog window properties are different for open and save dialogs
     }
 
     private void doApproveButtonMnemonicChanged(PropertyChangeEvent e) {
@@ -1998,10 +2074,10 @@ public class AquaFileChooserUI extends BasicFileChooserUI {
 
     private void updateButton(JButton b) {
         String buttonType = null;
-        if (fc.getDialogType() == JFileChooser.OPEN_DIALOG && OSXSystemProperties.OSVersion >= 1011) {
+        if (fc.getDialogType() == JFileChooser.OPEN_DIALOG && OSVersion >= 1011 && OSVersion <= 1012) {
             buttonType = "textured";
         }
-        b.putClientProperty("JButton.buttonType", buttonType);
+        b.putClientProperty(BUTTON_TYPE, buttonType);
     }
 
     private void ensureFileSystemModel() {
@@ -2023,19 +2099,13 @@ public class AquaFileChooserUI extends BasicFileChooserUI {
         reconfigureView();
     }
 
-    protected void reconfigureView() {
-        if (activeView != null) {
-            activeView.reconfigure();
-        }
-    }
-
     /*
      * Listen for filechooser property changes, such as
      * the selected dir changing, or the type of the dialog changing.
      */
 
     @Override
-    public PropertyChangeListener createPropertyChangeListener(final JFileChooser fc) {
+    public PropertyChangeListener createPropertyChangeListener(JFileChooser fc) {
         return new FileChooserPropertyChangeListener();
     }
 
@@ -2118,8 +2188,8 @@ public class AquaFileChooserUI extends BasicFileChooserUI {
         TreePath sidebarPath = sidebarTree.getSelectionPath();
         if (sidebarPath != null) {
             Object o = sidebarPath.getLastPathComponent();
-            if (o instanceof SidebarTreeFileNode) {
-                SidebarTreeFileNode info = (SidebarTreeFileNode) o;
+            if (o instanceof SidebarTreeNode) {
+                SidebarTreeNode info = (SidebarTreeNode) o;
                 File file = info.getResolvedFile();
 
                 while (file != null && !file.isDirectory() && !fc.isTraversable(file)) {
@@ -2157,7 +2227,7 @@ public class AquaFileChooserUI extends BasicFileChooserUI {
      * @param source The source of this change. (See constants above.)
      * @param r This runnable is invoked after all updates have been completed.
      */
-    protected void selectDirectory(File f, final int source, final Runnable r) {
+    protected void selectDirectory(File f, int source, Runnable r) {
 
         /*
           Smart folders are displayed when they are selected using the sidebar. If a smart folder is already displayed
@@ -2189,16 +2259,16 @@ public class AquaFileChooserUI extends BasicFileChooserUI {
           that sidebar item (if found) is selected.
         */
 
-        final TreePath fullPath = model.toPath(f, null);
+        TreePath fullPath = model.toPath(f, null);
 
         if (source == SELECT_DIRECTORY_FROM_SIDEBAR) {
             setViewRoot(fullPath);
             finishSelectDirectory(source, fullPath, r);
         } else if (!(model instanceof SavedSearchFileSystemTreeModel)) {
-            final File theFile = f;
+            File theFile = f;
             sidebarTreeModel.invokeWhenValid(new Runnable() {
                 public void run() {
-                    final TreePath sidebarPath = selectViewRoot(theFile, viewMode == ViewModeControl.COLUMN_VIEW);
+                    TreePath sidebarPath = selectViewRoot(theFile, viewMode == ViewModeControl.COLUMN_VIEW);
                     finishSelectDirectory(source, fullPath, r);
                     /*
                       Seems to be a race condition causing AquaTreeUI to get confused about which row is selected
@@ -2322,8 +2392,8 @@ public class AquaFileChooserUI extends BasicFileChooserUI {
 
     private TreePath searchSidebarTreeForFile(TreeNode node, File f) {
 
-        if (node instanceof SidebarTreeFileNode) {
-            SidebarTreeFileNode info = (SidebarTreeFileNode) node;
+        if (node instanceof SidebarTreeNode) {
+            SidebarTreeNode info = (SidebarTreeNode) node;
             File nf = info.getResolvedFile();
             if (nf != null) {
                 File rf = OSXFile.resolve(f);
@@ -2431,7 +2501,7 @@ public class AquaFileChooserUI extends BasicFileChooserUI {
         --isAdjusting;
     }
 
-    private void ensurePathIsVisible(final TreePath path) {
+    private void ensurePathIsVisible(TreePath path) {
 
         /*
           Make sure the nodes are valid otherwise the scroll positions may be incorrect.
@@ -2447,7 +2517,7 @@ public class AquaFileChooserUI extends BasicFileChooserUI {
         }
     }
 
-    private void runAfterValidation(final TreePath path, final int index, final int lastIndex, final Runnable r) {
+    private void runAfterValidation(TreePath path, int index, int lastIndex, Runnable r) {
         if (index > lastIndex) {
             r.run();
         } else {
@@ -2500,7 +2570,6 @@ public class AquaFileChooserUI extends BasicFileChooserUI {
                 int index, boolean isSelected,
                 boolean cellHasFocus) {
 
-
             // String objects are used to denote delimiters.
             if (value instanceof String) {
                 super.getListCellRendererComponent(list, value, index, false, cellHasFocus);
@@ -2545,7 +2614,7 @@ public class AquaFileChooserUI extends BasicFileChooserUI {
             if (paths != null && paths.length > 0) {
                 TreePath path = paths[0];
                 Object pc = path.getLastPathComponent();
-                if (!(pc instanceof SidebarTreeFileNode)) {
+                if (!(pc instanceof SidebarTreeNode)) {
                     return;
                 }
             }
@@ -2560,63 +2629,18 @@ public class AquaFileChooserUI extends BasicFileChooserUI {
 
         @Override
         public Component getTreeCellRendererComponent(JTree tree, Object value,
-                boolean isSelected, boolean isExpanded, boolean isLeaf,
-                int row, boolean cellHasFocus) {
+                                                      boolean isSelected, boolean isExpanded, boolean isLeaf,
+                                                      int row, boolean cellHasFocus) {
             super.getTreeCellRendererComponent(tree, value, isSelected,
                     isExpanded, isLeaf, row, false);
 
-            if (value != null && value instanceof SidebarTreeFileNode) {
-                SidebarTreeFileNode info = (SidebarTreeFileNode) value;
+            if (value instanceof SidebarTreeNode) {
+                SidebarTreeNode info = (SidebarTreeNode) value;
                 setText(info.getUserName());
-                setIcon(getSpecialFolderIcon(info));
+                AquaAppearance appearance = AppearanceManager.ensureAppearance(tree);
+                setIcon(info.getIcon(appearance));
             }
-            putClientProperty(ListStateIcon.IS_SELECTED_KEY, isSelected);
             return this;
-        }
-
-        /**
-         * Gets the special icon for the folder.
-         *
-         * @param info The {@link FileInfo}.
-         * @return The icon.
-         **/
-        private Icon getSpecialFolderIcon(SidebarTreeFileNode info) {
-            Icon icon = info.getIcon();
-            if (icon != null) {
-                return icon;
-            }
-
-            File file = info.getResolvedFile();
-            if (file == null) {
-                return UIManager.getIcon("FileChooser.sideBarIcon.GenericFolder");
-            }
-
-            // Load the icon from the UIDefaults table
-            if (file.getPath().equals("/Volumes")) {
-                return OSXFile.getSidebarComputerIcon();
-            }
-
-            icon = UIManager.getIcon("FileChooser.sideBarIcon." + file.getName());
-
-            if (icon == null) {
-                if (OSXFile.isSavedSearch(file)) {
-                    icon = UIManager.getIcon("FileChooser.sideBarIcon.SmartFolder");
-                } else if (file.getParentFile() != null && file.getParentFile().getPath().equals("/Volumes")) {
-                    File bf = new File(file, "Backups.backupdb");
-                    if (bf.isDirectory()) {
-                        icon = UIManager.getIcon("FileChooser.sideBarIcon.TimeMachineVolume");
-                    }
-                    if (icon == null) {
-                        icon = UIManager.getIcon("FileChooser.sideBarIcon.GenericVolume");
-                    }
-                } else if (file.getParentFile() != null && file.getParentFile().getPath().equals("/Users")) {
-                    icon = UIManager.getIcon("FileChooser.sideBarIcon.Home");
-                } else {
-                    icon = UIManager.getIcon("FileChooser.sideBarIcon.GenericFolder");
-                }
-            }
-
-            return icon;
         }
     }
 
@@ -2891,7 +2915,7 @@ public class AquaFileChooserUI extends BasicFileChooserUI {
         @Override
         public void actionPerformed(ActionEvent e) {
             isOptionsEnabled = !isOptionsEnabled;
-            updateAccessoryViewPanel();
+            updateOptionsPanel();
         }
     }
 
@@ -2916,10 +2940,10 @@ public class AquaFileChooserUI extends BasicFileChooserUI {
               Our request must come after that.
             */
 
-            final TreePath path = directoryComboBoxModel.getSelectedPath();
+            TreePath path = directoryComboBoxModel.getSelectedPath();
             if (path != null) {
                 FileInfo info = (FileInfo) path.getLastPathComponent();
-                final File dir = info.getResolvedFile();
+                File dir = info.getResolvedFile();
                 SwingUtilities.invokeLater(new Runnable() {
                     public void run() {
                         selectDirectory(dir, SELECT_DIRECTORY_FROM_COMBO_BOX, null);
@@ -3365,14 +3389,6 @@ public class AquaFileChooserUI extends BasicFileChooserUI {
         }
     }
 
-    protected class FileChooserComponentListener extends ComponentAdapter {
-        @Override
-        public void componentResized(ComponentEvent e)
-        {
-            configureDialog();
-        }
-    }
-
     /**
      * We want to configure a file chooser dialog created by JFileChooser but not mess with others.
      */
@@ -3431,6 +3447,8 @@ public class AquaFileChooserUI extends BasicFileChooserUI {
         if (fc.getSelectedFile() != null) {
             ensureFileIsVisible(fc, fc.getSelectedFile());
         }
+
+        reconfigure(optionsPanel);
     }
 
     protected void configureForHiding() {
@@ -3445,15 +3463,42 @@ public class AquaFileChooserUI extends BasicFileChooserUI {
     }
 
     /**
-     * Reconfigure the file chooser layout based on a change to the dialog type.
+     * Reconfigure the file chooser presentation based on a change to the dialog type or the system appearance.
      */
     protected void reconfigureChooser() {
-        if (navigationPanel instanceof Reconfigurable) {
-            Reconfigurable r = (Reconfigurable) navigationPanel;
+        reconfigure(navigationPanel);
+        reconfigure(buttonsPanel);
+        reconfigure(topPanel);
+        reconfigure(optionsPanel);
+        reconfigureView();
+    }
+
+    protected void reconfigureView() {
+        if (activeView != null) {
+            activeView.reconfigure();
+        }
+    }
+
+    private void reconfigure(@Nullable JComponent c) {
+        if (c instanceof Reconfigurable) {
+            Reconfigurable r = (Reconfigurable) c;
             r.reconfigure();
         }
-        if (buttonsPanel != null) {
-            buttonsPanel.reconfigure();
+    }
+
+    private void updateWindowStyleParameters() {
+        JDialog d = getStandardDialog();
+        if (d != null) {
+            JRootPane rp = d.getRootPane();
+            if (windowStyle != null) {
+                Integer topMargin = topPanel.getHeight();
+                Integer bottomMargin = controlsPanel.getHeight();
+                rp.putClientProperty(AQUA_WINDOW_TOP_MARGIN_KEY, topMargin);
+                rp.putClientProperty(AQUA_WINDOW_BOTTOM_MARGIN_KEY, bottomMargin);
+            } else {
+                rp.putClientProperty(AQUA_WINDOW_STYLE_KEY, null);
+                rp.putClientProperty(AQUA_WINDOW_TOP_MARGIN_KEY, null);
+            }
         }
     }
 
@@ -3462,105 +3507,41 @@ public class AquaFileChooserUI extends BasicFileChooserUI {
      */
     protected void configureDialog() {
 
-        isUnifiedDialog = false;
-
-        if (isSheetChangeListener != null) {
-            isSheetChangeListener.dispose();
-            isSheetChangeListener = null;
-        }
+        boolean isStandardDialog = false;
+        useToolBar = false;
+        windowStyle = null;
 
         JDialog d = getStandardDialog();
         if (d != null) {
-
-            boolean workaroundNeeded = false;
-
+            isStandardDialog = true;
             JRootPane rp = d.getRootPane();
-            String style = null;
-            Integer topMargin = null;
-            Integer bottomMargin = null;
-            if (fc.getDialogType() == JFileChooser.OPEN_DIALOG && !AquaSheetSupport.isSheet(rp)) {
-                if (OSXSystemProperties.OSVersion >= 1011) {
-                    topMargin = navigationPanel.getHeight();
-                    bottomMargin = buttonsPanel.getHeight();
-                    if (topMargin > 0 || bottomMargin > 0) {
-                        style = "noTitleBar";
-                        workaroundNeeded = true;
-                    }
-                } else {
-                    style = "unifiedToolBar";
-                }
-                isUnifiedDialog = true;
-            }
-            rp.putClientProperty(AQUA_WINDOW_STYLE_KEY, style);
-            rp.putClientProperty(AQUA_WINDOW_TOP_MARGIN_KEY, topMargin);
-            rp.putClientProperty(AQUA_WINDOW_BOTTOM_MARGIN_KEY, bottomMargin);
 
-            if (workaroundNeeded) {
-                installWindowDraggingListener(d);
+            // Choose a window style for the dialog.
+            // However, if the dialog is being displayed as a sheet, do not change the style.
+
+            if (fc.getDialogType() == JFileChooser.OPEN_DIALOG) {
+                windowStyle = "texturedToolBar";
+                useToolBar = true;
             } else {
-                uninstallWindowDraggingListener();
+                windowStyle = "overlayTitleBar";
             }
 
-            // Install a change listener to detect the dialog being displayed as a sheet. A listener is needed
-            // because the dialog is created first, and only later is the decision made to display it as a sheet.
-            // We need to know, because when displayed as a sheet, we do not use window margins.
-
-            isSheetChangeListener = new IsSheetChangeListener(rp);
-            AquaSheetSupport.registerIsSheetChangeListener(rp, isSheetChangeListener);
+            String existingStyle = AquaRootPaneUI.getWindowStyleKey(rp);
+            if (!"undecorated".equals(existingStyle)) {
+                rp.putClientProperty(AQUA_WINDOW_STYLE_KEY, windowStyle);
+                rp.revalidate();
+                rp.repaint();
+            }
         }
 
-        if (isUnifiedDialog) {
-            Color divider = new Color(191, 191, 191);
-            splitPane.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, divider));
+        configureTopPanel();
+
+        AquaAppearance appearance = AppearanceManager.ensureAppearance(fc);
+        if (isStandardDialog) {
+            splitPane.setBorder(null);
         } else {
-            Color divider = new Color(0, 0, 0, 25);
+            Color divider = appearance.getColor("separator");
             splitPane.setBorder(BorderFactory.createMatteBorder(1, 0, 1, 0, divider));
-        }
-    }
-
-    private class IsSheetChangeListener implements ChangeListener {
-
-        JRootPane rp;
-
-        public IsSheetChangeListener(JRootPane rp) {
-            this.rp = rp;
-        }
-
-        @Override
-        public void stateChanged(ChangeEvent e) {
-            configureDialog();
-        }
-
-        public void dispose() {
-            if (rp != null) {
-                AquaSheetSupport.unregisterIsSheetChangeListener(rp, this);
-            }
-        }
-    }
-
-    private void installWindowDraggingListener(JDialog d) {
-        // JFileChooser enables mouse events but does not use them. Therefore the window margin mouse listener that
-        // implements window dragging does not get called. Copy that listener to the file chooser.
-        MouseListener[] listeners = d.getContentPane().getMouseListeners();
-        for (MouseListener listener : listeners) {
-            if (listener instanceof WindowDraggingMouseListener) {
-                WindowDraggingMouseListener l = (WindowDraggingMouseListener) listener;
-                fc.removeMouseListener(l);
-                fc.removeMouseMotionListener(l);
-                fc.addMouseListener(l);
-                fc.addMouseMotionListener(l);
-            }
-        }
-    }
-
-    private void uninstallWindowDraggingListener() {
-        MouseListener[] listeners = fc.getMouseListeners();
-        for (MouseListener listener : listeners) {
-            if (listener instanceof WindowDraggingMouseListener) {
-                WindowDraggingMouseListener l = (WindowDraggingMouseListener) listener;
-                fc.removeMouseListener(l);
-                fc.removeMouseMotionListener(l);
-            }
         }
     }
 
@@ -3572,7 +3553,7 @@ public class AquaFileChooserUI extends BasicFileChooserUI {
      * API method of FileChooserUI.
      */
     @Override
-    public void ensureFileIsVisible(JFileChooser fc, final File f) {
+    public void ensureFileIsVisible(JFileChooser fc, File f) {
 
         /*
           This method is called by the file chooser when the selected file is set.

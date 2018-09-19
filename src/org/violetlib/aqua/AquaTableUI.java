@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014-2015 Alan Snyder.
+ * Copyright (c) 2014-2018 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -34,20 +34,27 @@
 package org.violetlib.aqua;
 
 import java.awt.*;
-import java.awt.event.*;
+import java.awt.event.FocusEvent;
+import java.awt.event.FocusListener;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
-
 import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.event.MouseInputListener;
+import javax.swing.plaf.ColorUIResource;
 import javax.swing.plaf.ComponentUI;
 import javax.swing.plaf.UIResource;
 import javax.swing.plaf.basic.BasicTableUI;
 import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableColumn;
 import javax.swing.table.TableColumnModel;
+
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.violetlib.jnr.aqua.AquaUIPainter;
 
 /**
  * A table UI based on AquaTableUI for Yosemite. It implements the striped style. It paints the selection background
@@ -58,8 +65,9 @@ import javax.swing.table.TableColumnModel;
  * For best results using the striped style, cell renderer components should not be opaque, and the table should use
  * auto resizing and setFillsViewportHeight(true).
  */
-public class AquaTableUI extends BasicTableUI implements SelectionRepaintable {
-    public static ComponentUI createUI(final JComponent c) {
+public class AquaTableUI extends BasicTableUI
+        implements SelectionRepaintable, AquaComponentUI {
+    public static ComponentUI createUI(JComponent c) {
         return new AquaTableUI();
     }
 
@@ -68,26 +76,18 @@ public class AquaTableUI extends BasicTableUI implements SelectionRepaintable {
 
     protected final PropertyChangeListener propertyChangeListener;
     protected final ListSelectionListener selectionListener;
-
     protected TableCellRenderer originalBooleanRenderer;
     protected AquaTablePainter painter;
+
+    private boolean isStriped = false;
+    protected @NotNull ContainerContextualColors colors;
+    protected @Nullable AppearanceContext appearanceContext;
+    protected @Nullable Color actualTableBackground;
 
     public AquaTableUI() {
         propertyChangeListener = new TablePropertyChangeListener();
         selectionListener = new SelectionListener();
-    }
-
-    public static boolean isStriped(JTable table) {
-        String value = getStyleProperty(table);
-        return value != null && value.equals("striped");
-    }
-
-    protected boolean isStyleProperty(String prop) {
-        return AquaUtils.isProperty(prop, TABLE_STYLE_KEY, QUAQUA_TABLE_STYLE_KEY);
-    }
-
-    protected static String getStyleProperty(JTable table) {
-        return AquaUtils.getProperty(table, TABLE_STYLE_KEY, QUAQUA_TABLE_STYLE_KEY);
+        this.colors = AquaColors.CONTAINER_COLORS;
     }
 
     /**
@@ -105,21 +105,25 @@ public class AquaTableUI extends BasicTableUI implements SelectionRepaintable {
     }
 
     public class FocusHandler implements FocusListener {
-        public void focusGained(final FocusEvent e) {
-            repaintSelection();
+        public void focusGained(FocusEvent e) {
+            focusChanged();
         }
 
-        public void focusLost(final FocusEvent e) {
-            repaintSelection();
+        public void focusLost(FocusEvent e) {
+            focusChanged();
+        }
+
+        private void focusChanged() {
+            configureAppearanceContext(null);
         }
     }
 
     protected class TablePropertyChangeListener implements PropertyChangeListener {
-        public void propertyChange(final PropertyChangeEvent ev) {
+        public void propertyChange(PropertyChangeEvent ev) {
             String pn = ev.getPropertyName();
             if (pn != null) {
-                if (pn.equals(AquaFocusHandler.FRAME_ACTIVE_PROPERTY) || pn.equals("enabled")) {
-                    repaintSelection();
+                if (pn.equals("enabled")) {
+                    configureAppearanceContext(null);
                     return;
                 }
                 if (pn.equals("selectionModel")) {
@@ -127,33 +131,28 @@ public class AquaTableUI extends BasicTableUI implements SelectionRepaintable {
                     updateSelectionListener(old);
                 }
                 if (isStyleProperty(pn)) {
+                    updateStriped();
                     table.repaint();
+                }
+                if (pn.equals("background")) {
+                    repaintScrollPaneCorner();
                 }
             }
         }
     }
 
     @Override
-    public void installUI(JComponent c) {
-        super.installUI(c);
-        painter = new AquaTablePainter(table, rendererPane);
-    }
-
-    @Override
-    public void uninstallUI(JComponent c) {
-        painter = null;
-        super.uninstallUI(c);
-    }
-
-    @Override
     protected void installDefaults() {
         super.installDefaults();
+        painter = new AquaTablePainter(table, rendererPane);
         table.putClientProperty("terminateEditOnFocusLost", true);
         table.putClientProperty(AquaCellEditorPolicy.IS_CELL_CONTAINER_PROPERTY, true);
         table.setShowHorizontalLines(false);
         table.setShowVerticalLines(false);
         LookAndFeel.installProperty(table, "rowHeight", 19);
         originalBooleanRenderer = installRendererIfPossible(Boolean.class, new AquaBooleanRenderer());
+        isStriped = getStripedValue();
+        configureAppearanceContext(null);
     }
 
     @Override
@@ -162,16 +161,21 @@ public class AquaTableUI extends BasicTableUI implements SelectionRepaintable {
         if (booleanRenderer instanceof AquaBooleanRenderer) {
             table.setDefaultRenderer(Boolean.class, originalBooleanRenderer);
         }
+        painter = null;
         super.uninstallDefaults();
     }
 
+    @Override
     protected void installListeners() {
         super.installListeners();
         table.addPropertyChangeListener(propertyChangeListener);
         updateSelectionListener(null);
+        AppearanceManager.installListener(table);
     }
 
+    @Override
     protected void uninstallListeners() {
+        AppearanceManager.uninstallListener(table);
         table.getSelectionModel().removeListSelectionListener(selectionListener);
         table.removePropertyChangeListener(propertyChangeListener);
         super.uninstallListeners();
@@ -182,10 +186,10 @@ public class AquaTableUI extends BasicTableUI implements SelectionRepaintable {
     // Replace the mouse event with one that returns the cmd-key state when asked
     // for the control-key state, which super assumes is what everyone does to discontiguously extend selections
     public class MouseInputHandler extends BasicTableUI.MouseInputHandler {
-        /*public void mousePressed(final MouseEvent e) {
+        /*public void mousePressed(MouseEvent e) {
             super.mousePressed(new SelectionMouseEvent(e));
         }
-        public void mouseDragged(final MouseEvent e) {
+        public void mouseDragged(MouseEvent e) {
             super.mouseDragged(new SelectionMouseEvent(e));
         }*/
     }
@@ -267,16 +271,59 @@ public class AquaTableUI extends BasicTableUI implements SelectionRepaintable {
         }
     }
 
-    /**
-     * This method is called after a possible change to the state that affects the display of selected cells.
-     */
     @Override
-    public void repaintSelection() {
-        // All of the selected cells must be repainted when the focus/active/enabled state changes, because the selected
-        // cell background depends upon these states.
+    public void appearanceChanged(@NotNull JComponent c, @NotNull AquaAppearance appearance) {
+        configureAppearanceContext(appearance);
+    }
 
-        AquaFocusHandler.swapSelectionColors("Table", table, tableHasFocus());
+    @Override
+    public void activeStateChanged(@NotNull JComponent c, boolean isActive) {
+        configureAppearanceContext(null);
+    }
+
+    protected void configureAppearanceContext(@Nullable AquaAppearance appearance) {
+        if (appearance == null) {
+            appearance = AppearanceManager.ensureAppearance(table);
+        }
+        AquaUIPainter.State state = getState();
+        appearanceContext = new AppearanceContext(appearance, state, false, false);
+        colors = isStriped ? AquaColors.STRIPED_CONTAINER_COLORS : AquaColors.CONTAINER_COLORS;
+        colors.configureForContainer();
+        actualTableBackground = colors.getBackground(appearanceContext);
+        AquaColors.installColors(table, appearanceContext, colors);
         table.repaint();
+    }
+
+    protected AquaUIPainter.State getState() {
+        return table.isEnabled()
+                ? (shouldDisplayAsFocused() ? AquaUIPainter.State.ACTIVE_DEFAULT : AquaUIPainter.State.ACTIVE)
+                : AquaUIPainter.State.DISABLED;
+    }
+
+    protected boolean shouldDisplayAsFocused() {
+        return AquaFocusHandler.hasFocus(table) || table.isEditing() && AquaFocusHandler.isActive(table);
+    }
+
+    private void updateStriped() {
+        boolean value = getStripedValue();
+        if (value != isStriped) {
+            isStriped = value;
+            configureAppearanceContext(null);
+        }
+    }
+
+    private boolean getStripedValue() {
+        String value = getStyleProperty(table);
+        return "striped".equals(value) && isBackgroundClear();
+    }
+
+    private boolean isBackgroundClear() {
+        Color c = table.getBackground();
+        return c == null || c.getAlpha() == 0 || c instanceof ColorUIResource;
+    }
+
+    public boolean isStriped() {
+        return isStriped;
     }
 
     protected boolean tableHasFocus() {
@@ -287,34 +334,86 @@ public class AquaTableUI extends BasicTableUI implements SelectionRepaintable {
         }
     }
 
+    protected boolean isStyleProperty(String prop) {
+        return AquaUtils.isProperty(prop, TABLE_STYLE_KEY, QUAQUA_TABLE_STYLE_KEY);
+    }
+
+    protected static String getStyleProperty(JTable table) {
+        return AquaUtils.getProperty(table, TABLE_STYLE_KEY, QUAQUA_TABLE_STYLE_KEY);
+    }
+
+    /**
+     * This method is called after a possible change to the state that affects the display of selected cells.
+     */
+    @Override
+    public void repaintSelection() {
+        // All of the selected cells must be repainted when the focus/active/enabled state changes, because the selected
+        // cell background depends upon these states.
+
+        configureAppearanceContext(null);
+    }
+
+    @Override
+    public void update(Graphics g, JComponent c) {
+
+        AquaAppearance appearance = AppearanceManager.registerCurrentAppearance(c);
+        Color background = getBackgroundColor();
+        if (background != null) {
+            g.setColor(background);
+            g.fillRect(0, 0, c.getWidth(),c.getHeight());
+        }
+
+        paint(g, c);
+        AppearanceManager.restoreCurrentAppearance(appearance);
+    }
+
+    private @Nullable Color getBackgroundColor() {
+        if (table.isOpaque()) {
+            if (isStriped && actualTableBackground != null) {
+                // The dark mode stripes presume a dark background.
+                return actualTableBackground;
+            } else {
+                return table.getBackground();
+            }
+        }
+        return null;
+    }
+
+    public void repaintScrollPaneCorner() {
+        Container p1 = table.getParent();
+        if (p1 instanceof JViewport) {
+            Container p2 = p1.getParent();
+            if (p2 instanceof JScrollPane) {
+                JScrollPane sp = (JScrollPane) p2;
+                Component corner = sp.getCorner(JScrollPane.UPPER_TRAILING_CORNER);
+                if (corner != null) {
+                    corner.repaint();
+                }
+            }
+        }
+    }
+
+    @Override
     public void paint(Graphics g, JComponent c) {
-        if (painter != null) {
+        if (painter != null && appearanceContext != null) {
             painter.paint(g, c);
         }
     }
 
     protected class AquaTablePainter extends BasicTableUIPainter {
 
-        protected final Color[] stripes;
-
         protected boolean tableHasFocus;
-        protected boolean isStriped;
-        protected Color selectedBackground;
-        protected Color selectedForeground;
 
         public AquaTablePainter(JTable table, CellRendererPane rendererPane) {
             super(table, rendererPane);
-
-            stripes = new Color[]{UIManager.getColor("Table.evenRowBackground"), UIManager.getColor("Table.oddRowBackground")};
         }
 
         public void paint(Graphics g, JComponent c) {
 
-            tableHasFocus = tableHasFocus();
-            selectedBackground = table.getSelectionBackground();
-            selectedForeground = table.getSelectionForeground();
+            assert appearanceContext != null;
 
-            isStriped = AquaTableUI.isStriped(table);
+            tableHasFocus = tableHasFocus();
+
             boolean isSelection = table.getSelectedRowCount() > 0 && table.getRowSelectionAllowed()
                     || table.getSelectedColumnCount() > 0 && table.getColumnSelectionAllowed();
 
@@ -368,12 +467,15 @@ public class AquaTableUI extends BasicTableUI implements SelectionRepaintable {
                 extendHorizontalGrid = true;
             }
 
+            colors.configureForContainer();
+
             if (isStriped || isSelection) {
                 paintBackground(g, rMin, rMax, cMin, cMax);
             }
 
             paintGrid(g, rMin, rMax, cMin, cMax, extendVerticalGrid, extendHorizontalGrid);
             paintCells(g, rMin, rMax, cMin, cMax);
+            colors.configureForContainer();
         }
 
         protected void paintBackground(Graphics g, int rMin, int rMax, int cMin, int cMax) {
@@ -382,16 +484,28 @@ public class AquaTableUI extends BasicTableUI implements SelectionRepaintable {
             boolean isRowSelection = table.getSelectedRowCount() > 0 && table.getRowSelectionAllowed() && !table.getColumnSelectionAllowed();
             boolean isColumnSelection = table.getSelectedColumnCount() > 0 && table.getColumnSelectionAllowed() && !table.getRowSelectionAllowed();
 
+            assert appearanceContext != null;
+
+            // Note: the table is configured with colors for the entire table, not with colors for individual rows
+
             int nextRowY = 0;
 
             for (int row = rMin; row <= rMax; row++) {
                 Rectangle cellRect = table.getCellRect(row, cMin, true);
                 boolean isSelected = isRowSelection && table.isRowSelected(row);
-                Color bg = isSelected ? selectedBackground : (isStriped ? stripes[row % 2] : null);
-                if (bg == null) {
-                    bg = table.getBackground();
+                if (isStriped) {
+                    colors.configureForRow(row, isSelected);
+                } else {
+                    colors.configureForRow(isSelected);
                 }
-                g.setColor(bg);
+                Color rowBackground = colors.getBackground(appearanceContext);
+                if (!isStriped && !isSelected) {
+                    Color c = table.getBackground();
+                    if (AquaColors.isPriority(c)) {
+                        rowBackground = c;
+                    }
+                }
+                g.setColor(rowBackground);
                 g.fillRect(clip.x, cellRect.y, clip.width, cellRect.height);
                 nextRowY = cellRect.y + cellRect.height;
             }
@@ -403,7 +517,8 @@ public class AquaTableUI extends BasicTableUI implements SelectionRepaintable {
                     if (rowHeight > 0) {
                         int row = rMax + 1;
                         while (nextRowY < clipTop) {
-                            Color bg = stripes[row % 2];
+                            colors.configureForRow(row, false);
+                            Color bg = colors.getBackground(appearanceContext);
                             g.setColor(bg);
                             g.fillRect(clip.x, nextRowY, clip.width, rowHeight);
                             row++;
@@ -417,7 +532,10 @@ public class AquaTableUI extends BasicTableUI implements SelectionRepaintable {
         }
 
         protected void paintGrid(Graphics g, int rMin, int rMax, int cMin, int cMax, boolean xVertical, boolean xHorizontal) {
-            g.setColor(table.getGridColor());
+
+            assert appearanceContext != null;
+            Color gridColor = colors.getGrid(appearanceContext);
+            g.setColor(gridColor);
 
             Rectangle minCell = table.getCellRect(rMin, cMin, true);
             Rectangle maxCell = table.getCellRect(rMax, cMax, true);
@@ -470,53 +588,31 @@ public class AquaTableUI extends BasicTableUI implements SelectionRepaintable {
         @Override
         protected void paintCell(Graphics g, Rectangle cellRect, int row, int column) {
             if (table.isEditing() && table.getEditingRow()==row && table.getEditingColumn()==column) {
-                Component component = table.getEditorComponent();
-                component.setBounds(cellRect);
-                component.validate();
-            }
-            else {
-                TableCellRenderer renderer = table.getCellRenderer(row, column);
-                Component component = table.prepareRenderer(renderer, row, column);
-                Color bc = getOverrideCellBackground(row, column);
-                if (bc != null) {
-                    component.setBackground(bc);
-                }
-                rendererPane.paintComponent(g, component, table, cellRect.x, cellRect.y,
-                        cellRect.width, cellRect.height, true);
-                // Setting the background color of a DefaultTableCellRenderer makes that color the color to use instead
-                // of the table background when the cell is not selected. So, if we installed a color, we should also
-                // remove it.
-                bc = component.getBackground();
-                if (bc instanceof UIResource) {
-                    component.setBackground(null);
-                }
+                paintEditorCell(g, cellRect, row, column);
+            } else {
+                paintRenderedCell(g, cellRect, row, column);
             }
         }
 
-        /**
-         * Here we reverse engineer DefaultTableCellRenderer to determine when it would install the list background
-         * color in the renderer component. If the table is striped, then we intend to override that background color.
-         */
-        protected Color getOverrideCellBackground(int row, int column) {
-            if (!isStriped) {
-                return null;
-            }
+        protected void paintEditorCell(@NotNull Graphics g,
+                                       @NotNull Rectangle cellRect,
+                                       int row,
+                                       int column) {
+            Component component = table.getEditorComponent();
+            component.setBounds(cellRect);
+            component.validate();
+        }
 
-            if (table.isCellSelected(row, column)) {
-                return null;
-            }
+        protected void paintRenderedCell(@NotNull Graphics g,
+                                         @NotNull Rectangle cellRect,
+                                         int row,
+                                         int column) {
 
-            JTable.DropLocation dropLocation = table.getDropLocation();
-            if (dropLocation != null
-                    && !dropLocation.isInsertRow()
-                    && !dropLocation.isInsertColumn()
-                    && dropLocation.getRow() == row
-                    && dropLocation.getColumn() == column) {
+            TableCellRenderer renderer = table.getCellRenderer(row, column);
+            Component rendererComponent = table.prepareRenderer(renderer, row, column);
 
-                return null;
-            }
-
-            return stripes[row % 2];
+            rendererPane.paintComponent(g, rendererComponent, table, cellRect.x, cellRect.y,
+                    cellRect.width, cellRect.height, true);
         }
 
         protected void paintDraggedArea(Graphics g, int rMin, int rMax, TableColumn draggedColumn, int distance) {
@@ -538,9 +634,12 @@ public class AquaTableUI extends BasicTableUI implements SelectionRepaintable {
             // Fill the background.
             paintDraggedAreaBackground(g, vacatedColumnRect, rMin, rMax);
 
+            assert appearanceContext != null;
+            Color gridColor = colors.getGrid(appearanceContext);
+
             // Paint the vertical grid lines if necessary.
             if (table.getShowVerticalLines()) {
-                g.setColor(table.getGridColor());
+                g.setColor(gridColor);
                 int x1 = vacatedColumnRect.x;
                 int y1 = vacatedColumnRect.y;
                 int x2 = x1 + vacatedColumnRect.width - 1;
@@ -559,7 +658,7 @@ public class AquaTableUI extends BasicTableUI implements SelectionRepaintable {
 
                 // Paint the (lower) horizontal grid line if necessary.
                 if (table.getShowHorizontalLines()) {
-                    g.setColor(table.getGridColor());
+                    g.setColor(gridColor);
                     Rectangle rcr = table.getCellRect(row, draggedColumnIndex, true);
                     rcr.x += distance;
                     int x1 = rcr.x;
@@ -581,9 +680,11 @@ public class AquaTableUI extends BasicTableUI implements SelectionRepaintable {
                     gg.dispose();
                 }
             } else {
-                g.setColor(table.getBackground());
-                g.fillRect(columnRect.x, columnRect.y,
-                        columnRect.width, columnRect.height);
+                Color background = getBackgroundColor();
+                if (background != null) {
+                    g.setColor(background);
+                    g.fillRect(columnRect.x, columnRect.y, columnRect.width, columnRect.height);
+                }
             }
         }
     }
@@ -613,8 +714,7 @@ public class AquaTableUI extends BasicTableUI implements SelectionRepaintable {
             }
             // TBD: Setting the background to a transparent color is a work around for the code in
             // AquaButtonLabeledUI that ignores opaque for cell renderers. Not sure why it does that.
-            // Alternatively, we could install the appropriate background just as DefaultTableCellRenderer does.
-            setBackground(new Color(0, 0, 0, 0));   //
+            setBackground(AquaColors.CLEAR);
             setSelected((value != null && (Boolean) value));
             return this;
         }

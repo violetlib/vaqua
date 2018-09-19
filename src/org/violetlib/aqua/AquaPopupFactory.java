@@ -31,7 +31,7 @@ public abstract class AquaPopupFactory extends PopupFactory {
             throws IllegalArgumentException {
         if (isActive) {
             Popup p = getHeavyweightPopup(owner, contents, x, y);
-            return configure(p, contents);
+            return configure(owner, p, contents);
         } else {
             return super.getPopup(owner, contents, x, y);
         }
@@ -45,26 +45,33 @@ public abstract class AquaPopupFactory extends PopupFactory {
         return super.getPopup(owner, contents, x, y);
     }
 
-    private Popup configure(Popup p, Component contents) {
+    private Popup configure(Component owner, Popup p, Component contents) {
         // If the popup is a reused popup, then we need to reconfigure it.
         // A new popup will have zero size because pack() is not called if the window is not visible (and why would
         // it be?) A reused popup will probably have the wrong size, for the same reason.
+
         Window w = SwingUtilities.getWindowAncestor(contents);
+        AquaRootPaneUI ui = null;
+        JRootPane rp = AquaUtils.getRootPane(w);
+        if (rp != null) {
+            ui = AquaUtils.getUI(rp, AquaRootPaneUI.class);
+            if (ui == null) {
+                rp.updateUI();
+                ui = AquaUtils.getUI(rp, AquaRootPaneUI.class);
+            }
+        }
+
         if (w.isDisplayable() && w.getWidth() > 0) {
             // The popup is reused. It will have the old size.
             w.setSize(w.getPreferredSize());
             w.invalidate();
             w.validate();
-            if (w instanceof RootPaneContainer) {
-                JRootPane rp = ((RootPaneContainer) w).getRootPane();
-                AquaRootPaneUI ui = AquaUtils.getUI(rp, AquaRootPaneUI.class);
-                if (ui != null) {
-                    // Reconfigure the popup based on the client properties of the new content component.
-                    ui.configure();
-                } else {
-                    rp.updateUI();
-                }
-            }
+        }
+
+        if (ui != null) {
+            AquaAppearance appearance = AppearanceManager.ensureAppearance(owner);
+            String appearanceName = appearance.getName();
+            ui.configure(appearanceName);
         }
 
         return p;

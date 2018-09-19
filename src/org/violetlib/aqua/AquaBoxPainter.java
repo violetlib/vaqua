@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015 Alan Snyder.
+ * Copyright (c) 2015-2018 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -65,7 +65,7 @@ public class AquaBoxPainter implements BackgroundPainter {
         int boxTop = Math.max(0, s.top - topInset);
         int boxWidth = Math.max(0, width - boxLeft - Math.max(0, s.right - sideInset));
         int boxHeight = Math.max(0, height - boxTop - Math.max(0, s.bottom - topInset));
-        painter.configure(boxWidth, boxHeight);
+        AquaUtils.configure(painter, c, boxWidth, boxHeight);
         Configuration bg = getConfiguration();
         painter.getPainter(bg).paint(g, boxLeft, boxTop);
 

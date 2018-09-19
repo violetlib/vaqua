@@ -65,7 +65,7 @@ public class Aqua9MultiResolutionImage extends AquaMultiResolutionImage implemen
     }
 
     private static Image createFilteredImage(Image image, ImageFilter filter) {
-        final ImageProducer prod = new FilteredImageSource(image.getSource(), filter);
+        ImageProducer prod = new FilteredImageSource(image.getSource(), filter);
         return waitForImage(Toolkit.getDefaultToolkit().createImage(prod));
     }
 

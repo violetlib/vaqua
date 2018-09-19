@@ -1,5 +1,5 @@
 /*
- * Changes Copyright (c) 2015-2016 Alan Snyder.
+ * Changes Copyright (c) 2015-2018 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -34,14 +34,15 @@
 package org.violetlib.aqua;
 
 import java.awt.*;
-
 import javax.swing.*;
 import javax.swing.plaf.ComponentUI;
 import javax.swing.plaf.basic.BasicOptionPaneUI;
 import javax.swing.text.Document;
 import javax.swing.text.View;
 
-public class AquaOptionPaneUI extends BasicOptionPaneUI {
+import org.jetbrains.annotations.NotNull;
+
+public class AquaOptionPaneUI extends BasicOptionPaneUI implements AquaComponentUI {
     private static final int kOKCancelButtonWidth = 79;
     private static final int kButtonHeight = 23;
 
@@ -62,24 +63,37 @@ public class AquaOptionPaneUI extends BasicOptionPaneUI {
     /**
      * Creates a new BasicOptionPaneUI instance.
      */
-    public static ComponentUI createUI(final JComponent x) {
+    public static ComponentUI createUI(JComponent x) {
         return new AquaOptionPaneUI();
     }
 
     @Override
-    public final void update(final Graphics g, final JComponent c) {
-        if (c.isOpaque()) {
-            AquaUtils.fillRect(g, c, AquaUtils.ERASE_IF_VIBRANT);
-        }
+    protected void installDefaults() {
+        super.installDefaults();
+        LookAndFeel.installProperty(optionPane, "opaque", false);
+    }
+
+    @Override
+    public void appearanceChanged(@NotNull JComponent c, @NotNull AquaAppearance appearance) {
+    }
+
+    @Override
+    public void activeStateChanged(@NotNull JComponent c, boolean isActive) {
+    }
+
+    @Override
+    public final void update(Graphics g, JComponent c) {
+        AquaAppearance appearance = AppearanceManager.registerCurrentAppearance(c);
         paint(g, c);
+        AppearanceManager.restoreCurrentAppearance(appearance);
     }
 
     /**
-     * Creates and returns a Container containin the buttons. The buttons
+     * Creates and returns a Container containing the buttons. The buttons
      * are created by calling <code>getButtons</code>.
      */
     protected Container createButtonArea() {
-        final Container bottom = super.createButtonArea();
+        Container bottom = super.createButtonArea();
         // Now replace the Layout
         bottom.setLayout(new AquaButtonAreaLayout(true, kDialogSmallPadding));
         return bottom;
@@ -176,28 +190,28 @@ public class AquaOptionPaneUI extends BasicOptionPaneUI {
      * a subclass of ButtonAreaLayout
      */
     public static class AquaButtonAreaLayout extends ButtonAreaLayout {
-        public AquaButtonAreaLayout(final boolean syncAllWidths, final int padding) {
+        public AquaButtonAreaLayout(boolean syncAllWidths, int padding) {
             super(true, padding);
         }
 
-        public void layoutContainer(final Container container) {
-            final Component[] children = container.getComponents();
+        public void layoutContainer(Container container) {
+            Component[] children = container.getComponents();
             if (children == null || 0 >= children.length) return;
 
-            final int numChildren = children.length;
-            final int yLocation = container.getInsets().top;
+            int numChildren = children.length;
+            int yLocation = container.getInsets().top;
 
             // Always syncAllWidths - and heights!
-            final Dimension maxSize = new Dimension(kOKCancelButtonWidth, kButtonHeight);
+            Dimension maxSize = new Dimension(kOKCancelButtonWidth, kButtonHeight);
             for (int i = 0; i < numChildren; i++) {
-                final Dimension sizes = children[i].getPreferredSize();
+                Dimension sizes = children[i].getPreferredSize();
                 maxSize.width = Math.max(maxSize.width, sizes.width);
                 maxSize.height = Math.max(maxSize.height, sizes.height);
             }
 
             // ignore getCentersChildren, because we don't
             int xLocation = container.getSize().width - (maxSize.width * numChildren + (numChildren - 1) * padding);
-            final int xOffset = maxSize.width + padding;
+            int xOffset = maxSize.width + padding;
 
             // most important button (button zero) on far right
             for (int i = numChildren - 1; i >= 0; i--) {
@@ -332,7 +346,8 @@ public class AquaOptionPaneUI extends BasicOptionPaneUI {
         } else {
             JTextArea textArea = new JTextArea();
             textArea.setEditable(false);
-            textArea.setBackground(UIManager.getColor("Label.background"));
+            textArea.setOpaque(false);
+            //textArea.setBackground(UIManager.getColor("Label.background"));
             textArea.setFont(UIManager.getFont("Label.font"));
             textArea.setWrapStyleWord(true);
             textArea.setLineWrap(true);
@@ -351,14 +366,11 @@ public class AquaOptionPaneUI extends BasicOptionPaneUI {
      * used representing the message.
      */
     protected void configureMessageLabel(JComponent label) {
-        Color color = UIManager.getColor("OptionPane.messageForeground", optionPane.getLocale());
-        if (color != null) {
-            label.setForeground(color);
-        }
         Font messageFont = UIManager.getFont("OptionPane.messageFont", optionPane.getLocale());
         if (messageFont != null) {
             label.setFont(messageFont);
         }
-        label.setOpaque(false); // to work correctly when the option pane has a vibrant background
+        label.setOpaque(false);
+        label.setBackground(AquaColors.CLEAR);
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Changes Copyright (c) 2015 Alan Snyder.
+ * Changes Copyright (c) 2015-2018 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -55,7 +55,7 @@ public class AquaFocusHandler implements FocusListener, PropertyChangeListener {
     public static final String HAS_FOCUS_DELEGATE_KEY = "Component.hasFocusDelegate";
     public static final String QUAQUA_HAS_FOCUS_DELEGATE_KEY = "Quaqua.Component.cellRendererFor";
 
-    public void focusGained(final FocusEvent ev) {
+    public void focusGained(FocusEvent ev) {
         // If we gained focus and it wasn't due to a previous temporary focus loss
         // or the frame became active again, then repaint the border on the component.
         if (!wasTemporary || repaintBorder) {
@@ -65,7 +65,7 @@ public class AquaFocusHandler implements FocusListener, PropertyChangeListener {
         wasTemporary = false;
     }
 
-    public void focusLost(final FocusEvent ev) {
+    public void focusLost(FocusEvent ev) {
         wasTemporary = ev.isTemporary();
 
         // If we lost focus due to a permanent focus loss then repaint the border on the component.
@@ -74,7 +74,7 @@ public class AquaFocusHandler implements FocusListener, PropertyChangeListener {
         }
     }
 
-    public void propertyChange(final PropertyChangeEvent ev) {
+    public void propertyChange(PropertyChangeEvent ev) {
         if (!FRAME_ACTIVE_PROPERTY.equals(ev.getPropertyName())) return;
 
         if (Boolean.TRUE.equals(ev.getNewValue())) {
@@ -126,90 +126,54 @@ public class AquaFocusHandler implements FocusListener, PropertyChangeListener {
         return false;
     }
 
-    public static boolean isActive(final JComponent c) {
+    public static void updateComponentTreeUIActivation(Component c, boolean active) {
+        if (c instanceof javax.swing.JInternalFrame) {
+            active = ((JInternalFrame)c).isSelected();
+        }
+
+        if (c instanceof javax.swing.JComponent) {
+            ((javax.swing.JComponent)c).putClientProperty(AquaFocusHandler.FRAME_ACTIVE_PROPERTY, active);
+        }
+
+        Component[] children = null;
+
+        if (c instanceof javax.swing.JMenu) {
+            children = ((javax.swing.JMenu)c).getMenuComponents();
+        } else if (c instanceof Container) {
+            children = ((Container)c).getComponents();
+        }
+
+        if (children == null) {
+            return;
+        }
+
+        for (Component element : children) {
+            updateComponentTreeUIActivation(element, active);
+        }
+    }
+
+    public static boolean isActive(JComponent c) {
         if (c == null) return true;
-        final Object activeObj = c.getClientProperty(AquaFocusHandler.FRAME_ACTIVE_PROPERTY);
+        Object activeObj = c.getClientProperty(AquaFocusHandler.FRAME_ACTIVE_PROPERTY);
         if (Boolean.FALSE.equals(activeObj)) return false;
         return true;
     }
 
     static final PropertyChangeListener REPAINT_LISTENER = new PropertyChangeListener() {
-        public void propertyChange(final PropertyChangeEvent evt) {
-            final Object source = evt.getSource();
+        public void propertyChange(PropertyChangeEvent evt) {
+            Object source = evt.getSource();
             if (source instanceof JComponent) {
                 ((JComponent)source).repaint();
             }
         }
     };
 
-    protected static void install(final JComponent c) {
+    protected static void install(JComponent c) {
         c.addPropertyChangeListener(FRAME_ACTIVE_PROPERTY, REPAINT_LISTENER);
     }
 
-    protected static void uninstall(final JComponent c) {
+    protected static void uninstall(JComponent c) {
         c.removePropertyChangeListener(FRAME_ACTIVE_PROPERTY, REPAINT_LISTENER);
-    }
-
-    static void swapSelectionColors(final String prefix, final JTree c, final Object value) {
-        // <rdar://problem/8166173> JTree: selection color does not dim when window becomes inactive
-        // TODO inject our colors into the DefaultTreeCellRenderer
-    }
-
-    public static void swapSelectionColors(final String prefix, final JTable c, final Object value) {
-        // The following is commented out because the tree and table in a TreeTable
-        // are not in the component hierarchy
-        //if (!isComponentValid(c)) return;
-
-        final Color bg = c.getSelectionBackground();
-        final Color fg = c.getSelectionForeground();
-        if (!(bg instanceof UIResource) || !(fg instanceof UIResource)) return;
-
-        if (Boolean.FALSE.equals(value)) {
-            setSelectionColors(c, "Table.selectionInactiveForeground", "Table.selectionInactiveBackground");
-            return;
-        }
-
-        if (Boolean.TRUE.equals(value)) {
-            setSelectionColors(c, "Table.selectionForeground", "Table.selectionBackground");
-            return;
-        }
-    }
-
-    static void setSelectionColors(final JTable c, final String fgName, final String bgName) {
-        c.setSelectionForeground(UIManager.getColor(fgName));
-        c.setSelectionBackground(UIManager.getColor(bgName));
-    }
-
-    static void swapSelectionColors(final String prefix, final JList<?> c, final Object value) {
-        // The following is commented out because setEnabled(false) may be called before the component is installed
-        // in a hierarchy
-//        if (!isComponentValid(c)) return;
-
-        final Color bg = c.getSelectionBackground();
-        final Color fg = c.getSelectionForeground();
-        if (!(bg instanceof UIResource) || !(fg instanceof UIResource)) return;
-
-        if (Boolean.FALSE.equals(value)) {
-            setSelectionColors(c, "List.selectionInactiveForeground", "List.selectionInactiveBackground");
-            return;
-        }
-
-        if (Boolean.TRUE.equals(value)) {
-            setSelectionColors(c, "List.selectionForeground", "List.selectionBackground");
-            return;
-        }
-    }
-
-    static void setSelectionColors(final JList<?> c, final String fgName, final String bgName) {
-        c.setSelectionForeground(UIManager.getColor(fgName));
-        c.setSelectionBackground(UIManager.getColor(bgName));
-    }
-
-    static boolean isComponentValid(final JComponent c) {
-        if (c == null) return false;
-        final Window window = SwingUtilities.getWindowAncestor(c);
-        if (window == null) return false;
-        return true;
     }
 
     // Based on SwingUtilities2.compositeRequestFocus. It returns the component that compositeRequestFocus()

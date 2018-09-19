@@ -1,5 +1,5 @@
 /*
- * Changes Copyright (c) 2015-2017 Alan Snyder.
+ * Changes Copyright (c) 2015-2018 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -34,21 +34,18 @@
 package org.violetlib.aqua;
 
 import java.awt.*;
-import java.awt.event.InputEvent;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseWheelEvent;
-import java.awt.event.MouseWheelListener;
+import java.awt.event.*;
 import javax.swing.*;
-import javax.swing.border.Border;
 import javax.swing.event.ListDataEvent;
 import javax.swing.event.ListDataListener;
 import javax.swing.plaf.basic.BasicComboPopup;
+
+import org.jetbrains.annotations.NotNull;
 
 @SuppressWarnings("serial") // Superclass is not serializable across versions
 class AquaComboBoxPopup extends BasicComboPopup implements AquaExtendedPopup, ListDataListener {
 
     protected static final String uiClassID = "ComboBoxPopupMenuUI";
-    protected static AquaCellEditorPolicy cellEditorPolicy = AquaCellEditorPolicy.getInstance();
 
     public enum PopupDisplayType {
         EDITABLE_NO_SCROLL,     // an editable combo box pop up menu with no scroll pane
@@ -65,7 +62,7 @@ class AquaComboBoxPopup extends BasicComboPopup implements AquaExtendedPopup, Li
         }
     };
 
-    public AquaComboBoxPopup(final JComboBox<Object> cBox) {
+    public AquaComboBoxPopup(JComboBox<Object> cBox) {
         super(cBox);
     }
 
@@ -76,20 +73,6 @@ class AquaComboBoxPopup extends BasicComboPopup implements AquaExtendedPopup, Li
     @Override
     public String getUIClassID() {
         return uiClassID;
-    }
-
-    @Override
-    protected void configurePopup() {
-        setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
-        setBorderPainted(true);
-        setOpaque(false);
-        setDoubleBuffered(true);
-        setFocusable(false);
-
-        updateContents(false);
-
-        // TODO: CPlatformWindow?
-        putClientProperty("apple.awt._windowFadeOut", new Integer(150));
     }
 
     @Override
@@ -111,17 +94,41 @@ class AquaComboBoxPopup extends BasicComboPopup implements AquaExtendedPopup, Li
     public void contentsChanged(ListDataEvent e) {
     }
 
+    @Override
+    protected void configurePopup() {
+        // This is "static" configuration that happens when the UI object is created.
+
+        setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
+        setBorderPainted(true);
+        setOpaque(false);
+        setDoubleBuffered(true);
+        setFocusable(false);
+
+        updateContents(false);
+
+        // TODO: CPlatformWindow?
+        putClientProperty("apple.awt._windowFadeOut", 150);
+    }
+
+    @Override
+    protected JScrollPane createScroller() {
+        JScrollPane sp = super.createScroller();
+        sp.setOpaque(false);
+        sp.getViewport().setOpaque(false);
+        return sp;
+    }
+
     /**
      * If the number of menu items change, we may need to change the size of the popup menu, and we many need to
      * install or remove a scroll pane.
      */
     private void possiblyUpdatePopup() {
-        Rectangle newBounds = adjustPopupAndGetBounds();
+        Rectangle newBounds = adjustPopupAndGetBounds(false);
         list.setSize(newBounds.width, newBounds.height);
         pack();
     }
 
-// There are several different presentations:
+    // There are several different presentations:
     //
     // An editable combo box uses a list. The list has a maximum number of displayed rows. If there are more elements,
     // then a scroll bar is used.
@@ -130,7 +137,7 @@ class AquaComboBoxPopup extends BasicComboPopup implements AquaExtendedPopup, Li
     // necessary. If there are items not visible, an upward or downward arrow will be displayed. The menu scrolls by
     // moving the mouse over (or beyond) the arrow. Scroll bars are never used.
 
-    public void updateContents(final boolean remove) {
+    public void updateContents(boolean remove) {
         // The combo box popup scroll pane is used only if the combo box is editable and has too many items.
 
         if (list != null) {
@@ -142,16 +149,16 @@ class AquaComboBoxPopup extends BasicComboPopup implements AquaExtendedPopup, Li
                 }
                 add(scroller);
                 scroller.setViewportView(list);
-                list.setOpaque(true);
-                setOpaque(true);
+                //list.setOpaque(true);
+                //setOpaque(true);
             } else {
                 remove(scroller);
                 if (remove) {
                     remove(list);
                 }
                 add(list);
-                list.setOpaque(false);
-                setOpaque(false);
+                //list.setOpaque(false);
+                //setOpaque(false);
             }
 
             // The following is a workaround for bad behavior in BasicPopupMenuUI. If we do not consume a mouse wheel
@@ -163,34 +170,29 @@ class AquaComboBoxPopup extends BasicComboPopup implements AquaExtendedPopup, Li
                 list.addMouseWheelListener(mouseWheelEventConsumer);
             }
 
-            if (currentDisplayType == PopupDisplayType.EDITABLE_SCROLL || currentDisplayType == PopupDisplayType.EDITABLE_NO_SCROLL) {
-                list.setSelectionBackground(UIManager.getColor("ComboBox.selectionBackground"));
-                list.setSelectionForeground(UIManager.getColor("ComboBox.selectionForeground"));
-                list.setBackground(UIManager.getColor("ComboBox.background"));
-                list.setForeground(UIManager.getColor("ComboBox.foreground"));
-            } else {
-                list.setSelectionBackground(UIManager.getColor("PopupMenu.selectionBackground"));
-                list.setSelectionForeground(UIManager.getColor("PopupMenu.selectionForeground"));
-                list.setBackground(UIManager.getColor("PopupMenu.background"));
-                list.setForeground(UIManager.getColor("PopupMenu.foreground"));
+            if (remove) {
+                AquaComboBoxPopupMenuUI ui = AquaUtils.getUI(this, AquaComboBoxPopupMenuUI.class);
+                if (ui != null) {
+                    ui.configure(list);
+                }
             }
         }
 
         setBorder(null);
     }
 
-    protected Dimension getBestPopupSizeForRowCount(final int maxRowCount) {
-        final int currentElementCount = comboBox.getModel().getSize();
-        final int rowCount = currentDisplayType == PopupDisplayType.EDITABLE_SCROLL
+    protected Dimension getBestPopupSizeForRowCount(int maxRowCount) {
+        int currentElementCount = comboBox.getModel().getSize();
+        int rowCount = currentDisplayType == PopupDisplayType.EDITABLE_SCROLL
                 ? Math.min(maxRowCount, currentElementCount) : currentElementCount;
 
-        final Dimension popupSize = new Dimension();
-        final ListCellRenderer<Object> renderer = list.getCellRenderer();
+        Dimension popupSize = new Dimension();
+        ListCellRenderer<Object> renderer = list.getCellRenderer();
 
         for (int i = 0; i < rowCount; i++) {
-            final Object value = list.getModel().getElementAt(i);
-            final Component c = renderer.getListCellRendererComponent(list, value, i, false, false);
-            final Dimension prefSize = c.getPreferredSize();
+            Object value = list.getModel().getElementAt(i);
+            Component c = renderer.getListCellRendererComponent(list, value, i, false, false);
+            Dimension prefSize = c.getPreferredSize();
             popupSize.height += prefSize.height;
             popupSize.width = Math.max(prefSize.width, popupSize.width);
         }
@@ -200,7 +202,7 @@ class AquaComboBoxPopup extends BasicComboPopup implements AquaExtendedPopup, Li
         return popupSize;
     }
 
-    protected PopupDisplayType getPopupDisplayType() {
+    protected @NotNull PopupDisplayType computePopupDisplayType() {
         if (comboBox.isEditable()) {
             return comboBox.getItemCount() > comboBox.getMaximumRowCount()
               ? PopupDisplayType.EDITABLE_SCROLL : PopupDisplayType.EDITABLE_NO_SCROLL;
@@ -211,27 +213,29 @@ class AquaComboBoxPopup extends BasicComboPopup implements AquaExtendedPopup, Li
 
     @Override
     public void show() {
-        final int startItemCount = comboBox.getItemCount();
+        int startItemCount = comboBox.getItemCount();
 
-        final Rectangle popupBounds = adjustPopupAndGetBounds();
-        if (popupBounds == null) return; // null means don't show
+        Rectangle popupBounds = adjustPopupAndGetBounds(true);
+        if (popupBounds == null) {
+            return; // null means don't show
+        }
 
         comboBox.firePopupMenuWillBecomeVisible();
         show(comboBox, popupBounds.x, popupBounds.y);
 
         // hack for <rdar://problem/4905531> JComboBox does not fire popupWillBecomeVisible if item count is 0
-        final int afterShowItemCount = comboBox.getItemCount();
+        int afterShowItemCount = comboBox.getItemCount();
         if (afterShowItemCount == 0) {
             hide();
             return;
         }
 
         if (startItemCount != afterShowItemCount) {
-            final Rectangle newBounds = adjustPopupAndGetBounds();
+            Rectangle newBounds = adjustPopupAndGetBounds(false);
             list.setSize(newBounds.width, newBounds.height);
             pack();
 
-            final Point newLoc = comboBox.getLocationOnScreen();
+            Point newLoc = comboBox.getLocationOnScreen();
             setLocation(newLoc.x + newBounds.x, newLoc.y + newBounds.y);
         }
         // end hack
@@ -248,6 +252,7 @@ class AquaComboBoxPopup extends BasicComboPopup implements AquaExtendedPopup, Li
     protected class AquaPopupMenuList extends JList<Object> {
         public AquaPopupMenuList(ListModel<Object> dataModel) {
             super(dataModel);
+
             setOpaque(false);
         }
 
@@ -262,16 +267,19 @@ class AquaComboBoxPopup extends BasicComboPopup implements AquaExtendedPopup, Li
         }
     }
 
-    protected Rectangle adjustPopupAndGetBounds() {
-        if (currentDisplayType != getPopupDisplayType()) {
-            currentDisplayType = getPopupDisplayType();
+    protected Rectangle adjustPopupAndGetBounds(boolean forceConfiguration) {
+        PopupDisplayType actualDisplayType = computePopupDisplayType();
+        if (currentDisplayType != actualDisplayType) {
+            currentDisplayType = actualDisplayType;
+            updateContents(true);
+        } else if (forceConfiguration) {
             updateContents(true);
         }
 
-        final Dimension popupSize = getBestPopupSizeForRowCount(comboBox.getMaximumRowCount());
-        final Rectangle popupBounds = computePopupBounds(0, comboBox.getBounds().height, popupSize.width, popupSize.height);
+        Dimension popupSize = getBestPopupSizeForRowCount(comboBox.getMaximumRowCount());
+        Rectangle popupBounds = computePopupBounds(0, comboBox.getBounds().height, popupSize.width, popupSize.height);
 
-        final Dimension realPopupSize = popupBounds.getSize();
+        Dimension realPopupSize = popupBounds.getSize();
         if (currentDisplayType == PopupDisplayType.EDITABLE_SCROLL) {
             scroller.setMaximumSize(realPopupSize);
             scroller.setPreferredSize(realPopupSize);
@@ -307,7 +315,7 @@ class AquaComboBoxPopup extends BasicComboPopup implements AquaExtendedPopup, Li
             }
         }
 
-        final int selectedIndex = comboBox.getSelectedIndex();
+        int selectedIndex = comboBox.getSelectedIndex();
         if (selectedIndex == -1 || getComboBoxType() == AquaComboBoxType.PULL_DOWN_MENU_BUTTON) {
             list.clearSelection();
         } else {
@@ -327,7 +335,7 @@ class AquaComboBoxPopup extends BasicComboPopup implements AquaExtendedPopup, Li
 
         // Get the screen location of the combo box
         // Retain this location because our result must be relative to the combo box
-        final Point p = AquaUtils.getScreenLocation(comboBox);
+        Point p = AquaUtils.getScreenLocation(comboBox);
 
         // Get the available bounds of the screen where the popup should appear.
         Rectangle scrBounds = AquaUtils.getScreenBounds(p, comboBox);
@@ -336,9 +344,9 @@ class AquaComboBoxPopup extends BasicComboPopup implements AquaExtendedPopup, Li
             pw += 15;
         }
 
-        final Insets comboBoxInsets = comboBox.getInsets();
-        final Dimension comboBoxSize = comboBox.getSize();
-        final int minWidth = comboBoxSize.width - (comboBoxInsets.left + comboBoxInsets.right);
+        Insets comboBoxInsets = comboBox.getInsets();
+        Dimension comboBoxSize = comboBox.getSize();
+        int minWidth = comboBoxSize.width - (comboBoxInsets.left + comboBoxInsets.right);
         pw = Math.max(minWidth, pw);
         int x = p.x + comboBoxInsets.left;
         if (!AquaUtils.isLeftToRight(comboBox)) {
@@ -347,7 +355,7 @@ class AquaComboBoxPopup extends BasicComboPopup implements AquaExtendedPopup, Li
 
         AquaComboBoxType type = getComboBoxType();
 
-        int yOffset = getNominalPopupYOffset(type, comboBoxSize.height);
+        int yOffset = getNominalPopupYOffset();
         int y = p.y + yOffset;
 
         // For a pop up menu, the goal is for the menu item label to exactly overlay the combo box button label, at
@@ -412,29 +420,14 @@ class AquaComboBoxPopup extends BasicComboPopup implements AquaExtendedPopup, Li
      * Return the nominal Y offset of the popup relative to the top of the combo box.
      * The nominal offset may be replaced if there is not enough room on the screen.
      */
-    protected int getNominalPopupYOffset(AquaComboBoxType type, int comboBoxHeight) {
+    protected int getNominalPopupYOffset() {
 
-        boolean isTableCellEditor = cellEditorPolicy.isCellEditor(comboBox);
-
-        switch (type) {
-            case EDITABLE_COMBO_BOX:
-                return isTableCellEditor ? comboBoxHeight : comboBoxHeight + 4;
-            case PULL_DOWN_MENU_BUTTON:
-                return isTableCellEditor ? comboBoxHeight : comboBoxHeight; // there is a gap in the rendering
+        AquaComboBoxUI ui = AquaUtils.getUI(comboBox, AquaComboBoxUI.class);
+        if (ui != null) {
+            return ui.getNominalPopupYOffset();
+        } else {
+            return comboBox.getHeight() + 2;
         }
-
-        // A pop up menu button wants the selected item to appear over the button.
-        if (list != null) {
-            int selectedIndex = comboBox.getSelectedIndex();
-            if (selectedIndex >= 0) {
-                Rectangle cellBounds = list.getCellBounds(selectedIndex, selectedIndex);
-                Border border = AquaContextualPopup.getContextualMenuBorder();
-                Insets s = border.getBorderInsets(this);
-                return -(cellBounds.y + s.top);
-            }
-        }
-
-        return 0;
     }
 
     @Override
@@ -466,9 +459,97 @@ class AquaComboBoxPopup extends BasicComboPopup implements AquaExtendedPopup, Li
     @Override
     protected void updateListBoxSelectionForEvent(MouseEvent e, boolean shouldScroll) {
         // On an editable combo box, Aqua tracks the mouse when it is dragged, not when it is moved.
-        final AquaComboBoxType type = getComboBoxType();
+        AquaComboBoxType type = getComboBoxType();
         if (type != AquaComboBoxType.EDITABLE_COMBO_BOX || e.getID() == MouseEvent.MOUSE_DRAGGED) {
             super.updateListBoxSelectionForEvent(e, shouldScroll);
         }
+    }
+
+    @Override
+    protected MouseListener createMouseListener() {
+        return new AquaComboBoxPopupMouseListener();
+    }
+
+    protected class AquaComboBoxPopupMouseListener extends MouseAdapter implements MouseListener {
+
+        // These methods copied from BasicComboPopup.Handler
+
+        @Override
+        public void mousePressed(MouseEvent e) {
+            if (e.getSource() == list) {
+                return;
+            }
+
+            if (!SwingUtilities.isLeftMouseButton(e) || !comboBox.isEnabled()) {
+                return;
+            }
+
+            if (comboBox.isEditable()) {
+                Component comp = comboBox.getEditor().getEditorComponent();
+                if (shouldFocusEditor(comp)) {
+                    comp.requestFocus();
+                }
+            } else if (comboBox.isRequestFocusEnabled()) {
+                comboBox.requestFocus();
+            }
+            togglePopup();
+        }
+
+        protected boolean shouldFocusEditor(@NotNull Component c) {
+            if (c instanceof JComponent) {
+                JComponent jc = (JComponent) c;
+                if (!jc.isRequestFocusEnabled()) {
+                    return false;
+                }
+            }
+            if (isTextured()) {
+                return false;
+            }
+            return true;
+        }
+
+        @Override
+        public void mouseReleased(MouseEvent e) {
+            if (e.getSource() == list) {
+                if (list.getModel().getSize() > 0) {
+                    // JList mouse listener
+                    if (comboBox.getSelectedIndex() == list.getSelectedIndex()) {
+                        comboBox.getEditor().setItem(list.getSelectedValue());
+                    }
+                    comboBox.setSelectedIndex(list.getSelectedIndex());
+                }
+                comboBox.setPopupVisible(false);
+                // workaround for cancelling an edited item (bug 4530953)
+                if (comboBox.isEditable() && comboBox.getEditor() != null) {
+                    comboBox.configureEditor(comboBox.getEditor(),
+                                             comboBox.getSelectedItem());
+                }
+                return;
+            }
+            // JComboBox mouse listener
+            Component source = (Component)e.getSource();
+            Dimension size = source.getSize();
+            Rectangle bounds = new Rectangle( 0, 0, size.width, size.height);
+            if ( !bounds.contains( e.getPoint() ) ) {
+                MouseEvent newEvent = convertMouseEvent( e );
+                Point location = newEvent.getPoint();
+                Rectangle r = new Rectangle();
+                list.computeVisibleRect( r );
+                if ( r.contains( location ) ) {
+                    if (comboBox.getSelectedIndex() == list.getSelectedIndex()) {
+                        comboBox.getEditor().setItem(list.getSelectedValue());
+                    }
+                    comboBox.setSelectedIndex(list.getSelectedIndex());
+                }
+                comboBox.setPopupVisible(false);
+            }
+            hasEntered = false;
+            stopAutoScrolling();
+        }
+    }
+
+    protected boolean isTextured() {
+        AquaComboBoxUI ui = AquaUtils.getUI(comboBox, AquaComboBoxUI.class);
+        return ui != null && ui.isTextured;
     }
 }

@@ -95,6 +95,7 @@ import javax.swing.tree.TreeCellRenderer;
 import javax.swing.tree.TreeModel;
 import javax.swing.tree.TreePath;
 
+import org.violetlib.aqua.AquaUtils;
 import org.violetlib.treetable.TreeTable;
 import org.violetlib.treetable.TreeTable.DropLocation;
 import org.violetlib.treetable.CellEditorContainer;
@@ -130,8 +131,7 @@ public class BasicTreeTableUI extends TreeTableUI {
 	}
 
 	protected void installDefaults() {
-		LookAndFeel.installColorsAndFont(treeTable,
-				"Table.background", "Table.foreground", "Table.font");
+		AquaUtils.installFont(treeTable,"Table.font");
 		if (treeTable.getAlternateRowColor() == null || treeTable.getAlternateRowColor() instanceof UIResource) {
 			Color c = UIManager.getColor("Table.alternateRowColor");
 			treeTable.setAlternateRowColor(c);
@@ -1689,7 +1689,7 @@ public class BasicTreeTableUI extends TreeTableUI {
 	            LookAndFeel nimbusLaf = UIManager.getLookAndFeel();
 	            Class nimbusLafClass = nimbusLaf.getClass();
 
-	            final Field defaultsField = nimbusLafClass.getDeclaredField("defaults");
+	            Field defaultsField = nimbusLafClass.getDeclaredField("defaults");
 	            defaultsField.setAccessible(true);
 
 	            Object defaults = defaultsField.get(nimbusLaf);
@@ -1697,7 +1697,7 @@ public class BasicTreeTableUI extends TreeTableUI {
 
 	            // NimbusDefaults has this private field:
 	            // private Map<Region, List<LazyStyle>> m;
-	            final Field mField = defaultsClass.getDeclaredField("m");
+	            Field mField = defaultsClass.getDeclaredField("m");
 	            mField.setAccessible(true);
 	            Map m = (Map) mField.get(defaults);
 	            List values = (List) m.get(region);
@@ -1706,7 +1706,7 @@ public class BasicTreeTableUI extends TreeTableUI {
 	                    // find this field:
 	                    // private WeakHashMap<JComponent, WeakReference<NimbusStyle>> overridesCache;
 	                    Class lazyStyleClass = lazyStyleObj.getClass();
-	                    final Field overridesCacheField =
+	                    Field overridesCacheField =
 	                            lazyStyleClass.getDeclaredField("overridesCache");
 	                    overridesCacheField.setAccessible(true);
 	                    Map overridesCache = (Map) overridesCacheField.get(lazyStyleObj);

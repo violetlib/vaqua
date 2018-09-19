@@ -1,4 +1,12 @@
 /*
+ * Copyright (c) 2018 Alan Snyder.
+ * All rights reserved.
+ *
+ * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
+ * accompanying license terms.
+ */
+
+/*
  * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -26,40 +34,61 @@
 package org.violetlib.aqua;
 
 import java.awt.*;
-
 import javax.swing.*;
 import javax.swing.plaf.ComponentUI;
 import javax.swing.plaf.basic.BasicTextPaneUI;
-import javax.swing.text.*;
+import javax.swing.text.Caret;
+import javax.swing.text.JTextComponent;
+
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.violetlib.jnr.aqua.AquaUIPainter;
 
 //[3663467] moved it to sublcass from BasicEditorPaneUI to BasicTextPaneUI. (vm)
-public class AquaTextPaneUI extends BasicTextPaneUI implements FocusRingOutlineProvider {
-    public static ComponentUI createUI(final JComponent c) {
+public class AquaTextPaneUI extends BasicTextPaneUI implements FocusRingOutlineProvider, AquaComponentUI {
+    public static ComponentUI createUI(JComponent c) {
         return new AquaTextPaneUI();
     }
 
+    private JTextComponent editor;
+    private AquaFocusHandler handler;
+    private boolean oldDragState = false;
+    protected @NotNull BasicContextualColors colors;
+    protected @Nullable AppearanceContext appearanceContext;
+
     public AquaTextPaneUI() {
-        super();
+        colors = AquaColors.TEXT_COLORS;
     }
 
-    AquaFocusHandler handler;
+    @Override
+    public void installUI(JComponent c) {
+        if (c instanceof JTextComponent) {
+            editor = (JTextComponent) c;
+            super.installUI(c);
+        }
+    }
 
     @Override
-     public Shape getFocusRingOutline(JComponent c) {
-         return null;    // No focus ring on a text pane
-     }
+    public void uninstallUI(JComponent c) {
+        super.uninstallUI(c);
+        editor = null;
+    }
 
+    @Override
     protected void installListeners() {
         super.installListeners();
-        final JComponent c = getComponent();
+        JComponent c = getComponent();
         handler = new AquaFocusHandler();
         c.addFocusListener(handler);
         c.addPropertyChangeListener(handler);
         AquaUtilControlSize.addSizePropertyListener(c);
+        AppearanceManager.installListener(editor);
     }
 
+    @Override
     protected void uninstallListeners() {
-        final JComponent c = getComponent();
+        AppearanceManager.uninstallListener(editor);
+        JComponent c = getComponent();
         AquaUtilControlSize.removeSizePropertyListener(c);
         c.removeFocusListener(handler);
         c.removePropertyChangeListener(handler);
@@ -67,38 +96,77 @@ public class AquaTextPaneUI extends BasicTextPaneUI implements FocusRingOutlineP
         super.uninstallListeners();
     }
 
-    boolean oldDragState = false;
+    @Override
     protected void installDefaults() {
-        final JTextComponent c = getComponent();
         if (!GraphicsEnvironment.isHeadless()) {
-            oldDragState = c.getDragEnabled();
-            c.setDragEnabled(true);
+            oldDragState = editor.getDragEnabled();
+            editor.setDragEnabled(true);
         }
         super.installDefaults();
+        configureAppearanceContext(null);
     }
 
+    @Override
     protected void uninstallDefaults() {
         if (!GraphicsEnvironment.isHeadless()) {
-            getComponent().setDragEnabled(oldDragState);
+            editor.setDragEnabled(oldDragState);
         }
         super.uninstallDefaults();
     }
 
     // Install a default keypress action which handles Cmd and Option keys properly
+    @Override
     protected void installKeyboardActions() {
         super.installKeyboardActions();
         AquaKeyBindings bindings = AquaKeyBindings.instance();
         bindings.setDefaultAction(getKeymapName());
 
-        final JTextComponent c = getComponent();
+        JTextComponent c = getComponent();
         bindings.installAquaUpDownActions(c);
     }
 
+    @Override
+    public void appearanceChanged(@NotNull JComponent c, @NotNull AquaAppearance appearance) {
+        configureAppearanceContext(appearance);
+    }
+
+    @Override
+    public void activeStateChanged(@NotNull JComponent c, boolean isActive) {
+        configureAppearanceContext(null);
+    }
+
+    protected void configureAppearanceContext(@Nullable AquaAppearance appearance) {
+        if (appearance == null) {
+            appearance = AppearanceManager.ensureAppearance(editor);
+        }
+        AquaUIPainter.State state = getState();
+        appearanceContext = new AppearanceContext(appearance, state, false, false);
+        AquaColors.installColors(editor, appearanceContext, colors);
+        editor.repaint();
+    }
+
+    protected AquaUIPainter.State getState() {
+        boolean isActive = AquaFocusHandler.isActive(editor);
+        boolean hasFocus = AquaFocusHandler.hasFocus(editor);
+        return isActive
+                ? (hasFocus ? AquaUIPainter.State.ACTIVE_DEFAULT : AquaUIPainter.State.ACTIVE)
+                : AquaUIPainter.State.INACTIVE;
+    }
+
+    @Override
+    public void update(Graphics g, JComponent c) {
+        AquaAppearance appearance = AppearanceManager.registerCurrentAppearance(c);
+        super.update(g, c);
+        AppearanceManager.restoreCurrentAppearance(appearance);
+    }
+
+    @Override
     protected Caret createCaret() {
         return new AquaCaret();
     }
 
-    protected Highlighter createHighlighter() {
-        return new AquaHighlighter();
+    @Override
+    public Shape getFocusRingOutline(JComponent c) {
+        return null;    // No focus ring on a text pane
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015 Alan Snyder.
+ * Copyright (c) 2015-2018 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -9,54 +9,79 @@
 package org.violetlib.aqua;
 
 import java.awt.*;
-import java.beans.PropertyChangeEvent;
-import java.beans.PropertyChangeListener;
 import javax.swing.*;
 import javax.swing.plaf.ComponentUI;
-import javax.swing.plaf.basic.BasicViewportUI;
+import javax.swing.plaf.ViewportUI;
+
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.violetlib.jnr.aqua.AquaUIPainter;
 
 /**
  * Support vibrant background.
  */
-public class AquaViewportUI extends BasicViewportUI {
-    static AquaUtils.RecyclableSingleton<AquaViewportUI> instance = new AquaUtils.RecyclableSingletonFromDefaultConstructor<AquaViewportUI>(AquaViewportUI.class);
+public class AquaViewportUI extends ViewportUI implements AquaComponentUI {
 
-    public PropertyChangeListener propertyChangeListener = new PropertyChangeListener() {
-        @Override
-        public void propertyChange(PropertyChangeEvent evt) {
-            AquaViewportUI.this.propertyChange(evt);
-        }
-    };
-
-    public static ComponentUI createUI(final JComponent c) {
-        return instance.get();
+    public static ComponentUI createUI(JComponent c) {
+        return new AquaViewportUI();
     }
+
+    protected JViewport viewport;
+    protected @NotNull BasicContextualColors colors;
+    protected @Nullable AppearanceContext appearanceContext;
 
     @Override
     public void installUI(JComponent c) {
         super.installUI(c);
+        viewport = (JViewport) c;
         AquaVibrantSupport.updateVibrantStyle(c);
-        c.addPropertyChangeListener(propertyChangeListener);
+        AppearanceManager.installListener(c);
+        configureAppearanceContext(null);
     }
 
     @Override
     public void uninstallUI(JComponent c) {
-        c.removePropertyChangeListener(propertyChangeListener);
+        AppearanceManager.uninstallListener(c);
         AquaVibrantSupport.uninstallVibrantStyle(c);
+        viewport = null;
         super.uninstallUI(c);
     }
 
     @Override
-    public final void update(final Graphics g, final JComponent c) {
+    public void appearanceChanged(@NotNull JComponent c, @NotNull AquaAppearance appearance) {
+        configureAppearanceContext(appearance);
+    }
+
+    @Override
+    public void activeStateChanged(@NotNull JComponent c, boolean isActive) {
+        configureAppearanceContext(null);
+    }
+
+    protected void configureAppearanceContext(@Nullable AquaAppearance appearance) {
+        if (appearance == null) {
+            appearance = AppearanceManager.ensureAppearance(viewport);
+        }
+        AquaUIPainter.State state = getState();
+        appearanceContext = new AppearanceContext(appearance, state, false, false);
+        colors = AquaColors.CONTROL_COLORS;
+        AquaColors.installColors(viewport, appearanceContext, colors);
+        viewport.repaint();
+    }
+
+    protected AquaUIPainter.State getState() {
+        return AquaFocusHandler.isActive(viewport) ? AquaUIPainter.State.ACTIVE : AquaUIPainter.State.INACTIVE;
+    }
+
+    @Override
+    public final void update(@NotNull Graphics g, @NotNull JComponent c) {
+
+        AquaAppearance appearance = AppearanceManager.registerCurrentAppearance(c);
+
         if (c.isOpaque() || AquaVibrantSupport.isVibrant(c)) {
             AquaUtils.fillRect(g, c, AquaUtils.ERASE_IF_VIBRANT);
         }
-        paint(g, c);
-    }
 
-    protected void propertyChange(PropertyChangeEvent evt) {
-        if (AquaVibrantSupport.processVibrantStyleChange(evt)) {
-            return;
-        }
+        paint(g, c);
+        AppearanceManager.restoreCurrentAppearance(appearance);
     }
 }

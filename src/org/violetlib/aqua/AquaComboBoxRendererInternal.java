@@ -1,5 +1,5 @@
 /*
- * Changes Copyright (c) 2015-2016 Alan Snyder.
+ * Changes Copyright (c) 2015-2018 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -36,32 +36,39 @@ package org.violetlib.aqua;
 import javax.swing.*;
 import java.awt.*;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.violetlib.jnr.aqua.PopupButtonLayoutConfiguration;
 import org.violetlib.jnr.aqua.AquaUIPainter.Size;
 
 @SuppressWarnings("serial") // Superclass is not serializable across versions
 public class AquaComboBoxRendererInternal<E> extends JLabel implements ListCellRenderer<E> {
-    final JComboBox<?> fComboBox;
+    protected final JComboBox<?> fComboBox;
     protected boolean fSelected;
     protected boolean fChecked;
     protected boolean fInList;
     protected boolean fEditable;
     protected boolean fDrawCheckedItem = true;
+    protected boolean fIsDark;
 
     protected static int checkMarkLeftInset = 5;
     protected static int checkMarkTopInset = 3;
+
     protected static int menuLabelLeftInset = 21;
-    protected static int buttonLabelLeftInset = 0;    // already determined using content area and padding
+    protected static int editableMenuLabelLeftInset = 5;
+    protected static int menuLabelRightInset = 5;
     protected static int menuLabelTopInset = 0;
     protected static int menuLabelBottomInset = 1;
-    protected static int buttonLabelTopInset = 0;     // already determined using content area
-    protected static int buttonLabelBottomInset = 0;    // already determined using content area
-    protected static int buttonLabelRightInset = 0;    // already determined using content area and padding
     protected static int miniMenuLabelTopInset = 1;
     protected static int miniMenuLabelBottomInset = 0;
 
+    protected static int buttonLabelLeftInset = 0;    // already determined using content area and padding
+    protected static int buttonLabelTopInset = 0;     // already determined using content area
+    protected static int buttonLabelBottomInset = 0;  // already determined using content area
+    protected static int buttonLabelRightInset = 0;   // already determined using content area and padding
+
     // Provides space for a checkbox, and is translucent
-    public AquaComboBoxRendererInternal(final JComboBox<?> comboBox) {
+    public AquaComboBoxRendererInternal(JComboBox<?> comboBox) {
         super();
         fComboBox = comboBox;
     }
@@ -84,7 +91,7 @@ public class AquaComboBoxRendererInternal<E> extends JLabel implements ListCellR
     }
 
     // Don't paint the border here, it gets painted by the UI
-    protected void paintBorder(final Graphics g) {
+    protected void paintBorder(Graphics g) {
 
     }
 
@@ -93,10 +100,10 @@ public class AquaComboBoxRendererInternal<E> extends JLabel implements ListCellR
     }
 
     // Really means is the one with the mouse over it
-    public Component getListCellRendererComponent(final JList<? extends E> list,
-                                                  final E value, int index,
-                                                  final boolean isSelected,
-                                                  final boolean cellHasFocus) {
+    public Component getListCellRendererComponent(JList<? extends E> list,
+                                                  E value, int index,
+                                                  boolean isSelected,
+                                                  boolean cellHasFocus) {
         fInList = (index >= 0); // When the button wants the item painted, it passes in -1
         fSelected = isSelected;
         if (index < 0) {
@@ -113,7 +120,7 @@ public class AquaComboBoxRendererInternal<E> extends JLabel implements ListCellR
 
         // Fix for Radar # 3204287 where we ask for an item at a negative index!
         if (index >= 0) {
-            final Object item = fComboBox.getItemAt(index);
+            Object item = fComboBox.getItemAt(index);
             // Ideally, there would be a way to set check marks on individual model elements of a pull down menu
             // independently of the selected element, which does not have a special display.
             fChecked = fInList && item != null && item.equals(fComboBox.getSelectedItem()) && !isPullDown(fComboBox);
@@ -122,15 +129,21 @@ public class AquaComboBoxRendererInternal<E> extends JLabel implements ListCellR
         }
 
         fEditable = fComboBox.isEditable();
-        if (isSelected) {
-            setBackground(list.getSelectionBackground());
-            setForeground(list.getSelectionForeground());
-        } else {
-            setBackground(list.getBackground());
-            setForeground(list.getForeground());
-        }
 
-        setFont(list.getFont());
+        //if (fInList) {
+            if (isSelected) {
+                setBackground(list.getSelectionBackground());
+                setForeground(list.getSelectionForeground());
+            } else {
+                setBackground(list.getBackground());
+                setForeground(list.getForeground());
+            }
+            setFont(list.getFont());
+//        } else {
+//            setBackground(fComboBox.getBackground());
+//            setForeground(fComboBox.getForeground());
+//            setFont(fComboBox.getFont());
+//        }
 
         if (value instanceof Icon) {
             setIcon((Icon)value);
@@ -139,19 +152,25 @@ public class AquaComboBoxRendererInternal<E> extends JLabel implements ListCellR
             setIcon(null);
             setText((value == null) ? " " : value.toString());
         }
+
+        AquaAppearance appearance = AppearanceManager.getRegisteredAppearance(fComboBox);
+        fIsDark = appearance != null && appearance.isDark();
+
         return this;
     }
 
-    public Insets getInsets(Insets insets) {
-        if (insets == null) insets = new Insets(0, 0, 0, 0);
+    public @NotNull Insets getInsets(@Nullable Insets insets) {
+        if (insets == null) {
+            insets = new Insets(0, 0, 0, 0);
+        }
 
         Size size = getComboBoxSizeVariant();
 
-        if (fInList && !fEditable) {
+        if (fInList) {
             insets.top = size == Size.MINI ? miniMenuLabelTopInset : menuLabelTopInset;
             insets.bottom = size == Size.MINI ? miniMenuLabelBottomInset : menuLabelBottomInset;
-            insets.right = 5;
-            insets.left = menuLabelLeftInset;
+            insets.left = fEditable ? editableMenuLabelLeftInset : menuLabelLeftInset;
+            insets.right = menuLabelRightInset;
         } else {
             insets.top = buttonLabelTopInset;
             insets.bottom = buttonLabelBottomInset;
@@ -162,12 +181,12 @@ public class AquaComboBoxRendererInternal<E> extends JLabel implements ListCellR
         return insets;
     }
 
-    protected void setDrawCheckedItem(final boolean drawCheckedItem) {
+    protected void setDrawCheckedItem(boolean drawCheckedItem) {
         this.fDrawCheckedItem = drawCheckedItem;
     }
 
     // Paint this component, and a checkbox if it's the selected item and not in the button
-    protected void paintComponent(final Graphics g) {
+    protected void paintComponent(Graphics g) {
         if (fInList) {
             g.setColor(getBackground());
             g.fillRect(0, 0, getWidth(), getHeight());
@@ -175,14 +194,12 @@ public class AquaComboBoxRendererInternal<E> extends JLabel implements ListCellR
             if (fChecked && !fEditable && fDrawCheckedItem) {
                 Size size = getComboBoxSizeVariant();
                 Icon checkMark = AquaImageFactory.getPopupMenuItemCheckIcon(size);
-                if (fSelected && checkMark instanceof AquaImageFactory.InvertableImageIcon) {
-                    AquaImageFactory.InvertableImageIcon ic = (AquaImageFactory.InvertableImageIcon) checkMark;
-                    checkMark = ic.getInvertedIcon();
-                }
+                Color color = getForeground();
+                Image im = AquaImageFactory.getProcessedImage(checkMark, color);
                 int height = getHeight();
                 int left = checkMarkLeftInset;
                 int top = Math.max(checkMarkTopInset, (height - checkMark.getIconHeight() - 1) / 2);
-                checkMark.paintIcon(fComboBox, g, left, top);
+                g.drawImage(im, left, top, null);
             }
         }
         super.paintComponent(g);
@@ -206,4 +223,46 @@ public class AquaComboBoxRendererInternal<E> extends JLabel implements ListCellR
         }
         return false;
     }
+
+     @Override
+     public void validate() {}
+
+     @Override
+     public void invalidate() {}
+
+     @Override
+     public void repaint() {}
+
+     @Override
+     public void revalidate() {}
+
+     @Override
+     public void repaint(long tm, int x, int y, int width, int height) {}
+
+     @Override
+     public void repaint(Rectangle r) {}
+
+     @Override
+     public void firePropertyChange(String propertyName, byte oldValue, byte newValue) {}
+
+     @Override
+     public void firePropertyChange(String propertyName, char oldValue, char newValue) {}
+
+     @Override
+     public void firePropertyChange(String propertyName, short oldValue, short newValue) {}
+
+     @Override
+     public void firePropertyChange(String propertyName, int oldValue, int newValue) {}
+
+     @Override
+     public void firePropertyChange(String propertyName, long oldValue, long newValue) {}
+
+     @Override
+     public void firePropertyChange(String propertyName, float oldValue, float newValue) {}
+
+     @Override
+     public void firePropertyChange(String propertyName, double oldValue, double newValue) {}
+
+     @Override
+     public void firePropertyChange(String propertyName, boolean oldValue, boolean newValue) {}
 }

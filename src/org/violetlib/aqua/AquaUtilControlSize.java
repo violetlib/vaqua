@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015 Alan Snyder.
+ * Copyright (c) 2015-2018 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -58,16 +58,16 @@ public class AquaUtilControlSize {
         return sizeListener.get();
     }
 
-    protected static void addSizePropertyListener(final JComponent c) {
+    protected static void addSizePropertyListener(JComponent c) {
         c.addPropertyChangeListener(CLIENT_PROPERTY_KEY, getSizeListener());
         AquaUtilControlSize.applyComponentSize(c, c.getClientProperty(CLIENT_PROPERTY_KEY));
     }
 
-    protected static void removeSizePropertyListener(final JComponent c) {
+    protected static void removeSizePropertyListener(JComponent c) {
         c.removePropertyChangeListener(CLIENT_PROPERTY_KEY, getSizeListener());
     }
 
-    private static Size getSizeFromString(final String name) {
+    private static Size getSizeFromString(String name) {
         if ("regular".equalsIgnoreCase(name)) return Size.REGULAR;
         if ("small".equalsIgnoreCase(name)) return Size.SMALL;
         if ("mini".equalsIgnoreCase(name)) return Size.MINI;
@@ -84,8 +84,8 @@ public class AquaUtilControlSize {
     }
 
     private static Size getDefaultSize() {
-        final String sizeProperty = java.security.AccessController.doPrivileged((PrivilegedAction<String>) () -> System.getProperty(SYSTEM_PROPERTY_KEY));
-        final Size size = getSizeFromString(sizeProperty);
+        String sizeProperty = java.security.AccessController.doPrivileged((PrivilegedAction<String>) () -> System.getProperty(SYSTEM_PROPERTY_KEY));
+        Size size = getSizeFromString(sizeProperty);
         if (size != null) return size;
         return Size.REGULAR;
     }
@@ -93,11 +93,11 @@ public class AquaUtilControlSize {
     protected final static Size defaultSize = getDefaultSize();
 
     public static Size getUserSizeFrom(JComponent c) {
-        final Object sizeProp = c.getClientProperty(CLIENT_PROPERTY_KEY);
+        Object sizeProp = c.getClientProperty(CLIENT_PROPERTY_KEY);
         if (sizeProp == null) {
             return AquaUtilControlSize.defaultSize;
         }
-        final Size size = getSizeFromString(sizeProp.toString());
+        Size size = getSizeFromString(sizeProp.toString());
         return size != null ? size : Size.REGULAR;
     }
 
@@ -122,14 +122,14 @@ public class AquaUtilControlSize {
     }
 
     protected static class PropertySizeListener implements PropertyChangeListener {
-        public void propertyChange(final PropertyChangeEvent evt) {
-            final String key = evt.getPropertyName();
+        public void propertyChange(PropertyChangeEvent evt) {
+            String key = evt.getPropertyName();
             if (!CLIENT_PROPERTY_KEY.equalsIgnoreCase(key)) return;
 
-            final Object source = evt.getSource();
+            Object source = evt.getSource();
             if (!(source instanceof JComponent)) return;
 
-            final JComponent c = (JComponent)source;
+            JComponent c = (JComponent)source;
             applyComponentSize(c, evt.getNewValue());
         }
     }

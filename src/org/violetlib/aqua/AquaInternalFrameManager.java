@@ -1,4 +1,12 @@
 /*
+ * Changes copyright (c) 2018 Alan Snyder.
+ * All rights reserved.
+ *
+ * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
+ * accompanying license terms.
+ */
+
+/*
  * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -28,7 +36,6 @@ package org.violetlib.aqua;
 import java.awt.*;
 import java.beans.PropertyVetoException;
 import java.util.Vector;
-
 import javax.swing.*;
 
 /**
@@ -73,7 +80,7 @@ public class AquaInternalFrameManager extends DefaultDesktopManager {
      */
     Vector<JInternalFrame> fChildFrames = new Vector<JInternalFrame>(1);
 
-    public void closeFrame(final JInternalFrame f) {
+    public void closeFrame(JInternalFrame f) {
         if (f == fCurrentFrame) {
             activateNextFrame();
         }
@@ -81,7 +88,7 @@ public class AquaInternalFrameManager extends DefaultDesktopManager {
         super.closeFrame(f);
     }
 
-    public void deiconifyFrame(final JInternalFrame f) {
+    public void deiconifyFrame(JInternalFrame f) {
         JInternalFrame.JDesktopIcon desktopIcon;
 
         desktopIcon = f.getDesktopIcon();
@@ -91,19 +98,19 @@ public class AquaInternalFrameManager extends DefaultDesktopManager {
         super.deiconifyFrame(f);
     }
 
-    void addIcon(final Container c, final JInternalFrame.JDesktopIcon desktopIcon) {
+    void addIcon(Container c, JInternalFrame.JDesktopIcon desktopIcon) {
         c.add(desktopIcon);
     }
 
     /** Removes the frame from its parent and adds its desktopIcon to the parent. */
-    public void iconifyFrame(final JInternalFrame f) {
+    public void iconifyFrame(JInternalFrame f) {
         // Same as super except doesn't deactivate it
         JInternalFrame.JDesktopIcon desktopIcon;
         Container c;
 
         desktopIcon = f.getDesktopIcon();
         // Position depends on *current* position of frame, unlike super which reuses the first position
-        final Rectangle r = getBoundsForIconOf(f);
+        Rectangle r = getBoundsForIconOf(f);
         desktopIcon.setBounds(r.x, r.y, r.width, r.height);
 
         c = f.getParent();
@@ -115,7 +122,7 @@ public class AquaInternalFrameManager extends DefaultDesktopManager {
     }
 
     // WindowsDesktopManager code
-    public void activateFrame(final JInternalFrame f) {
+    public void activateFrame(JInternalFrame f) {
         try {
             if (f != null) super.activateFrame(f);
 
@@ -135,23 +142,23 @@ public class AquaInternalFrameManager extends DefaultDesktopManager {
             }
 
             fCurrentFrame = f;
-        } catch(final PropertyVetoException e) {}
+        } catch(PropertyVetoException e) {}
     }
 
-    private void switchFrame(final boolean next) {
+    private void switchFrame(boolean next) {
         if (fCurrentFrame == null) {
             // initialize first frame we find
             if (fInitialFrame != null) activateFrame(fInitialFrame);
             return;
         }
 
-        final int count = fChildFrames.size();
+        int count = fChildFrames.size();
         if (count <= 1) {
             // No other child frames.
             return;
         }
 
-        final int currentIndex = fChildFrames.indexOf(fCurrentFrame);
+        int currentIndex = fChildFrames.indexOf(fCurrentFrame);
         if (currentIndex == -1) {
             // the "current frame" is no longer in the list
             fCurrentFrame = null;
@@ -170,7 +177,7 @@ public class AquaInternalFrameManager extends DefaultDesktopManager {
                 nextIndex = count - 1;
             }
         }
-        final JInternalFrame f = fChildFrames.elementAt(nextIndex);
+        JInternalFrame f = fChildFrames.elementAt(nextIndex);
         activateFrame(f);
         fCurrentFrame = f;
     }
@@ -188,7 +195,7 @@ public class AquaInternalFrameManager extends DefaultDesktopManager {
     /** same as above but will activate a frame if none
      *  have been selected
      */
-    public void activateNextFrame(final JInternalFrame f) {
+    public void activateNextFrame(JInternalFrame f) {
         fInitialFrame = f;
         switchFrame(true);
     }

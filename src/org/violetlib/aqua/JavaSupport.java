@@ -14,6 +14,8 @@ import java.awt.image.ImageFilter;
 import java.util.function.Function;
 import javax.swing.*;
 
+import org.jetbrains.annotations.NotNull;
+
 /**
  * Platform support that varies based on the Java version.
  */
@@ -22,7 +24,7 @@ public class JavaSupport {
 
     public interface JavaSupportImpl {
         int getScaleFactor(Graphics g);
-        boolean hasOpaqueBeenExplicitlySet(final JComponent c);
+        boolean hasOpaqueBeenExplicitlySet(JComponent c);
         Image getDockIconImage();
         void drawString(JComponent c, Graphics2D g, String string, float x, float y);
         void drawStringUnderlineCharAt(JComponent c, Graphics2D g, String string, int underlinedIndex,
@@ -35,6 +37,7 @@ public class JavaSupport {
         Image applyFilter(Image image, ImageFilter filter);
         Image applyMapper(Image source, Function<Image,Image> mapper);
         Image applyMapper(Image source, AquaMultiResolutionImage.Mapper mapper);
+        @NotNull Image getResolutionVariant(@NotNull Image source, double width, double height);
         BufferedImage createImage(int width, int height, int[] data);
         void preload(Image image, int availableInfo);
         void lockRenderQueue();
@@ -49,7 +52,7 @@ public class JavaSupport {
         return impl.getScaleFactor(g);
     }
 
-    public static boolean hasOpaqueBeenExplicitlySet(final JComponent c) {
+    public static boolean hasOpaqueBeenExplicitlySet(JComponent c) {
         return impl.hasOpaqueBeenExplicitlySet(c);
     }
 
@@ -96,6 +99,10 @@ public class JavaSupport {
 
     public static Image applyMapper(Image source, AquaMultiResolutionImage.Mapper mapper) {
         return impl.applyMapper(source, mapper);
+    }
+
+    public static @NotNull Image getResolutionVariant(@NotNull Image source, double width, double height) {
+        return impl.getResolutionVariant(source, width, height);
     }
 
     /**

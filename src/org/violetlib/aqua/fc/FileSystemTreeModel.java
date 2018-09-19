@@ -1,8 +1,6 @@
 /*
- * @(#)FileSystemTreeModel.java
- *
  * Copyright (c) 2003-2013 Werner Randelshofer, Switzerland.
- * http://www.randelshofer.ch
+ * Copyright (c) 2018 Alan Snyder
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the
@@ -12,22 +10,23 @@
 
 package org.violetlib.aqua.fc;
 
-import javax.swing.*;
-import javax.swing.event.EventListenerList;
-import javax.swing.event.TreeModelEvent;
-import javax.swing.event.TreeModelListener;
-import javax.swing.filechooser.FileSystemView;
-import javax.swing.tree.*;
 import java.awt.*;
 import java.io.File;
 import java.io.Serializable;
 import java.text.CollationKey;
 import java.text.Collator;
 import java.util.*;
+import javax.swing.*;
+import javax.swing.event.EventListenerList;
+import javax.swing.event.TreeModelEvent;
+import javax.swing.event.TreeModelListener;
+import javax.swing.filechooser.FileSystemView;
+import javax.swing.tree.*;
 
+import org.jetbrains.annotations.NotNull;
 import org.violetlib.aqua.AquaUtils;
 
-/**
+ /**
  * The FileSystemTreeModel provides the data model for the file system in a file chooser.
  * <p>
  * It is capable of resolving aliases to files, and it updates its content
@@ -886,7 +885,7 @@ public class FileSystemTreeModel implements TreeModel {
             }
         }
 
-        public String getUserName() {
+        public @NotNull String getUserName() {
             if (userName == null) {
                 userName = fileChooser.getName(file);
             }
@@ -985,11 +984,11 @@ public class FileSystemTreeModel implements TreeModel {
         /**
          * Invoke the runnable when validation is complete, either now or later. This method does not block.
          */
-        public void invokeWhenValid(final Runnable r) {
+        public void invokeWhenValid(Runnable r) {
             invokeWhenValid(r, 100);
         }
 
-        protected void invokeWhenValid(final Runnable r, final int counter) {
+        protected void invokeWhenValid(Runnable r, int counter) {
             if (counter > 0) {
                 if (infoState == VALID) {
                     r.run();
@@ -1010,7 +1009,7 @@ public class FileSystemTreeModel implements TreeModel {
         /**
          * Updates values, that may change in a file.
          */
-        public final void validateInfo() {
+        public void validateInfo() {
             if (infoState == INVALID) {
                 infoState = VALIDATING;
 
@@ -1274,10 +1273,10 @@ public class FileSystemTreeModel implements TreeModel {
                     return;
                 }
 
-                final long startTime = System.currentTimeMillis();
+                long startTime = System.currentTimeMillis();
 
                 // Check if the directory denoted by this node exists.
-                final boolean exists = file != null && file.exists();
+                boolean exists = file != null && file.exists();
 
                 // The updating algorithm is split up into two steps.
                 // Phase 1 does the I/O intensive part. It is done on the worker
@@ -1305,7 +1304,7 @@ public class FileSystemTreeModel implements TreeModel {
                 //                          (instance variable "children").
 
                 // Step 1.1 Fetch fresh files
-                final File[] freshFiles;
+                File[] freshFiles;
                 if (exists && isTraversable()) {
                     freshFiles = getFiles();
                 } else {
@@ -1389,7 +1388,7 @@ public class FileSystemTreeModel implements TreeModel {
                         }
                     }
                 }
-                final Node[] freshNodes = (Node[]) freshNodeList.toArray(new Node[freshNodeList.size()]);
+                Node[] freshNodes = (Node[]) freshNodeList.toArray(new Node[freshNodeList.size()]);
                 if (this != validator) {
                     return;
                 }
@@ -1679,7 +1678,7 @@ public class FileSystemTreeModel implements TreeModel {
         }
 
         @Override
-        public void invokeWhenValid(final Runnable r) {
+        public void invokeWhenValid(Runnable r) {
             super.invokeWhenValid(new Runnable() {
                 public void run() {
                     invokeWhenChildrenValid(r, 100);
@@ -1687,7 +1686,7 @@ public class FileSystemTreeModel implements TreeModel {
             });
         }
 
-        private void invokeWhenChildrenValid(final Runnable r, final int counter) {
+        private void invokeWhenChildrenValid(Runnable r, int counter) {
             if (counter > 0) {
                 if (childrenState == VALID) {
                     r.run();

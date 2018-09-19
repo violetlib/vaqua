@@ -1,5 +1,5 @@
 /*
- * Changes Copyright (c) 2015-2016 Alan Snyder.
+ * Changes Copyright (c) 2015-2018 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -33,6 +33,8 @@
 
 package org.violetlib.aqua;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.violetlib.jnr.LayoutInfo;
 import org.violetlib.jnr.aqua.AquaUIPainter;
 import org.violetlib.jnr.aqua.SplitPaneDividerLayoutConfiguration;
@@ -46,15 +48,21 @@ import javax.swing.border.Border;
 import javax.swing.plaf.ComponentUI;
 import javax.swing.plaf.basic.*;
 
-public class AquaSplitPaneUI extends BasicSplitPaneUI implements MouseListener, ContainerListener, PropertyChangeListener {
-    static final String DIVIDER_PAINTER_KEY = "JSplitPane.dividerPainter";
+public class AquaSplitPaneUI extends BasicSplitPaneUI
+        implements MouseListener, ContainerListener, PropertyChangeListener, AquaComponentUI {
+
+    public static ComponentUI createUI(JComponent x) {
+        return new AquaSplitPaneUI();
+    }
+
+    public static final String DIVIDER_PAINTER_KEY = "JSplitPane.dividerPainter";
 
     public static final String SPLIT_PANE_STYLE_KEY = "JSplitPane.style";
     public static final String QUAQUA_SPLIT_PANE_STYLE_KEY = "Quaqua.SplitPane.style";
 
-    public enum SplitPaneStyle { THIN, THICK, PANE_SPLITTER}
+    public enum SplitPaneStyle { THIN, THICK, PANE_SPLITTER }
 
-    final AquaUIPainter painter = AquaPainting.create();
+    private final AquaUIPainter painter = AquaPainting.create();
 
     protected static SplitPaneStyle defaultStyle = SplitPaneStyle.THIN;
     protected SplitPaneStyle style = defaultStyle;
@@ -64,12 +72,11 @@ public class AquaSplitPaneUI extends BasicSplitPaneUI implements MouseListener, 
     private boolean ignoreDividerLocationChange;
     private boolean isInLayout;
 
-    public AquaSplitPaneUI() {
-        super();
-    }
+    protected @NotNull BasicContextualColors colors;
+    protected @Nullable AppearanceContext appearanceContext;
 
-    public static ComponentUI createUI(final JComponent x) {
-        return new AquaSplitPaneUI();
+    public AquaSplitPaneUI() {
+        colors = AquaColors.CLEAR_CONTROL_COLORS;
     }
 
     public BasicSplitPaneDivider createDefaultDivider() {
@@ -79,12 +86,14 @@ public class AquaSplitPaneUI extends BasicSplitPaneUI implements MouseListener, 
     @Override
     protected void installDefaults() {
         super.installDefaults();
+        LookAndFeel.installProperty(splitPane, "opaque", false);
         splitPane.setOneTouchExpandable(false);
         SplitPaneStyle specifiedStyle = getClientSpecifiedStyle();
         if (specifiedStyle != null) {
             style = specifiedStyle;
         }
         updateDividerSize();
+        configureAppearanceContext(null, splitPane);
     }
 
     protected void installListeners() {
@@ -93,14 +102,36 @@ public class AquaSplitPaneUI extends BasicSplitPaneUI implements MouseListener, 
         splitPane.addPropertyChangeListener(SPLIT_PANE_STYLE_KEY, this);
         splitPane.addPropertyChangeListener(QUAQUA_SPLIT_PANE_STYLE_KEY, this);
         splitPane.addContainerListener(this);
+        AppearanceManager.installListener(splitPane);
     }
 
     protected void uninstallListeners() {
+        AppearanceManager.uninstallListener(splitPane);
         splitPane.removeContainerListener(this);
         splitPane.removePropertyChangeListener(DIVIDER_PAINTER_KEY, this);
         splitPane.removePropertyChangeListener(SPLIT_PANE_STYLE_KEY, this);
         splitPane.removePropertyChangeListener(QUAQUA_SPLIT_PANE_STYLE_KEY, this);
         super.uninstallListeners();
+    }
+
+    @Override
+    public void appearanceChanged(@NotNull JComponent c, @NotNull AquaAppearance appearance) {
+        configureAppearanceContext(appearance, (JSplitPane)c);
+    }
+
+    @Override
+    public void activeStateChanged(@NotNull JComponent c, boolean isActive) {
+        // not active state sensitive
+    }
+
+    protected void configureAppearanceContext(@Nullable AquaAppearance appearance, @NotNull JSplitPane s) {
+        if (appearance == null) {
+            appearance = AppearanceManager.ensureAppearance(s);
+        }
+        AquaUIPainter.State state = AquaUIPainter.State.ACTIVE;
+        appearanceContext = new AppearanceContext(appearance, state, false, false);
+        AquaColors.installColors(s, appearanceContext, colors);
+        s.repaint();
     }
 
     protected void updateStyle() {
@@ -138,7 +169,7 @@ public class AquaSplitPaneUI extends BasicSplitPaneUI implements MouseListener, 
     }
 
     public int getFixedDividerSize() {
-        final boolean isVerticalDivider = splitPane.getOrientation() == JSplitPane.HORIZONTAL_SPLIT;
+        boolean isVerticalDivider = splitPane.getOrientation() == JSplitPane.HORIZONTAL_SPLIT;
         AquaUIPainter.DividerWidget w = getWidget();
         AquaUIPainter.Orientation o = isVerticalDivider ? AquaUIPainter.Orientation.VERTICAL : AquaUIPainter.Orientation.HORIZONTAL;
         SplitPaneDividerLayoutConfiguration g = new SplitPaneDividerLayoutConfiguration(w, o, 0);
@@ -380,10 +411,12 @@ public class AquaSplitPaneUI extends BasicSplitPaneUI implements MouseListener, 
 
     @Override
     public void update(Graphics g, JComponent c) {
+        AquaAppearance appearance = AppearanceManager.registerCurrentAppearance(c);
         if (c.isOpaque()) {
             AquaUtils.fillRect(g, c, AquaUtils.ERASE_IF_VIBRANT);
         }
         paint(g, c);
+        AppearanceManager.restoreCurrentAppearance(appearance);
     }
 
     @Override
@@ -398,15 +431,15 @@ public class AquaSplitPaneUI extends BasicSplitPaneUI implements MouseListener, 
         super.paint(g, jc);
     }
 
-    public void mouseClicked(final MouseEvent e) {
+    public void mouseClicked(MouseEvent e) {
         if (e.getClickCount() < 2) return;
         if (!splitPane.isOneTouchExpandable()) return;
 
-        final double resizeWeight = splitPane.getResizeWeight();
-        final int minLocation = splitPane.getMinimumDividerLocation();
-        final int maxLocation = splitPane.getMaximumDividerLocation();
-        final int divLocation = splitPane.getDividerLocation();
-        final int lastDivLocation = splitPane.getLastDividerLocation();
+        double resizeWeight = splitPane.getResizeWeight();
+        int minLocation = splitPane.getMinimumDividerLocation();
+        int maxLocation = splitPane.getMaximumDividerLocation();
+        int divLocation = splitPane.getDividerLocation();
+        int lastDivLocation = splitPane.getLastDividerLocation();
 
         // if we are at the far edge
         if (divLocation >= maxLocation - 5) {
@@ -428,16 +461,16 @@ public class AquaSplitPaneUI extends BasicSplitPaneUI implements MouseListener, 
         }
     }
 
-    public void mouseEntered(final MouseEvent e) { }
-    public void mouseExited(final MouseEvent e) { }
-    public void mousePressed(final MouseEvent e) { }
-    public void mouseReleased(final MouseEvent e) { }
+    public void mouseEntered(MouseEvent e) { }
+    public void mouseExited(MouseEvent e) { }
+    public void mousePressed(MouseEvent e) { }
+    public void mouseReleased(MouseEvent e) { }
 
-    public void propertyChange(final PropertyChangeEvent evt) {
+    public void propertyChange(PropertyChangeEvent evt) {
         String prop = evt.getPropertyName();
         if (prop != null) {
             if (prop.equals(DIVIDER_PAINTER_KEY)) {
-                final Object value = evt.getNewValue();
+                Object value = evt.getNewValue();
                 if (value instanceof Border) {
                     divider.setBorder((Border)value);
                 } else {

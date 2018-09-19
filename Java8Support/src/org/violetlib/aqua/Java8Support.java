@@ -18,8 +18,10 @@ import java.util.WeakHashMap;
 import java.util.function.Function;
 import javax.swing.*;
 
+import org.jetbrains.annotations.NotNull;
 import sun.java2d.opengl.OGLRenderQueue;
 import sun.swing.SwingUtilities2;
+import sun.awt.image.MultiResolutionImage;
 
 /**
  * Support for Java 8
@@ -74,11 +76,11 @@ public class Java8Support implements JavaSupport.JavaSupportImpl {
 
     @Override
     public boolean hasOpaqueBeenExplicitlySet(JComponent c) {
-        final Method method = getJComponentGetFlagMethod.get();
+        Method method = getJComponentGetFlagMethod.get();
         if (method == null) return false;
         try {
             return Boolean.TRUE.equals(method.invoke(c, OPAQUE_SET_FLAG));
-        } catch (final Throwable ignored) {
+        } catch (Throwable ignored) {
             return false;
         }
     }
@@ -92,11 +94,11 @@ public class Java8Support implements JavaSupport.JavaSupportImpl {
                   @Override
                   public Method run() {
                       try {
-                          final Method method = JComponent.class.getDeclaredMethod(
+                          Method method = JComponent.class.getDeclaredMethod(
                             "getFlag", new Class<?>[]{int.class});
                           method.setAccessible(true);
                           return method;
-                      } catch (final Throwable ignored) {
+                      } catch (Throwable ignored) {
                           return null;
                       }
                   }
@@ -164,10 +166,20 @@ public class Java8Support implements JavaSupport.JavaSupportImpl {
     }
 
     @Override
+    public @NotNull Image getResolutionVariant(@NotNull Image source, double width, double height) {
+        if (source instanceof MultiResolutionImage) {
+            MultiResolutionImage mr = (MultiResolutionImage) source;
+            return mr.getResolutionVariant((int) width, (int) height);
+        } else {
+            return source;
+        }
+    }
+
+    @Override
     public BufferedImage createImage(int width, int height, int[] data) {
         BufferedImage b = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB_PRE);
-        final WritableRaster raster = b.getRaster();
-        final DataBufferInt buffer = (DataBufferInt) raster.getDataBuffer();
+        WritableRaster raster = b.getRaster();
+        DataBufferInt buffer = (DataBufferInt) raster.getDataBuffer();
         int[] rasterdata = sun.awt.image.SunWritableRaster.stealData(buffer, 0);
         System.arraycopy(data, 0, rasterdata, 0, width * height);
         sun.awt.image.SunWritableRaster.markDirty(buffer);

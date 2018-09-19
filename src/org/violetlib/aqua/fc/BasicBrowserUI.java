@@ -1,19 +1,23 @@
 /*
- * @(#)BasicBrowserUI.java
- *
  * Copyright (c) 2005-2013 Werner Randelshofer, Switzerland.
+ * Copyright (c) 2018 Alan Snyder
  * You may not use, copy or modify this file, except in compliance with the
  * accompanying license terms.
  */
 
 package org.violetlib.aqua.fc;
 
+import java.awt.*;
+import java.awt.datatransfer.Transferable;
+import java.util.ArrayList;
+import java.util.Collections;
 import javax.swing.*;
 import javax.swing.plaf.UIResource;
 import javax.swing.tree.TreeModel;
 import javax.swing.tree.TreePath;
-import java.awt.datatransfer.Transferable;
-import java.util.ArrayList;
+
+import org.violetlib.aqua.AppearanceManager;
+import org.violetlib.aqua.AquaAppearance;
 
 /**
  * BasicBrowserUI.
@@ -24,7 +28,6 @@ import java.util.ArrayList;
 public class BasicBrowserUI extends BrowserUI {
 
     protected JBrowser browser;
-    public Icon sizeHandleIcon;
 
     /**
      * Creates a new instance.
@@ -39,7 +42,6 @@ public class BasicBrowserUI extends BrowserUI {
     public void installUI(JComponent c) {
         c.setBackground(UIManager.getColor("List.background"));
         c.setFont(UIManager.getFont("List.font"));
-        sizeHandleIcon = UIManager.getIcon("Browser.sizeHandleIcon");
         browser = (JBrowser) c;
         installDefaults();
     }
@@ -69,9 +71,15 @@ public class BasicBrowserUI extends BrowserUI {
     }
 
     @Override
-    public Icon getSizeHandleIcon() {
-        return sizeHandleIcon;
-    }
+    public void update(Graphics g, JComponent c) {
+        AquaAppearance appearance = AppearanceManager.ensureAppearance(c);
+         if (c.isOpaque()) {
+             Color background = appearance.getColor("controlBackground");
+             g.setColor(background);
+             g.fillRect(0, 0, c.getWidth(),c.getHeight());
+         }
+         paint(g, c);
+     }
 
     protected ListCellRenderer createCellRenderer() {
         return new DefaultColumnCellRenderer.UIResource(browser);
@@ -167,9 +175,7 @@ public class BasicBrowserUI extends BrowserUI {
         TreePath[] getDisplayOrderPaths(TreePath[] paths) {
             // sort the paths to display order rather than selection order
             ArrayList selOrder = new ArrayList();
-            for (int i = 0; i < paths.length; i++) {
-                selOrder.add(paths[i]);
-            }
+            Collections.addAll(selOrder, paths);
             //Collections.sort(selOrder, this);
             int n = selOrder.size();
             TreePath[] displayPaths = new TreePath[n];

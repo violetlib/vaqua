@@ -1,4 +1,12 @@
 /*
+ * Changes copyright (c) 2018 Alan Snyder.
+ * All rights reserved.
+ *
+ * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
+ * accompanying license terms.
+ */
+
+/*
  * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -25,38 +33,40 @@
 
 package org.violetlib.aqua;
 
-import java.beans.*;
-import java.util.*;
-
-import javax.swing.JComponent;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
+import javax.swing.*;
 
 public class ClientPropertyApplicator<T extends JComponent, N> implements PropertyChangeListener {
     private final Map<String, Property<N>> properties = new HashMap<String, Property<N>>();
 
     @SuppressWarnings("unchecked")
-    public ClientPropertyApplicator(final Property<N>... propertyList) {
-        for (final Property<N> p : propertyList) {
+    public ClientPropertyApplicator(Property<N>... propertyList) {
+        for (Property<N> p : propertyList) {
             properties.put(p.name, p);
         }
     }
 
-    void applyProperty(final N target, final String propName, final Object value) {
-        final Property<N> property = properties.get(propName);
+    void applyProperty(N target, String propName, Object value) {
+        Property<N> property = properties.get(propName);
         if (property != null) {
             property.applyProperty(target, value);
         }
     }
 
-    public void attachAndApplyClientProperties(final T target) {
+    public void attachAndApplyClientProperties(T target) {
         target.addPropertyChangeListener(this);
-        final N obj = convertJComponentToTarget(target);
+        N obj = convertJComponentToTarget(target);
         if (obj == null) {
             return;
         }
 
-        final Set<String> propNames = properties.keySet();
-        for (final String propName : propNames) {
-            final Object value = target.getClientProperty(propName);
+        Set<String> propNames = properties.keySet();
+        for (String propName : propNames) {
+            Object value = target.getClientProperty(propName);
             if (value == null) {
                 continue;
             }
@@ -64,30 +74,30 @@ public class ClientPropertyApplicator<T extends JComponent, N> implements Proper
         }
     }
 
-    public void removeFrom(final T target) {
+    public void removeFrom(T target) {
         target.removePropertyChangeListener(this);
     }
 
     @Override
     @SuppressWarnings("unchecked")
-    public void propertyChange(final PropertyChangeEvent evt) {
-        final N obj = convertJComponentToTarget((T)evt.getSource());
+    public void propertyChange(PropertyChangeEvent evt) {
+        N obj = convertJComponentToTarget((T)evt.getSource());
         if (obj == null) return;
         applyProperty(obj, evt.getPropertyName(), evt.getNewValue());
     }
 
     @SuppressWarnings("unchecked")
-    public N convertJComponentToTarget(final T component) {
+    public N convertJComponentToTarget(T component) {
         return (N)component; // naive implementation
     }
 
     public abstract static class Property<X> {
-        final String name;
+        private final String name;
 
-        public Property(final String name) {
+        public Property(String name) {
             this.name = name;
         }
 
-        public abstract void applyProperty(final X target, final Object value);
+        public abstract void applyProperty(X target, Object value);
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015 Alan Snyder.
+ * Copyright (c) 2015-2018 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -10,16 +10,14 @@ package org.violetlib.aqua;
 
 import java.awt.*;
 import java.util.Arrays;
-
 import javax.swing.*;
 
+import org.jetbrains.annotations.NotNull;
 import org.violetlib.jnr.Insetter;
 import org.violetlib.jnr.LayoutInfo;
 import org.violetlib.jnr.aqua.*;
 
-import static org.violetlib.jnr.aqua.AquaUIPainter.TitleBarButtonWidget.CLOSE_BOX;
-import static org.violetlib.jnr.aqua.AquaUIPainter.TitleBarButtonWidget.MINIMIZE_BOX;
-import static org.violetlib.jnr.aqua.AquaUIPainter.TitleBarButtonWidget.RESIZE_BOX;
+import static org.violetlib.jnr.aqua.AquaUIPainter.TitleBarButtonWidget.*;
 
 /**
  * A title bar for an internal frame.
@@ -47,9 +45,6 @@ public class AquaTitleBar {
         Rectangle minimizeButtonBounds;
         Rectangle resizeButtonBounds;
     }
-
-    private Color selectedTextColor;
-    private Color notSelectedTextColor;
 
     public AquaTitleBar(JInternalFrame frame, AquaUIPainter.TitleBarWidget widget) {
         this.frame = frame;
@@ -134,18 +129,18 @@ public class AquaTitleBar {
         return result;
     }
 
-    public void setColors(final Color inSelectedTextColor, final Color inNotSelectedTextColor) {
-        selectedTextColor = inSelectedTextColor;
-        notSelectedTextColor = inNotSelectedTextColor;
-    }
-
-    public void paint(Graphics g) {
+    public void paint(@NotNull Graphics g) {
+        AquaAppearance appearance = AppearanceManager.ensureAppearance(frame);
+        boolean isSelected = frame.isSelected() || widget == AquaUIPainter.TitleBarWidget.UTILITY_WINDOW;
+        EffectName effect = isSelected ? EffectName.EFFECT_NONE : EffectName.EFFECT_DISABLED;
+        Color textColor = appearance.getColorForOptionalEffect("text", effect);
+        assert textColor != null;
         // paint the background and buttons
         Configuration tg = getConfiguration();
-        titleBarPainter.configure(width, titleBarHeight);
+        AquaUtils.configure(titleBarPainter, frame.getRootPane(), width, titleBarHeight);
         titleBarPainter.getPainter(tg).paint(g, 0, 0);
         // now the title and the icon
-        paintTitleContents(g);
+        paintTitleContents(g, textColor);
     }
 
     public Rectangle getButtonArea() {
@@ -163,17 +158,17 @@ public class AquaTitleBar {
         return new TitleBarConfiguration(widget, state, closeButtonState, minimizeButtonState, resizeButtonState, resizeAction, isDirty);
     }
 
-    protected AquaUIPainter.State getButtonState(final int buttonType, boolean isEnabled) {
-        final AquaInternalFrameUI ui = (AquaInternalFrameUI)frame.getUI();
-        final int buttonPressedIndex = ui.getWhichButtonPressed();
-        final boolean overButton = ui.getMouseOverPressedButton();
-        final boolean rollover = ui.getRollover();
-        final boolean frameSelected = frame.isSelected() || widget == AquaUIPainter.TitleBarWidget.UTILITY_WINDOW;
-        final boolean isActive = rollover || frameSelected;
+    protected AquaUIPainter.State getButtonState(int buttonType, boolean isEnabled) {
+        AquaInternalFrameUI ui = (AquaInternalFrameUI)frame.getUI();
+        int buttonPressedIndex = ui.getWhichButtonPressed();
+        boolean overButton = ui.getMouseOverPressedButton();
+        boolean rollover = ui.getRollover();
+        boolean frameSelected = frame.isSelected() || widget == AquaUIPainter.TitleBarWidget.UTILITY_WINDOW;
+        boolean isActive = rollover || frameSelected;
         return getState(buttonPressedIndex == buttonType && overButton, rollover, isActive, isEnabled);
     }
 
-    protected AquaUIPainter.State getState(final boolean pressed, final boolean rollover, final boolean active, final boolean enabled) {
+    protected AquaUIPainter.State getState(boolean pressed, boolean rollover, boolean active, boolean enabled) {
         if (!enabled) return AquaUIPainter.State.DISABLED;
         if (!active) return AquaUIPainter.State.INACTIVE;
         if (pressed) return AquaUIPainter.State.PRESSED;
@@ -181,21 +176,20 @@ public class AquaTitleBar {
         return AquaUIPainter.State.ACTIVE;
     }
 
-    protected void paintTitleContents(Graphics g) {
+    protected void paintTitleContents(@NotNull Graphics g, @NotNull Color textColor) {
         TitleBarLayout layout = getTitleBarLayout();
         Rectangle titleBounds = layout.titleBounds;
         if (titleBounds == null) {
             return;
         }
 
-        final boolean isSelected = frame.isSelected();
-        final Font f = g.getFont();
+        Font f = g.getFont();
 
         g.setFont(frame.getFont());
 
         // Center text vertically.
-        final FontMetrics fm = g.getFontMetrics();
-        final int baseline = titleBounds.y + (titleBounds.height + fm.getAscent() - fm.getLeading() - fm.getDescent()) / 2;
+        FontMetrics fm = g.getFontMetrics();
+        int baseline = titleBounds.y + (titleBounds.height + fm.getAscent() - fm.getLeading() - fm.getDescent()) / 2;
 
         int iconWidth = getIconWidth();
         if (iconWidth > 0) {
@@ -211,13 +205,13 @@ public class AquaTitleBar {
         // shorten the string to fit in the
         if ((text != null) && !(text.equals(""))) {
             totalTextWidth = SwingUtilities.computeStringWidth(fm, text);
-            final String clipString = "\u2026";
+            String clipString = "\u2026";
             if (totalTextWidth > availTextWidth) {
                 wasTextShortened = true;
                 totalTextWidth = SwingUtilities.computeStringWidth(fm, clipString);
                 int nChars;
                 for (nChars = 0; nChars < text.length(); nChars++) {
-                    final int nextCharWidth = fm.charWidth(text.charAt(nChars));
+                    int nextCharWidth = fm.charWidth(text.charAt(nChars));
                     if ((totalTextWidth + nextCharWidth) > availTextWidth) {
                         break;
                     }
@@ -234,17 +228,12 @@ public class AquaTitleBar {
                 }
             }
 
-            if (isSelected || widget == AquaUIPainter.TitleBarWidget.UTILITY_WINDOW) {
-                g.setColor(selectedTextColor);
-            } else {
-                g.setColor(notSelectedTextColor);
-            }
-
+            g.setColor(textColor);
             JavaSupport.drawString(frame, (Graphics2D) g, text, startXPosition + iconWidth, baseline);
             g.setFont(f);
         }
 
-        final int iconYPosition = titleBounds.y + (titleBounds.height - getIconHeight()) / 2;
+        int iconYPosition = titleBounds.y + (titleBounds.height - getIconHeight()) / 2;
         paintTitleIcon(g, startXPosition, iconYPosition);
     }
 
@@ -259,7 +248,7 @@ public class AquaTitleBar {
 
         // Resize to 16x16 if necessary.
         if (icon instanceof ImageIcon && (icon.getIconWidth() > sMaxIconWidth || icon.getIconHeight() > sMaxIconHeight)) {
-            final Image img = ((ImageIcon)icon).getImage();
+            Image img = ((ImageIcon)icon).getImage();
             ((ImageIcon)icon).setImage(img.getScaledInstance(sMaxIconWidth, sMaxIconHeight, Image.SCALE_SMOOTH));
         }
 
@@ -299,7 +288,8 @@ public class AquaTitleBar {
     }
 
     protected TitleBarConfiguration.ResizeAction getResizeAction(JInternalFrame frame) {
-        if (frame.isMaximizable()) {
+        AquaInternalFrameUI ui = (AquaInternalFrameUI) frame.getUI();
+        if (frame.isMaximizable() && !ui.getOption()) {
             return frame.isMaximum() ? TitleBarConfiguration.ResizeAction.FULL_SCREEN_EXIT : TitleBarConfiguration.ResizeAction.FULL_SCREEN_ENTER;
         } else {
             return TitleBarConfiguration.ResizeAction.ZOOM_ENTER;
@@ -308,7 +298,7 @@ public class AquaTitleBar {
 
     // defaults to false
     protected boolean isDirty() {
-        final Object dirty = frame.getClientProperty("windowModified");
+        Object dirty = frame.getClientProperty("windowModified");
         return Boolean.TRUE.equals(dirty);
     }
 }

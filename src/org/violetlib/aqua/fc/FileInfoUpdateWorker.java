@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015 Alan Snyder.
+ * Copyright (c) 2015-2018 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -42,7 +42,7 @@ public class FileInfoUpdateWorker implements Runnable {
     protected void updateIcon() {
 
         // We have special code to get the file icon. However, the JFileChooser owns the mapping from file to icon.
-        // Therefore we have to validate that our short circuit.
+        // Therefore we have to validate the use of our short circuit.
 
         if (!canGetFileIconDirectly()) {
             Icon icon = fc.getIcon(f);
@@ -54,11 +54,10 @@ public class FileInfoUpdateWorker implements Runnable {
         // the file. However, Quick Look can be very slow, so our plan is to install the Launch Services icon first,
         // and replace it if and when the Quick Look icon arrives.
 
-        try {
-            Image basicImage = OSXFile.getIconImage(f, 16, false);
-            updateFileIcon(new ImageIcon(basicImage));
-        } catch (UnsupportedOperationException ex) {
-        }
+        // Based on the above validation, this call will get the Launch Services icon, but also handles some special
+        // cases.
+        Icon icon = fc.getIcon(f);
+        updateFileIcon(icon);
 
         try {
             Image quickLookImage = OSXFile.getIconImage(f, 16, true);

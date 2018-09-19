@@ -12,6 +12,8 @@ import java.awt.*;
 import java.beans.PropertyChangeEvent;
 import javax.swing.*;
 
+import org.jetbrains.annotations.NotNull;
+
 import static org.violetlib.aqua.AquaUtils.execute;
 
 /**
@@ -21,15 +23,28 @@ import static org.violetlib.aqua.AquaUtils.execute;
  */
 public class AquaVibrantSupport {
 
-    public static final int LIGHT_STYLE = 0;
-    public static final int DARK_STYLE = 1;
+    public static final int NO_VIBRANT_STYLE = -1;
+
+    public static final int LIGHT_STYLE = 0;    // deprecated in macOS 10.14
+    public static final int DARK_STYLE = 1;     // deprecated in macOS 10.14
     public static final int SIDEBAR_STYLE = 2;
     public static final int TITLE_BAR_STYLE = 3;
     public static final int MENU_STYLE = 4;
     public static final int POPOVER_STYLE = 5;
-    public static final int MEDIUM_LIGHT_STYLE = 6;
-    public static final int ULTRA_DARK_STYLE = 7;
-    public static final int SHEET_STYLE = 8;    // a way of indicating that the window will be displayed as a sheet
+    public static final int MEDIUM_LIGHT_STYLE = 6; // deprecated in macOS 10.14
+    public static final int ULTRA_DARK_STYLE = 7;   // deprecated in macOS 10.14
+    public static final int SELECTION_STYLE = 9;
+
+    // Materials defined in macOS 10.14
+    public static final int SHEET_STYLE = 8;    // also used as a way of indicating that the window will be displayed as a sheet
+    public static final int HEADER_STYLE = 10;
+    public static final int WINDOW_BACKGROUND_STYLE = 11;
+    public static final int HUD_WINDOW_STYLE = 12;
+    public static final int FULL_SCREEN_MODAL_STYLE = 13;
+    public static final int TOOL_TIP_STYLE = 14;
+    public static final int CONTENT_BACKGROUND_STYLE = 15;
+    public static final int UNDER_WINDOW_BACKGROUND_STYLE = 16;
+    public static final int UNDER_PAGE_BACKGROUND_STYLE = 17;
 
     /** This client property allows the client to request a vibrant background style on certain components. */
     public static final String BACKGROUND_STYLE_KEY = "Aqua.backgroundStyle";
@@ -75,8 +90,35 @@ public class AquaVibrantSupport {
             if (s.equals("vibrantSheet")) {
                 return SHEET_STYLE;
             }
+            if (s.equals("vibrantSelection")) {
+                return SELECTION_STYLE;
+            }
+            if (s.equals("vibrantHeader")) {
+                return HEADER_STYLE;
+            }
+            if (s.equals("vibrantWindowBackground")) {
+                return WINDOW_BACKGROUND_STYLE;
+            }
+            if (s.equals("vibrantHUDWindow")) {
+                return HUD_WINDOW_STYLE;
+            }
+            if (s.equals("vibrantFullScreenUI")) {
+                return FULL_SCREEN_MODAL_STYLE;
+            }
+            if (s.equals("vibrantToolTip")) {
+                return TOOL_TIP_STYLE;
+            }
+            if (s.equals("vibrantContentBackground")) {
+                return CONTENT_BACKGROUND_STYLE;
+            }
+            if (s.equals("vibrantUnderWindowBackground")) {
+                return UNDER_WINDOW_BACKGROUND_STYLE;
+            }
+            if (s.equals("vibrantUnderPageBackground")) {
+                return UNDER_PAGE_BACKGROUND_STYLE;
+            }
         }
-        return -1;
+        return NO_VIBRANT_STYLE;
     }
 
     /**
@@ -175,14 +217,14 @@ public class AquaVibrantSupport {
         // If a window can never become active, then we should force visual effect view to display the active state.
         // Otherwise, there is no point to enabling a vibrant style.
 
-        boolean forceActive = w.getType() == Window.Type.POPUP || isUndecorated(w);
+        boolean forceActive = w.getType() == Window.Type.POPUP || !AquaUtils.isDecorated(w);
         long rc = execute(w, ptr -> setupVisualEffectWindow(ptr, style, forceActive));
         if (rc != 0) {
             System.err.println("Unable to install visual effect view");
         } else {
             JRootPane rp = AquaUtils.getRootPane(w);
-            AquaUtils.setWindowBackgroundClear(w, true); // suppress Java window background
             if (rp != null) {
+                enableTranslucency(w);
                 rp.putClientProperty(VIBRANT_WINDOW_KEY, Boolean.TRUE);
                 AquaUtils.paintImmediately(w, rp);
                 // The goal of the following is to transfer the new clear background to the AWTView layer immediately so
@@ -192,18 +234,6 @@ public class AquaVibrantSupport {
                 AquaUtils.syncAWTView(w);
             }
         }
-    }
-
-    private static boolean isUndecorated(Window w) {
-        if (w instanceof Frame) {
-            return ((Frame) w).isUndecorated();
-        }
-
-        if (w instanceof Dialog) {
-            return ((Dialog) w).isUndecorated();
-        }
-
-        return true;
     }
 
     /**
@@ -218,7 +248,6 @@ public class AquaVibrantSupport {
         JRootPane rp = AquaUtils.getRootPane(w);
         if (rp != null) {
             if (rp.getClientProperty(VIBRANT_WINDOW_KEY) != null) {
-                AquaUtils.setWindowBackgroundClear(w, false); // restore Java window background
                 rp.repaint();
             }
         }
@@ -236,10 +265,21 @@ public class AquaVibrantSupport {
     public static VisualEffectViewPeer createVisualEffectView(Window w, int style, boolean supportSelections) {
         long ptr = execute(w, wptr -> nativeCreateVisualEffectView(wptr, style, supportSelections));
         if (ptr != 0) {
-            AquaUtils.setWindowBackgroundClear(w, true); // suppress Java window background
+            enableTranslucency(w);
             return new VisualEffectViewPeerImpl(w, ptr);
         }
         return null;
+    }
+
+    /**
+     * Ensure that the specified window has a frame buffer that supports an alpha channel. An alpha channel is needed to
+     * use the magic eraser.
+     */
+    private static void enableTranslucency(@NotNull Window w) {
+        // The textured attribute is one of three ways to make a window support an alpha channel.
+        // Setting the opaque attribute to false is another, but it triggers a repainting bug in Java.
+        // Setting a window shape is the third, but a window shape is not wanted.
+        AquaUtils.setWindowTextured(w, true);
     }
 
     private static class VisualEffectViewPeerImpl implements VisualEffectViewPeer {
@@ -261,7 +301,7 @@ public class AquaVibrantSupport {
                     }
                 }
                 nativeNSViewPointer = 0;
-                AquaUtils.setWindowBackgroundClear(w, false); // restore Java window background
+                //AquaUtils.setWindowBackgroundClear(w, false); // restore Java window background
             }
         }
 

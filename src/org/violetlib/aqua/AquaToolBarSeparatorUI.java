@@ -1,5 +1,5 @@
 /*
- * Changes Copyright (c) 2016 Alan Snyder.
+ * Changes Copyright (c) 2016-2018 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -39,41 +39,57 @@ import javax.swing.*;
 import javax.swing.plaf.ComponentUI;
 import javax.swing.plaf.basic.BasicToolBarSeparatorUI;
 
+import org.jetbrains.annotations.NotNull;
 import org.violetlib.aqua.AquaUtils.RecyclableSingleton;
 import org.violetlib.aqua.AquaUtils.RecyclableSingletonFromDefaultConstructor;
 
-public class AquaToolBarSeparatorUI extends BasicToolBarSeparatorUI {
+public class AquaToolBarSeparatorUI extends BasicToolBarSeparatorUI implements AquaComponentUI {
     protected static RecyclableSingleton<AquaToolBarSeparatorUI> instance = new RecyclableSingletonFromDefaultConstructor<AquaToolBarSeparatorUI>(AquaToolBarSeparatorUI.class);
 
-    public static ComponentUI createUI(final JComponent c) {
+    public static ComponentUI createUI(JComponent c) {
         return instance.get();
     }
 
     public AquaToolBarSeparatorUI() {
     }
 
-    public void paint(final Graphics g, final JComponent c) {
+    @Override
+    public void appearanceChanged(@NotNull JComponent c, @NotNull AquaAppearance appearance) {
+    }
+
+    @Override
+    public void activeStateChanged(@NotNull JComponent c, boolean isActive) {
+    }
+
+    @Override
+    public void update(Graphics g, JComponent c) {
+        AquaAppearance appearance = AppearanceManager.registerCurrentAppearance(c);
+        super.update(g, c);
+        AppearanceManager.restoreCurrentAppearance(appearance);
+    }
+
+    public void paint(Graphics g, JComponent c) {
         // The separator item style was removed in OS 10.7. We implement as a space.
     }
 
-    public Dimension getMinimumSize(final JComponent c) {
-        final JToolBar.Separator sep = (JToolBar.Separator)c;
+    public Dimension getMinimumSize(JComponent c) {
+        JToolBar.Separator sep = (JToolBar.Separator)c;
         if (sep.getOrientation() == SwingConstants.HORIZONTAL) {
             return new Dimension(1, 11);
         }
         return new Dimension(11, 1);
     }
 
-    public Dimension getPreferredSize(final JComponent c) {
-        final JToolBar.Separator sep = (JToolBar.Separator)c;
+    public Dimension getPreferredSize(JComponent c) {
+        JToolBar.Separator sep = (JToolBar.Separator)c;
         if (sep.getOrientation() == SwingConstants.HORIZONTAL) {
             return new Dimension(1, 11);
         }
         return new Dimension(11, 1);
     }
 
-    public Dimension getMaximumSize(final JComponent c) {
-        final JToolBar.Separator sep = (JToolBar.Separator)c;
+    public Dimension getMaximumSize(JComponent c) {
+        JToolBar.Separator sep = (JToolBar.Separator)c;
         if (sep.getOrientation() == SwingConstants.HORIZONTAL) {
             return new Dimension(Integer.MAX_VALUE, 11);
         }

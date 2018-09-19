@@ -1,5 +1,5 @@
 /*
- * Changes Copyright (c) 2015 Alan Snyder.
+ * Changes Copyright (c) 2015-2018 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -33,21 +33,20 @@
 
 package org.violetlib.aqua;
 
+import java.awt.*;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import javax.swing.*;
 import javax.swing.border.Border;
-import javax.swing.plaf.BorderUIResource;
 import javax.swing.plaf.ComponentUI;
 import javax.swing.plaf.UIResource;
 import javax.swing.plaf.basic.BasicPanelUI;
 
+import org.jetbrains.annotations.NotNull;
 import org.violetlib.aqua.AquaUtils.RecyclableSingleton;
 import org.violetlib.aqua.AquaUtils.RecyclableSingletonFromDefaultConstructor;
 
-import java.awt.*;
-import java.beans.PropertyChangeEvent;
-import java.beans.PropertyChangeListener;
-
-public class AquaPanelUI extends BasicPanelUI {
+public class AquaPanelUI extends BasicPanelUI implements AquaComponentUI {
 
     public static final String PANEL_STYLE_KEY = "JPanel.style";
     public static final String GROUP_BOX_STYLE = "groupBox";
@@ -62,7 +61,7 @@ public class AquaPanelUI extends BasicPanelUI {
         }
     };
 
-    public static ComponentUI createUI(final JComponent c) {
+    public static ComponentUI createUI(JComponent c) {
         return instance.get();
     }
 
@@ -88,19 +87,36 @@ public class AquaPanelUI extends BasicPanelUI {
     }
 
     @Override
-    public void paint(Graphics g, JComponent c) {
-        BackgroundPainter p = getBackgroundPainter(c);
-        if (p != null) {
-            p.paintBackground(c, g, 0, 0, c.getWidth(), c.getHeight());
-        }
+    protected void installDefaults(JPanel p) {
+        super.installDefaults(p);
+        LookAndFeel.installProperty(p, "opaque", false);
     }
 
     @Override
-    public final void update(final Graphics g, final JComponent c) {
+    public void appearanceChanged(@NotNull JComponent c, @NotNull AquaAppearance appearance) {
+    }
+
+    @Override
+    public void activeStateChanged(@NotNull JComponent c, boolean isActive) {
+    }
+
+    @Override
+    public final void update(@NotNull Graphics g, @NotNull JComponent c) {
+        AppearanceManager.ensureAppearance(c);
+        AquaAppearance appearance = AppearanceManager.registerCurrentAppearance(c);
         if (c.isOpaque() || AquaVibrantSupport.isVibrant(c)) {
             AquaUtils.fillRect(g, c, AquaUtils.ERASE_IF_TEXTURED | AquaUtils.ERASE_IF_VIBRANT);
         }
         paint(g, c);
+        AppearanceManager.restoreCurrentAppearance(appearance);
+    }
+
+    @Override
+    public void paint(@NotNull Graphics g, @NotNull JComponent c) {
+        BackgroundPainter p = getBackgroundPainter(c);
+        if (p != null) {
+            p.paintBackground(c, g, 0, 0, c.getWidth(), c.getHeight());
+        }
     }
 
     protected void propertyChange(PropertyChangeEvent evt) {
