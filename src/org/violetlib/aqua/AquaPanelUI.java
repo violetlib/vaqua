@@ -54,12 +54,7 @@ public class AquaPanelUI extends BasicPanelUI implements AquaComponentUI {
 
     static RecyclableSingleton<AquaPanelUI> instance = new RecyclableSingletonFromDefaultConstructor<AquaPanelUI>(AquaPanelUI.class);
 
-    public PropertyChangeListener propertyChangeListener = new PropertyChangeListener() {
-        @Override
-        public void propertyChange(PropertyChangeEvent evt) {
-            AquaPanelUI.this.propertyChange(evt);
-        }
-    };
+    private PropertyChangeListener propertyChangeListener = AquaPanelUI.this::propertyChange;
 
     public static ComponentUI createUI(JComponent c) {
         return instance.get();
@@ -68,7 +63,7 @@ public class AquaPanelUI extends BasicPanelUI implements AquaComponentUI {
     @Override
     public void installUI(JComponent c) {
         super.installUI(c);
-        AquaVibrantSupport.updateVibrantStyle(c);
+        AquaVibrantSupport.installVibrantStyle(c);
         c.addPropertyChangeListener(propertyChangeListener);
         updateStyle(c);
     }
@@ -120,14 +115,10 @@ public class AquaPanelUI extends BasicPanelUI implements AquaComponentUI {
     }
 
     protected void propertyChange(PropertyChangeEvent evt) {
-        if (AquaVibrantSupport.processVibrantStyleChange(evt)) {
-            return;
-        } else {
-            String prop = evt.getPropertyName();
-            if (PANEL_STYLE_KEY.equals(prop) || GROUP_BOX_TITLE_KEY.equals(prop)) {
-                JComponent c = (JComponent) evt.getSource();
-                updateStyle(c);
-            }
+        String prop = evt.getPropertyName();
+        if (PANEL_STYLE_KEY.equals(prop) || GROUP_BOX_TITLE_KEY.equals(prop)) {
+            JComponent c = (JComponent) evt.getSource();
+            updateStyle(c);
         }
     }
 

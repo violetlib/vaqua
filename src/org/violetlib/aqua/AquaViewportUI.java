@@ -18,7 +18,7 @@ import org.jetbrains.annotations.Nullable;
 import org.violetlib.jnr.aqua.AquaUIPainter;
 
 /**
- * Support vibrant background.
+ * The viewport UI supports vibrant backgrounds and appearances.
  */
 public class AquaViewportUI extends ViewportUI implements AquaComponentUI {
 
@@ -26,15 +26,19 @@ public class AquaViewportUI extends ViewportUI implements AquaComponentUI {
         return new AquaViewportUI();
     }
 
-    protected JViewport viewport;
-    protected @NotNull BasicContextualColors colors;
+    protected @Nullable JViewport viewport;
+    protected final @NotNull BasicContextualColors colors;
     protected @Nullable AppearanceContext appearanceContext;
+
+    public AquaViewportUI() {
+        colors = AquaColors.CONTROL_COLORS;
+    }
 
     @Override
     public void installUI(JComponent c) {
         super.installUI(c);
         viewport = (JViewport) c;
-        AquaVibrantSupport.updateVibrantStyle(c);
+        AquaVibrantSupport.installVibrantStyle(c);
         AppearanceManager.installListener(c);
         configureAppearanceContext(null);
     }
@@ -58,12 +62,12 @@ public class AquaViewportUI extends ViewportUI implements AquaComponentUI {
     }
 
     protected void configureAppearanceContext(@Nullable AquaAppearance appearance) {
+        assert viewport != null;
         if (appearance == null) {
             appearance = AppearanceManager.ensureAppearance(viewport);
         }
         AquaUIPainter.State state = getState();
         appearanceContext = new AppearanceContext(appearance, state, false, false);
-        colors = AquaColors.CONTROL_COLORS;
         AquaColors.installColors(viewport, appearanceContext, colors);
         viewport.repaint();
     }
