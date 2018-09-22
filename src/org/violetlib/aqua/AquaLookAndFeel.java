@@ -48,6 +48,7 @@ import java.util.function.Consumer;
 
 import javax.swing.*;
 import javax.swing.border.Border;
+import javax.swing.border.EmptyBorder;
 import javax.swing.border.TitledBorder;
 import javax.swing.plaf.*;
 import javax.swing.plaf.basic.BasicBorders;
@@ -774,6 +775,37 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
         };
 
         table.putDefaults(defaults);
+
+        int version = AquaUtils.getJavaVersion();
+        if (version < 900000) {
+            // prior to Java 9, the platform UI is needed to support the screen menu bar
+            // the following definitions allow the platform UI to paint a non-screen menu bar
+            final Color menuBackgroundColor = new ColorUIResource(Color.white);
+            final Color menuForegroundColor = new ColorUIResource(Color.black);
+
+            final Color menuSelectedForegroundColor = new ColorUIResource(Color.white);;
+            final Color menuSelectedBackgroundColor = new ColorUIResource(54, 148, 253);
+
+            final Color menuDisabledBackgroundColor = menuBackgroundColor;
+            final Color menuDisabledForegroundColor = new ColorUIResource(0.5f, 0.5f, 0.5f);
+
+            Border fakeBorder = new EmptyBorder(0, 0, 0, 0);
+
+            Object[] menuBarDefaults = {
+                    "MenuBar.font", menuFont,
+                    "MenuBar.background", menuBackgroundColor, // not a menu item, not selected
+                    "MenuBar.foreground", menuForegroundColor,
+                    "MenuBar.border", new com.apple.laf.AquaMenuBarBorder(), // sja make lazy!
+                    "MenuBar.margin", new InsetsUIResource(0, 8, 0, 8), // sja make lazy!
+                    "MenuBar.selectionBackground", menuSelectedBackgroundColor, // not a menu item, is selected
+                    "MenuBar.selectionForeground", menuSelectedForegroundColor,
+                    "MenuBar.disabledBackground", menuDisabledBackgroundColor, //ThemeBrush.GetThemeBrushForMenu(false, false), // not a menu item, not selected
+                    "MenuBar.disabledForeground", menuDisabledForegroundColor,
+                    "MenuBar.backgroundPainter", fakeBorder,
+                    "MenuBar.selectedBackgroundPainter", fakeBorder,
+            };
+            table.putDefaults(menuBarDefaults);
+        }
 
         JavaSupport.installAATextInfo(table);
     }
