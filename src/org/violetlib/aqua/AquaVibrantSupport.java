@@ -243,7 +243,7 @@ public class AquaVibrantSupport {
         } else {
             JRootPane rp = AquaUtils.getRootPane(w);
             if (rp != null) {
-                enableTranslucency(w);
+                AquaUtils.enableTranslucency(w);
                 rp.putClientProperty(VIBRANT_WINDOW_KEY, Boolean.TRUE);
                 AquaUtils.paintImmediately(w, rp);
                 // The goal of the following is to transfer the new clear background to the AWTView layer immediately so
@@ -284,21 +284,10 @@ public class AquaVibrantSupport {
     public static VisualEffectViewPeer createVisualEffectView(@NotNull Window w, int style, boolean supportSelections) {
         long ptr = execute(w, wptr -> nativeCreateVisualEffectView(wptr, style, supportSelections));
         if (ptr != 0) {
-            enableTranslucency(w);
+            AquaUtils.enableTranslucency(w);
             return new VisualEffectViewPeerImpl(w, ptr);
         }
         return null;
-    }
-
-    /**
-     * Ensure that the specified window has a frame buffer that supports an alpha channel. An alpha channel is needed to
-     * use the magic eraser.
-     */
-    private static void enableTranslucency(@NotNull Window w) {
-        // The textured attribute is one of three ways to make a window support an alpha channel.
-        // Setting the opaque attribute to false is another, but it triggers a repainting bug in Java.
-        // Setting a window shape is the third, but a window shape is not wanted.
-        AquaUtils.setWindowTextured(w, true);
     }
 
     private static class VibrantStylePropertyChangeListener implements PropertyChangeListener {

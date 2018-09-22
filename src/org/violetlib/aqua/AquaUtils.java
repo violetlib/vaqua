@@ -1405,6 +1405,32 @@ final public class AquaUtils {
     }
 
     /**
+     * Set the textured attribute of the window peer. This method has no other side effects.
+     * @param w The window.
+     * @param isTextured The new value of the textured attribute.
+     */
+    public static void setWindowTextured(Window w, boolean isTextured) {
+
+        try {
+            nativeSetWindowTextured(w, isTextured);
+        } catch (Throwable ex) {
+            System.err.println("Unable to set textured: " + ex);
+        }
+    }
+
+    /**
+     * Ensure that the specified window has a frame buffer that supports an alpha channel. An alpha channel is needed to
+     * use the magic eraser.
+     */
+    public static void enableTranslucency(@NotNull Window w) {
+        // The textured attribute is one of three ways to make a window support an alpha channel.
+        // Setting the opaque attribute to false is another, but it triggers a repainting bug in Java.
+        // Setting a window shape is the third, but a window shape is not wanted.
+        AquaUtils.setWindowTextured(w, true);
+        new ShadowMaker(w);
+    }
+
+    /**
      * I have not found a reliable way to ensure that enough opaque pixels are present to allow AppKit to compute
      * the window shadow for a vibrant popup. This class is a workaround for that problem.
      *
@@ -1433,20 +1459,6 @@ final public class AquaUtils {
                 AquaUtils.syncAWTView(w);
                 rp.putClientProperty("apple.awt.windowShadow.revalidateNow", Math.random());
             }
-        }
-    }
-
-    /**
-     * Set the textured attribute of the window peer. This method has no other side effects.
-     * @param w The window.
-     * @param isTextured The new value of the textured attribute.
-     */
-    public static void setWindowTextured(Window w, boolean isTextured) {
-
-        try {
-            nativeSetWindowTextured(w, isTextured);
-        } catch (Throwable ex) {
-            System.err.println("Unable to set textured: " + ex);
         }
     }
 
