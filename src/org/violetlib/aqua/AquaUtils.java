@@ -880,8 +880,8 @@ final public class AquaUtils {
     }
 
     // options for when to use a magic eraser
-    public final static int ERASE_IF_TEXTURED = 1<<0;
-    public final static int ERASE_IF_VIBRANT = 1<<1;
+    public final static int ERASE_IF_TEXTURED = 1<<0;   // erase if the window is natively textured
+    public final static int ERASE_IF_VIBRANT = 1<<1;    // erase if the window is vibrant
     public final static int ERASE_ALWLAYS = 1<<2;
 
     /**
@@ -970,19 +970,8 @@ final public class AquaUtils {
         while (c != null) {
             if (c instanceof JRootPane) {
                 JRootPane rp = (JRootPane) c;
-
-                Object prop = rp.getClientProperty("apple.awt.brushMetalLook");
-                if (prop != null && isTextured) {
-                    if (Boolean.parseBoolean(prop.toString())) {
-                        return true;
-                    }
-                }
-
-                prop = rp.getClientProperty("Window.style");
-                if (prop != null) {
-                    if (prop.equals("textured") && isTextured) {
-                        return true;
-                    }
+                if (isTextured && isNativeTextured(rp)) {
+                    return true;
                 }
             }
 
@@ -1000,14 +989,128 @@ final public class AquaUtils {
     }
 
     /**
+     * Determine the appropriate background for a component that displays the window content background color.
+     * @param c A component in the window.
+     * @return the color.
+     */
+    public static @NotNull Color getWindowBackground(@NotNull JComponent c) {
+        EffectName effect = AquaFocusHandler.isActive(c) ? EffectName.EFFECT_NONE : EffectName.EFFECT_DISABLED;
+        String baseColor = "windowBackground";
+        JRootPane rp = c.getRootPane();
+        if (rp != null && isTextured(rp)) {
+            baseColor = "texturedWindowBackground";
+        }
+        return AquaColors.getBackground(c, baseColor, effect);
+    }
+
+    /**
+     * Determine the appropriate background for a window top or bottom margin.
+     * This method is not used when the margin is painted with a gradient.
+     * @param rp The root pane the window.
+     * @param isTop True for the top margin, false for the bottom margin.
+     * @return the color.
+     */
+    public static @NotNull Color getWindowMarginBackground(@NotNull JRootPane rp, boolean isTop) {
+        // In most cases, the margin color when flat matches the content area color.
+        // One exception is a non-textured window in light mode.
+        // The other is a dark mode non-textured unified title/tool bar (top margin).
+
+        String base = isTextured(rp) ? "TexturedWindowMarginBackground" : "WindowMarginBackground";
+        String prefix = isTop ? "top" : "bottom";
+        String suffix = AquaFocusHandler.isActive(rp) ? "" : "_disabled";
+        String colorName = prefix + base + suffix;
+        AquaAppearance appearance = AppearanceManager.getAppearance(rp);
+        Color bc = appearance.getColor(colorName);
+        if (bc == null) {
+            // should not happen
+            System.err.println("Undefined window margin background color: " + colorName);
+            return AquaColors.CLEAR;
+        } else {
+            return bc;
+        }
+    }
+
+    public static @NotNull Color getWindowMarginDividerColor(@NotNull JRootPane rp, boolean isTop) {
+        String base = isTextured(rp) ? "TexturedWindowDivider" : "WindowDivider";
+        String prefix = isTop ? "top" : "bottom";
+        String suffix = AquaFocusHandler.isActive(rp) ? "" : "_disabled";
+        String colorName = prefix + base + suffix;
+        AquaAppearance appearance = AppearanceManager.getAppearance(rp);
+        Color color = appearance.getColor(colorName);
+        if (color == null) {
+            // should not happen
+            System.err.println("Undefined window divider color: " + colorName);
+            return AquaColors.CLEAR;
+        } else {
+            return color;
+        }
+    }
+
+    public static boolean isTextured(@NotNull JRootPane rp) {
+        if (isNativeTextured(rp)) {
+            return true;
+        }
+
+        AquaRootPaneUI ui = getUI(rp, AquaRootPaneUI.class);
+        if (ui != null) {
+            AquaCustomStyledWindow customStyledWindow = ui.getCustomStyledWindow();
+            if (customStyledWindow != null) {
+                return customStyledWindow.isTextured();
+            }
+        }
+
+        return false;
+    }
+
+    public static boolean isNativeTextured(@NotNull JRootPane rp) {
+        Object prop = rp.getClientProperty("apple.awt.brushMetalLook");
+        if (prop != null) {
+            if (Boolean.parseBoolean(prop.toString())) {
+                return true;
+            }
+        }
+
+        prop = rp.getClientProperty("Window.style");
+        if (prop != null) {
+            if (prop.equals("textured")) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
      * Fill with specified color or erase.
      * @param g The graphics context.
      * @param color The color to fill, or null to erase
      */
     public static void fillRect(Graphics g, @Nullable Color color, int x, int y, int w, int h) {
         Graphics cg = g.create();
+
         try {
-            if (color != null) {
+            if (color instanceof AquaColors.GradientColor && cg instanceof Graphics2D) {
+                AquaColors.GradientColor gradientColor = (AquaColors.GradientColor) color;
+                Graphics2D gg = (Graphics2D) cg;
+                if (gradientColor.useMagicEraser()) {
+                    gg.setComposite(AlphaComposite.Src);
+                    gg.setColor(AquaColors.CLEAR);
+                    gg.fillRect(x, y, w, h);
+                }
+                Color start = gradientColor.getStart();
+                Color finish = gradientColor.getFinish();
+                GradientPaint gp = new GradientPaint(0, y, start, 0, y + h, finish);
+                gg.setPaint(gp);
+                gg.fillRect(x, y, w, h);
+            } else if (color instanceof AquaColors.TintedEraser && cg instanceof Graphics2D) {
+                AquaColors.TintedEraser tintedEraser = (AquaColors.TintedEraser) color;
+                Graphics2D gg = (Graphics2D) cg;
+                gg.setComposite(AlphaComposite.Src);
+                gg.setColor(AquaColors.CLEAR);
+                gg.fillRect(x, y, w, h);
+                cg.setColor(color);
+                cg.fillRect(x, y, w, h);
+            } else if (color != null && color != AquaColors.MAGIC_ERASER) {
                 cg.setColor(color);
                 cg.fillRect(x, y, w, h);
             } else if (cg instanceof Graphics2D) {

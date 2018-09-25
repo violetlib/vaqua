@@ -325,7 +325,8 @@ public class AquaInternalFrameUI extends BasicInternalFrameUI implements SwingCo
         // The root pane must paint over the extra shadow
         JRootPane rp = frame.getRootPane();
         rp.setOpaque(true);
-        rp.setBackground(AquaColors.getBackground(rp, "windowBackground"));
+        Color bc = AquaUtils.getWindowBackground(rp);
+        rp.setBackground(bc);
         AppearanceManager.restoreCurrentAppearance(appearance);
     }
 

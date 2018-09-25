@@ -81,7 +81,7 @@ public class AquaRootPaneUI extends BasicRootPaneUI {
     protected boolean isInitialized;
     protected AquaCustomStyledWindow customStyledWindow;
     protected int vibrantStyle = NO_VIBRANT_STYLE;
-    protected boolean vibrantStyleIsSet;
+    protected boolean vibrantStyleIsExplicitlySet;
 
     /**
      * Set the debugging option to force all windows to display as active. Used to compare a Java window with a native
@@ -127,9 +127,8 @@ public class AquaRootPaneUI extends BasicRootPaneUI {
     }
 
     public void uninstallUI(JComponent c) {
-//        stopTimer();
         c.removeAncestorListener(ancestorListener);
-        uninstallCustomWindowStyle();
+        disposeCustomWindowStyle();
         removeVisualEffectView();
 
         if (sUseScreenMenuBar) {
@@ -141,7 +140,7 @@ public class AquaRootPaneUI extends BasicRootPaneUI {
 
         isInitialized = false;
         vibrantStyle = NO_VIBRANT_STYLE;
-        vibrantStyleIsSet = false;
+        vibrantStyleIsExplicitlySet = false;
 
         super.uninstallUI(c);
     }
@@ -249,7 +248,7 @@ public class AquaRootPaneUI extends BasicRootPaneUI {
         String prop = e.getPropertyName();
         if (AquaVibrantSupport.BACKGROUND_STYLE_KEY.equals(prop)) {
             Object o = e.getNewValue();
-            setupBackgroundStyle(o);
+            updateVibrantStyleFromProperty(o);
         } else if (AQUA_WINDOW_STYLE_KEY.equals(prop) || AQUA_WINDOW_TOP_MARGIN_KEY.equals(prop) || AQUA_WINDOW_BOTTOM_MARGIN_KEY.equals(prop)) {
             reconfigureCustomWindowStyle();
         } else if ("ancestor".equals(prop)) {
@@ -260,6 +259,12 @@ public class AquaRootPaneUI extends BasicRootPaneUI {
             }
         } else if (AppearanceManager.AQUA_APPEARANCE_NAME_KEY.equals(prop)) {
             configureSpecifiedWindowAppearance(true);
+        } else if (AquaFocusHandler.FRAME_ACTIVE_PROPERTY.equals(prop)) {
+            Component parent = rootPane.getParent();
+            if (parent instanceof Window) {
+                Window w = (Window) parent;
+                setupBackground(w);
+            }
         }
     }
 
@@ -326,7 +331,13 @@ public class AquaRootPaneUI extends BasicRootPaneUI {
 
         AquaAppearance appearance = AppearanceManager.registerCurrentAppearance(c);
         if (c.isOpaque() || vibrantStyle >= 0) {
-            AquaUtils.fillRect(g, c, AquaUtils.ERASE_IF_TEXTURED|AquaUtils.ERASE_IF_VIBRANT);
+            // Need a special case here. A dark mode textured window has a vibrant background (needed for a unified
+            // title/toolbar), but the content area is opaque.
+            int eraserMode = AquaUtils.ERASE_IF_TEXTURED|AquaUtils.ERASE_IF_VIBRANT;
+            if (appearance != null && appearance.isDark() && customStyledWindow != null && customStyledWindow.isTextured()) {
+                eraserMode = 0;
+            }
+            AquaUtils.fillRect(g, c, eraserMode);
         }
         if (customStyledWindow != null) {
             customStyledWindow.paintMarginBackgrounds(g);
@@ -454,11 +465,6 @@ public class AquaRootPaneUI extends BasicRootPaneUI {
                     System.err.println(message);
                 }
                 AppearanceManager.installAppearance(rootPane, appearance);
-
-                if (OSXSystemProperties.OSVersion >= 1014 && !vibrantStyleIsSet) {
-                    updateVibrantStyle(appearance.isDark() ? WINDOW_BACKGROUND_STYLE : NO_VIBRANT_STYLE, false);
-                }
-
                 setupBackground(w);
                 AppearanceManager.updateAppearancesInSubtree(rootPane);
                 appearanceHasChanged();
@@ -470,7 +476,24 @@ public class AquaRootPaneUI extends BasicRootPaneUI {
     }
 
     protected void setupBackground(@NotNull Window w) {
-        AquaColors.installBackground(w, "windowBackground");
+
+        if (OSXSystemProperties.OSVersion >= 1014 && !vibrantStyleIsExplicitlySet) {
+            int vibrantStyle = getDefaultWindowVibrantStyle();
+            updateVibrantStyle(vibrantStyle, false);
+        }
+
+        Color c = AquaUtils.getWindowBackground(rootPane);
+        AquaUtils.setBackgroundCarefully(rootPane, c);
+    }
+
+    protected int getDefaultWindowVibrantStyle() {
+        // Non-textured windows use a vibrant background in dark mode
+        // Textured windows use a vibrant background in dark mode but reveal it only in the title/toolbar
+        AquaAppearance appearance = AppearanceManager.getAppearance(rootPane);
+        if (appearance.isDark()) {
+            return WINDOW_BACKGROUND_STYLE;
+        }
+        return NO_VIBRANT_STYLE;
     }
 
     protected void appearanceHasChanged() {
@@ -488,7 +511,7 @@ public class AquaRootPaneUI extends BasicRootPaneUI {
                     if (c instanceof JComponent) {
                         JComponent jc = (JComponent) c;
                         Object o = jc.getClientProperty(AquaVibrantSupport.POPUP_BACKGROUND_STYLE_KEY);
-                        setupBackgroundStyle(o);
+                        updateVibrantStyleFromProperty(o);
                         o = jc.getClientProperty(AquaVibrantSupport.POPUP_CORNER_RADIUS_KEY);
                         configurePopup(o);
                     }
@@ -497,7 +520,7 @@ public class AquaRootPaneUI extends BasicRootPaneUI {
         }
     }
 
-    protected void setupBackgroundStyle(Object o) {
+    protected void updateVibrantStyleFromProperty(Object o) {
         int style = AquaVibrantSupport.parseVibrantStyle(o, false);
         updateVibrantStyle(style, style != NO_VIBRANT_STYLE);
     }
@@ -506,7 +529,7 @@ public class AquaRootPaneUI extends BasicRootPaneUI {
     {
         int oldVibrantStyle = vibrantStyle;
         vibrantStyle = style;
-        vibrantStyleIsSet = isSet;
+        vibrantStyleIsExplicitlySet = isSet;
         if (vibrantStyle != oldVibrantStyle && isInitialized) {
             updateVisualEffectView();
         }
@@ -579,9 +602,11 @@ public class AquaRootPaneUI extends BasicRootPaneUI {
             int bottomMarginHeight = getBottomMarginHeight();
             if (customStyledWindow != null && !customStyledWindow.isValid(style, topMarginHeight, bottomMarginHeight)) {
                 customStyledWindow = customStyledWindow.reconfigure(style, topMarginHeight, bottomMarginHeight);
+                setupBackground(w);
             } else if (customStyledWindow == null) {
                 try {
                     customStyledWindow = new AquaCustomStyledWindow(w, style, topMarginHeight, bottomMarginHeight);
+                    setupBackground(w);
                 } catch (AquaCustomStyledWindow.RequiredToolBarNotFoundException ex) {
                     // This exception would be thrown if the window style is set before adding the tool bar to the
                     // content pane, which would not be an error.
@@ -593,6 +618,17 @@ public class AquaRootPaneUI extends BasicRootPaneUI {
     }
 
     protected void uninstallCustomWindowStyle() {
+        if (customStyledWindow != null) {
+            customStyledWindow.dispose();
+            customStyledWindow = null;
+            Window w = getWindow();
+            if (w != null) {
+                setupBackground(w);
+            }
+        }
+    }
+
+    private void disposeCustomWindowStyle() {
         if (customStyledWindow != null) {
             customStyledWindow.dispose();
             customStyledWindow = null;

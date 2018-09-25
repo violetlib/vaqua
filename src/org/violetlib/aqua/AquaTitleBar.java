@@ -131,7 +131,7 @@ public class AquaTitleBar {
 
     public void paint(@NotNull Graphics g) {
         AquaAppearance appearance = AppearanceManager.ensureAppearance(frame);
-        boolean isSelected = frame.isSelected() || widget == AquaUIPainter.TitleBarWidget.UTILITY_WINDOW;
+        boolean isSelected = AquaFocusHandler.isActive(frame) && (frame.isSelected() || widget == AquaUIPainter.TitleBarWidget.UTILITY_WINDOW);
         EffectName effect = isSelected ? EffectName.EFFECT_NONE : EffectName.EFFECT_DISABLED;
         Color textColor = appearance.getColorForOptionalEffect("text", effect);
         assert textColor != null;
@@ -149,7 +149,7 @@ public class AquaTitleBar {
     }
 
     protected TitleBarConfiguration getConfiguration() {
-        AquaUIPainter.State state = frame.isSelected() ? AquaUIPainter.State.ACTIVE : AquaUIPainter.State.INACTIVE;
+        AquaUIPainter.State state = frame.isSelected() && AquaFocusHandler.isActive(frame) ? AquaUIPainter.State.ACTIVE : AquaUIPainter.State.INACTIVE;
         AquaUIPainter.State closeButtonState = getButtonState(AquaInternalFrameBorder.kCloseButton, frame.isClosable());
         AquaUIPainter.State minimizeButtonState = getButtonState(AquaInternalFrameBorder.kIconButton, frame.isIconifiable());
         AquaUIPainter.State resizeButtonState = getButtonState(AquaInternalFrameBorder.kGrowButton, frame.isMaximizable());
@@ -164,7 +164,7 @@ public class AquaTitleBar {
         boolean overButton = ui.getMouseOverPressedButton();
         boolean rollover = ui.getRollover();
         boolean frameSelected = frame.isSelected() || widget == AquaUIPainter.TitleBarWidget.UTILITY_WINDOW;
-        boolean isActive = rollover || frameSelected;
+        boolean isActive = AquaFocusHandler.isActive(frame) && (rollover || frameSelected);
         return getState(buttonPressedIndex == buttonType && overButton, rollover, isActive, isEnabled);
     }
 

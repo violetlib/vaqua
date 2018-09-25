@@ -131,6 +131,11 @@ public class AquaColors {
 
     public static final Color CLEAR = new ColorUIResource(new Color(0, 0, 0, 0));
 
+    /**
+     * This specific color object may have a special interpretation, to be replaced by the magic eraser effect.
+     */
+    public static final Color MAGIC_ERASER = new ColorUIResource(new Color(0, 0, 0, 0));
+
     private static boolean COLORS_DEBUG = false;
     private static @Nullable BasicContextualColors COLORS_DEBUG_CHOICE = TEXTURED_SEGMENTED_BUTTON_COLORS;
     private static boolean currentColorsDebugFlag;
@@ -155,6 +160,45 @@ public class AquaColors {
             "_inactive_disabled",
             "_focused"
     ));
+
+    public static class TintedEraser extends ColorUIResource {
+        public TintedEraser(int intensity, int alpha) {
+            super(new Color(intensity, intensity, intensity, alpha));
+        }
+    }
+
+    public static class GradientColor extends ColorUIResource {
+        private final @NotNull Color finish;
+        private final boolean useMagicEraser;
+
+        public GradientColor(@NotNull Color start, @NotNull Color finish) {
+            super(start);
+            this.finish = finish;
+            this.useMagicEraser = false;
+        }
+
+        public GradientColor(@NotNull Color start, @NotNull Color finish, boolean useMagicEraser) {
+            super(start);
+            this.finish = finish;
+            this.useMagicEraser = useMagicEraser;
+
+            if (useMagicEraser && (start.getAlpha() == 255 && finish.getAlpha() == 255)) {
+                System.err.println("Magic eraser not needed with opaque gradient");
+            }
+        }
+
+        public @NotNull Color getStart() {
+            return this;
+        }
+
+        public @NotNull Color getFinish() {
+            return finish;
+        }
+
+        public boolean useMagicEraser() {
+            return useMagicEraser;
+        }
+    }
 
     public static @NotNull String toString(@Nullable Color c) {
         if (c == null) {
@@ -191,14 +235,6 @@ public class AquaColors {
     public static @NotNull Color getBackground(@NotNull Component c, @NotNull String colorName, @NotNull EffectName effect) {
         Color color = c.getBackground();
         return getDefaultColor(c, color, colorName, effect);
-    }
-
-    public static void installBackground(@NotNull Component c, @NotNull String colorName) {
-        Color background = c.getBackground();
-        Color color = getBackground(c, colorName);
-        if (!color.equals(background)) {
-            AquaUtils.setBackgroundCarefully(c, color);
-        }
     }
 
     /**

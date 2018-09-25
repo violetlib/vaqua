@@ -58,10 +58,10 @@ public class AquaVibrantSupport {
     public static final String POPUP_CORNER_RADIUS_KEY = "AquaPopup.cornerRadius";
 
     /** This internal client property stores our state for vibrant components, allowing use of a singleton component UI. */
-    public static final String VIBRANT_EFFECTS_KEY = "AquaInternal.vibrantEffects";
+    private static final String VIBRANT_EFFECTS_KEY = "AquaInternal.vibrantEffects";
 
     /** This internal client property records when a window has a full size vibrant background installed. */
-    public static final String VIBRANT_WINDOW_KEY = "AquaInternal.vibrantWindow";
+    private static final String VIBRANT_WINDOW_KEY = "AquaInternal.vibrantWindow";
 
     private static final PropertyChangeListener vibrantStylePropertyChangeListener = new VibrantStylePropertyChangeListener();
 
@@ -260,14 +260,16 @@ public class AquaVibrantSupport {
      * @param w The window.
      */
     public static void removeFullWindowVibrantView(@NotNull Window w) {
-        long rc = execute(w, AquaVibrantSupport::removeVisualEffectWindow);
-        if (rc != 0) {
-            System.err.println("Unable to remove visual effect view");
-        }
         JRootPane rp = AquaUtils.getRootPane(w);
         if (rp != null) {
             if (rp.getClientProperty(VIBRANT_WINDOW_KEY) != null) {
-                rp.repaint();
+                long rc = execute(w, AquaVibrantSupport::removeVisualEffectWindow);
+                if (rc != 0) {
+                    System.err.println("Unable to remove visual effect view");
+                } else {
+                    rp.putClientProperty(VIBRANT_WINDOW_KEY, null);
+                    rp.repaint();
+                }
             }
         }
     }

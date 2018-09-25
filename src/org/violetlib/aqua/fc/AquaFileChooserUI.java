@@ -567,17 +567,15 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
                 optionsSeparator.setVisible(true);
                 // Use a transparent background when displayed in a sheet.
                 if (!AquaSheetSupport.isSheet(fc)) {
-                    AquaAppearance appearance = AppearanceManager.getRegisteredAppearance(fc);
-                    if (appearance != null) {
-                        boolean isSave = fc.getDialogType() == JFileChooser.SAVE_DIALOG;
-                        String name = isSave ? "saveOptionsArea" : "openOptionsArea";
-                        EffectName effect = AquaFocusHandler.isActive(fc) ? EffectName.EFFECT_NONE : EffectName.EFFECT_DISABLED;
-                        Color color = appearance.getColorForEffect(name, effect);
-                        if (color != null) {
-                            // Must not use a UI color, as this color should override a vibrant ancestor.
-                            setOpaque(true);
-                            setBackground(AquaColors.getOrdinaryColor(color));
-                        }
+                    AquaAppearance appearance = AppearanceManager.getAppearance(fc);
+                    boolean isSave = fc.getDialogType() == JFileChooser.SAVE_DIALOG;
+                    String name = isSave ? "saveOptionsArea" : "openOptionsArea";
+                    EffectName effect = AquaFocusHandler.isActive(fc) ? EffectName.EFFECT_NONE : EffectName.EFFECT_DISABLED;
+                    Color color = appearance.getColorForEffect(name, effect);
+                    if (color != null) {
+                        // Must not use a UI color, as this color should override a vibrant ancestor.
+                        setOpaque(true);
+                        setBackground(AquaColors.getOrdinaryColor(color));
                     }
                 }
             }

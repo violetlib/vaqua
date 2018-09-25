@@ -242,6 +242,10 @@ public class AquaCustomStyledWindow {
                 && declaredBottomMarginHeight == this.declaredBottomMarginHeight;
     }
 
+    public boolean isTextured() {
+        return isTextured;
+    }
+
     public void dispose() {
         if (w != null) {
             removeListeners();
@@ -400,7 +404,6 @@ public class AquaCustomStyledWindow {
     }
 
     public void paintMarginBackgrounds(@NotNull Graphics g) {
-
         // Update the possibly dynamic margin heights
         topMarginHeight = calculateTopMarginHeight();
         bottomMarginHeight = calculateBottomMarginHeight();
@@ -422,13 +425,17 @@ public class AquaCustomStyledWindow {
             try {
                 boolean isActive = AquaFocusHandler.isActive(rp);
                 boolean isSheet = AquaSheetSupport.isSheet(rp);
-                boolean isPainted = false;
-                if (useGradient(isActive, isSheet)) {
-                    isPainted = paintGradient(gg, y, height, isTop, isActive);
+
+                Color c;
+
+                if (isSheet) {
+                    c = AquaColors.CLEAR;
+                } else {
+                    c = AquaUtils.getWindowMarginBackground(rp, isTop);
                 }
-                if (!isPainted) {
-                    paintFlat(gg, y, height, isActive, isSheet);
-                }
+
+                AquaUtils.fillRect(g, c, 0, y, rp.getWidth(), height);
+
                 int dividerY;
                 if (isTop) {
                     dividerY = y + height - 1;
@@ -446,42 +453,10 @@ public class AquaCustomStyledWindow {
         }
     }
 
-    protected boolean paintGradient(@NotNull Graphics2D g, int y, int height, boolean isTop, boolean isActive) {
-        String position = isTop ? "Top" : "Bottom";
-        String type = isTextured ? "texturedWindow" : "window";
-        String baseColor = type + position + "Gradient";
-        String startColor = baseColor + "Start";
-        String finishColor = baseColor + "Finish";
-
-        AquaAppearance appearance = AppearanceManager.getAppearance(rp);
-        // currently there are no inactive gradients...
-        EffectName effect = isActive ? EffectName.EFFECT_NONE : EffectName.EFFECT_DISABLED;
-        Color start = appearance.getColorForEffect(startColor, effect);
-        Color finish = appearance.getColorForEffect(finishColor, effect);
-        if (start != null && finish != null) {
-            GradientPaint gp = new GradientPaint(0, y, start, 0, y+height, finish);
-            g.setPaint(gp);
-            int width = rp.getWidth();
-            g.fillRect(0, y, width, height);
-            return true;
-        }
-        return false;
-    }
-
-    protected void paintFlat(@NotNull Graphics2D g, int y, int height, boolean isActive, boolean isSheet) {
-        AquaAppearance appearance = AppearanceManager.getAppearance(rp);
-        EffectName effect = isActive ? EffectName.EFFECT_NONE : EffectName.EFFECT_DISABLED;
-        Color c = appearance.getColorForEffect("windowBackground", effect);
-        if (c != null && (c.getAlpha() < 255 || !isSheet)) {
-            g.setColor(c);
-            g.fillRect(0, y, rp.getWidth(), height);
-        }
-    }
-
     protected void paintUnifiedDivider(Graphics2D g, int y, int width, boolean isActive, boolean isTop) {
-        Color c = AquaColors.getSystemColor(rp, "separator");
-        g.setColor(c);
-        g.fillRect(0, y, width, 1);
+        assert rp != null;
+        Color c = AquaUtils.getWindowMarginDividerColor(rp, isTop);
+        AquaUtils.fillRect(g, c, 0, y, width, 1);
     }
 
     /**
@@ -544,10 +519,6 @@ public class AquaCustomStyledWindow {
 
     protected int calculateBottomMarginHeight() {
         return fixedBottomMarginHeight;
-    }
-
-    protected boolean useGradient(boolean isActive, boolean isSheet) {
-        return isActive && OSXSystemProperties.OSVersion >= 1012 && !isSheet;
     }
 
     protected JComponent getContentPane() {

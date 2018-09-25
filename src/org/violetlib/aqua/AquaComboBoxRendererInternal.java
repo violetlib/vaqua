@@ -153,8 +153,8 @@ public class AquaComboBoxRendererInternal<E> extends JLabel implements ListCellR
             setText((value == null) ? " " : value.toString());
         }
 
-        AquaAppearance appearance = AppearanceManager.getRegisteredAppearance(fComboBox);
-        fIsDark = appearance != null && appearance.isDark();
+        AquaAppearance appearance = AppearanceManager.getAppearance(fComboBox);
+        fIsDark = appearance.isDark();
 
         return this;
     }

@@ -67,11 +67,8 @@ public class AquaLineBorder implements Border {
     }
 
     protected @Nullable Color getColor(@NotNull Component c) {
-        AquaAppearance appearance = AppearanceManager.getRegisteredAppearance(c);
-        if (appearance != null) {
-            return appearance.getColor(colorName);
-        }
-        return null;
+        AquaAppearance appearance = AppearanceManager.getAppearance(c);
+        return appearance.getColor(colorName);
     }
 
     @Override

@@ -77,9 +77,7 @@ public class AquaToolBarUI extends BasicToolBarUI implements SwingConstants, Aqu
     @Override
     public void installUI(JComponent c) {
         super.installUI(c);
-        if (OSXSystemProperties.OSVersion >= 1014) {
-            LookAndFeel.installProperty(c, "opaque", false);
-        }
+        LookAndFeel.installProperty(c, "opaque", false);
     }
 
     @Override
@@ -296,7 +294,7 @@ public class AquaToolBarUI extends BasicToolBarUI implements SwingConstants, Aqu
     public void update(Graphics g, JComponent c) {
         AquaAppearance appearance = AppearanceManager.registerCurrentAppearance(c);
         if (!isRendering && c.isOpaque()) {
-            Color bc = AquaColors.getBackground(c, "windowBackground");
+            Color bc = c.getBackground();
             AquaUtils.fillRect(g, c, bc, AquaUtils.ERASE_IF_TEXTURED|AquaUtils.ERASE_IF_VIBRANT);
         }
         paint(g, c);
@@ -376,11 +374,7 @@ public class AquaToolBarUI extends BasicToolBarUI implements SwingConstants, Aqu
 
     @Override
     public Color getDockingColor() {
-        AquaAppearance appearance = AppearanceManager.getRegisteredAppearance(toolBar);
-        if (appearance != null) {
-            return appearance.getColor("windowBackground");
-        }
-        return Color.WHITE; // should not happen
+        return AquaUtils.getWindowBackground(toolBar);
     }
 
     @Override
@@ -412,7 +406,7 @@ public class AquaToolBarUI extends BasicToolBarUI implements SwingConstants, Aqu
             for (int i = 0; i < count; i++) {
                 Component c = toolBar.getComponent(i);
                 if (i > 0) {
-                    major.addGap(5);    // 2 is fine for large icon buttons, but regular buttons need a larger gap
+                    major.addGap(5); // 2 is fine for large icon buttons, but regular buttons need a larger gap
                 }
                 major.addComponent(c);
                 minor.addComponent(c);

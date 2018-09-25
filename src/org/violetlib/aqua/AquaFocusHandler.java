@@ -128,7 +128,7 @@ public class AquaFocusHandler implements FocusListener, PropertyChangeListener {
 
     public static void updateComponentTreeUIActivation(Component c, boolean active) {
         if (c instanceof javax.swing.JInternalFrame) {
-            active = ((JInternalFrame)c).isSelected();
+            active = active && ((JInternalFrame)c).isSelected();
         }
 
         if (c instanceof javax.swing.JComponent) {

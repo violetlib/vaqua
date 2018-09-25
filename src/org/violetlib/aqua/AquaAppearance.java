@@ -149,6 +149,29 @@ public class AquaAppearance implements VAppearance {
 
         // default definitions
 
+        colors.add("texturedWindowBackground", "windowBackground");
+        colors.add("texturedWindowBackground_disabled", "windowBackground_disabled");
+
+        colors.add("topWindowMarginBackground", "windowBackground");
+        colors.add("topWindowMarginBackground_disabled", "windowBackground_disabled");
+        colors.add("bottomWindowMarginBackground", "windowBackground");
+        colors.add("bottomWindowMarginBackground_disabled", "windowBackground_disabled");
+
+        colors.add("topTexturedWindowMarginBackground", "texturedWindowBackground");
+        colors.add("topTexturedWindowMarginBackground_disabled", "texturedWindowBackground_disabled");
+        colors.add("bottomTexturedWindowMarginBackground", "texturedWindowBackground");
+        colors.add("bottomTexturedWindowMarginBackground_disabled", "texturedWindowBackground_disabled");
+
+        colors.add("topWindowDivider", "separator");
+        colors.add("topWindowDivider_disabled", "separator_disabled");
+        colors.add("bottomWindowDivider", "separator");
+        colors.add("bottomWindowDivider_disabled", "separator_disabled");
+
+        colors.add("topTexturedWindowDivider", "separator");
+        colors.add("topTexturedWindowDivider_disabled", "separator_disabled");
+        colors.add("bottomTexturedWindowDivider", "separator");
+        colors.add("bottomTexturedWindowDivider_disabled", "separator_disabled");
+
         colors.add("text_inactive", "text");
         colors.add("selectedText_inactive", "unemphasizedSelectedText");
 
@@ -206,22 +229,22 @@ public class AquaAppearance implements VAppearance {
     }
 
     private static @NotNull Colors createLightColors() {
-        // Define colors used by VAqua that may not be defined by system colors.
-        // Mostly these are colors not supported by macOS prior to 10.13 or 10.14.
         Colors colors = new Colors();
-        colors.add("text_disabled", 192);
-        colors.add("textBackground_disabled", 255, 89);
-        colors.add("windowBackground", 237);
-        colors.add("controlText_disabled", 128);
-        colors.add("alternateSelectedControlText_disabled", 128);   // I had 192 before, did not work, but is there somewhere that 192 is needed?
+        colors.add("texturedWindowBackground", 212);
+        colors.add("texturedWindowBackground_disabled", 246);
         colors.add("capsLockIcon", 0, 100);
-        colors.add("selectedMenuItemText", 255);
 
-        if (OSVersion < 1012) {
-            colors.add("windowBackground_disabled", 234);
-        } else {
-            colors.add("windowBackground_disabled", 246);
+        if (OSVersion < 1014) {
+            colors.add("text_disabled", 0, 89); // was 192
+            colors.add("textBackground_disabled", 255, 89);
+            colors.add("windowBackground", 236);
+            colors.add("separator_disabled", 0, 8);
+            colors.add("controlText_disabled", 0, 77); // was 128
+            colors.add("alternateSelectedControlText_disabled", 255, 89); // was 128
+            colors.add("selectedMenuItemText", 255);
         }
+
+        colors.add("windowBackground_disabled", "windowBackground");
 
         // disabled system colors
         if (OSVersion < 1014) {
@@ -375,16 +398,79 @@ public class AquaAppearance implements VAppearance {
 
         // colors related to window content borders
 
-        colors.add("texturedWindowTopGradientStart", 186, 36);
-        colors.add("texturedWindowTopGradientFinish", 0, 36);
-        colors.add("texturedWindowBottomGradientStart", 160, 36);
-        colors.add("texturedWindowBottomGradientFinish", 70, 36);
+        if (OSVersion < 1014) {
+            colors.addColorGradient("topTexturedWindowMarginBackground", 255, 194, 120);
+            colors.addAlphaGradient("bottomTexturedWindowMarginBackground", 255, 104, 28);
+            colors.addAlphaGradient("topWindowMarginBackground", 0, 4, 28);
+            colors.addAlphaGradient("bottomWindowMarginBackground", 0, 8, 22);
+        } else {
+            colors.addColorGradient("topTexturedWindowMarginBackground", 255, 180, 80);
+            colors.addAlphaGradient("bottomTexturedWindowMarginBackground", 255, 144, 8);
+            colors.addAlphaGradient("topWindowMarginBackground", 0, 8, 36);
+            colors.addAlphaGradient("bottomWindowMarginBackground", 0, 0, 24);
+        }
+
+        colors.add("topWindowMarginBackground_disabled", 246);
+        colors.add("bottomWindowMarginBackground_disabled", 246);
+        colors.add("topTexturedWindowBackground_disabled", 246);
+        colors.add("bottomTexturedWindowBackground_disabled", 246);
+
+        if (OSVersion < 1014) {
+            colors.add("topWindowDivider", 0, 36);
+            colors.add("topWindowDivider_disabled", 0, 28);
+            colors.add("bottomWindowDivider", 0, 36);
+            colors.add("bottomWindowDivider_disabled", 0, 38);
+        } else {
+            colors.add("topWindowDivider", 0, 32);
+            colors.add("topWindowDivider_disabled", 0, 28);
+            colors.add("bottomWindowDivider", 0, 28);
+            colors.add("bottomWindowDivider_disabled", 0, 28);
+        }
+
+        colors.add("topTexturedWindowDivider", 0, 32);  // was 42
+        colors.add("topTexturedWindowDivider_disabled", 0, 28);
+        colors.add("bottomTexturedWindowDivider", 0, 56);
+        colors.add("bottomTexturedWindowDivider_disabled", 0, 28);
 
         return colors;
     }
 
     private static @NotNull Colors createHighContrastLightColors() {
         Colors colors = new Colors();
+
+        if (OSVersion < 1014) {
+            colors.add("windowBackground", 246);
+            colors.add("windowBackground_disabled", 246);
+            colors.add("texturedWindowBackground", 207);
+        } else {
+            colors.add("windowBackground", 236);
+            colors.add("windowBackground_disabled", 236);
+            colors.add("texturedWindowBackground", 212);
+        }
+
+        if (OSVersion < 1014) {
+            colors.addAlphaGradient("topWindowMarginBackground", 0, 16, 40);
+            colors.addAlphaGradient("bottomWindowMarginBackground", 0, 22, 36);
+        } else {
+            colors.addAlphaGradient("topWindowMarginBackground", 0, 8, 34);
+            colors.addAlphaGradient("bottomWindowMarginBackground", 0, 0, 26);
+            colors.addColorGradient("topTexturedWindowMarginBackground", 255, 200, 104);
+            colors.addAlphaGradient("bottomTexturedWindowMarginBackground", 255, 144, 8);
+        }
+
+        {
+            int c = 0;
+            int a = OSVersion < 1014 ? 64 : 74;
+            colors.add("topWindowDivider", c, a);
+            colors.add("bottomWindowDivider", c, a);
+            colors.add("topTexturedWindowDivider", c, a);
+            colors.add("bottomTexturedWindowDivider", c, a);
+
+            colors.add("topWindowDivider_disabled", c, a);
+            colors.add("bottomWindowDivider_disabled", c, a);
+            colors.add("topTexturedWindowDivider_disabled", c, a);
+            colors.add("bottomTexturedWindowDivider_disabled", c, a);
+        }
 
         // support for painting the scroll pane corner when using legacy scroll bars
         colors.add("scrollPaneBorder", 0, 128);
@@ -433,6 +519,8 @@ public class AquaAppearance implements VAppearance {
         colors.add("capsLockIcon", 255, 96);
 
         colors.add("windowBackground_disabled", 45);
+        colors.add("texturedWindowBackground", 42);
+        colors.add("texturedWindowBackground_disabled", 45);
 
         colors.add("cellBackground", "clear");
         colors.add("selectedCellBackground_inactive", "selectedTextBackground_inactive");
@@ -605,10 +693,15 @@ public class AquaAppearance implements VAppearance {
 
         // colors related to window content borders (dark mode)
 
-        colors.add("texturedWindowTopGradientStart", 186, 32);
-        colors.add("texturedWindowTopGradientFinish", 150, 32);
-        colors.add("texturedWindowBottomGradientStart", 60, 64);
-        colors.add("texturedWindowBottomGradientFinish", 0, 64);
+        colors.addMagicAlphaGradient("topTexturedWindowMarginBackground", 255, 24, 8);
+        colors.add("topTexturedWindowMarginBackground_disabled", new AquaColors.TintedEraser(0, 32));
+        colors.addColorGradient("bottomTexturedWindowMarginBackground", 60, 38, 128);
+        colors.addAlphaGradient("topWindowMarginBackground", 255, 24, 8);
+        colors.add("topWindowMarginBackground_disabled", new AquaColors.TintedEraser(32, 64));
+        // using translucent colors will reveal a vibrant background, which is incorrect for the bottom margin
+        colors.addColorGradient("bottomWindowMarginBackground", 50, 40, 255);
+
+        colors.add("topWindowDivider_disabled", 55);    // flat divider over vibrant background
 
         return colors;
     }
@@ -616,9 +709,30 @@ public class AquaAppearance implements VAppearance {
     private static @NotNull Colors createHighContrastDarkColors() {
         Colors colors = new Colors();
 
+        colors.add("windowBackground", 50);
+        colors.add("texturedWindowBackground", 53);
+
         // support for painting the scroll pane corner when using legacy scroll bars (dark mode)
         colors.add("scrollPaneGrabber", 200);
         colors.add("scrollPaneBorder", 153, 128);
+
+        colors.addColorGradient("bottomTexturedWindowMarginBackground", 80, 48, 128);
+        // using translucent colors will reveal a vibrant background, which is incorrect for the bottom margin
+        colors.addColorGradient("bottomWindowMarginBackground", 66, 53, 255);
+
+        {
+            int c = 255;
+            int a = 104;
+            colors.add("topWindowDivider", c, a);
+            colors.add("bottomWindowDivider", c, a);
+            colors.add("topTexturedWindowDivider", c, a);
+            colors.add("bottomTexturedWindowDivider", c, a);
+
+            colors.add("topWindowDivider_disabled", c, a);
+            colors.add("bottomWindowDivider_disabled", c, a);
+            colors.add("topTexturedWindowDivider_disabled", c, a);
+            colors.add("bottomTexturedWindowDivider_disabled", c, a);
+        }
 
         return colors;
     }
@@ -709,6 +823,34 @@ public class AquaAppearance implements VAppearance {
         public void add(@NotNull String name, int intensity, int alpha) {
             Color c = new ColorUIResource(new Color(intensity, intensity, intensity, alpha));
             internalAdd(name, c);
+        }
+
+        public void addColorGradient(@NotNull String name, int start, int finish, int alpha) {
+            Color startColor = new Color(start, start, start, alpha);
+            Color finishColor = new Color(finish, finish, finish, alpha);
+            Color gradientColor = new AquaColors.GradientColor(startColor, finishColor);
+            internalAdd(name, gradientColor);
+        }
+
+        public void addMagicColorGradient(@NotNull String name, int start, int finish, int alpha) {
+            Color startColor = new Color(start, start, start, alpha);
+            Color finishColor = new Color(finish, finish, finish, alpha);
+            Color gradientColor = new AquaColors.GradientColor(startColor, finishColor, true);
+            internalAdd(name, gradientColor);
+        }
+
+        public void addAlphaGradient(@NotNull String name, int intensity, int startAlpha, int finishAlpha) {
+            Color startColor = new Color(intensity, intensity, intensity, startAlpha);
+            Color finishColor = new Color(intensity, intensity, intensity, finishAlpha);
+            Color gradientColor = new AquaColors.GradientColor(startColor, finishColor);
+            internalAdd(name, gradientColor);
+        }
+
+        public void addMagicAlphaGradient(@NotNull String name, int intensity, int startAlpha, int finishAlpha) {
+            Color startColor = new Color(intensity, intensity, intensity, startAlpha);
+            Color finishColor = new Color(intensity, intensity, intensity, finishAlpha);
+            Color gradientColor = new AquaColors.GradientColor(startColor, finishColor, true);
+            internalAdd(name, gradientColor);
         }
 
         public void add(@NotNull String name, @NotNull Color color) {

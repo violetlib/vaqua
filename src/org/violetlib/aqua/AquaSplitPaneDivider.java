@@ -145,8 +145,7 @@ public class AquaSplitPaneDivider extends BasicSplitPaneDivider {
             SplitPaneDividerConfiguration dg = new SplitPaneDividerConfiguration(w, state, orientation, 0);
             painter.getPainter(dg).paint(g, x, y);
         } else {
-            g.setColor(c);
-            g.fillRect(x, y, size.width, size.height);
+            AquaUtils.fillRect(g, c, x, y, size.width, size.height);
         }
 
         super.paint(g); // Ends up at Container.paint, which paints our JButton children
