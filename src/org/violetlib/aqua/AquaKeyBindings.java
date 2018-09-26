@@ -1,4 +1,12 @@
 /*
+ * Changes copyright (c) 2018 Alan Snyder.
+ * All rights reserved.
+ *
+ * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
+ * accompanying license terms.
+ */
+
+/*
  * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -37,23 +45,23 @@ import org.violetlib.aqua.AquaUtils.RecyclableSingleton;
 import org.violetlib.aqua.AquaUtils.RecyclableSingletonFromDefaultConstructor;
 
 public class AquaKeyBindings {
-    static final RecyclableSingleton<AquaKeyBindings> instance = new RecyclableSingletonFromDefaultConstructor<AquaKeyBindings>(AquaKeyBindings.class);
+    private static final RecyclableSingleton<AquaKeyBindings> instance = new RecyclableSingletonFromDefaultConstructor<AquaKeyBindings>(AquaKeyBindings.class);
     static AquaKeyBindings instance() {
         return instance.get();
     }
 
-    final DefaultKeyTypedAction defaultKeyTypedAction = new DefaultKeyTypedAction();
-    void setDefaultAction(final String keymapName) {
-        final javax.swing.text.Keymap map = JTextComponent.getKeymap(keymapName);
+    private final DefaultKeyTypedAction defaultKeyTypedAction = new DefaultKeyTypedAction();
+    void setDefaultAction(String keymapName) {
+        javax.swing.text.Keymap map = JTextComponent.getKeymap(keymapName);
         map.setDefaultAction(defaultKeyTypedAction);
     }
 
-    static final String upMultilineAction = "aqua-move-up";
-    static final String downMultilineAction = "aqua-move-down";
-    static final String pageUpMultiline = "aqua-page-up";
-    static final String pageDownMultiline = "aqua-page-down";
+    private static final String upMultilineAction = "aqua-move-up";
+    private static final String downMultilineAction = "aqua-move-down";
+    private static final String pageUpMultiline = "aqua-page-up";
+    private static final String pageDownMultiline = "aqua-page-down";
 
-    final String[] commonTextEditorBindings = {
+    private final String[] commonTextEditorBindings = {
         "ENTER", JTextField.notifyAction,
         "COPY", DefaultEditorKit.copyAction,
         "CUT", DefaultEditorKit.cutAction,
@@ -464,8 +472,8 @@ public class AquaKeyBindings {
 
     // wraps basic string arrays
     static class SimpleBinding implements BindingsProvider {
-        final String[] bindings;
-        public SimpleBinding(final String[] bindings) { this.bindings = bindings; }
+        public final String[] bindings;
+        public SimpleBinding(String[] bindings) { this.bindings = bindings; }
         public String[] getBindings() { return bindings; }
     }
 
@@ -474,18 +482,18 @@ public class AquaKeyBindings {
         private final BindingsProvider[] providerList;
         private String[] mergedBindings;
 
-        public LateBoundInputMap(final BindingsProvider ... providerList) {
+        public LateBoundInputMap(BindingsProvider ... providerList) {
             this.providerList = providerList;
         }
 
-        public Object createValue(final UIDefaults table) {
+        public Object createValue(UIDefaults table) {
             return LookAndFeel.makeInputMap(getBindings());
         }
 
         public String[] getBindings() {
             if (mergedBindings != null) return mergedBindings;
 
-            final String[][] bindingsList = new String[providerList.length][];
+            String[][] bindingsList = new String[providerList.length][];
             int size = 0;
             for (int i = 0; i < providerList.length; i++) {
                 bindingsList[i] = providerList[i].getBindings();
@@ -496,7 +504,7 @@ public class AquaKeyBindings {
                 return mergedBindings = bindingsList[0];
             }
 
-            final ArrayList<String> unifiedList = new ArrayList<String>(size);
+            ArrayList<String> unifiedList = new ArrayList<String>(size);
             Collections.addAll(unifiedList, bindingsList[0]); // System.arrayCopy() the first set
 
             for (int i = 1; i < providerList.length; i++) {
@@ -506,12 +514,12 @@ public class AquaKeyBindings {
             return mergedBindings = unifiedList.toArray(new String[unifiedList.size()]);
         }
 
-        static void mergeBindings(final ArrayList<String> unifiedList, final String[] overrides) {
+        static void mergeBindings(ArrayList<String> unifiedList, String[] overrides) {
             for (int i = 0; i < overrides.length; i+=2) {
-                final String key = overrides[i];
-                final String value = overrides[i+1];
+                String key = overrides[i];
+                String value = overrides[i+1];
 
-                final int keyIndex = unifiedList.indexOf(key);
+                int keyIndex = unifiedList.indexOf(key);
                 if (keyIndex == -1) {
                     unifiedList.add(key);
                     unifiedList.add(value);
@@ -523,8 +531,8 @@ public class AquaKeyBindings {
         }
     }
 
-    void installAquaUpDownActions(final JTextComponent component) {
-        final ActionMap actionMap = component.getActionMap();
+    void installAquaUpDownActions(JTextComponent component) {
+        ActionMap actionMap = component.getActionMap();
         actionMap.put(upMultilineAction, moveUpMultilineAction);
         actionMap.put(downMultilineAction, moveDownMultilineAction);
         actionMap.put(pageUpMultiline, pageUpMultilineAction);
@@ -534,12 +542,12 @@ public class AquaKeyBindings {
     // extracted and adapted from DefaultEditorKit in 1.6
     @SuppressWarnings("serial") // Superclass is not serializable across versions
     static abstract class DeleteWordAction extends TextAction {
-        public DeleteWordAction(final String name) { super(name); }
+        public DeleteWordAction(String name) { super(name); }
 
-        public void actionPerformed(final ActionEvent e) {
+        public void actionPerformed(ActionEvent e) {
             if (e == null) return;
 
-            final JTextComponent target = getTextComponent(e);
+            JTextComponent target = getTextComponent(e);
             if (target == null) return;
 
             if (!target.isEditable() || !target.isEnabled()) {
@@ -548,49 +556,49 @@ public class AquaKeyBindings {
             }
 
             try {
-                final int start = target.getSelectionStart();
-                final Element line = Utilities.getParagraphElement(target, start);
-                final int end = getEnd(target, line, start);
+                int start = target.getSelectionStart();
+                Element line = Utilities.getParagraphElement(target, start);
+                int end = getEnd(target, line, start);
 
-                final int offs = Math.min(start, end);
-                final int len = Math.abs(end - start);
+                int offs = Math.min(start, end);
+                int len = Math.abs(end - start);
                 if (offs >= 0) {
                     target.getDocument().remove(offs, len);
                     return;
                 }
-            } catch (final BadLocationException ignore) {}
+            } catch (BadLocationException ignore) {}
             UIManager.getLookAndFeel().provideErrorFeedback(target);
         }
 
-        abstract int getEnd(final JTextComponent target, final Element line, final int start) throws BadLocationException;
+        abstract int getEnd(JTextComponent target, Element line, int start) throws BadLocationException;
     }
 
-    final TextAction moveUpMultilineAction = new AquaMultilineAction(upMultilineAction, DefaultEditorKit.upAction, DefaultEditorKit.beginAction);
-    final TextAction moveDownMultilineAction = new AquaMultilineAction(downMultilineAction, DefaultEditorKit.downAction, DefaultEditorKit.endAction);
-    final TextAction pageUpMultilineAction = new AquaMultilineAction(pageUpMultiline, DefaultEditorKit.pageUpAction, DefaultEditorKit.beginAction);
-    final TextAction pageDownMultilineAction = new AquaMultilineAction(pageDownMultiline, DefaultEditorKit.pageDownAction, DefaultEditorKit.endAction);
+    private final TextAction moveUpMultilineAction = new AquaMultilineAction(upMultilineAction, DefaultEditorKit.upAction, DefaultEditorKit.beginAction);
+    private final TextAction moveDownMultilineAction = new AquaMultilineAction(downMultilineAction, DefaultEditorKit.downAction, DefaultEditorKit.endAction);
+    private final TextAction pageUpMultilineAction = new AquaMultilineAction(pageUpMultiline, DefaultEditorKit.pageUpAction, DefaultEditorKit.beginAction);
+    private final TextAction pageDownMultilineAction = new AquaMultilineAction(pageDownMultiline, DefaultEditorKit.pageDownAction, DefaultEditorKit.endAction);
 
     @SuppressWarnings("serial") // Superclass is not serializable across versions
     static class AquaMultilineAction extends TextAction {
-        final String targetActionName;
-        final String proxyActionName;
+        public final String targetActionName;
+        public final String proxyActionName;
 
-        public AquaMultilineAction(final String actionName, final String targetActionName, final String proxyActionName) {
+        public AquaMultilineAction(String actionName, String targetActionName, String proxyActionName) {
             super(actionName);
             this.targetActionName = targetActionName;
             this.proxyActionName = proxyActionName;
         }
 
-        public void actionPerformed(final ActionEvent e) {
-            final JTextComponent c = getTextComponent(e);
-            final ActionMap actionMap = c.getActionMap();
-            final Action targetAction = actionMap.get(targetActionName);
+        public void actionPerformed(ActionEvent e) {
+            JTextComponent c = getTextComponent(e);
+            ActionMap actionMap = c.getActionMap();
+            Action targetAction = actionMap.get(targetActionName);
 
-            final int startPosition = c.getCaretPosition();
+            int startPosition = c.getCaretPosition();
             targetAction.actionPerformed(e);
             if (startPosition != c.getCaretPosition()) return;
 
-            final Action proxyAction = actionMap.get(proxyActionName);
+            Action proxyAction = actionMap.get(proxyActionName);
             proxyAction.actionPerformed(e);
         }
     }

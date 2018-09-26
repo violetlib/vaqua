@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015 Alan Snyder.
+ * Copyright (c) 2015-2018 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -110,7 +110,7 @@ public class AquaFocusRingPainter {
             if (currentDisplayedFocusOwner != null && AquaFocusHandler.isActive(currentDisplayedFocusOwner) && currentFocusRingProvider != null) {
                 Shape s = currentFocusRingProvider.getFocusRingOutline(currentDisplayedFocusOwner);
                 if (s != null) {
-                    Color focusColor = UIManager.getColor("Focus.color");
+                    Color focusColor = AquaColors.getSystemColor(currentDisplayedFocusOwner,"keyboardFocusIndicator");
                     FocusRingPainter p = getFocusRingPainter(s);
                     p.paint(g, focusColor);
                 }
@@ -171,6 +171,6 @@ public class AquaFocusRingPainter {
      * cell editor should use a smaller focus ring that does not overlap other cells.
      */
     protected boolean isCellEditor(JComponent c) {
-        return cellEditorPolicy.isCellEditor(c);
+        return cellEditorPolicy.getCellStatus(c) != null;
     }
 }

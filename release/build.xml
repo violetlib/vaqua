@@ -45,12 +45,13 @@
     <property name="headersdir" location="${builddir}/headers"/>
     <property name="jnidir" location="${builddir}/jni"/>
     <property name="distdir" location="dist"/>
+    <property name="libdir" location="${base}/lib"/>
 
-    <property name="renderingLibraryJAR" location="${base}/lib/VAquaRendering.jar"/>
+    <property name="renderingLibraryJAR" location="${libdir}/VAquaRendering.jar"/>
 
-    <property name="SDKversion" value="10.13"/>
+    <property name="SDKversion" value="10.14"/>
     <property name="SDKroot" location="/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX${SDKversion}.sdk" />
-    <property name="libpath" location="${base}/lib/IdeaAnnotations.jar"/>
+    <property name="libpath" location="${libdir}/IdeaAnnotations.jar"/>
     <property name="cc" location="/usr/bin/cc"/>
 
     <property name="debug" value="false"/>
@@ -164,6 +165,7 @@
             <arg value="-I${SDKroot}/System/Library/Frameworks/JavaVM.framework/Headers"/>
             <arg value="-I${SDKroot}/System/Library/Frameworks/JavaVM.framework/Frameworks/JavaNativeFoundation.framework/Headers"/>
             <arg value="-I${headersdir}"/>
+            <arg value="-I${libdir}"/>
 
             <arg value="-dynamiclib"/>
             <arg value="-ObjC"/>
@@ -177,13 +179,17 @@
             <arg value="-framework"/>
             <arg value="JavaNativeFoundation"/>
 
-            <arg value="-L${jdklibdir}"/>
-            <arg value="-lawt_lwawt"/>
-            <arg value="-losxapp"/>
+            <arg value="-U"/>
+            <arg value="_VAppearances_updateAppearance"/>
+            <arg value="-undefined"/>
+            <arg value="dynamic_lookup"/>
 
             <arg value="${jnisrc}/AquaNativeSupport.m"/>
             <arg value="${jnisrc}/AquaSidebarBackground.m"/>
             <arg value="${jnisrc}/AquaWrappedAWTView.m"/>
+            <arg value="${jnisrc}/AquaVisualEffectView.m"/>
+            <arg value="${jnisrc}/JavaWindowAccess.m"/>
+            <arg value="${jnisrc}/WindowStyleMaskPatch.m"/>
         </exec>
 
     </target>

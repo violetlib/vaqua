@@ -1,4 +1,12 @@
 /*
+ * Changes copyright (c) 2018 Alan Snyder.
+ * All rights reserved.
+ *
+ * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
+ * accompanying license terms.
+ */
+
+/*
  * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -40,7 +48,7 @@ public class AquaMnemonicHandler {
 
     protected static boolean isMnemonicHidden = true; // true by default
 
-    public static void setMnemonicHidden(final boolean hide) {
+    public static void setMnemonicHidden(boolean hide) {
         if (UIManager.getBoolean("Button.showMnemonics")) {
             // Do not hide mnemonics if the UI defaults do not support this
             isMnemonicHidden = false;
@@ -65,13 +73,13 @@ public class AquaMnemonicHandler {
     }
 
     static class AltProcessor implements KeyEventPostProcessor {
-        public boolean postProcessKeyEvent(final KeyEvent ev) {
+        public boolean postProcessKeyEvent(KeyEvent ev) {
             if (ev.getKeyCode() != KeyEvent.VK_ALT) {
                 return false;
             }
 
-            final JRootPane root = SwingUtilities.getRootPane(ev.getComponent());
-            final Window winAncestor = (root == null ? null : SwingUtilities.getWindowAncestor(root));
+            JRootPane root = SwingUtilities.getRootPane(ev.getComponent());
+            Window winAncestor = (root == null ? null : SwingUtilities.getWindowAncestor(root));
 
             switch(ev.getID()) {
                 case KeyEvent.KEY_PRESSED:
@@ -91,13 +99,13 @@ public class AquaMnemonicHandler {
     /*
      * Repaints all the components with the mnemonics in the given window and all its owned windows.
      */
-    static void repaintMnemonicsInWindow(final Window w) {
+    static void repaintMnemonicsInWindow(Window w) {
         if (w == null || !w.isShowing()) {
             return;
         }
 
-        final Window[] ownedWindows = w.getOwnedWindows();
-        for (final Window element : ownedWindows) {
+        Window[] ownedWindows = w.getOwnedWindows();
+        for (Window element : ownedWindows) {
             repaintMnemonicsInWindow(element);
         }
 
@@ -108,9 +116,9 @@ public class AquaMnemonicHandler {
      * Repaints all the components with the mnemonics in container.
      * Recursively searches for all the subcomponents.
      */
-    static void repaintMnemonicsInContainer(final Container cont) {
+    static void repaintMnemonicsInContainer(Container cont) {
         for (int i = 0; i < cont.getComponentCount(); i++) {
-            final Component c = cont.getComponent(i);
+            Component c = cont.getComponent(i);
             if (c == null || !c.isVisible()) {
                 continue;
             }

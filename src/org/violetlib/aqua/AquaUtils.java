@@ -47,16 +47,16 @@ import java.security.PrivilegedAction;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.StringTokenizer;
-import java.util.WeakHashMap;
 import java.util.concurrent.locks.Lock;
 import java.util.function.Supplier;
 import javax.swing.*;
 import javax.swing.border.Border;
-import javax.swing.plaf.ColorUIResource;
 import javax.swing.plaf.MenuBarUI;
 import javax.swing.plaf.UIResource;
 import javax.swing.text.View;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.violetlib.aqua.AquaImageFactory.SlicedImageControl;
 import org.violetlib.jnr.Insets2D;
 import org.violetlib.jnr.Insetter;
@@ -66,15 +66,39 @@ import static javax.swing.SwingConstants.*;
 
 final public class AquaUtils {
 
+    public static final String TOOLBAR_PANEL_PROPERTY = "Aqua.isToolBarPanel";
+
     private static final String ANIMATIONS_PROPERTY = "swing.enableAnimations";
 
     private static final int javaVersion = obtainJavaVersion();
+
+    private interface WindowAppearanceChangedCallback {
+        void windowAppearanceChanged(@NotNull Window w, @NotNull String appearanceName);
+    }
 
     /**
      * Suppresses default constructor, ensuring non-instantiability.
      */
     private AquaUtils() {
     }
+
+    static {
+        registerWindowChangedAppearanceCallback(new WindowAppearanceChangedCallback() {
+            @Override
+            public void windowAppearanceChanged(@NotNull Window w, @NotNull String appearanceName) {
+                if (w instanceof RootPaneContainer) {
+                    RootPaneContainer rpc = (RootPaneContainer) w;
+                    SwingUtilities.invokeLater(() -> {
+                        JRootPane rootPane = rpc.getRootPane();
+                        AquaRootPaneUI ui = getUI(rootPane, AquaRootPaneUI.class);
+                        if (ui != null) {
+                            ui.windowAppearanceChanged(appearanceName);
+                        }
+                    });
+                }
+            }
+        });
+    };
 
     public static int getJavaVersion() {
         return javaVersion;
@@ -124,19 +148,19 @@ final public class AquaUtils {
     /**
      * Return the UI of a component if it satisfies the specified class or interface.
      */
-    public static <T> T getUI(JComponent c, Class<T> requestedClass) {
+    public static @Nullable <T> T getUI(@NotNull JComponent c, Class<T> requestedClass) {
         // The getUI() method is public as of Java 9
         try {
-            final Class<? extends JComponent> clazz = c.getClass();
-            final Method getUIMethod = clazz.getMethod("getUI");
-            final Object ui = getUIMethod.invoke(c);
+            Class<? extends JComponent> clazz = c.getClass();
+            Method getUIMethod = clazz.getMethod("getUI");
+            Object ui = getUIMethod.invoke(c);
             return requestedClass.cast(ui);
         } catch (Throwable th) {
             return null;
         }
     }
 
-    public static String getWindowNameForDebugging(Window w) {
+    public static @NotNull String getWindowNameForDebugging(@NotNull Window w) {
         String name = w.getName();
         if (name == null) {
             name = w.getClass().getName() + "@" + Integer.toHexString(w.hashCode());
@@ -266,7 +290,7 @@ final public class AquaUtils {
         int left = insets.left;
         int right = insets.right;
         return new Rectangle(bounds.x + left, bounds.y + top, bounds.width - left - right,
-                bounds.height - top - bottom);
+          bounds.height - top - bottom);
     }
 
     /**
@@ -297,7 +321,7 @@ final public class AquaUtils {
     /**
      * Convenience method to get the root pane of a window.
      */
-    public static JRootPane getRootPane(Window w) {
+    public static @Nullable JRootPane getRootPane(Window w) {
         if (w instanceof RootPaneContainer) {
             RootPaneContainer rpc = (RootPaneContainer) w;
             return rpc.getRootPane();
@@ -317,10 +341,10 @@ final public class AquaUtils {
         return c == null || c.getComponentOrientation().isLeftToRight() ? AquaUIPainter.UILayoutDirection.LEFT_TO_RIGHT : AquaUIPainter.UILayoutDirection.RIGHT_TO_LEFT;
     }
 
-    static void enforceComponentOrientation(final Component c, final ComponentOrientation orientation) {
+    static void enforceComponentOrientation(Component c, ComponentOrientation orientation) {
         c.setComponentOrientation(orientation);
         if (c instanceof Container) {
-            for (final Component child : ((Container) c).getComponents()) {
+            for (Component child : ((Container) c).getComponents()) {
                 enforceComponentOrientation(child, orientation);
             }
         }
@@ -329,11 +353,38 @@ final public class AquaUtils {
     public static boolean isOnToolbar(JComponent b) {
         Component parent = b.getParent();
         while (parent != null) {
-            if (parent instanceof JToolBar) {
+            if (isToolBar(parent)) {
                 return true;
             }
             parent = parent.getParent();
         }
+        return false;
+    }
+
+    public static boolean isToolBar(@NotNull Component c) {
+        if (c instanceof JToolBar) {
+            JToolBar tb = (JToolBar) c;
+            return !tb.isFloatable();
+        }
+
+        if (c instanceof JComponent) {
+            JComponent jc = (JComponent) c;
+            Object o = jc.getClientProperty(TOOLBAR_PANEL_PROPERTY);
+            return Boolean.TRUE.equals(o);
+        }
+
+        return false;
+    }
+
+    public static boolean isDecorated(@NotNull Window w) {
+        if (w instanceof Frame) {
+            return !((Frame) w).isUndecorated();
+        }
+
+        if (w instanceof Dialog) {
+            return !((Dialog) w).isUndecorated();
+        }
+
         return false;
     }
 
@@ -375,17 +426,17 @@ final public class AquaUtils {
      * @return the possibly clipped version of the compound labels string
      */
     public static String layoutCompoundLabel(JComponent c,
-            FontMetrics fm,
-            String text,
-            Icon icon,
-            int verticalAlignment,
-            int horizontalAlignment,
-            int verticalTextPosition,
-            int horizontalTextPosition,
-            Rectangle viewR,
-            Rectangle iconR,
-            Rectangle textR,
-            int textIconGap)
+                                             FontMetrics fm,
+                                             String text,
+                                             Icon icon,
+                                             int verticalAlignment,
+                                             int horizontalAlignment,
+                                             int verticalTextPosition,
+                                             int horizontalTextPosition,
+                                             Rectangle viewR,
+                                             Rectangle iconR,
+                                             Rectangle textR,
+                                             int textIconGap)
     {
         boolean orientationIsLeftToRight = true;
         int hAlign = horizontalAlignment;
@@ -420,17 +471,17 @@ final public class AquaUtils {
         }
 
         return layoutCompoundLabelImpl(c,
-                fm,
-                text,
-                icon,
-                verticalAlignment,
-                hAlign,
-                verticalTextPosition,
-                hTextPos,
-                viewR,
-                iconR,
-                textR,
-                textIconGap);
+          fm,
+          text,
+          icon,
+          verticalAlignment,
+          hAlign,
+          verticalTextPosition,
+          hTextPos,
+          viewR,
+          iconR,
+          textR,
+          textIconGap);
     }
 
     /**
@@ -448,18 +499,18 @@ final public class AquaUtils {
      * inserted at the middle of the text instead of at the end.
      */
     private static String layoutCompoundLabelImpl(
-            JComponent c,
-            FontMetrics fm,
-            String text,
-            Icon icon,
-            int verticalAlignment,
-            int horizontalAlignment,
-            int verticalTextPosition,
-            int horizontalTextPosition,
-            Rectangle viewR,
-            Rectangle iconR,
-            Rectangle textR,
-            int textIconGap)
+      JComponent c,
+      FontMetrics fm,
+      String text,
+      Icon icon,
+      int verticalAlignment,
+      int horizontalAlignment,
+      int verticalTextPosition,
+      int horizontalTextPosition,
+      Rectangle viewR,
+      Rectangle iconR,
+      Rectangle textR,
+      int textIconGap)
     {
         /* Initialize the icon bounds rectangle iconR.
          */
@@ -584,10 +635,10 @@ final public class AquaUtils {
          */
         int labelR_x = Math.min(iconR.x, textR.x);
         int labelR_width = Math.max(iconR.x + iconR.width,
-                textR.x + textR.width) - labelR_x;
+          textR.x + textR.width) - labelR_x;
         int labelR_y = Math.min(iconR.y, textR.y);
         int labelR_height = Math.max(iconR.y + iconR.height,
-                textR.y + textR.height) - labelR_y;
+          textR.y + textR.height) - labelR_y;
 
         int dx, dy;
 
@@ -607,7 +658,7 @@ final public class AquaUtils {
         } else { // (horizontalAlignment == CENTER)
 
             dx = (viewR.x + (viewR.width / 2))
-                    - (labelR_x + (labelR_width / 2));
+                   - (labelR_x + (labelR_width / 2));
         }
 
         /* Translate textR and glypyR by dx,dy.
@@ -656,7 +707,7 @@ final public class AquaUtils {
     }
 
     public abstract static class RecyclableSingleton<T> {
-        final T get() {
+        final @Nullable T get() {
             return getSoftReferenceValue(this, () -> getInstance());
         }
 
@@ -664,18 +715,18 @@ final public class AquaUtils {
             put(this, null);
         }
 
-        protected abstract T getInstance();
+        protected abstract @Nullable T getInstance();
     }
 
     static class RecyclableSingletonFromDefaultConstructor<T> extends RecyclableSingleton<T> {
         private final Class<T> clazz;
 
-        RecyclableSingletonFromDefaultConstructor(final Class<T> clazz) {
+        RecyclableSingletonFromDefaultConstructor(Class<T> clazz) {
             this.clazz = clazz;
         }
 
         @Override
-        protected T getInstance() {
+        protected @Nullable T getInstance() {
             try {
                 //ReflectUtil.checkPackageAccess(clazz);
                 return clazz.newInstance();
@@ -688,13 +739,13 @@ final public class AquaUtils {
     abstract static class LazyKeyedSingleton<K, V> {
         private Map<K, V> refs;
 
-        V get(final K key) {
+        V get(K key) {
             if (refs == null) refs = new HashMap<>();
 
-            final V cachedValue = refs.get(key);
+            V cachedValue = refs.get(key);
             if (cachedValue != null) return cachedValue;
 
-            final V value = getInstance(key);
+            V value = getInstance(key);
             refs.put(key, value);
             return value;
         }
@@ -705,8 +756,8 @@ final public class AquaUtils {
     private static final RecyclableSingleton<Boolean> enableAnimations = new RecyclableSingleton<Boolean>() {
         @Override
         protected Boolean getInstance() {
-            final String sizeProperty = (String) AccessController.doPrivileged((PrivilegedAction<String>) () -> System.getProperty(
-                    ANIMATIONS_PROPERTY));
+            String sizeProperty = (String) AccessController.doPrivileged((PrivilegedAction<String>) () -> System.getProperty(
+              ANIMATIONS_PROPERTY));
             return !"false".equals(sizeProperty); // should be true by default
         }
     };
@@ -717,23 +768,19 @@ final public class AquaUtils {
 
     private static final int MENU_BLINK_DELAY = 50; // 50ms == 3/60 sec, according to the spec
 
-    static void blinkMenu(final Selectable selectable) {
+    static void blinkMenu(Selectable selectable) {
         if (!animationsEnabled()) return;
         try {
             selectable.paintSelected(false);
             Thread.sleep(MENU_BLINK_DELAY);
             selectable.paintSelected(true);
             Thread.sleep(MENU_BLINK_DELAY);
-        } catch (final InterruptedException ignored) {
+        } catch (InterruptedException ignored) {
         }
     }
 
     interface Selectable {
         void paintSelected(boolean selected);
-    }
-
-    interface JComponentPainter {
-        void paint(JComponent c, Graphics g, int x, int y, int w, int h);
     }
 
     interface Painter {
@@ -751,18 +798,18 @@ final public class AquaUtils {
         private final Insets insets;
         private final ConvolveOp blurOp;
 
-        ShadowBorder(final Painter prePainter, final Painter postPainter, final int offsetX, final int offsetY, final float distance, final float intensity, final int blur) {
+        ShadowBorder(Painter prePainter, Painter postPainter, int offsetX, int offsetY, float distance, float intensity, int blur) {
             this.prePainter = prePainter;
             this.postPainter = postPainter;
             this.offsetX = offsetX;
             this.offsetY = offsetY;
             this.distance = distance;
             this.blur = blur;
-            final int halfBlur = blur / 2;
+            int halfBlur = blur / 2;
             insets = new Insets(halfBlur - offsetY, halfBlur - offsetX, halfBlur + offsetY, halfBlur + offsetX);
 
-            final float blurry = intensity / (blur * blur);
-            final float[] blurKernel = new float[blur * blur];
+            float blurry = intensity / (blur * blur);
+            float[] blurKernel = new float[blur * blur];
             for (int i = 0; i < blurKernel.length; i++) blurKernel[i] = blurry;
             blurOp = new ConvolveOp(new Kernel(blur, blur, blurKernel));
         }
@@ -773,29 +820,29 @@ final public class AquaUtils {
         }
 
         @Override
-        public final Insets getBorderInsets(final Component c) {
+        public final Insets getBorderInsets(Component c) {
             return insets;
         }
 
         @Override
-        public void paintBorder(final Component c, final Graphics g, final int x, final int y, final int width, final int height) {
-            final BufferedImage img = new BufferedImage(width + blur * 2, height + blur * 2, BufferedImage.TYPE_INT_ARGB_PRE);
+        public void paintBorder(Component c, Graphics g, int x, int y, int width, int height) {
+            BufferedImage img = new BufferedImage(width + blur * 2, height + blur * 2, BufferedImage.TYPE_INT_ARGB_PRE);
             paintToImage(img, x, y, width, height);
 //            debugFrame("border", img);
             g.drawImage(img, -blur, -blur, null);
         }
 
-        private void paintToImage(final BufferedImage img, final int x, final int y, final int width, final int height) {
+        private void paintToImage(BufferedImage img, int x, int y, int width, int height) {
             // clear the prior image
             Graphics2D imgG = (Graphics2D) img.getGraphics();
             imgG.setComposite(AlphaComposite.Clear);
             imgG.setColor(Color.black);
             imgG.fillRect(0, 0, width + blur * 2, height + blur * 2);
 
-            final int adjX = (int) (x + blur + offsetX + (insets.left * distance));
-            final int adjY = (int) (y + blur + offsetY + (insets.top * distance));
-            final int adjW = (int) (width - (insets.left + insets.right) * distance);
-            final int adjH = (int) (height - (insets.top + insets.bottom) * distance);
+            int adjX = (int) (x + blur + offsetX + (insets.left * distance));
+            int adjY = (int) (y + blur + offsetY + (insets.top * distance));
+            int adjW = (int) (width - (insets.left + insets.right) * distance);
+            int adjH = (int) (height - (insets.top + insets.bottom) * distance);
 
             // let the delegate paint whatever they want to be blurred
             imgG.setComposite(AlphaComposite.DstAtop);
@@ -817,24 +864,24 @@ final public class AquaUtils {
     static class SlicedShadowBorder extends ShadowBorder {
         private final SlicedImageControl slices;
 
-        SlicedShadowBorder(final Painter prePainter, final Painter postPainter, final int offsetX, final int offsetY, final float distance, final float intensity, final int blur, final int templateWidth, final int templateHeight, final int leftCut, final int topCut, final int rightCut, final int bottomCut) {
+        SlicedShadowBorder(Painter prePainter, Painter postPainter, int offsetX, int offsetY, float distance, float intensity, int blur, int templateWidth, int templateHeight, int leftCut, int topCut, int rightCut, int bottomCut) {
             super(prePainter, postPainter, offsetX, offsetY, distance, intensity, blur);
 
-            final BufferedImage i = new BufferedImage(templateWidth, templateHeight, BufferedImage.TYPE_INT_ARGB_PRE);
+            BufferedImage i = new BufferedImage(templateWidth, templateHeight, BufferedImage.TYPE_INT_ARGB_PRE);
             super.paintBorder(null, i.getGraphics(), 0, 0, templateWidth, templateHeight);
 //            debugFrame("slices", i);
             slices = new SlicedImageControl(i, leftCut, topCut, rightCut, bottomCut, false);
         }
 
         @Override
-        public void paintBorder(final Component c, final Graphics g, final int x, final int y, final int width, final int height) {
+        public void paintBorder(Component c, Graphics g, int x, int y, int width, int height) {
             slices.paint(g, x, y, width, height);
         }
     }
 
     // options for when to use a magic eraser
-    public final static int ERASE_IF_TEXTURED = 1<<0;
-    public final static int ERASE_IF_VIBRANT = 1<<1;
+    public final static int ERASE_IF_TEXTURED = 1<<0;   // erase if the window is natively textured
+    public final static int ERASE_IF_VIBRANT = 1<<1;    // erase if the window is vibrant
     public final static int ERASE_ALWLAYS = 1<<2;
 
     /**
@@ -865,11 +912,46 @@ final public class AquaUtils {
         }
 
         Color bc = c.getBackground();
-        if (bc != null && !(bc instanceof UIResource)) {
+        if (AquaColors.isPriority(bc)) {
             return bc;
         }
 
         return !isMagicEraser(c, eraserMode) ? bc : null;
+    }
+
+    /**
+     * Fill the component bounds with the specified fill color or magic eraser.
+     * @param c The component.
+     */
+    public static void fillRect(Graphics g, Component c, @NotNull Color color, int eraserMode) {
+        fillRect(g, c, color, eraserMode, 0, 0, c.getWidth(), c.getHeight());
+    }
+
+    /**
+     * Fill the specified rectangle with the specified fill color or magic eraser.
+     * @param c The component.
+     */
+    public static void fillRect(Graphics g, Component c, @NotNull Color color, int eraserMode, int x, int y, int w, int h) {
+        color = getFillColor(c, color, eraserMode);
+        fillRect(g, color, x, y, w, h);
+    }
+
+    /**
+     * Determine the fill color to use for a component.
+     * @param c The component.
+     * @return the fill color, or null to use the magic eraser.
+     */
+    private static Color getFillColor(Component c, @NotNull Color color, int eraserMode) {
+        if ((eraserMode & ERASE_ALWLAYS) != 0) {
+            return null;
+        }
+
+        Color bc = c.getBackground();
+        if (AquaColors.isPriority(bc)) {
+            return bc;
+        }
+
+        return !isMagicEraser(c, eraserMode) ? color : null;
     }
 
     /**
@@ -888,19 +970,8 @@ final public class AquaUtils {
         while (c != null) {
             if (c instanceof JRootPane) {
                 JRootPane rp = (JRootPane) c;
-
-                Object prop = rp.getClientProperty("apple.awt.brushMetalLook");
-                if (prop != null && isTextured) {
-                    if (Boolean.parseBoolean(prop.toString())) {
-                        return true;
-                    }
-                }
-
-                prop = rp.getClientProperty("Window.style");
-                if (prop != null) {
-                    if (prop.equals("textured") && isTextured) {
-                        return true;
-                    }
+                if (isTextured && isNativeTextured(rp)) {
+                    return true;
                 }
             }
 
@@ -918,19 +989,133 @@ final public class AquaUtils {
     }
 
     /**
+     * Determine the appropriate background for a component that displays the window content background color.
+     * @param c A component in the window.
+     * @return the color.
+     */
+    public static @NotNull Color getWindowBackground(@NotNull JComponent c) {
+        EffectName effect = AquaFocusHandler.isActive(c) ? EffectName.EFFECT_NONE : EffectName.EFFECT_DISABLED;
+        String baseColor = "windowBackground";
+        JRootPane rp = c.getRootPane();
+        if (rp != null && isTextured(rp)) {
+            baseColor = "texturedWindowBackground";
+        }
+        return AquaColors.getBackground(c, baseColor, effect);
+    }
+
+    /**
+     * Determine the appropriate background for a window top or bottom margin.
+     * This method is not used when the margin is painted with a gradient.
+     * @param rp The root pane the window.
+     * @param isTop True for the top margin, false for the bottom margin.
+     * @return the color.
+     */
+    public static @NotNull Color getWindowMarginBackground(@NotNull JRootPane rp, boolean isTop) {
+        // In most cases, the margin color when flat matches the content area color.
+        // One exception is a non-textured window in light mode.
+        // The other is a dark mode non-textured unified title/tool bar (top margin).
+
+        String base = isTextured(rp) ? "TexturedWindowMarginBackground" : "WindowMarginBackground";
+        String prefix = isTop ? "top" : "bottom";
+        String suffix = AquaFocusHandler.isActive(rp) ? "" : "_disabled";
+        String colorName = prefix + base + suffix;
+        AquaAppearance appearance = AppearanceManager.getAppearance(rp);
+        Color bc = appearance.getColor(colorName);
+        if (bc == null) {
+            // should not happen
+            System.err.println("Undefined window margin background color: " + colorName);
+            return AquaColors.CLEAR;
+        } else {
+            return bc;
+        }
+    }
+
+    public static @NotNull Color getWindowMarginDividerColor(@NotNull JRootPane rp, boolean isTop) {
+        String base = isTextured(rp) ? "TexturedWindowDivider" : "WindowDivider";
+        String prefix = isTop ? "top" : "bottom";
+        String suffix = AquaFocusHandler.isActive(rp) ? "" : "_disabled";
+        String colorName = prefix + base + suffix;
+        AquaAppearance appearance = AppearanceManager.getAppearance(rp);
+        Color color = appearance.getColor(colorName);
+        if (color == null) {
+            // should not happen
+            System.err.println("Undefined window divider color: " + colorName);
+            return AquaColors.CLEAR;
+        } else {
+            return color;
+        }
+    }
+
+    public static boolean isTextured(@NotNull JRootPane rp) {
+        if (isNativeTextured(rp)) {
+            return true;
+        }
+
+        AquaRootPaneUI ui = getUI(rp, AquaRootPaneUI.class);
+        if (ui != null) {
+            AquaCustomStyledWindow customStyledWindow = ui.getCustomStyledWindow();
+            if (customStyledWindow != null) {
+                return customStyledWindow.isTextured();
+            }
+        }
+
+        return false;
+    }
+
+    public static boolean isNativeTextured(@NotNull JRootPane rp) {
+        Object prop = rp.getClientProperty("apple.awt.brushMetalLook");
+        if (prop != null) {
+            if (Boolean.parseBoolean(prop.toString())) {
+                return true;
+            }
+        }
+
+        prop = rp.getClientProperty("Window.style");
+        if (prop != null) {
+            if (prop.equals("textured")) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
      * Fill with specified color or erase.
      * @param g The graphics context.
      * @param color The color to fill, or null to erase
      */
-    public static void fillRect(Graphics g, Color color, int x, int y, int w, int h) {
-        final Graphics cg = g.create();
+    public static void fillRect(Graphics g, @Nullable Color color, int x, int y, int w, int h) {
+        Graphics cg = g.create();
+
         try {
-            if (color != null) {
+            if (color instanceof AquaColors.GradientColor && cg instanceof Graphics2D) {
+                AquaColors.GradientColor gradientColor = (AquaColors.GradientColor) color;
+                Graphics2D gg = (Graphics2D) cg;
+                if (gradientColor.useMagicEraser()) {
+                    gg.setComposite(AlphaComposite.Src);
+                    gg.setColor(AquaColors.CLEAR);
+                    gg.fillRect(x, y, w, h);
+                }
+                Color start = gradientColor.getStart();
+                Color finish = gradientColor.getFinish();
+                GradientPaint gp = new GradientPaint(0, y, start, 0, y + h, finish);
+                gg.setPaint(gp);
+                gg.fillRect(x, y, w, h);
+            } else if (color instanceof AquaColors.TintedEraser && cg instanceof Graphics2D) {
+                AquaColors.TintedEraser tintedEraser = (AquaColors.TintedEraser) color;
+                Graphics2D gg = (Graphics2D) cg;
+                gg.setComposite(AlphaComposite.Src);
+                gg.setColor(AquaColors.CLEAR);
+                gg.fillRect(x, y, w, h);
+                cg.setColor(color);
+                cg.fillRect(x, y, w, h);
+            } else if (color != null && color != AquaColors.MAGIC_ERASER) {
                 cg.setColor(color);
                 cg.fillRect(x, y, w, h);
             } else if (cg instanceof Graphics2D) {
                 ((Graphics2D) cg).setComposite(AlphaComposite.Src);
-                cg.setColor(new Color(0, 0, 0, 0));
+                cg.setColor(AquaColors.CLEAR);
                 cg.fillRect(x, y, w, h);
             }
         } finally {
@@ -1045,12 +1230,12 @@ final public class AquaUtils {
         @SuppressWarnings("unchecked")
         SoftReference<T> ref = (SoftReference<T>) get(key);
         if (ref != null) {
-            final T object = ref.get();
+            T object = ref.get();
             if (object != null) {
                 return object;
             }
         }
-        final T object = supplier.get();
+        T object = supplier.get();
         ref = new SoftReference<>(object);
         put(key, ref);
         return object;
@@ -1060,9 +1245,9 @@ final public class AquaUtils {
     public static Object beginGraphics(Graphics2D graphics2d) {
         Object object = graphics2d.getRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING);
         graphics2d.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING,
-                RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+          RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
         graphics2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
-                RenderingHints.VALUE_ANTIALIAS_ON);
+          RenderingHints.VALUE_ANTIALIAS_ON);
         return object;
     }
 
@@ -1070,20 +1255,25 @@ final public class AquaUtils {
     public static void endGraphics(Graphics2D graphics2d, Object oldHints) {
         if (oldHints != null) {
             graphics2d.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING,
-                    oldHints);
+              oldHints);
         }
     }
 
-    private static final WeakHashMap<Graphics,Integer> scaleMap = new WeakHashMap<>();
-
     public static void drawHLine(Graphics g, int x1, int x2, int y) {
-         if (x2 < x1) {
-             final int temp = x2;
-             x2 = x1;
-             x1 = temp;
-         }
-         g.fillRect(x1, y, x2 - x1 + 1, 1);
-     }
+        if (x2 < x1) {
+            int temp = x2;
+            x2 = x1;
+            x1 = temp;
+        }
+        g.fillRect(x1, y, x2 - x1 + 1, 1);
+    }
+
+    public static void installFont(@NotNull JComponent c, @NotNull String defaultFontName) {
+        Font f = c.getFont();
+        if (f == null || f instanceof UIResource) {
+            c.setFont(UIManager.getFont(defaultFontName));
+        }
+    }
 
     @SuppressWarnings("deprecation")
     public static FontMetrics getFontMetrics(JComponent c, Graphics g, Font font) {
@@ -1118,6 +1308,14 @@ final public class AquaUtils {
             }
         }
         return null;
+    }
+
+    public static void configure(@NotNull AquaUIPainter painter, @NotNull Component c, int width, int height) {
+        AquaAppearance appearance = AppearanceManager.getRegisteredAppearance(c);
+        if (appearance != null) {
+            painter.configureAppearance(appearance);
+        }
+        painter.configure(width, height);
     }
 
     private static JScrollPane verifyScrollPaneAncestor(Component view, JScrollPane p) {
@@ -1215,35 +1413,34 @@ final public class AquaUtils {
      * @param w The window.
      * @throws UnsupportedOperationException on error.
      */
-    public static void unsetTitledWindowStyle(Window w) throws UnsupportedOperationException {
+    public static int unsetTitledWindowStyle(Window w) throws UnsupportedOperationException {
         Rectangle oldBounds = w.getBounds();
         Insets oldInsets = w.getInsets();
         int top = oldInsets.top;
 
         if (top == 0) {
-            // This method should be called only on a decorated window.
-            throw new UnsupportedOperationException("Unable to unset titled window style: no top inset");
+            // Most likely, the window does not yet know its insets.
+            top = 22;
         }
 
         try {
-            int DECORATED = 1 << 1;
             int newHeight = oldBounds.height - top;
-            nativeSetTitledWindowStyle(w, false, newHeight, new Insets(0, 0, 0, 0));
+            int oldWidth = oldBounds.width;
+            nativeSetTitledWindowStyle(w, false, new Insets(0, 0, 0, 0));
+            w.setSize(oldWidth, newHeight);
             w.invalidate();
             w.validate();
+            return top;
         } catch (Exception ex) {
             String errorMessage = ex.toString();
             throw new UnsupportedOperationException(errorMessage);
         }
     }
 
-    public static void restoreTitledWindowStyle(Window w, int top) {
-        Rectangle oldBounds = w.getBounds();
-        int newHeight = oldBounds.height + top;
-
+    public static void restoreTitledWindowStyle(Window w, int top, @NotNull Dimension originalSize) {
         try {
-            int DECORATED = 1 << 1;
-            nativeSetTitledWindowStyle(w, true, newHeight, new Insets(top, 0, 0, 0));
+            nativeSetTitledWindowStyle(w, true, new Insets(top, 0, 0, 0));
+            w.setSize(originalSize);
             w.invalidate();
             w.validate();
         } catch (Exception ex) {
@@ -1268,20 +1465,71 @@ final public class AquaUtils {
         return null;
     }
 
+    public static void setBackgroundCarefully(@NotNull Component c, @NotNull Color color) {
+
+        JComponent contentPane = null;
+        boolean contentPaneWasOpaque = false;
+        JComponent layeredPane = null;
+        boolean layeredPaneWasOpaque = false;
+
+        if (c instanceof Window) {
+            Window w = (Window) c;
+            boolean isDecorated = isDecorated(w);
+
+            // Special case for decorated frames and dialogs, which reject non-opaque background colors.
+            if (isDecorated && color.getAlpha() < 255) {
+                setWindowBackground(w, color);
+                return;
+            }
+
+            // Special case for non-decorated windows, which insist on making the content pane and layered pane opaque
+            // when setting an opaque background color.
+
+            if (!isDecorated && color.getAlpha() == 255 && c instanceof RootPaneContainer) {
+                RootPaneContainer rpc = (RootPaneContainer) c;
+                Container container = rpc.getContentPane();
+                if (container instanceof JComponent) {
+                    contentPane = (JComponent) container;
+                    contentPaneWasOpaque = contentPane.isOpaque();
+                    layeredPane = rpc.getLayeredPane();
+                    layeredPaneWasOpaque = layeredPane.isOpaque();
+                }
+            }
+        }
+
+        c.setBackground(color);
+
+        if (contentPane != null && !contentPaneWasOpaque) {
+            contentPane.setOpaque(false);
+        }
+        if (layeredPane != null && !layeredPaneWasOpaque) {
+            layeredPane.setOpaque(false);
+        }
+    }
+
     /**
-     * Enable or disable a clear window background. This method alters the background of the AWTView. A clear background
-     * allows the native window background and NSVisualEffectViews behind the AWTView to be visible.
-     * @param w The window
-     * @param isClear True to make the window background clear, false to restore the default window background color.
+     * Set the textured attribute of the window peer. This method has no other side effects.
+     * @param w The window.
+     * @param isTextured The new value of the textured attribute.
      */
-    public static void setWindowBackgroundClear(Window w, boolean isClear) {
+    public static void setWindowTextured(Window w, boolean isTextured) {
 
-        Color c = isClear ? new Color(0, 0, 0, 0) : AquaImageFactory.getWindowBackgroundColorUIResource();
+        try {
+            nativeSetWindowTextured(w, isTextured);
+        } catch (Throwable ex) {
+            System.err.println("Unable to set textured: " + ex);
+        }
+    }
 
-        // The following may be necessary to properly calculate the window shadow.
-        setWindowTextured(w, isClear);
-        setWindowBackground(w, c);
-
+    /**
+     * Ensure that the specified window has a frame buffer that supports an alpha channel. An alpha channel is needed to
+     * use the magic eraser.
+     */
+    public static void enableTranslucency(@NotNull Window w) {
+        // The textured attribute is one of three ways to make a window support an alpha channel.
+        // Setting the opaque attribute to false is another, but it triggers a repainting bug in Java.
+        // Setting a window shape is the third, but a window shape is not wanted.
+        AquaUtils.setWindowTextured(w, true);
         new ShadowMaker(w);
     }
 
@@ -1309,25 +1557,11 @@ final public class AquaUtils {
 
         @Override
         public void run() {
-            if (w instanceof RootPaneContainer) {
+            JRootPane rp = AquaUtils.getRootPane(w);
+            if (rp != null) {
                 AquaUtils.syncAWTView(w);
-                JRootPane rp = ((RootPaneContainer) w).getRootPane();
                 rp.putClientProperty("apple.awt.windowShadow.revalidateNow", Math.random());
             }
-        }
-    }
-
-    /**
-     * Set the textured attribute of the window peer. This method has no other side effects.
-     * @param w The window.
-     * @param isTextured The new value of the textured attribute.
-     */
-    private static void setWindowTextured(Window w, boolean isTextured) {
-
-        try {
-            nativeSetWindowTextured(w, isTextured);
-        } catch (Throwable ex) {
-            System.err.println("Unable to set textured: " + ex);
         }
     }
 
@@ -1362,7 +1596,7 @@ final public class AquaUtils {
         }
     }
 
-    public static void setCornerRadius(Window w, float radius) {
+    public static void configurePopup(Window w, float radius) {
         execute(w, ptr -> nativeSetWindowCornerRadius(ptr, radius));
     }
 
@@ -1384,7 +1618,41 @@ final public class AquaUtils {
     }
 
     /**
-     * Perform an action that requires a native pointer.
+     * Specify the appearance to be used by a window. This method has no effect if the window is not displayable.
+     * If the window appearance changes, a callback will be generated.
+     * @param w The window.
+     * @param appearanceName The name of the appearance, or null to cause the window to inherit its appearance.
+     *                       An unrecognized appearance name is treated as null.
+     * @return true if and only if {@code appearanceName} is recognized as a valid appearance name and the appearance
+     * was installed in the window.
+     */
+
+    public static boolean setWindowAppearance(@NotNull Window w, @Nullable String appearanceName) {
+        if (w.isDisplayable()) {
+            return 0 == execute(w, ptr -> nativeSetWindowAppearance(ptr, appearanceName));
+        } else {
+            return false;
+        }
+    }
+
+    /**
+     * Identify the effective appearance of the specified window.
+     * @return the appearance name, or null if not available.
+     */
+
+    public static @Nullable String getWindowEffectiveAppearanceName(@NotNull Window w) {
+        if (w.isDisplayable()) {
+            try {
+                return executeForObject(w, AquaUtils::nativeGetWindowEffectiveAppearanceName);
+            } catch (UnsupportedOperationException ex) {
+                // native window may no longer exist
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Perform an action that requires a native pointer and returns a long.
      */
 
     public interface NativeAction {
@@ -1399,7 +1667,50 @@ final public class AquaUtils {
         Object[] data = new Object[1];
         long ptr = nativeGetNativeWindow(w, data);
         if (ptr == 0) {
-            String name = getWindowNameForDebugging(w);
+            String name = w.getName();
+            if (w instanceof Frame) {
+                Frame fr = (Frame) w;
+                name = fr.getTitle() + " " + name;
+            }
+            UnsupportedOperationException ex = new UnsupportedOperationException("Unable to get NSWindow for window " + name);
+            ex.printStackTrace();
+            throw ex;
+        } else {
+            Lock lock = (Lock) data[0];
+            if (lock != null) {
+                lock.lock();
+                try {
+                    return action.run(ptr);
+                } finally {
+                    lock.unlock();
+                }
+            } else {
+                return action.run(ptr);
+            }
+        }
+    }
+
+    /**
+     * Perform an action that requires a native pointer and returns an object.
+     */
+
+    public interface NativeObjectAction<T> {
+        T run(long wptr);
+    }
+
+    /**
+     * Perform an action that requires the native NSWindow pointer for a window.
+     */
+
+    public static <T> T executeForObject(Window w, NativeObjectAction<T> action) {
+        Object[] data = new Object[1];
+        long ptr = nativeGetNativeWindow(w, data);
+        if (ptr == 0) {
+            String name = w.getName();
+            if (w instanceof Frame) {
+                Frame fr = (Frame) w;
+                name = fr.getTitle() + " " + name;
+            }
             UnsupportedOperationException ex = new UnsupportedOperationException("Unable to get NSWindow for window " + name);
             ex.printStackTrace();
             throw ex;
@@ -1429,9 +1740,9 @@ final public class AquaUtils {
      *               (null if not available).
      * @return the native window pointer, or zero if not available.
      */
-    public static native long nativeGetNativeWindow(Window w, Object[] data);
+    private static native long nativeGetNativeWindow(Window w, Object[] data);
 
-    private static native void nativeSetTitledWindowStyle(Window w, boolean isDecorated, int height, Insets insets);
+    private static native void nativeSetTitledWindowStyle(Window w, boolean isDecorated, Insets insets);
     private static native void nativeSetWindowTextured(Window w, boolean isTextured);
     private static native void nativeSetWindowBackground(Window w, Color color);
     private static native boolean nativeIsFullScreenWindow(long w);
@@ -1448,13 +1759,11 @@ final public class AquaUtils {
     public static native boolean getScreenMenuBarProperty();
     public static native void setScreenMenuBar(JFrame frame, MenuBarUI menuBarUI);
     public static native void clearScreenMenuBar(JFrame frame, MenuBarUI menuBarUI);
+    private static native int nativeSetWindowAppearance(long w, @Nullable String appearanceName);
+    private static native @Nullable String nativeGetWindowEffectiveAppearanceName(long w);
+    public static native @Nullable String nativeGetApplicationAppearanceName();
+    private static native void registerWindowChangedAppearanceCallback(@NotNull WindowAppearanceChangedCallback callback);
 
     public static native int nativeDebugWindow(long w);
     public static native void syslog(String msg);
-
-    public static class GrayUIResource extends ColorUIResource {
-        public GrayUIResource(int c) {
-            super(new Color(c, c, c));
-        }
-    }
 }

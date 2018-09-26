@@ -1,5 +1,5 @@
 /*
- * Changes Copyright (c) 2015-2016 Alan Snyder.
+ * Changes Copyright (c) 2015-2018 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -81,7 +81,7 @@ public class AquaSegmentedButtonBorder extends AquaButtonBorder implements Focus
         }
 
         ButtonModel model = b.getModel();
-        final State state = getState(b);
+        State state = getState(b);
         boolean isFocused = (state != State.DISABLED && state != State.INACTIVE && state != State.DISABLED_INACTIVE) && b.isFocusPainted() && b.hasFocus();
 
         // Swing does not know about segmented buttons. They are just buttons that happen to be arranged in a row and
@@ -94,9 +94,11 @@ public class AquaSegmentedButtonBorder extends AquaButtonBorder implements Focus
             // Special case for nonexclusive selected textured segmented buttons. Use the same background as the
             // non-selected button.
             AquaButtonExtendedTypes.WidgetInfo info = getWidgetInfo(b);
-            boolean useNonexclusive = shouldUseNonexclusiveStyle(b, info);
-            if (useNonexclusive) {
-                isSelected = false;
+            if (info.isTextured()) {
+                boolean useNonexclusive = shouldUseNonexclusiveStyle(b, info);
+                if (useNonexclusive) {
+                    isSelected = false;
+                }
             }
         }
 

@@ -2,28 +2,33 @@
  * @(#)FileRenderer.java
  *
  * Copyright (c) 2007-2013 Werner Randelshofer, Switzerland.
+ * Copyright (c) 2018 Alan Snyder.
  * You may not use, copy or modify this file, except in compliance with the
  * accompanying license terms.
  */
 
 package org.violetlib.aqua.fc;
 
-import org.violetlib.aqua.AquaFocusHandler;
-import org.violetlib.aqua.AquaUtils;
-
-import javax.swing.*;
 import java.awt.*;
 import java.awt.geom.Ellipse2D;
+import javax.swing.*;
+import javax.swing.border.Border;
+import javax.swing.border.EmptyBorder;
+import javax.swing.border.MatteBorder;
+import javax.swing.plaf.BorderUIResource;
+
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.violetlib.aqua.*;
+import org.violetlib.jnr.aqua.AquaUIPainter;
 
 /**
  * The FileRenderer is used to render a file in the file chooser browser view.
  *
  * @author  Werner Randelshofer
- * @version $Id$
  */
 public class FileRenderer extends JLabel implements ListCellRenderer, GenericCellRenderer {
 
-    private Color labelForeground, labelDisabledForeground;
     private Icon selectedExpandingIcon;
     private Icon selectedExpandedIcon;
     private Icon focusedSelectedExpandingIcon;
@@ -38,13 +43,14 @@ public class FileRenderer extends JLabel implements ListCellRenderer, GenericCel
     private Icon icon;
     private String text;
     private Icon arrowIcon;
-    private Color labelColor, labelBrightColor;
+    private Color labelColor;
     private boolean isSelected;
     private boolean isActive;
     private boolean isGrayed;
     private boolean isAlias;
     private boolean isListView;
     private double labelRadius = 4.8;
+    private Border border;
 
     public FileRenderer(JFileChooser fileChooser) {
         this.fileChooser = fileChooser;
@@ -62,8 +68,7 @@ public class FileRenderer extends JLabel implements ListCellRenderer, GenericCel
         selectedExpandingIcon = UIManager.getIcon("Browser.selectedExpandingIcon");
         focusedSelectedExpandingIcon = UIManager.getIcon("Browser.focusedSelectedExpandingIcon");
 
-        labelForeground = UIManager.getColor("Label.foreground");
-        labelDisabledForeground = UIManager.getColor("Label.disabledForeground");
+        border = new EmptyBorder(0, 4, 2, 0);
 
         setOpaque(true);
     }
@@ -113,22 +118,35 @@ public class FileRenderer extends JLabel implements ListCellRenderer, GenericCel
     public void firePropertyChange(String propertyName, boolean oldValue, boolean newValue) {
     }
 
-    public Component getListCellRendererComponent(JList list, Object value,
-            int index, boolean isSelected,
-            boolean cellHasFocus) {
-        return getCellRendererComponent(list, value, isSelected, cellHasFocus, false);
+    public Component getListCellRendererComponent(@NotNull JList list,
+                                                  @Nullable Object value,
+                                                  int index,
+                                                  boolean isSelected,
+                                                  boolean cellHasFocus) {
+
+        AquaListUI ui = AquaUtils.getUI(list, AquaListUI.class);
+        AquaAppearance appearance = AppearanceManager.ensureAppearance(list);
+        ContainerContextualColors colors = ui != null ? ui.getColors() : AquaColors.CONTAINER_COLORS;
+        return getCellRendererComponent(list, appearance, colors, value, isSelected, cellHasFocus, false);
     }
 
     @Override
-    public Component getCellRendererComponent(JComponent container, Object value, boolean isSelected, boolean cellHasFocus) {
-        return getCellRendererComponent(container, value, isSelected, cellHasFocus, true);
+    public Component getCellRendererComponent(@NotNull JComponent container,
+                                              @NotNull AquaAppearance appearance,
+                                              @NotNull ContainerContextualColors colors,
+                                              @Nullable Object value,
+                                              boolean isSelected,
+                                              boolean cellHasFocus) {
+        return getCellRendererComponent(container, appearance, colors, value, isSelected, cellHasFocus, true);
     }
 
-    protected Component getCellRendererComponent(JComponent container,
-        Object value,
-        boolean isSelected,
-        boolean cellHasFocus,
-        boolean isListView) {
+    protected Component getCellRendererComponent(@NotNull JComponent container,
+                                                 @NotNull AquaAppearance appearance,
+                                                 @NotNull ContainerContextualColors colors,
+                                                 @Nullable Object value,
+                                                 boolean isSelected,
+                                                 boolean cellHasFocus,
+                                                 boolean isListView) {
 
         this.isListView = isListView;
 
@@ -139,26 +157,26 @@ public class FileRenderer extends JLabel implements ListCellRenderer, GenericCel
         FileInfo info = (FileInfo) value;
 
         isGrayed = !info.isAcceptable() && !info.isTraversable();
-
-        labelColor = OSXFile.getLabelColor(info.getFileLabel(), (isGrayed) ? 2 : 0);
-        labelBrightColor = OSXFile.getLabelColor(info.getFileLabel(), (isGrayed) ? 3 : 1);
+        labelColor = null;
+        {
+            int tag = info.getFileLabel();
+            String labelColorName = OSXFile.getTagColorName(tag);
+            if (labelColorName != null) {
+                EffectName effect = isGrayed ? EffectName.EFFECT_DISABLED : EffectName.EFFECT_NONE;
+                labelColor = appearance.getColorForEffect(labelColorName, effect);
+            }
+        }
 
         this.isSelected = isSelected;
         this.isActive = container.isEnabled() && AquaFocusHandler.hasFocus(container);
 
-        if (this.isSelected) {
-            if (isActive) {
-                setBackground(UIManager.getColor("Browser.selectionBackground"));
-                setForeground(UIManager.getColor("Browser.selectionForeground"));
-            } else {
-                setBackground(UIManager.getColor("Browser.inactiveSelectionBackground"));
-                setForeground(UIManager.getColor("Browser.inactiveSelectionForeground"));
-            }
-        } else {
-            //setBackground((labelColor == null) ? container.getBackground() : labelColor);
-            setBackground(container.getBackground());
-            setForeground((isGrayed) ? labelDisabledForeground : labelForeground);
-        }
+        AquaUIPainter.State state = getState(container, isGrayed);
+        AppearanceContext context = new AppearanceContext(appearance, state, isSelected, false);
+
+        Color background = colors.getBackground(context);
+        Color foreground = colors.getForeground(context);
+        setBackground(AquaColors.getOrdinaryColor(background));
+        setForeground(AquaColors.getOrdinaryColor(foreground));
 
         if (!isListView) {
 
@@ -195,8 +213,33 @@ public class FileRenderer extends JLabel implements ListCellRenderer, GenericCel
         setOpaque(!isListView);
         setEnabled(container.isEnabled());
         setFont(container.getFont());
-        setBorder(isListView ? null : (cellHasFocus) ? UIManager.getBorder(isGrayed ? "FileChooser.browserCellFocusBorderGrayed" : "FileChooser.browserCellFocusBorder") : UIManager.getBorder("FileChooser.browserCellBorder"));
+        setBorder(isListView ? null : border);
         return this;
+    }
+
+    protected @NotNull AquaUIPainter.State getState(@NotNull JComponent c, boolean isGrayed) {
+        return c.isEnabled() && !isGrayed ?
+                AquaFocusHandler.hasFocus(c) ? AquaUIPainter.State.ACTIVE_DEFAULT : AquaUIPainter.State.ACTIVE
+                : AquaUIPainter.State.DISABLED;
+    }
+
+    private class ConfigurableMatteBorder extends MatteBorder {
+        private @NotNull Color configuredColor;
+
+        public ConfigurableMatteBorder(int top, int left, int bottom, int right) {
+            super(top, left, bottom, right, Color.BLACK);
+            this.configuredColor = Color.BLACK;
+        }
+
+        public void configure(@NotNull Color c) {
+            configuredColor = c;
+        }
+
+        @Override
+        public void paintBorder(Component c, Graphics g, int x, int y, int width, int height) {
+            g.setColor(configuredColor);
+            super.paintBorder(c, g, x, y, width, height);
+        }
     }
 
     @Override

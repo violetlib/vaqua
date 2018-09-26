@@ -1,4 +1,12 @@
 /*
+ * Copyright (c) 2018 Alan Snyder.
+ * All rights reserved.
+ *
+ * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
+ * accompanying license terms.
+ */
+
+/*
  * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -25,20 +33,48 @@
 
 package org.violetlib.aqua;
 
-import javax.swing.JComponent;
+import java.awt.*;
+import javax.swing.*;
 import javax.swing.plaf.ComponentUI;
 import javax.swing.plaf.basic.BasicToolTipUI;
 
+import org.jetbrains.annotations.NotNull;
 import org.violetlib.aqua.AquaUtils.RecyclableSingletonFromDefaultConstructor;
+import org.violetlib.jnr.aqua.AquaUIPainter;
 
-public class AquaToolTipUI extends BasicToolTipUI {
+public class AquaToolTipUI extends BasicToolTipUI implements AquaComponentUI {
+
     static final RecyclableSingletonFromDefaultConstructor<AquaToolTipUI> sharedAquaInstance = new RecyclableSingletonFromDefaultConstructor<AquaToolTipUI>(AquaToolTipUI.class);
 
-    public static ComponentUI createUI(final JComponent c) {
+    public static ComponentUI createUI(JComponent c) {
         return sharedAquaInstance.get();
     }
 
+    protected @NotNull BasicContextualColors colors;
+
     public AquaToolTipUI() {
-        super();
+        colors = AquaColors.TOOL_TIP_COLORS;
+    }
+
+    @Override
+    public void appearanceChanged(@NotNull JComponent c, @NotNull AquaAppearance appearance) {
+    }
+
+    @Override
+    public void activeStateChanged(@NotNull JComponent c, boolean isActive) {
+    }
+
+    @Override
+    public void update(Graphics g, JComponent c) {
+        AppearanceManager.ensureAppearance(c);
+        AquaAppearance appearance = AppearanceManager.registerCurrentAppearance(c);
+        assert appearance != null;
+        AquaUIPainter.State state = AquaUIPainter.State.ACTIVE;
+        AppearanceContext context = new AppearanceContext(appearance, state, false, false);
+        AquaColors.installColors(c, context, colors);
+
+        super.update(g, c);
+
+        AppearanceManager.restoreCurrentAppearance(appearance);
     }
 }

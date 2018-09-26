@@ -1,5 +1,5 @@
 /*
- * Changes copyright (c) 2014-2015 Alan Snyder.
+ * Changes copyright (c) 2014-2018 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -40,8 +40,8 @@ import javax.swing.plaf.ListUI;
 import javax.swing.plaf.UIResource;
 import javax.swing.tree.*;
 
-import org.violetlib.aqua.AquaFocusHandler;
-import org.violetlib.aqua.AquaScrollPaneUI;
+import org.jetbrains.annotations.NotNull;
+import org.violetlib.aqua.*;
 
 /**
  * JBrowser provides a user interface for displaying and selecting items from a
@@ -223,7 +223,6 @@ public class JBrowser extends javax.swing.JComponent implements Scrollable {
      * "List.cellNoFocusBorder".
      */
     private static final Border DEFAULT_NO_FOCUS_BORDER = new EmptyBorder(1, 1, 1, 1);
-    private static final Color TRANSPARENT_COLOR = new Color(0, true);
 
     /**
      * Creates a {@code JBrowser} with a sample model.
@@ -1491,8 +1490,8 @@ public class JBrowser extends javax.swing.JComponent implements Scrollable {
      * Appends a new column to the browser.
      * @param path the value
      */
-    protected void addColumn(final TreePath path) {
-        JList l = new ColumnList(new ColumnListModel(path, treeModel));
+    protected void addColumn(@NotNull TreePath path) {
+        JList l = createColumnList(new ColumnListModel(path, treeModel));
         if (isShowCellTips) {
             l.setToolTipText("cell tip");
         }
@@ -1535,6 +1534,10 @@ public class JBrowser extends javax.swing.JComponent implements Scrollable {
         Column column = new Column(l, path.getPathCount() - 1);
 
         add(column, getListColumnCount());
+    }
+
+    protected @NotNull JList createColumnList(@NotNull ColumnListModel m) {
+        return new ColumnList(m);
     }
 
     protected class ColumnList extends JList {
@@ -1598,7 +1601,9 @@ public class JBrowser extends javax.swing.JComponent implements Scrollable {
 
         @Override
         public String toString() {
-            return "ColumnList";
+            String s = "ColumnList";
+            ColumnListModel m = (ColumnListModel) getModel();
+            return s + ": " + m;
         }
     }
 
@@ -3393,14 +3398,11 @@ public class JBrowser extends javax.swing.JComponent implements Scrollable {
 
             if (isSelected) {
                 setBackground(list.getSelectionBackground());
-                Color foreground = (!isFocused && UIManager.getColor("List.inactiveSelectionForeground") != null) ? UIManager.getColor("List.inactiveSelectionForeground") : list.getSelectionForeground();
-                arrowLabel.setForeground(foreground);
+                arrowLabel.setForeground(list.getSelectionForeground());
                 arrowLabel.setIcon(isFocused ? focusedSelectedExpandedIcon : selectedExpandedIcon);
             } else {
-                //setBackground(list.getBackground());
-                setBackground(TRANSPARENT_COLOR);
-                Color foreground = list.getForeground();
-                arrowLabel.setForeground(foreground);
+                setBackground(AquaColors.CLEAR);
+                arrowLabel.setForeground(list.getForeground());
                 arrowLabel.setIcon(expandedIcon);
             }
 
@@ -3644,24 +3646,33 @@ public class JBrowser extends javax.swing.JComponent implements Scrollable {
 
     protected class IconSizeHandle extends SizeHandleBase {
 
+        private int width = 15;
+        private int height = 15;
+
         public IconSizeHandle(int column) {
             super(column);
         }
 
         @Override
         public Dimension getPreferredSize() {
-            Icon sizeHandleIcon = JBrowser.this.getUI().getSizeHandleIcon();
-            return sizeHandleIcon != null ?
-              new Dimension(sizeHandleIcon.getIconWidth(), sizeHandleIcon.getIconHeight())
-              : new Dimension(0, 0);
+            return new Dimension(width, height);
         }
 
         @Override
         public void paintComponent(Graphics g) {
-            Icon sizeHandleIcon = JBrowser.this.getUI().getSizeHandleIcon();
-            if (sizeHandleIcon != null) {
-                sizeHandleIcon.paintIcon(this, g, 0, 0);
-            }
+            AquaAppearance appearance = AppearanceManager.ensureAppearance(this);
+            Color backgroundColor = appearance.getColor("scrollPaneTrack");
+            Color borderColor = appearance.getColor("scrollPaneBorder");
+            Color lineColor = appearance.getColor("scrollPaneGrabber");
+
+            g.setColor(backgroundColor);
+            g.fillRect(0, 0, width, height);
+            g.setColor(borderColor);
+            g.fillRect(0, 0, 1, height);
+            g.fillRect(width - 1, 0, 1, height);
+            g.setColor(lineColor);
+            g.fillRect(5, 4, 1, 7);
+            g.fillRect(9, 4, 1, 7);
         }
 
         @Override
@@ -3680,9 +3691,12 @@ public class JBrowser extends javax.swing.JComponent implements Scrollable {
 
         @Override
         protected void paintComponent(Graphics g) {
-            g.setColor(Color.WHITE);
+            AquaAppearance appearance = AppearanceManager.ensureAppearance(this);
+            Color background = appearance.getColor("controlBackground");
+            Color handleColor = appearance.getColor("separator");
+            g.setColor(background);
             g.fillRect(0, 0, getWidth(), getHeight());
-            g.setColor(new Color(224, 224, 224));
+            g.setColor(handleColor);
             g.fillRect(getWidth()-1, 0, 1, getHeight());
         }
 

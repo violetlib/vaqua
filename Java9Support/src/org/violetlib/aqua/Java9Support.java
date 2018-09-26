@@ -16,6 +16,8 @@ import java.util.function.Function;
 import javax.swing.*;
 import javax.swing.plaf.basic.BasicGraphicsUtils;
 
+import org.jetbrains.annotations.NotNull;
+
 /**
  * Support for Java 9 and later
  */
@@ -96,6 +98,16 @@ public class Java9Support implements JavaSupport.JavaSupportImpl {
     @Override
     public Image applyMapper(Image source, AquaMultiResolutionImage.Mapper mapper) {
         return Aqua9MultiResolutionImage.apply(source, mapper);
+    }
+
+    @Override
+    public @NotNull Image getResolutionVariant(@NotNull Image source, double width, double height) {
+        if (source instanceof MultiResolutionImage) {
+            MultiResolutionImage mr = (MultiResolutionImage) source;
+            return mr.getResolutionVariant(width, height);
+        } else {
+            return source;
+        }
     }
 
     @Override

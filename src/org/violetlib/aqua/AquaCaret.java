@@ -39,6 +39,7 @@ import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import javax.swing.*;
 import javax.swing.plaf.UIResource;
+import javax.swing.plaf.basic.BasicTextUI;
 import javax.swing.text.DefaultCaret;
 import javax.swing.text.Highlighter;
 import javax.swing.text.JTextComponent;
@@ -66,7 +67,7 @@ public class AquaCaret extends DefaultCaret
 
     @Override
     protected Highlighter.HighlightPainter getSelectionPainter() {
-        return AquaHighlighter.getInstance();
+        return BasicTextUI.BasicHighlighter.DefaultPainter;
     }
 
     /**
@@ -89,10 +90,10 @@ public class AquaCaret extends DefaultCaret
 
     @Override
     public void propertyChange(PropertyChangeEvent evt) {
-        final String propertyName = evt.getPropertyName();
+        String propertyName = evt.getPropertyName();
 
         if (AquaFocusHandler.FRAME_ACTIVE_PROPERTY.equals(propertyName)) {
-            final JTextComponent comp = ((JTextComponent)evt.getSource());
+            JTextComponent comp = ((JTextComponent)evt.getSource());
 
             if (evt.getNewValue() == Boolean.TRUE) {
                 setVisible(comp.isFocusOwner());
@@ -113,9 +114,9 @@ public class AquaCaret extends DefaultCaret
 
         if (shouldSelectAllOnFocusGained()) {
             JTextComponent c = getComponent();
-            final int end = c.getDocument().getLength();
-            final int dot = getDot();
-            final int mark = getMark();
+            int end = c.getDocument().getLength();
+            int dot = getDot();
+            int mark = getMark();
             if (dot == mark) {
                 if (dot == 0) {
                     c.setCaretPosition(end);
@@ -180,7 +181,7 @@ public class AquaCaret extends DefaultCaret
 //     * @param r  the current location of the caret
 //     * @see #paint
 //     */
-//    protected synchronized void damage(final Rectangle r) {
+//    protected synchronized void damage(Rectangle r) {
 //        if (r == null || fPainting) return;
 //
 //        x = r.x - 4;
@@ -190,12 +191,12 @@ public class AquaCaret extends DefaultCaret
 //
 //        // Don't damage the border area.  We can't paint a partial border, so get the
 //        // intersection of the caret rectangle and the component less the border, if any.
-//        final Rectangle caretRect = new Rectangle(x, y, width, height);
-//        final Border border = getComponent().getBorder();
+//        Rectangle caretRect = new Rectangle(x, y, width, height);
+//        Border border = getComponent().getBorder();
 //        if (border != null) {
-//            final Rectangle alloc = getComponent().getBounds();
+//            Rectangle alloc = getComponent().getBounds();
 //            alloc.x = alloc.y = 0;
-//            final Insets borderInsets = border.getBorderInsets(getComponent());
+//            Insets borderInsets = border.getBorderInsets(getComponent());
 //            alloc.x += borderInsets.left;
 //            alloc.y += borderInsets.top;
 //            alloc.width -= borderInsets.left + borderInsets.right;
@@ -215,7 +216,7 @@ public class AquaCaret extends DefaultCaret
 //    // We are getting into a circular condition with the BasicCaret paint code since it doesn't know about the fact that our
 //    // damage routine above elminates the border. Sadly we can't easily change either one, so we will
 //    // add a painting flag and not damage during a repaint.
-//    public void paint(final Graphics g) {
+//    public void paint(Graphics g) {
 //        if (isVisible()) {
 //            fPainting = true;
 //            super.paint(g);

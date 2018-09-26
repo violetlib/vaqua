@@ -1,4 +1,12 @@
 /*
+ * Changes copyright (c) 2018 Alan Snyder.
+ * All rights reserved.
+ *
+ * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
+ * accompanying license terms.
+ */
+
+/*
  * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -36,7 +44,8 @@ import javax.swing.text.JTextComponent;
  * insertion caret at the beginning of a text field when it gets clicked on.
  */
 public class AquaTextFieldFormattedUI extends AquaTextFieldUI implements MouseListener {
-    public static ComponentUI createUI(final JComponent c) {
+
+    public static ComponentUI createUI(JComponent c) {
         return new AquaTextFieldFormattedUI();
     }
 
@@ -55,18 +64,18 @@ public class AquaTextFieldFormattedUI extends AquaTextFieldUI implements MouseLi
         super.uninstallListeners();
     }
 
-    public void mouseClicked(final MouseEvent e) {
+    public void mouseClicked(MouseEvent e) {
         if (e.getClickCount() != 1) return;
 
-        final JTextComponent c = getComponent();
+        JTextComponent c = getComponent();
         // apparently, focus has already been granted by the time this mouse listener fires
     //    if (c.hasFocus()) return;
 
         c.setCaretPosition(viewToModel(c, e.getPoint()));
     }
 
-    public void mouseEntered(final MouseEvent e) { }
-    public void mouseExited(final MouseEvent e) { }
-    public void mousePressed(final MouseEvent e) { }
-    public void mouseReleased(final MouseEvent e) { }
+    public void mouseEntered(MouseEvent e) { }
+    public void mouseExited(MouseEvent e) { }
+    public void mousePressed(MouseEvent e) { }
+    public void mouseReleased(MouseEvent e) { }
 }

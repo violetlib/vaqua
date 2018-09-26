@@ -1,5 +1,5 @@
 /*
- * Changes Copyright (c) 2015 Alan Snyder.
+ * Changes Copyright (c) 2015-2018 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -33,22 +33,33 @@
 
 package org.violetlib.aqua;
 
-import javax.swing.*;
-import javax.swing.plaf.ComponentUI;
-import javax.swing.plaf.basic.BasicPopupMenuUI;
 import java.awt.*;
 import java.awt.event.*;
+import javax.swing.*;
+import javax.swing.border.Border;
+import javax.swing.plaf.ComponentUI;
+import javax.swing.plaf.basic.BasicPopupMenuUI;
+
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.violetlib.jnr.aqua.AquaUIPainter;
+
+import static org.violetlib.aqua.AquaContextualPopup.getContextualMenuBorder;
 
 /**
  * UI for all kinds of pop up menus.
  */
-public class AquaPopupMenuUI extends BasicPopupMenuUI {
+public class AquaPopupMenuUI extends BasicPopupMenuUI implements AquaComponentUI {
 
     public static final String POP_UP_SCREEN_BOUNDS = "Aqua.PopupMenu.ScreenBounds";
     public static final String POP_UP_SELECTED_REGION = "Aqua.PopupMenu.SelectedRegion";
     public static final String POP_UP_SELECTED_REGION_LOCATION = "Aqua.PopupMenu.SelectedRegionLocation";
 
-    public static ComponentUI createUI(final JComponent x) {
+    public static final int ORDINARY_CONTEXTUAL_MENU_STYLE = 0;
+    public static final int SIMPLE_CONTEXTUAL_MENU_STYLE = 1;   // used in macOS 10.14+ for editable combo boxes
+    public static final int FANCY_CONTEXTUAL_MENU_STYLE = 2;    // rounded corners and fancy scrolling
+
+    public static ComponentUI createUI(JComponent x) {
         return new AquaPopupMenuUI();
     }
 
@@ -56,16 +67,18 @@ public class AquaPopupMenuUI extends BasicPopupMenuUI {
 
     private AquaContextualPopup cp;
     private ScrollingMouseListener scrollingMouseListener = new ScrollingMouseListener();
+    protected @NotNull BasicContextualColors colors;
+    protected @Nullable AppearanceContext appearanceContext;
 
-    public boolean isPopupTrigger(final MouseEvent e) {
-        // Use the awt popup trigger code since this only runs on our OS!
-        return e.isPopupTrigger();
+    public AquaPopupMenuUI() {
+        colors = AquaColors.getMenuColors();
     }
 
     @Override
     public void installDefaults() {
         super.installDefaults();
-        LookAndFeel.installProperty(popupMenu, "opaque", Boolean.FALSE);
+        LookAndFeel.installProperty(popupMenu, "opaque", false);
+        configureAppearanceContext(null);
     }
 
     @Override
@@ -74,14 +87,48 @@ public class AquaPopupMenuUI extends BasicPopupMenuUI {
         popupMenu.addMouseListener(scrollingMouseListener);
         popupMenu.addMouseMotionListener(scrollingMouseListener);
         popupMenu.addMouseWheelListener(scrollingMouseListener);
+        AppearanceManager.installListener(popupMenu);
     }
 
     @Override
     protected void uninstallListeners() {
-        super.uninstallListeners();
+        AppearanceManager.uninstallListener(popupMenu);
         popupMenu.removeMouseListener(scrollingMouseListener);
         popupMenu.removeMouseMotionListener(scrollingMouseListener);
         popupMenu.removeMouseWheelListener(scrollingMouseListener);
+        super.uninstallListeners();
+    }
+
+    @Override
+    public void appearanceChanged(@NotNull JComponent c, @NotNull AquaAppearance appearance) {
+        configureAppearanceContext(appearance);
+    }
+
+    @Override
+    public void activeStateChanged(@NotNull JComponent c, boolean isActive) {
+        configureAppearanceContext(null);
+    }
+
+    protected void configureAppearanceContext(@Nullable AquaAppearance appearance) {
+        if (appearance == null) {
+            appearance = AppearanceManager.ensureAppearance(popupMenu);
+        }
+        AquaUIPainter.State state = AquaUIPainter.State.ACTIVE;
+        appearanceContext = new AppearanceContext(appearance, state, false, false);
+        AquaColors.installColors(popupMenu, appearanceContext, colors);
+        popupMenu.repaint();
+    }
+
+    @Override
+    public void update(Graphics g, JComponent c) {
+        AquaAppearance appearance = AppearanceManager.registerCurrentAppearance(c);
+        super.update(g, c);
+        AppearanceManager.restoreCurrentAppearance(appearance);
+    }
+
+    public boolean isPopupTrigger(MouseEvent e) {
+        // Use the awt popup trigger code since this only runs on our OS!
+        return e.isPopupTrigger();
     }
 
     @Override
@@ -104,8 +151,9 @@ public class AquaPopupMenuUI extends BasicPopupMenuUI {
         }
 
         Component owner = popup.getInvoker();
+        int menuStyle = getContextualMenuStyle(owner);
 
-        if (isContextualMenuStyle(owner)) {
+        if (menuStyle == FANCY_CONTEXTUAL_MENU_STYLE) {
 
             Rectangle selectedRegion = null;
             Point selectedRegionLocation = null;
@@ -123,14 +171,27 @@ public class AquaPopupMenuUI extends BasicPopupMenuUI {
 
             cp = new AquaContextualPopup(popup, owner, selectedRegion, selectedRegionLocation, x, y, width, height);
             return cp.getPopup();
+
+        } else if (menuStyle == SIMPLE_CONTEXTUAL_MENU_STYLE) {
+
+            Border border = getContextualMenuBorder();
+            AquaBasicPopupMenuWrapper wrapper = new AquaBasicPopupMenuWrapper(popup, border);
+            wrapper.putClientProperty(AquaVibrantSupport.POPUP_BACKGROUND_STYLE_KEY, "vibrantMenu");
+            wrapper.putClientProperty(AquaVibrantSupport.POPUP_CORNER_RADIUS_KEY, 6);
+            popup.setBorder(null);
+            PopupFactory f = PopupFactory.getSharedInstance();
+            y += 2;
+            return f.getPopup(owner, wrapper, x, y);
+
         } else {
+
             PopupFactory f = PopupFactory.getSharedInstance();
             return f.getPopup(owner, popup, x, y);
         }
     }
 
-    protected boolean isContextualMenuStyle(Component c) {
-        return true;
+    protected int getContextualMenuStyle(Component c) {
+        return FANCY_CONTEXTUAL_MENU_STYLE;
     }
 
     public static Object getHidePopupKey() {

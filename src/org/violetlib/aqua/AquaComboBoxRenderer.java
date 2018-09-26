@@ -1,4 +1,12 @@
 /*
+ * Copyright (c) 2018 Alan Snyder.
+ * All rights reserved.
+ *
+ * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
+ * accompanying license terms.
+ */
+
+/*
  * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -30,7 +38,7 @@ import javax.swing.plaf.UIResource;
 
 @SuppressWarnings("serial") // Superclass is not serializable across versions
 class AquaComboBoxRenderer extends AquaComboBoxRendererInternal<Object> implements UIResource {
-    public AquaComboBoxRenderer(final JComboBox<?> comboBox) {
+    public AquaComboBoxRenderer(JComboBox<?> comboBox) {
         super(comboBox);
     }
 }

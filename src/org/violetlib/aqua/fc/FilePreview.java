@@ -2,7 +2,7 @@
  * @(#)FilePreview.java
  *
  * Copyright (c) 2009-2010 Werner Randelshofer, Switzerland.
- * Copyright (c) 2014-2016 Alan Snyder.
+ * Copyright (c) 2014-2018 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the
@@ -12,30 +12,30 @@
 
 package org.violetlib.aqua.fc;
 
-import javax.swing.*;
-import javax.swing.border.EmptyBorder;
-import javax.swing.filechooser.FileSystemView;
-import javax.swing.plaf.basic.BasicHTML;
-import javax.swing.table.*;
-import javax.swing.tree.TreePath;
-import javax.swing.Timer;
 import java.awt.*;
 import java.awt.event.*;
 import java.io.File;
 import java.text.DateFormat;
 import java.text.MessageFormat;
 import java.text.NumberFormat;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 import java.util.concurrent.TimeUnit;
+import javax.swing.*;
+import javax.swing.border.EmptyBorder;
+import javax.swing.filechooser.FileSystemView;
+import javax.swing.plaf.basic.BasicHTML;
+import javax.swing.table.*;
+import javax.swing.tree.TreePath;
 
-import org.violetlib.aqua.OSXSystemProperties;
+import org.violetlib.aqua.*;
 
 /**
  * The FilePreview is used to render the preview column in the file chooser browser view.
  *
  * @author  Werner Randelshofer
- * @version $Id$
  */
 public class FilePreview extends JComponent implements BrowserPreviewRenderer {
 
@@ -43,6 +43,7 @@ public class FilePreview extends JComponent implements BrowserPreviewRenderer {
     private JPanel emptyPreview;
     private FileInfo info;
     private JLabel nameView;
+    private JLabel typeSizeView;
     private JTable attributeView;
     private Font labelFont;
     private Font valueFont;
@@ -52,8 +53,10 @@ public class FilePreview extends JComponent implements BrowserPreviewRenderer {
     private JProgressBar imageLoadingIndicator;
     private boolean imageIsLoading;
     private Timer imageLoadingTimer;
-
-    private final static Object LABEL_COLUMN_ID = new Object();
+    private TableColumn nameColumn;
+    private TableColumn valueColumn;
+    private SimpleTableCellRenderer nameRenderer;
+    private SimpleTableCellRenderer valueRenderer;
 
     public FilePreview(JFileChooser fileChooser) {
         this.fileChooser = fileChooser;
@@ -77,18 +80,12 @@ public class FilePreview extends JComponent implements BrowserPreviewRenderer {
         setBorder(BorderFactory.createEmptyBorder(3, 4, 4, 4));
         setLayout(new BorderLayout());
 
-        Color bg = UIManager.getColor("List.background");
-        Color fgl = UIManager.getColor("FileChooser.previewLabelForeground");
-        Color fgv = UIManager.getColor("FileChooser.previewValueForeground");
         labelFont = UIManager.getFont("FileChooser.previewLabelFont");
         valueFont = UIManager.getFont("FileChooser.previewValueFont");
         typeSizeFont = UIManager.getFont("FileChooser.previewTypeSizeFont");
 
         emptyPreview = new JPanel();
-        emptyPreview.setBackground(bg);
-        emptyPreview.setOpaque(true);
-
-        Insets labelInsets = UIManager.getInsets("FileChooser.previewLabelInsets");
+        emptyPreview.setOpaque(false);
 
         labelDelimiter = UIManager.getString("FileChooser.previewLabelDelimiter");
         if (labelDelimiter == null) {
@@ -101,39 +98,33 @@ public class FilePreview extends JComponent implements BrowserPreviewRenderer {
             TableColumnModel cm = new DefaultTableColumnModel();
 
             {
-                TableColumn names = new TableColumn();
-                names.setIdentifier(LABEL_COLUMN_ID);
-                SimpleTableCellRenderer r = new SimpleTableCellRenderer(labelFont, fgl);
-                r.setHorizontalAlignment(SwingConstants.RIGHT);
+                nameColumn = new TableColumn();
+                nameRenderer = new SimpleTableCellRenderer(labelFont);
+                nameRenderer.setHorizontalAlignment(SwingConstants.RIGHT);
                 Insets borderMargin = new Insets(0, 0, 0, 0);
-                r.putClientProperty("Quaqua.Component.visualMargin", borderMargin);
-                names.setCellRenderer(r);
-                names.setModelIndex(0);
-                cm.addColumn(names);
+                nameRenderer.putClientProperty("Quaqua.Component.visualMargin", borderMargin);
+                nameColumn.setCellRenderer(nameRenderer);
+                nameColumn.setModelIndex(0);
+                cm.addColumn(nameColumn);
             }
 
             {
-                TableColumn values = new TableColumn();
-                SimpleTableCellRenderer r = new SimpleTableCellRenderer(valueFont, fgv);
-                r.setHorizontalAlignment(SwingConstants.LEFT);
-                values.setCellRenderer(r);
-                values.setModelIndex(1);
-                cm.addColumn(values);
-                if (OSXSystemProperties.OSVersion >= 1010) {
-                    r.setRowZeroFont(typeSizeFont);
-                    r.setRowZeroColor(fgl);
-                }
+                valueColumn = new TableColumn();
+                valueRenderer = new SimpleTableCellRenderer(valueFont);
+                valueRenderer.setHorizontalAlignment(SwingConstants.LEFT);
+                valueColumn.setCellRenderer(valueRenderer);
+                valueColumn.setModelIndex(1);
+                cm.addColumn(valueColumn);
             }
 
             attributeView = new JTable(null, cm);
             attributeView.setIntercellSpacing(new Dimension(columnSeparation, 0));
             attributeView.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
             attributeView.setFocusable(false);
+            attributeView.setOpaque(false);
         }
 
-        setBackground(bg);
-        attributeView.setBackground(bg);
-        setOpaque(true);
+        setOpaque(false);
 
         OverlayContainer imageHolder = new OverlayContainer();
         imageHolder.add(imageLoadingIndicator);
@@ -153,13 +144,29 @@ public class FilePreview extends JComponent implements BrowserPreviewRenderer {
             nameView = new JLabel();
             nameView.setFont(UIManager.getFont("FileChooser.previewNameFont"));
 
+            if (OSXSystemProperties.OSVersion >= 1014) {
+                typeSizeView = new JLabel();
+                typeSizeView.setFont(typeSizeFont);
+            } else {
+                valueRenderer.setRowZeroFont(typeSizeFont);
+            }
+
             {
                 Box p = new Box(BoxLayout.X_AXIS);
                 p.add(Box.createHorizontalGlue());
                 p.add(nameView);
                 p.add(Box.createHorizontalGlue());
-                p.setBorder(new EmptyBorder(0, 0, 20, 0));
                 vb.add(p);
+
+                if (typeSizeView != null) {
+                    p = new Box(BoxLayout.X_AXIS);
+                    p.add(Box.createHorizontalGlue());
+                    p.add(typeSizeView);
+                    p.add(Box.createHorizontalGlue());
+                    vb.add(p);
+                }
+
+                p.setBorder(new EmptyBorder(0, 0, 20, 0));
             }
         }
 
@@ -189,10 +196,23 @@ public class FilePreview extends JComponent implements BrowserPreviewRenderer {
 
     @Override
     protected void paintComponent(Graphics g) {
+
+        AppearanceManager.ensureAppearance(this);
+        Color background = AquaColors.getBackground(this, "controlBackground");
+        Color labelForeground = AquaColors.getSystemColor(this, "secondaryLabel");
+        Color valueForeground = AquaColors.getSystemColor(this, "label");
+
+        nameRenderer.setColor(AquaColors.getOrdinaryColor(labelForeground));
+        valueRenderer.setColor(AquaColors.getOrdinaryColor(valueForeground));
+        if (typeSizeView != null) {
+            typeSizeView.setForeground(AquaColors.getOrdinaryColor(labelForeground));
+        } else if (OSXSystemProperties.OSVersion >= 1010) {
+            valueRenderer.setRowZeroColor(AquaColors.getOrdinaryColor(labelForeground));
+        }
+
         // Avoid the magic eraser when displayed as a sheet
         if (isOpaque()) {
-            Color c = getBackground();
-            g.setColor(c);
+            g.setColor(background);
             g.fillRect(0, 0, getWidth(), getHeight());
         }
     }
@@ -264,7 +284,11 @@ public class FilePreview extends JComponent implements BrowserPreviewRenderer {
             if (size != null) {
                 s = s + " - " + size;
             }
-            m.add("", s); // special font and text color for first row
+            if (typeSizeView != null) {
+                typeSizeView.setText(s);
+            } else {
+                m.add("", s); // special font and text color for first row
+            }
             m.add("modified", modified);
             if (lastUsedDate != null) {
                 m.add("lastUsed", getLastUsedString(lastUsedDate));
@@ -402,7 +426,7 @@ public class FilePreview extends JComponent implements BrowserPreviewRenderer {
         if (info != null) {
             // Retrieving the file icon requires some potentially lengthy I/O
             // operations. Therefore we do this in a worker thread.
-            final File file = info.lazyGetResolvedFile();
+            File file = info.lazyGetResolvedFile();
             if (file != null) {
                 imageIsLoading = true;
                 boolean useQuickLook = UIManager.getBoolean("FileChooser.quickLookEnabled");
@@ -511,9 +535,9 @@ public class FilePreview extends JComponent implements BrowserPreviewRenderer {
         private Font rowZeroFont;
         private Color rowZeroColor;
 
-        public SimpleTableCellRenderer(Font f, Color fg) {
+        public SimpleTableCellRenderer(Font f) {
             this.f = f;
-            this.fg = fg;
+            this.fg = Color.BLACK;  // temporary, configured later
             setOpaque(false);
         }
 
@@ -523,6 +547,10 @@ public class FilePreview extends JComponent implements BrowserPreviewRenderer {
 
         public void setRowZeroColor(Color c) {
             this.rowZeroColor = c;
+        }
+
+        public void setColor(Color c) {
+            this.fg = c;
         }
 
         @Override
@@ -630,7 +658,7 @@ public class FilePreview extends JComponent implements BrowserPreviewRenderer {
             }
 
             Insets s = getInsets();
-            g.setColor(new Color(0xd9d9d9));
+            g.setColor(new Color(217, 217, 217));
             g.fillRect(s.left, s.top, getWidth() - s.left - s.right, 1);
         }
     }
