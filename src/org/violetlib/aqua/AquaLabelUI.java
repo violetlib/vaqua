@@ -196,7 +196,7 @@ public class AquaLabelUI extends BasicLabelUI implements AquaComponentUI {
             if (foreground == defaultColor) {
                 AquaAppearance appearance = AppearanceManager.getCurrentAppearance();
                 foreground = appearance.getColor("controlText");
-                System.err.println("Using default color for titled border: " + AquaColors.toString(foreground));
+                //System.err.println("Using default color for titled border: " + AquaColors.toString(foreground));
             }
         }
 
