@@ -54,7 +54,7 @@ static NSWindowStyleMask MY_STYLE_BITS = NSWindowStyleMaskTitled | NSWindowStyle
     WindowStyleMaskPatchMaskHolder *holder = objc_getAssociatedObject(self, &holderKey);
     if (holder == nil) {
         holder = [[WindowStyleMaskPatchMaskHolder alloc] init];
-	    objc_setAssociatedObject(self, &holderKey, holder, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+        objc_setAssociatedObject(self, &holderKey, holder, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
     }
     holder.specifiedMask = mask;
 
@@ -90,7 +90,7 @@ static NSWindowStyleMask MY_STYLE_BITS = NSWindowStyleMaskTitled | NSWindowStyle
     WindowStyleMaskPatchMaskHolder *holder = objc_getAssociatedObject(self, &holderKey);
     if (holder == nil) {
         holder = [[WindowStyleMaskPatchMaskHolder alloc] init];
-	    objc_setAssociatedObject(self, &holderKey, holder, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+        objc_setAssociatedObject(self, &holderKey, holder, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
     }
     holder.specifiedMask = mask;
 
