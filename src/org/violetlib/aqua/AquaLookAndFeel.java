@@ -795,7 +795,7 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
                     "MenuBar.font", menuFont,
                     "MenuBar.background", menuBackgroundColor, // not a menu item, not selected
                     "MenuBar.foreground", menuForegroundColor,
-                    "MenuBar.border", new com.apple.laf.AquaMenuBarBorder(), // sja make lazy!
+                    "MenuBar.border", new AquaMenuBarBorder(),
                     "MenuBar.margin", new InsetsUIResource(0, 8, 0, 8), // sja make lazy!
                     "MenuBar.selectionBackground", menuSelectedBackgroundColor, // not a menu item, is selected
                     "MenuBar.selectionForeground", menuSelectedForegroundColor,
