@@ -33,16 +33,6 @@ public class WindowStylePatch
         return Boolean.TRUE.equals(isNeeded);
     }
 
-    private static boolean isNeededAndIsInstalled() {
-        if (isNeeded()) {
-            if (isInstalled == null) {
-                loadNativeSupport();
-            }
-            return Boolean.TRUE.equals(isInstalled);
-        }
-        return false;
-    }
-
     private static Boolean computeIfNeeded() {
         int version = AquaUtils.getJavaVersion();
         return version < 1200000;
