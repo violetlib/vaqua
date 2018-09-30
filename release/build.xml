@@ -48,6 +48,7 @@
     <property name="libdir" location="${base}/lib"/>
 
     <property name="renderingLibraryJAR" location="${libdir}/VAquaRendering.jar"/>
+    <property name="activationJAR" location="${libdir}/javax.activation-1.2.0.jar"/>
 
     <property name="SDKversion" value="10.14"/>
     <property name="SDKroot" location="/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX${SDKversion}.sdk" />
@@ -69,8 +70,9 @@
       <echo file="${classesdir}/org/violetlib/aqua/BUILD.txt" message="${NOW}"/>
     </target>
 
-    <target name="unjarRenderingLibrary">
+    <target name="unjarLibraries">
         <unjar overwrite="false" dest="${classesdir}" src="${renderingLibraryJAR}"/>
+        <unjar overwrite="false" dest="${classesdir}" src="${activationJAR}"/>
     </target>
 
     <target name="copyResources">
@@ -81,7 +83,7 @@
       </copy>
     </target>
 
-    <target name="compile8" depends="unjarRenderingLibrary, copyResources">
+    <target name="compile8" depends="unjarLibraries, copyResources">
       <mkdir dir="${classesdir}"/>
       <mkdir dir="${headersdir}"/>
 
