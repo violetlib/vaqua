@@ -1062,6 +1062,15 @@ final public class AquaUtils {
         return false;
     }
 
+    public static boolean isNativeTextured(@NotNull Window w) {
+        if (w instanceof RootPaneContainer) {
+            RootPaneContainer rpc = (RootPaneContainer) w;
+            JRootPane rootPane = rpc.getRootPane();
+            return isNativeTextured(rootPane);
+        }
+        return false;
+    }
+
     public static boolean isNativeTextured(@NotNull JRootPane rp) {
         Object prop = rp.getClientProperty("apple.awt.brushMetalLook");
         if (prop != null) {
@@ -1366,7 +1375,62 @@ final public class AquaUtils {
     }
 
     private static long setTitleBarStyle(Window w, long wptr, int style) {
-        int result = nativeSetTitleBarStyle(wptr, style);
+
+        JRootPane rp = getRootPane(w);
+        assert rp != null;
+
+        int result;
+
+        if (!WindowStylePatch.isNeeded()) {
+            boolean hasTitleBar = true;
+            boolean isFullWindowContent = false;
+            boolean isTransparentTitleBar = false;
+            boolean isMovableByBackground = isNativeTextured(w);
+            boolean isMovable = true;
+            boolean isFixNeeded = false;
+            boolean isHidden = false;
+
+            switch (style) {
+                case TITLE_BAR_NONE:
+                    hasTitleBar = false;
+                    break;
+
+                case TITLE_BAR_TRANSPARENT:
+                    isFullWindowContent = true;
+                    isTransparentTitleBar = true;
+                    isMovableByBackground = false;
+                    isFixNeeded = true;
+                    break;
+
+                case TITLE_BAR_HIDDEN:
+                    isFullWindowContent = true;
+                    isTransparentTitleBar = true;
+                    if (OSXSystemProperties.OSVersion < 1011){
+                        isMovable = false;
+                    }
+                    isMovableByBackground = false;
+                    isFixNeeded = true;
+                    isHidden = true;
+                    break;
+
+                case TITLE_BAR_OVERLAY:
+                    isFullWindowContent = true;
+                    isFixNeeded = true;
+                    break;
+
+                case TITLE_BAR_ORDINARY:
+                default:
+            }
+
+            rp.putClientProperty("apple.awt.fullWindowContent", isFullWindowContent);
+            rp.putClientProperty("apple.awt.transparentTitleBar", isTransparentTitleBar);
+            rp.putClientProperty("apple.awt.draggableWindowBackground", isMovableByBackground);
+            result = nativeSetTitleBarProperties(wptr, hasTitleBar, isMovable, isHidden, isFixNeeded);
+
+        } else {
+            result = nativeSetTitleBarStyle(wptr, style);
+        }
+
         if (result != 0) {
             throw new UnsupportedOperationException("Unable to set window title bar style");
         } else if (style == TITLE_BAR_HIDDEN) {
@@ -1747,6 +1811,7 @@ final public class AquaUtils {
     private static native void nativeSetWindowBackground(Window w, Color color);
     private static native boolean nativeIsFullScreenWindow(long w);
     private static native int nativeSetTitleBarStyle(long w, int style);
+    private static native int nativeSetTitleBarProperties(long w, boolean hasTitleBar, boolean isMovable, boolean isHidden, boolean isFixNeeded);
     private static native int nativeAddToolbarToWindow(long w);
     private static native int nativeSetWindowCornerRadius(long w, float radius);
     private static native int nativeSetAWTViewVisibility(long w, boolean isVisible);
