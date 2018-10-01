@@ -670,7 +670,7 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
                 // *** SplitPane
                 "SplitPane.border", null,
                 "SplitPane.continuousLayout", true,
-                "SplitPane.dividerSize", 9, // will be replaced by AquaSplitPaneUI
+                "SplitPane.dividerSize", 1, // will be replaced by AquaSplitPaneUI
                 "SplitPaneDivider.border", null, // AquaSplitPaneDividerUI draws it
 
                 // *** TabbedPane
