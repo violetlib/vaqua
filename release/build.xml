@@ -26,10 +26,6 @@
 
     <property name="bootclasspath" location="${jdk8}/jre/lib/rt.jar" />
 
-    <!-- A JDK lib directory is required -->
-
-    <property name="jdklibdir" location="/Library/Java/JavaVirtualMachines/jdk-9.0.4.jdk/Contents/Home/lib"/>
-
     <property name="RELEASE" value="0.9"/>
     <property name="fullReleaseName" value="${RELEASE} ${NOW}"/>
 
@@ -223,12 +219,6 @@
             <arg value="-F/${SDKroot}/System/Library/Frameworks/JavaVM.framework/Versions/A/Frameworks"/>
             <arg value="-framework"/>
             <arg value="JavaNativeFoundation"/>
-
-            <!--
-            <arg value="-L${jdklibdir}"/>
-            <arg value="-lawt_lwawt"/>
-            <arg value="-losxapp"/>
-            -->
 
             <arg value="-undefined"/>
             <arg value="dynamic_lookup"/>
