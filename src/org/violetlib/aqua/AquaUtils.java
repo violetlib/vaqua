@@ -1405,9 +1405,7 @@ final public class AquaUtils {
                 case TITLE_BAR_HIDDEN:
                     isFullWindowContent = true;
                     isTransparentTitleBar = true;
-                    if (OSXSystemProperties.OSVersion < 1011){
-                        isMovable = false;
-                    }
+                    isMovable = OSXSystemProperties.OSVersion < 1011;
                     isMovableByBackground = false;
                     isFixNeeded = true;
                     isHidden = true;
