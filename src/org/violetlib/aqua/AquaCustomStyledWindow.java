@@ -93,14 +93,36 @@ public class AquaCustomStyledWindow {
 
     protected final int style;
 
+    /**
+     * The top margin height, if specified by a client property, otherwise -1.
+     */
     protected int declaredTopMarginHeight;
+
+    /**
+     * The bottom margin height, if specified by a client property, otherwise -1.
+     */
     protected int declaredBottomMarginHeight;
+
+    /**
+     * The top margin height, if it is fixed based on the window style or the declared top margin height,
+     * otherwise -1.
+     */
     protected int fixedTopMarginHeight;
+
+    /**
+     * The bottom margin height, if it is fixed based on the window style or the declared bottom margin height,
+     * otherwise -1.
+     */
     protected int fixedBottomMarginHeight;
 
-    /** Computed top margin height, used when painting and handling mouse events. */
+    /**
+     * The computed top margin height, used when painting and handling mouse events.
+     */
     protected int topMarginHeight;
-    /** Computed bottom margin height, used when painting and handling mouse events. */
+
+    /**
+     * The computed bottom margin height, used when painting and handling mouse events.
+     */
     protected int bottomMarginHeight;
 
     protected final int titleBarStyle;
@@ -495,7 +517,7 @@ public class AquaCustomStyledWindow {
             case STYLE_TEXTURED_HIDDEN:
             case STYLE_COMBINED:
             case STYLE_UNDECORATED:
-                return declaredBottomMarginHeight;
+                return declaredBottomMarginHeight > 0 ? declaredBottomMarginHeight : 0;
         }
         return -1;
     }
