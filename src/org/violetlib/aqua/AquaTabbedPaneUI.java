@@ -816,8 +816,8 @@ public class AquaTabbedPaneUI extends AquaTabbedPaneCopyFromBasicUI
                 g.fillRect(0, 0, width, height);
             }
 
+            // HiDPI apparently not needed
             Rectangle clipRect = g.getClipBounds();
-            // TBD: need scale factor?
             BufferedImage b = new BufferedImage(clipRect.width, clipRect.height, BufferedImage.TYPE_INT_ARGB);
             Graphics2D bg = b.createGraphics();
             bg.translate(-clipRect.x, -clipRect.y);

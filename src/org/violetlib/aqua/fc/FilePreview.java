@@ -30,7 +30,9 @@ import javax.swing.plaf.basic.BasicHTML;
 import javax.swing.table.*;
 import javax.swing.tree.TreePath;
 
-import org.violetlib.aqua.*;
+import org.violetlib.aqua.AppearanceManager;
+import org.violetlib.aqua.AquaColors;
+import org.violetlib.aqua.OSXSystemProperties;
 
 /**
  * The FilePreview is used to render the preview column in the file chooser browser view.
@@ -42,7 +44,7 @@ public class FilePreview extends JComponent implements BrowserPreviewRenderer {
     private JFileChooser fileChooser;
     private JPanel emptyPreview;
     private FileInfo info;
-    private JLabel nameView;
+    private NameView nameView;
     private JLabel typeSizeView;
     private JTable attributeView;
     private Font labelFont;
@@ -60,6 +62,14 @@ public class FilePreview extends JComponent implements BrowserPreviewRenderer {
 
     public FilePreview(JFileChooser fileChooser) {
         this.fileChooser = fileChooser;
+
+        int version = OSXSystemProperties.OSVersion;
+        int minWidth = 210;
+        int prefWidth = version >= 1014 ? 240 : minWidth;
+        int minHeight = 335;
+
+        setMinimumSize(new Dimension(minWidth, minHeight));
+        setPreferredSize(new Dimension(prefWidth, minHeight));
 
         previewImageView = new ScaledImageView();
         previewImageView.setMinimumSize(new Dimension(128, 128));
@@ -122,6 +132,7 @@ public class FilePreview extends JComponent implements BrowserPreviewRenderer {
             attributeView.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
             attributeView.setFocusable(false);
             attributeView.setOpaque(false);
+            attributeView.setAlignmentX(0.5f);
         }
 
         setOpaque(false);
@@ -141,43 +152,34 @@ public class FilePreview extends JComponent implements BrowserPreviewRenderer {
             b.setBorder(new EmptyBorder(5, 25, 5, 25));
             vb.add(b);
         } else {
-            nameView = new JLabel();
-            nameView.setFont(UIManager.getFont("FileChooser.previewNameFont"));
+            nameView = new NameView();
+            nameView.setAlignmentX(0.5f);
 
             if (OSXSystemProperties.OSVersion >= 1014) {
                 typeSizeView = new JLabel();
                 typeSizeView.setFont(typeSizeFont);
+                typeSizeView.setAlignmentX(0.5f);
             } else {
                 valueRenderer.setRowZeroFont(typeSizeFont);
             }
 
-            {
-                Box p = new Box(BoxLayout.X_AXIS);
-                p.add(Box.createHorizontalGlue());
-                p.add(nameView);
-                p.add(Box.createHorizontalGlue());
-                vb.add(p);
+            vb.add(Box.createVerticalStrut(5));
+            vb.add(nameView);
+            if (OSXSystemProperties.OSVersion < 1014) {
+                vb.add(Box.createVerticalStrut(20));
+            }
 
-                if (typeSizeView != null) {
-                    p = new Box(BoxLayout.X_AXIS);
-                    p.add(Box.createHorizontalGlue());
-                    p.add(typeSizeView);
-                    p.add(Box.createHorizontalGlue());
-                    vb.add(p);
-                }
+            if (typeSizeView != null) {
+                vb.add(typeSizeView);
+            }
 
-                p.setBorder(new EmptyBorder(0, 0, 20, 0));
+            if (OSXSystemProperties.OSVersion >= 1014) {
+                vb.add(Box.createVerticalStrut(20));
             }
         }
 
-        {
-            Box p = new Box(BoxLayout.X_AXIS);
-            p.add(Box.createHorizontalGlue());
-            p.add(attributeView);
-            p.add(Box.createHorizontalGlue());
-            p.setBorder(new EmptyBorder(0, 0, 40, 0));
-            vb.add(p);
-        }
+        vb.add(attributeView);
+        vb.add(Box.createVerticalStrut(40));
 
         MouseListener mouseHandler = new MouseAdapter() {
 
@@ -242,7 +244,7 @@ public class FilePreview extends JComponent implements BrowserPreviewRenderer {
 
     public Component getPreviewRendererComponent(JBrowser browser, TreePath[] paths) {
 
-        if (paths.length > 1) {
+        if (paths.length != 1) {
             return emptyPreview;
         }
 

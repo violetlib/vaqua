@@ -16,6 +16,7 @@ import javax.swing.plaf.ColorUIResource;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.violetlib.jnr.aqua.AquaNativeRendering;
 import org.violetlib.vappearances.VAppearance;
 
 import static org.violetlib.aqua.OSXSystemProperties.OSVersion;
@@ -42,6 +43,9 @@ public class AquaAppearance implements VAppearance {
         Colors colors = new Colors();
         colors.add(defaultColors);
         colors.addAll(appearance.getColors());
+
+        Map<String,Color> myNativeColors = AquaNativeRendering.createPainter().getColors(appearance);
+        colors.addAll(myNativeColors);
 
         if (appearance.isDark()) {
             colors.add(darkColors);
@@ -266,11 +270,13 @@ public class AquaAppearance implements VAppearance {
             colors.add("saveOptionsArea", 236);
         }
 
-        // support for painting the scroll pane corner when using legacy scroll bars
-        colors.add("scrollPaneTrack", 250);
-        colors.add("scrollPaneTrackBorder", 241);
-        colors.add("scrollPaneBorder", 197);
+        colors.add("selectedBrowserExpandArrow", 110);
+        colors.add("selectedBrowserExpandArrow_focused", 255);
+        colors.add("browserExpandArrow", 127);
         colors.add("scrollPaneGrabber", 163);
+
+        // support for scroll panes
+        colors.add("scrollPaneBorder", 197);
 
         // colors related to textured buttons and text fields used as textured combo box renderers
         colors.add("texturedText", 0, 170);
@@ -472,10 +478,11 @@ public class AquaAppearance implements VAppearance {
             colors.add("bottomTexturedWindowDivider_disabled", c, a);
         }
 
-        // support for painting the scroll pane corner when using legacy scroll bars
-        colors.add("scrollPaneBorder", 0, 128);
-        colors.add("scrollPaneTrackBorder", 218);
+        // support for the file chooser
         colors.add("scrollPaneGrabber", 87);
+
+        // support for scroll panes
+        colors.add("scrollPaneBorder", 0, 128);
 
         return colors;
     }
@@ -535,11 +542,13 @@ public class AquaAppearance implements VAppearance {
         colors.add("openOptionsArea_disabled", 45);
         colors.remove("saveOptionsArea");
 
-        // support for painting the scroll pane corner when using legacy scroll bars (dark mode)
-        colors.add("scrollPaneTrack", 68, 217);
-        colors.add("scrollPaneTrackBorder", 160, 36);
+        colors.add("selectedBrowserExpandArrow", 172);
+        colors.add("selectedBrowserExpandArrow_focused", 255);
+        colors.add("browserExpandArrow", 154);
+        colors.add("scrollPaneGrabber", 255, 72);
+
+        // support for scroll panes (dark mode)
         colors.add("scrollPaneBorder", 155, 128);
-        colors.add("scrollPaneGrabber", 105);
 
         // colors related to textured buttons and text fields used as textured combo box renderers (dark mode)
         colors.add("texturedText", "controlText");
@@ -712,8 +721,10 @@ public class AquaAppearance implements VAppearance {
         colors.add("windowBackground", 50);
         colors.add("texturedWindowBackground", 53);
 
-        // support for painting the scroll pane corner when using legacy scroll bars (dark mode)
-        colors.add("scrollPaneGrabber", 200);
+        // support for the file chooser (dark mode)
+        colors.add("scrollPaneGrabber", 255, 196);
+
+        // support for scroll panes (dark mode)
         colors.add("scrollPaneBorder", 153, 128);
 
         colors.addColorGradient("bottomTexturedWindowMarginBackground", 80, 48, 128);

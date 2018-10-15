@@ -28,6 +28,7 @@ import javax.swing.event.*;
 import javax.swing.filechooser.FileFilter;
 import javax.swing.filechooser.FileView;
 import javax.swing.plaf.ComponentUI;
+import javax.swing.plaf.DimensionUIResource;
 import javax.swing.plaf.TreeUI;
 import javax.swing.plaf.basic.BasicFileChooserUI;
 import javax.swing.tree.DefaultTreeCellRenderer;
@@ -525,6 +526,12 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
         }
 
         @Override
+        public Dimension getMinimumSize() {
+            Dimension d = super.getMinimumSize();
+            return new Dimension(720, d.height);
+        }
+
+        @Override
         public void doLayout() {
             super.doLayout();
             updateWindowStyleParameters();
@@ -593,6 +600,15 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
         }
     }
 
+    private class ControlsPanel extends JPanel {
+
+        public ControlsPanel() {
+            setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
+            setBorder(new EmptyBorder(1, 0, 0, 0));   // allow divider to show
+            setOpaque(false);
+        }
+    }
+
     // Button panel: depends upon Open/Save dialog type
 
     private class ButtonPanel extends JPanel implements Reconfigurable {
@@ -655,7 +671,7 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
         columnView = ColumnView.create(fc);
         viewModeControl = ViewModeControl.create();
         listView = ListView.create(fc);
-        controlsPanel = new JPanel();
+        controlsPanel = new ControlsPanel();
         optionsSeparator = createOptionsSeparator();    // create before options panel
         optionsPanel = new OptionsPanel();
         accessoryPanel = new JPanel();
@@ -753,17 +769,12 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
         splitPane.setLeftComponent(sidebarScrollPane);
         splitPane.setRightComponent(viewsPanel);
 
-
-        controlsPanel.setLayout(new BoxLayout(controlsPanel, BoxLayout.Y_AXIS));
-        controlsPanel.setBorder(new EmptyBorder(1, 0, 0, 0));   // allow divider to show
-
         accessoryPanel.setLayout(new java.awt.BorderLayout());
         optionsPanel.add(accessoryPanel);
         controlsPanel.add(optionsPanel);
 
         accessoryPanel.setOpaque(false);
         formatPanel.setOpaque(false);
-        controlsPanel.setOpaque(false);
         buttonsPanel.setOpaque(false);
 
         formatPanel.setLayout(new java.awt.GridBagLayout());
@@ -810,13 +821,13 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
         controlsPanel.add(buttonsPanel);
 
         layout.setVerticalGroup(layout.createSequentialGroup()
-          .addComponent(topPanel, 0, GroupLayout.PREFERRED_SIZE, GroupLayout.PREFERRED_SIZE)
-          .addComponent(splitPane, 0, GroupLayout.PREFERRED_SIZE, Short.MAX_VALUE)
-          .addComponent(controlsPanel, 0, GroupLayout.PREFERRED_SIZE, GroupLayout.PREFERRED_SIZE));
+          .addComponent(topPanel, GroupLayout.PREFERRED_SIZE, GroupLayout.PREFERRED_SIZE, GroupLayout.PREFERRED_SIZE)
+          .addComponent(splitPane, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE, Short.MAX_VALUE)
+          .addComponent(controlsPanel, GroupLayout.PREFERRED_SIZE, GroupLayout.PREFERRED_SIZE, GroupLayout.PREFERRED_SIZE));
         layout.setHorizontalGroup(layout.createParallelGroup()
-          .addComponent(topPanel, 0, GroupLayout.PREFERRED_SIZE, Short.MAX_VALUE)
+          .addComponent(topPanel, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE, Short.MAX_VALUE)
           .addComponent(splitPane, 0, GroupLayout.PREFERRED_SIZE, Short.MAX_VALUE)
-          .addComponent(controlsPanel, 0, GroupLayout.PREFERRED_SIZE, Short.MAX_VALUE));
+          .addComponent(controlsPanel, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE, Short.MAX_VALUE));
 
         separator.putClientProperty("Quaqua.Component.visualMargin", new Insets(3, 0, 3, 0));
 
@@ -1026,7 +1037,6 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
         // Configure size of split pane
         int columnWidth = 207 + 16;
         splitPane.setPreferredSize(new Dimension(sidebarWidth + 2 * columnWidth, 298));
-        splitPane.setMinimumSize(new Dimension(sidebarWidth + columnWidth, 130));
         splitPane.setMaximumSize(new Dimension(100000, 100000));
 
         // register key events with window
@@ -3422,7 +3432,7 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
     }
 
     /**
-     * We want to configure a file chooser dialog created by JFileChooser but not mess with others.
+     * Determine if this file chooser is contained in a dialog created by JFileChooser.
      */
     protected JDialog getStandardDialog() {
         Window w = SwingUtilities.getWindowAncestor(fc);
@@ -3575,6 +3585,93 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
             Color divider = appearance.getColor("separator");
             splitPane.setBorder(BorderFactory.createMatteBorder(1, 0, 1, 0, divider));
         }
+
+        configureDialogSize();
+    }
+
+    /**
+     * Determine and install the minimum size for the enclosing dialog, if the file chooser is part of a dialog and the
+     * dialog minimum size has not been specified by the application. If the new minimum size is larger than the current
+     * dialog size, resize the dialog to conform to the new minimum size.
+     */
+    public void configureDialogSize() {
+        Window w = SwingUtilities.getWindowAncestor(fc);
+        if (w instanceof JDialog) {
+            JDialog d = (JDialog) w;
+            if (isDefaultDialogSize(d)) {
+                d.setMinimumSize(null);
+                Dimension minimumSize = d.getMinimumSize();
+                installMinimumSize(d, minimumSize.width, minimumSize.height);
+                Dimension size = d.getSize();
+                if (size.width < minimumSize.width || size.height < minimumSize.height) {
+                    Point location = d.getLocation();
+                    int x = location.x;
+                    int y = location.y;
+                    size = new Dimension(Math.max(minimumSize.width, size.width), Math.max(minimumSize.height, size.height));
+                    Rectangle screenBounds = getScreenBounds(d);
+                    if (x + size.width > screenBounds.x + screenBounds.width) {
+                        x = Math.max(screenBounds.x, screenBounds.x + screenBounds.width - size.width);
+                    }
+                    if (y + size.height > screenBounds.y + screenBounds.height) {
+                        y = Math.max(screenBounds.y, screenBounds.y + screenBounds.height - size.height);
+                    }
+                    d.setBounds(x, y, size.width, size.height);
+                }
+            }
+        }
+    }
+
+    protected void installMinimumSize(@NotNull JDialog d, int width, int height) {
+        Dimension size = new DimensionUIResource(width, height);
+        d.setMinimumSize(size);
+    }
+
+    protected boolean isDefaultDialogSize(@NotNull JDialog d) {
+        if (!d.isMinimumSizeSet()) {
+            return true;
+        }
+
+        // Here, I would like to determine whether the set minimum size is an instance of DimensionUIResource.
+        // Unfortunately, there is no direct way to access the value that was set.
+        // Asking for the minimum size always returns a new Dimension.
+        // However, there is a tricky way to get the original, which is to set a new value and capture the old value
+        // in a property change listener.
+
+        MinimumSizeTester tester = new MinimumSizeTester(d);
+        return tester.isUIResource();
+    }
+
+    private static class MinimumSizeTester implements PropertyChangeListener {
+
+        private Component c;
+        private Dimension value;
+
+        public MinimumSizeTester(@NotNull Component c) {
+            this.c = c;
+        }
+
+        public boolean isUIResource() {
+            // This will set the "minimumSizeSet" attribute, so it should be used only when this attribute is already
+            // true.
+
+            Dimension existingSize = c.getMinimumSize();
+            c.addPropertyChangeListener(this);
+            // the new size must be different than the old size to get a property change event
+            c.setMinimumSize(new Dimension(existingSize.width + 1, existingSize.height));
+            c.removePropertyChangeListener(this);
+            c.setMinimumSize(existingSize);
+            return value instanceof DimensionUIResource;
+        }
+
+        @Override
+        public void propertyChange(PropertyChangeEvent evt) {
+            value = (Dimension) evt.getOldValue();
+        }
+    }
+
+    protected @NotNull Rectangle getScreenBounds(@NotNull Window w) {
+        Point loc = w.getLocationOnScreen();
+        return AquaUtils.getScreenBounds(loc, w);
     }
 
     // *******************************************************

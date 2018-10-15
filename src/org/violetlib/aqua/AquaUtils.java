@@ -272,9 +272,17 @@ final public class AquaUtils {
      * Obtain the usable bounds of the screen at a given location.
      * This code taken from JPopupMenu.
      */
-    public static Rectangle getScreenBounds(Point location, Component invoker) {
-        Rectangle bounds;
+    public static Rectangle getScreenBounds(@NotNull Point location, @Nullable Component invoker) {
         GraphicsConfiguration gc = getCurrentGraphicsConfiguration(location, invoker);
+        return getScreenBounds(gc);
+    }
+
+    /**
+     * Obtain the usable bounds of the specified screen or the primary screen.
+     * This code taken from JPopupMenu.
+     */
+    public static @NotNull Rectangle getScreenBounds(@Nullable GraphicsConfiguration gc) {
+        Rectangle bounds;
         Toolkit toolkit = Toolkit.getDefaultToolkit();
         if (gc != null) {
             // If we have GraphicsConfiguration use it to get screen bounds
@@ -285,7 +293,7 @@ final public class AquaUtils {
         }
 
         Insets insets = toolkit.getScreenInsets(gc);
-        int top = insets.top / 2;
+        int top = insets.top;
         int bottom = insets.bottom;
         int left = insets.left;
         int right = insets.right;
@@ -294,11 +302,11 @@ final public class AquaUtils {
     }
 
     /**
-     * Tries to find GraphicsConfiguration
-     * that contains the mouse cursor position.
-     * Can return null.
+     * Try to find GraphicsConfiguration that contains the specified mouse sprite position.
+     * This code taken from JPopupMenu.
      */
-    private static GraphicsConfiguration getCurrentGraphicsConfiguration(Point location, Component invoker) {
+    private static @Nullable GraphicsConfiguration getCurrentGraphicsConfiguration(@NotNull Point location,
+                                                                                   @Nullable Component invoker) {
         GraphicsConfiguration gc = null;
         GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
         GraphicsDevice[] gds = ge.getScreenDevices();
@@ -964,25 +972,20 @@ final public class AquaUtils {
      */
     private static boolean isMagicEraser(Component c, int eraserMode) {
 
-        boolean isTextured = (eraserMode & ERASE_IF_TEXTURED) != 0;
-        boolean isVibrant = (eraserMode & ERASE_IF_VIBRANT) != 0;
-
-        while (c != null) {
-            if (c instanceof JRootPane) {
-                JRootPane rp = (JRootPane) c;
-                if (isTextured && isNativeTextured(rp)) {
-                    return true;
-                }
+        if ((eraserMode & ERASE_IF_TEXTURED) != 0) {
+            JRootPane rootPane = SwingUtilities.getRootPane(c);
+            if (rootPane != null && isNativeTextured(rootPane)) {
+                return true;
             }
+        }
 
+        if ((eraserMode & ERASE_IF_VIBRANT) != 0) {
             if (c instanceof JComponent) {
                 JComponent jc = (JComponent) c;
-                if (isVibrant && AquaVibrantSupport.isVibrant(jc)) {
+                if (AquaVibrantSupport.isVibrant(jc)) {
                     return true;
                 }
             }
-
-            c = c.getParent();
         }
 
         return false;

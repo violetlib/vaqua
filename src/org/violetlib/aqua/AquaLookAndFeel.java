@@ -241,12 +241,6 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
         return audioActionMap;
     }
 
-    protected static Object makeIcon(String location) {
-        return new UIDefaults.ProxyLazyValue(
-                "org.violetlib.aqua.AquaIcon", "loadResource",
-                new Object[]{location});
-    }
-
     /**
      * We override getDefaults() so we can install our own debug defaults
      * if needed for testing
@@ -411,14 +405,6 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
         Object[] defaults = {
                 // "control" is used by JFrame, cannot be transparent
                 "control", windowBackgroundColor, /* Default color for controls (buttons, sliders, etc) */
-
-                // JBrowser
-                "Browser.expandedIcon", makeIcon("fc/Unselected.png"),
-                "Browser.expandingIcon", makeIcon("fc/Unselected.png"),
-                "Browser.focusedSelectedExpandedIcon", makeIcon("fc/SelectedFocused.png"),
-                "Browser.focusedSelectedExpandingIcon", makeIcon("fc/SelectedFocused.png"),
-                "Browser.selectedExpandedIcon", makeIcon("fc/SelectedUnfocused.png"),
-                "Browser.selectedExpandingIcon", makeIcon("fc/SelectedUnfocused.png"),
 
                 // Buttons
                 "Button.border",(LazyValue) t -> AquaButtonBorder.getPushButtonBorder(),

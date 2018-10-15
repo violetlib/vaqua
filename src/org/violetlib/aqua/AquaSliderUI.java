@@ -35,6 +35,8 @@ package org.violetlib.aqua;
 
 import java.awt.*;
 import java.awt.event.MouseEvent;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import java.util.Dictionary;
 import java.util.Enumeration;
 import javax.swing.*;
@@ -61,7 +63,10 @@ import org.violetlib.jnr.aqua.SliderLayoutConfiguration;
 public class AquaSliderUI extends BasicSliderUI
         implements AquaUtilControlSize.Sizeable, FocusRingOutlineProvider, AquaComponentUI {
 
-    // Create PLAF
+    // TBD: circular slider support is not ready for prime time
+
+    public final static String AQUA_SLIDER_STYLE_KEY = "Aqua.sliderStyle";
+
     public static ComponentUI createUI(JComponent c) {
         return new AquaSliderUI((JSlider)c);
     }
@@ -70,15 +75,16 @@ public class AquaSliderUI extends BasicSliderUI
 
     protected @NotNull BasicContextualColors colors;
     protected @Nullable AppearanceContext appearanceContext;
+    protected @Nullable PropertyChangeListener propertyChangeListener;
 
     protected Size sizeVariant = Size.REGULAR;
     protected int fixedWidth;
     protected int fixedHeight;
 
+    protected boolean isCircular;
+
     protected int leftTrackBuffer;  // for left and top
     protected int rightTrackBuffer; // for right and bottom
-
-    protected Color tickColor;
 
     private boolean oldRequestFocusEnabled;
 
@@ -91,9 +97,8 @@ public class AquaSliderUI extends BasicSliderUI
 
     public void installUI(JComponent c) {
         super.installUI(c);
-
+        updateStyle();
         LookAndFeel.installProperty(slider, "opaque", Boolean.FALSE);
-        tickColor = UIManager.getColor("Slider.tickColor");
     }
 
     protected BasicSliderUI.TrackListener createTrackListener(JSlider s) {
@@ -116,6 +121,8 @@ public class AquaSliderUI extends BasicSliderUI
 
     protected void installListeners(JSlider s) {
         super.installListeners(s);
+        propertyChangeListener = new MyPropertyChangeListener();
+        s.addPropertyChangeListener(propertyChangeListener);
         AquaFocusHandler.install(s);
         AquaUtilControlSize.addSizePropertyListener(s);
         AquaFullKeyboardFocusableHandler.addListener(s);
@@ -126,6 +133,8 @@ public class AquaSliderUI extends BasicSliderUI
         AppearanceManager.uninstallListener(s);
         AquaUtilControlSize.removeSizePropertyListener(s);
         AquaFocusHandler.uninstall(s);
+        s.removePropertyChangeListener(propertyChangeListener);
+        propertyChangeListener = null;
         super.uninstallListeners(s);
         AquaFullKeyboardFocusableHandler.removeListener(s);
     }
@@ -162,6 +171,34 @@ public class AquaSliderUI extends BasicSliderUI
         }
     }
 
+    @Override
+    public Dimension getPreferredSize(JComponent c) {
+        if (isCircular) {
+            return getCircularSize();
+        }
+        return super.getPreferredSize(c);
+    }
+
+    @Override
+    public Dimension getMinimumSize(JComponent c) {
+        if (isCircular) {
+            return getCircularSize();
+        }
+        return super.getMinimumSize(c);
+    }
+
+    @Override
+    public Dimension getMaximumSize(JComponent c) {
+        if (isCircular) {
+            return getCircularSize();
+        }
+        return super.getMaximumSize(c);
+    }
+
+    protected @NotNull Dimension getCircularSize() {
+        return new Dimension(fixedWidth, fixedHeight);
+    }
+
     protected void updateFixedDimension() {
         int valueRange = (slider.getMaximum() - slider.getMinimum());
 
@@ -196,7 +233,9 @@ public class AquaSliderUI extends BasicSliderUI
     }
 
     protected SliderWidget getSliderWidget() {
-        // TBD: support circular
+        if (isCircular) {
+            return SliderWidget.SLIDER_CIRCULAR;
+        }
 
         boolean isHorizontal = slider.getOrientation() == SwingConstants.HORIZONTAL;
         boolean isInverted = drawInverted();
@@ -234,7 +273,7 @@ public class AquaSliderUI extends BasicSliderUI
 
         // We cannot implement the clip optimizations
 
-        if (slider.getPaintTrack()) {
+        if (slider.getPaintTrack() && !isCircular) {
             // This is needed for when this is used as a renderer. It is the same as BasicSliderUI.java
             // and is missing from our reimplementation.
             //
@@ -247,7 +286,11 @@ public class AquaSliderUI extends BasicSliderUI
         }
 
         Painter p = getConfiguredPainter();
-        p.paint(g, trackRect.x, trackRect.y);
+        if (isCircular) {
+            p.paint(g, 0, 0);
+        } else {
+            p.paint(g, trackRect.x, trackRect.y);
+        }
 
         if (slider.getPaintLabels() && clip.intersects(labelRect)) {
             paintLabels(g);
@@ -277,10 +320,7 @@ public class AquaSliderUI extends BasicSliderUI
         SliderWidget widget = getSliderWidget();
         TickMarkPosition tickPosition = getTickMarkPosition();
         boolean isFocused = slider.hasFocus();
-
-        // TBD: support tick color
-
-         return new SliderConfiguration(widget, sizeVariant, state, isFocused, thumbPosition, tickCount, tickPosition);
+        return new SliderConfiguration(widget, sizeVariant, state, isFocused, thumbPosition, tickCount, tickPosition);
     }
 
     protected TickMarkPosition getTickMarkPosition() {
@@ -364,31 +404,31 @@ public class AquaSliderUI extends BasicSliderUI
 
     // changed to use left and right track buffers
     protected void calculateTrackRect() {
-         int centerSpacing; // used to center sliders added using BorderLayout.CENTER (bug 4275631)
-         if ( slider.getOrientation() == JSlider.HORIZONTAL ) {
-             centerSpacing = thumbRect.height;
-             if ( slider.getPaintTicks() ) centerSpacing += getTickLength();
-             if ( slider.getPaintLabels() ) centerSpacing += getHeightOfTallestLabel();
-             trackRect.x = contentRect.x + leftTrackBuffer;
-             trackRect.y = contentRect.y + (contentRect.height - centerSpacing - 1)/2;
-             trackRect.width = contentRect.width - leftTrackBuffer - rightTrackBuffer;
-             trackRect.height = thumbRect.height;
-         }
-         else {
-             centerSpacing = thumbRect.width;
-             if (slider.getComponentOrientation().isLeftToRight()) {
-                 if ( slider.getPaintTicks() ) centerSpacing += getTickLength();
-                 if ( slider.getPaintLabels() ) centerSpacing += getWidthOfWidestLabel();
-             } else {
-                 if ( slider.getPaintTicks() ) centerSpacing -= getTickLength();
-                 if ( slider.getPaintLabels() ) centerSpacing -= getWidthOfWidestLabel();
-             }
-             trackRect.x = contentRect.x + (contentRect.width - centerSpacing - 1)/2;
-             trackRect.y = contentRect.y + leftTrackBuffer;
-             trackRect.width = thumbRect.width;
-             trackRect.height = contentRect.height - leftTrackBuffer - rightTrackBuffer;
-         }
-     }
+        int centerSpacing; // used to center sliders added using BorderLayout.CENTER (bug 4275631)
+        if ( slider.getOrientation() == JSlider.HORIZONTAL ) {
+            centerSpacing = thumbRect.height;
+            if ( slider.getPaintTicks() ) centerSpacing += getTickLength();
+            if ( slider.getPaintLabels() ) centerSpacing += getHeightOfTallestLabel();
+            trackRect.x = contentRect.x + leftTrackBuffer;
+            trackRect.y = contentRect.y + (contentRect.height - centerSpacing - 1)/2;
+            trackRect.width = contentRect.width - leftTrackBuffer - rightTrackBuffer;
+            trackRect.height = thumbRect.height;
+        }
+        else {
+            centerSpacing = thumbRect.width;
+            if (slider.getComponentOrientation().isLeftToRight()) {
+                if ( slider.getPaintTicks() ) centerSpacing += getTickLength();
+                if ( slider.getPaintLabels() ) centerSpacing += getWidthOfWidestLabel();
+            } else {
+                if ( slider.getPaintTicks() ) centerSpacing -= getTickLength();
+                if ( slider.getPaintLabels() ) centerSpacing -= getWidthOfWidestLabel();
+            }
+            trackRect.x = contentRect.x + (contentRect.width - centerSpacing - 1)/2;
+            trackRect.y = contentRect.y + leftTrackBuffer;
+            trackRect.width = thumbRect.width;
+            trackRect.height = contentRect.height - leftTrackBuffer - rightTrackBuffer;
+        }
+    }
 
     protected void calculateTrackBuffer() {
 
@@ -494,6 +534,26 @@ public class AquaSliderUI extends BasicSliderUI
 
     protected ChangeListener createChangeListener(JSlider s) {
         return new StateChangeListener();
+    }
+
+    protected class MyPropertyChangeListener implements PropertyChangeListener {
+        @Override
+        public void propertyChange(PropertyChangeEvent evt) {
+            String prop = evt.getPropertyName();
+            if (AQUA_SLIDER_STYLE_KEY.equals(prop)) {
+                updateStyle();
+            }
+        }
+    }
+
+    protected void updateStyle() {
+        Object o = slider.getClientProperty(AQUA_SLIDER_STYLE_KEY);
+        boolean b = "circular".equals(o);
+        if (b != isCircular) {
+            isCircular = b;
+            slider.revalidate();
+            slider.repaint();
+        }
     }
 
     protected class StateChangeListener implements ChangeListener {
@@ -650,6 +710,11 @@ public class AquaSliderUI extends BasicSliderUI
     }
 
     public void paintLabels( Graphics g ) {
+
+        // TBD: support labels on circular sliders
+        if (isCircular) {
+            return;
+        }
 
         double range = slider.getMaximum() - slider.getMinimum();
         if (range <= 0) {

@@ -177,9 +177,9 @@ public class AquaImageFactory {
         return image;
     }
 
-    public static Image loadResource(String resource) {
+    public static @Nullable ImageIcon loadResource(String resource) {
         URL u = AquaImageFactory.class.getResource(resource);
-        return u != null ? Toolkit.getDefaultToolkit().createImage(u) : null;
+        return u != null ? new ImageIcon(Toolkit.getDefaultToolkit().createImage(u)) : null;
     }
 
     public static @Nullable Image getImage(@Nullable File file, int size) {

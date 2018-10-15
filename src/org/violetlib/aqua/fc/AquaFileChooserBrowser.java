@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014-2015 Alan Snyder.
+ * Copyright (c) 2014-2018 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -14,6 +14,8 @@ import java.awt.*;
 import java.awt.event.MouseWheelEvent;
 import java.awt.event.MouseWheelListener;
 import java.io.File;
+
+import org.jetbrains.annotations.Nullable;
 
 /**
  * The browser in a file chooser. Implements special behavior for clicking on an ordinary file in a Save panel.
@@ -43,8 +45,8 @@ public class AquaFileChooserBrowser extends JBrowser {
     }
 
     @Override
-    protected JScrollPane createScrollPane(JComponent c, int columnIndex) {
-        JScrollPane sp = super.createScrollPane(c, columnIndex);
+    protected JScrollPane createScrollPane(@Nullable JComponent c) {
+        JScrollPane sp = super.createScrollPane(c);
         sp.addMouseWheelListener(columnScrollPaneMouseWheelListener);
         return sp;
     }

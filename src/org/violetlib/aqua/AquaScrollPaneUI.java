@@ -239,8 +239,8 @@ public class AquaScrollPaneUI extends BasicScrollPaneUI implements AquaUtilContr
                 assert appearanceContext != null;
                 AquaAppearance appearance = appearanceContext.getAppearance();
 
-                Color trackColor = appearance.getColor("scrollPaneTrack");
-                Color outerBorderColor = appearance.getColor("scrollPaneTrackBorder");
+                Color trackColor = appearance.getColor("legacyScrollBarTrack");
+                Color outerBorderColor = appearance.getColor("legacyScrollBarOuterBorder");
 
                 int w = x2 - x1;
                 int h = y2 - y1;
