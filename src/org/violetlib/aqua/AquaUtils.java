@@ -1575,7 +1575,7 @@ final public class AquaUtils {
      * @param w The window.
      * @param c The color.
      */
-    public static void setWindowBackground(Window w, Color c) {
+    private static void setWindowBackground(Window w, Color c) {
 
         if (c.equals(w.getBackground())) {
             return;
