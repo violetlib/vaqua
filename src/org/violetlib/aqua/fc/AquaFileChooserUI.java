@@ -1298,7 +1298,7 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
     }
 
     @Override
-    public Dimension getMinimumSize(final JComponent c) {
+    public Dimension getMinimumSize(JComponent c) {
         if (isRecursiveLayoutCall) {
             // return null to use the size computed by the layout manager
             return null;
@@ -1315,6 +1315,11 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
         } finally {
             isRecursiveLayoutCall = false;
         }
+    }
+
+    @Override
+    public Dimension getMaximumSize(JComponent c) {
+        return new Dimension(100000, 100000);
     }
 
     public int getViewMode() {
