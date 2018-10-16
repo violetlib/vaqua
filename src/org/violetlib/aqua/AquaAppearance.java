@@ -261,6 +261,15 @@ public class AquaAppearance implements VAppearance {
             colors.add("systemYellow_disabled", 255, 204, 0, 89);
         }
 
+        // file tag colors
+        colors.add("tagBlue", 52, 148, 255);
+        colors.add("tagGray", 164, 164, 168);
+        colors.add("tagGreen", 91, 215, 105);
+        colors.add("tagOrange", 255, 170, 71);
+        colors.add("tagPurple", 190, 118, 229);
+        colors.add("tagRed", 255, 99, 92);
+        colors.add("tagYellow", 254, 214, 75);
+
         // support for the file chooser
         if (OSVersion == 1013) {
             colors.add("openOptionsArea", 205);
@@ -528,6 +537,15 @@ public class AquaAppearance implements VAppearance {
         colors.add("windowBackground_disabled", 45);
         colors.add("texturedWindowBackground", 42);
         colors.add("texturedWindowBackground_disabled", 45);
+
+        // file tag colors
+        colors.add("tagBlue", 63, 157, 255);
+        colors.add("tagGray", 172, 172, 176);
+        colors.add("tagGreen", 97, 223, 113);
+        colors.add("tagOrange", 255, 178, 75);
+        colors.add("tagPurple", 204, 124, 245);
+        colors.add("tagRed", 255, 107, 99);
+        colors.add("tagYellow", 255, 222, 78);
 
         colors.add("cellBackground", "clear");
         colors.add("selectedCellBackground_inactive", "selectedTextBackground_inactive");
