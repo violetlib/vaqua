@@ -487,6 +487,15 @@ public class AquaAppearance implements VAppearance {
             colors.add("bottomTexturedWindowDivider_disabled", c, a);
         }
 
+        // file tag colors
+        colors.add("tagBlue", 68, 171, 229);
+        colors.add("tagGray", 164, 164, 167);
+        colors.add("tagGreen", 72, 188, 79);
+        colors.add("tagOrange", 234, 147, 66);
+        colors.add("tagPurple", 160, 106, 188);
+        colors.add("tagRed", 255, 99, 92);  // unchanged
+        colors.add("tagYellow", 248, 192, 73);
+
         // support for the file chooser
         colors.add("scrollPaneGrabber", 87);
 
@@ -538,7 +547,7 @@ public class AquaAppearance implements VAppearance {
         colors.add("texturedWindowBackground", 42);
         colors.add("texturedWindowBackground_disabled", 45);
 
-        // file tag colors
+        // file tag colors (dark mode)
         colors.add("tagBlue", 63, 157, 255);
         colors.add("tagGray", 172, 172, 176);
         colors.add("tagGreen", 97, 223, 113);
@@ -738,6 +747,15 @@ public class AquaAppearance implements VAppearance {
 
         colors.add("windowBackground", 50);
         colors.add("texturedWindowBackground", 53);
+
+        // file tag colors (dark mode)
+        colors.add("tagBlue", 103, 176, 255);
+        colors.add("tagGray", 172, 172, 176);
+        colors.add("tagGreen", 91, 215, 105);   // same as ordinary light mode? mistake?
+        colors.add("tagOrange", 255, 170, 71);
+        colors.add("tagPurple", 226, 165, 254);
+        colors.add("tagRed", 255, 135, 129);
+        colors.add("tagYellow", 254, 214, 75);    // same as ordinary light mode? mistake?
 
         // support for the file chooser (dark mode)
         colors.add("scrollPaneGrabber", 255, 196);
