@@ -526,12 +526,6 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
         }
 
         @Override
-        public Dimension getMinimumSize() {
-            Dimension d = super.getMinimumSize();
-            return new Dimension(720, d.height);
-        }
-
-        @Override
         public void doLayout() {
             super.doLayout();
             updateWindowStyleParameters();
@@ -826,7 +820,7 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
           .addComponent(controlsPanel, GroupLayout.PREFERRED_SIZE, GroupLayout.PREFERRED_SIZE, GroupLayout.PREFERRED_SIZE));
         layout.setHorizontalGroup(layout.createParallelGroup()
           .addComponent(topPanel, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE, Short.MAX_VALUE)
-          .addComponent(splitPane, 0, GroupLayout.PREFERRED_SIZE, Short.MAX_VALUE)
+          .addComponent(splitPane, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE, Short.MAX_VALUE)
           .addComponent(controlsPanel, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE, Short.MAX_VALUE));
 
         separator.putClientProperty("Quaqua.Component.visualMargin", new Insets(3, 0, 3, 0));
@@ -3595,44 +3589,45 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
     }
 
     /**
-     * Determine and install the minimum size for the enclosing dialog, if the file chooser is part of a dialog and the
-     * dialog minimum size has not been specified by the application. If the new minimum size is larger than the current
-     * dialog size, resize the dialog to conform to the new minimum size.
+     * Determine and install the minimum size for the enclosing window, if the minimum window size has not been specified
+     * by the application. If the new minimum size is larger than the current window size, resize the window to conform
+     * to the new minimum size.
      */
     public void configureDialogSize() {
         Window w = SwingUtilities.getWindowAncestor(fc);
-        if (w instanceof JDialog) {
-            JDialog d = (JDialog) w;
-            if (isDefaultDialogSize(d)) {
-                d.setMinimumSize(null);
-                Dimension minimumSize = d.getMinimumSize();
-                installMinimumSize(d, minimumSize.width, minimumSize.height);
-                Dimension size = d.getSize();
-                if (size.width < minimumSize.width || size.height < minimumSize.height) {
-                    Point location = d.getLocation();
+        if (w != null && isDefaultWindowSize(w)) {
+            w.setMinimumSize(null);
+            Dimension minimumSize = w.getMinimumSize();
+            installMinimumSize(w, minimumSize.width, minimumSize.height);
+            Dimension size = w.getSize();
+            if (size.width < minimumSize.width || size.height < minimumSize.height) {
+                size = new Dimension(Math.max(minimumSize.width, size.width), Math.max(minimumSize.height, size.height));
+                w.setSize(size);
+                try {
+                    Point location = w.getLocationOnScreen();
                     int x = location.x;
                     int y = location.y;
-                    size = new Dimension(Math.max(minimumSize.width, size.width), Math.max(minimumSize.height, size.height));
-                    Rectangle screenBounds = getScreenBounds(d);
+                    Rectangle screenBounds = getScreenBounds(w);
                     if (x + size.width > screenBounds.x + screenBounds.width) {
                         x = Math.max(screenBounds.x, screenBounds.x + screenBounds.width - size.width);
                     }
                     if (y + size.height > screenBounds.y + screenBounds.height) {
                         y = Math.max(screenBounds.y, screenBounds.y + screenBounds.height - size.height);
                     }
-                    d.setBounds(x, y, size.width, size.height);
+                    w.setLocation(x, y);
+                } catch (IllegalComponentStateException ex) {
                 }
             }
         }
     }
 
-    protected void installMinimumSize(@NotNull JDialog d, int width, int height) {
+    protected void installMinimumSize(@NotNull Window w, int width, int height) {
         Dimension size = new DimensionUIResource(width, height);
-        d.setMinimumSize(size);
+        w.setMinimumSize(size);
     }
 
-    protected boolean isDefaultDialogSize(@NotNull JDialog d) {
-        if (!d.isMinimumSizeSet()) {
+    protected boolean isDefaultWindowSize(@NotNull Window w) {
+        if (!w.isMinimumSizeSet()) {
             return true;
         }
 
@@ -3642,7 +3637,7 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
         // However, there is a tricky way to get the original, which is to set a new value and capture the old value
         // in a property change listener.
 
-        MinimumSizeTester tester = new MinimumSizeTester(d);
+        MinimumSizeTester tester = new MinimumSizeTester(w);
         return tester.isUIResource();
     }
 

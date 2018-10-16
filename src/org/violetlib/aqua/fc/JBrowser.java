@@ -50,7 +50,7 @@ import org.violetlib.aqua.*;
  * columns, which are numbered from left to right.
  * <p>
  * JBrowser is a clean-room implementation of an Aqua column view (NSBrowser), which is used by file dialogs and the
- * finder of Mac OS X.
+ * finder of macOS.
  * <p>
  * <b>Usage</b>
  * <p>
@@ -94,14 +94,14 @@ public class JBrowser extends JComponent implements Scrollable {
     private boolean expandedPathIsLeaf;
 
     /**
-     * The fixed width of the column cells.
+     * The fixed width of the list column cells.
      */
     private int fixedCellWidth = 175;
 
     /**
-     * The minimum width of the column cells.
+     * The minimum column width.
      */
-    private int minimumCellWidth = 150;
+    private int columnMinimumWidth = 150;
 
     /**
      * The minimum column height.
@@ -182,10 +182,13 @@ public class JBrowser extends JComponent implements Scrollable {
     public final static String SELECTION_MODEL_PROPERTY = "selectionModel";
     /** Bound property name for preferredCellWidth. */
     public final static String FIXED_CELL_WIDTH_PROPERTY = "fixedCellWidth";
-    /** Bound property name for minimumCellWidth. */
-    public final static String MINIMUM_CELL_WIDTH_PROPERTY = "minimumCellWidth";
+    /** Bound property name for columnMinimumWidth. */
+    public final static String COLUMN_MINIMUM_WIDTH = "columnMinimumWidth";
+    /** Bound property name for columnMinimumHeight. */
+    public final static String COLUMN_MINIMUM_HEIGHT = "columnMinimumHeight";
     /** Bound property name for columnsResizable. */
     public final static String COLUMNS_RESIZABLE_PROPERTY = "columnsResizable";
+
     private Object prototypeCellValue;
     /**
      * If this is set to true, JBrowser shows tooltips with the cell value
@@ -219,8 +222,7 @@ public class JBrowser extends JComponent implements Scrollable {
 
     /**
      * Creates a {@code JBrowser} with a sample model.
-     * The default model used by the browser defines a leaf node as any node
-     * without children.
+     * The default model used by the browser defines a leaf node as any node without children.
      *
      * @see DefaultTreeModel#asksAllowsChildren
      */
@@ -229,10 +231,8 @@ public class JBrowser extends JComponent implements Scrollable {
     }
 
     /**
-     * Creates a {@code JBrowser} with each element of the
-     * specified array as the child of a new root node which is not displayed.
-     * By default, the browser defines a leaf node as any node without
-     * children.
+     * Creates a {@code JBrowser} with each element of the specified array as the child of a new root node which is not
+     * displayed. By default, the browser defines a leaf node as any node without children.
      *
      * @param value an array of {@code Object}s
      * @see DefaultTreeModel#asksAllowsChildren
@@ -243,10 +243,8 @@ public class JBrowser extends JComponent implements Scrollable {
     }
 
     /**
-     * Creates a {@code JBrowser} with each element of the specified
-     * {@code Vector} as the child of a new root node which is not
-     * displayed. By default, the
-     * tree defines a leaf node as any node without children.
+     * Creates a {@code JBrowser} with each element of the specified {@code Vector} as the child of a new root node
+     * which is not displayed. By default, the tree defines a leaf node as any node without children.
      *
      * @param value a {@code Vector}
      * @see DefaultTreeModel#asksAllowsChildren
@@ -395,7 +393,6 @@ public class JBrowser extends JComponent implements Scrollable {
      * @see #getDragEnabled
      * @see #setTransferHandler
      * @see TransferHandler
-     *
      */
     public void setDragEnabled(boolean b) {
         if (b && GraphicsEnvironment.isHeadless()) {
@@ -741,19 +738,6 @@ public class JBrowser extends JComponent implements Scrollable {
     }
 
     /**
-     * Set the minimum height of the columns.
-     * @param h The height.
-     */
-
-    public void setColumnMinimumHeight(int h) {
-        if (h != columnMinimumHeight) {
-            columnMinimumHeight = h;
-            revalidate();
-            repaint();
-        }
-    }
-
-    /**
      * Sets the width of every cell in the browser. If {@code width} is -1, cell widths are computed by applying {@code
      * getPreferredSize} to the {@code cellRenderer} component for each tree node.
      * <p>
@@ -762,7 +746,7 @@ public class JBrowser extends JComponent implements Scrollable {
      * This is a JavaBeans bound property.
      *
      * @param width the width, in pixels, for all cells in this list
-     * @see #setMinimumCellWidth
+     * @see #setColumnMinimumWidth
      * @see JComponent#addPropertyChangeListener
      */
     public void setFixedCellWidth(int width) {
@@ -771,10 +755,8 @@ public class JBrowser extends JComponent implements Scrollable {
         for (int i = 0; i < getListColumnCount(); i++) {
             getColumnList(i).setFixedCellWidth(width);
         }
-        if (getParent() != null) {
-            getParent().validate();
-        }
-
+        revalidate();
+        repaint();
         firePropertyChange(FIXED_CELL_WIDTH_PROPERTY, oldValue, fixedCellWidth);
     }
 
@@ -783,26 +765,40 @@ public class JBrowser extends JComponent implements Scrollable {
     }
 
     /**
-     * Sets the minimum width of cells in the browser.
-     * This width affects the minimum width of columns, when the user
-     * resizes them.
-     * <p>
-     * The default value of this property is 150.
-     * <p>
-     * This is a JavaBeans bound property.
+     * Sets the minimum width of browser columns, which limits the ability of the user to resize them.
      *
-     * @param newValue   the width, in pixels.
-     * @see #setFixedCellWidth
-     * @see JComponent#addPropertyChangeListener
+     * @param w The width.
      */
-    public void setMinimumCellWidth(int newValue) {
-        int oldValue = minimumCellWidth;
-        minimumCellWidth = newValue;
-        firePropertyChange(MINIMUM_CELL_WIDTH_PROPERTY, oldValue, newValue);
+    public void setColumnMinimumWidth(int w) {
+        if (w != columnMinimumWidth) {
+            int oldValue = columnMinimumWidth;
+            columnMinimumWidth = w;
+            revalidate();
+            repaint();
+            firePropertyChange(COLUMN_MINIMUM_WIDTH, oldValue, w);
+        }
     }
 
-    public int getMinimumCellWidth() {
-        return minimumCellWidth;
+    public int getColumnMinimumWidth() {
+        return columnMinimumWidth;
+    }
+
+    /**
+     * Set the minimum height of browser columns, which limits the ability of the user to resize them.
+     * @param h The height.
+     */
+    public void setColumnMinimumHeight(int h) {
+        if (h != columnMinimumHeight) {
+            int oldValue = columnMinimumHeight;
+            columnMinimumHeight = h;
+            revalidate();
+            repaint();
+            firePropertyChange(COLUMN_MINIMUM_HEIGHT, oldValue, h);
+        }
+    }
+
+    public int getColumnMinimumHeight() {
+        return columnMinimumHeight;
     }
 
     /**
@@ -833,15 +829,15 @@ public class JBrowser extends JComponent implements Scrollable {
     }
 
     /**
-     * Gets the preferred width of a column, which usually is the width of the largest cell.
+     * Gets the preferred width of a column.
      *
      * @param column Index of the column.
      * @return the value
      */
-    public int getPreferredColumnWidth(int column) {
+    public int getColumnPreferredWidth(int column) {
         ListColumn c = getListColumn(column);
         if (c != null) {
-            return c.getPreferredColumnWidth();
+            return c.getColumnPreferredWidth();
         }
         return 0;
     }
@@ -1388,8 +1384,6 @@ public class JBrowser extends JComponent implements Scrollable {
                     m.setPath(p);
                 }
             } else {
-
-
                 // Remove all extraneous columns, avoid removing the column
                 // which has focus, because Java has trouble setting the
                 // focus on a JComponent, if the JComponent which is focus owner
@@ -1426,7 +1420,6 @@ public class JBrowser extends JComponent implements Scrollable {
             }
             expandedPath = path;
             expandedPathIsLeaf = newPathIsLeaf;
-
 
             // Set the selection to match the new path
             // Note: We do not change the selection of the column from
@@ -1920,16 +1913,16 @@ public class JBrowser extends JComponent implements Scrollable {
 
     protected static class BrowserLayout implements LayoutManager2 {
 
-        private int preferredWidth = 0, preferredHeight = 0;
+        // The components of a browser are columns. They are stacked in row with no extra spacing.
+
+        private int minimumWidth = 0;
+        private int minimumHeight = 0;
+        private int preferredWidth = 0;
+        private int preferredHeight = 0;
         private boolean sizeUnknown = true;
 
         @Override
         public void addLayoutComponent(Component comp, Object constraints) {
-        }
-
-        @Override
-        public Dimension maximumLayoutSize(Container target) {
-            return new Dimension(100000, 100000);
         }
 
         @Override
@@ -1957,41 +1950,52 @@ public class JBrowser extends JComponent implements Scrollable {
 
         private void setSizes(Container parent) {
             int nComps = parent.getComponentCount();
-            Dimension d = null;
 
+            minimumWidth = 0;
+            minimumHeight = 0;
             preferredWidth = 0;
             preferredHeight = 0;
 
             for (int i = 0; i < nComps; i++) {
                 Component c = parent.getComponent(i);
                 if (c.isVisible()) {
-                    d = c.getPreferredSize();
-
-                    preferredWidth += d.width;
-                    preferredHeight = Math.max(preferredHeight, d.height);
+                    Dimension min = c.getMinimumSize();
+                    minimumWidth += min.width;
+                    minimumHeight = Math.max(minimumHeight, min.height);
+                    Dimension pref = c.getPreferredSize();
+                    preferredWidth += pref.width;
+                    preferredHeight = Math.max(preferredHeight, pref.height);
                 }
             }
+
+            sizeUnknown = false;
         }
 
         @Override
         public Dimension preferredLayoutSize(Container parent) {
-            Dimension dim = new Dimension(0, 0);
 
             setSizes(parent);
 
-            //Always add the container's insets!
             Insets insets = parent.getInsets();
-            dim.width = preferredWidth + insets.left + insets.right;
-            dim.height = preferredHeight + insets.top + insets.bottom;
-
-            sizeUnknown = false;
-
-            return dim;
-            }
+            int width = preferredWidth + insets.left + insets.right;
+            int height = preferredHeight + insets.top + insets.bottom;
+            return new Dimension(width, height);
+        }
 
         @Override
         public Dimension minimumLayoutSize(Container parent) {
-            return preferredLayoutSize(parent);
+
+            setSizes(parent);
+
+            Insets insets = parent.getInsets();
+            int width = minimumWidth + insets.left + insets.right;
+            int height = minimumHeight + insets.top + insets.bottom;
+            return new Dimension(width, height);
+        }
+
+        @Override
+        public Dimension maximumLayoutSize(Container target) {
+            return new Dimension(100000, 100000);
         }
 
         /*
@@ -2012,9 +2016,6 @@ public class JBrowser extends JComponent implements Scrollable {
             int x = insets.left, y = insets.top;
             int rowh = 0, start = 0;
 
-            // Go through the components' sizes, if neither
-            // preferredLayoutSize nor minimumLayoutSize has
-            // been called.
             if (sizeUnknown) {
                 setSizes(parent);
             }
@@ -2268,13 +2269,13 @@ public class JBrowser extends JComponent implements Scrollable {
             switch (selectionModel.getSelectionCount()) {
                 case 0:
                     expandPath(new TreePath(treeModel.getRoot()));
-                    {
-                        int count = getListColumnCount();
-                        if (count > 0) {
-                            getColumnList(count - 1).clearSelection();
-                        }
+                {
+                    int count = getListColumnCount();
+                    if (count > 0) {
+                        getColumnList(count - 1).clearSelection();
                     }
-                    break;
+                }
+                break;
                 case 1: {
                     TreePath selectionPath = selectionModel.getSelectionPath();
                     expandPath(selectionPath);
@@ -2403,7 +2404,7 @@ public class JBrowser extends JComponent implements Scrollable {
                         JBrowser.this, evt.getID(), evt.getWhen(), evt.getModifiers(),
                         x, y,
                         evt.getClickCount(), evt.isPopupTrigger() //, evt.getButton()
-                        );
+                );
                 for (int i = 0; i < listeners.length; i++) {
                     ((MouseListener) listeners[i]).mouseReleased(refiredEvent);
                 }
@@ -2475,7 +2476,7 @@ public class JBrowser extends JComponent implements Scrollable {
                         JBrowser.this, evt.getID(), evt.getWhen(), evt.getModifiers(),
                         x, y,
                         evt.getClickCount(), evt.isPopupTrigger() //, evt.getButton()
-                        );
+                );
                 for (int i = 0; i < listeners.length; i++) {
                     ((MouseListener) listeners[i]).mouseClicked(refiredEvent);
                 }
@@ -2951,7 +2952,7 @@ public class JBrowser extends JComponent implements Scrollable {
         }
 
         private void changeSelection(int clearMin, int clearMax,
-                int setMin, int setMax, boolean clearFirst) {
+                                     int setMin, int setMax, boolean clearFirst) {
             for (int i = Math.min(setMin, clearMin); i <= Math.max(setMax, clearMax); i++) {
 
                 boolean shouldClear = contains(clearMin, clearMax, i);
@@ -3374,8 +3375,8 @@ public class JBrowser extends JComponent implements Scrollable {
         }
 
         public Component getListCellRendererComponent(JList list, Object value,
-                int index, boolean isSelected,
-                boolean cellHasFocus) {
+                                                      int index, boolean isSelected,
+                                                      boolean cellHasFocus) {
             //setComponentOrientation(list.getComponentOrientation());
             boolean isFocused = AquaFocusHandler.hasFocus(list);
             boolean isLeaf = getModel().isLeaf(value);
@@ -3502,7 +3503,7 @@ public class JBrowser extends JComponent implements Scrollable {
         protected void configureFromScrollBars() {
             // The configuration is based on whether or not overlay scroll bars are being used
             boolean isOverlayScrollBars = Boolean.TRUE.equals(
-              scrollPane.getClientProperty(AquaScrollPaneUI.SCROLL_PANE_AQUA_OVERLAY_SCROLL_BARS_KEY));
+                    scrollPane.getClientProperty(AquaScrollPaneUI.SCROLL_PANE_AQUA_OVERLAY_SCROLL_BARS_KEY));
 
             if (sizeHandle != null) {
                 remove(sizeHandle);
@@ -3545,15 +3546,21 @@ public class JBrowser extends JComponent implements Scrollable {
 
         @Override
         public @NotNull Dimension getMinimumSize() {
-            return new Dimension(getFixedCellWidth(), columnMinimumHeight);
+            int width = getColumnMinimumWidth();
+            int height = getColumnMinimumHeight();
+            return new Dimension(width, height);
         }
 
         @Override
         public Dimension getPreferredSize() {
-            return getMinimumSize();
+            Dimension size = super.getPreferredSize();
+            int width = Math.max(size.width, getColumnMinimumWidth());
+            int height = Math.max(size.height, getColumnMinimumHeight());
+            return new Dimension(width, height);
         }
 
-        public int getPreferredColumnWidth() {
+        public int getColumnPreferredWidth() {
+            // TBD: should leave room for a scroll bar
             JList list = getList();
             int fixedCellWidth = list.getFixedCellWidth();
             list.setFixedCellWidth(-1);
@@ -3676,7 +3683,7 @@ public class JBrowser extends JComponent implements Scrollable {
                 if (column < 0) {
                     setPreviewColumnWidth(Math.max(startWidth + difX, 0));
                 } else {
-                    setColumnWidth(column, Math.max(startWidth + difX, JBrowser.this.getMinimumCellWidth()));
+                    setColumnWidth(column, Math.max(startWidth + difX, getColumnMinimumWidth()));
                 }
             }
         }
@@ -3709,7 +3716,7 @@ public class JBrowser extends JComponent implements Scrollable {
                 if (column < 0) {
                     setPreviewColumnWidth(Math.max(startWidth + difX, 0));
                 } else {
-                    setColumnWidth(column, Math.max(startWidth + difX, JBrowser.this.getMinimumCellWidth()));
+                    setColumnWidth(column, Math.max(startWidth + difX, getColumnMinimumWidth()));
                 }
             }
 
@@ -3763,7 +3770,7 @@ public class JBrowser extends JComponent implements Scrollable {
         @Override
         public void mouseClicked(MouseEvent e) {
             if (e.getClickCount() == 2 && column >= 0) {
-                setColumnWidth(column, Math.max(minimumCellWidth, getPreferredColumnWidth(column)));
+                setColumnWidth(column, Math.max(getColumnMinimumWidth(), getColumnPreferredWidth(column)));
             }
         }
     }

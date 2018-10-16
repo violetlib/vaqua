@@ -51,15 +51,6 @@ public class ColumnViewImpl extends ColumnView {
         int version = OSXSystemProperties.OSVersion;
 
         int columnMinimumWidth;
-        int columnMinimumHeight;
-
-        if (version <= 1011) {
-            columnMinimumHeight = 332;
-        } else if (version == 1012) {
-            columnMinimumHeight = 203;
-        } else {
-            columnMinimumHeight = 100;
-        }
 
         if (version <= 1013) {
             columnMinimumWidth = 164;
@@ -68,11 +59,22 @@ public class ColumnViewImpl extends ColumnView {
         }
 
         browser = new ColumnViewBrowser(fc);
-        browser.setColumnMinimumHeight(columnMinimumHeight);
-        browser.setFixedCellWidth(columnMinimumWidth);
+        browser.setColumnMinimumWidth(columnMinimumWidth);
         browser.setShowCellTipOrigin((Point) UIManager.get("FileChooser.cellTipOrigin"));
         browser.setShowCellTips(true);
         browser.setPreviewColumnFilled(true);
+
+        int minimumHeight;
+
+        if (version <= 1011) {
+            minimumHeight = 332;
+        } else if (version == 1012) {
+            minimumHeight = 203;
+        } else {
+            minimumHeight = 100;
+        }
+
+        setMinimumSize(new Dimension(720, minimumHeight));
 
         browserScrollPane = new JScrollPane();
         browserScrollPane.setViewport(new BrowserViewport());
