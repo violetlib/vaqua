@@ -514,12 +514,13 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
         }
 
         public boolean isToolBar() {
-            return Boolean.TRUE.equals(getClientProperty("Aqua.isToolBarPanel"));
+            return Boolean.TRUE.equals(getClientProperty(AquaUtils.TOOLBAR_PANEL_PROPERTY));
         }
 
         public void setToolBar(boolean b) {
             if (b != isToolBar()) {
-                putClientProperty("Aqua.isToolBarPanel", b);
+                putClientProperty(AquaUtils.TOOLBAR_PANEL_PROPERTY, b);
+                AquaUtils.generateToolbarStatusEvents(this);
                 revalidate();
                 repaint();
             }
@@ -543,10 +544,17 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
 
         public void reconfigure() {
             if (fc.getDialogType() == JFileChooser.SAVE_DIALOG) {
-                setBorder(new EmptyBorder(8-2, 8+3, 6+5, 8+3));
+                if (OSXSystemProperties.OSVersion >= 1014) {
+                    setBorder(new EmptyBorder(9, 11, 6, 11));
+                } else {
+                    setBorder(new EmptyBorder(10, 11, 10, 11));
+                }
             } else {
-                //setBorder(new EmptyBorder(8, 8, 6, 8));
-                setBorder(new EmptyBorder(3, 8, 2, 8));
+                if (OSXSystemProperties.OSVersion >= 1014) {
+                    setBorder(new EmptyBorder(5, 8, 6, 8));
+                } else {
+                    setBorder(new EmptyBorder(3, 8, 2, 8));
+                }
             }
         }
     }
@@ -646,7 +654,7 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
         ChangeListener viewSelectionChangeListener = createViewSelectionChangeListener(fc);
         FileChooserView.SelectListener viewSelectListener = createViewSelectListener(fc);
 
-        java.awt.GridBagConstraints gridBagConstraints;
+        GridBagConstraints gridBagConstraints;
 
         topPanel = new TopPanel();
         fileNamePanel = new JPanel();
@@ -716,7 +724,11 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
         fileNamePanel.add(fileNameLine);
         fileNamePanel.add(separator);
 
-        fileNamePanel.setBorder(new EmptyBorder(10, 0, 0, 0));
+        if (OSXSystemProperties.OSVersion >= 1014) {
+            fileNameLine.setBorder(new EmptyBorder(6, 0, 7, 0));
+        } else {
+            fileNameLine.setBorder(new EmptyBorder(10, 0, 7, 0));
+        }
 
         viewsPanel.setLayout(new CardLayout());
 
@@ -1121,7 +1133,7 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
 
     protected JSeparator createSeparator() {
         JSeparator s = new JSeparator();
-        s.setBorder(new EmptyBorder(7, 0, 4, 0));
+        s.setBorder(new EmptyBorder(0, 0, 0, 0));
         return s;
     }
 
@@ -1440,9 +1452,7 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
           chooser as a way of selecting a directory and a default file name.
         */
 
-        if (fc.getDialogType() == JFileChooser.SAVE_DIALOG
-              && fileNameTextField != null
-              && isFileNameFieldVisible()) {
+        if (fc.getDialogType() == JFileChooser.SAVE_DIALOG && fileNameTextField != null && isFileNameFieldVisible()) {
             files = getChooserSelection();
             if (!files.isEmpty()) {
                 File f = files.get(0);
@@ -3544,7 +3554,7 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
     }
 
     /**
-     * Configure the file chooser to be in a standard dialog or not.
+     * Configure the file chooser and its window ancestor.
      */
     protected void configureDialog() {
 
@@ -3562,10 +3572,11 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
 
             if (fc.getDialogType() == JFileChooser.OPEN_DIALOG) {
                 windowStyle = "texturedToolBar";
-                useToolBar = true;
             } else {
                 windowStyle = "overlayTitleBar";
             }
+
+            useToolBar = true;
 
             String existingStyle = AquaRootPaneUI.getWindowStyleKey(rp);
             if (!"undecorated".equals(existingStyle)) {

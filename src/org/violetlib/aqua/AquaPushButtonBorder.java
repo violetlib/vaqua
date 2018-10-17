@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2016 Alan Snyder.
+ * Copyright (c) 2015-2018 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -8,9 +8,9 @@
 
 package org.violetlib.aqua;
 
-import org.violetlib.jnr.aqua.AquaUIPainter.ButtonWidget;
-
 import javax.swing.*;
+
+import org.violetlib.jnr.aqua.AquaUIPainter.ButtonWidget;
 
 /**
  * A border for a push button with no client specified button style. A generic button border must adapt to any size
@@ -23,7 +23,7 @@ public class AquaPushButtonBorder extends AquaButtonBorder {
 
     @Override
     public ButtonWidget getButtonWidget(AbstractButton b) {
-        boolean isOnToolbar = AquaButtonUI.isOnToolbar(b);
+        boolean isOnToolbar = AquaUtils.isOnToolbar(b);
 
         ButtonWidget preferredWidget = isOnToolbar ? ButtonWidget.BUTTON_TEXTURED_TOOLBAR : ButtonWidget.BUTTON_PUSH;
         if (isProposedButtonWidgetUsable(b, preferredWidget)) {

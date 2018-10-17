@@ -57,7 +57,7 @@ import org.violetlib.jnr.aqua.ButtonLayoutConfiguration;
 import org.violetlib.jnr.aqua.LayoutConfiguration;
 
 public class AquaButtonUI extends BasicButtonUI
-        implements AquaUtilControlSize.Sizeable, FocusRingOutlineProvider, AquaComponentUI {
+        implements AquaUtilControlSize.Sizeable, FocusRingOutlineProvider, ToolbarSensitiveUI, AquaComponentUI {
 
     // This UI is shared.
     // Button borders may also be shared.
@@ -80,6 +80,7 @@ public class AquaButtonUI extends BasicButtonUI
     public static final String DEFAULT_FONT_PROPERTY = "Aqua.Button.DefaultFont";
     protected static final String COLOR_CHOOSER_OWNER_PROPERTY = "Aqua.Button.ColorChooserOwner";
     protected static final String SPECIAL_ICON_PROPERTY = "Aqua.Button.SpecialIcon";
+    protected static final String CACHED_TOOLBAR_STATUS_PROPERTY = "Aqua.Button.IsToolbarButton";
 
     protected static final RecyclableSingleton<AquaButtonUI> buttonUI = new RecyclableSingletonFromDefaultConstructor<AquaButtonUI>(AquaButtonUI.class);
 
@@ -104,6 +105,7 @@ public class AquaButtonUI extends BasicButtonUI
 
         b.putClientProperty(DEFAULT_FONT_PROPERTY, b.getFont());
 
+        initializeToolbarStatus(b);
         configure(b);
     }
 
@@ -132,8 +134,9 @@ public class AquaButtonUI extends BasicButtonUI
         // as part of its configuration of the button. The border performs all of the configuration based on a defined
         // button type.
 
-        AquaButtonExtendedTypes.TypeSpecifier type = AquaButtonExtendedTypes.getTypeSpecifier(b);
-        installBorder(b, type);
+        boolean isToolbar = Boolean.TRUE.equals(b.getClientProperty(CACHED_TOOLBAR_STATUS_PROPERTY));
+        AquaButtonExtendedTypes.TypeSpecifier type = AquaButtonExtendedTypes.getTypeSpecifier(b, isToolbar);
+        installBorder(b, type, isToolbar);
 
         LayoutConfiguration g = null;
         Border border = b.getBorder();
@@ -159,8 +162,7 @@ public class AquaButtonUI extends BasicButtonUI
 
         updateTemplateIconStatus(b);
 
-        AquaUIPainter.ButtonWidget widget = getButtonWidget(b);
-        if (widget != AquaUIPainter.ButtonWidget.BUTTON_COLOR_WELL) {
+        if (!isColorWell(b)) {
             disconnectColorChooser(b);
         }
 
@@ -214,14 +216,14 @@ public class AquaButtonUI extends BasicButtonUI
     /**
      * Install the appropriate border for a button.
      */
-    protected void installBorder(AbstractButton b, AquaButtonExtendedTypes.TypeSpecifier type) {
+    protected void installBorder(AbstractButton b, AquaButtonExtendedTypes.TypeSpecifier type, boolean isToolbar) {
         Border customBorder = type != null ? type.getBorder() : null;
         if (customBorder != null) {
             b.setBorder(customBorder);
         } else {
             Border oldBorder = b.getBorder();
             if (oldBorder == null || oldBorder instanceof UIResource) {
-                Border border = getDefaultBorder(b);
+                Border border = getDefaultBorder(b, isToolbar);
                 if (border == null) {
                     border = new AquaPushButtonBorder();
                 }
@@ -235,8 +237,8 @@ public class AquaButtonUI extends BasicButtonUI
      * @param b The button component.
      * @return the border to use for the button component.
      */
-    protected Border getDefaultBorder(AbstractButton b) {
-        if (isOnToolbar(b)) {
+    protected Border getDefaultBorder(AbstractButton b, boolean isToolbar) {
+        if (isToolbar) {
             if (b instanceof JToggleButton) {
                 return AquaButtonBorder.getToolBarToggleButtonBorder();
             } else {
@@ -335,8 +337,20 @@ public class AquaButtonUI extends BasicButtonUI
         return false;
     }
 
-    public static boolean isOnToolbar(AbstractButton b) {
-        return AquaUtils.isOnToolbar(b);
+    private void initializeToolbarStatus(@NotNull AbstractButton b) {
+        Boolean isToolbar = AquaUtils.isOnToolbar(b);
+        b.putClientProperty(CACHED_TOOLBAR_STATUS_PROPERTY, isToolbar);
+    }
+
+    @Override
+    public void toolbarStatusChanged(@NotNull JComponent c) {
+        AbstractButton b = (AbstractButton) c;
+        Boolean isToolbar = AquaUtils.isOnToolbar(b);
+        Object oldStatus = b.getClientProperty(CACHED_TOOLBAR_STATUS_PROPERTY);
+        if (!isToolbar.equals(oldStatus)) {
+            b.putClientProperty(CACHED_TOOLBAR_STATUS_PROPERTY, isToolbar);
+            configure(b);
+        }
     }
 
     protected void setButtonMarginIfNeeded(AbstractButton b, Insets insets) {
@@ -360,23 +374,25 @@ public class AquaButtonUI extends BasicButtonUI
             b.addChangeListener(listener);
             b.addActionListener(listener);
         }
-        installHierListener(b);
+        if (isToolbarSensitive(b)) {
+            AquaUtils.installToolbarSensitivity(b);
+        }
         AquaUtilControlSize.addSizePropertyListener(b);
         AquaFullKeyboardFocusableHandler.addListener(b);
     }
 
     protected void installKeyboardActions(AbstractButton b) {
         BasicButtonListener listener = (BasicButtonListener)b.getClientProperty(this);
-        if (listener != null) listener.installKeyboardActions(b);
+        if (listener != null) {
+            listener.installKeyboardActions(b);
+        }
     }
 
-    // Uninstall PLAF
     public void uninstallUI(JComponent c) {
         disconnectColorChooser((AbstractButton)c);
         uninstallKeyboardActions((AbstractButton)c);
         uninstallListeners((AbstractButton)c);
         uninstallDefaults((AbstractButton)c);
-        //BasicHTML.updateRenderer(c, "");
         removeCachedIcons((AbstractButton) c);
     }
 
@@ -396,9 +412,9 @@ public class AquaButtonUI extends BasicButtonUI
             b.removePropertyChangeListener(listener);
             b.removeActionListener(listener);
         }
-        uninstallHierListener(b);
         AquaUtilControlSize.removeSizePropertyListener(b);
         AquaFullKeyboardFocusableHandler.removeListener(b);
+        AquaUtils.uninstallToolbarSensitivity(b);
     }
 
     protected void uninstallDefaults(AbstractButton b) {
@@ -463,8 +479,7 @@ public class AquaButtonUI extends BasicButtonUI
         Rectangle iconRect = new Rectangle();
         Rectangle textRect = new Rectangle();
 
-        AquaUIPainter.ButtonWidget widget = getButtonWidget(b);
-        boolean isColorWell = widget == AquaUIPainter.ButtonWidget.BUTTON_COLOR_WELL;
+        boolean isColorWell = isColorWell(b);
 
         AquaButtonBorder aquaBorder = null;
         if (b.isBorderPainted()) {
@@ -657,6 +672,11 @@ public class AquaButtonUI extends BasicButtonUI
         DEFAULT
     }
 
+    public static boolean isColorWell(@NotNull AbstractButton b) {
+        AquaUIPainter.ButtonWidget widget = getButtonWidget(b);
+        return widget == AquaUIPainter.ButtonWidget.BUTTON_COLOR_WELL;
+    }
+
     public static AquaUIPainter.ButtonWidget getButtonWidget(AbstractButton b) {
         Object o = b.getClientProperty(LAYOUT_CONFIGURATION_PROPERTY);
         if (o instanceof ButtonLayoutConfiguration) {
@@ -835,46 +855,11 @@ public class AquaButtonUI extends BasicButtonUI
         return d;
     }
 
-    final static RecyclableSingleton<AquaHierarchyButtonListener> fHierListener = new RecyclableSingletonFromDefaultConstructor<AquaHierarchyButtonListener>(AquaHierarchyButtonListener.class);
-    static AquaHierarchyButtonListener getAquaHierarchyButtonListener() {
-        return fHierListener.get();
-    }
 
-    // We need to know when ordinary JButtons are put on JToolbars, but not JComboBoxButtons
-    // JToggleButtons always have the same border
-
-    private boolean shouldInstallHierListener(AbstractButton b) {
-        return  (b instanceof JButton || b instanceof JToggleButton && !(b instanceof AquaComboBoxButton) && !(b instanceof JCheckBox) && !(b instanceof JRadioButton));
-    }
-
-    protected void installHierListener(AbstractButton b) {
-        if (shouldInstallHierListener(b)) {
-            // super put the listener in the button's client properties
-            b.addHierarchyListener(getAquaHierarchyButtonListener());
-        }
-    }
-
-    protected void uninstallHierListener(AbstractButton b) {
-        if (shouldInstallHierListener(b)) {
-            b.removeHierarchyListener(getAquaHierarchyButtonListener());
-        }
-    }
-
-    static class AquaHierarchyButtonListener implements HierarchyListener {
-        // Everytime a hierarchy is change we need to check if the button if moved on or from
-        // a toolbar. If that is the case, we need to re-set the border of the button.
-        public void hierarchyChanged(HierarchyEvent e) {
-            if ((e.getChangeFlags() & HierarchyEvent.PARENT_CHANGED) == 0) return;
-
-            Object o = e.getSource();
-            if (!(o instanceof AbstractButton)) return;
-
-            AbstractButton b = (AbstractButton)o;
-            ButtonUI ui = b.getUI();
-            if (!(ui instanceof AquaButtonUI)) return;
-
-            ((AquaButtonUI)ui).configure(b);
-        }
+    private boolean isToolbarSensitive(AbstractButton b) {
+        // Checkboxes and radio buttons are not toolbar sensitive
+        return b instanceof JButton
+                || b instanceof JToggleButton && !(b instanceof JCheckBox) && !(b instanceof JRadioButton);
     }
 
     class AquaButtonListener extends BasicButtonListener implements ActionListener {
@@ -888,8 +873,7 @@ public class AquaButtonUI extends BasicButtonUI
         @Override
         public void actionPerformed(ActionEvent e) {
             // If the button is a color well and no other action listeners are defined, bring up a color chooser.
-            AquaUIPainter.ButtonWidget widget = getButtonWidget(b);
-            if (widget == AquaUIPainter.ButtonWidget.BUTTON_COLOR_WELL) {
+            if (isColorWell(b)) {
                 ActionListener[] listeners = b.getActionListeners();
                 if (listeners.length == 1) {
                     toggleColorChooser(b);

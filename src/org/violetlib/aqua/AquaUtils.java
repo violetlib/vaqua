@@ -36,6 +36,8 @@ package org.violetlib.aqua;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.HierarchyEvent;
+import java.awt.event.HierarchyListener;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
 import java.awt.image.ConvolveOp;
@@ -71,6 +73,13 @@ final public class AquaUtils {
     private static final String ANIMATIONS_PROPERTY = "swing.enableAnimations";
 
     private static final int javaVersion = obtainJavaVersion();
+
+    private static final HierarchyListener toolbarStatusListener = new HierarchyListener() {
+        @Override
+        public void hierarchyChanged(HierarchyEvent e) {
+            toolbarStatusChanged(e);
+        }
+    };
 
     private interface WindowAppearanceChangedCallback {
         void windowAppearanceChanged(@NotNull Window w, @NotNull String appearanceName);
@@ -349,15 +358,57 @@ final public class AquaUtils {
         return c == null || c.getComponentOrientation().isLeftToRight() ? AquaUIPainter.UILayoutDirection.LEFT_TO_RIGHT : AquaUIPainter.UILayoutDirection.RIGHT_TO_LEFT;
     }
 
-    static void enforceComponentOrientation(Component c, ComponentOrientation orientation) {
-        c.setComponentOrientation(orientation);
-        if (c instanceof Container) {
-            for (Component child : ((Container) c).getComponents()) {
-                enforceComponentOrientation(child, orientation);
+    // A component is toolbar sensitive if its layout and/or rendering is different when it is contained in a toolbar or
+    // a toolbar panel. Changes in toolbar status may occur when the ancestor hierarchy changes. It also may change if
+    // a container dynamically changes its toolbar panel status. Dynamic changes to toolbar panel status are not
+    // automatically recognized. The file chooser supports its dynamic toolbar panel status by generating hierarchy
+    // changed events (using the generateToolbarStatusEvents method, below).
+
+    public static void installToolbarSensitivity(@NotNull JComponent c) {
+        ToolbarSensitiveUI ui = getUI(c, ToolbarSensitiveUI.class);
+        if (ui != null) {
+            c.addHierarchyListener(toolbarStatusListener);
+        }
+    }
+
+    public static void uninstallToolbarSensitivity(@NotNull JComponent c) {
+        c.removeHierarchyListener(toolbarStatusListener);
+    }
+
+    private static void toolbarStatusChanged(@NotNull HierarchyEvent e) {
+        Component target = e.getComponent();
+        if (target instanceof JComponent) {
+            JComponent jc = (JComponent) target;
+            ToolbarSensitiveUI ui = getUI(jc, ToolbarSensitiveUI.class);
+            if (ui != null) {
+                ui.toolbarStatusChanged(jc);
             }
         }
     }
 
+    public static void generateToolbarStatusEvents(@NotNull JComponent c) {
+        // For a toolbar status change to be recognized by subcomponents, a hierarchy changed event must be delivered
+        // to each component.
+        generateToolbarStatusEvents(c, c);
+    }
+
+    private static void generateToolbarStatusEvents(@NotNull JComponent top, @NotNull Component c) {
+        HierarchyEvent e = new HierarchyEvent(c, HierarchyEvent.HIERARCHY_CHANGED, top, top.getParent());
+        HierarchyListener[] listeners = c.getHierarchyListeners();
+        for (HierarchyListener listener : listeners) {
+            listener.hierarchyChanged(e);
+        }
+        if (c instanceof Container) {
+            Container cc = (Container) c;
+            int componentCount = cc.getComponentCount();
+            for (int i = 0; i < componentCount; i++) {
+                Component child = cc.getComponent(i);
+                generateToolbarStatusEvents(top, child);
+            }
+        }
+    }
+
+    // Any component UI that uses this method should install toolbar sensitivity.
     public static boolean isOnToolbar(JComponent b) {
         Component parent = b.getParent();
         while (parent != null) {

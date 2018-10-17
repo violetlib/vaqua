@@ -224,15 +224,11 @@ public class AquaTextFieldBorder extends AquaBorder implements FocusRingOutlineP
     protected TextFieldWidget getWidget(JTextComponent tc) {
         Object o = tc.getClientProperty(AquaTextFieldUI.TEXT_FIELD_STYLE_KEY);
         if ("round".equals(o)) {
-            return isOnToolbar(tc) ? TextFieldWidget.TEXT_FIELD_ROUND_TOOLBAR : TextFieldWidget.TEXT_FIELD_ROUND;
-        } else if (isOnToolbar(tc)) {
+            return AquaUtils.isOnToolbar(tc) ? TextFieldWidget.TEXT_FIELD_ROUND_TOOLBAR : TextFieldWidget.TEXT_FIELD_ROUND;
+        } else if (AquaUtils.isOnToolbar(tc)) {
             return TextFieldWidget.TEXT_FIELD_ROUND_TOOLBAR;
         }
         return TextFieldWidget.TEXT_FIELD;
-    }
-
-    public static boolean isOnToolbar(JTextComponent tc) {
-        return AquaUtils.isOnToolbar(tc);
     }
 
     protected State getStateFor(JTextComponent tc) {

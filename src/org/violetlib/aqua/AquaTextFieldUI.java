@@ -52,7 +52,8 @@ import org.violetlib.jnr.Insetter;
 import org.violetlib.jnr.LayoutInfo;
 import org.violetlib.jnr.aqua.AquaUIPainter;
 
-public class AquaTextFieldUI extends BasicTextFieldUI implements FocusRingOutlineProvider, AquaComponentUI {
+public class AquaTextFieldUI extends BasicTextFieldUI
+        implements FocusRingOutlineProvider, ToolbarSensitiveUI, AquaComponentUI {
 
     public static final String TEXT_FIELD_STYLE_KEY = "JTextField.style";
     public static final String TEXT_FIELD_VARIANT_KEY = "JTextField.variant";   // legacy from Aqua LAF
@@ -70,6 +71,7 @@ public class AquaTextFieldUI extends BasicTextFieldUI implements FocusRingOutlin
     boolean oldDragState = false;
     protected @NotNull BasicContextualColors colors;
     protected @Nullable AppearanceContext appearanceContext;
+    protected boolean isToolbar;
 
     public AquaTextFieldUI() {
         colors = AquaColors.TEXT_COLORS;
@@ -80,6 +82,7 @@ public class AquaTextFieldUI extends BasicTextFieldUI implements FocusRingOutlin
         if (c instanceof JTextComponent) {
             editor = (JTextComponent) c;
             super.installUI(c);
+            isToolbar = AquaUtils.isOnToolbar(c);
         }
     }
 
@@ -104,9 +107,11 @@ public class AquaTextFieldUI extends BasicTextFieldUI implements FocusRingOutlin
 
         AquaUtilControlSize.addSizePropertyListener(editor);
         AppearanceManager.installListener(editor);
+        AquaUtils.installToolbarSensitivity(editor);
     }
 
     protected void uninstallListeners() {
+        AquaUtils.uninstallToolbarSensitivity(editor);
         AppearanceManager.uninstallListener(editor);
         AquaUtilControlSize.removeSizePropertyListener(editor);
         editor.removeFocusListener(handler);
@@ -217,6 +222,16 @@ public class AquaTextFieldUI extends BasicTextFieldUI implements FocusRingOutlin
             if ((e.getChangeFlags() & HierarchyEvent.PARENT_CHANGED) != 0) {
                 updateStyle();
             }
+        }
+    }
+
+    @Override
+    public void toolbarStatusChanged(@NotNull JComponent c) {
+        boolean b = AquaUtils.isOnToolbar(c);
+        if (b != isToolbar) {
+            isToolbar = b;
+            c.revalidate();
+            c.repaint();
         }
     }
 

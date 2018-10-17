@@ -325,7 +325,7 @@ public class AquaTextFieldSearch {
                 hasCancelButton = hasFocus;
             }
 
-            boolean isToolbar = isOnToolbar(tc);
+            boolean isToolbar = AquaUtils.isOnToolbar(tc);
 
             return !hasCancelButton ?
                     hasMenu ?
