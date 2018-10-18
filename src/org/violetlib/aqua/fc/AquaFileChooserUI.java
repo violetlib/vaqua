@@ -449,13 +449,13 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
     private AbstractAction keyListenerAction = new KeyListenerAction();
 
     protected TopPanel topPanel;
-    protected   JPanel fileNamePanel;
+    protected   SavePanel savePanel;
     protected     JPanel fileNameLine;
     protected       JLabel fileNameLabel;
     protected       JTextField fileNameTextField;
     protected       JPanel fileNameSpringPanel;
     protected     JSeparator separator;
-    protected   JComponent navigationPanel;
+    protected   NavigationPanel navigationPanel;
     protected     ViewModeControl viewModeControl;
     protected     JComboBox directoryComboBox;
     protected JSplitPane splitPane;
@@ -503,7 +503,13 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
     }
 
     private void configureTopPanel() {
-        topPanel.setToolBar(useToolBar);
+        if (fc.getDialogType() == JFileChooser.SAVE_DIALOG) {
+            navigationPanel.setToolBar(useToolBar);
+            topPanel.setToolBar(false);
+        } else {
+            navigationPanel.setToolBar(false);
+            topPanel.setToolBar(useToolBar);
+        }
     }
 
     private class TopPanel extends JPanel {
@@ -513,23 +519,21 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
             setBorder(new EmptyBorder(4, 4, 4, 0));
         }
 
-        public boolean isToolBar() {
-            return Boolean.TRUE.equals(getClientProperty(AquaUtils.TOOLBAR_PANEL_PROPERTY));
-        }
-
         public void setToolBar(boolean b) {
-            if (b != isToolBar()) {
-                putClientProperty(AquaUtils.TOOLBAR_PANEL_PROPERTY, b);
-                AquaUtils.generateToolbarStatusEvents(this);
-                revalidate();
-                repaint();
-            }
+            putClientProperty(AquaUtils.TOOLBAR_PANEL_PROPERTY, b);
         }
 
         @Override
         public void doLayout() {
             super.doLayout();
             updateWindowStyleParameters();
+        }
+    }
+
+    private class SavePanel extends JPanel {
+        public SavePanel() {
+            setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
+            setOpaque(false);
         }
     }
 
@@ -540,6 +544,10 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
             setLayout(new BoxLayout(this, BoxLayout.X_AXIS));
             setOpaque(false);
             reconfigure();
+        }
+
+        public void setToolBar(boolean b) {
+            putClientProperty(AquaUtils.TOOLBAR_PANEL_PROPERTY, b);
         }
 
         public void reconfigure() {
@@ -657,7 +665,7 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
         GridBagConstraints gridBagConstraints;
 
         topPanel = new TopPanel();
-        fileNamePanel = new JPanel();
+        savePanel = new SavePanel();
         fileNameLine = new JPanel();
         fileNameLabel = new JLabel();
         fileNameTextField = createTextField("File Name Text Field");
@@ -720,9 +728,8 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
         gridBagConstraints.insets = new java.awt.Insets(0, 6, 0, 0);
         fileNameLine.add(fileNameSpringPanel, gridBagConstraints);
 
-        fileNamePanel.setLayout(new BoxLayout(fileNamePanel, BoxLayout.Y_AXIS));
-        fileNamePanel.add(fileNameLine);
-        fileNamePanel.add(separator);
+        savePanel.add(fileNameLine);
+        savePanel.add(separator);
 
         if (OSXSystemProperties.OSVersion >= 1014) {
             fileNameLine.setBorder(new EmptyBorder(6, 0, 7, 0));
@@ -754,7 +761,7 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
 
         configureTopPanel();
 
-        topPanel.add(fileNamePanel);
+        topPanel.add(savePanel);
         topPanel.add(navigationPanel);
 
         int w = UIManager.getInt("FileChooser.sideBarWidth");
@@ -1000,7 +1007,7 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
           controlsPanel,
           directoryComboBox,
           fileNameLabel,
-          fileNamePanel,
+                savePanel,
           fileNameSpringPanel,
           fileNameTextField,
           filesOfTypeLabel,
@@ -1031,7 +1038,7 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
         // Change component visibility to match the dialog type
         boolean isSave = (fc.getDialogType() == JFileChooser.SAVE_DIALOG) || (fc.getDialogType() == JFileChooser.CUSTOM_DIALOG);
         fileNameTextField.setEnabled(isSave);
-        fileNamePanel.setVisible(isSave);
+        savePanel.setVisible(isSave);
 
         // Preview column
         doPreviewComponentChanged(null);
@@ -2084,7 +2091,7 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
         approveButton.setToolTipText(getApproveButtonToolTipText(fc));
         boolean isSave = isFileNameFieldVisible();
         fileNameTextField.setEnabled(isSave);
-        fileNamePanel.setVisible(isSave);
+        savePanel.setVisible(isSave);
         updateApproveButtonState();
         updateOptionsPanel(); // also updates buttons
         reconfigureChooser();   // some display properties are different for open and save dialogs

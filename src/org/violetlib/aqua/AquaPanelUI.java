@@ -119,6 +119,9 @@ public class AquaPanelUI extends BasicPanelUI implements AquaComponentUI {
         if (PANEL_STYLE_KEY.equals(prop) || GROUP_BOX_TITLE_KEY.equals(prop)) {
             JComponent c = (JComponent) evt.getSource();
             updateStyle(c);
+        } else if (AquaUtils.TOOLBAR_PANEL_PROPERTY.equals(prop)) {
+            JComponent c = (JComponent) evt.getSource();
+            AquaUtils.generateToolbarStatusEvents(c);
         }
     }
 
