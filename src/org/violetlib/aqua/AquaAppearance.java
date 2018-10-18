@@ -269,6 +269,13 @@ public class AquaAppearance implements VAppearance {
         colors.add("tagPurple", 190, 118, 229);
         colors.add("tagRed", 255, 99, 92);
         colors.add("tagYellow", 254, 214, 75);
+        colors.add("tagBlue_disabled", 155, 203, 255);
+        colors.add("tagGray_disabled", 210, 210, 212);
+        colors.add("tagGreen_disabled", 175, 236, 181);
+        colors.add("tagOrange_disabled", 255, 213, 165);
+        colors.add("tagPurple_disabled", 223, 187, 243);
+        colors.add("tagRed_disabled", 255, 177, 175);
+        colors.add("tagYellow_disabled", 254, 235, 168);
 
         // support for the file chooser
         if (OSVersion == 1013) {
@@ -495,6 +502,13 @@ public class AquaAppearance implements VAppearance {
         colors.add("tagPurple", 160, 106, 188);
         colors.add("tagRed", 255, 99, 92);  // unchanged
         colors.add("tagYellow", 248, 192, 73);
+        colors.add("tagBlue_disabled", 163, 214, 242);
+        colors.add("tagGray_disabled", 210, 210, 211);
+        colors.add("tagGreen_disabled", 166, 223, 168);
+        colors.add("tagOrange_disabled", 245, 202, 162);
+        colors.add("tagPurple_disabled", 208, 182, 222);
+        colors.add("tagRed_disabled", 255, 177, 175);  // unchanged
+        colors.add("tagYellow_disabled", 252, 224, 167);
 
         // support for the file chooser
         colors.add("scrollPaneGrabber", 87);
@@ -555,6 +569,13 @@ public class AquaAppearance implements VAppearance {
         colors.add("tagPurple", 204, 124, 245);
         colors.add("tagRed", 255, 107, 99);
         colors.add("tagYellow", 255, 222, 78);
+        colors.add("tagBlue_disabled", 47, 94, 142);
+        colors.add("tagGray_disabled", 100, 101, 103);
+        colors.add("tagGreen_disabled", 64, 126, 72);
+        colors.add("tagOrange_disabled", 142, 104, 53);
+        colors.add("tagPurple_disabled", 117, 77, 137);
+        colors.add("tagRed_disabled", 142, 68, 64);
+        colors.add("tagYellow_disabled", 142, 126, 55);
 
         colors.add("cellBackground", "clear");
         colors.add("selectedCellBackground_inactive", "selectedTextBackground_inactive");
@@ -756,6 +777,13 @@ public class AquaAppearance implements VAppearance {
         colors.add("tagPurple", 226, 165, 254);
         colors.add("tagRed", 255, 135, 129);
         colors.add("tagYellow", 254, 214, 75);    // same as ordinary light mode? mistake?
+        colors.add("tagBlue_disabled", 67, 104, 144);
+        colors.add("tagGray_disabled", 102, 102, 104);
+        colors.add("tagGreen_disabled", 62, 123, 69);
+        colors.add("tagOrange_disabled", 143, 101, 52);
+        colors.add("tagPurple_disabled", 128, 98, 143);
+        colors.add("tagRed_disabled", 143, 83, 80);
+        colors.add("tagYellow_disabled", 143, 123, 55);
 
         // support for the file chooser (dark mode)
         colors.add("scrollPaneGrabber", 255, 196);
