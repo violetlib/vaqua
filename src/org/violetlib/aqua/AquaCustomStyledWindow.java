@@ -128,7 +128,7 @@ public class AquaCustomStyledWindow {
      * @throws IllegalArgumentException if the style is not valid, the window is not appropriately decorated, the content
      *  pane is not a JComponent, or a required JToolBar or toolbar panel is not found.
      */
-    public AquaCustomStyledWindow(Window w, int style, int declaredTopMarginHeight, int declaredBottomMarginHeight)
+    public AquaCustomStyledWindow(@NotNull Window w, int style, int declaredTopMarginHeight, int declaredBottomMarginHeight)
             throws IllegalArgumentException {
 
         boolean isDecorated = AquaUtils.isDecorated(w);
@@ -226,6 +226,7 @@ public class AquaCustomStyledWindow {
      */
 
     public @NotNull AquaCustomStyledWindow reconfigure(int style, int top, int bottom) {
+        assert w != null;
         AquaCustomStyledWindow replacement = new AquaCustomStyledWindow(w, style, top, bottom);
         removeListeners();
         // do not dispose, as that alters the window
@@ -260,7 +261,6 @@ public class AquaCustomStyledWindow {
             if (contentPane != null) {
                 resetBorder(contentPane);
             }
-            AquaUtils.setTitleBarStyle(w, AquaUtils.TITLE_BAR_ORDINARY);
             w = null;
             rp = null;
             contentPane = null;
@@ -575,8 +575,8 @@ public class AquaCustomStyledWindow {
     }
 
     protected class CustomBorderBase
-        extends AbstractBorder
-        implements UIResource {
+            extends AbstractBorder
+            implements UIResource {
     }
 
     protected class CustomContentPaneBorder extends CustomBorderBase {
