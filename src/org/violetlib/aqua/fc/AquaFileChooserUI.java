@@ -516,7 +516,7 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
         public TopPanel() {
             setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
             setOpaque(false);
-            setBorder(new EmptyBorder(4, 4, 4, 0));
+            setBorder(new EmptyBorder(4, 0, 4, 0));
         }
 
         public void setToolBar(boolean b) {
