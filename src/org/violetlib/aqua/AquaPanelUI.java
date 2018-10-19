@@ -43,6 +43,7 @@ import javax.swing.plaf.UIResource;
 import javax.swing.plaf.basic.BasicPanelUI;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.violetlib.aqua.AquaUtils.RecyclableSingleton;
 import org.violetlib.aqua.AquaUtils.RecyclableSingletonFromDefaultConstructor;
 
@@ -66,6 +67,7 @@ public class AquaPanelUI extends BasicPanelUI implements AquaComponentUI {
         AquaVibrantSupport.installVibrantStyle(c);
         c.addPropertyChangeListener(propertyChangeListener);
         updateStyle(c);
+        configureAppearanceContext(c, null);
     }
 
     @Override
@@ -95,9 +97,14 @@ public class AquaPanelUI extends BasicPanelUI implements AquaComponentUI {
     public void activeStateChanged(@NotNull JComponent c, boolean isActive) {
     }
 
+    protected void configureAppearanceContext(@NotNull JComponent c, @Nullable AquaAppearance appearance) {
+        if (appearance == null) {
+            appearance = AppearanceManager.ensureAppearance(c);
+        }
+    }
+
     @Override
     public final void update(@NotNull Graphics g, @NotNull JComponent c) {
-        AppearanceManager.ensureAppearance(c);
         AquaAppearance appearance = AppearanceManager.registerCurrentAppearance(c);
         if (c.isOpaque() || AquaVibrantSupport.isVibrant(c)) {
             AquaUtils.fillRect(g, c, AquaUtils.ERASE_IF_TEXTURED | AquaUtils.ERASE_IF_VIBRANT);
