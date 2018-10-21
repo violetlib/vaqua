@@ -321,7 +321,7 @@ public class AquaImageFactory {
     }
 
     public static Icon getMenuArrowIcon() {
-        return new ImageIcon(getProcessedImage(eastArrow.get(), LIGHTEN_25));
+        return eastArrowIcon.get();
     }
 
     public static Icon getPopupMenuItemCheckIcon(Size sizeVariant) {
