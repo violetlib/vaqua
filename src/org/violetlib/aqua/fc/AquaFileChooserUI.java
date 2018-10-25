@@ -552,10 +552,10 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
 
         public void reconfigure() {
             if (fc.getDialogType() == JFileChooser.SAVE_DIALOG) {
-                if (OSXSystemProperties.OSVersion >= 1014) {
+                if (OSXSystemProperties.OSVersion >= 1011) {
                     setBorder(new EmptyBorder(9, 11, 6, 11));
                 } else {
-                    setBorder(new EmptyBorder(10, 11, 10, 11));
+                    setBorder(new EmptyBorder(17, 11, 6, 11));
                 }
             } else {
                 if (OSXSystemProperties.OSVersion >= 1014) {
@@ -728,13 +728,18 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
         gridBagConstraints.insets = new java.awt.Insets(0, 6, 0, 0);
         fileNameLine.add(fileNameSpringPanel, gridBagConstraints);
 
-        savePanel.add(fileNameLine);
-        savePanel.add(separator);
-
-        if (OSXSystemProperties.OSVersion >= 1014) {
-            fileNameLine.setBorder(new EmptyBorder(6, 0, 7, 0));
+        if (OSXSystemProperties.OSVersion >= 1013) {
+            fileNameLine.setBorder(new EmptyBorder(5, 0, 7, 0));
+        } else if (OSXSystemProperties.OSVersion >= 1011) {
+            fileNameLine.setBorder(new EmptyBorder(12, 0, 7, 0));
         } else {
-            fileNameLine.setBorder(new EmptyBorder(10, 0, 7, 0));
+            fileNameLine.setBorder(new EmptyBorder(12, 0, 14, 0));
+        }
+
+        savePanel.add(fileNameLine);
+
+        if (OSXSystemProperties.OSVersion != 1013) {
+            savePanel.add(separator);
         }
 
         viewsPanel.setLayout(new CardLayout());
@@ -747,7 +752,6 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
         if (viewModeControl != null && listView != null) {
             listView.addSelectionChangeListener(viewSelectionChangeListener);
             listView.addSelectListener(viewSelectListener);
-            viewModeControl.setMaximumSize(viewModeControl.getPreferredSize());
             viewModeControl.setAlignmentY(0.5f);
             navigationPanel.add(viewModeControl);
             navigationPanel.add(Box.createHorizontalGlue());
@@ -997,34 +1001,34 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
         KeyListener kl = new TextKeyListener();
 
         Component[] dropComponents = {
-          fc,
-          accessoryPanel,
-          approveButton,
-          columnView,
-          buttonsPanel,
-          optionsButton,
-          cancelButton,
-          controlsPanel,
-          directoryComboBox,
-          fileNameLabel,
+                fc,
+                accessoryPanel,
+                approveButton,
+                columnView,
+                buttonsPanel,
+                optionsButton,
+                cancelButton,
+                controlsPanel,
+                directoryComboBox,
+                fileNameLabel,
                 savePanel,
-          fileNameSpringPanel,
-          fileNameTextField,
-          filesOfTypeLabel,
-          filterComboBox,
-          formatPanel,
-          formatSpringPanel,
-          listView,
-          navigationPanel,
-          newFolderButton,
-          //nextButton,
-          //previousButton,
-          separator,
-          splitPane,
-          viewModeControl,
-          viewsPanel,
-          sidebarTree,
-          sidebarScrollPane
+                fileNameSpringPanel,
+                fileNameTextField,
+                filesOfTypeLabel,
+                filterComboBox,
+                formatPanel,
+                formatSpringPanel,
+                listView,
+                navigationPanel,
+                newFolderButton,
+                //nextButton,
+                //previousButton,
+                separator,
+                splitPane,
+                viewModeControl,
+                viewsPanel,
+                sidebarTree,
+                sidebarScrollPane
         };
         for (int i = 0; i < dropComponents.length; i++) {
             Component c = dropComponents[i];

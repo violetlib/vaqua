@@ -90,7 +90,7 @@ public class ViewModeControlImpl extends ViewModeControl {
         add(listViewButton);
         add(columnViewButton);
 
-        setLayout(new FlowLayout(java.awt.FlowLayout.CENTER, 0, 0));
+        setLayout(new BoxLayout(this, BoxLayout.X_AXIS));
     }
 
     protected JToggleButton createButton(ImageIcon ic, String position, int viewMode) {
