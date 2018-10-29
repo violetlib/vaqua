@@ -38,22 +38,17 @@ import java.awt.event.FocusEvent;
 import java.awt.event.HierarchyEvent;
 import java.awt.event.HierarchyListener;
 import java.beans.PropertyChangeEvent;
-import java.beans.PropertyChangeListener;
 import javax.swing.*;
 import javax.swing.border.Border;
 import javax.swing.plaf.ComponentUI;
-import javax.swing.plaf.basic.BasicTextFieldUI;
 import javax.swing.text.*;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.violetlib.jnr.Insets2D;
 import org.violetlib.jnr.Insetter;
 import org.violetlib.jnr.LayoutInfo;
-import org.violetlib.jnr.aqua.AquaUIPainter;
 
-public class AquaTextFieldUI extends BasicTextFieldUI
-        implements FocusRingOutlineProvider, ToolbarSensitiveUI, AquaComponentUI {
+public class AquaTextFieldUI extends AquaTextComponentUIBase implements ToolbarSensitiveUI {
 
     public static final String TEXT_FIELD_STYLE_KEY = "JTextField.style";
     public static final String TEXT_FIELD_VARIANT_KEY = "JTextField.variant";   // legacy from Aqua LAF
@@ -63,97 +58,43 @@ public class AquaTextFieldUI extends BasicTextFieldUI
         return new AquaTextFieldUI();
     }
 
-    protected AquaFocusHandler handler;
-    protected PropertyChangeListener propertyChangeListener;
     protected HierarchyListener hierarchyListener;
-    protected JTextComponent editor;
     protected View topView;
-    boolean oldDragState = false;
-    protected @NotNull BasicContextualColors colors;
-    protected @Nullable AppearanceContext appearanceContext;
     protected boolean isToolbar;
 
     public AquaTextFieldUI() {
-        colors = AquaColors.TEXT_COLORS;
+        super(new AquaTextFieldUIDelegate());
     }
 
     @Override
     public void installUI(JComponent c) {
-        if (c instanceof JTextComponent) {
-            editor = (JTextComponent) c;
-            super.installUI(c);
-            isToolbar = AquaUtils.isOnToolbar(c);
-        }
-    }
-
-    @Override
-    public void uninstallUI(JComponent c) {
-        super.uninstallUI(c);
-        editor = null;
+        super.installUI(c);
+        isToolbar = AquaUtils.isOnToolbar(c);
     }
 
     protected void installListeners() {
         super.installListeners();
-
-        handler = new AquaTextFieldFocusHandler();
-        editor.addFocusListener(handler);
-        editor.addPropertyChangeListener(handler);
-
-        propertyChangeListener = new AquaPropertyChangeHandler();
-        editor.addPropertyChangeListener(propertyChangeListener);
-
         hierarchyListener = new AquaHierarchyListener();
         editor.addHierarchyListener(hierarchyListener);
-
-        AquaUtilControlSize.addSizePropertyListener(editor);
-        AppearanceManager.installListener(editor);
         AquaUtils.installToolbarSensitivity(editor);
     }
 
     protected void uninstallListeners() {
         AquaUtils.uninstallToolbarSensitivity(editor);
-        AppearanceManager.uninstallListener(editor);
-        AquaUtilControlSize.removeSizePropertyListener(editor);
-        editor.removeFocusListener(handler);
-        editor.removePropertyChangeListener(handler);
-        editor.removePropertyChangeListener(propertyChangeListener);
         editor.removeHierarchyListener(hierarchyListener);
-        handler = null;
-        propertyChangeListener = null;
+        hierarchyListener = null;
         super.uninstallListeners();
     }
 
-    protected void installDefaults() {
-        if (!GraphicsEnvironment.isHeadless()) {
-            oldDragState = editor.getDragEnabled();
-            editor.setDragEnabled(true);
-        }
-
-        super.installDefaults();
-        LookAndFeel.installProperty(editor, "opaque", false);
-
-        configureAppearanceContext(null);
-    }
-
-    protected void uninstallDefaults() {
-        super.uninstallDefaults();
-
-        if (!GraphicsEnvironment.isHeadless()) {
-            getComponent().setDragEnabled(oldDragState);
-        }
+    @Override
+    protected @NotNull AquaFocusHandler createFocusHandler() {
+        return new AquaTextFieldFocusHandler();
     }
 
     protected class AquaTextFieldFocusHandler extends AquaFocusHandler {
         @Override
-        public void focusGained(FocusEvent ev) {
-            super.focusGained(ev);
-            updateFocusStyle(editor, true);
-        }
-
-        @Override
         public void focusLost(FocusEvent ev) {
             super.focusLost(ev);
-            updateFocusStyle(editor, false);
             if (!ev.isTemporary()) {
                 Caret c = editor.getCaret();
                 if (c != null) {
@@ -163,55 +104,18 @@ public class AquaTextFieldUI extends BasicTextFieldUI
         }
     }
 
-    protected void updateFocusStyle(JTextComponent c, boolean hasFocus) {
-    }
-
-    protected class AquaPropertyChangeHandler implements PropertyChangeListener {
-        public void propertyChange(PropertyChangeEvent e) {
-            String prop = e.getPropertyName();
-            if (isStyleProperty(prop) || AquaCellEditorPolicy.isCellEditorProperty(prop)) {
-                updateStyle();
-            } else if (AquaColors.COMPONENT_COLORS_KEY.equals(prop)) {
-                Object o = e.getNewValue();
-                if (o instanceof BasicContextualColors) {
-                    colors = (BasicContextualColors) o;
-                    configureAppearanceContext(null);
-                }
-            } else if ("enabled".equals(prop)) {
+    @Override
+    protected void propertyChange(@NotNull PropertyChangeEvent evt) {
+        super.propertyChange(evt);
+        String prop = evt.getPropertyName();
+        if (isStyleProperty(prop) || AquaCellEditorPolicy.isCellEditorProperty(prop)) {
+            updateStyle();
+        } else if (AquaColors.COMPONENT_COLORS_KEY.equals(prop)) {
+            Object o = evt.getNewValue();
+            if (o instanceof BasicContextualColors) {
+                colors = (BasicContextualColors) o;
                 configureAppearanceContext(null);
             }
-        }
-    }
-
-    @Override
-    public void appearanceChanged(@NotNull JComponent c, @NotNull AquaAppearance appearance) {
-        configureAppearanceContext(appearance);
-    }
-
-    @Override
-    public void activeStateChanged(@NotNull JComponent c, boolean isActive) {
-        configureAppearanceContext(null);
-    }
-
-    protected void configureAppearanceContext(@Nullable AquaAppearance appearance) {
-        if (appearance == null) {
-            appearance = AppearanceManager.ensureAppearance(editor);
-        }
-        AquaUIPainter.State state = getState();
-        appearanceContext = new AppearanceContext(appearance, state, false, false);
-        AquaColors.installColors(editor, appearanceContext, colors);
-        editor.repaint();
-    }
-
-    protected AquaUIPainter.State getState() {
-        if (editor.isEnabled()) {
-            boolean isActive = AquaFocusHandler.isActive(editor);
-            boolean hasFocus = AquaFocusHandler.hasFocus(editor);
-            return isActive
-                    ? (hasFocus ? AquaUIPainter.State.ACTIVE_DEFAULT : AquaUIPainter.State.ACTIVE)
-                    : AquaUIPainter.State.INACTIVE;
-        } else {
-            return AquaUIPainter.State.DISABLED;
         }
     }
 
@@ -265,25 +169,12 @@ public class AquaTextFieldUI extends BasicTextFieldUI
         return AquaUtils.getProperty(editor, TEXT_FIELD_STYLE_KEY, TEXT_FIELD_VARIANT_KEY, QUAQUA_TEXT_FIELD_STYLE_KEY);
     }
 
-    // Install a default keypress action which handles Cmd and Option keys properly
-    protected void installKeyboardActions() {
-        super.installKeyboardActions();
-        AquaKeyBindings.instance().setDefaultAction(getKeymapName());
-    }
-
     @Override
-    public void update(Graphics g, JComponent c) {
-        AquaAppearance appearance = AppearanceManager.registerCurrentAppearance(c);
-        super.update(g, c);
-        AppearanceManager.restoreCurrentAppearance(appearance);
-    }
-
-    @Override
-    public final View create(Element elem) {
+    public final @Nullable View create(@NotNull Element elem) {
         return topView = createView(elem);
     }
 
-    private View createView(Element elem) {
+    private @Nullable View createView(@NotNull Element elem) {
         View base = createBasicView(elem);
         int textMargin = getTextMargin();
         if (textMargin > 0) {
@@ -296,10 +187,12 @@ public class AquaTextFieldUI extends BasicTextFieldUI
     }
 
     protected View createBasicView(Element elem) {
-        View view = super.create(elem);
-        Class c = view.getClass();
-        if (c == FieldView.class) {
-            return new AquaFieldView(elem);
+        View view = delegate.create(editor, elem);
+        if (view != null) {
+            Class c = view.getClass();
+            if (c == FieldView.class) {
+                return new AquaFieldView(elem);
+            }
         }
         return view;
     }
@@ -425,49 +318,6 @@ public class AquaTextFieldUI extends BasicTextFieldUI
     }
 
     @Override
-    public Shape getFocusRingOutline(JComponent c) {
-        Border b = c.getBorder();
-        if (b instanceof FocusRingOutlineProvider) {
-            FocusRingOutlineProvider p = (FocusRingOutlineProvider) b;
-            return p.getFocusRingOutline(c);
-        }
-        return new Rectangle(0, 0, c.getWidth(), c.getHeight());
-    }
-
-    protected void paintSafely(Graphics g) {
-
-        Color background = getBackground();
-        paintBackgroundSafely(g, background);
-
-        // If the painter has specified a non-integer top inset, attempt to support that by translation.
-        // This works with AquaTextComponentBorder, which will have rounded down the top inset.
-
-        if (g instanceof Graphics2D) {
-            Border b = editor.getBorder();
-            if (b instanceof Border2D) {
-                Border2D ab = (Border2D) b;
-                Insets2D n = ab.getBorderInsets2D(editor);
-                if (n != null) {
-                    float top = n.getTop();
-                    float floor = (float) Math.floor(top);
-                    if (top - floor > 0.001f) {
-                        Graphics2D gg = (Graphics2D) g.create();
-                        gg.translate(0, top - floor);
-                        super.paintSafely(gg);
-                        gg.dispose();
-                        return;
-                    }
-                }
-            }
-        }
-
-        super.paintSafely(g);
-    }
-
-    protected @Nullable Color getBackground() {
-        return editor.getBackground();
-    }
-
     protected void paintBackgroundSafely(@NotNull Graphics g, @Nullable Color background) {
         int width = editor.getWidth();
         int height = editor.getHeight();
@@ -497,14 +347,5 @@ public class AquaTextFieldUI extends BasicTextFieldUI
         // using our own border
         AquaTextComponentBorder tb = (AquaTextComponentBorder) b;
         tb.paintBackground(editor, g, background);
-    }
-
-    protected void paintBackground(Graphics g) {
-        // we have already ensured that the background is painted to our liking
-        // by paintBackgroundSafely(), called from paintSafely().
-    }
-
-    protected Caret createCaret() {
-        return new AquaCaret();
     }
 }
