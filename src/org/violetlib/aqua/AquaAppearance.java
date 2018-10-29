@@ -178,6 +178,7 @@ public class AquaAppearance implements VAppearance {
 
         colors.add("text_inactive", "text");
         colors.add("selectedText_inactive", "unemphasizedSelectedText");
+        colors.add("textBackground_inactive", "textBackground");
 
         colors.add("cellBackground", "textBackground");
         colors.add("selectedCellBackground", "selectedTextBackground");

@@ -1364,20 +1364,38 @@ final public class AquaUtils {
         return null;
     }
 
+    private static JScrollPane verifyScrollPaneAncestor(Component view, JScrollPane p) {
+        // Make certain we are the viewport's view and not, for example, the rowHeaderView of the scrollPane - an
+        // implementor of fixed columns might do this.
+        JViewport v = p.getViewport();
+        return v != null && v.getView() == view ? p : null;
+    }
+
+    /**
+     * Return the scroll pane that contains the specified component as the sole component of the viewport.
+     */
+    public static @Nullable JScrollPane getScrollPaneContainer(JComponent c) {
+        Container parent = c.getParent();
+        if (parent instanceof JViewport) {
+            if (parent.getComponentCount() == 1) {
+                Container viewportParent = parent.getParent();
+                if (viewportParent instanceof OverlayScrollPaneHack.AquaOverlayViewportHolder) {
+                    viewportParent = viewportParent.getParent();
+                }
+                if (viewportParent instanceof JScrollPane) {
+                    return (JScrollPane) viewportParent;
+                }
+            }
+        }
+        return null;
+    }
+
     public static void configure(@NotNull AquaUIPainter painter, @NotNull Component c, int width, int height) {
         AquaAppearance appearance = AppearanceManager.getRegisteredAppearance(c);
         if (appearance != null) {
             painter.configureAppearance(appearance);
         }
         painter.configure(width, height);
-    }
-
-    private static JScrollPane verifyScrollPaneAncestor(Component view, JScrollPane p) {
-        // Make certain we are the viewPort's view and not, for
-        // example, the rowHeaderView of the scrollPane -
-        // an implementor of fixed columns might do this.
-        JViewport v = p.getViewport();
-        return v != null && v.getView() == view ? p : null;
     }
 
     public final static int TITLE_BAR_NONE = 0;

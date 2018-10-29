@@ -311,8 +311,8 @@ public class AquaTextFieldUI extends BasicTextFieldUI
      */
     public int getTextMargin() {
         Border b = editor.getBorder();
-        if (b instanceof AquaTextFieldBorder) {
-            AquaTextFieldBorder bb = (AquaTextFieldBorder) b;
+        if (b instanceof AquaTextComponentBorder) {
+            AquaTextComponentBorder bb = (AquaTextComponentBorder) b;
             return bb.getTextMargin(editor);
         }
         return 0;
@@ -336,8 +336,8 @@ public class AquaTextFieldUI extends BasicTextFieldUI
     protected Dimension getLayoutSize(LayoutOption opt) {
         Dimension size = getLayoutSizeFromText(opt);
         Border b = editor.getBorder();
-        if (b instanceof AquaTextFieldBorder) {
-            AquaTextFieldBorder tb = (AquaTextFieldBorder) b;
+        if (b instanceof AquaTextComponentBorder) {
+            AquaTextComponentBorder tb = (AquaTextComponentBorder) b;
             LayoutInfo info = tb.getLayoutInfo(editor);
             int width = (int) Math.max(size.width, info.getMinimumVisualWidth());
             int height = (int) Math.max(size.height, info.getMinimumVisualHeight());
@@ -352,10 +352,10 @@ public class AquaTextFieldUI extends BasicTextFieldUI
         int textWidth = td.width;
         int textHeight = td.height;
         Border b = editor.getBorder();
-        if (b instanceof AquaTextFieldBorder) {
+        if (b instanceof AquaTextComponentBorder) {
             // Our painter can tell us the minimum size
             // For the preferred size and maximum size, leave some extra room at the top and bottom
-            AquaTextFieldBorder tb = (AquaTextFieldBorder) b;
+            AquaTextComponentBorder tb = (AquaTextComponentBorder) b;
             Insetter insets = tb.getTextInsets(editor);
             if (insets != null) {
                 int extraHeight = opt != LayoutOption.MINIMUM ? tb.getExtraHeight(editor) : 0;
@@ -440,7 +440,7 @@ public class AquaTextFieldUI extends BasicTextFieldUI
         paintBackgroundSafely(g, background);
 
         // If the painter has specified a non-integer top inset, attempt to support that by translation.
-        // This works with AquaTextFieldBorder, which will have rounded down the top inset.
+        // This works with AquaTextComponentBorder, which will have rounded down the top inset.
 
         if (g instanceof Graphics2D) {
             Border b = editor.getBorder();
@@ -474,7 +474,7 @@ public class AquaTextFieldUI extends BasicTextFieldUI
 
         Border b = editor.getBorder();
 
-        if (!(b instanceof AquaTextFieldBorder)) {
+        if (!(b instanceof AquaTextComponentBorder)) {
             // developer must have set a custom border
 
             // The effect of this code is to make isOpaque=true the default when a custom border is used.
@@ -495,25 +495,8 @@ public class AquaTextFieldUI extends BasicTextFieldUI
         }
 
         // using our own border
-        AquaTextFieldBorder tb = (AquaTextFieldBorder) b;
+        AquaTextComponentBorder tb = (AquaTextComponentBorder) b;
         tb.paintBackground(editor, g, background);
-//
-//
-//
-//        Insets margin = c.getMargin();
-//        Insets insets = c.getInsets();
-//
-//        if (insets == null) insets = new Insets(0, 0, 0, 0);
-//        if (margin != null) {
-//            insets.top -= margin.top;
-//            insets.left -= margin.left;
-//            insets.bottom -= margin.bottom;
-//            insets.right -= margin.right;
-//        }
-//
-//        // the common case
-//        int shrinkage = AquaTextFieldBorder.getShrinkageFor(c, height);
-//        g.fillRect(insets.left - 2, insets.top - shrinkage - 1, width - insets.right - insets.left + 4, height - insets.bottom - insets.top + shrinkage * 2 + 2);
     }
 
     protected void paintBackground(Graphics g) {

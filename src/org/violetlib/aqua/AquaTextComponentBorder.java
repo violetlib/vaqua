@@ -50,21 +50,21 @@ import org.violetlib.jnr.aqua.AquaUIPainter.TextFieldWidget;
 import org.violetlib.jnr.aqua.TextFieldConfiguration;
 import org.violetlib.jnr.aqua.TextFieldLayoutConfiguration;
 
-public class AquaTextFieldBorder extends AquaBorder implements FocusRingOutlineProvider, Border2D {
+public class AquaTextComponentBorder extends AquaBorder implements FocusRingOutlineProvider, Border2D {
 
     // This border is really a background. It paints as background, not as a border.
     // It needs to be a Border as a signal to the UI that the user has not installed a custom border.
     // It also provides the insets to the base text field UI.
 
-    protected static final RecyclableSingleton<AquaTextFieldBorder> instance = new RecyclableSingletonFromDefaultConstructor<AquaTextFieldBorder>(AquaTextFieldBorder.class);
-    public static AquaTextFieldBorder getTextFieldBorder() {
+    protected static final RecyclableSingleton<AquaTextComponentBorder> instance = new RecyclableSingletonFromDefaultConstructor<AquaTextComponentBorder>(AquaTextComponentBorder.class);
+    public static AquaTextComponentBorder getTextFieldBorder() {
         return instance.get();
     }
 
-    public AquaTextFieldBorder() {
+    public AquaTextComponentBorder() {
     }
 
-    public AquaTextFieldBorder(AquaTextFieldBorder other) {
+    public AquaTextComponentBorder(AquaTextComponentBorder other) {
     }
 
     @Override
@@ -237,10 +237,6 @@ public class AquaTextFieldBorder extends AquaBorder implements FocusRingOutlineP
         }
 
         if (!tc.isEnabled()) {
-            return State.DISABLED;
-        }
-
-        if (!tc.isEditable()) {
             return State.DISABLED;
         }
 

@@ -193,13 +193,6 @@ public class AquaScrollPaneUI extends BasicScrollPaneUI implements AquaUtilContr
         if (c.isOpaque()) {
             Color background = AquaColors.getBackground(c, "controlBackground");
             AquaUtils.fillRect(g, c, background, AquaUtils.ERASE_IF_VIBRANT);
-
-//            // If using the sidebar style, must erase the background to allow the vibrant background to show.
-//            if (isSideBar()) {
-//                AquaUtils.fillRect(g, (Color) null, 0, 0, c.getWidth(), c.getHeight());
-//            } else {
-//                AquaUtils.fillRect(g, c, AquaUtils.ERASE_IF_VIBRANT);
-//            }
         }
         paint(g, c);
         AppearanceManager.restoreCurrentAppearance(appearance);

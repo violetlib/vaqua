@@ -34,8 +34,10 @@
 package org.violetlib.aqua;
 
 import java.awt.*;
+import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import javax.swing.*;
+import javax.swing.border.Border;
 import javax.swing.plaf.ComponentUI;
 import javax.swing.plaf.basic.BasicTextAreaUI;
 import javax.swing.text.Caret;
@@ -43,6 +45,7 @@ import javax.swing.text.JTextComponent;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.violetlib.jnr.Insets2D;
 import org.violetlib.jnr.aqua.AquaUIPainter;
 
 public class AquaTextAreaUI extends BasicTextAreaUI implements FocusRingOutlineProvider, AquaComponentUI {
@@ -81,6 +84,7 @@ public class AquaTextAreaUI extends BasicTextAreaUI implements FocusRingOutlineP
         handler = new AquaFocusHandler();
         editor.addFocusListener(handler);
         editor.addPropertyChangeListener(handler);
+        propertyChangeListener = new AquaPropertyChangeHandler();
         editor.addPropertyChangeListener(propertyChangeListener);
         AquaUtilControlSize.addSizePropertyListener(editor);
         AppearanceManager.installListener(editor);
@@ -105,6 +109,7 @@ public class AquaTextAreaUI extends BasicTextAreaUI implements FocusRingOutlineP
             editor.setDragEnabled(true);
         }
         super.installDefaults();
+        LookAndFeel.installProperty(editor, "opaque", false);
         configureAppearanceContext(null);
     }
 
@@ -123,6 +128,15 @@ public class AquaTextAreaUI extends BasicTextAreaUI implements FocusRingOutlineP
         AquaKeyBindings bindings = AquaKeyBindings.instance();
         bindings.setDefaultAction(getKeymapName());
         bindings.installAquaUpDownActions(editor);
+    }
+
+    protected class AquaPropertyChangeHandler implements PropertyChangeListener {
+        public void propertyChange(PropertyChangeEvent e) {
+            String prop = e.getPropertyName();
+            if ("enabled".equals(prop)) {
+                configureAppearanceContext(null);
+            }
+        }
     }
 
     @Override
@@ -146,11 +160,15 @@ public class AquaTextAreaUI extends BasicTextAreaUI implements FocusRingOutlineP
     }
 
     protected AquaUIPainter.State getState() {
-        boolean isActive = AquaFocusHandler.isActive(editor);
-        boolean hasFocus = AquaFocusHandler.hasFocus(editor);
-        return isActive
-                ? (hasFocus ? AquaUIPainter.State.ACTIVE_DEFAULT : AquaUIPainter.State.ACTIVE)
-                : AquaUIPainter.State.INACTIVE;
+        if (editor.isEnabled()) {
+            boolean isActive = AquaFocusHandler.isActive(editor);
+            boolean hasFocus = AquaFocusHandler.hasFocus(editor);
+            return isActive
+                    ? (hasFocus ? AquaUIPainter.State.ACTIVE_DEFAULT : AquaUIPainter.State.ACTIVE)
+                    : AquaUIPainter.State.INACTIVE;
+        } else {
+            return AquaUIPainter.State.DISABLED;
+        }
     }
 
     @Override
@@ -160,6 +178,53 @@ public class AquaTextAreaUI extends BasicTextAreaUI implements FocusRingOutlineP
         AppearanceManager.restoreCurrentAppearance(appearance);
     }
 
+    protected void paintSafely(Graphics g) {
+
+        Color background = getBackground();
+        paintBackgroundSafely(g, background);
+
+        // If the painter has specified a non-integer top inset, attempt to support that by translation.
+        // This works with AquaTextComponentBorder, which will have rounded down the top inset.
+
+        if (g instanceof Graphics2D) {
+            Border b = editor.getBorder();
+            if (b instanceof Border2D) {
+                Border2D ab = (Border2D) b;
+                Insets2D n = ab.getBorderInsets2D(editor);
+                if (n != null) {
+                    float top = n.getTop();
+                    float floor = (float) Math.floor(top);
+                    if (top - floor > 0.001f) {
+                        Graphics2D gg = (Graphics2D) g.create();
+                        gg.translate(0, top - floor);
+                        super.paintSafely(gg);
+                        gg.dispose();
+                        return;
+                    }
+                }
+            }
+        }
+
+        super.paintSafely(g);
+    }
+
+    protected @Nullable Color getBackground() {
+        return editor.getBackground();
+    }
+
+    protected void paintBackgroundSafely(@NotNull Graphics g, @Nullable Color background) {
+        Border b = editor.getBorder();
+        if (b instanceof AquaTextComponentBorder) {
+            AquaTextComponentBorder tb = (AquaTextComponentBorder) b;
+            tb.paintBackground(editor, g, background);
+        }
+    }
+
+    protected void paintBackground(Graphics g) {
+        // we have already ensured that the background is painted to our liking
+        // by paintBackgroundSafely(), called from paintSafely().
+    }
+
     @Override
     protected Caret createCaret() {
         return new AquaCaret();
@@ -167,6 +232,11 @@ public class AquaTextAreaUI extends BasicTextAreaUI implements FocusRingOutlineP
 
     @Override
     public Shape getFocusRingOutline(JComponent c) {
-        return null;    // No focus ring on a text area
+        Border b = c.getBorder();
+        if (b instanceof FocusRingOutlineProvider) {
+            FocusRingOutlineProvider p = (FocusRingOutlineProvider) b;
+            return p.getFocusRingOutline(c);
+        }
+        return new Rectangle(0, 0, c.getWidth(), c.getHeight());
     }
 }

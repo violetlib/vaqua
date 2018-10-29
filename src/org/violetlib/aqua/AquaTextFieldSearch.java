@@ -286,7 +286,7 @@ public class AquaTextFieldSearch {
     }
 
     // subclass of normal text border, because we still want all the normal text field behaviors
-    static class SearchFieldBorder extends AquaTextFieldBorder {
+    static class SearchFieldBorder extends AquaTextComponentBorder {
         protected boolean reallyPaintBorder;
 
         // called via reflection
