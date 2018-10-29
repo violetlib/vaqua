@@ -44,10 +44,13 @@ import org.jetbrains.annotations.Nullable;
 import org.violetlib.jnr.Insets2D;
 import org.violetlib.jnr.aqua.AquaUIPainter;
 
+/**
+ * Common code for text components.
+ */
 public class AquaTextComponentUIBase extends AquaTextComponentDelegatedUIBase implements FocusRingOutlineProvider, AquaComponentUI {
 
     private AquaFocusHandler handler;
-    private boolean oldDragState = false;
+    private boolean oldDragState;
     protected @NotNull BasicContextualColors colors;
     protected @Nullable AppearanceContext appearanceContext;
 
@@ -136,7 +139,7 @@ public class AquaTextComponentUIBase extends AquaTextComponentDelegatedUIBase im
         editor.repaint();
     }
 
-    protected AquaUIPainter.State getState() {
+    protected @NotNull AquaUIPainter.State getState() {
         if (editor.isEnabled()) {
             boolean isActive = AquaFocusHandler.isActive(editor);
             boolean hasFocus = AquaFocusHandler.hasFocus(editor);
@@ -149,13 +152,13 @@ public class AquaTextComponentUIBase extends AquaTextComponentDelegatedUIBase im
     }
 
     @Override
-    public void update(Graphics g, JComponent c) {
+    public void update(@NotNull Graphics g, @NotNull JComponent c) {
         AquaAppearance appearance = AppearanceManager.registerCurrentAppearance(c);
         super.update(g, c);
         AppearanceManager.restoreCurrentAppearance(appearance);
     }
 
-    protected void paintSafely(Graphics g) {
+    protected void paintSafely(@NotNull Graphics g) {
 
         Color background = getBackground();
         paintBackgroundSafely(g, background);
@@ -197,18 +200,18 @@ public class AquaTextComponentUIBase extends AquaTextComponentDelegatedUIBase im
         }
     }
 
-    protected void paintBackground(Graphics g) {
+    protected void paintBackground(@NotNull Graphics g) {
         // we have already ensured that the background is painted to our liking
         // by paintBackgroundSafely(), called from paintSafely().
     }
 
     @Override
-    protected Caret createCaret() {
+    protected @NotNull Caret createCaret() {
         return new AquaCaret();
     }
 
     @Override
-    public Shape getFocusRingOutline(JComponent c) {
+    public @Nullable Shape getFocusRingOutline(@NotNull JComponent c) {
         Border b = c.getBorder();
         if (b instanceof FocusRingOutlineProvider) {
             FocusRingOutlineProvider p = (FocusRingOutlineProvider) b;

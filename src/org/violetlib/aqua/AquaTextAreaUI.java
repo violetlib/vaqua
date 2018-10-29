@@ -11,12 +11,14 @@ package org.violetlib.aqua;
 import javax.swing.*;
 import javax.swing.plaf.ComponentUI;
 
+import org.jetbrains.annotations.NotNull;
+
 /**
  * The UI for JTextArea.
  */
 public class AquaTextAreaUI extends AquaTextPaneUIBase {
 
-    public static ComponentUI createUI(JComponent c) {
+    public static @NotNull ComponentUI createUI(@NotNull JComponent c) {
         return new AquaTextAreaUI();
     }
 

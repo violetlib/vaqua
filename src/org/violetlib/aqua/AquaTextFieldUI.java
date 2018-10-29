@@ -54,7 +54,7 @@ public class AquaTextFieldUI extends AquaTextComponentUIBase implements ToolbarS
     public static final String TEXT_FIELD_VARIANT_KEY = "JTextField.variant";   // legacy from Aqua LAF
     public static final String QUAQUA_TEXT_FIELD_STYLE_KEY = "Quaqua.TextField.style";
 
-    public static ComponentUI createUI(JComponent c) {
+    public static @NotNull ComponentUI createUI(@NotNull JComponent c) {
         return new AquaTextFieldUI();
     }
 
@@ -93,7 +93,7 @@ public class AquaTextFieldUI extends AquaTextComponentUIBase implements ToolbarS
 
     protected class AquaTextFieldFocusHandler extends AquaFocusHandler {
         @Override
-        public void focusLost(FocusEvent ev) {
+        public void focusLost(@NotNull FocusEvent ev) {
             super.focusLost(ev);
             if (!ev.isTemporary()) {
                 Caret c = editor.getCaret();
@@ -165,7 +165,7 @@ public class AquaTextFieldUI extends AquaTextComponentUIBase implements ToolbarS
         return AquaUtils.isProperty(prop, TEXT_FIELD_STYLE_KEY, TEXT_FIELD_VARIANT_KEY, QUAQUA_TEXT_FIELD_STYLE_KEY);
     }
 
-    protected String getStyleProperty() {
+    protected @Nullable String getStyleProperty() {
         return AquaUtils.getProperty(editor, TEXT_FIELD_STYLE_KEY, TEXT_FIELD_VARIANT_KEY, QUAQUA_TEXT_FIELD_STYLE_KEY);
     }
 
@@ -186,7 +186,7 @@ public class AquaTextFieldUI extends AquaTextComponentUIBase implements ToolbarS
         return base;
     }
 
-    protected View createBasicView(Element elem) {
+    protected @Nullable View createBasicView(@NotNull Element elem) {
         View view = delegate.create(editor, elem);
         if (view != null) {
             Class c = view.getClass();

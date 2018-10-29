@@ -194,8 +194,7 @@ public class AquaTextAreaUIDelegate implements AquaTextComponentUIDelegate {
                     req.minimum = 0;
                     req.preferred = getWidth();
                     if (req.preferred == Integer.MAX_VALUE) {
-                        // We have been initially set to MAX_VALUE, but we
-                        // don't want this as our preferred.
+                        // We have been initially set to MAX_VALUE, but we don't want this as our preferred.
                         req.preferred = 100;
                     }
                 }
@@ -203,14 +202,6 @@ public class AquaTextAreaUIDelegate implements AquaTextComponentUIDelegate {
             return req;
         }
 
-        /**
-         * Sets the size of the view.  If the size has changed, layout
-         * is redone.  The size is the full size of the view including
-         * the inset areas.
-         *
-         * @param width the width >= 0
-         * @param height the height >= 0
-         */
         public void setSize(float width, float height) {
             if ((int) width != getWidth()) {
                 preferenceChanged(null, true, true);
@@ -218,13 +209,6 @@ public class AquaTextAreaUIDelegate implements AquaTextComponentUIDelegate {
             super.setSize(width, height);
         }
 
-        /**
-         * This class can be used to represent a logical view for
-         * a flow.  It keeps the children updated to reflect the state
-         * of the model, gives the logical child views access to the
-         * view hierarchy, and calculates a preferred span.  It doesn't
-         * do any rendering, layout, or model/view translation.
-         */
         static class LogicalView extends CompositeView {
 
             LogicalView(Element elem) {
@@ -266,8 +250,7 @@ public class AquaTextAreaUIDelegate implements AquaTextComponentUIDelegate {
                 super.forwardUpdateToView(v, e, a, f);
             }
 
-            // The following methods don't do anything useful, they
-            // simply keep the class from being abstract.
+            // The following methods don't do anything useful, they simply keep the class from being abstract.
 
             public void paint(Graphics g, Shape allocation) {
             }
@@ -288,5 +271,4 @@ public class AquaTextAreaUIDelegate implements AquaTextComponentUIDelegate {
             }
         }
     }
-
 }

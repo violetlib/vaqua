@@ -1,3 +1,11 @@
+/*
+ * Copyright (c) 2018 Alan Snyder.
+ * All rights reserved.
+ *
+ * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
+ * accompanying license terms.
+ */
+
 package org.violetlib.aqua;
 
 import java.awt.*;
@@ -12,9 +20,9 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
-
+ * The interface supported by a text component UI delegate. The UI delegate supports the custom behaviors for a
+ * specific type of text component.
  */
-
 public interface AquaTextComponentUIDelegate {
 
     @NotNull String getPropertyPrefix();
@@ -27,7 +35,6 @@ public interface AquaTextComponentUIDelegate {
      * Respond to a property change on the text component.
      * @return true if the model should be updated.
      */
-
     boolean propertyChange(@NotNull PropertyChangeEvent ev);
 
     @Nullable EditorKit getEditorKit(@NotNull JTextComponent c);

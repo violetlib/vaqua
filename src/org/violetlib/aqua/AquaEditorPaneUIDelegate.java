@@ -39,7 +39,6 @@ import java.beans.PropertyChangeEvent;
 import javax.swing.*;
 import javax.swing.plaf.ActionMapUIResource;
 import javax.swing.plaf.UIResource;
-import javax.swing.plaf.basic.BasicTextUI;
 import javax.swing.text.*;
 import javax.swing.text.html.HTMLDocument;
 import javax.swing.text.html.StyleSheet;
