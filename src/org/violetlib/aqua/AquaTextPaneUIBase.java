@@ -11,9 +11,8 @@ package org.violetlib.aqua;
 import org.jetbrains.annotations.NotNull;
 
 /**
-
+ * A base class for multiple-line text component UIs.
  */
-
 public class AquaTextPaneUIBase extends AquaTextComponentUIBase {
 
     public AquaTextPaneUIBase(@NotNull AquaTextComponentUIDelegate delegate) {
