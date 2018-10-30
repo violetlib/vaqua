@@ -264,8 +264,7 @@ public class AquaEditorPaneUIDelegate implements AquaTextComponentUIDelegate {
                     }
                 }
             }
-            String cssRule = sun.swing.
-                SwingUtilities2.displayPropertiesToCSS(font, fg);
+            String cssRule = AquaTextComponentSupport.displayPropertiesToCSS(font, fg);
             styleSheet.addRule(cssRule);
             documentStyleSheet.addStyleSheet(styleSheet);
             documentStyleSheet.addRule("BASE_SIZE " + c.getFont().getSize());

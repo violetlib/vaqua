@@ -338,8 +338,8 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
         int zero = 0;
         Object editorMargin = zeroInsets; // this is not correct - look at TextEdit to determine the right margin
         int textCaretBlinkRate = 500;
-        LazyValue textFieldBorder = t -> AquaTextComponentBorder.getTextFieldBorder();
-        Object textAreaBorder = textFieldBorder;
+        LazyValue textFieldBorder = null;  // created on demand
+        Object textAreaBorder = null;  // created on demand
         LazyValue aquaTitledBorder = t -> AquaGroupBorder.getBorderForTitledBorder();
 
         Border listHeaderBorder = AquaTableHeaderBorder.getListHeaderBorder();

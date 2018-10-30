@@ -154,4 +154,41 @@ public class AquaTextComponentSupport {
         }
         return hasParagraph(view.getView(index));
     }
+
+    // The following method is from SwingUtilities2
+    public static String displayPropertiesToCSS(Font font, Color fg) {
+        StringBuilder rule = new StringBuilder("body {");
+        if (font != null) {
+            rule.append(" font-family: ");
+            rule.append(font.getFamily());
+            rule.append(" ; ");
+            rule.append(" font-size: ");
+            rule.append(font.getSize());
+            rule.append("pt ;");
+            if (font.isBold()) {
+                rule.append(" font-weight: 700 ; ");
+            }
+            if (font.isItalic()) {
+                rule.append(" font-style: italic ; ");
+            }
+        }
+        if (fg != null) {
+            rule.append(" color: #");
+            if (fg.getRed() < 16) {
+                rule.append('0');
+            }
+            rule.append(Integer.toHexString(fg.getRed()));
+            if (fg.getGreen() < 16) {
+                rule.append('0');
+            }
+            rule.append(Integer.toHexString(fg.getGreen()));
+            if (fg.getBlue() < 16) {
+                rule.append('0');
+            }
+            rule.append(Integer.toHexString(fg.getBlue()));
+            rule.append(" ; ");
+        }
+        rule.append(" }");
+        return rule.toString();
+    }
 }

@@ -37,7 +37,9 @@ import java.awt.*;
 import java.awt.event.*;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
+import java.util.prefs.PreferenceChangeListener;
 import javax.swing.*;
+import javax.swing.border.Border;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import javax.swing.plaf.ComponentUI;
@@ -118,6 +120,15 @@ public class AquaScrollPaneUI extends BasicScrollPaneUI implements AquaUtilContr
         JScrollPane sp = scrollpane;
         super.uninstallUI(c);
         sp.putClientProperty(SCROLL_PANE_AQUA_OVERLAY_SCROLL_BARS_KEY, null);
+    }
+
+    @Override
+    protected void installDefaults(JScrollPane scrollpane) {
+        Border b = scrollpane.getBorder();
+        super.installDefaults(scrollpane);
+        if (b instanceof AquaTextComponentBorder) {
+            scrollpane.setBorder(b);
+        }
     }
 
     @Override
@@ -215,6 +226,12 @@ public class AquaScrollPaneUI extends BasicScrollPaneUI implements AquaUtilContr
         } else {
             setSidebarStyle(scrollpane.getHorizontalScrollBar(), false);
             setSidebarStyle(scrollpane.getVerticalScrollBar(), false);
+        }
+
+        Border b = c.getBorder();
+        if (b instanceof AquaTextComponentBorder) {
+            AquaTextComponentBorder tcb = (AquaTextComponentBorder) b;
+            tcb.paintBackground(c, g, null);
         }
 
         super.paint(g, c);

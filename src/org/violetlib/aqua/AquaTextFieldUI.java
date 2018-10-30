@@ -41,6 +41,7 @@ import java.beans.PropertyChangeEvent;
 import javax.swing.*;
 import javax.swing.border.Border;
 import javax.swing.plaf.ComponentUI;
+import javax.swing.plaf.UIResource;
 import javax.swing.text.*;
 
 import org.jetbrains.annotations.NotNull;
@@ -72,6 +73,13 @@ public class AquaTextFieldUI extends AquaTextComponentUIBase implements ToolbarS
         isToolbar = AquaUtils.isOnToolbar(c);
     }
 
+    @Override
+    protected void installDefaults() {
+        super.installDefaults();
+        installBorder();
+    }
+
+    @Override
     protected void installListeners() {
         super.installListeners();
         hierarchyListener = new AquaHierarchyListener();
@@ -79,11 +87,19 @@ public class AquaTextFieldUI extends AquaTextComponentUIBase implements ToolbarS
         AquaUtils.installToolbarSensitivity(editor);
     }
 
+    @Override
     protected void uninstallListeners() {
         AquaUtils.uninstallToolbarSensitivity(editor);
         editor.removeHierarchyListener(hierarchyListener);
         hierarchyListener = null;
         super.uninstallListeners();
+    }
+
+    protected void installBorder() {
+        Border b = editor.getBorder();
+        if ((b == null) || (b instanceof UIResource)) {
+            editor.setBorder(new AquaTextComponentBorder(editor));
+        }
     }
 
     @Override
@@ -206,7 +222,7 @@ public class AquaTextFieldUI extends AquaTextComponentUIBase implements ToolbarS
         Border b = editor.getBorder();
         if (b instanceof AquaTextComponentBorder) {
             AquaTextComponentBorder bb = (AquaTextComponentBorder) b;
-            return bb.getTextMargin(editor);
+            return bb.getTextMargin();
         }
         return 0;
     }
@@ -231,7 +247,7 @@ public class AquaTextFieldUI extends AquaTextComponentUIBase implements ToolbarS
         Border b = editor.getBorder();
         if (b instanceof AquaTextComponentBorder) {
             AquaTextComponentBorder tb = (AquaTextComponentBorder) b;
-            LayoutInfo info = tb.getLayoutInfo(editor);
+            LayoutInfo info = tb.getLayoutInfo();
             int width = (int) Math.max(size.width, info.getMinimumVisualWidth());
             int height = (int) Math.max(size.height, info.getMinimumVisualHeight());
             return new Dimension(width, height);
@@ -249,9 +265,9 @@ public class AquaTextFieldUI extends AquaTextComponentUIBase implements ToolbarS
             // Our painter can tell us the minimum size
             // For the preferred size and maximum size, leave some extra room at the top and bottom
             AquaTextComponentBorder tb = (AquaTextComponentBorder) b;
-            Insetter insets = tb.getTextInsets(editor);
+            Insetter insets = tb.getTextInsets();
             if (insets != null) {
-                int extraHeight = opt != LayoutOption.MINIMUM ? tb.getExtraHeight(editor) : 0;
+                int extraHeight = opt != LayoutOption.MINIMUM ? tb.getExtraHeight() : 0;
                 Dimension size = insets.expand(new Dimension(textWidth, textHeight + extraHeight));
                 return size;
             }

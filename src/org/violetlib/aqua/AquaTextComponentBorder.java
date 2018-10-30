@@ -38,9 +38,8 @@ import javax.swing.*;
 import javax.swing.plaf.InsetsUIResource;
 import javax.swing.text.JTextComponent;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.violetlib.aqua.AquaUtils.RecyclableSingleton;
-import org.violetlib.aqua.AquaUtils.RecyclableSingletonFromDefaultConstructor;
 import org.violetlib.jnr.*;
 import org.violetlib.jnr.Painter;
 import org.violetlib.jnr.aqua.AquaUIPainter;
@@ -50,67 +49,58 @@ import org.violetlib.jnr.aqua.AquaUIPainter.TextFieldWidget;
 import org.violetlib.jnr.aqua.TextFieldConfiguration;
 import org.violetlib.jnr.aqua.TextFieldLayoutConfiguration;
 
+/**
+ * A border that is associated with a text component but can be attached to a text component or the scroll pane that
+ * displays the text component.
+ */
 public class AquaTextComponentBorder extends AquaBorder implements FocusRingOutlineProvider, Border2D {
 
     // This border is really a background. It paints as background, not as a border.
     // It needs to be a Border as a signal to the UI that the user has not installed a custom border.
-    // It also provides the insets to the base text field UI.
+    // It also provides the insets to the component UI.
 
-    protected static final RecyclableSingleton<AquaTextComponentBorder> instance = new RecyclableSingletonFromDefaultConstructor<AquaTextComponentBorder>(AquaTextComponentBorder.class);
-    public static AquaTextComponentBorder getTextFieldBorder() {
-        return instance.get();
-    }
+    protected final @NotNull JTextComponent tc;
 
-    public AquaTextComponentBorder() {
-    }
-
-    public AquaTextComponentBorder(AquaTextComponentBorder other) {
+    /**
+     * Create a border whose configuration is based on the specified text component.
+     */
+    public AquaTextComponentBorder(@NotNull JTextComponent tc) {
+        this.tc = tc;
     }
 
     @Override
     public void paintBorder(Component c, Graphics g, int x, int y, int width, int height) {
-        // The text field border is now a background
+        // The border is a background. It is not painted as a border.
     }
 
-    public void paintBackground(JComponent c, Graphics g, @Nullable Color background) {
-        if (c instanceof JTextComponent) {
-            JTextComponent tc = (JTextComponent) c;
-            int width = tc.getWidth();
-            int height = tc.getHeight();
-
-//        g.setColor(Color.MAGENTA);
-//        g.drawRect(x, y, width - 1, height - 1);
-
-            if (tc.isOpaque()) {
-                if (background != null) {
-                    g.setColor(background);
-                    g.fillRect(0, 0, width, height);
-                }
-                return;
+    public void paintBackground(@NotNull Component c, Graphics g, @Nullable Color background) {
+        if (c.isOpaque()) {
+            if (background != null) {
+                g.setColor(background);
+                int width = c.getWidth();
+                int height = c.getHeight();
+                g.fillRect(0, 0, width, height);
             }
-
-            Painter p = getConfiguredPainter(tc);
+        } else {
+            Painter p = getConfiguredPainter(c);
             p.paint(g, 0, 0);
-
-//        g.setColor(Color.ORANGE);
-//        g.drawRect(x, y, width - 1, height - 1);
         }
     }
 
-    public LayoutInfo getLayoutInfo(JTextComponent tc) {
-        TextFieldLayoutConfiguration g = getLayoutConfiguration(tc);
+    public @NotNull LayoutInfo getLayoutInfo() {
+        TextFieldLayoutConfiguration g = getLayoutConfiguration();
         return painter.getLayoutInfo().getLayoutInfo(g);
     }
 
-    public Shape getFocusRingOutline(JComponent c) {
-        if (c instanceof JTextComponent) {
-            JTextComponent tc = (JTextComponent) c;
-            TextFieldLayoutConfiguration g = getLayoutConfiguration(tc);
+    public @Nullable Shape getFocusRingOutline(@NotNull JComponent c) {
+        if (c == tc) {
+            TextFieldLayoutConfiguration g = getLayoutConfiguration();
             AppearanceManager.ensureAppearance(tc);
             AquaUtils.configure(painter, tc, tc.getWidth(), tc.getHeight());
             return painter.getOutline(g);
+        } else {
+            return null;
         }
-        return null;
     }
 
     /**
@@ -118,7 +108,7 @@ public class AquaTextComponentBorder extends AquaBorder implements FocusRingOutl
      * therefore scrolls left and right along with the text. The result is that the full width of the text field
      * (exclusive of the actual border margin) is available for editing.
      */
-    public int getTextMargin(JTextComponent tc) {
+    public int getTextMargin() {
         // The cell editor test probably fails during the initial construction of the text component.
         // It should be performed again when the text field is added as a component of the table.
         if (AquaCellEditorPolicy.getInstance().getCellStatus(tc) != null) {
@@ -126,7 +116,7 @@ public class AquaTextComponentBorder extends AquaBorder implements FocusRingOutl
         } else {
             // The goal is to give the appearance of a specific left and right margin, but the portion of the margin
             // that is not reserved by the border is available for editing.
-            TextFieldWidget widget = getWidget(tc);
+            TextFieldWidget widget = getWidget();
             int target = widget == TextFieldWidget.TEXT_FIELD_ROUND ? 11 : 3;
             Insets s = getBorderInsets(tc);
             int averageInset = (s.left + s.right) / 2;
@@ -134,58 +124,48 @@ public class AquaTextComponentBorder extends AquaBorder implements FocusRingOutl
         }
     }
 
-    public Insets getBorderInsets(Component c) {
-        if (c instanceof JTextComponent) {
-            JTextComponent tc = (JTextComponent) c;
+    public @NotNull Insets getBorderInsets(@NotNull Component c) {
 
-            if (AquaCellEditorPolicy.getInstance().getCellStatus(tc) != null) {
-                return new InsetsUIResource(0, 0, 0, 0);
-            }
+        if (AquaCellEditorPolicy.getInstance().getCellStatus(tc) != null) {
+            return new InsetsUIResource(0, 0, 0, 0);
+        }
 
-            Insetter s = getTextInsets(tc);
-            if (s != null) {
-                Insets2D n = s.asInsets2D();
-                if (n != null) {
-                    // We want to handle non-integer top and bottom insets by shifting the contents
-                    int left = (int) Math.ceil(n.getLeft());
-                    int right = (int) Math.ceil(n.getRight());
-                    int top = (int) Math.floor(n.getTop());
-                    int bottom = (int) Math.ceil(n.getBottom());
-                    return new InsetsUIResource(top, left, bottom, right);
-                }
-            }
+        Insetter s = getTextInsets();
+        Insets2D n = s.asInsets2D();
+        if (n != null) {
+            // We want to handle non-integer top and bottom insets by shifting the contents
+            int left = (int) Math.ceil(n.getLeft());
+            int right = (int) Math.ceil(n.getRight());
+            int top = (int) Math.floor(n.getTop());
+            int bottom = (int) Math.ceil(n.getBottom());
+            return new InsetsUIResource(top, left, bottom, right);
         }
 
         return new InsetsUIResource(3, 3, 3, 3);
     }
 
-    public Insets2D getBorderInsets2D(Component c) {
-        if (c instanceof JTextComponent) {
-            JTextComponent tc = (JTextComponent) c;
+    public @NotNull Insets2D getBorderInsets2D(@NotNull Component c) {
 
-            if (AquaCellEditorPolicy.getInstance().getCellStatus(tc) != null) {
-                return new Insets2D(0, 0, 0, 0);
-            }
+        if (AquaCellEditorPolicy.getInstance().getCellStatus(tc) != null) {
+            return new Insets2D(0, 0, 0, 0);
+        }
 
-            Insetter s = getTextInsets(tc);
-            if (s != null) {
-                Insets2D n = s.asInsets2D();
-                if (n != null) {
-                    return new Insets2DUIResource(n);
-                }
-            }
+        Insetter s = getTextInsets();
+        Insets2D n = s.asInsets2D();
+        if (n != null) {
+            return new Insets2DUIResource(n);
         }
 
         return new Insets2DUIResource(3, 3, 3, 3);
     }
 
-    public Insetter getTextInsets(JTextComponent tc) {
-        TextFieldLayoutConfiguration g = getLayoutConfiguration(tc);
+    public @NotNull Insetter getTextInsets() {
+        TextFieldLayoutConfiguration g = getLayoutConfiguration();
         return painter.getLayoutInfo().getTextFieldTextInsets(g);
     }
 
-    public int getExtraHeight(JTextComponent tc) {
-        TextFieldLayoutConfiguration g = getLayoutConfiguration(tc);
+    protected int getExtraHeight() {
+        TextFieldLayoutConfiguration g = getLayoutConfiguration();
         TextFieldWidget widget = g.getWidget();
         switch (widget) {
             case TEXT_FIELD:
@@ -196,32 +176,32 @@ public class AquaTextComponentBorder extends AquaBorder implements FocusRingOutl
         }
     }
 
-    protected Painter getConfiguredPainter(JTextComponent tc) {
-        int width = tc.getWidth();
-        int height = tc.getHeight();
+    protected @NotNull Painter getConfiguredPainter(@NotNull Component c) {
+        int width = c.getWidth();
+        int height = c.getHeight();
         AppearanceManager.ensureAppearance(tc);
         AquaUtils.configure(painter, tc, width, height);
-        TextFieldConfiguration tg = getConfiguration(tc);
+        TextFieldConfiguration tg = getConfiguration();
         return painter.getPainter(tg);
     }
 
-    protected TextFieldLayoutConfiguration getLayoutConfiguration(JTextComponent tc) {
-        TextFieldWidget widget = getWidget(tc);
+    protected @NotNull TextFieldLayoutConfiguration getLayoutConfiguration() {
+        TextFieldWidget widget = getWidget();
         Size size = AquaUtilControlSize.getUserSizeFrom(tc);
         AquaUIPainter.UILayoutDirection ld = AquaUtils.getLayoutDirection(tc);
         return new TextFieldLayoutConfiguration(widget, size, ld);
     }
 
-    protected TextFieldConfiguration getConfiguration(JTextComponent tc) {
-        TextFieldWidget widget = getWidget(tc);
+    protected @NotNull TextFieldConfiguration getConfiguration() {
+        TextFieldWidget widget = getWidget();
         Size size = AquaUtilControlSize.getUserSizeFrom(tc);
-        State state = getStateFor(tc);
+        State state = getState();
         boolean isFocused = State.ACTIVE == state && tc.hasFocus();
         AquaUIPainter.UILayoutDirection ld = AquaUtils.getLayoutDirection(tc);
         return new TextFieldConfiguration(widget, size, state, isFocused, ld);
     }
 
-    protected TextFieldWidget getWidget(JTextComponent tc) {
+    protected @NotNull TextFieldWidget getWidget() {
         Object o = tc.getClientProperty(AquaTextFieldUI.TEXT_FIELD_STYLE_KEY);
         if ("round".equals(o)) {
             return AquaUtils.isOnToolbar(tc) ? TextFieldWidget.TEXT_FIELD_ROUND_TOOLBAR : TextFieldWidget.TEXT_FIELD_ROUND;
@@ -231,7 +211,7 @@ public class AquaTextComponentBorder extends AquaBorder implements FocusRingOutl
         return TextFieldWidget.TEXT_FIELD;
     }
 
-    protected State getStateFor(JTextComponent tc) {
+    protected @NotNull State getState() {
         if (!AquaFocusHandler.isActive(tc)) {
             return State.INACTIVE;
         }
