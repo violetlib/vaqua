@@ -17,6 +17,7 @@ import javax.swing.text.html.ParagraphView;
 
 import org.jetbrains.annotations.NotNull;
 import org.violetlib.aqua.AppearanceManager;
+import org.violetlib.aqua.AquaLookAndFeel;
 
 /**
  * Much hairy code to support non-word-based line wrap and centering in the same component. Ugh.
@@ -29,6 +30,8 @@ public class NameView extends JTextPane {
         font = UIManager.getFont("FileChooser.previewNameFont");
         setEditorKit(new MyEditorKit());
         setEditable(false);
+        setFocusable(false);
+        setBorder(AquaLookAndFeel.NOTHING_BORDER);
         addPropertyChangeListener(AppearanceManager.AQUA_APPEARANCE_KEY, ev -> updateAttributes());
     }
 

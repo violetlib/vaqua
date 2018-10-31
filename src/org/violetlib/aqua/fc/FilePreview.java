@@ -130,6 +130,7 @@ public class FilePreview extends JComponent implements BrowserPreviewRenderer {
             attributeView = new JTable(null, cm);
             attributeView.setIntercellSpacing(new Dimension(columnSeparation, 0));
             attributeView.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
+            attributeView.setRowSelectionAllowed(false);
             attributeView.setFocusable(false);
             attributeView.setOpaque(false);
             attributeView.setAlignmentX(0.5f);

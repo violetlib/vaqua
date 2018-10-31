@@ -614,7 +614,7 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
 
         public ControlsPanel() {
             setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
-            setBorder(new EmptyBorder(1, 0, 0, 0));   // allow divider to show
+            setBorder(AquaLookAndFeel.NOTHING_BORDER);  // allow divider to show
             setOpaque(false);
         }
     }
@@ -1144,13 +1144,13 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
 
     protected JSeparator createSeparator() {
         JSeparator s = new JSeparator();
-        s.setBorder(new EmptyBorder(0, 0, 0, 0));
+        s.setBorder(AquaLookAndFeel.NOTHING_BORDER);
         return s;
     }
 
     protected JSeparator createOptionsSeparator() {
         JSeparator s = new JSeparator();
-        s.setBorder(new EmptyBorder(0, 0, 0, 0));
+        s.setBorder(AquaLookAndFeel.NOTHING_BORDER);
         return s;
     }
 

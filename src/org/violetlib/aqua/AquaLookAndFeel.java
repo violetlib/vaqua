@@ -33,9 +33,6 @@
 
 package org.violetlib.aqua;
 
-import org.violetlib.aqua.fc.OSXFile;
-import org.violetlib.jnr.aqua.AquaNativeRendering;
-
 import java.awt.*;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
@@ -43,9 +40,10 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.util.*;
+import java.util.Enumeration;
+import java.util.Locale;
+import java.util.ResourceBundle;
 import java.util.function.Consumer;
-
 import javax.swing.*;
 import javax.swing.border.Border;
 import javax.swing.border.EmptyBorder;
@@ -53,6 +51,9 @@ import javax.swing.border.TitledBorder;
 import javax.swing.plaf.*;
 import javax.swing.plaf.basic.BasicBorders;
 import javax.swing.plaf.basic.BasicLookAndFeel;
+
+import org.violetlib.aqua.fc.OSXFile;
+import org.violetlib.jnr.aqua.AquaNativeRendering;
 
 import static javax.swing.UIDefaults.LazyValue;
 
@@ -66,6 +67,8 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
     private AquaPopupFactory popupFactory;
 
     public static boolean suppressCreationOfDisabledButtonIcons;
+
+    public static final Border NOTHING_BORDER = new EmptyBorder(0, 0, 0, 0);
 
     public String getName() {
         return "VAqua";
@@ -772,8 +775,6 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
             final Color menuDisabledBackgroundColor = menuBackgroundColor;
             final Color menuDisabledForegroundColor = new ColorUIResource(0.5f, 0.5f, 0.5f);
 
-            Border fakeBorder = new EmptyBorder(0, 0, 0, 0);
-
             Object[] menuBarDefaults = {
                     "MenuBar.font", menuFont,
                     "MenuBar.background", menuBackgroundColor, // not a menu item, not selected
@@ -784,8 +785,8 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
                     "MenuBar.selectionForeground", menuSelectedForegroundColor,
                     "MenuBar.disabledBackground", menuDisabledBackgroundColor, //ThemeBrush.GetThemeBrushForMenu(false, false), // not a menu item, not selected
                     "MenuBar.disabledForeground", menuDisabledForegroundColor,
-                    "MenuBar.backgroundPainter", fakeBorder,
-                    "MenuBar.selectedBackgroundPainter", fakeBorder,
+                    "MenuBar.backgroundPainter", NOTHING_BORDER,
+                    "MenuBar.selectedBackgroundPainter", NOTHING_BORDER,
             };
             table.putDefaults(menuBarDefaults);
         }
