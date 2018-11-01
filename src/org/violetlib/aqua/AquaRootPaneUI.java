@@ -477,17 +477,19 @@ public class AquaRootPaneUI extends BasicRootPaneUI {
 
     protected void setupBackground(@NotNull Window w) {
 
-        if (OSXSystemProperties.OSVersion >= 1014 && !vibrantStyleIsExplicitlySet) {
-            int vibrantStyle = getDefaultWindowVibrantStyle();
-            updateVibrantStyle(vibrantStyle, false);
-        }
+        if (w.isDisplayable()) {
+            if (OSXSystemProperties.OSVersion >= 1014 && !vibrantStyleIsExplicitlySet) {
+                int vibrantStyle = getDefaultWindowVibrantStyle();
+                updateVibrantStyle(vibrantStyle, false);
+            }
 
-        if (!AquaColors.isPriority(rootPane.getBackground())) {
-            rootPane.setBackground(null);
-        }
+            if (!AquaColors.isPriority(rootPane.getBackground())) {
+                rootPane.setBackground(null);
+            }
 
-        Color c = AquaUtils.getWindowBackground(rootPane);
-        AquaUtils.setBackgroundCarefully(w, c);
+            Color c = AquaUtils.getWindowBackground(rootPane);
+            AquaUtils.setBackgroundCarefully(w, c);
+        }
     }
 
     protected int getDefaultWindowVibrantStyle() {
