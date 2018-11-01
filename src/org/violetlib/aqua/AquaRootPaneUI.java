@@ -594,24 +594,26 @@ public class AquaRootPaneUI extends BasicRootPaneUI {
 
     protected void reconfigureCustomWindowStyle() {
         Window w = getWindow();
-        int style = getCustomWindowStyle();
-        if (style < 0 || w == null) {
-            uninstallCustomWindowStyle();
-        } else {
-            int topMarginHeight = getTopMarginHeight();
-            int bottomMarginHeight = getBottomMarginHeight();
-            if (customStyledWindow != null && !customStyledWindow.isValid(style, topMarginHeight, bottomMarginHeight)) {
-                customStyledWindow = customStyledWindow.reconfigure(style, topMarginHeight, bottomMarginHeight);
-                setupBackground(w);
-            } else if (customStyledWindow == null) {
-                try {
-                    customStyledWindow = new AquaCustomStyledWindow(w, style, topMarginHeight, bottomMarginHeight);
+        if (w.isDisplayable()) {
+            int style = getCustomWindowStyle();
+            if (style < 0 || w == null) {
+                uninstallCustomWindowStyle();
+            } else {
+                int topMarginHeight = getTopMarginHeight();
+                int bottomMarginHeight = getBottomMarginHeight();
+                if (customStyledWindow != null && !customStyledWindow.isValid(style, topMarginHeight, bottomMarginHeight)) {
+                    customStyledWindow = customStyledWindow.reconfigure(style, topMarginHeight, bottomMarginHeight);
                     setupBackground(w);
-                } catch (AquaCustomStyledWindow.RequiredToolBarNotFoundException ex) {
-                    // This exception would be thrown if the window style is set before adding the tool bar to the
-                    // content pane, which would not be an error.
-                } catch (IllegalArgumentException ex) {
-                    AquaUtils.syslog("Unable to install custom window style: " + ex.getMessage());
+                } else if (customStyledWindow == null) {
+                    try {
+                        customStyledWindow = new AquaCustomStyledWindow(w, style, topMarginHeight, bottomMarginHeight);
+                        setupBackground(w);
+                    } catch (AquaCustomStyledWindow.RequiredToolBarNotFoundException ex) {
+                        // This exception would be thrown if the window style is set before adding the tool bar to the
+                        // content pane, which would not be an error.
+                    } catch (IllegalArgumentException ex) {
+                        AquaUtils.syslog("Unable to install custom window style: " + ex.getMessage());
+                    }
                 }
             }
         }
