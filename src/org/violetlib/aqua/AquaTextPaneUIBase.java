@@ -118,13 +118,20 @@ public class AquaTextPaneUIBase extends AquaTextComponentUIBase {
     protected void clearScrollPaneBorder() {
         clearWatchedParent();
         clearOwningScrollPane();
+        installBorder();
+    }
 
-        // restore the text component border
+    private void installBorder() {
         Border textComponentBorder = editor.getBorder();
         if (textComponentBorder == null || textComponentBorder instanceof UIResource) {
-            if (!(textComponentBorder instanceof AquaTextComponentBorder)) {
-                Border b = new AquaTextComponentBorder(editor);
-                editor.setBorder(b);
+            if (JavaSupport.hasOpaqueBeenExplicitlySet(editor)) {
+                // If the application set the opaque attribute, do not install our border
+                editor.setBorder(null);
+            } else {
+                if (!(textComponentBorder instanceof AquaTextComponentBorder)) {
+                    Border b = new AquaTextComponentBorder(editor);
+                    editor.setBorder(b);
+                }
             }
         }
     }
