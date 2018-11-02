@@ -96,7 +96,7 @@ public class AquaTextPaneUIBase extends AquaTextComponentUIBase {
     }
 
     protected void updateBorderOwner() {
-        if (!JavaSupport.hasOpaqueBeenExplicitlySet(editor)) {
+        if (editor != null && !JavaSupport.hasOpaqueBeenExplicitlySet(editor)) {
             Border textComponentBorder = editor.getBorder();
             if (textComponentBorder == null || textComponentBorder instanceof UIResource) {
                 Container parent = editor.getParent();
@@ -122,16 +122,20 @@ public class AquaTextPaneUIBase extends AquaTextComponentUIBase {
     }
 
     private void installBorder() {
-        Border textComponentBorder = editor.getBorder();
-        if (textComponentBorder == null || textComponentBorder instanceof UIResource) {
-            if (JavaSupport.hasOpaqueBeenExplicitlySet(editor)) {
-                // If the application set the opaque attribute, do not install our border
-                editor.setBorder(null);
-            } else {
-                if (!(textComponentBorder instanceof AquaTextComponentBorder)) {
-                    Border b = new AquaTextComponentBorder(editor);
-                    editor.setBorder(b);
+        if (editor != null) {
+            Border textComponentBorder = editor.getBorder();
+            if (textComponentBorder == null || textComponentBorder instanceof UIResource) {
+                installingBorder = true;
+                if (JavaSupport.hasOpaqueBeenExplicitlySet(editor)) {
+                    // If the application set the opaque attribute, do not install our border
+                    editor.setBorder(null);
+                } else {
+                    if (!(textComponentBorder instanceof AquaTextComponentBorder)) {
+                        Border b = new AquaTextComponentBorder(editor);
+                        editor.setBorder(b);
+                    }
                 }
+                installingBorder = false;
             }
         }
     }
