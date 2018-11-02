@@ -47,10 +47,10 @@ public class AquaTextPaneUIBase extends AquaTextComponentUIBase {
     // The special case for a scrollable text component is recognized when:
     //
     // The text component does not have an application defined border.
+    // The text component opaque attribute has not been assigned by the application.
     // The text component parent is a JViewport with one child.
     // The JViewport is associated with a JScrollPane ancestor.
     // The scroll pane does not have an application defined border.
-    // The scroll pane is not vibrant.
 
     protected @Nullable JScrollPane owningScrollPane;
     protected @Nullable Container watchedParent;
@@ -96,16 +96,18 @@ public class AquaTextPaneUIBase extends AquaTextComponentUIBase {
     }
 
     protected void updateBorderOwner() {
-        Border textComponentBorder = editor.getBorder();
-        if (textComponentBorder == null || textComponentBorder instanceof UIResource) {
-            Container parent = editor.getParent();
-            if (parent instanceof JViewport && parent.getComponentCount() == 1) {
-                JScrollPane scrollPane = AquaUtils.getScrollPaneAncestor(editor);
-                if (scrollPane != null && !AquaVibrantSupport.isVibrant(scrollPane)) {
-                    Border b = scrollPane.getBorder();
-                    if (b == null || b instanceof UIResource) {
-                        updateScrollPaneBorder(scrollPane, parent);
-                        return;
+        if (!JavaSupport.hasOpaqueBeenExplicitlySet(editor)) {
+            Border textComponentBorder = editor.getBorder();
+            if (textComponentBorder == null || textComponentBorder instanceof UIResource) {
+                Container parent = editor.getParent();
+                if (parent instanceof JViewport && parent.getComponentCount() == 1) {
+                    JScrollPane scrollPane = AquaUtils.getScrollPaneAncestor(editor);
+                    if (scrollPane != null) {
+                        Border b = scrollPane.getBorder();
+                        if (b == null || b instanceof UIResource) {
+                            updateScrollPaneBorder(scrollPane, parent);
+                            return;
+                        }
                     }
                 }
             }
