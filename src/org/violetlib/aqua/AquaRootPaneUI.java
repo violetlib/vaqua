@@ -594,7 +594,7 @@ public class AquaRootPaneUI extends BasicRootPaneUI {
 
     protected void reconfigureCustomWindowStyle() {
         Window w = getWindow();
-        if (w.isDisplayable()) {
+        if (w == null || w.isDisplayable()) {
             int style = getCustomWindowStyle();
             if (style < 0 || w == null) {
                 uninstallCustomWindowStyle();
