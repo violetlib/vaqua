@@ -197,6 +197,11 @@ public class AquaTextComponentUIBase extends AquaTextComponentDelegatedUIBase im
         if (b instanceof AquaTextComponentBorder) {
             AquaTextComponentBorder tb = (AquaTextComponentBorder) b;
             tb.paintBackground(editor, g, background);
+        } else if (background != null && editor.isOpaque() && background.getAlpha() > 0) {
+            int width = editor.getWidth();
+            int height = editor.getHeight();
+            g.setColor(background);
+            g.fillRect(0, 0, width, height);
         }
     }
 
