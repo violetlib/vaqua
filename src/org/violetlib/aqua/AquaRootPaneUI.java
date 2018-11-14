@@ -350,8 +350,12 @@ public class AquaRootPaneUI extends BasicRootPaneUI {
         @Override
         public void hierarchyChanged(HierarchyEvent e) {
             long flags = e.getChangeFlags();
-            if (!isInitialized && (flags & HierarchyEvent.DISPLAYABILITY_CHANGED) != 0) {
-                configure();
+            if ((flags & HierarchyEvent.DISPLAYABILITY_CHANGED) != 0) {
+                if (rootPane.getParent() != null && rootPane.getParent().isDisplayable()) {
+                    configure();
+                } else {
+                    unconfigure();
+                }
             }
         }
     }
@@ -416,6 +420,10 @@ public class AquaRootPaneUI extends BasicRootPaneUI {
             return (String) o;
         }
         return null;
+    }
+
+    private void unconfigure() {
+        removeVisualEffectView();
     }
 
     /**

@@ -309,7 +309,7 @@ public class AppearanceManager {
         @Override
         public void hierarchyChanged(@NotNull HierarchyEvent e) {
             long flags = e.getChangeFlags();
-            if ((flags & (HierarchyEvent.PARENT_CHANGED)) != 0) {
+            if ((flags & HierarchyEvent.PARENT_CHANGED) != 0) {
                 Component c = e.getChanged();
                 if (c instanceof JComponent) {
                     JComponent jc = (JComponent) c;

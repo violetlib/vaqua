@@ -193,7 +193,7 @@ public class AquaTextPaneUIBase extends AquaTextComponentUIBase {
     private class MyHierarchyListener implements HierarchyListener {
         @Override
         public void hierarchyChanged(@NotNull HierarchyEvent e) {
-            if ((e.getChangeFlags() | HierarchyEvent.PARENT_CHANGED) != 0) {
+            if ((e.getChangeFlags() & HierarchyEvent.PARENT_CHANGED) != 0) {
                 updateBorderOwner();
             }
         }

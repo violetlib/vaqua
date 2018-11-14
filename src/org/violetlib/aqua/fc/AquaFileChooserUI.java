@@ -3438,10 +3438,11 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
         @Override
         public void hierarchyChanged(HierarchyEvent e) {
             Component c = e.getChanged();
-            if (e.getChangeFlags() == HierarchyEvent.PARENT_CHANGED) {
+            long flags = e.getChangeFlags();
+            if ((flags & HierarchyEvent.PARENT_CHANGED) != 0) {
                 configureDialog();
             }
-            if (e.getChangeFlags() == HierarchyEvent.SHOWING_CHANGED) {
+            if ((flags & HierarchyEvent.SHOWING_CHANGED) != 0) {
                 if (c.isVisible()) {
                     configureForShowing();
                 } else {

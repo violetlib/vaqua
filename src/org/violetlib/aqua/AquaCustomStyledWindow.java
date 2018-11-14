@@ -579,7 +579,7 @@ public class AquaCustomStyledWindow {
     protected class ToolbarHierarchyListener implements HierarchyListener {
         @Override
         public void hierarchyChanged(HierarchyEvent e) {
-            if (e.getChangeFlags() == HierarchyEvent.PARENT_CHANGED) {
+            if ((e.getChangeFlags() & HierarchyEvent.PARENT_CHANGED) != 0) {
                 JComponent tb = (JComponent) e.getComponent();
                 if (SwingUtilities.getWindowAncestor(tb) != w) {
                     resetBorder(tb);
