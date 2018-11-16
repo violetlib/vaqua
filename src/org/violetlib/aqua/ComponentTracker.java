@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015 Alan Snyder.
+ * Copyright (c) 2015-2018 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -18,6 +18,8 @@ import java.awt.event.HierarchyListener;
 import java.util.Objects;
 import javax.swing.JComponent;
 import javax.swing.SwingUtilities;
+
+import org.jetbrains.annotations.Nullable;
 
 /**
  * A base class for an object tracks a component as
@@ -57,7 +59,7 @@ public abstract class ComponentTracker
                 }
 
                 if ((flags & (HierarchyEvent.DISPLAYABILITY_CHANGED)) != 0) {
-                    // Displayability change events are generated for adding and removing thie tracked component.
+                    // Displayability change events are generated for adding and removing the tracked component.
                     // These events are redundant with parent changed.
                     // The only time we want to call windowChanged() with identical arguments is when the
                     // window is not null and its displayability has changed.
@@ -110,7 +112,7 @@ public abstract class ComponentTracker
      * Specify the component to be tracked.
      * @param c The component, or null to detach this tracker from any previous component.
      */
-    public void attach(JComponent c) {
+    public void attach(@Nullable JComponent c) {
         if (tracked != c) {
             if (tracked != null) {
                 Window w = window;
@@ -139,14 +141,14 @@ public abstract class ComponentTracker
      * Called when this tracker is detached from a component.
      * @param w The window previously containing the component, or null if none.
      */
-    protected void detached(Window w) {
+    protected void detached(@Nullable Window w) {
     }
 
     /**
      * Called when this tracker is attached to a component.
      * @param w The window containing the component, or null if none.
      */
-    protected void attached(Window w) {
+    protected void attached(@Nullable Window w) {
     }
 
     /**
@@ -156,7 +158,7 @@ public abstract class ComponentTracker
      * @param newWindow The window now containing the component, or null if none. Normally oldWindow and newWindow
      * are different. However, they may be the same if the window containing the component becomes displayable.
      */
-    protected void windowChanged(Window oldWindow, Window newWindow) {
+    protected void windowChanged(@Nullable Window oldWindow, @Nullable Window newWindow) {
     }
 
     /**
@@ -164,6 +166,6 @@ public abstract class ComponentTracker
      *
      * @param window The window containing the component, or null if none.
      */
-    protected void visibleBoundsChanged(Window window) {
+    protected void visibleBoundsChanged(@Nullable Window window) {
     }
 }
