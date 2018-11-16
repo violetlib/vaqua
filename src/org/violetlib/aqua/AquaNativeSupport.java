@@ -38,6 +38,7 @@ public class AquaNativeSupport {
             loadNativeSupport();
             if (isAvailable) {
                 KeyWindowPatch.installIfNeeded();
+                WindowStylePatch.installIfNeeded();
             }
         }
         return isAvailable;

@@ -31,3 +31,18 @@ jobject getJavaWindow(JNIEnv *env, NSWindow *w)
 
     return NULL;
 }
+
+// Map a native window to its Java platform window, if possible.
+jobject getJavaPlatformWindow(JNIEnv *env, NSWindow *w)
+{
+    NSObject *delegate = [w delegate];
+
+    if ([delegate respondsToSelector: @selector(javaPlatformWindow)]) {
+        JNFWeakJObjectWrapper *jPlatformWindowWrapper = [delegate javaPlatformWindow];
+        if (jPlatformWindowWrapper) {
+            return [jPlatformWindowWrapper jObjectWithEnv:env];
+        }
+    }
+
+    return NULL;
+}

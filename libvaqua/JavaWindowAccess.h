@@ -6,9 +6,10 @@
  * accompanying license terms.
  */
 
-// Support for mapping a native window to a Java window.
+// Support for mapping a native window to a Java window or a Java platform window (CPlatformWindow).
 
 #import <Cocoa/Cocoa.h>
 #include "jni.h"
 
 jobject getJavaWindow(JNIEnv *env, NSWindow *w);
+jobject getJavaPlatformWindow(JNIEnv *env, NSWindow *w);
