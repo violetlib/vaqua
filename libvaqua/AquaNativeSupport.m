@@ -1668,6 +1668,19 @@ JNIEXPORT jint JNICALL Java_org_violetlib_aqua_AquaUtils_nativeSetTitleBarStyle
 
             [w setTitlebarAppearsTransparent: isTransparent];
 
+            if (((originalStyleMask ^ styleMask) & NSWindowStyleMaskFullSizeContentView) != 0) {
+                // The full size content view option has changed.
+                // The content view must be resized first, otherwise the window will be resized to fit the existing
+                // content view.
+                NSRect frame = w.frame;
+                NSRect screenContentRect = [NSWindow contentRectForFrameRect:frame styleMask:styleMask];
+                NSRect contentFrame = NSMakeRect(screenContentRect.origin.x - frame.origin.x,
+                    screenContentRect.origin.y - frame.origin.y,
+                    screenContentRect.size.width,
+                    screenContentRect.size.height);
+                w.contentView.frame = contentFrame;
+            }
+
             if ([w respondsToSelector: @selector(setStyleMaskOverride:)]) {
                 [w setStyleMaskOverride: styleMask];
             } else {
@@ -1702,12 +1715,11 @@ JNIEXPORT jint JNICALL Java_org_violetlib_aqua_AquaUtils_nativeSetTitleBarStyle
                 // The full size content view option has changed.
                 // We need to get Java to recompute the window insets.
                 // This should do it...
-                if ([w respondsToSelector: @selector(windowDidResize:)]) {
+
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wnonnull"
-                    [((id)w) windowDidResize:nil];
+                [((id)w.delegate) windowDidResize:nil];
 #pragma GCC diagnostic pop
-                }
             }
         });
         result = 0;
