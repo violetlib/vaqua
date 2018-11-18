@@ -361,11 +361,11 @@ public class AquaImageFactory {
     }
 
     public static Icon getMenuItemCheckIcon() {
-        return new ImageIcon(getProcessedImage(getNSIcon("NSMenuCheckmark"), LIGHTEN_25));
+        return new ImageIcon(getNSIcon("NSMenuCheckmark"));
     }
 
     public static Icon getMenuItemDashIcon() {
-        return new ImageIcon(getProcessedImage(getNSIcon("NSMenuMixedState"), LIGHTEN_25));
+        return new ImageIcon(getNSIcon("NSMenuMixedState"));
     }
 
     private static @Nullable Image getNSImage(@NotNull String imageName, int width, int height) {
