@@ -484,7 +484,7 @@ public abstract class AquaButtonBorder extends AquaBorder implements BackgroundP
         return false;
     }
 
-    /*
+    /**
      * Return the layout configuration for the button. They layout configuration is determined when the button is
      * configured by the button UI. The button layout is presumed to be invalid at that time.
      */
@@ -492,7 +492,7 @@ public abstract class AquaButtonBorder extends AquaBorder implements BackgroundP
         return (LayoutConfiguration) b.getClientProperty(AquaButtonUI.LAYOUT_CONFIGURATION_PROPERTY);
     }
 
-    /*
+    /**
      * Determine the layout configuration for the button. They layout configuration is determined when the button is
      * configured by the button UI. The button layout is presumed to be invalid at that time.
      */

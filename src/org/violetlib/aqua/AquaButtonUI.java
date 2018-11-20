@@ -677,7 +677,7 @@ public class AquaButtonUI extends BasicButtonUI
         return widget == AquaUIPainter.ButtonWidget.BUTTON_COLOR_WELL;
     }
 
-    public static AquaUIPainter.ButtonWidget getButtonWidget(AbstractButton b) {
+    private static AquaUIPainter.ButtonWidget getButtonWidget(AbstractButton b) {
         Object o = b.getClientProperty(LAYOUT_CONFIGURATION_PROPERTY);
         if (o instanceof ButtonLayoutConfiguration) {
             ButtonLayoutConfiguration bg = (ButtonLayoutConfiguration) o;
@@ -924,7 +924,8 @@ public class AquaButtonUI extends BasicButtonUI
                 return;
             }
 
-            if (AbstractButton.VERTICAL_ALIGNMENT_CHANGED_PROPERTY.equals(propertyName)) {
+            if (AbstractButton.VERTICAL_ALIGNMENT_CHANGED_PROPERTY.equals(propertyName)
+                    || AbstractButton.VERTICAL_TEXT_POSITION_CHANGED_PROPERTY.equals(propertyName)) {
                 // A change to the preferred content height can change the selected button widget
                 configure(b);
                 return;
