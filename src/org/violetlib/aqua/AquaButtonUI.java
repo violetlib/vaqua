@@ -925,7 +925,8 @@ public class AquaButtonUI extends BasicButtonUI
             }
 
             if (AbstractButton.VERTICAL_ALIGNMENT_CHANGED_PROPERTY.equals(propertyName)
-                    || AbstractButton.VERTICAL_TEXT_POSITION_CHANGED_PROPERTY.equals(propertyName)) {
+                    || AbstractButton.VERTICAL_TEXT_POSITION_CHANGED_PROPERTY.equals(propertyName)
+                    || "font".equals(propertyName)) {
                 // A change to the preferred content height can change the selected button widget
                 configure(b);
                 return;
