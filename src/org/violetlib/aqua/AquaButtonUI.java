@@ -34,12 +34,14 @@
 package org.violetlib.aqua;
 
 import java.awt.*;
-import java.awt.event.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.FocusEvent;
+import java.awt.event.MouseEvent;
 import java.awt.geom.RoundRectangle2D;
 import java.beans.PropertyChangeEvent;
 import javax.swing.*;
 import javax.swing.border.Border;
-import javax.swing.plaf.ButtonUI;
 import javax.swing.plaf.ComponentUI;
 import javax.swing.plaf.UIResource;
 import javax.swing.plaf.basic.BasicButtonListener;
@@ -642,7 +644,7 @@ public class AquaButtonUI extends BasicButtonUI
      * @param b The button.
      * @return the icon to use.
      */
-    protected Icon getIcon(AbstractButton b) {
+    protected @Nullable Icon getIcon(AbstractButton b) {
         ButtonIconState bs = getIconState(b);
         Icon definedIcon = getDefinedIcon(b, bs);
 
@@ -677,7 +679,7 @@ public class AquaButtonUI extends BasicButtonUI
         return widget == AquaUIPainter.ButtonWidget.BUTTON_COLOR_WELL;
     }
 
-    private static AquaUIPainter.ButtonWidget getButtonWidget(AbstractButton b) {
+    private static @Nullable AquaUIPainter.ButtonWidget getButtonWidget(AbstractButton b) {
         Object o = b.getClientProperty(LAYOUT_CONFIGURATION_PROPERTY);
         if (o instanceof ButtonLayoutConfiguration) {
             ButtonLayoutConfiguration bg = (ButtonLayoutConfiguration) o;
@@ -692,7 +694,7 @@ public class AquaButtonUI extends BasicButtonUI
      * @return the button icon state.
      */
 
-    public static ButtonIconState getIconState(AbstractButton b) {
+    protected static @NotNull ButtonIconState getIconState(AbstractButton b) {
         ButtonModel model = b.getModel();
         if (!model.isEnabled()) {
             if (model.isSelected()) {
@@ -721,7 +723,7 @@ public class AquaButtonUI extends BasicButtonUI
      * @param b The button.
      * @return the icon defined on that button for the specified button state (may return null).
      */
-    public static Icon getDefinedIcon(AbstractButton b, ButtonIconState bs) {
+    public static @Nullable Icon getDefinedIcon(AbstractButton b, ButtonIconState bs) {
         switch (bs) {
             case DISABLED:              return getDisabledIcon(b);
             case DISABLED_SELECTED:     return getDisabledSelectedIcon(b);
@@ -761,7 +763,7 @@ public class AquaButtonUI extends BasicButtonUI
      * @param source The button icon.
      * @return the icon to use.
      */
-    public Icon createDisabledIcon(AbstractButton b, ImageIcon source) {
+    public @NotNull Icon createDisabledIcon(AbstractButton b, ImageIcon source) {
         AquaButtonIcon specialIcon = getSpecialIcon(b);
         if (specialIcon != null) {
             return specialIcon;
@@ -776,7 +778,7 @@ public class AquaButtonUI extends BasicButtonUI
      * @param source The button selected icon.
      * @return the icon to use.
      */
-    public Icon createDisabledSelectedIcon(AbstractButton b, ImageIcon source) {
+    public @NotNull Icon createDisabledSelectedIcon(AbstractButton b, ImageIcon source) {
         AquaButtonIcon specialIcon = getSpecialIcon(b);
         if (specialIcon != null) {
             return specialIcon;
@@ -784,7 +786,7 @@ public class AquaButtonUI extends BasicButtonUI
         return createDefaultDisabledIcon(source);
     }
 
-    protected ImageIcon createDefaultDisabledIcon(ImageIcon source) {
+    protected @NotNull ImageIcon createDefaultDisabledIcon(ImageIcon source) {
         return new ImageIconUIResource(AquaImageFactory.getProcessedImage(source.getImage(), AquaImageFactory.LIGHTEN_FOR_DISABLED));
     }
 
@@ -793,7 +795,7 @@ public class AquaButtonUI extends BasicButtonUI
     }
 
     /**
-     * As of Java 2 platform v 1.4 this method should not be used or overriden.
+     * As of Java 2 platform v 1.4 this method should not be used or overridden.
      * Use the paintText method which takes the AbstractButton argument.
      */
     protected void paintText(Graphics g, JComponent c, Rectangle localTextRect, String text) {
