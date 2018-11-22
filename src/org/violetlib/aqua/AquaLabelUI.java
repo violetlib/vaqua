@@ -108,9 +108,15 @@ public class AquaLabelUI extends BasicLabelUI implements AquaComponentUI {
 
     @Override
     public void update(Graphics g, JComponent c) {
-        AquaAppearance appearance = AppearanceManager.registerCurrentAppearance(c);
-        super.update(g, c);
-        AppearanceManager.restoreCurrentAppearance(appearance);
+        // If a label is used for the title of a titled border, it has no parent and its appearance property may be
+        // stale.
+        if (c.getParent() != null) {
+            AquaAppearance appearance = AppearanceManager.registerCurrentAppearance(c);
+            super.update(g, c);
+            AppearanceManager.restoreCurrentAppearance(appearance);
+        } else {
+            super.update(g, c);
+        }
     }
 
     @Override
