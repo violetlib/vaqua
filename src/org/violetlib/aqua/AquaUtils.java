@@ -1144,98 +1144,6 @@ final public class AquaUtils {
     }
 
     /**
-     * Determine the appropriate background for a component that displays the window content background color.
-     * @param c A component in the window.
-     * @return the color.
-     */
-    public static @NotNull Color getWindowBackground(@NotNull JComponent c) {
-        EffectName effect = AquaFocusHandler.isActive(c) ? EffectName.EFFECT_NONE : EffectName.EFFECT_DISABLED;
-        String baseColor = "windowBackground";
-        JRootPane rp = c.getRootPane();
-        if (rp != null && isTextured(rp)) {
-            baseColor = "texturedWindowBackground";
-        }
-        return AquaColors.getBackground(c, baseColor, effect);
-    }
-
-    /**
-     * Determine the appropriate background for a window top or bottom margin.
-     * This method is not used when the margin is painted with a gradient.
-     * @param rp The root pane the window.
-     * @param isTop True for the top margin, false for the bottom margin.
-     * @return the color.
-     */
-    public static @NotNull Color getWindowMarginBackground(@NotNull JRootPane rp, boolean isTop) {
-        // In most cases, the margin color when flat matches the content area color.
-        // One exception is a non-textured window in light mode.
-        // The other is a dark mode non-textured unified title/tool bar (top margin).
-
-        String base = isTextured(rp) ? "TexturedWindowMarginBackground" : "WindowMarginBackground";
-        String prefix = isTop ? "top" : "bottom";
-        String suffix = AquaFocusHandler.isActive(rp) ? "" : "_disabled";
-        String colorName = prefix + base + suffix;
-        AquaAppearance appearance = AppearanceManager.getAppearance(rp);
-        Color bc = appearance.getColor(colorName);
-        if (bc == null) {
-            // should not happen
-            System.err.println("Undefined window margin background color: " + colorName);
-            return AquaColors.CLEAR;
-        } else {
-            return bc;
-        }
-    }
-
-    public static @NotNull Color getWindowMarginDividerColor(@NotNull JRootPane rp, boolean isTop) {
-        String base = isTextured(rp) ? "TexturedWindowDivider" : "WindowDivider";
-        String prefix = isTop ? "top" : "bottom";
-        String suffix = AquaFocusHandler.isActive(rp) ? "" : "_disabled";
-        String colorName = prefix + base + suffix;
-        AquaAppearance appearance = AppearanceManager.getAppearance(rp);
-        Color color = appearance.getColor(colorName);
-        if (color == null) {
-            // should not happen
-            System.err.println("Undefined window divider color: " + colorName);
-            return AquaColors.CLEAR;
-        } else {
-            return color;
-        }
-    }
-
-    public static boolean isTextured(@NotNull JRootPane rp) {
-        if (isNativeTextured(rp)) {
-            return true;
-        }
-
-        AquaRootPaneUI ui = getUI(rp, AquaRootPaneUI.class);
-        if (ui != null) {
-            AquaCustomStyledWindow customStyledWindow = ui.getCustomStyledWindow();
-            if (customStyledWindow != null) {
-                return customStyledWindow.isTextured();
-            }
-        }
-
-        return false;
-    }
-
-    public static boolean isNativeTextured(@NotNull JRootPane rp) {
-        Object prop = rp.getClientProperty("apple.awt.brushMetalLook");
-        if (prop != null) {
-            if (Boolean.parseBoolean(prop.toString())) {
-                return true;
-            }
-        }
-
-        prop = rp.getClientProperty("Window.style");
-        if (prop != null) {
-            if (prop.equals("textured")) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    /**
      * Fill with specified color or erase.
      * @param g The graphics context.
      * @param color The color to fill, or null to erase
@@ -1463,14 +1371,6 @@ final public class AquaUtils {
             }
         }
         return null;
-    }
-
-    public static void configure(@NotNull AquaUIPainter painter, @NotNull Component c, int width, int height) {
-        AquaAppearance appearance = AppearanceManager.getRegisteredAppearance(c);
-        if (appearance != null) {
-            painter.configureAppearance(appearance);
-        }
-        painter.configure(width, height);
     }
 
     private static JScrollPane verifyScrollPaneAncestor(Component view, JScrollPane p) {

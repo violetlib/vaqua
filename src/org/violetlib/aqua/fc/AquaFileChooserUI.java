@@ -565,12 +565,6 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
                 }
             }
         }
-
-        @Override
-        public void doLayout() {
-            super.doLayout();
-            updateWindowStyleParameters();
-        }
     }
 
     // Options panel: depends upon Open/Save dialog type, sheet status, active status
@@ -3580,7 +3574,6 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
         useToolBar = false;
         windowStyle = null;
 
-    private void updateWindowStyleParameters() {
         JDialog d = getStandardDialog();
         if (d != null) {
             isStandardDialog = true;
@@ -3697,6 +3690,7 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
         public void propertyChange(PropertyChangeEvent evt) {
             value = (Dimension) evt.getOldValue();
         }
+    }
 
     protected @NotNull Rectangle getScreenBounds(@NotNull Window w) {
         Point loc = w.getLocationOnScreen();

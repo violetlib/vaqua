@@ -583,9 +583,6 @@ public class AquaRootPaneUI extends BasicRootPaneUI {
             if (vibrantStyle >= 0) {
                 try {
                     AquaVibrantSupport.addFullWindowVibrantView(w, vibrantStyle);
-                    if (!AquaColors.isPriority(rootPane.getBackground())) {
-                        rootPane.setBackground(AquaColors.CLEAR);
-                    }
                 } catch (IllegalArgumentException ex) {
                     System.err.println("Unable to install visual effect view: " + ex.getMessage());
                 }
@@ -600,9 +597,6 @@ public class AquaRootPaneUI extends BasicRootPaneUI {
         Window w = getWindow();
         if (w != null) {
             AquaVibrantSupport.removeFullWindowVibrantView(w);
-            if (!AquaColors.isPriority(rootPane.getBackground())) {
-                rootPane.setBackground(null);
-            }
         }
     }
 

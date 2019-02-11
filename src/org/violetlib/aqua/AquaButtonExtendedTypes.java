@@ -51,7 +51,6 @@ import static org.violetlib.jnr.aqua.AquaUIPainter.ButtonWidget.*;
 import static org.violetlib.jnr.aqua.AquaUIPainter.ComboBoxWidget.*;
 import static org.violetlib.jnr.aqua.AquaUIPainter.PopupButtonWidget.*;
 import static org.violetlib.jnr.aqua.AquaUIPainter.SegmentedButtonWidget.*;
-import static org.violetlib.jnr.aqua.AquaUIPainter.ComboBoxWidget.*;
 
 /**
  * Map client properties to borders.

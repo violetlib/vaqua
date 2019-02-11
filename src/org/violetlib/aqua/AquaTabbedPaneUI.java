@@ -335,8 +335,6 @@ public class AquaTabbedPaneUI extends AquaTabbedPaneCopyFromBasicUI
         if (selectedIndex >= 0) { // && rects[selectedIndex].intersects(clipRect)) {
             paintTabNormal(g, tabPlacement, selectedIndex, true);
         }
-
-        return tr.createTransformedShape(outline);
     }
 
     @Override

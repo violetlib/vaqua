@@ -776,25 +776,6 @@ public class AquaInternalFrameUI extends BasicInternalFrameUI implements SwingCo
         }
     }
 
-    private void repaintButtons() {
-        if (fAquaBorder != null) {
-            fAquaBorder.repaintButtonArea();
-        }
-    }
-
-    private void menuBarInstalled() {
-        // This method is called when a menu bar is installed in an internal frame.
-        // Here we attempt to undo the nasty hack in JMenuBar that installs apple.laf.AquaMenuBarUI in
-        // all menu bars when the screen menu bar is in use.
-
-        JMenuBar installedMenuBar = frame.getJMenuBar();
-        if (installedMenuBar.getUI().getClass().getName().endsWith("apple.laf.AquaMenuBarUI")) {
-            // debug
-            System.err.println("Fixing the UI for a menu bar installed on an internal frame");
-            installedMenuBar.setUI((MenuBarUI) AquaMenuBarUI.createUI(installedMenuBar));
-        }
-    }
-
     static final InternalFrameShadow documentWindowShadow = new InternalFrameShadow() {
         Border getForegroundShadowBorder() {
             return new AquaUtils.SlicedShadowBorder(new AquaUtils.Painter() {
