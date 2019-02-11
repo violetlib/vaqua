@@ -50,8 +50,8 @@ public interface BrowserPreviewRenderer {
      * @return The component.
      *
      */
-      public Component getPreviewRendererComponent(
-          JBrowser browser,
-          TreePath[] paths
-          );
+    Component getPreviewRendererComponent(
+            JBrowser browser,
+            TreePath[] paths
+    );
 }

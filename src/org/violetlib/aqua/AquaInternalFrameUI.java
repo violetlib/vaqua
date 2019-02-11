@@ -734,7 +734,7 @@ public class AquaInternalFrameUI extends BasicInternalFrameUI implements SwingCo
                 configureFrameType();
             } else if ("windowModified".equals(name) || "Window.documentModified".equals(name)) {
                 // repaint title bar
-                setDocumentEdited(((Boolean)e.getNewValue()).booleanValue());
+                setDocumentEdited((Boolean) e.getNewValue());
                 frame.repaint(0, 0, frame.getWidth(), frame.getBorder().getBorderInsets(frame).top);
             } else if ("resizable".equals(name) || "state".equals(name) || "iconable".equals(name) || "maximizable".equals(name) || "closable".equals(name)) {
                 if ("resizable".equals(name)) {
@@ -742,6 +742,8 @@ public class AquaInternalFrameUI extends BasicInternalFrameUI implements SwingCo
                 }
                 frame.repaint();
             } else if ("title".equals(name)) {
+                frame.repaint();
+            } else if (JInternalFrame.IS_MAXIMUM_PROPERTY.equals(name)) {
                 frame.repaint();
             } else if ("componentOrientation".equals(name)) {
                 frame.revalidate();
@@ -752,9 +754,27 @@ public class AquaInternalFrameUI extends BasicInternalFrameUI implements SwingCo
             } else if (JInternalFrame.MENU_BAR_PROPERTY.equals(name)) {
                 menuBarInstalled();
             }
-
         }
-    } // end class PaletteListener
+    }
+
+    private void repaintButtons() {
+        if (fAquaBorder != null) {
+            fAquaBorder.repaintButtonArea();
+        }
+    }
+
+    private void menuBarInstalled() {
+        // This method is called when a menu bar is installed in an internal frame.
+        // Here we attempt to undo the nasty hack in JMenuBar that installs apple.laf.AquaMenuBarUI in
+        // all menu bars when the screen menu bar is in use.
+
+        JMenuBar installedMenuBar = frame.getJMenuBar();
+        if (installedMenuBar.getUI().getClass().getName().endsWith("apple.laf.AquaMenuBarUI")) {
+            // debug
+            System.err.println("Fixing the UI for a menu bar installed on an internal frame");
+            installedMenuBar.setUI((MenuBarUI) AquaMenuBarUI.createUI(installedMenuBar));
+        }
+    }
 
     private void repaintButtons() {
         if (fAquaBorder != null) {

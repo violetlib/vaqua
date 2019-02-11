@@ -36,9 +36,13 @@ package org.violetlib.aqua;
 import java.awt.*;
 import java.awt.event.*;
 import java.awt.geom.AffineTransform;
+import java.awt.image.BufferedImage;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
+import java.util.ArrayList;
+import java.util.List;
 import javax.swing.*;
+import javax.swing.border.Border;
 import javax.swing.event.*;
 import javax.swing.plaf.ComponentUI;
 import javax.swing.plaf.UIResource;
@@ -60,24 +64,23 @@ import static org.violetlib.jnr.aqua.SegmentedButtonConfiguration.DividerState;
 public class AquaTabbedPaneUI extends AquaTabbedPaneCopyFromBasicUI
         implements AquaUtilControlSize.Sizeable, FocusRingOutlineProvider, AquaComponentUI {
 
-    // Create PLAF
     public static ComponentUI createUI(JComponent c) {
         return new AquaTabbedPaneUI();
     }
 
-    private static final int kSmallTabHeight = 20; // height of a small tab
-    private static final int kLargeTabHeight = 23; // height of a large tab
-    private static final int kMaxIconSize = kLargeTabHeight - 7;
-
     private static final double kNinetyDegrees = (Math.PI / 2.0); // used for rotation
 
-    protected SegmentedButtonWidget buttonWidget = SegmentedButtonWidget.BUTTON_TAB;
+    protected final SegmentedButtonWidget buttonWidget = SegmentedButtonWidget.BUTTON_TAB;
 
     protected final Insets currentContentDrawingInsets = new Insets(0, 0, 0, 0);
     protected final Insets currentContentBorderInsets = new Insets(0, 0, 0, 0);
     protected final Insets contentDrawingInsets = new Insets(0, 0, 0, 0);
 
-    protected int pressedTab = -3; // -2 is right scroller, -1 is left scroller
+    protected static final int LEFT_TAB_INDEX = -2;
+    protected static final int RIGHT_TAB_INDEX = -1;
+    protected static final int NO_TAB = -3;
+
+    protected int pressedTab = NO_TAB;
     protected boolean popupSelectionChanged;
 
     protected Boolean isDefaultFocusReceiver = null;
@@ -246,14 +249,14 @@ public class AquaTabbedPaneUI extends AquaTabbedPaneCopyFromBasicUI
 
     // Paint Methods
     // Cache for performance
-    Rectangle fContentRect = new Rectangle();
-    Rectangle fIconRect = new Rectangle();
-    Rectangle fTextRect = new Rectangle();
+    private Rectangle fContentRect = new Rectangle();
+    private Rectangle fIconRect = new Rectangle();
+    private Rectangle fTextRect = new Rectangle();
 
     // UI Rendering
 
     @Override
-    public void update(Graphics g, JComponent c) {
+    public void update(@NotNull Graphics g, @NotNull JComponent c) {
         AquaAppearance appearance = AppearanceManager.registerCurrentAppearance(c);
         if (c.isOpaque()) {
             AquaUtils.fillRect(g, c, AquaUtils.ERASE_IF_VIBRANT);
@@ -262,25 +265,32 @@ public class AquaTabbedPaneUI extends AquaTabbedPaneCopyFromBasicUI
         AppearanceManager.restoreCurrentAppearance(appearance);
     }
 
-    public void paint(Graphics g, JComponent c) {
+    public void paint(@NotNull Graphics g, @NotNull JComponent c) {
+
+        ensureCurrentLayout();
+
         int tabPlacement = tabPane.getTabPlacement();
         int selectedIndex = tabPane.getSelectedIndex();
         paintContentBorder(g, tabPlacement, selectedIndex);
 
-        // we want to call ensureCurrentLayout, but it's private
-        ensureCurrentLayout();
         Rectangle clipRect = g.getClipBounds();
 
         isLeftToRight = (tabPane.getComponentOrientation().isLeftToRight() || tabPlacement == LEFT) && tabPlacement != RIGHT;
 
-        // Paint tabRuns of tabs from back to front
-        if (visibleTabState.needsScrollTabs()) {
-            paintScrollingTabs(g, clipRect, tabPlacement, selectedIndex);
-            return;
+        if (DEBUG_CUTOUT && !isDark) {
+            g = g.create();
+            ((Graphics2D) g).setComposite(AlphaComposite.SrcOver.derive(0.2f));
         }
 
-        // old way
-        paintAllTabs(g, clipRect, tabPlacement, selectedIndex);
+        if (visibleTabState.needsScrollTabs()) {
+            paintScrollingTabs(g, clipRect, tabPlacement, selectedIndex);
+        } else {
+            paintAllTabs(g, clipRect, tabPlacement, selectedIndex);
+        }
+
+        if (DEBUG_CUTOUT) {
+            g.dispose();
+        }
     }
 
     protected void paintAllTabs(Graphics g, Rectangle clipRect, int tabPlacement, int selectedIndex) {
@@ -295,23 +305,13 @@ public class AquaTabbedPaneUI extends AquaTabbedPaneCopyFromBasicUI
             }
         }
 
-        // paint the selected tab last.
+        // paint the selected tab last
         if (drawSelectedLast && rects[selectedIndex].intersects(clipRect)) {
             paintTabNormal(g, tabPlacement, selectedIndex, true);
         }
     }
 
     protected void paintScrollingTabs(Graphics g, Rectangle clipRect, int tabPlacement, int selectedIndex) {
-//        Graphics g2 = g.create();
-//        g2.setColor(Color.cyan);
-//        Rectangle r = new Rectangle();
-//        for (int i = 0; i < visibleTabState.getTotal(); i++) {
-//            r.add(rects[visibleTabState.getIndex(i)]);
-//        }
-//        g2.fillRect(r.x, r.y, r.width, r.height);
-//        g2.dispose();
-//        System.out.println(r);
-
         // for each visible tab, except the selected one
         for (int i = 0; i < visibleTabState.getTotal(); i++) {
             int realIndex = visibleTabState.getIndex(i);
@@ -324,22 +324,24 @@ public class AquaTabbedPaneUI extends AquaTabbedPaneCopyFromBasicUI
 
         Rectangle leftScrollTabRect = visibleTabState.getLeftScrollTabRect();
         if (visibleTabState.needsLeftScrollTab() && leftScrollTabRect.intersects(clipRect)) {
-            paintTabNormalFromRect(g, tabPlacement, leftScrollTabRect, -2, false, fIconRect, fTextRect);
+            paintTabNormalFromRect(g, tabPlacement, leftScrollTabRect, LEFT_TAB_INDEX, false, fIconRect, fTextRect);
         }
 
         Rectangle rightScrollTabRect = visibleTabState.getRightScrollTabRect();
         if (visibleTabState.needsRightScrollTab() && rightScrollTabRect.intersects(clipRect)) {
-            paintTabNormalFromRect(g, tabPlacement, rightScrollTabRect, -1, false, fIconRect, fTextRect);
+            paintTabNormalFromRect(g, tabPlacement, rightScrollTabRect, RIGHT_TAB_INDEX, false, fIconRect, fTextRect);
         }
 
         if (selectedIndex >= 0) { // && rects[selectedIndex].intersects(clipRect)) {
             paintTabNormal(g, tabPlacement, selectedIndex, true);
         }
+
+        return tr.createTransformedShape(outline);
     }
 
     @Override
-    public Shape getFocusRingOutline(JComponent c) {
-        // On Yosemite, a tabbed pane is focusable in Full Keyboard Access mode. The selected tab displays a focus ring.
+    public @Nullable Shape getFocusRingOutline(JComponent c) {
+        // A tabbed pane is focusable in Full Keyboard Access mode. The selected tab displays a focus ring.
         // The individual tabs are not focusable.
 
         int selectedIndex = tabPane.getSelectedIndex();
@@ -351,7 +353,7 @@ public class AquaTabbedPaneUI extends AquaTabbedPaneCopyFromBasicUI
         return null;
     }
 
-    protected Shape createFocusRingOutline(int tabIndex, Rectangle bounds) {
+    protected @NotNull Shape createFocusRingOutline(int tabIndex, Rectangle bounds) {
         int tabPlacement = tabPane.getTabPlacement();
         boolean isVertical = tabPlacement == JTabbedPane.LEFT || tabPlacement == JTabbedPane.RIGHT;
 
@@ -377,14 +379,11 @@ public class AquaTabbedPaneUI extends AquaTabbedPaneCopyFromBasicUI
     }
 
     private static boolean isScrollTabIndex(int index) {
-        return index == -1 || index == -2;
+        return index == RIGHT_TAB_INDEX || index == LEFT_TAB_INDEX;
     }
 
-    protected static void transposeRect(Rectangle r) {
-        int temp = r.y;
-//        r.y = r.x;
-//        r.x = temp;
-        temp = r.width;
+    protected static void transposeRect(@NotNull Rectangle r) {
+        int temp = r.width;
         r.width = r.height;
         r.height = temp;
     }
@@ -422,7 +421,7 @@ public class AquaTabbedPaneUI extends AquaTabbedPaneCopyFromBasicUI
         if (tabPlacement == RIGHT) shouldFlip = false;
         if (tabPlacement == LEFT) shouldFlip = true;
 
-        int direction = tabIndex == -1 ? EAST : WEST;
+        int direction = tabIndex == RIGHT_TAB_INDEX ? EAST : WEST;
         if (shouldFlip) {
             if (direction == EAST) {
                 direction = WEST;
@@ -451,13 +450,13 @@ public class AquaTabbedPaneUI extends AquaTabbedPaneCopyFromBasicUI
         return new ImageIcon(image);
     }
 
-    protected void paintTabNormal(Graphics g, int tabPlacement, int tabIndex, boolean isSelected) {
+    protected void paintTabNormal(@NotNull Graphics g, int tabPlacement, int tabIndex, boolean isSelected) {
         paintTabNormalFromRect(g, tabPlacement, rects[tabIndex], tabIndex, isSelected, fIconRect, fTextRect);
     }
 
-    protected void paintTabNormalFromRect(Graphics g, int tabPlacement, Rectangle tabRect, int nonRectIndex,
+    protected void paintTabNormalFromRect(@NotNull Graphics g, int tabPlacement, Rectangle tabRect, int nonRectIndex,
                                           boolean isSelected,
-                                          Rectangle iconRect, Rectangle textRect) {
+                                          @NotNull Rectangle iconRect, @NotNull Rectangle textRect) {
         Direction direction = getDirection();
         boolean isVertical = direction == Direction.LEFT || direction == Direction.RIGHT;
 
@@ -511,9 +510,9 @@ public class AquaTabbedPaneUI extends AquaTabbedPaneCopyFromBasicUI
         p.paint(g, tabRect.x, tabRect.y);
     }
 
-    protected SegmentedButtonConfiguration getConfiguration(boolean isSelected,
-                                                            boolean isLeftToRight,
-                                                            int nonRectIndex) {
+    protected @NotNull SegmentedButtonConfiguration getConfiguration(boolean isSelected,
+                                                                     boolean isLeftToRight,
+                                                                     int nonRectIndex) {
 
         int tabCount = tabPane.getTabCount();
 
@@ -524,10 +523,10 @@ public class AquaTabbedPaneUI extends AquaTabbedPaneCopyFromBasicUI
         boolean first = nonRectIndex == 0;
         boolean last = nonRectIndex == tabCount - 1;
         if (needsLeftScrollTab || needsRightScrollTab) {
-            if (nonRectIndex == -1) {
+            if (nonRectIndex == RIGHT_TAB_INDEX) {
                 first = false;
                 last = true;
-            } else if (nonRectIndex == -2) {
+            } else if (nonRectIndex == LEFT_TAB_INDEX) {
                 first = true;
                 last = false;
             } else {
@@ -637,7 +636,7 @@ public class AquaTabbedPaneUI extends AquaTabbedPaneCopyFromBasicUI
         JavaSupport.drawString(tabPane, g2d, title, textRect.x, textRect.y + metrics.getAscent());
     }
 
-    protected Color getTabTextColor(int tabIndex, boolean isSelected) {
+    protected @NotNull Color getTabTextColor(int tabIndex, boolean isSelected) {
         assert appearanceContext != null;
         AppearanceContext tabContext = appearanceContext;
         if (appearanceContext.getState() == State.ACTIVE) {
@@ -656,7 +655,7 @@ public class AquaTabbedPaneUI extends AquaTabbedPaneCopyFromBasicUI
         return false;   // not needed, so not implemented
     }
 
-    protected Direction getDirection() {
+    protected @NotNull Direction getDirection() {
         switch (tabPane.getTabPlacement()) {
             case SwingConstants.BOTTOM: return Direction.DOWN;
             case SwingConstants.LEFT: return Direction.LEFT;
@@ -665,9 +664,7 @@ public class AquaTabbedPaneUI extends AquaTabbedPaneCopyFromBasicUI
         return Direction.UP;
     }
 
-    protected static Position getSegmentPosition(boolean first,
-                                                 boolean last,
-                                                 boolean isLeftToRight) {
+    protected static @NotNull Position getSegmentPosition(boolean first, boolean last, boolean isLeftToRight) {
         if (first && last) return ONLY;
         if (first) return isLeftToRight ? FIRST : LAST;
         if (last) return isLeftToRight ? LAST : FIRST;
@@ -682,13 +679,7 @@ public class AquaTabbedPaneUI extends AquaTabbedPaneCopyFromBasicUI
         return false;
     }
 
-    protected boolean isTabBeforeSelectedTab(int index, int selectedIndex, boolean isLeftToRight) {
-        if (index == -2 && visibleTabState.getIndex(0) == selectedIndex) return true;
-        int indexBeforeSelectedIndex = isLeftToRight ? selectedIndex - 1 : selectedIndex + 1;
-        return index == indexBeforeSelectedIndex ? true : false;
-    }
-
-    protected State getState() {
+    protected @NotNull State getState() {
         if (AquaFocusHandler.isActive(tabPane)) {
             if (tabPane.isEnabled()) {
                 return State.ACTIVE;
@@ -700,7 +691,7 @@ public class AquaTabbedPaneUI extends AquaTabbedPaneCopyFromBasicUI
         }
     }
 
-    protected State getTabState(int index, boolean isSelected) {
+    protected @NotNull State getTabState(int index, boolean isSelected) {
         if (appearanceContext != null) {
             State state = appearanceContext.getState();
             if (state == State.INACTIVE || state == State.DISABLED || state == State.DISABLED_INACTIVE) {
@@ -708,13 +699,16 @@ public class AquaTabbedPaneUI extends AquaTabbedPaneCopyFromBasicUI
             }
         }
 
-        if (!tabPane.isEnabled()) return State.DISABLED;
-        if (isSelected) return State.ACTIVE;    // TBD: is this right?
-        if (pressedTab == index) return State.PRESSED;
+        if (!tabPane.isEnabled()) {
+            return State.DISABLED;
+        }
+        if (pressedTab == index) {
+            return State.PRESSED;
+        }
         return State.ACTIVE;
     }
 
-    protected Insets getContentBorderInsets(int tabPlacement) {
+    protected @NotNull Insets getContentBorderInsets(int tabPlacement) {
         Insets draw = getContentDrawingInsets(tabPlacement); // will be rotated
 
         rotateInsets(contentBorderInsets, currentContentBorderInsets, tabPlacement);
@@ -756,20 +750,22 @@ public class AquaTabbedPaneUI extends AquaTabbedPaneCopyFromBasicUI
         }
     }
 
-    protected Insets getContentDrawingInsets(int tabPlacement) {
+    protected @NotNull Insets getContentDrawingInsets(int tabPlacement) {
         rotateInsets(contentDrawingInsets, currentContentDrawingInsets, tabPlacement);
         return currentContentDrawingInsets;
     }
 
-    protected Icon getIconForTab(int tabIndex) {
+    protected @Nullable Icon getIconForTab(int tabIndex) {
         Icon mainIcon = super.getIconForTab(tabIndex);
-        if (mainIcon == null) return null;
+        if (mainIcon == null) {
+            return null;
+        }
 
         int iconHeight = mainIcon.getIconHeight();
-
-        if (iconHeight <= maxIconSize) return mainIcon;
+        if (iconHeight <= maxIconSize) {
+            return mainIcon;
+        }
         float ratio = (float)maxIconSize / (float)iconHeight;
-
         int iconWidth = mainIcon.getIconWidth();
         return new AquaIcon.CachingScalingIcon((int)(iconWidth * ratio), maxIconSize) {
             Image createImage() {
@@ -778,7 +774,9 @@ public class AquaTabbedPaneUI extends AquaTabbedPaneCopyFromBasicUI
         };
     }
 
-    protected void paintContentBorder(Graphics g, int tabPlacement, int selectedIndex) {
+    private static boolean DEBUG_CUTOUT = false;
+
+    protected void paintContentBorder(@NotNull Graphics g, int tabPlacement, int selectedIndex) {
         int width = tabPane.getWidth();
         int height = tabPane.getHeight();
         Insets insets = tabPane.getInsets();
@@ -790,8 +788,7 @@ public class AquaTabbedPaneUI extends AquaTabbedPaneCopyFromBasicUI
 
         int tabBorderInset = fixedTabHeight / 2;
 
-        // The tabbed pane group border has its own insets, which makes sense except where it overlaps the
-        // tabs.
+        // The tabbed pane group border has its own insets.
 
         tabBorderInset -= 5;
 
@@ -801,87 +798,154 @@ public class AquaTabbedPaneUI extends AquaTabbedPaneCopyFromBasicUI
                 h -= tabBorderInset;
                 break;
             case BOTTOM:
-                h -= tabBorderInset;// - 2;
+                h -= tabBorderInset;
                 break;
             case LEFT:
-                x += tabBorderInset;// - 5;
-                w -= tabBorderInset;// + 1;
+                x += tabBorderInset;
+                w -= tabBorderInset;
                 break;
             case RIGHT:
-                w -= tabBorderInset;// + 1;
+                w -= tabBorderInset;
                 break;
         }
 
-//        if (tabPane.isOpaque()) {
-//            g.setColor(tabPane.getBackground());
-//            g.fillRect(0, 0, width, height);
-//        }
+        Border border = AquaGroupBorder.getTabbedPaneGroupBorder();
+        Shapes cutout = getContentBorderCutout();
+        if (cutout != null) {
 
-        AquaGroupBorder.getTabbedPaneGroupBorder().paintBorder(tabPane, g, x, y, w, h);
+            if (DEBUG_CUTOUT) {
+                g.setColor(new Color(255, 0, 0, 120));
+                g.fillRect(0, 0, width, height);
+            }
+
+            // HiDPI apparently not needed
+            Rectangle clipRect = g.getClipBounds();
+            BufferedImage b = new BufferedImage(clipRect.width, clipRect.height, BufferedImage.TYPE_INT_ARGB);
+            Graphics2D bg = b.createGraphics();
+            bg.translate(-clipRect.x, -clipRect.y);
+            border.paintBorder(tabPane, bg, x, y, w, h);
+            bg.setComposite(AlphaComposite.Src);
+            bg.setColor(AquaColors.CLEAR);
+            cutout.fill(bg);
+            bg.dispose();
+            g.drawImage(b, clipRect.x, clipRect.y, clipRect.width, clipRect.height, null);
+        } else {
+            border.paintBorder(tabPane, g, x, y, w, h);
+        }
     }
 
-    // see paintContentBorder
-    protected void repaintContentBorderEdge() {
-        int width = tabPane.getWidth();
-        int height = tabPane.getHeight();
-        Insets insets = tabPane.getInsets();
-        int tabPlacement = tabPane.getTabPlacement();
-        Insets localContentBorderInsets = getContentBorderInsets(tabPlacement);
+    /**
+     * Identify a region of the content background that should not be painted. This feature is needed to support
+     * tabbed panes that use translucent buttons (a feature currently only used in dark mode).
+     */
+    protected @Nullable Shapes getContentBorderCutout() {
+        int tabCount = tabPane.getTabCount();
+        if (tabCount > 0) {
+            if (DEBUG_CUTOUT || isDark) {
+                Shapes shapes = new Shapes();
 
-        int x = insets.left;
-        int y = insets.top;
-        int w = width - insets.right - insets.left;
-        int h = height - insets.top - insets.bottom;
+                if (visibleTabState.needsScrollTabs()) {
+                    if (visibleTabState.needsLeftScrollTab()) {
+                        Rectangle rect = visibleTabState.getLeftScrollTabRect();
+                        addTabShape(shapes, LEFT_TAB_INDEX, rect);
+                    }
 
-        switch (tabPlacement) {
-            case LEFT:
-                x += calculateTabAreaWidth(tabPlacement, runCount, maxTabWidth);
-                w = localContentBorderInsets.left;
-                break;
-            case RIGHT:
-                w = localContentBorderInsets.right;
-                break;
-            case BOTTOM:
-                h = localContentBorderInsets.bottom;
-                break;
-            case TOP:
-            default:
-                y += calculateTabAreaHeight(tabPlacement, runCount, maxTabHeight);
-                h = localContentBorderInsets.top;
+                    if (visibleTabState.needsRightScrollTab()) {
+                        Rectangle rect = visibleTabState.getRightScrollTabRect();
+                        addTabShape(shapes, RIGHT_TAB_INDEX, rect);
+                    }
+
+                    for (int i = 0; i < visibleTabState.getTotal(); i++) {
+                        int realIndex = visibleTabState.getIndex(i);
+                        if (realIndex >= 0) {
+                            Rectangle bounds = rects[realIndex];
+                            addTabShape(shapes, realIndex, bounds);
+                        }
+                    }
+                } else {
+                    for (int i = 0; i < tabCount; i++) {
+                        Rectangle bounds = rects[i];
+                        addTabShape(shapes, i, bounds);
+                    }
+                }
+
+                if (!shapes.isEmpty()) {
+                    return shapes;
+                }
+            }
         }
-        tabPane.repaint(x, y, w, h);
+        return null;
+    }
+
+    private void addTabShape(@NotNull Shapes shapes, int tabIndex, @NotNull Rectangle rect) {
+        Shape s = createFocusRingOutline(tabIndex, rect);
+        shapes.add(s);
+    }
+
+    private static class Shapes {
+
+        private @NotNull List<Shape> shapes = new ArrayList<>();
+
+        public void add(@NotNull Shape s) {
+            Rectangle bounds = s.getBounds();
+            if (bounds.width > 0 && bounds.height > 0) {
+                shapes.add(s);
+            }
+        }
+
+        public boolean isEmpty() {
+            return shapes.isEmpty();
+        }
+
+        public void fill(@NotNull Graphics2D g) {
+            for (Shape s : shapes) {
+                g.fill(s);
+            }
+        }
     }
 
     public boolean isTabVisible(int index) {
-        if (index == -1 || index == -2) return true;
+        if (!visibleTabState.needsScrollTabs()) {
+            return true;
+        }
+        if (index == RIGHT_TAB_INDEX || index == LEFT_TAB_INDEX) {
+            return true;
+        }
         for (int i = 0; i < visibleTabState.getTotal(); i++) {
-            if (visibleTabState.getIndex(i) == index) return true;
+            if (visibleTabState.getIndex(i) == index) {
+                return true;
+            }
         }
         return false;
     }
 
-    protected SegmentedButtonLayoutConfiguration getTabLayoutConfiguration(int tabIndex) {
-
-        int tabCount = tabPane.getTabCount();
+    protected @NotNull SegmentedButtonLayoutConfiguration getTabLayoutConfiguration(int tabIndex) {
 
         boolean isLeftToRight = tabPane.getComponentOrientation().isLeftToRight();
 
         Position position;
-        if (tabCount < 2) {
-            position = ONLY;
-        } else if (tabIndex == 0) {
+        if (tabIndex == LEFT_TAB_INDEX) {
             position = isLeftToRight ? FIRST : LAST;
-        } else if (tabIndex == tabCount-1) {
+        } else if (tabIndex == RIGHT_TAB_INDEX) {
             position = isLeftToRight ? LAST : FIRST;
         } else {
-            position = MIDDLE;
+            int tabCount = tabPane.getTabCount();
+            if (tabCount < 2) {
+                position = ONLY;
+            } else if (tabIndex == 0) {
+                position = isLeftToRight ? FIRST : LAST;
+            } else if (tabIndex == tabCount - 1) {
+                position = isLeftToRight ? LAST : FIRST;
+            } else {
+                position = MIDDLE;
+            }
         }
 
         return new SegmentedButtonLayoutConfiguration(buttonWidget, sizeVariant, position);
     }
 
     @Override
-    protected Insets getTabInsets(int tabPlacement, int tabIndex) {
+    protected @NotNull Insets getTabInsets(int tabPlacement, int tabIndex) {
         int tabCount = tabPane.getTabCount();
 
         boolean isLeftToRight = tabPane.getComponentOrientation().isLeftToRight();
@@ -912,12 +976,11 @@ public class AquaTabbedPaneUI extends AquaTabbedPaneCopyFromBasicUI
     }
 
     /**
-     * Returns the bounds of the specified tab index.  The bounds are
-     * with respect to the JTabbedPane's coordinate space.  If the tab at this
-     * index is not currently visible in the UI, then returns null.
+     * Returns the bounds of the specified tab index. The bounds are with respect to the JTabbedPane's coordinate space.
+     * If the tab at this index is not currently visible in the UI, then returns null.
      */
     @Override
-    public Rectangle getTabBounds(JTabbedPane pane, int i) {
+    public @Nullable Rectangle getTabBounds(@NotNull JTabbedPane pane, int i) {
         if (visibleTabState.needsScrollTabs()
                 && (visibleTabState.isBefore(i) || visibleTabState.isAfter(i))) {
             return null;
@@ -926,23 +989,27 @@ public class AquaTabbedPaneUI extends AquaTabbedPaneCopyFromBasicUI
     }
 
     /**
-     * Returns the tab index which intersects the specified point
-     * in the JTabbedPane's coordinate space.
+     * Returns the tab index which intersects the specified point in the JTabbedPane's coordinate space.
      */
-    public int tabForCoordinate(JTabbedPane pane, int x, int y) {
+    public int tabForCoordinate(@NotNull JTabbedPane pane, int x, int y) {
         ensureCurrentLayout();
         Point p = new Point(x, y);
         if (visibleTabState.needsScrollTabs()) {
             for (int i = 0; i < visibleTabState.getTotal(); i++) {
                 int realOffset = visibleTabState.getIndex(i);
-                if (rects[realOffset].contains(p.x, p.y)) return realOffset;
+                if (rects[realOffset].contains(p.x, p.y)) {
+                    return realOffset;
+                }
             }
-            if (visibleTabState.getRightScrollTabRect().contains(p.x, p.y)) return -1; //tabPane.getTabCount();
+            if (visibleTabState.getRightScrollTabRect().contains(p.x, p.y)) {
+                return -1;
+            }
         } else {
-            //old way
             int tabCount = tabPane.getTabCount();
             for (int i = 0; i < tabCount; i++) {
-                if (rects[i].contains(p.x, p.y)) return i;
+                if (rects[i].contains(p.x, p.y)) {
+                    return i;
+                }
             }
         }
         return -1;
@@ -974,25 +1041,21 @@ public class AquaTabbedPaneUI extends AquaTabbedPaneCopyFromBasicUI
                 return;
             }
 
-            if (!AquaFocusHandler.FRAME_ACTIVE_PROPERTY.equals(prop)) {
-                super.propertyChange(e);
+            if (AquaFocusHandler.FRAME_ACTIVE_PROPERTY.equals(prop)) {
+                comp.repaint();
                 return;
             }
 
-            comp.repaint();
-
-            // Repaint the "front" tab and the border
-            int selected = tabPane.getSelectedIndex();
-            Rectangle[] theRects = rects;
-            if (selected >= 0 && selected < theRects.length) comp.repaint(theRects[selected]);
-            repaintContentBorderEdge();
+            super.propertyChange(e);
         }
     }
 
     protected ChangeListener createChangeListener() {
         return new ChangeListener() {
             public void stateChanged(ChangeEvent e) {
-                if (!isTabVisible(tabPane.getSelectedIndex())) popupSelectionChanged = true;
+                if (!isTabVisible(tabPane.getSelectedIndex())) {
+                    popupSelectionChanged = true;
+                }
                 tabPane.revalidate();
                 tabPane.repaint();
             }
@@ -1026,12 +1089,14 @@ public class AquaTabbedPaneUI extends AquaTabbedPaneCopyFromBasicUI
             }
         }
 
-        boolean isDefaultFocusReceiver(JComponent component) {
+        boolean isDefaultFocusReceiver(@NotNull JComponent component) {
             if (isDefaultFocusReceiver == null) {
-                Component defaultFocusReceiver = KeyboardFocusManager.getCurrentKeyboardFocusManager().getDefaultFocusTraversalPolicy().getDefaultComponent(getTopLevelFocusCycleRootAncestor(component));
-                isDefaultFocusReceiver = new Boolean(defaultFocusReceiver != null && defaultFocusReceiver.equals(component));
+                Component defaultFocusReceiver
+                        = KeyboardFocusManager.getCurrentKeyboardFocusManager().getDefaultFocusTraversalPolicy()
+                        .getDefaultComponent(getTopLevelFocusCycleRootAncestor(component));
+                isDefaultFocusReceiver = defaultFocusReceiver != null && defaultFocusReceiver.equals(component);
             }
-            return isDefaultFocusReceiver.booleanValue();
+            return isDefaultFocusReceiver;
         }
 
         Container getTopLevelFocusCycleRootAncestor(Container container) {
@@ -1044,7 +1109,7 @@ public class AquaTabbedPaneUI extends AquaTabbedPaneCopyFromBasicUI
     }
 
     public class MouseHandler extends MouseInputAdapter implements ActionListener {
-        protected int trackingTab = -3;
+        protected int trackingTab = NO_TAB;
         protected Timer popupTimer = new Timer(500, this);
 
         public MouseHandler() {
@@ -1054,18 +1119,18 @@ public class AquaTabbedPaneUI extends AquaTabbedPaneCopyFromBasicUI
         public void mousePressed(MouseEvent e) {
             JTabbedPane pane = (JTabbedPane)e.getSource();
             if (!pane.isEnabled()) {
-                trackingTab = -3;
+                trackingTab = NO_TAB;
                 return;
             }
 
             Point p = e.getPoint();
             trackingTab = getCurrentTab(pane, p);
-            if (trackingTab == -3 || (!shouldRepaintSelectedTabOnMouseDown() && trackingTab == pane.getSelectedIndex())) {
-                trackingTab = -3;
+            if (trackingTab == NO_TAB || (!shouldRepaintSelectedTabOnMouseDown() && trackingTab == pane.getSelectedIndex())) {
+                trackingTab = NO_TAB;
                 return;
             }
 
-            if (trackingTab < 0 && trackingTab > -3) {
+            if (trackingTab == LEFT_TAB_INDEX || trackingTab == RIGHT_TAB_INDEX) {
                 popupTimer.start();
             }
 
@@ -1074,18 +1139,20 @@ public class AquaTabbedPaneUI extends AquaTabbedPaneCopyFromBasicUI
         }
 
         public void mouseDragged(MouseEvent e) {
-            if (trackingTab < -2) return;
+            if (trackingTab == NO_TAB) {
+                return;
+            }
 
             JTabbedPane pane = (JTabbedPane)e.getSource();
             int currentTab = getCurrentTab(pane, e.getPoint());
 
             if (currentTab != trackingTab) {
-                pressedTab = -3;
+                pressedTab = NO_TAB;
             } else {
                 pressedTab = trackingTab;
             }
 
-            if (trackingTab < 0 && trackingTab > -3) {
+            if (trackingTab == LEFT_TAB_INDEX || trackingTab == RIGHT_TAB_INDEX) {
                 popupTimer.start();
             }
 
@@ -1093,7 +1160,9 @@ public class AquaTabbedPaneUI extends AquaTabbedPaneCopyFromBasicUI
         }
 
         public void mouseReleased(MouseEvent e) {
-            if (trackingTab < -2) return;
+            if (trackingTab == NO_TAB) {
+                return;
+            }
 
             popupTimer.stop();
 
@@ -1101,11 +1170,11 @@ public class AquaTabbedPaneUI extends AquaTabbedPaneCopyFromBasicUI
             Point p = e.getPoint();
             int currentTab = getCurrentTab(pane, p);
 
-            if (trackingTab == -1 && currentTab == -1) {
+            if (trackingTab == RIGHT_TAB_INDEX && currentTab == RIGHT_TAB_INDEX) {
                 pane.setSelectedIndex(pane.getSelectedIndex() + 1);
             }
 
-            if (trackingTab == -2 && currentTab == -2) {
+            if (trackingTab == LEFT_TAB_INDEX && currentTab == LEFT_TAB_INDEX) {
                 pane.setSelectedIndex(pane.getSelectedIndex() - 1);
             }
 
@@ -1115,8 +1184,8 @@ public class AquaTabbedPaneUI extends AquaTabbedPaneCopyFromBasicUI
 
             repaint(pane, trackingTab);
 
-            pressedTab = -3;
-            trackingTab = -3;
+            pressedTab = NO_TAB;
+            trackingTab = NO_TAB;
         }
 
         public void actionPerformed(ActionEvent e) {
@@ -1124,38 +1193,41 @@ public class AquaTabbedPaneUI extends AquaTabbedPaneCopyFromBasicUI
                 return;
             }
 
-            if (trackingTab == -1) {
+            if (trackingTab == RIGHT_TAB_INDEX) {
                 showFullPopup(false);
-                trackingTab = -3;
+                trackingTab = NO_TAB;
             }
 
-            if (trackingTab == -2) {
+            if (trackingTab == LEFT_TAB_INDEX) {
                 showFullPopup(true);
-                trackingTab = -3;
+                trackingTab = NO_TAB;
             }
         }
 
         int getCurrentTab(JTabbedPane pane, Point p) {
             int tabIndex = tabForCoordinate(pane, p.x, p.y);
-            if (tabIndex >= 0 && pane.isEnabledAt(tabIndex)) return tabIndex;
-
-            if (visibleTabState.needsLeftScrollTab() && visibleTabState.getLeftScrollTabRect().contains(p)) return -2;
-            if (visibleTabState.needsRightScrollTab() && visibleTabState.getRightScrollTabRect().contains(p)) return -1;
-
-            return -3;
+            if (tabIndex >= 0 && pane.isEnabledAt(tabIndex)) {
+                return tabIndex;
+            }
+            if (visibleTabState.needsLeftScrollTab() && visibleTabState.getLeftScrollTabRect().contains(p)) {
+                return LEFT_TAB_INDEX;
+            }
+            if (visibleTabState.needsRightScrollTab() && visibleTabState.getRightScrollTabRect().contains(p)) {
+                return RIGHT_TAB_INDEX;
+            }
+            return NO_TAB;
         }
 
         void repaint(JTabbedPane pane, int tab) {
             switch (tab) {
-                case -1:
+                case RIGHT_TAB_INDEX:
                     pane.repaint(visibleTabState.getRightScrollTabRect());
                     return;
-                case -2:
+                case LEFT_TAB_INDEX:
                     pane.repaint(visibleTabState.getLeftScrollTabRect());
                     return;
                 default:
                     if (trackingTab >= 0) pane.repaint(rects[trackingTab]);
-                    return;
             }
         }
 
@@ -1182,14 +1254,14 @@ public class AquaTabbedPaneUI extends AquaTabbedPaneCopyFromBasicUI
                 public void popupMenuWillBecomeVisible(PopupMenuEvent e) { }
 
                 public void popupMenuWillBecomeInvisible(PopupMenuEvent e) {
-                    pressedTab = -3;
+                    pressedTab = NO_TAB;
                     tabPane.repaint(visibleTabState.getLeftScrollTabRect());
                     tabPane.repaint(visibleTabState.getRightScrollTabRect());
                 }
             });
         }
 
-        JMenuItem createMenuItem(int i) {
+        @NotNull JMenuItem createMenuItem(int i) {
             Component component = getTabComponentAt(i);
             JMenuItem menuItem;
             if (component == null) {
@@ -1267,7 +1339,9 @@ public class AquaTabbedPaneUI extends AquaTabbedPaneCopyFromBasicUI
             superCalculateTabRects(tabPlacement, tabCount); // does most of the hard work
 
             // If they haven't been padded (which they only do when there are multiple rows) we should center them
-            if (rects.length <= 0) return;
+            if (rects.length <= 0) {
+                return;
+            }
 
             visibleTabState.alignRectsRunFor(rects, tabPane.getSize(), tabPlacement, AquaUtils.isLeftToRight(tabPane));
         }
@@ -1344,7 +1418,9 @@ public class AquaTabbedPaneUI extends AquaTabbedPaneCopyFromBasicUI
             runCount = 0;
             selectedRun = 0;
 
-            if (tabCount == 0) return;
+            if (tabCount == 0) {
+                return;
+            }
 
             FontMetrics metrics = getFontMetrics();
             boolean verticalTabRuns = (tabPlacement == SwingConstants.LEFT || tabPlacement == SwingConstants.RIGHT);
@@ -1387,7 +1463,7 @@ public class AquaTabbedPaneUI extends AquaTabbedPaneCopyFromBasicUI
             }
         }
 
-        private void calculateHorizontalTabRunRect(Rectangle rect, FontMetrics metrics, int tabPlacement, int returnAt, int i, int x, int y) {
+        private void calculateHorizontalTabRunRect(@NotNull Rectangle rect, FontMetrics metrics, int tabPlacement, int returnAt, int i, int x, int y) {
             // Tabs on TOP or BOTTOM....
             if (i > 0) {
                 rect.x = rects[i - 1].x + rects[i - 1].width;
@@ -1405,7 +1481,9 @@ public class AquaTabbedPaneUI extends AquaTabbedPaneCopyFromBasicUI
             rect.height = maxTabHeight;
         }
 
-        private void calculateVerticalTabRunRect(Rectangle rect, FontMetrics metrics, int tabPlacement, int returnAt, int i, int x, int y) {
+        private void calculateVerticalTabRunRect(@NotNull Rectangle rect,
+                                                 @NotNull FontMetrics metrics,
+                                                 int tabPlacement, int returnAt, int i, int x, int y) {
             // Tabs on LEFT or RIGHT...
             if (i > 0) {
                 rect.y = rects[i - 1].y + rects[i - 1].height;
@@ -1441,11 +1519,11 @@ public class AquaTabbedPaneUI extends AquaTabbedPaneCopyFromBasicUI
 
                 if (placement == SwingConstants.TOP || placement == SwingConstants.BOTTOM) {
                     rect.x += insets.left + delta.x + getTabLabelShiftX(placement, i, isSelected);
-                    rect.y += insets.top + delta.y + getTabLabelShiftY(placement, i, isSelected);// + 1;
+                    rect.y += insets.top + delta.y + getTabLabelShiftY(placement, i, isSelected);
                     rect.width -= insets.left + insets.right;
                     rect.height -= insets.top + insets.bottom - 1;
                 } else {
-                    rect.x += insets.top + delta.x + getTabLabelShiftY(placement, i, isSelected);// + (placement == SwingConstants.LEFT ? 2 : 1);
+                    rect.x += insets.top + delta.x + getTabLabelShiftY(placement, i, isSelected);
                     rect.y += insets.left + delta.y + getTabLabelShiftX(placement, i, isSelected);
                     rect.width -= insets.top + insets.bottom - 1;
                     rect.height -= insets.left + insets.right;

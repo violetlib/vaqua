@@ -177,9 +177,9 @@ public class AquaImageFactory {
         return image;
     }
 
-    public static Image loadResource(String resource) {
+    public static @Nullable ImageIcon loadResource(String resource) {
         URL u = AquaImageFactory.class.getResource(resource);
-        return u != null ? Toolkit.getDefaultToolkit().createImage(u) : null;
+        return u != null ? new ImageIcon(Toolkit.getDefaultToolkit().createImage(u)) : null;
     }
 
     public static @Nullable Image getImage(@Nullable File file, int size) {
@@ -321,7 +321,7 @@ public class AquaImageFactory {
     }
 
     public static Icon getMenuArrowIcon() {
-        return new ImageIcon(getProcessedImage(eastArrow.get(), LIGHTEN_25));
+        return eastArrowIcon.get();
     }
 
     public static Icon getPopupMenuItemCheckIcon(Size sizeVariant) {
@@ -361,11 +361,11 @@ public class AquaImageFactory {
     }
 
     public static Icon getMenuItemCheckIcon() {
-        return new ImageIcon(getProcessedImage(getNSIcon("NSMenuCheckmark"), LIGHTEN_25));
+        return new ImageIcon(getNSIcon("NSMenuCheckmark"));
     }
 
     public static Icon getMenuItemDashIcon() {
-        return new ImageIcon(getProcessedImage(getNSIcon("NSMenuMixedState"), LIGHTEN_25));
+        return new ImageIcon(getNSIcon("NSMenuMixedState"));
     }
 
     private static @Nullable Image getNSImage(@NotNull String imageName, int width, int height) {
@@ -811,7 +811,8 @@ public class AquaImageFactory {
     private static @NotNull Image waitForImage(@NotNull Image image) {
         boolean[] mutex = new boolean[] { false };
         ImageObserver observer = (Image img, int infoflags, int x, int y, int width, int height) -> {
-            if ((width != -1 && height != -1 && (infoflags & ImageObserver.ALLBITS) != 0) || (infoflags & ImageObserver.ABORT) != 0) {
+            if ((width != -1 && height != -1 && (infoflags & ImageObserver.ALLBITS) != 0)
+                    || (infoflags & (ImageObserver.ABORT | ImageObserver.FRAMEBITS)) != 0) {
                 synchronized (mutex) {
                     mutex[0] = true;
                     mutex.notify();

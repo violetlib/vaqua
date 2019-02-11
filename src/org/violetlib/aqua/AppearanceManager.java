@@ -160,8 +160,8 @@ public class AppearanceManager {
         // hierarchy and the appearance of its native window.
 
         // Validating the appearance at paint time ensures that the correct appearance is used even if the component
-        // hierarchy has been modified. (One common example of modification is the use of cell renderers.) An alternative
-        // would be to use event listeners to track changes in the hierarchy.
+        // hierarchy has been modified. (One common example of modification is the use of cell renderers.) An
+        // alternative would be to use event listeners to track changes in the hierarchy.
 
         if (c instanceof JComponent) {
             JComponent jc = (JComponent) c;
@@ -269,7 +269,8 @@ public class AppearanceManager {
     private static void appearanceHasChanged(@NotNull JComponent c, @NotNull AquaAppearance appearance) {
         if (c instanceof JMenuBar) {
             JMenuBar mb = (JMenuBar) c;
-            // Special hack because we are required to use the platform AquaMenuBarUI to be able to use the screen menu bar
+            // Special hack because we are required to use the platform AquaMenuBarUI to be able to use the screen menu
+            // bar
             Color background = mb.getBackground();
             if (background instanceof ColorUIResource) {
                 mb.setBackground(appearance.getColor("controlBackground"));
@@ -308,7 +309,7 @@ public class AppearanceManager {
         @Override
         public void hierarchyChanged(@NotNull HierarchyEvent e) {
             long flags = e.getChangeFlags();
-            if ((flags & (HierarchyEvent.PARENT_CHANGED)) != 0) {
+            if ((flags & HierarchyEvent.PARENT_CHANGED) != 0) {
                 Component c = e.getChanged();
                 if (c instanceof JComponent) {
                     JComponent jc = (JComponent) c;

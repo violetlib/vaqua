@@ -14,8 +14,6 @@ import java.awt.geom.Ellipse2D;
 import javax.swing.*;
 import javax.swing.border.Border;
 import javax.swing.border.EmptyBorder;
-import javax.swing.border.MatteBorder;
-import javax.swing.plaf.BorderUIResource;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -29,47 +27,30 @@ import org.violetlib.jnr.aqua.AquaUIPainter;
  */
 public class FileRenderer extends JLabel implements ListCellRenderer, GenericCellRenderer {
 
-    private Icon selectedExpandingIcon;
-    private Icon selectedExpandedIcon;
-    private Icon focusedSelectedExpandingIcon;
-    private Icon focusedSelectedExpandedIcon;
-    private Icon expandingIcon;
-    private Icon expandedIcon;
-    private Icon emptyIcon;
+    private final @NotNull ImageIcon arrowIcon;
+    private @Nullable Color arrowColor;
     private Icon aliasBadgeIcon;
-    private JFileChooser fileChooser;
     private int textIconGap;
     private int textArrowIconGap;
     private Icon icon;
     private String text;
-    private Icon arrowIcon;
-    private Color labelColor;
+    private @Nullable Color labelColor;
     private boolean isSelected;
-    private boolean isActive;
+    private boolean isFocused;
     private boolean isGrayed;
     private boolean isAlias;
     private boolean isListView;
     private double labelRadius = 4.8;
     private Border border;
 
-    public FileRenderer(JFileChooser fileChooser) {
-        this.fileChooser = fileChooser;
+    private static final Color LABEL_BORDER_SELECTED = Color.WHITE;
+
+    public FileRenderer(@NotNull JFileChooser fileChooser) {
         this.textIconGap = UIManager.getInt("FileChooser.browserCellTextIconGap");
         this.textArrowIconGap = UIManager.getInt("FileChooser.browserCellTextArrowIconGap");
-
-        emptyIcon = new EmptyIcon(12, 12);  //TBD
         aliasBadgeIcon = UIManager.getIcon("FileView.aliasBadgeIcon");
-
-        expandedIcon = UIManager.getIcon("Browser.expandedIcon");
-        selectedExpandedIcon = UIManager.getIcon("Browser.selectedExpandedIcon");
-        focusedSelectedExpandedIcon = UIManager.getIcon("Browser.focusedSelectedExpandedIcon");
-
-        expandingIcon = UIManager.getIcon("Browser.expandingIcon");
-        selectedExpandingIcon = UIManager.getIcon("Browser.selectedExpandingIcon");
-        focusedSelectedExpandingIcon = UIManager.getIcon("Browser.focusedSelectedExpandingIcon");
-
+        arrowIcon = AquaIcon.getBrowserExpandArrowTemplate();
         border = new EmptyBorder(0, 4, 2, 0);
-
         setOpaque(true);
     }
 
@@ -168,7 +149,7 @@ public class FileRenderer extends JLabel implements ListCellRenderer, GenericCel
         }
 
         this.isSelected = isSelected;
-        this.isActive = container.isEnabled() && AquaFocusHandler.hasFocus(container);
+        this.isFocused = container.isEnabled() && AquaFocusHandler.hasFocus(container);
 
         AquaUIPainter.State state = getState(container, isGrayed);
         AppearanceContext context = new AppearanceContext(appearance, state, isSelected, false);
@@ -178,28 +159,7 @@ public class FileRenderer extends JLabel implements ListCellRenderer, GenericCel
         setBackground(AquaColors.getOrdinaryColor(background));
         setForeground(AquaColors.getOrdinaryColor(foreground));
 
-        if (!isListView) {
-
-            if (this.isSelected && labelColor == null) {
-                if (cellHasFocus) {
-                    arrowIcon = (info.isValidating()) ? focusedSelectedExpandingIcon : focusedSelectedExpandedIcon;
-                } else {
-                    arrowIcon = (info.isValidating()) ? selectedExpandingIcon : selectedExpandedIcon;
-                }
-            } else {
-                arrowIcon = (info.isValidating()) ? expandingIcon : expandedIcon;
-            }
-
-            /*
-              Special case: no arrow is displayed for a package even if the package is traversable (an option).
-            */
-
-            if (!info.isTraversable() || OSXFile.isVirtualFile(info.lazyGetResolvedFile())) {
-                arrowIcon = (labelColor == null) ? null : emptyIcon;
-            }
-        } else {
-            arrowIcon = null;
-        }
+        arrowColor = getArrowColor(info, cellHasFocus, appearance);
 
         text = info.getUserName();
         icon = info.getIcon();
@@ -217,29 +177,38 @@ public class FileRenderer extends JLabel implements ListCellRenderer, GenericCel
         return this;
     }
 
+    protected @Nullable Color getArrowColor(@NotNull FileInfo info, boolean isFocused, @NotNull AquaAppearance appearance) {
+        if (isListView) {
+            return null;
+        }
+
+        /*
+          Special case: no arrow is displayed for a package even if the package is traversable (an option).
+        */
+
+        if (!info.isTraversable() || OSXFile.isVirtualFile(info.lazyGetResolvedFile())) {
+            return null;
+        }
+
+        if (this.isSelected) {
+            if (isFocused) {
+                return appearance.getColor("selectedBrowserExpandArrow_focused");
+            } else {
+                return appearance.getColor("selectedBrowserExpandArrow");
+            }
+        } else {
+            return appearance.getColor("browserExpandArrow");
+        }
+    }
+
+    protected @Nullable Color getLabelBorderColor() {
+        return isSelected && isFocused ? LABEL_BORDER_SELECTED : null;
+    }
+
     protected @NotNull AquaUIPainter.State getState(@NotNull JComponent c, boolean isGrayed) {
         return c.isEnabled() && !isGrayed ?
                 AquaFocusHandler.hasFocus(c) ? AquaUIPainter.State.ACTIVE_DEFAULT : AquaUIPainter.State.ACTIVE
                 : AquaUIPainter.State.DISABLED;
-    }
-
-    private class ConfigurableMatteBorder extends MatteBorder {
-        private @NotNull Color configuredColor;
-
-        public ConfigurableMatteBorder(int top, int left, int bottom, int right) {
-            super(top, left, bottom, right, Color.BLACK);
-            this.configuredColor = Color.BLACK;
-        }
-
-        public void configure(@NotNull Color c) {
-            configuredColor = c;
-        }
-
-        @Override
-        public void paintBorder(Component c, Graphics g, int x, int y, int width, int height) {
-            g.setColor(configuredColor);
-            super.paintBorder(c, g, x, y, width, height);
-        }
     }
 
     @Override
@@ -268,20 +237,21 @@ public class FileRenderer extends JLabel implements ListCellRenderer, GenericCel
         }
 
         String clippedText = layoutRenderer(
-                textFM, text,
-                icon, arrowIcon,
+                textFM,
                 viewRect, iconRect, textRect, arrowIconRect, labelRect,
                 text == null ? 0 : textIconGap, textArrowIconGap);
 
         if (labelColor != null) {
-
             // Paint the label as a filled circle with an outline
             double r = labelRadius;
             Shape s = new Ellipse2D.Double(labelRect.x, labelRect.y, r * 2, r * 2);
             g.setPaint(labelColor);
             g.fill(s);
-            g.setPaint(isSelected && isActive ? Color.WHITE : Color.LIGHT_GRAY);
-            g.draw(s);
+            Color labelBorderColor = getLabelBorderColor();
+            if (labelBorderColor != null) {
+                g.setPaint(labelBorderColor);
+                g.draw(s);
+            }
         }
 
         if (icon != null) {
@@ -297,11 +267,14 @@ public class FileRenderer extends JLabel implements ListCellRenderer, GenericCel
             g.drawString(clippedText, textRect.x, textRect.y + textFM.getAscent());
         }
 
-        if (arrowIcon != null) {
-            arrowIcon.paintIcon(this, g, arrowIconRect.x, arrowIconRect.y);
+        if (arrowColor != null) {
+            Image arrow = AquaImageFactory.getProcessedImage(arrowIcon, arrowColor);
+            if (arrow != null) {
+                g.drawImage(arrow, arrowIconRect.x, arrowIconRect.y, null);
+            }
         }
 
-        AquaUtils.endGraphics((Graphics2D) g, oldHints);
+        AquaUtils.endGraphics(g, oldHints);
     }
     /**
      * The following variables are used for laying out the renderer.
@@ -338,8 +311,7 @@ public class FileRenderer extends JLabel implements ListCellRenderer, GenericCel
         resetRects();
 
         layoutRenderer(
-                textFM, text,
-                icon, arrowIcon,
+                textFM,
                 viewRect,
                 iconRect,
                 textRect,
@@ -348,11 +320,9 @@ public class FileRenderer extends JLabel implements ListCellRenderer, GenericCel
                 text == null ? 0 : textIconGap, textArrowIconGap);
 
         r.setBounds(textRect);
-        r = SwingUtilities.computeUnion(iconRect.x, iconRect.y, iconRect.width,
-                iconRect.height, r);
+        r = SwingUtilities.computeUnion(iconRect.x, iconRect.y, iconRect.width, iconRect.height, r);
 
-        boolean isUseArrow = arrowIcon != null;
-        if (isUseArrow) {
+        if (arrowColor != null) {
             r.width += arrowIconRect.width + textArrowIconGap;
         }
 
@@ -370,33 +340,41 @@ public class FileRenderer extends JLabel implements ListCellRenderer, GenericCel
     }
 
     /**
-     * Layouts the components of the renderer.
+     * Lay out the components of the renderer.
      */
     private String layoutRenderer(
-            FontMetrics textFM, String text,
-            Icon icon, Icon arrowIcon,
-            Rectangle viewRect, Rectangle iconRect,
-            Rectangle textRect,
-            Rectangle arrowIconRect,
-            Rectangle labelRect,
-            int textIconGap, int textArrowIconGap) {
+            @NotNull FontMetrics textFM,
+            @NotNull Rectangle viewRect,
+            @NotNull Rectangle iconRect,
+            @NotNull Rectangle textRect,
+            @NotNull Rectangle arrowRect,
+            @NotNull Rectangle labelRect,
+            int textIconGap,
+            int textArrowIconGap) {
 
-        boolean isUseArrow = arrowIcon != null;
+        boolean isUseArrow = arrowColor != null;
+        boolean isUseLabel = labelColor != null;
+
+        int arrowWidth = arrowIcon.getIconWidth();
+        int arrowHeight = arrowIcon.getIconHeight();
+        int labelWidth = (int) Math.ceil(2 * labelRadius);
+        int labelHeight = labelWidth;
 
         if (isUseArrow) {
-            arrowIconRect.width = arrowIcon.getIconWidth();
-            arrowIconRect.height = arrowIcon.getIconHeight();
-            arrowIconRect.x = viewRect.x + viewRect.width - arrowIconRect.width;
-            viewRect.width -= arrowIconRect.width + textArrowIconGap;
+            arrowRect.width = arrowWidth;
+            arrowRect.height = arrowHeight;
+            arrowRect.x = viewRect.x + viewRect.width - arrowWidth;
         }
 
-        if (labelColor != null) {
-            int d = (int) Math.ceil(2 * labelRadius);
-            labelRect.width = d;
-            labelRect.height = d;
-            labelRect.x = viewRect.x + viewRect.width - labelRect.width;
-            viewRect.width -= labelRect.width + textArrowIconGap;
+        viewRect.width -= arrowWidth + textArrowIconGap;
+
+        if (isUseLabel) {
+            labelRect.width = labelWidth;
+            labelRect.height = labelHeight;
+            labelRect.x = viewRect.x + viewRect.width - labelWidth;
         }
+
+        viewRect.width -= labelWidth + textArrowIconGap;
 
         text = AquaUtils.layoutCompoundLabel(
                 this, textFM, text,
@@ -405,30 +383,25 @@ public class FileRenderer extends JLabel implements ListCellRenderer, GenericCel
                 viewRect, iconRect, textRect,
                 textIconGap);
 
-        if (isUseArrow) {
-            viewRect.width += arrowIconRect.width + textArrowIconGap;
-        }
-
-        if (labelColor != null) {
-            viewRect.width += labelRect.width + textArrowIconGap;
-        }
+        viewRect.width += labelWidth + textArrowIconGap;
+        viewRect.width += arrowWidth + textArrowIconGap;
 
         Rectangle jLabelRect = iconRect.union(textRect);
 
         if (isUseArrow) {
-            arrowIconRect.y = (viewRect.y + jLabelRect.height / 2 - arrowIconRect.height / 2);
+            arrowRect.y = (viewRect.y + jLabelRect.height / 2 - arrowHeight / 2);
         }
 
-        if (labelColor != null) {
-            labelRect.y = (viewRect.y + jLabelRect.height / 2 - labelRect.height / 2);
+        if (isUseLabel) {
+            labelRect.y = (viewRect.y + jLabelRect.height / 2 - labelHeight / 2);
         }
 
         if (!AquaUtils.isLeftToRight(this)) {
             int width = viewRect.width;
             iconRect.x = width - (iconRect.x + iconRect.width);
             textRect.x = width - (textRect.x + textRect.width);
-            arrowIconRect.x = width - (arrowIconRect.x + arrowIconRect.width);
-            labelRect.x = width - (labelRect.x + labelRect.width);
+            arrowRect.x = width - (arrowRect.x + arrowWidth);
+            labelRect.x = width - (labelRect.x + labelWidth);
         }
 
         return text;

@@ -9,6 +9,7 @@
 package org.violetlib.aqua;
 
 import java.awt.*;
+import java.awt.image.ImageObserver;
 import javax.swing.*;
 import javax.swing.plaf.UIResource;
 
@@ -20,7 +21,7 @@ import org.jetbrains.annotations.Nullable;
  * rendering is based on the button's default icon.
  */
 
-public class AquaButtonIcon implements Icon, UIResource {
+public class AquaButtonIcon implements Icon, UIResource, ImageObserver {
 
     public interface ImageOperatorSupplier {
         @Nullable Object getCurrentImageProcessingOperator(@NotNull AbstractButton b, boolean isTemplate);
@@ -64,14 +65,20 @@ public class AquaButtonIcon implements Icon, UIResource {
             Object operator = operatorSupplier.getCurrentImageProcessingOperator(b, isTemplate);
             Image im = AquaImageFactory.getProcessedImage(icon, operator);
             if (im != null) {
-                boolean isComplete = g.drawImage(im, x, y, c);
-                if (!isComplete) {
-                    new ImageIcon(im);
-                    if (!g.drawImage(im, x, y, c)) {
-                        System.err.println("Button icon not drawn!");
-                    }
-                }
+                // Using the button as the image observer can fail because it aborts drawing the image if the button
+                // does not recognize the image as the proper image for the button in its current state, and its ability
+                // to recognize images is not flexible enough for our usage.
+                g.drawImage(im, x, y, this);
             }
         }
+    }
+
+    @Override
+    public boolean imageUpdate(Image img, int infoFlags, int x, int y, int width, int height) {
+        if ((infoFlags & (FRAMEBITS|ALLBITS|SOMEBITS)) != 0) {
+            b.repaint();
+        }
+
+        return (infoFlags & (ALLBITS|ABORT)) == 0;
     }
 }

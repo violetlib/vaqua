@@ -93,14 +93,36 @@ public class AquaCustomStyledWindow {
 
     protected final int style;
 
+    /**
+     * The top margin height, if specified by a client property, otherwise -1.
+     */
     protected int declaredTopMarginHeight;
+
+    /**
+     * The bottom margin height, if specified by a client property, otherwise -1.
+     */
     protected int declaredBottomMarginHeight;
+
+    /**
+     * The top margin height, if it is fixed based on the window style or the declared top margin height,
+     * otherwise -1.
+     */
     protected int fixedTopMarginHeight;
+
+    /**
+     * The bottom margin height, if it is fixed based on the window style or the declared bottom margin height,
+     * otherwise -1.
+     */
     protected int fixedBottomMarginHeight;
 
-    /** Computed top margin height, used when painting and handling mouse events. */
+    /**
+     * The computed top margin height, used when painting and handling mouse events.
+     */
     protected int topMarginHeight;
-    /** Computed bottom margin height, used when painting and handling mouse events. */
+
+    /**
+     * The computed bottom margin height, used when painting and handling mouse events.
+     */
     protected int bottomMarginHeight;
 
     protected final int titleBarStyle;
@@ -128,7 +150,7 @@ public class AquaCustomStyledWindow {
      * @throws IllegalArgumentException if the style is not valid, the window is not appropriately decorated, the content
      *  pane is not a JComponent, or a required JToolBar or toolbar panel is not found.
      */
-    public AquaCustomStyledWindow(Window w, int style, int declaredTopMarginHeight, int declaredBottomMarginHeight)
+    public AquaCustomStyledWindow(@NotNull Window w, int style, int declaredTopMarginHeight, int declaredBottomMarginHeight)
             throws IllegalArgumentException {
 
         boolean isDecorated = AquaUtils.isDecorated(w);
@@ -226,6 +248,7 @@ public class AquaCustomStyledWindow {
      */
 
     public @NotNull AquaCustomStyledWindow reconfigure(int style, int top, int bottom) {
+        assert w != null;
         AquaCustomStyledWindow replacement = new AquaCustomStyledWindow(w, style, top, bottom);
         removeListeners();
         // do not dispose, as that alters the window
@@ -260,7 +283,6 @@ public class AquaCustomStyledWindow {
             if (contentPane != null) {
                 resetBorder(contentPane);
             }
-            AquaUtils.setTitleBarStyle(w, AquaUtils.TITLE_BAR_ORDINARY);
             w = null;
             rp = null;
             contentPane = null;
@@ -495,7 +517,7 @@ public class AquaCustomStyledWindow {
             case STYLE_TEXTURED_HIDDEN:
             case STYLE_COMBINED:
             case STYLE_UNDECORATED:
-                return declaredBottomMarginHeight;
+                return declaredBottomMarginHeight > 0 ? declaredBottomMarginHeight : 0;
         }
         return -1;
     }
@@ -557,7 +579,7 @@ public class AquaCustomStyledWindow {
     protected class ToolbarHierarchyListener implements HierarchyListener {
         @Override
         public void hierarchyChanged(HierarchyEvent e) {
-            if (e.getChangeFlags() == HierarchyEvent.PARENT_CHANGED) {
+            if ((e.getChangeFlags() & HierarchyEvent.PARENT_CHANGED) != 0) {
                 JComponent tb = (JComponent) e.getComponent();
                 if (SwingUtilities.getWindowAncestor(tb) != w) {
                     resetBorder(tb);
@@ -575,8 +597,8 @@ public class AquaCustomStyledWindow {
     }
 
     protected class CustomBorderBase
-        extends AbstractBorder
-        implements UIResource {
+            extends AbstractBorder
+            implements UIResource {
     }
 
     protected class CustomContentPaneBorder extends CustomBorderBase {

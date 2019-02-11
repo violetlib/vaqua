@@ -37,7 +37,9 @@ import java.awt.*;
 import java.awt.event.*;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
+import java.util.prefs.PreferenceChangeListener;
 import javax.swing.*;
+import javax.swing.border.Border;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import javax.swing.plaf.ComponentUI;
@@ -121,6 +123,15 @@ public class AquaScrollPaneUI extends BasicScrollPaneUI implements AquaUtilContr
     }
 
     @Override
+    protected void installDefaults(JScrollPane scrollpane) {
+        Border b = scrollpane.getBorder();
+        super.installDefaults(scrollpane);
+        if (b instanceof AquaTextComponentBorder) {
+            scrollpane.setBorder(b);
+        }
+    }
+
+    @Override
     protected void installListeners(JScrollPane c) {
         super.installListeners(c);
         componentListener = new MyComponentListener();
@@ -193,13 +204,6 @@ public class AquaScrollPaneUI extends BasicScrollPaneUI implements AquaUtilContr
         if (c.isOpaque()) {
             Color background = AquaColors.getBackground(c, "controlBackground");
             AquaUtils.fillRect(g, c, background, AquaUtils.ERASE_IF_VIBRANT);
-
-//            // If using the sidebar style, must erase the background to allow the vibrant background to show.
-//            if (isSideBar()) {
-//                AquaUtils.fillRect(g, (Color) null, 0, 0, c.getWidth(), c.getHeight());
-//            } else {
-//                AquaUtils.fillRect(g, c, AquaUtils.ERASE_IF_VIBRANT);
-//            }
         }
         paint(g, c);
         AppearanceManager.restoreCurrentAppearance(appearance);
@@ -224,6 +228,12 @@ public class AquaScrollPaneUI extends BasicScrollPaneUI implements AquaUtilContr
             setSidebarStyle(scrollpane.getVerticalScrollBar(), false);
         }
 
+        Border b = c.getBorder();
+        if (b instanceof AquaTextComponentBorder) {
+            AquaTextComponentBorder tcb = (AquaTextComponentBorder) b;
+            tcb.paintBackground(c, g, null);
+        }
+
         super.paint(g, c);
 
         // If two legacy scroll bars are displayed, the corner must be painted to match.
@@ -239,8 +249,8 @@ public class AquaScrollPaneUI extends BasicScrollPaneUI implements AquaUtilContr
                 assert appearanceContext != null;
                 AquaAppearance appearance = appearanceContext.getAppearance();
 
-                Color trackColor = appearance.getColor("scrollPaneTrack");
-                Color outerBorderColor = appearance.getColor("scrollPaneTrackBorder");
+                Color trackColor = appearance.getColor("legacyScrollBarTrack");
+                Color outerBorderColor = appearance.getColor("legacyScrollBarOuterBorder");
 
                 int w = x2 - x1;
                 int h = y2 - y1;

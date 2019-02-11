@@ -63,7 +63,7 @@ public class AquaTextPasswordFieldUI extends AquaTextFieldUI {
     }
 
     @Override
-    protected View createBasicView(Element elem) {
+    protected @NotNull View createBasicView(@NotNull Element elem) {
         return new AquaPasswordView(elem);
     }
 

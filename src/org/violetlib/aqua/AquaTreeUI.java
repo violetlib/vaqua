@@ -41,7 +41,6 @@ import java.beans.PropertyChangeListener;
 import java.util.Enumeration;
 import java.util.TooManyListenersException;
 import javax.swing.*;
-import javax.swing.border.EmptyBorder;
 import javax.swing.event.MouseInputAdapter;
 import javax.swing.plaf.ColorUIResource;
 import javax.swing.plaf.ComponentUI;
@@ -865,7 +864,7 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
         // and paint a border around each item
         if (component instanceof DefaultTreeCellRenderer) {
             DefaultTreeCellRenderer treeCellRenderer = (DefaultTreeCellRenderer) component;
-            treeCellRenderer.setBorder(new EmptyBorder(0, 0, 0, 0));
+            treeCellRenderer.setBorder(AquaLookAndFeel.NOTHING_BORDER);
             if (!isLayout) {
                 assert appearanceContext != null;
                 treeCellRenderer.setBackgroundNonSelectionColor(AquaColors.CLEAR);

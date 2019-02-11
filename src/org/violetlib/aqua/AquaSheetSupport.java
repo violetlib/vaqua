@@ -371,7 +371,7 @@ public class AquaSheetSupport {
 
         @Override
         public void hierarchyChanged(HierarchyEvent e) {
-            if (e.getChangeFlags() == HierarchyEvent.SHOWING_CHANGED && !w.isVisible()) {
+            if ((e.getChangeFlags() & HierarchyEvent.SHOWING_CHANGED) != 0 && !w.isVisible()) {
                 completed();
             }
         }

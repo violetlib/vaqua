@@ -12,11 +12,14 @@ import javax.swing.*;
 import java.awt.*;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
+import java.security.cert.Extension;
 
 /**
  * Implement focus rings drawn over components, not by them.
  */
 public class AquaFocusRingManager {
+
+    public static final String USE_FOCUS_RING_PROPERTY = "Aqua.useFocusRing";
 
     private static AquaFocusRingManager INSTANCE = new AquaFocusRingManager();
 
@@ -91,7 +94,17 @@ public class AquaFocusRingManager {
         // TBD: could improve this
         // TBD: should this be dynamic, like Frame.active?
 
-        return c.isVisible();
+        if (c.isVisible()) {
+            if (c instanceof JComponent) {
+                JComponent jc = (JComponent) c;
+                Object o = jc.getClientProperty(USE_FOCUS_RING_PROPERTY);
+                if (Boolean.FALSE.equals(o)) {
+                    return false;
+                }
+            }
+            return true;
+        }
+        return false;
     }
 
     private void updateFocusRing(JComponent c) {

@@ -36,6 +36,8 @@ package org.violetlib.aqua;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.HierarchyEvent;
+import java.awt.event.HierarchyListener;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
 import java.awt.image.ConvolveOp;
@@ -71,6 +73,13 @@ final public class AquaUtils {
     private static final String ANIMATIONS_PROPERTY = "swing.enableAnimations";
 
     private static final int javaVersion = obtainJavaVersion();
+
+    private static final HierarchyListener toolbarStatusListener = new HierarchyListener() {
+        @Override
+        public void hierarchyChanged(HierarchyEvent e) {
+            toolbarStatusChanged(e);
+        }
+    };
 
     private interface WindowAppearanceChangedCallback {
         void windowAppearanceChanged(@NotNull Window w, @NotNull String appearanceName);
@@ -272,9 +281,17 @@ final public class AquaUtils {
      * Obtain the usable bounds of the screen at a given location.
      * This code taken from JPopupMenu.
      */
-    public static Rectangle getScreenBounds(Point location, Component invoker) {
-        Rectangle bounds;
+    public static Rectangle getScreenBounds(@NotNull Point location, @Nullable Component invoker) {
         GraphicsConfiguration gc = getCurrentGraphicsConfiguration(location, invoker);
+        return getScreenBounds(gc);
+    }
+
+    /**
+     * Obtain the usable bounds of the specified screen or the primary screen.
+     * This code taken from JPopupMenu.
+     */
+    public static @NotNull Rectangle getScreenBounds(@Nullable GraphicsConfiguration gc) {
+        Rectangle bounds;
         Toolkit toolkit = Toolkit.getDefaultToolkit();
         if (gc != null) {
             // If we have GraphicsConfiguration use it to get screen bounds
@@ -285,7 +302,7 @@ final public class AquaUtils {
         }
 
         Insets insets = toolkit.getScreenInsets(gc);
-        int top = insets.top / 2;
+        int top = insets.top;
         int bottom = insets.bottom;
         int left = insets.left;
         int right = insets.right;
@@ -294,11 +311,11 @@ final public class AquaUtils {
     }
 
     /**
-     * Tries to find GraphicsConfiguration
-     * that contains the mouse cursor position.
-     * Can return null.
+     * Try to find GraphicsConfiguration that contains the specified mouse sprite position.
+     * This code taken from JPopupMenu.
      */
-    private static GraphicsConfiguration getCurrentGraphicsConfiguration(Point location, Component invoker) {
+    private static @Nullable GraphicsConfiguration getCurrentGraphicsConfiguration(@NotNull Point location,
+                                                                                   @Nullable Component invoker) {
         GraphicsConfiguration gc = null;
         GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
         GraphicsDevice[] gds = ge.getScreenDevices();
@@ -341,15 +358,57 @@ final public class AquaUtils {
         return c == null || c.getComponentOrientation().isLeftToRight() ? AquaUIPainter.UILayoutDirection.LEFT_TO_RIGHT : AquaUIPainter.UILayoutDirection.RIGHT_TO_LEFT;
     }
 
-    static void enforceComponentOrientation(Component c, ComponentOrientation orientation) {
-        c.setComponentOrientation(orientation);
-        if (c instanceof Container) {
-            for (Component child : ((Container) c).getComponents()) {
-                enforceComponentOrientation(child, orientation);
+    // A component is toolbar sensitive if its layout and/or rendering is different when it is contained in a toolbar or
+    // a toolbar panel. Changes in toolbar status may occur when the ancestor hierarchy changes. It also may change if
+    // a container dynamically changes its toolbar panel status. Dynamic changes to toolbar panel status are not
+    // automatically recognized. The file chooser supports its dynamic toolbar panel status by generating hierarchy
+    // changed events (using the generateToolbarStatusEvents method, below).
+
+    public static void installToolbarSensitivity(@NotNull JComponent c) {
+        ToolbarSensitiveUI ui = getUI(c, ToolbarSensitiveUI.class);
+        if (ui != null) {
+            c.addHierarchyListener(toolbarStatusListener);
+        }
+    }
+
+    public static void uninstallToolbarSensitivity(@NotNull JComponent c) {
+        c.removeHierarchyListener(toolbarStatusListener);
+    }
+
+    private static void toolbarStatusChanged(@NotNull HierarchyEvent e) {
+        Component target = e.getComponent();
+        if (target instanceof JComponent) {
+            JComponent jc = (JComponent) target;
+            ToolbarSensitiveUI ui = getUI(jc, ToolbarSensitiveUI.class);
+            if (ui != null) {
+                ui.toolbarStatusChanged(jc);
             }
         }
     }
 
+    public static void generateToolbarStatusEvents(@NotNull JComponent c) {
+        // For a toolbar status change to be recognized by subcomponents, a hierarchy changed event must be delivered
+        // to each component.
+        generateToolbarStatusEvents(c, c);
+    }
+
+    private static void generateToolbarStatusEvents(@NotNull JComponent top, @NotNull Component c) {
+        HierarchyEvent e = new HierarchyEvent(c, HierarchyEvent.HIERARCHY_CHANGED, top, top.getParent());
+        HierarchyListener[] listeners = c.getHierarchyListeners();
+        for (HierarchyListener listener : listeners) {
+            listener.hierarchyChanged(e);
+        }
+        if (c instanceof Container) {
+            Container cc = (Container) c;
+            int componentCount = cc.getComponentCount();
+            for (int i = 0; i < componentCount; i++) {
+                Component child = cc.getComponent(i);
+                generateToolbarStatusEvents(top, child);
+            }
+        }
+    }
+
+    // Any component UI that uses this method should install toolbar sensitivity.
     public static boolean isOnToolbar(JComponent b) {
         Component parent = b.getParent();
         while (parent != null) {
@@ -964,25 +1023,121 @@ final public class AquaUtils {
      */
     private static boolean isMagicEraser(Component c, int eraserMode) {
 
-        boolean isTextured = (eraserMode & ERASE_IF_TEXTURED) != 0;
-        boolean isVibrant = (eraserMode & ERASE_IF_VIBRANT) != 0;
-
-        while (c != null) {
-            if (c instanceof JRootPane) {
-                JRootPane rp = (JRootPane) c;
-                if (isTextured && isNativeTextured(rp)) {
-                    return true;
-                }
+        if ((eraserMode & ERASE_IF_TEXTURED) != 0) {
+            JRootPane rootPane = SwingUtilities.getRootPane(c);
+            if (rootPane != null && isNativeTextured(rootPane)) {
+                return true;
             }
+        }
 
+        if ((eraserMode & ERASE_IF_VIBRANT) != 0) {
             if (c instanceof JComponent) {
                 JComponent jc = (JComponent) c;
-                if (isVibrant && AquaVibrantSupport.isVibrant(jc)) {
+                if (AquaVibrantSupport.isVibrant(jc)) {
                     return true;
                 }
             }
+        }
 
-            c = c.getParent();
+        return false;
+    }
+
+    /**
+     * Determine the appropriate background for a component that displays the window content background color.
+     * @param c A component in the window.
+     * @return the color.
+     */
+    public static @NotNull Color getWindowBackground(@NotNull JComponent c) {
+        EffectName effect = AquaFocusHandler.isActive(c) ? EffectName.EFFECT_NONE : EffectName.EFFECT_DISABLED;
+        String baseColor = "windowBackground";
+        JRootPane rp = c.getRootPane();
+        if (rp != null && isTextured(rp)) {
+            baseColor = "texturedWindowBackground";
+        }
+        return AquaColors.getBackground(c, baseColor, effect);
+    }
+
+    /**
+     * Determine the appropriate background for a window top or bottom margin.
+     * This method is not used when the margin is painted with a gradient.
+     * @param rp The root pane the window.
+     * @param isTop True for the top margin, false for the bottom margin.
+     * @return the color.
+     */
+    public static @NotNull Color getWindowMarginBackground(@NotNull JRootPane rp, boolean isTop) {
+        // In most cases, the margin color when flat matches the content area color.
+        // One exception is a non-textured window in light mode.
+        // The other is a dark mode non-textured unified title/tool bar (top margin).
+
+        String base = isTextured(rp) ? "TexturedWindowMarginBackground" : "WindowMarginBackground";
+        String prefix = isTop ? "top" : "bottom";
+        String suffix = AquaFocusHandler.isActive(rp) ? "" : "_disabled";
+        String colorName = prefix + base + suffix;
+        AquaAppearance appearance = AppearanceManager.getAppearance(rp);
+        Color bc = appearance.getColor(colorName);
+        if (bc == null) {
+            // should not happen
+            System.err.println("Undefined window margin background color: " + colorName);
+            return AquaColors.CLEAR;
+        } else {
+            return bc;
+        }
+    }
+
+    public static @NotNull Color getWindowMarginDividerColor(@NotNull JRootPane rp, boolean isTop) {
+        String base = isTextured(rp) ? "TexturedWindowDivider" : "WindowDivider";
+        String prefix = isTop ? "top" : "bottom";
+        String suffix = AquaFocusHandler.isActive(rp) ? "" : "_disabled";
+        String colorName = prefix + base + suffix;
+        AquaAppearance appearance = AppearanceManager.getAppearance(rp);
+        Color color = appearance.getColor(colorName);
+        if (color == null) {
+            // should not happen
+            System.err.println("Undefined window divider color: " + colorName);
+            return AquaColors.CLEAR;
+        } else {
+            return color;
+        }
+    }
+
+    public static boolean isTextured(@NotNull JRootPane rp) {
+        if (isNativeTextured(rp)) {
+            return true;
+        }
+
+        AquaRootPaneUI ui = getUI(rp, AquaRootPaneUI.class);
+        if (ui != null) {
+            AquaCustomStyledWindow customStyledWindow = ui.getCustomStyledWindow();
+            if (customStyledWindow != null) {
+                return customStyledWindow.isTextured();
+            }
+        }
+
+        return false;
+    }
+
+    public static boolean isNativeTextured(@NotNull Window w) {
+        if (w instanceof RootPaneContainer) {
+            RootPaneContainer rpc = (RootPaneContainer) w;
+            JRootPane rootPane = rpc.getRootPane();
+            return isNativeTextured(rootPane);
+        }
+        return false;
+    }
+
+    public static boolean isNativeTextured(@NotNull JRootPane rp) {
+        Object prop = rp.getClientProperty("apple.awt.brushMetalLook");
+        if (prop != null) {
+            if (Boolean.parseBoolean(prop.toString())) {
+                return true;
+            }
+        }
+
+        prop = rp.getClientProperty("Window.style");
+        if (prop != null) {
+            if (prop.equals("textured")) {
+                return true;
+            }
         }
 
         return false;
@@ -1319,11 +1474,37 @@ final public class AquaUtils {
     }
 
     private static JScrollPane verifyScrollPaneAncestor(Component view, JScrollPane p) {
-        // Make certain we are the viewPort's view and not, for
-        // example, the rowHeaderView of the scrollPane -
-        // an implementor of fixed columns might do this.
+        // Make certain we are the viewport's view and not, for example, the rowHeaderView of the scrollPane - an
+        // implementor of fixed columns might do this.
         JViewport v = p.getViewport();
         return v != null && v.getView() == view ? p : null;
+    }
+
+    /**
+     * Return the scroll pane that contains the specified component as the sole component of the viewport.
+     */
+    public static @Nullable JScrollPane getScrollPaneContainer(JComponent c) {
+        Container parent = c.getParent();
+        if (parent instanceof JViewport) {
+            if (parent.getComponentCount() == 1) {
+                Container viewportParent = parent.getParent();
+                if (viewportParent instanceof OverlayScrollPaneHack.AquaOverlayViewportHolder) {
+                    viewportParent = viewportParent.getParent();
+                }
+                if (viewportParent instanceof JScrollPane) {
+                    return (JScrollPane) viewportParent;
+                }
+            }
+        }
+        return null;
+    }
+
+    public static void configure(@NotNull AquaUIPainter painter, @NotNull Component c, int width, int height) {
+        AquaAppearance appearance = AppearanceManager.getRegisteredAppearance(c);
+        if (appearance != null) {
+            painter.configureAppearance(appearance);
+        }
+        painter.configure(width, height);
     }
 
     public final static int TITLE_BAR_NONE = 0;
@@ -1366,7 +1547,60 @@ final public class AquaUtils {
     }
 
     private static long setTitleBarStyle(Window w, long wptr, int style) {
-        int result = nativeSetTitleBarStyle(wptr, style);
+
+        JRootPane rp = getRootPane(w);
+        assert rp != null;
+
+        int result;
+
+        if (!WindowStylePatch.isNeeded()) {
+            boolean hasTitleBar = true;
+            boolean isFullWindowContent = false;
+            boolean isTransparentTitleBar = false;
+            boolean isMovableByBackground = isNativeTextured(w);
+            boolean isMovable = true;
+            boolean isFixNeeded = false;
+            boolean isHidden = false;
+
+            switch (style) {
+                case TITLE_BAR_NONE:
+                    hasTitleBar = false;
+                    break;
+
+                case TITLE_BAR_TRANSPARENT:
+                    isFullWindowContent = true;
+                    isTransparentTitleBar = true;
+                    isMovableByBackground = false;
+                    isFixNeeded = true;
+                    break;
+
+                case TITLE_BAR_HIDDEN:
+                    isFullWindowContent = true;
+                    isTransparentTitleBar = true;
+                    isMovable = OSXSystemProperties.OSVersion < 1011;
+                    isMovableByBackground = false;
+                    isFixNeeded = true;
+                    isHidden = true;
+                    break;
+
+                case TITLE_BAR_OVERLAY:
+                    isFullWindowContent = true;
+                    isFixNeeded = true;
+                    break;
+
+                case TITLE_BAR_ORDINARY:
+                default:
+            }
+
+            rp.putClientProperty("apple.awt.fullWindowContent", isFullWindowContent);
+            rp.putClientProperty("apple.awt.transparentTitleBar", isTransparentTitleBar);
+            rp.putClientProperty("apple.awt.draggableWindowBackground", isMovableByBackground);
+            result = nativeSetTitleBarProperties(wptr, hasTitleBar, isMovable, isHidden, isFixNeeded);
+
+        } else {
+            result = nativeSetTitleBarStyle(wptr, style);
+        }
+
         if (result != 0) {
             throw new UnsupportedOperationException("Unable to set window title bar style");
         } else if (style == TITLE_BAR_HIDDEN) {
@@ -1572,7 +1806,7 @@ final public class AquaUtils {
      * @param w The window.
      * @param c The color.
      */
-    public static void setWindowBackground(Window w, Color c) {
+    private static void setWindowBackground(Window w, Color c) {
 
         if (c.equals(w.getBackground())) {
             return;
@@ -1747,6 +1981,7 @@ final public class AquaUtils {
     private static native void nativeSetWindowBackground(Window w, Color color);
     private static native boolean nativeIsFullScreenWindow(long w);
     private static native int nativeSetTitleBarStyle(long w, int style);
+    private static native int nativeSetTitleBarProperties(long w, boolean hasTitleBar, boolean isMovable, boolean isHidden, boolean isFixNeeded);
     private static native int nativeAddToolbarToWindow(long w);
     private static native int nativeSetWindowCornerRadius(long w, float radius);
     private static native int nativeSetAWTViewVisibility(long w, boolean isVisible);

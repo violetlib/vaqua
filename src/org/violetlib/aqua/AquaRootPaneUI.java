@@ -350,8 +350,12 @@ public class AquaRootPaneUI extends BasicRootPaneUI {
         @Override
         public void hierarchyChanged(HierarchyEvent e) {
             long flags = e.getChangeFlags();
-            if (!isInitialized && (flags & HierarchyEvent.DISPLAYABILITY_CHANGED) != 0) {
-                configure();
+            if ((flags & HierarchyEvent.DISPLAYABILITY_CHANGED) != 0) {
+                if (rootPane.getParent() != null && rootPane.getParent().isDisplayable()) {
+                    configure();
+                } else {
+                    unconfigure();
+                }
             }
         }
     }
@@ -418,6 +422,10 @@ public class AquaRootPaneUI extends BasicRootPaneUI {
         return null;
     }
 
+    private void unconfigure() {
+        removeVisualEffectView();
+    }
+
     /**
      * This method is called when the native window discovers that it has been assigned a different appearance,
      * meaning an appearance with a different appearance name.
@@ -477,13 +485,19 @@ public class AquaRootPaneUI extends BasicRootPaneUI {
 
     protected void setupBackground(@NotNull Window w) {
 
-        if (OSXSystemProperties.OSVersion >= 1014 && !vibrantStyleIsExplicitlySet) {
-            int vibrantStyle = getDefaultWindowVibrantStyle();
-            updateVibrantStyle(vibrantStyle, false);
-        }
+        if (w.isDisplayable()) {
+            if (OSXSystemProperties.OSVersion >= 1014 && !vibrantStyleIsExplicitlySet) {
+                int vibrantStyle = getDefaultWindowVibrantStyle();
+                updateVibrantStyle(vibrantStyle, false);
+            }
 
-        Color c = AquaUtils.getWindowBackground(rootPane);
-        AquaUtils.setBackgroundCarefully(rootPane, c);
+            if (!AquaColors.isPriority(rootPane.getBackground())) {
+                rootPane.setBackground(null);
+            }
+
+            Color c = AquaUtils.getWindowBackground(rootPane);
+            AquaUtils.setBackgroundCarefully(w, c);
+        }
     }
 
     protected int getDefaultWindowVibrantStyle() {
@@ -594,24 +608,26 @@ public class AquaRootPaneUI extends BasicRootPaneUI {
 
     protected void reconfigureCustomWindowStyle() {
         Window w = getWindow();
-        int style = getCustomWindowStyle();
-        if (style < 0 || w == null) {
-            uninstallCustomWindowStyle();
-        } else {
-            int topMarginHeight = getTopMarginHeight();
-            int bottomMarginHeight = getBottomMarginHeight();
-            if (customStyledWindow != null && !customStyledWindow.isValid(style, topMarginHeight, bottomMarginHeight)) {
-                customStyledWindow = customStyledWindow.reconfigure(style, topMarginHeight, bottomMarginHeight);
-                setupBackground(w);
-            } else if (customStyledWindow == null) {
-                try {
-                    customStyledWindow = new AquaCustomStyledWindow(w, style, topMarginHeight, bottomMarginHeight);
+        if (w == null || w.isDisplayable()) {
+            int style = getCustomWindowStyle();
+            if (style < 0 || w == null) {
+                uninstallCustomWindowStyle();
+            } else {
+                int topMarginHeight = getTopMarginHeight();
+                int bottomMarginHeight = getBottomMarginHeight();
+                if (customStyledWindow != null && !customStyledWindow.isValid(style, topMarginHeight, bottomMarginHeight)) {
+                    customStyledWindow = customStyledWindow.reconfigure(style, topMarginHeight, bottomMarginHeight);
                     setupBackground(w);
-                } catch (AquaCustomStyledWindow.RequiredToolBarNotFoundException ex) {
-                    // This exception would be thrown if the window style is set before adding the tool bar to the
-                    // content pane, which would not be an error.
-                } catch (IllegalArgumentException ex) {
-                    AquaUtils.syslog("Unable to install custom window style: " + ex.getMessage());
+                } else if (customStyledWindow == null) {
+                    try {
+                        customStyledWindow = new AquaCustomStyledWindow(w, style, topMarginHeight, bottomMarginHeight);
+                        setupBackground(w);
+                    } catch (AquaCustomStyledWindow.RequiredToolBarNotFoundException ex) {
+                        // This exception would be thrown if the window style is set before adding the tool bar to the
+                        // content pane, which would not be an error.
+                    } catch (IllegalArgumentException ex) {
+                        AquaUtils.syslog("Unable to install custom window style: " + ex.getMessage());
+                    }
                 }
             }
         }

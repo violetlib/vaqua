@@ -77,7 +77,7 @@ public abstract class AquaButtonLabeledUI extends AquaButtonUI {
     }
 
     @Override
-    protected Border getDefaultBorder(AbstractButton b) {
+    protected Border getDefaultBorder(AbstractButton b, boolean isToolbar) {
         return widgetBorder;
     }
 

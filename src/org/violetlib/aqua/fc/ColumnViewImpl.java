@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014-2015 Alan Snyder.
+ * Copyright (c) 2014-2018 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -8,11 +8,6 @@
 
 package org.violetlib.aqua.fc;
 
-import javax.swing.*;
-import javax.swing.event.TreeSelectionEvent;
-import javax.swing.event.TreeSelectionListener;
-import javax.swing.tree.TreePath;
-import javax.swing.tree.TreeSelectionModel;
 import java.awt.*;
 import java.awt.dnd.DropTarget;
 import java.awt.event.KeyListener;
@@ -20,7 +15,16 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.io.File;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import javax.swing.*;
+import javax.swing.event.TreeSelectionEvent;
+import javax.swing.event.TreeSelectionListener;
+import javax.swing.tree.TreePath;
+import javax.swing.tree.TreeSelectionModel;
+
+import org.violetlib.aqua.AquaUtils;
+import org.violetlib.aqua.OSXSystemProperties;
 
 /**
  * An implementation of column view.
@@ -44,13 +48,36 @@ public class ColumnViewImpl extends ColumnView {
 
         setFocusable(false);
 
+        int version = OSXSystemProperties.OSVersion;
+
+        int columnMinimumWidth;
+
+        if (version <= 1013) {
+            columnMinimumWidth = 164;
+        } else {
+            columnMinimumWidth = 206;
+        }
+
         browser = new ColumnViewBrowser(fc);
-        browser.setFixedCellWidth(170);
+        browser.setColumnMinimumWidth(columnMinimumWidth);
         browser.setShowCellTipOrigin((Point) UIManager.get("FileChooser.cellTipOrigin"));
         browser.setShowCellTips(true);
         browser.setPreviewColumnFilled(true);
 
+        int minimumHeight;
+
+        if (version <= 1011) {
+            minimumHeight = 332;
+        } else if (version == 1012) {
+            minimumHeight = 203;
+        } else {
+            minimumHeight = 100;
+        }
+
+        setMinimumSize(new Dimension(720, minimumHeight));
+
         browserScrollPane = new JScrollPane();
+        browserScrollPane.setViewport(new BrowserViewport());
         browserScrollPane.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 0));
         browserScrollPane.setViewportView(browser);
         browserScrollPane.putClientProperty("Quaqua.Component.visualMargin", new Insets(3, 2, 3, 2));
@@ -92,6 +119,14 @@ public class ColumnViewImpl extends ColumnView {
                 }
             }
             return false;
+        }
+
+        @Override
+        protected void previewColumnVisibilityChanged(boolean isVisible) {
+            AquaFileChooserUI ui = AquaUtils.getUI(fc, AquaFileChooserUI.class);
+            if (ui != null) {
+                ui.configureDialogSize();
+            }
         }
     }
 
@@ -151,18 +186,21 @@ public class ColumnViewImpl extends ColumnView {
     }
 
     private void installPreviewComponent() {
-        final Component pv = (Component) fc.getClientProperty(PREVIEW_COMPONENT_CLIENT_PROPERTY_KEY);
-        if (pv != null) {
-            browser.setPreviewRenderer(new BrowserPreviewRenderer() {
-                public Component getPreviewRendererComponent(JBrowser browser, TreePath[] paths) {
-                    return pv;
-                }
-            });
-            browser.setPreviewColumnWidth(Math.max(browser.getFixedCellWidth(), pv.getPreferredSize().width));
+        boolean isSave = isFileNameFieldVisible();
+        if (isSave) {
+            browser.setPreviewRenderer(null);
         } else {
-            boolean isSave = isFileNameFieldVisible();
-            browser.setPreviewRenderer((isSave) ? null : createFilePreview(fc));
-            browser.setPreviewColumnWidth(browser.getFixedCellWidth());
+            Component specifiedPreviewComponent = (Component) fc.getClientProperty(PREVIEW_COMPONENT_CLIENT_PROPERTY_KEY);
+            if (specifiedPreviewComponent != null) {
+                browser.setPreviewRenderer(new BrowserPreviewRenderer() {
+                    public Component getPreviewRendererComponent(JBrowser browser, TreePath[] paths) {
+                        return specifiedPreviewComponent;
+                    }
+                });
+            } else {
+                BrowserPreviewRenderer previewRenderer = createFilePreview(fc);
+                browser.setPreviewRenderer(previewRenderer);
+            }
         }
     }
 
@@ -192,6 +230,14 @@ public class ColumnViewImpl extends ColumnView {
 
     protected MouseListener createDoubleClickListener() {
         return new DoubleClickListener();
+    }
+
+    protected class BrowserViewport extends JViewport {
+        @Override
+        public Dimension getMinimumSize() {
+            Component view = getView();
+            return view.getMinimumSize();
+        }
     }
 
     protected class MyTreeSelectionListener implements TreeSelectionListener {
