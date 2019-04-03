@@ -10,11 +10,10 @@
 
 package org.violetlib.aqua.fc;
 
-import javax.swing.*;
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
-import java.util.List;
+import javax.swing.*;
 
 import org.jetbrains.annotations.NotNull;
 
@@ -226,7 +225,7 @@ public abstract class BasicOSXFileSystemView extends AquaFileSystemView {
         }
 
         if (OSXFile.isAvailable()) {
-            return OSXFile.getFileIcon(f, 16);
+            return AquaFileIcons.getFileIcon(f, 16);
         }
 
         return super.getSystemIcon(f);

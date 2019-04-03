@@ -772,11 +772,11 @@ static NSImage *getFileImage(NSString *path, jboolean isQuickLook, jboolean isIc
 }
 
 /*
- * Class:     org_violetlib_aqua_fc_OSXFile
+ * Class:     org_violetlib_aqua_fc_AquaFileIcons
  * Method:    nativeRenderFileImage
  * Signature: (Ljava/lang/String;ZZ[[III)Z
  */
-JNIEXPORT jboolean JNICALL Java_org_violetlib_aqua_fc_OSXFile_nativeRenderFileImage
+JNIEXPORT jboolean JNICALL Java_org_violetlib_aqua_fc_AquaFileIcons_nativeRenderFileImage
     (JNIEnv *env, jclass cl, jstring jpath, jboolean isQuickLook, jboolean isIconMode, jobjectArray output, jint w, jint h)
 {
     jboolean result = NO;

@@ -8,11 +8,10 @@
 
 package org.violetlib.aqua.fc;
 
+import java.io.File;
 import javax.swing.*;
 import javax.swing.filechooser.FileView;
 import javax.swing.plaf.FileChooserUI;
-import java.awt.*;
-import java.io.File;
 
 /**
  * Update the tree node for a file with system provided display information that might be expensive to obtain.
@@ -47,7 +46,7 @@ public class FileInfoUpdateWorker implements Runnable {
         Icon icon;
 
         if (canGetFileIconDirectly()) {
-            icon = OSXFile.getFileIcon(f, 16);
+            icon = AquaFileIcons.getFileIcon(f, 16);
         } else {
             icon = fc.getIcon(f);
         }

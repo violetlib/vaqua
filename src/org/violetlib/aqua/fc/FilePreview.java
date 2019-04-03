@@ -11,7 +11,9 @@
 package org.violetlib.aqua.fc;
 
 import java.awt.*;
-import java.awt.event.*;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
 import java.io.File;
 import java.text.DateFormat;
 import java.text.MessageFormat;
@@ -430,7 +432,7 @@ public class FilePreview extends JComponent implements BrowserPreviewRenderer {
             if (file != null) {
                 imageIsLoading = true;
                 imageLoadingTimer.start();
-                AquaFileIcon icon = OSXFile.getFileIcon(file, 1600);
+                AquaFileIcon icon = AquaFileIcons.getFileIcon(file, 1600);
                 icon.addChangeListener(ev -> SwingUtilities.invokeLater(() -> installPreviewImage(icon)));
                 installPreviewImage(icon);
             }
