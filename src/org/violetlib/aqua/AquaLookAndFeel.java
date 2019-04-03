@@ -1,5 +1,5 @@
 /*
- * Changes copyright (c) 2015-2018 Alan Snyder.
+ * Changes copyright (c) 2015-2019 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -462,7 +462,6 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
                 "FileChooser.autovalidate", true,
                 "FileChooser.quickLookEnabled", true,
                 "FileChooser.orderByType", false,
-                "FileChooser.speed", false,  // setting to true turns off the fancy file view
 
                 "FileChooser.browserCellTextIconGap", 6,
                 "FileChooser.browserCellTextArrowIconGap", 5,

@@ -1,8 +1,6 @@
 /*
- * @(#AquaFileChooserUI.java
- *
  * Copyright (c) 2011-2013 Werner Randelshofer, Switzerland.
- * Copyright (c) 2014-2018 Alan Snyder.
+ * Copyright (c) 2014-2019 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the
@@ -1402,18 +1400,12 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
 
     @Override
     public void createModel() {
-        // FIXME - We should not overwrite the FileSystemView attribute
-        // of the JFileChooser.
+        // FIXME - We should not overwrite the FileSystemView attribute of the JFileChooser.
         fc.setFileSystemView(AquaFileSystemView.getAquaFileSystemView());
 
-        // FIXME - We should not overwrite the FileView attribute
-        // of the JFileChooser.
-        if (UIManager.getBoolean("FileChooser.speed")) {
-            fileView = new BasicFileView();
-        } else {
-            fileView = AquaFileSystemView.getAquaFileSystemView().createFileView(fc);
-        }
+        // FIXME - We should not overwrite the FileView attribute of the JFileChooser.
 
+        fileView = AquaFileSystemView.getAquaFileSystemView().createFileView(fc);
         fc.setFileView(fileView);
 
         fileSystemModel = new FileSystemTreeModel(fc);

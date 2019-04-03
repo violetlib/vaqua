@@ -1,8 +1,6 @@
 /*
- * @(#)BasicOSXFileSystemView.java
- *
  * Copyright (c) 2009-2010 Werner Randelshofer, Switzerland.
- * Copyright (c) 2014-2018 Alan Snyder
+ * Copyright (c) 2014-2019 Alan Snyder
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the
@@ -13,7 +11,6 @@
 package org.violetlib.aqua.fc;
 
 import javax.swing.*;
-import java.awt.*;
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
@@ -229,11 +226,7 @@ public abstract class BasicOSXFileSystemView extends AquaFileSystemView {
         }
 
         if (OSXFile.isAvailable()) {
-            try {
-                Image im = OSXFile.getIconImage(f, 16, false);
-                return new ImageIcon(im);
-            } catch (UnsupportedOperationException ex) {
-            }
+            return OSXFile.getFileIcon(f, 16);
         }
 
         return super.getSystemIcon(f);

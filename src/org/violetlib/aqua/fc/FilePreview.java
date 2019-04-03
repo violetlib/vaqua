@@ -1,8 +1,6 @@
 /*
- * @(#)FilePreview.java
- *
  * Copyright (c) 2009-2010 Werner Randelshofer, Switzerland.
- * Copyright (c) 2014-2018 Alan Snyder.
+ * Copyright (c) 2014-2019 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the
@@ -20,9 +18,7 @@ import java.text.MessageFormat;
 import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.List;
 import java.util.Locale;
-import java.util.concurrent.TimeUnit;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.filechooser.FileSystemView;
@@ -30,14 +26,13 @@ import javax.swing.plaf.basic.BasicHTML;
 import javax.swing.table.*;
 import javax.swing.tree.TreePath;
 
+import org.jetbrains.annotations.NotNull;
 import org.violetlib.aqua.AppearanceManager;
 import org.violetlib.aqua.AquaColors;
 import org.violetlib.aqua.OSXSystemProperties;
 
 /**
  * The FilePreview is used to render the preview column in the file chooser browser view.
- *
- * @author  Werner Randelshofer
  */
 public class FilePreview extends JComponent implements BrowserPreviewRenderer {
 
@@ -77,12 +72,9 @@ public class FilePreview extends JComponent implements BrowserPreviewRenderer {
 
         imageLoadingIndicator = createImageLoadingIndicator();
 
-        imageLoadingTimer = new Timer(500, new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                if (imageIsLoading) {
-                    imageLoadingIndicator.setVisible(true);
-                }
+        imageLoadingTimer = new Timer(500, e -> {
+            if (imageIsLoading) {
+                imageLoadingIndicator.setVisible(true);
             }
         });
         imageLoadingTimer.setRepeats(false);
@@ -262,7 +254,6 @@ public class FilePreview extends JComponent implements BrowserPreviewRenderer {
         String name = info.getUserName();
         String kind = OSXFile.getKindString(file);
         String size = getLengthString(info.getFileLength());
-        Date lastUsedDate = OSXFile.getLastUsedDate(file);
         String modified = getModifiedString(file);
 
         if (nameView != null) {
@@ -279,6 +270,7 @@ public class FilePreview extends JComponent implements BrowserPreviewRenderer {
             }
             m.add("modified", modified);
 
+            Date lastUsedDate = OSXFile.getLastUsedDate(file);
             if (lastUsedDate != null) {
                 m.add("lastUsed", getLastUsedString(lastUsedDate));
             }
@@ -293,8 +285,15 @@ public class FilePreview extends JComponent implements BrowserPreviewRenderer {
                 m.add("", s); // special font and text color for first row
             }
             m.add("modified", modified);
-            if (lastUsedDate != null) {
-                m.add("lastUsed", getLastUsedString(lastUsedDate));
+
+            // TBD: in 10.14, it can take a long time to determine that the last used date is not
+            // available to an untrusted program.
+
+            if (OSXSystemProperties.OSVersion < 1014) {
+                Date lastUsedDate = OSXFile.getLastUsedDate(file);
+                if (lastUsedDate != null) {
+                    m.add("lastUsed", getLastUsedString(lastUsedDate));
+                }
             }
         }
 
@@ -427,78 +426,25 @@ public class FilePreview extends JComponent implements BrowserPreviewRenderer {
         imageIsLoading = false;
 
         if (info != null) {
-            // Retrieving the file icon requires some potentially lengthy I/O
-            // operations. Therefore we do this in a worker thread.
             File file = info.lazyGetResolvedFile();
             if (file != null) {
                 imageIsLoading = true;
-                boolean useQuickLook = UIManager.getBoolean("FileChooser.quickLookEnabled");
-                PreviewWorker w = new PreviewWorker(file, useQuickLook);
-                w.execute();
                 imageLoadingTimer.start();
+                AquaFileIcon icon = OSXFile.getFileIcon(file, 1600);
+                icon.addChangeListener(ev -> SwingUtilities.invokeLater(() -> installPreviewImage(icon)));
+                installPreviewImage(icon);
             }
         }
     }
 
-    protected class QuickLookPreviewWorker extends SwingWorker<Image,Image> {
-
-        private final File file;
-
-        public QuickLookPreviewWorker(File file) {
-            this.file = file;
-        }
-
-        @Override
-        protected Image doInBackground() throws Exception {
-            try {
-                return OSXFile.getIconImage(file, 1600, true);
-            } catch (UnsupportedOperationException ex) {
-                return null;
-            }
-        }
-    }
-
-    protected class PreviewWorker extends SwingWorker<Image,Image> {
-
-        private final File file;
-        private final boolean useQuickLook;
-
-        public PreviewWorker(File file, boolean useQuickLook) {
-            this.file = file;
-            this.useQuickLook = useQuickLook;
-        }
-
-        @Override
-        protected Image doInBackground() throws Exception {
-            if (useQuickLook) {
-                QuickLookPreviewWorker w = new QuickLookPreviewWorker(file);
-                w.execute();
-                Image im = w.get(10, TimeUnit.SECONDS);
-                w.cancel(true);
-                if (im != null) {
-                    publish(im);
-                    return im;
-                }
-            }
-
-            Image im = OSXFile.getIconImage(file, 512, false);
-            publish(im);
-            return im;
-        }
-
-        @Override
-        protected void process(List<Image> chunks) {
-            FilePreview.this.installPreviewImage(chunks.get(0));
-        }
-    }
-
-    protected void installPreviewImage(Image im) {
-        imageLoadingTimer.stop();
-        imageIsLoading = false;
-        imageLoadingIndicator.setVisible(false);
-        previewImageView.setImage(im);
-        if (im != null) {
+    protected void installPreviewImage(@NotNull AquaFileIcon icon) {
+        Image image = icon.getCurrentImage();
+        if (image != null) {
+            previewImageView.setImage(image);
             previewImageView.setVisible(true);
+            imageLoadingTimer.stop();
+            imageIsLoading = false;
+            imageLoadingIndicator.setVisible(false);
         }
     }
 

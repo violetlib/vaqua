@@ -44,26 +44,15 @@ public class FileInfoUpdateWorker implements Runnable {
         // We have special code to get the file icon. However, the JFileChooser owns the mapping from file to icon.
         // Therefore we have to validate the use of our short circuit.
 
-        if (!canGetFileIconDirectly()) {
-            Icon icon = fc.getIcon(f);
-            updateFileIcon(icon);
-            return;
+        Icon icon;
+
+        if (canGetFileIconDirectly()) {
+            icon = OSXFile.getFileIcon(f, 16);
+        } else {
+            icon = fc.getIcon(f);
         }
 
-        // Our plan is to use a Quick Look image, if one is available, and otherwise use the Launch Services icon for
-        // the file. However, Quick Look can be very slow, so our plan is to install the Launch Services icon first,
-        // and replace it if and when the Quick Look icon arrives.
-
-        // Based on the above validation, this call will get the Launch Services icon, but also handles some special
-        // cases.
-        Icon icon = fc.getIcon(f);
         updateFileIcon(icon);
-
-        try {
-            Image quickLookImage = OSXFile.getIconImage(f, 16, true);
-            updateFileIcon(new ImageIcon(quickLookImage));
-        } catch (UnsupportedOperationException ex) {
-        }
     }
 
     protected boolean canGetFileIconDirectly() {
@@ -88,26 +77,14 @@ public class FileInfoUpdateWorker implements Runnable {
     }
 
     protected void updateFileLabel(int label) {
-        SwingUtilities.invokeLater(new Runnable() {
-            public void run() {
-                node.updateFileLabel(label);
-            }
-        });
+        SwingUtilities.invokeLater(() -> node.updateFileLabel(label));
     }
 
     protected void updateFileIcon(Icon icon) {
-        SwingUtilities.invokeLater(new Runnable() {
-            public void run() {
-                node.updateFileIcon(icon);
-            }
-        });
+        SwingUtilities.invokeLater(() -> node.updateFileIcon(icon));
     }
 
     protected void updateCompleted() {
-        SwingUtilities.invokeLater(new Runnable() {
-            public void run() {
-                node.updateCompleted();
-            }
-        });
+        SwingUtilities.invokeLater(() -> node.updateCompleted());
     }
 }

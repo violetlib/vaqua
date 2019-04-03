@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2003-2013 Werner Randelshofer, Switzerland.
- * Copyright (c) 2018 Alan Snyder
+ * Copyright (c) 2018-2019 Alan Snyder
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the
@@ -100,10 +100,6 @@ public class FileSystemTreeModel implements TreeModel {
      * Dispatcher for the resolution of aliases.
      */
     private SequentialDispatcher aliasResolutionDispatcher;
-    /**
-     * This is set to true, when we optimize for speed rather than for quality.
-     */
-    private boolean doItFast;
 
     /**
      * Creates a new instance.
@@ -125,8 +121,6 @@ public class FileSystemTreeModel implements TreeModel {
         //fileInfoDispatcher.setLIFO(true);
         directoryDispatcher = new ConcurrentDispatcher();
         aliasResolutionDispatcher = new SequentialDispatcher();
-
-        doItFast = UIManager.getBoolean("FileChooser.speed");
     }
 
     public void dispatchDirectoryUpdater(Runnable r) {
@@ -286,12 +280,8 @@ public class FileSystemTreeModel implements TreeModel {
             resolvedFile = f;
             isDirectory = fileType == OSXFile.FILE_TYPE_DIRECTORY;
         }
-        boolean isTraversable;
-        if (UIManager.getBoolean("FileChooser.speed")) {
-            isTraversable = isDirectory;
-        } else {
-            isTraversable = fileChooser.isTraversable(resolvedFile);
-        }
+        boolean isTraversable = fileChooser.isTraversable(resolvedFile);
+
         // Create node
         Node node;
         if (isAlias) {
@@ -1027,6 +1017,10 @@ public class FileSystemTreeModel implements TreeModel {
         public void updateFileIcon(Icon icon) {
             if (icon != this.icon) {
                 this.icon = icon;
+                if (icon instanceof AquaFileIcon) {
+                    AquaFileIcon ic = (AquaFileIcon) icon;
+                    ic.addChangeListener(ev -> SwingUtilities.invokeLater(this::fireChangeEvent));
+                }
                 fireChangeEvent();
             }
         }
@@ -1467,9 +1461,6 @@ public class FileSystemTreeModel implements TreeModel {
                             } else if (comparison == 0) {
                                 if (oldIndex < oldNodes.length) {
                                     Node oldNode = oldNodes[oldIndex];
-                                    if (!doItFast) {
-                                        oldNode.invalidateInfo();
-                                    }
                                     mergedChildren.add(oldNode);
                                 }
                                 oldIndex++;

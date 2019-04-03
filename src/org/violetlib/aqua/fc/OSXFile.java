@@ -1,10 +1,7 @@
 /*
- * @(#)OSXFile.java
- *
  * Copyright (c) 2009-2013 Werner Randelshofer, Switzerland.
- * Copyright (c) 2014-2018 Alan Snyder.
- * You may not use, copy or modify this file, except in compliance with the
- * accompanying license terms.
+ * Copyright (c) 2014-2019 Alan Snyder.
+ * You may not use, copy or modify this file, except in compliance with the accompanying license terms.
  */
 
 package org.violetlib.aqua.fc;
@@ -23,10 +20,7 @@ import org.violetlib.aqua.*;
 import org.violetlib.aqua.AquaUtils.RecyclableSingleton;
 
 /**
- * Provides access to Mac OS X file meta data and can resolve file aliases.
- *
- * @author Werner Randelshofer
- * @version $Id$
+ * Provides access to Mac OS X file metadata and icons and can resolve file aliases.
  */
 public class OSXFile {
 
@@ -35,14 +29,7 @@ public class OSXFile {
     public final static int FILE_TYPE_FILE = 0;
     public final static int FILE_TYPE_UNKNOWN = -1;
 
-    /**
-     * This array holds the colors used for drawing the gradients of a file label.
-     */
-    private static volatile Color[][] labelColors;
-
-    private static String computerModel;
-    private static boolean computerModelInitialized;
-    private static ImageIcon computerSidebarIcon;
+    private static final @NotNull ConcurrentDispatcher dispatcher = new ConcurrentDispatcher();
 
     private static final int kLSItemInfoIsPlainFile        = 0x00000001; /* Not a directory, volume, or symlink*/
     private static final int kLSItemInfoIsPackage          = 0x00000002; /* Packaged directory*/
@@ -391,73 +378,80 @@ public class OSXFile {
     }
 
     /**
-     * Return the icon image for a file.
+     * Return the icon for a file. The icon is dynamic. An image is installed into the icon when available.
+     * Additional images may be installed if they have higher priority than the current image.
      * @param file The file.
      * @param size The desired icon size.
-     * @param useQuickLook If true, an icon based on the Quick Look preview will be returned. If false, the Launch
-     * Services icon for the file wil be returned. Note that obtaining a Quick Look preview image can take a long time.
      * @throws UnsupportedOperationException if an image cannot be obtained.
      */
-    public static @NotNull Image getIconImage(@Nullable File file, int size, boolean useQuickLook) throws UnsupportedOperationException {
-        if (isNativeCodeAvailable() && file != null) {
-            FileIconCreator c = new FileIconCreator(file, size, useQuickLook, true);
-            return c.getImage();
-        }
+    public static @NotNull AquaFileIcon getFileIcon(@NotNull File file, int size) {
+        AquaFileIcon icon = new AquaFileIcon(size, size);
+        if (isNativeCodeAvailable()) {
+            // Quick Look icons are better but take longer to compute.
+            // For a small icon, it is best to use the Launch Services icon until the Quick Look icon is available.
+            // For a preview icon, it is better to wait a few seconds to get the Quick Look icon.
 
-        // TBD: return a default image
-        throw new UnsupportedOperationException();
-    }
-
-    /**
-     * Return the Quick Look thumbnail image for a file.
-     * @param file The file.
-     * @param size The desired image size.
-     * @throws UnsupportedOperationException if an image cannot be obtained.
-     */
-    public static @NotNull Image getThumbnailImage(@Nullable File file, int size) throws UnsupportedOperationException {
-        if (isNativeCodeAvailable() && file != null) {
-            FileIconCreator c = new FileIconCreator(file, size, true, false);
-            return c.getImage();
-        }
-
-        throw new UnsupportedOperationException();
-    }
-
-    /**
-     * Render the system icon for a file.
-     * This renderer should be invoked on a background thread.
-     */
-    private static class FileIconCreator {
-        private final File file;
-        private final int size;
-        private final boolean useQuickLook;
-        private final boolean useIconMode;
-        private Image result;
-
-        public FileIconCreator(@NotNull File file, int size, boolean useQuickLook, boolean useIconMode) {
-            this.file = file;
-            this.size = size;
-            this.useQuickLook = useQuickLook;
-            this.useIconMode = useIconMode;
-        }
-
-        public @NotNull Image getImage() {
-            if (result == null) {
-                String path = file.getAbsolutePath();
-                int[][] buffers = new int[2][];
-                if (!nativeRenderFileImage(path, useQuickLook, useIconMode, buffers, size, size)) {
-                    if (AquaImageFactory.debugNativeRendering) {
-                        System.err.println("Failed to render image for " + path);
+            if (size <= 256) {
+                dispatcher.dispatch(new FileIconUpdater(file, icon, false));
+                dispatcher.dispatch(new FileIconUpdater(file, icon, true));
+            } else {
+                dispatcher.dispatch(new FileIconUpdater(file, icon, true));
+                delay(10, () -> {
+                    if (icon.getCurrentImage() == null) {
+                        dispatcher.dispatch(new FileIconUpdater(file, icon, false));
                     }
-                    throw new UnsupportedOperationException();
-                }
-
-                if (AquaImageFactory.debugNativeRendering) {
-                    System.err.println("Rendered image for " + path);
-                }
-                result = AquaMultiResolutionImage.createImage(size, size, buffers[0], buffers[1]);
+                });
             }
-            return result;
+
+        } else {
+            // TBD: return a default image ?
+        }
+
+        return icon;
+    }
+
+    private static void delay(int secs, @NotNull Runnable r) {
+        Timer t = new Timer(secs * 1000, ev -> r.run());
+        t.setRepeats(false);
+        t.start();
+    }
+
+    /**
+     * Obtain the system icon for a file.
+     * This object should be invoked on a background thread.
+     */
+    private static class FileIconUpdater implements Runnable {
+        private final @NotNull File file;
+        private final @NotNull AquaFileIcon icon;
+        private final boolean useQuickLook;
+
+        public FileIconUpdater(@NotNull File file, @NotNull AquaFileIcon icon, boolean useQuickLook) {
+            this.file = file;
+            this.icon = icon;
+            this.useQuickLook = useQuickLook;
+        }
+
+        @Override
+        public void run() {
+            String path = file.getAbsolutePath();
+            int width = icon.getIconWidth();
+            int height = icon.getIconHeight();
+            int[][] buffers = new int[2][];
+            if (!nativeRenderFileImage(path, useQuickLook, true, buffers, width, height)) {
+                if (AquaImageFactory.debugNativeRendering) {
+                    String type = useQuickLook ? "Quick Look" : "Launch Services";
+                    System.err.println("Failed to render " + type + " image for " + path);
+                }
+            } else {
+                if (AquaImageFactory.debugNativeRendering) {
+                    String type = useQuickLook ? "Quick Look" : "Launch Services";
+                    System.err.println("Rendered " + type + " image for " + path);
+                }
+                Image image = AquaMultiResolutionImage.createImage(width, height, buffers[0], buffers[1]);
+                int priority = useQuickLook ? AquaFileIcon.ICON_QUICK_LOOK : AquaFileIcon.ICON_LAUNCH_SERVICES;
+                icon.installImage(image, priority);
+            }
+
         }
     }
 
