@@ -23,7 +23,7 @@
         <arg value="-v"/>
         <arg value="1.8"/>
     </exec>
-
+    
     <property name="bootclasspath" location="${jdk8}/jre/lib/rt.jar" />
 
     <property name="RELEASE" value="0.9"/>
@@ -47,8 +47,7 @@
     <property name="renderingLibraryJAR" location="${libdir}/VAquaRendering.jar"/>
     <property name="activationJAR" location="${libdir}/javax.activation-1.2.0.jar"/>
 
-    <property name="SDKversion" value="10.14"/>
-    <property name="SDKroot" location="/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX${SDKversion}.sdk" />
+    <property name="SDKroot" location="/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk" />
     <property name="libpath" location="${libdir}/IdeaAnnotations.jar"/>
     <property name="cc" location="/usr/bin/cc"/>
 
