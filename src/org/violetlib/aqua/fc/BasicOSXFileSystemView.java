@@ -224,11 +224,7 @@ public abstract class BasicOSXFileSystemView extends AquaFileSystemView {
             }
         }
 
-        if (OSXFile.isAvailable()) {
-            return AquaFileIcons.getFileIcon(f, 16);
-        }
-
-        return super.getSystemIcon(f);
+        return AquaFileIcons.getThumbnail(f);
     }
 
     @Override

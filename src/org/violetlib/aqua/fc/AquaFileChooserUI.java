@@ -2562,11 +2562,7 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
         */
 
         if (activeView != null && path != null) {
-            Runnable r = new Runnable() {
-                public void run() {
-                    activeView.ensurePathIsVisible(path);
-                }
-            };
+            Runnable r = () -> activeView.ensurePathIsVisible(path);
             runAfterValidation(path, 0, path.getPathCount() - 2, r);
         }
     }
@@ -2576,11 +2572,7 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
             r.run();
         } else {
             FileSystemTreeModel.Node n = (FileSystemTreeModel.Node) path.getPathComponent(index);
-            n.invokeWhenValid(new Runnable() {
-                public void run() {
-                    runAfterValidation(path, index+1, lastIndex, r);
-                }
-            });
+            n.invokeWhenValid(() -> runAfterValidation(path, index+1, lastIndex, r));
         }
     }
 

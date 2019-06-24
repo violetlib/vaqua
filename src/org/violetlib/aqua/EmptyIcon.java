@@ -9,11 +9,11 @@
  * For details see accompanying license terms.
  */
 
-package org.violetlib.aqua.fc;
+package org.violetlib.aqua;
 
-import javax.swing.*;
 import java.awt.*;
 import java.io.Serializable;
+import javax.swing.*;
 
 /**
  * {@code EmptyIcon}.

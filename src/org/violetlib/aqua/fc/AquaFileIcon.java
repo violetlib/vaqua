@@ -10,45 +10,43 @@ package org.violetlib.aqua.fc;
 
 import java.awt.*;
 import javax.swing.*;
-import javax.swing.event.*;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
+import javax.swing.event.EventListenerList;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.violetlib.aqua.AquaIcon;
 
 /**
  * An object that represents the possibly evolving state of an icon for a file.
- *
- * On macOS, there are two sources of icons for files used by a file chooser. One source is Launch Services, which
- * provides generic icons based on file type. The other source is Quick Look, which provides custom icons for certain
- * types of files. For example, the Quick Look icon for an image file is a reduced version of the image.
- *
- * Quick Look icons are preferred, but are not always immediately available. This class supports the strategy used by
- * native file choosers, which is to display the Launch Services icon until the Quick Look icon becomes available.
  */
-
-public class AquaFileIcon implements Icon {
+public class AquaFileIcon implements Icon, ChangeListener {
 
     private final int width;
     private final int height;
-    private @Nullable Image image;
-    private int iconPriority;
+    private @Nullable AquaFileIcon replacement;  // synchronized
+    private @Nullable Image image;  // synchronized
     private final @NotNull EventListenerList listenerList = new EventListenerList();
-
-    public static final int ICON_LAUNCH_SERVICES = 1;
-    public static final int ICON_QUICK_LOOK = 2;
 
     public AquaFileIcon(int width, int height) {
         this.width = width;
         this.height = height;
     }
 
-    public synchronized void installImage(@NotNull Image image, int priority)
+    public synchronized void installIcon(@NotNull Icon icon)
     {
-        if (priority > iconPriority) {
-            this.image = image;
-            this.iconPriority = priority;
-            iconChanged();
+        image = AquaIcon.getImageForIcon(icon);
+        if (icon instanceof AquaFileIcon) {
+            if (replacement != null) {
+                replacement.removeChangeListener(this);
+            }
+            replacement = (AquaFileIcon) icon;
+            image = replacement.getCurrentImage();
+            replacement.addChangeListener(this);
         }
+
+        iconChanged();
     }
 
     public void addChangeListener(@NotNull ChangeListener listener)
@@ -61,7 +59,25 @@ public class AquaFileIcon implements Icon {
         listenerList.remove(ChangeListener.class, listener);
     }
 
-    private void iconChanged() {
+    @Override
+    public synchronized void stateChanged(ChangeEvent e) {
+        // The replacement image has been updated
+        if (replacement != null) {
+            image = replacement.getCurrentImage();
+            iconChanged();
+        }
+    }
+
+    private synchronized void iconChanged() {
+        if (SwingUtilities.isEventDispatchThread()) {
+            fireChangeEvent();
+        } else {
+            SwingUtilities.invokeLater(() -> fireChangeEvent());
+        }
+    }
+
+    // This method is called only on the UI thread
+    private void fireChangeEvent() {
         Object[] listeners = listenerList.getListenerList();
         ChangeEvent e = null;
         for (int i = listeners.length - 2; i >= 0; i -= 2) {
@@ -81,6 +97,7 @@ public class AquaFileIcon implements Icon {
 
     @Override
     public synchronized void paintIcon(Component c, Graphics g, int x, int y) {
+        Image image = getCurrentImage();
         if (image != null) {
             g.drawImage(image, x, y, width, height, c);
         }

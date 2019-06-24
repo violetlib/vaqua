@@ -432,7 +432,7 @@ public class FilePreview extends JComponent implements BrowserPreviewRenderer {
             if (file != null) {
                 imageIsLoading = true;
                 imageLoadingTimer.start();
-                AquaFileIcon icon = AquaFileIcons.getFileIcon(file, 1600);
+                AquaFileIcon icon = AquaFileIcons.getPreview(file);
                 icon.addChangeListener(ev -> SwingUtilities.invokeLater(() -> installPreviewImage(icon)));
                 installPreviewImage(icon);
             }
