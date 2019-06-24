@@ -1,10 +1,7 @@
 /*
- * @(#)OSXFile.java
- *
  * Copyright (c) 2009-2013 Werner Randelshofer, Switzerland.
- * Copyright (c) 2014-2018 Alan Snyder.
- * You may not use, copy or modify this file, except in compliance with the
- * accompanying license terms.
+ * Copyright (c) 2014-2019 Alan Snyder.
+ * You may not use, copy or modify this file, except in compliance with the accompanying license terms.
  */
 
 package org.violetlib.aqua.fc;
@@ -23,10 +20,7 @@ import org.violetlib.aqua.*;
 import org.violetlib.aqua.AquaUtils.RecyclableSingleton;
 
 /**
- * Provides access to Mac OS X file meta data and can resolve file aliases.
- *
- * @author Werner Randelshofer
- * @version $Id$
+ * Provides access to Mac OS X file metadata and icons and can resolve file aliases.
  */
 public class OSXFile {
 
@@ -34,15 +28,6 @@ public class OSXFile {
     public final static int FILE_TYPE_DIRECTORY = 1;
     public final static int FILE_TYPE_FILE = 0;
     public final static int FILE_TYPE_UNKNOWN = -1;
-
-    /**
-     * This array holds the colors used for drawing the gradients of a file label.
-     */
-    private static volatile Color[][] labelColors;
-
-    private static String computerModel;
-    private static boolean computerModelInitialized;
-    private static ImageIcon computerSidebarIcon;
 
     private static final int kLSItemInfoIsPlainFile        = 0x00000001; /* Not a directory, volume, or symlink*/
     private static final int kLSItemInfoIsPackage          = 0x00000002; /* Packaged directory*/
@@ -388,77 +373,6 @@ public class OSXFile {
             case 7:     return "tagOrange";
         }
         return null;
-    }
-
-    /**
-     * Return the icon image for a file.
-     * @param file The file.
-     * @param size The desired icon size.
-     * @param useQuickLook If true, an icon based on the Quick Look preview will be returned. If false, the Launch
-     * Services icon for the file wil be returned. Note that obtaining a Quick Look preview image can take a long time.
-     * @throws UnsupportedOperationException if an image cannot be obtained.
-     */
-    public static @NotNull Image getIconImage(@Nullable File file, int size, boolean useQuickLook) throws UnsupportedOperationException {
-        if (isNativeCodeAvailable() && file != null) {
-            FileIconCreator c = new FileIconCreator(file, size, useQuickLook, true);
-            return c.getImage();
-        }
-
-        // TBD: return a default image
-        throw new UnsupportedOperationException();
-    }
-
-    /**
-     * Return the Quick Look thumbnail image for a file.
-     * @param file The file.
-     * @param size The desired image size.
-     * @throws UnsupportedOperationException if an image cannot be obtained.
-     */
-    public static @NotNull Image getThumbnailImage(@Nullable File file, int size) throws UnsupportedOperationException {
-        if (isNativeCodeAvailable() && file != null) {
-            FileIconCreator c = new FileIconCreator(file, size, true, false);
-            return c.getImage();
-        }
-
-        throw new UnsupportedOperationException();
-    }
-
-    /**
-     * Render the system icon for a file.
-     * This renderer should be invoked on a background thread.
-     */
-    private static class FileIconCreator {
-        private final File file;
-        private final int size;
-        private final boolean useQuickLook;
-        private final boolean useIconMode;
-        private Image result;
-
-        public FileIconCreator(@NotNull File file, int size, boolean useQuickLook, boolean useIconMode) {
-            this.file = file;
-            this.size = size;
-            this.useQuickLook = useQuickLook;
-            this.useIconMode = useIconMode;
-        }
-
-        public @NotNull Image getImage() {
-            if (result == null) {
-                String path = file.getAbsolutePath();
-                int[][] buffers = new int[2][];
-                if (!nativeRenderFileImage(path, useQuickLook, useIconMode, buffers, size, size)) {
-                    if (AquaImageFactory.debugNativeRendering) {
-                        System.err.println("Failed to render image for " + path);
-                    }
-                    throw new UnsupportedOperationException();
-                }
-
-                if (AquaImageFactory.debugNativeRendering) {
-                    System.err.println("Rendered image for " + path);
-                }
-                result = AquaMultiResolutionImage.createImage(size, size, buffers[0], buffers[1]);
-            }
-            return result;
-        }
     }
 
     /**
@@ -965,18 +879,4 @@ public class OSXFile {
     private static native @Nullable String[] nativeExecuteSavedSearch(String path);
 
     private static native @Nullable Object[] nativeGetSidebarFiles(int which, int iconSize, int lastSeed);
-
-    /**
-     * Obtain the icon or QuickLook image for a file.
-     *
-     * @param path the path to the file.
-     * @param isQuickLook True to get the QuickLook image, false to get the file icon.
-     * @param useIconMode True to use Icon mode when using Quick Look, false otherwise.
-     * @param buffers 1x and 2x rasters stored are here (2x is optional)
-     * @param w The width of the image.
-     * @param h The height of the image.
-     * @return true if successful, false otherwise.
-     */
-    private static native boolean nativeRenderFileImage(@NotNull String path, boolean isQuickLook,
-                                                        boolean useIconMode, int[][] buffers, int w, int h);
 }

@@ -14,6 +14,8 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.jetbrains.annotations.NotNull;
+
 /**
  * A file system model for the results of a saved search.
  */
@@ -72,8 +74,8 @@ public class SavedSearchFileSystemTreeModel extends FileSystemTreeModel {
         }
 
         @Override
-        public String getFileKind() {
-            return "Saved Search";
+        public @NotNull String getFileKind() {
+            return "saved search";
         }
 
         @Override
