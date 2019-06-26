@@ -272,13 +272,13 @@ public class AquaIcon {
                 int[][] buffers = new int[2][];
                 if (!nativeRenderIcon(osType, buffers, size)) {
                     if (AquaImageFactory.debugNativeRendering) {
-                        System.err.println("Failed to render image for icon " + osTypeName);
+                        AquaUtils.logDebug("Failed to render image for icon " + osTypeName);
                     }
                     throw new UnsupportedOperationException();
                 }
 
                 if (AquaImageFactory.debugNativeRendering) {
-                    System.err.println("Rendered image for icon " + osTypeName);
+                    AquaUtils.logDebug("Rendered image for icon " + osTypeName);
                 }
                 result = AquaMultiResolutionImage.createImage(size, size, buffers[0], buffers[1]);
             }

@@ -34,11 +34,12 @@ public class JavaSupport {
         void installAATextInfo(UIDefaults table);
         AquaMultiResolutionImage createMultiResolutionImage(BufferedImage im);
         AquaMultiResolutionImage createMultiResolutionImage(BufferedImage im1, BufferedImage im2);
+        @NotNull AquaMultiResolutionImage createImage(int rasterWidth, int rasterHeight, int[] data, float scale);
         Image applyFilter(Image image, ImageFilter filter);
         Image applyMapper(Image source, Function<Image,Image> mapper);
         Image applyMapper(Image source, AquaMultiResolutionImage.Mapper mapper);
         @NotNull Image getResolutionVariant(@NotNull Image source, double width, double height);
-        BufferedImage createImage(int width, int height, int[] data);
+        @NotNull BufferedImage createImage(int width, int height, int[] data);
         void preload(Image image, int availableInfo);
         void lockRenderQueue();
         void unlockRenderQueue();
@@ -89,6 +90,13 @@ public class JavaSupport {
         return impl.createMultiResolutionImage(im1, im2);
     }
 
+    /**
+     * Create an image from a scaled raster (created by native code).
+     */
+    public static @NotNull AquaMultiResolutionImage createImage(int rasterWidth, int rasterHeight, int[] data, float scale) {
+        return impl.createImage(rasterWidth, rasterHeight, data, scale);
+    }
+
     public static Image applyFilter(Image image, ImageFilter filter) {
         return impl.applyFilter(image, filter);
     }
@@ -108,7 +116,7 @@ public class JavaSupport {
     /**
      * Create a buffered image from a raster (created by native code).
      */
-    public static BufferedImage createImage(int width, int height, int[] data) {
+    public static @NotNull BufferedImage createImage(int width, int height, int[] data) {
         return impl.createImage(width, height, data);
     }
 

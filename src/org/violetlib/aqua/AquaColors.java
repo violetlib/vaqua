@@ -183,7 +183,7 @@ public class AquaColors {
             this.useMagicEraser = useMagicEraser;
 
             if (useMagicEraser && (start.getAlpha() == 255 && finish.getAlpha() == 255)) {
-                System.err.println("Magic eraser not needed with opaque gradient");
+                AquaUtils.logDebug("Magic eraser not needed with opaque gradient");
             }
         }
 

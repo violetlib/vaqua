@@ -8,13 +8,14 @@
 
 package org.violetlib.aqua.fc;
 
-import javax.swing.*;
-import javax.swing.tree.TreePath;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
+import javax.swing.*;
+import javax.swing.tree.TreePath;
 
 import org.jetbrains.annotations.NotNull;
+import org.violetlib.aqua.AquaUtils;
 
 /**
  * A file system model for the results of a saved search.
@@ -96,8 +97,7 @@ public class SavedSearchFileSystemTreeModel extends FileSystemTreeModel {
                 } else {
                     msg += " failed";
                 }
-
-                System.out.println(msg);
+                AquaUtils.logDebug(msg);
             }
 
             JFileChooser fileChooser = getFileChooser();

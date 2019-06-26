@@ -70,9 +70,7 @@ public abstract class BasicOSXFileSystemView extends AquaFileSystemView {
                     // exception, in the hope that it did not happen for the system volume. If it happened for the
                     // system volume, there is fallback code in method getSystemVolume() that handles this problem.
 
-                    // System.err.println(
-                    //   "Unable to canonicalize volume "+volumes[i]
-                    // );
+                    // AquaUtils.logError("Unable to canonicalize volume " + volumes[i]);
                     // e.printStackTrace();
                 } catch (SecurityException e) {
                     // We get here because we are not allowed to read the file. We suppress this exception, in the hope

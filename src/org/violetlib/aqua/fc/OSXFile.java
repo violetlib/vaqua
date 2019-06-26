@@ -57,9 +57,9 @@ public class OSXFile {
         private final boolean shouldConvertToTemplate;
 
         public RecyclableFileIcon(@NotNull File file, boolean shouldConvertToTemplate) {
-             this.file = file;
-             this.shouldConvertToTemplate = shouldConvertToTemplate;
-         }
+            this.file = file;
+            this.shouldConvertToTemplate = shouldConvertToTemplate;
+        }
 
         public RecyclableFileIcon(@NotNull String path, boolean shouldConvertToTemplate) {
             this.file = new File(path);
@@ -180,19 +180,19 @@ public class OSXFile {
     public static @NotNull File getAbsoluteFile(@NotNull File f) {
         if (!f.isAbsolute()) {
             f = new File(AquaUtils.getProperty("user.home") + File.separatorChar + f.getPath());
+        }
 
-        } // Windows does not support relative path segments, so we quit here
+        // Windows does not support relative path segments, so we quit here
         if (File.separatorChar == '\\') {
             return f;
+        }
 
-        } // The following code assumes that absolute paths start with a
-        // File.separatorChar.
+        // The following code assumes that absolute paths start with a File.separatorChar.
         StringBuffer buf = new StringBuffer(f.getPath().length());
 
         int skip = 0;
 
-        for (File i = f; i
-                != null; i = i.getParentFile()) {
+        for (File i = f; i != null; i = i.getParentFile()) {
             String name = i.getName();
             if (name.equals(".")) {
                 if (skip > 0) {
@@ -452,7 +452,7 @@ public class OSXFile {
                       Special case: the program wants to see volumes as directories.
                     */
 
-                    return true;
+                return true;
 
             } else {
                 return false;
@@ -481,7 +481,7 @@ public class OSXFile {
             return true;
 
         } else if (isSavedSearch(f)) {
-           return true;
+            return true;
         }
 
         return false;
@@ -742,8 +742,7 @@ public class OSXFile {
                 return lastResults;
             }
             lastSeed = (Integer) data[0];
-            // debug
-            //System.err.println("Updating " + name + " #" + lastSeed);
+            //AquaUtils.logDebug("Updating " + name + " #" + lastSeed);
             int sequence = 0;
             List<SystemItemInfo> result = new ArrayList<>();
             for (int i = 1; i < data.length; i += 6) {
@@ -766,8 +765,7 @@ public class OSXFile {
                         SystemItemInfo info = new SystemItemInfo(name, path, sequence++, isVisible, id, icon);
                         result.add(info);
                     } else {
-                        // debug
-                        System.err.println("Skipping " + name);
+                        AquaUtils.logDebug("Skipping " + name);
                     }
                 }
             }
@@ -780,8 +778,8 @@ public class OSXFile {
     public static final int SIDEBAR_VOLUMES = 1;
 
     private static final SharedFileList[] sharedFileLists = new SharedFileList[] {
-        new SharedFileList(0, "Sidebar Favorites"),
-        new SharedFileList(1, "Sidebar Volumes")
+            new SharedFileList(0, "Sidebar Favorites"),
+            new SharedFileList(1, "Sidebar Volumes")
     };
 
     /**

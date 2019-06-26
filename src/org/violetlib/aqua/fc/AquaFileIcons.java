@@ -9,17 +9,18 @@
 package org.violetlib.aqua.fc;
 
 import java.io.File;
-import javax.swing.*;
 
 import org.jetbrains.annotations.NotNull;
 
 /**
  * Support for file icons used in the file chooser.
  */
-
 public class AquaFileIcons {
 
-    private static final @NotNull FileIconService fis = new HybridFileIconServiceImpl();
+    private static final @NotNull FileIconService fis =
+            CatalinaFileIconServiceImpl.isAvailable()
+                    ? new CatalinaFileIconServiceImpl()
+                    : new HybridFileIconServiceImpl();
 
     /**
      * Return a thumbnail icon for a file. The icon is dynamic. An image is installed into the icon when available.
@@ -28,14 +29,14 @@ public class AquaFileIcons {
     public static @NotNull AquaFileIcon getThumbnail(@NotNull File f)
     {
         AquaFileIcon result = new AquaFileIcon(16, 16);
-        FileIconService.Request request = fis.requestIcon(f, 16, 2, (icon, quality) -> result.installIcon(icon));
+        fis.requestIcon(f, 16, 2, (icon, quality) -> result.installIcon(icon));
         return result;
     }
 
     public static @NotNull AquaFileIcon getPreview(@NotNull File f)
     {
         AquaFileIcon result = new AquaFileIcon(1600, 1600);
-        FileIconService.Request request = fis.requestIcon(f, 1600, 2, (icon, quality) -> result.installIcon(icon));
+        fis.requestIcon(f, 1600, 2, (icon, quality) -> result.installIcon(icon));
         return result;
     }
 

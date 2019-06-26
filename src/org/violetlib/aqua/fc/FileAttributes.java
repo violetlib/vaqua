@@ -18,7 +18,6 @@ import org.jetbrains.annotations.NotNull;
 /**
  * Provide file attributes for display in the file chooser.
  */
-
 public class FileAttributes {
 
     private static final @NotNull ConcurrentDispatcher dispatcher = new ConcurrentDispatcher();

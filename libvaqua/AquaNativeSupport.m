@@ -20,6 +20,7 @@ static int VERSION = 3;
 
 #include <stdio.h>
 #include <assert.h>
+#include <math.h>
 #include "jni.h"
 #include "org_violetlib_aqua_fc_OSXFile.h"
 #include "org_violetlib_aqua_OSXSystemProperties.h"
@@ -37,6 +38,10 @@ static int VERSION = 3;
 #import <CoreGraphics/CoreGraphics.h>
 #import <JavaNativeFoundation.h>
 #import <Availability.h>
+
+#if __MAC_OS_X_VERSION_MAX_ALLOWED >= 101500
+#import <QuickLookThumbnailing/QuickLookThumbnailing.h>
+#endif
 
 #import "AquaSidebarBackground.h"
 #import "AquaWrappedAWTView.h"
@@ -204,6 +209,32 @@ jboolean ensureVM(JNIEnv *env)
 void runOnMainThread(void (^block)())
 {
     [JNFRunLoop performOnMainThreadWaiting:YES withBlock:block];
+}
+
+void runFromNativeThread(void (^block)(JNIEnv *))
+{
+    assert(vm);
+
+    jboolean attachedHere = NO;
+
+    JNIEnv *env = NULL;
+    int status = (*vm)->GetEnv(vm, (void **) &env, JNI_VERSION_1_6);
+    if (status == JNI_EDETACHED) {
+        status = (*vm)->AttachCurrentThread(vm, (void **) &env, 0);
+        if (status == JNI_OK) {
+            attachedHere = YES;
+        }
+    }
+
+    if (status == JNI_OK) {
+        block(env);
+    } else {
+        NSLog(@"Unable to attach thread %d", status);
+    }
+
+    if (attachedHere) {
+        (*vm)->DetachCurrentThread(vm);
+    }
 }
 
 void setupLayers(NSView *v)
@@ -650,18 +681,20 @@ JNIEXPORT jstring JNICALL Java_org_violetlib_aqua_fc_OSXFile_nativeGetKindString
 }
 
 // Render an image into a Java int array
-// w and h is the desired image size
+// w and h is the desired image size (in points)
 // scaleFactor is the scaleFactor of the display for which this rendering is intended
 // return NULL if scaleFactor is greater than 1 and the image has only one representation
 
-static jintArray renderImageIntoBufferForDisplay(JNIEnv *env, NSImage *image, jint w, jint h, jfloat scaleFactor)
+static jintArray renderImageIntoBufferForDisplay(JNIEnv *env, NSImage *image, jfloat w, jfloat h, jfloat scaleFactor)
 {
-    if (scaleFactor > 1 && [[image representations] count] < 2) {
-        return NULL;
-    }
+	//NSLog(@"Calling renderImageIntoBufferForDisplay %f %f %f on thread %@", w, h, scaleFactor, NSThread.currentThread);
 
-    int rw = (int) (w * scaleFactor);
-    int rh = (int) (h * scaleFactor);
+//     if (scaleFactor > 1 && [[image representations] count] < 2) {
+//         return NULL;
+//     }
+
+    int rw = (int) ceil(w * scaleFactor);
+    int rh = (int) ceil(h * scaleFactor);
 
     jboolean isCopy = JNI_FALSE;
     jintArray jdata = (*env)->NewIntArray(env, rw * rh);
@@ -708,7 +741,7 @@ static jintArray renderImageIntoBufferForDisplay(JNIEnv *env, NSImage *image, ji
 // Render an image into a Java array
 // rw and rh are the actual size of the raster
 
-static jboolean renderImageIntoBuffers(JNIEnv *env, NSImage *image, jobjectArray joutput, jint w, jint h)
+static jboolean renderImageIntoBuffers(JNIEnv *env, NSImage *image, jobjectArray joutput, jfloat w, jfloat h)
 {
     //NSLog(@"Render image into buffers: %@", image);
 
@@ -785,14 +818,130 @@ JNIEXPORT jboolean JNICALL Java_org_violetlib_aqua_fc_AquaFileIcons_nativeRender
 
     NSString *path = JNFNormalizedNSStringForPath(env, jpath);
 
-        NSImage *image = getFileImage(path, isQuickLook, isIconMode, w, h);
-        if (image != nil) {
-                result = renderImageIntoBuffers(env, image, output, w, h);
-        }
+    NSImage *image = getFileImage(path, isQuickLook, isIconMode, w, h);
+    if (image != nil) {
+        result = renderImageIntoBuffers(env, image, output, w, h);
+    }
 
     JNF_COCOA_EXIT(env);
 
     return result;
+}
+
+static jobject thumbnailHandler;
+static jclass thumbnailHandlerClass;
+static jmethodID thumbnailHandlerMethodID;
+
+/*
+ * Class:     org_violetlib_aqua_fc_CatalinaFileIconServiceImpl
+ * Method:    nativeInstallThumbnailHandler
+ * Signature: (Lorg/violetlib/aqua/fc/CatalinaFileIconServiceImpl/MyHandler;)V
+ */
+JNIEXPORT void JNICALL Java_org_violetlib_aqua_fc_CatalinaFileIconServiceImpl_nativeInstallThumbnailHandler
+  (JNIEnv *env, jclass cl, jobject jhandler)
+{
+    thumbnailHandler = (*env)->NewGlobalRef(env, jhandler);
+    if (thumbnailHandler == NULL) {
+        NSLog(@"Unable to create global reference to thumbnail handler");
+    } else {
+        jclass c = (*env)->GetObjectClass(env, thumbnailHandler);
+        thumbnailHandlerClass = (*env)->NewGlobalRef(env, c);
+        if (thumbnailHandlerClass == NULL) {
+            NSLog(@"Unable to create global reference to thumbnail handler class");
+        } else {
+            thumbnailHandlerMethodID = (*env)->GetMethodID(env, thumbnailHandlerClass, "installImage", "(JII[IFI)V");
+            if (thumbnailHandlerMethodID == NULL) {
+                NSLog(@"Unable to find thumbnail handler method");
+            }
+        }
+    }
+}
+
+/*
+ * Class:     org_violetlib_aqua_fc_CatalinaFileIconServiceImpl
+ * Method:    isAvailable
+ * Signature: ()Z
+ */
+JNIEXPORT jboolean JNICALL Java_org_violetlib_aqua_fc_CatalinaFileIconServiceImpl_isAvailable
+  (JNIEnv *env, jclass cl)
+{
+    jboolean result = 0;
+
+#if __MAC_OS_X_VERSION_MAX_ALLOWED >= 101500
+    if (@available(macOS 10.15, *)) {
+        result = 1;
+    }
+#endif
+
+    return result;
+}
+
+/*
+ * Class:     org_violetlib_aqua_fc_CatalinaFileIconServiceImpl
+ * Method:    nativeInstallThumbnails
+ * Signature: (Ljava/lang/String;IFJ)V
+ */
+JNIEXPORT void JNICALL Java_org_violetlib_aqua_fc_CatalinaFileIconServiceImpl_nativeInstallThumbnails
+  (JNIEnv *env, jclass cl, jstring jpath, jint jsize, jfloat scale, jlong requestID)
+{
+    if (thumbnailHandlerMethodID == NULL) {
+      return;
+    }
+
+    JNF_COCOA_ENTER(env);
+
+#if __MAC_OS_X_VERSION_MAX_ALLOWED >= 101500
+    if (@available(macOS 10.15, *)) {
+        NSString *path = JNFNormalizedNSStringForPath(env, jpath);
+        NSURL *u = [NSURL fileURLWithPath:path];
+        if (u != nil) {
+            CGSize size = CGSizeMake(jsize, jsize);
+            QLThumbnailGenerator *generator = [QLThumbnailGenerator sharedGenerator];
+            QLThumbnailGenerationRequest *request
+              = [[QLThumbnailGenerationRequest alloc]
+                            initWithFileAtURL:u
+                                         size:size
+                                        scale:scale
+                          representationTypes:QLThumbnailGenerationRequestRepresentationTypeAll];
+
+            if (request) {
+                NSLog(@"Requesting thumbnails %@ %d %f", path, jsize, scale);
+                [generator generateRepresentationsForRequest:request updateHandler:
+                    ^(QLThumbnailRepresentation *thumbnail, QLThumbnailRepresentationType type, NSError *error)
+                    {
+                        if (thumbnail != nil) {
+                            NSImage *image = [thumbnail NSImage];
+                            NSLog(@"  Thumbnail %ld delivered: %@ (%f x %f)", (long) type, path, image.size.width, image.size.height);
+                            jint priority = 0;
+                            switch (type) {
+                              case QLThumbnailRepresentationTypeIcon: priority = 10; break;
+                              case QLThumbnailRepresentationTypeLowQualityThumbnail: priority = 20; break;
+                              case QLThumbnailRepresentationTypeThumbnail: priority = 30; break;
+                            }
+                            runFromNativeThread(^(JNIEnv *env){
+                                // TBD: the following assumes we get what we asked for, may not be true
+                                int rasterWidth = (int) (image.size.width * scale);
+                                int rasterHeight = (int) (image.size.height * scale);
+                                jintArray data = renderImageIntoBufferForDisplay(env, image, image.size.width, image.size.height, scale);
+                                if (data != NULL) {
+                                    (*env)->CallVoidMethod(env, thumbnailHandler, thumbnailHandlerMethodID, requestID, rasterWidth, rasterHeight, data, scale, priority);
+                                } else {
+                                    NSLog(@"  Unable to get thumbnail: unable to render image contents");
+                                }
+                            });
+                        } else if (error != nil) {
+                            NSLog(@"  Unable to get thumbnail %ld for %@: %@", (long) type, path, error.localizedFailureReason);
+                        }
+                    }
+                ];
+            } else {
+                NSLog(@"  Unable to create request for thumbnails %@ %d %f", path, jsize, scale);
+            }
+        }
+    }
+#endif
+
+    JNF_COCOA_EXIT(env);
 }
 
 /*

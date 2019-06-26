@@ -1,3 +1,11 @@
+/*
+ * Copyright (c) 2019 Alan Snyder.
+ * All rights reserved.
+ *
+ * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
+ * accompanying license terms.
+ */
+
 package org.violetlib.aqua.fc;
 
 import java.io.File;
@@ -18,6 +26,8 @@ public interface FileIconService {
     int ICON_CUSTOM_LOW = 20;  // a low-quality icon that may be custom for a specific file
     int ICON_CUSTOM = 30;      // the best quality icon for a specific file
 
+    boolean debugFlag = false;
+
     /**
      * Request an icon for a file. Icons are delivered to the specified handler on an unspecified thread.
      * This method may return before any icons are delivered. Icons may also be delivered on this thread before this
@@ -33,7 +43,6 @@ public interface FileIconService {
      * @param handler The handler that will receive the icons.
      * @return an object that can be used to cancel the request.
      */
-
     @NotNull Request requestIcon(@NotNull File f, int size, float scale, @NotNull Handler handler);
 
     interface Handler {
@@ -42,7 +51,6 @@ public interface FileIconService {
          * @param icon The icon.
          * @param quality The quality level of the icon.
          */
-
         void provideIcon(@NotNull ImageIcon icon, int quality);
     }
 

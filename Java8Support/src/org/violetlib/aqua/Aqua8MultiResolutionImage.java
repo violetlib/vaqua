@@ -38,14 +38,15 @@ public class Aqua8MultiResolutionImage extends AquaMultiResolutionImage implemen
 
     @Override
     public List<Image> getResolutionVariants() {
-        java.util.List<Image> result = new ArrayList<>();
+        List<Image> result = new ArrayList<>();
         result.add(baseImage);
         return result;
     }
 
     @Override
     public AquaMultiResolutionImage map(Mapper mapper) {
-        return new Aqua8MultiResolutionImage(mapper.map(baseImage, 1));
+        int scaleFactor = baseImageWidth / baseImage.getWidth(null);
+        return new Aqua8MultiResolutionImage(mapper.map(baseImage, scaleFactor));
     }
 
     @Override
@@ -151,9 +152,9 @@ public class Aqua8MultiResolutionImage extends AquaMultiResolutionImage implemen
             } catch (Exception ex) {
                 if (ex instanceof InvocationTargetException) {
                     Throwable th = ((InvocationTargetException) ex).getTargetException();
-                    System.err.println("Unable to map image: " + th);
+                    AquaUtils.logError("Unable to map image", th);
                 } else {
-                    System.err.println("Unable to map image: " + ex);
+                    AquaUtils.logError("Unable to map image", ex);
                 }
             }
         }

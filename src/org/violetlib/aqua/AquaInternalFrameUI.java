@@ -369,7 +369,7 @@ public class AquaInternalFrameUI extends BasicInternalFrameUI implements SwingCo
                 break;
 
             default:
-                System.err.println("AquaInternalFrameBorder should never get here!!!!");
+                AquaUtils.logError("AquaInternalFrameBorder should never get here!!!!");
                 Thread.dumpStack();
                 break;
         }
@@ -771,7 +771,7 @@ public class AquaInternalFrameUI extends BasicInternalFrameUI implements SwingCo
         JMenuBar installedMenuBar = frame.getJMenuBar();
         if (installedMenuBar.getUI().getClass().getName().endsWith("apple.laf.AquaMenuBarUI")) {
             // debug
-            System.err.println("Fixing the UI for a menu bar installed on an internal frame");
+            AquaUtils.logDebug("Fixing the UI for a menu bar installed on an internal frame");
             installedMenuBar.setUI((MenuBarUI) AquaMenuBarUI.createUI(installedMenuBar));
         }
     }

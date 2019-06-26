@@ -49,7 +49,7 @@ public class WindowStylePatch
 
             System.load(fn);
             isInstalled = true;
-            System.err.println("VAqua: installed patch for preserving window style bits");
+            AquaUtils.logDebug("VAqua: installed patch for preserving window style bits");
         } catch (UnsatisfiedLinkError e) {
             reportError(e.getMessage());
         } catch (AccessControlException e) {
@@ -62,6 +62,6 @@ public class WindowStylePatch
 
     private static void reportError(String msg) {
         String s = "WindowStylePatch: Unable to load library: " + msg;
-        System.err.println(s);
+        AquaUtils.logError(s);
     }
 }

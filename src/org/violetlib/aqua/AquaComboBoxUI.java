@@ -460,7 +460,7 @@ public class AquaComboBoxUI extends BasicComboBoxUI
         currentValueListBox.setBackground(AquaColors.CLEAR);
         currentValueListBox.setForeground(comboBox.getForeground());
         Component c = renderer.getListCellRendererComponent(currentValueListBox, displayedItem, -1, false, false);
-        // System.err.println("Renderer: " + renderer);
+        // AquaUtils.logDebug("Renderer: " + renderer);
         c.setFont(currentValuePane.getFont());
         updateRendererStyle(c);
 

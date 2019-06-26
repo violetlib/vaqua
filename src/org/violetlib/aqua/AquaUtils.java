@@ -109,6 +109,18 @@ final public class AquaUtils {
         });
     };
 
+    public static void logError(@NotNull String message) {
+        System.err.println(message);
+    }
+
+    public static void logError(@NotNull String message, @NotNull Throwable th) {
+        System.err.println(message + ": " + th);
+    }
+
+    public static void logDebug(@NotNull String message) {
+        System.err.println(message);
+    }
+
     public static int getJavaVersion() {
         return javaVersion;
     }
@@ -1077,7 +1089,7 @@ final public class AquaUtils {
         Color bc = appearance.getColor(colorName);
         if (bc == null) {
             // should not happen
-            System.err.println("Undefined window margin background color: " + colorName);
+            logError("Undefined window margin background color: " + colorName);
             return AquaColors.CLEAR;
         } else {
             return bc;
@@ -1093,7 +1105,7 @@ final public class AquaUtils {
         Color color = appearance.getColor(colorName);
         if (color == null) {
             // should not happen
-            System.err.println("Undefined window divider color: " + colorName);
+            logError("Undefined window divider color: " + colorName);
             return AquaColors.CLEAR;
         } else {
             return color;
@@ -1578,7 +1590,7 @@ final public class AquaUtils {
             w.invalidate();
             w.validate();
         } catch (Exception ex) {
-            System.err.println("Unable to restore titled window style: " + ex);
+            logError("Unable to restore titled window style", ex);
         }
     }
 
@@ -1651,7 +1663,7 @@ final public class AquaUtils {
         try {
             nativeSetWindowTextured(w, isTextured);
         } catch (Throwable ex) {
-            System.err.println("Unable to set textured: " + ex);
+            logError("Unable to set textured", ex);
         }
     }
 
@@ -1723,7 +1735,7 @@ final public class AquaUtils {
             try {
                 nativeSetWindowBackground(w, c);
             } catch (Throwable th) {
-                System.err.println("Unable to set window background: " + th);
+                logError("Unable to set window background", th);
             }
         } finally {
             JavaSupport.unlockRenderQueue();

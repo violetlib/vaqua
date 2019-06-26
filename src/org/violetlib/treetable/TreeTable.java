@@ -20,8 +20,8 @@ import java.awt.event.MouseEvent;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.util.AbstractMap.SimpleEntry;
-import java.util.*;
 import java.util.List;
+import java.util.*;
 import javax.swing.*;
 import javax.swing.RowSorter.SortKey;
 import javax.swing.border.Border;
@@ -2368,7 +2368,7 @@ public class TreeTable extends JComponent implements Scrollable {
         // TreeTableSorterListener Interface
 
         public void sorterChanged(TreeTableSorterEvent e) {
-//			System.out.print(e.getType().name());
+//			String debugMessage = e.getType().name();
             switch (e.getType()) {
             case SORT_ORDER_CHANGED:
                 JTableHeader header = getTableHeader();
@@ -2382,11 +2382,11 @@ public class TreeTable extends JComponent implements Scrollable {
                     updateTableRowHeights();
                 break;
             case NODE_SORTED:
-//				System.out.print(" " + e.getTreePath() + " " + ignoreSortedChange);
+//				debugMessage = debugMessage + " " + e.getTreePath() + " " + ignoreSortedChange);
                 nodeSorted(e.getTreePath());
                 break;
             }
-//			System.out.println();
+//			AquaUtils.logDebug(debugMessage);
         }
 
         private void nodeSorted(TreePath path) {

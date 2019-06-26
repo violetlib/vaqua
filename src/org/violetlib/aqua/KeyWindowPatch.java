@@ -67,7 +67,7 @@ public class KeyWindowPatch
 
             System.load(fn);
             isInstalled = true;
-            System.err.println("VAqua: installed patch for main/key window support");
+            AquaUtils.logDebug("VAqua: installed patch for main/key window support");
         } catch (UnsatisfiedLinkError e) {
             reportError(e.getMessage());
         } catch (AccessControlException e) {
@@ -80,7 +80,7 @@ public class KeyWindowPatch
 
     private static void reportError(String msg) {
         String s = "KeyWindowPatch: Unable to load library: " + msg;
-        System.err.println(s);
+        AquaUtils.logError(s);
     }
 
     private static long ensureWindowDelegateInstalled(Window w, long wptr)

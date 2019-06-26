@@ -12,8 +12,8 @@ import java.awt.*;
 import java.awt.image.*;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.List;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.function.Function;
 
 /**
@@ -37,14 +37,15 @@ public class Aqua9MultiResolutionImage extends AquaMultiResolutionImage implemen
 
     @Override
     public List<Image> getResolutionVariants() {
-        java.util.List<Image> result = new ArrayList<>();
+        List<Image> result = new ArrayList<>();
         result.add(baseImage);
         return result;
     }
 
     @Override
     public AquaMultiResolutionImage map(Mapper mapper) {
-        return new Aqua9MultiResolutionImage(mapper.map(baseImage, 1));
+        int scaleFactor = baseImageWidth / baseImage.getWidth(null);
+        return new Aqua9MultiResolutionImage(mapper.map(baseImage, scaleFactor));
     }
 
     @Override
@@ -150,9 +151,9 @@ public class Aqua9MultiResolutionImage extends AquaMultiResolutionImage implemen
             } catch (Exception ex) {
                 if (ex instanceof InvocationTargetException) {
                     Throwable th = ((InvocationTargetException) ex).getTargetException();
-                    System.err.println("Unable to map image: " + th);
+                    AquaUtils.logError("Unable to map image", th);
                 } else {
-                    System.err.println("Unable to map image: " + ex);
+                    AquaUtils.logError("Unable to map image", ex);
                 }
             }
         }

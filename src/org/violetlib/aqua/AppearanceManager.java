@@ -59,13 +59,13 @@ public class AppearanceManager {
             currentAppearance = appearance;
             if (false) {
                 // debug
-                System.err.println("Current appearance changed to: " + currentAppearance);
+                AquaUtils.logDebug("Current appearance changed to: " + currentAppearance);
             }
         } else if (appearance == null) {
             Class clazz = c.getClass();
             if (!notifiedClasses.contains(clazz)) {
                 notifiedClasses.add(clazz);
-                System.err.println("No appearance for: " + clazz.getName() + " should ensure appearance?");
+                AquaUtils.logDebug("No appearance for: " + clazz.getName() + " should ensure appearance?");
             }
         }
         return currentAppearance;
@@ -74,7 +74,7 @@ public class AppearanceManager {
     public static void restoreCurrentAppearance(@Nullable AquaAppearance appearance) {
         if (appearance != currentAppearance) {
             currentAppearance = appearance;
-            System.err.println("Restored appearance: " + currentAppearance);
+            AquaUtils.logDebug("Restored appearance: " + currentAppearance);
         }
     }
 
@@ -111,7 +111,7 @@ public class AppearanceManager {
                 try {
                     c.putClientProperty(AQUA_APPEARANCE_KEY, appearance);
                 } catch (Throwable th) {
-                    System.err.println("Error setting appearance property. Check for failure in a property change listener");
+                    AquaUtils.logError("Unable to appearance property. Check for failure in a property change listener", th);
                     th.printStackTrace();
                 }
                 appearanceHasChanged(c, appearance);
@@ -123,7 +123,7 @@ public class AppearanceManager {
         try {
             c.putClientProperty(AQUA_APPEARANCE_KEY, null);
         } catch (Throwable th) {
-            System.err.println("Error uninstalling appearance property. Check for failure in a property change listener");
+            AquaUtils.logError("Unable to uninstall appearance property. Check for failure in a property change listener", th);
             th.printStackTrace();
         }
     }

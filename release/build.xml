@@ -23,7 +23,7 @@
         <arg value="-v"/>
         <arg value="1.8"/>
     </exec>
-    
+
     <property name="bootclasspath" location="${jdk8}/jre/lib/rt.jar" />
 
     <property name="RELEASE" value="0.9"/>
@@ -172,6 +172,8 @@
             <arg value="JavaVM"/>
             <arg value="-framework"/>
             <arg value="Cocoa"/>
+            <arg value="-framework"/>
+            <arg value="QuickLookThumbnailing"/>
 
             <arg value="-F/${SDKroot}/System/Library/Frameworks/JavaVM.framework/Versions/A/Frameworks"/>
             <arg value="-framework"/>

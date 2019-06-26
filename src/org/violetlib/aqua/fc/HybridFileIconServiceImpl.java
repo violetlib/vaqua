@@ -1,43 +1,41 @@
+/*
+ * Copyright (c) 2019 Alan Snyder.
+ * All rights reserved.
+ *
+ * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
+ * accompanying license terms.
+ */
+
 package org.violetlib.aqua.fc;
 
 import java.awt.*;
 import java.io.File;
 
-import javax.swing.*;
-
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.violetlib.aqua.AquaImageFactory;
 import org.violetlib.aqua.AquaMultiResolutionImage;
+import org.violetlib.aqua.AquaUtils;
 
 /**
  * An implementation of the file icon service that uses Launch Services and Quick Look.
  */
-
 public class HybridFileIconServiceImpl
-  implements FileIconService
-{
+        extends FileIconServiceImplBase
+        implements FileIconService {
     private static final @NotNull ConcurrentDispatcher dispatcher = new ConcurrentDispatcher();
 
-    private @Nullable ImageIcon genericFileIcon;
-    private @Nullable ImageIcon genericFolderIcon;
+    public HybridFileIconServiceImpl() {
+        if (debugFlag) {
+            AquaUtils.logDebug("File Icon Service: Using Launch Services and Quick Look");
+        }
+    }
 
     @Override
     public synchronized @NotNull Request requestIcon(@NotNull File f, int size, float scale, @NotNull Handler handler) {
-        RequestImpl request = new RequestImpl(handler);
+        RequestImpl request = new RequestImpl(f, handler);
 
-        // First deliver a generic icon, if we can determine that the file is a folder or not.
-        if (f.isFile()) {
-            if (genericFileIcon == null) {
-                genericFileIcon = OSXFile.getFileIcon();
-            }
-            request.installIcon(genericFileIcon, FileIconService.ICON_GENERIC);
-        } else if (f.isDirectory()) {
-            if (genericFolderIcon == null) {
-                genericFolderIcon = OSXFile.getDirectoryIcon();
-            }
-            request.installIcon(genericFolderIcon, FileIconService.ICON_GENERIC);
-        }
+        // First deliver a generic icon, if we can determine that the file is a folder or an ordinary file.
+        installGenericFileIcon(f, request);
 
         if (OSXFile.isAvailable()) {
             dispatcher.dispatch(new Task(f, size, request, false));
@@ -47,42 +45,8 @@ public class HybridFileIconServiceImpl
         return request;
     }
 
-    private class RequestImpl
-      implements FileIconService.Request
-    {
-        private @Nullable FileIconService.Handler handler;
-        private int highestReceivedPriority = -1;
-
-        public RequestImpl(@Nullable Handler handler) {
-            this.handler = handler;
-        }
-
-        public synchronized void installIcon(@NotNull ImageIcon icon, int priority)
-        {
-            if (priority > highestReceivedPriority && handler != null) {
-                handler.provideIcon(icon, priority);
-                highestReceivedPriority = priority;
-            }
-        }
-
-        public synchronized void installImage(@NotNull Image image, int priority)
-        {
-            if (priority > highestReceivedPriority && handler != null) {
-                ImageIcon icon = new ImageIcon(image);
-                handler.provideIcon(icon, priority);
-                highestReceivedPriority = priority;
-            }
-        }
-
-        @Override
-        public synchronized void cancel() {
-            handler = null;
-        }
-    }
-
     private class Task
-      implements Runnable
-    {
+            implements Runnable {
         private final @NotNull File file;
         private final int size;
         private final @NotNull RequestImpl request;
@@ -102,12 +66,12 @@ public class HybridFileIconServiceImpl
             if (!AquaFileIcons.nativeRenderFileImage(path, useQuickLook, true, buffers, size, size)) {
                 if (AquaImageFactory.debugNativeRendering) {
                     String type = useQuickLook ? "Quick Look" : "Launch Services";
-                    System.err.println("Failed to render " + type + " image for " + path);
+                    AquaUtils.logDebug("Failed to render " + type + " image for " + path);
                 }
             } else {
                 if (AquaImageFactory.debugNativeRendering) {
                     String type = useQuickLook ? "Quick Look" : "Launch Services";
-                    System.err.println("Rendered " + type + " image for " + path);
+                    AquaUtils.logDebug("Rendered " + type + " image for " + path);
                 }
                 Image image = AquaMultiResolutionImage.createImage(size, size, buffers[0], buffers[1]);
                 int priority = useQuickLook ? FileIconService.ICON_GENERIC : FileIconService.ICON_CUSTOM;

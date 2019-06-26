@@ -10,10 +10,11 @@ package org.violetlib.aqua;
 
 import java.awt.*;
 import java.awt.image.*;
-import java.io.*;
-import java.net.*;
-import java.util.*;
-
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
+import java.util.Properties;
 import javax.swing.*;
 
 /**
@@ -69,12 +70,12 @@ public class Images {
                     try {
                         p.load(in);
                     } catch (IOException e) {
-                        System.err.println("Failed to load graphiteable.properties: " + e);
+                        AquaUtils.logError("Failed to load graphiteable.properties", e);
                     } finally {
                         try {
                             in.close();
                         } catch (IOException ex) {
-                            System.err.println("Failed to load graphiteable.properties: " + ex);
+                            AquaUtils.logError("Failed to load graphiteable.properties", ex);
                         }
                     }
                     canGraphite = p;

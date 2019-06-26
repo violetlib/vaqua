@@ -54,16 +54,16 @@ public class AquaMenuSupport {
 
     // Unicode character codes
     static final char
-        kUBlackDiamond = 0x25C6,
-        kUCheckMark = 0x2713,
-        kUControlGlyph = 0x2303,
-        kUOptionGlyph = 0x2325,
-        kUEnterGlyph = 0x2324,
-        kUCommandGlyph = 0x2318,
-        kULeftDeleteGlyph = 0x232B,
-        kURightDeleteGlyph = 0x2326,
-        kUShiftGlyph = 0x21E7,
-        kUCapsLockGlyph = 0x21EA;
+            kUBlackDiamond = 0x25C6,
+            kUCheckMark = 0x2713,
+            kUControlGlyph = 0x2303,
+            kUOptionGlyph = 0x2325,
+            kUEnterGlyph = 0x2324,
+            kUCommandGlyph = 0x2318,
+            kULeftDeleteGlyph = 0x232B,
+            kURightDeleteGlyph = 0x2326,
+            kUShiftGlyph = 0x21E7,
+            kUCapsLockGlyph = 0x21EA;
 
     static final int ALT_GRAPH_MASK = 1 << 5; // New to Java2
 
@@ -462,8 +462,10 @@ public class AquaMenuSupport {
             textR.width += 8;
         }
 
-        /*System.out.println("Layout: " +horizontalAlignment+ " v=" +viewR+"  c="+checkIconR+" i="+
-         iconR+" t="+textR+" acc="+acceleratorR+" a="+arrowIconR);*/
+        if (false) {
+            AquaUtils.logDebug("Layout: " +horizontalAlignment+ " v=" +viewR+"  c="+checkIconR+" i="+
+                    iconR+" t="+textR+" acc="+acceleratorR+" a="+arrowIconR);
+        }
 
         if (!AquaUtils.isLeftToRight(menuItem)) {
             // Flip the rectangles so that instead of [check][icon][text][accel/arrow] it's [accel/arrow][text][icon][check]

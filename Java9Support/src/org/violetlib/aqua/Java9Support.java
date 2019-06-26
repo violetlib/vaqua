@@ -86,6 +86,14 @@ public class Java9Support implements JavaSupport.JavaSupportImpl {
     }
 
     @Override
+    public @NotNull AquaMultiResolutionImage createImage(int rasterWidth, int rasterHeight, int[] data, float scale) {
+        BufferedImage basicImage = createImage(rasterWidth, rasterHeight, data);
+        int width = (int) (rasterWidth / scale);
+        int height = (int) (rasterHeight /scale);
+        return new Aqua9MultiResolutionImage(width, height, basicImage);
+    }
+
+    @Override
     public Image applyFilter(Image image, ImageFilter filter) {
         return Aqua9MultiResolutionImage.apply(image, filter);
     }
@@ -111,15 +119,15 @@ public class Java9Support implements JavaSupport.JavaSupportImpl {
     }
 
     @Override
-    public BufferedImage createImage(int width, int height, int[] data) {
+    public @NotNull BufferedImage createImage(int width, int height, int[] data) {
         ColorModel colorModel = new
                 DirectColorModel(
                 ColorSpace.getInstance(ColorSpace.CS_sRGB),
                 32,
-                0x00ff0000,// Red
-                0x0000ff00,// Green
-                0x000000ff,// Blue
-                0xff000000,// Alpha
+                0x00ff0000, // Red
+                0x0000ff00, // Green
+                0x000000ff, // Blue
+                0xff000000, // Alpha
                 true,       // Alpha Premultiplied
                 DataBuffer.TYPE_INT
         );
