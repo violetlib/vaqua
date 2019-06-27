@@ -315,7 +315,7 @@ public class AquaColors {
      * @throws UnsupportedOperationException if the specified color is not defined.
      */
     public static @NotNull Color getSystemColor(@NotNull JComponent c, @NotNull String colorName) {
-        AquaAppearance appearance = AppearanceManager.getAppearance(c);
+        AquaAppearance appearance = AppearanceManager.ensureAppearance(c);
         Color appearanceColor = appearance.getColor(colorName);
         if (appearanceColor != null) {
             return appearanceColor;
