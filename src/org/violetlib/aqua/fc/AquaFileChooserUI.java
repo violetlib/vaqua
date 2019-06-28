@@ -3424,7 +3424,9 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
             Component c = e.getChanged();
             long flags = e.getChangeFlags();
             if ((flags & HierarchyEvent.PARENT_CHANGED) != 0) {
-                configureDialog();
+                if (c.getParent() != null) {
+                    configureDialog();
+                }
             }
             if ((flags & HierarchyEvent.SHOWING_CHANGED) != 0) {
                 if (c.isVisible()) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2018 Alan Snyder.
+ * Copyright (c) 2015-2019 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -19,6 +19,7 @@ import java.util.Objects;
 import javax.swing.JComponent;
 import javax.swing.SwingUtilities;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
@@ -80,29 +81,29 @@ public abstract class ComponentTracker
         };
 
         hierarchyBoundsListener = new HierarchyBoundsListener() {
-            public void ancestorMoved(HierarchyEvent e) {
+            public void ancestorMoved(@NotNull HierarchyEvent e) {
                 visibleBoundsChanged(window);
             }
 
-            public void ancestorResized(HierarchyEvent e) {
+            public void ancestorResized(@NotNull HierarchyEvent e) {
                 visibleBoundsChanged(window);
             }
         };
 
         componentListener = new ComponentListener() {
-            public void componentResized(ComponentEvent e) {
+            public void componentResized(@NotNull ComponentEvent e) {
                 visibleBoundsChanged(window);
             }
 
-            public void componentMoved(ComponentEvent e) {
+            public void componentMoved(@NotNull ComponentEvent e) {
                 visibleBoundsChanged(window);
             }
 
-            public void componentShown(ComponentEvent e) {
+            public void componentShown(@NotNull ComponentEvent e) {
                 visibleBoundsChanged(window);
             }
 
-            public void componentHidden(ComponentEvent e) {
+            public void componentHidden(@NotNull ComponentEvent e) {
                 visibleBoundsChanged(window);
             }
         };
@@ -112,7 +113,7 @@ public abstract class ComponentTracker
      * Specify the component to be tracked.
      * @param c The component, or null to detach this tracker from any previous component.
      */
-    public void attach(@Nullable JComponent c) {
+    public void attach(@Nullable Component c) {
         if (tracked != c) {
             if (tracked != null) {
                 Window w = window;

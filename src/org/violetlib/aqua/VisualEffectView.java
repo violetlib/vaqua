@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015 Alan Snyder.
+ * Copyright (c) 2015-2019 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -8,14 +8,8 @@
 
 package org.violetlib.aqua;
 
-import java.awt.Component;
-import java.awt.Container;
-import java.awt.Rectangle;
-import java.awt.Window;
-import javax.swing.JComponent;
-import javax.swing.JRootPane;
-import javax.swing.JViewport;
-import javax.swing.SwingUtilities;
+import java.awt.*;
+import javax.swing.*;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -99,9 +93,11 @@ public class VisualEffectView {
     }
 
     protected void visibleBoundsChanged() {
-        Rectangle bounds = getVisibleBounds(component);
-        if (bounds != null && bounds.width > 0 && bounds.height > 0) {
-            setFrame(bounds.x, bounds.y, bounds.width, bounds.height);
+        VisibleBounds vb = AquaUtils.getVisibleBoundsInWindow(component);
+        if (vb != null) {
+            // TBD: not considering occlusion if the component is clipped by a viewport
+            Rectangle frame = vb.frame;
+            setFrame(frame.x, frame.y, frame.width, frame.height);
         } else {
             setFrame(0, 0, 0, 0);
         }
@@ -146,46 +142,5 @@ public class VisualEffectView {
                 VisualEffectView.this.visibleBoundsChanged();
             }
         }
-    }
-
-    /**
-     * Determine the visible bounds of the specified component in the window coordinate space. The bounds are normally
-     * the bounds of the component. However, if the base component is within a viewport view, then the bounds are
-     * constrained by the viewport.
-     *
-     * @param tc The component.
-     * @return the visible bounds, as defined above, in the coordinate space of the window, or null if the component is
-     *   not visible.
-     */
-    protected static Rectangle getVisibleBounds(Component tc) {
-        Component c = tc;
-        Rectangle bounds = c.getBounds();
-        Window w = SwingUtilities.getWindowAncestor(c);
-
-        for (;;) {
-            if (!c.isVisible()) {
-                return null;
-            }
-
-            if (c instanceof JRootPane) {
-                break;
-            }
-
-            if (c instanceof JViewport && c != tc) {
-                JViewport p = (JViewport) c;
-                bounds = p.getBounds();
-                return SwingUtilities.convertRectangle(p.getParent(), bounds, w);
-            }
-
-            Container parent = c.getParent();
-            if (parent == null) {
-                // should not happen
-                return null;
-            }
-
-            c = parent;
-        }
-
-        return SwingUtilities.convertRectangle(tc.getParent(), bounds, w);
     }
 }

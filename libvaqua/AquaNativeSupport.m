@@ -2,7 +2,7 @@
  * @(#)AquaNativeSupport.m
  *
  * Copyright (c) 2004-2007 Werner Randelshofer, Switzerland.
- * Copyright (c) 2014-2018 Alan Snyder.
+ * Copyright (c) 2014-2019 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this software, except in
@@ -36,6 +36,7 @@ static int VERSION = 3;
 #import <CoreServices/CoreServices.h>
 #import <CoreFoundation/CoreFoundation.h>
 #import <CoreGraphics/CoreGraphics.h>
+#import <Quartz/Quartz.h>
 #import <JavaNativeFoundation.h>
 #import <Availability.h>
 
@@ -669,7 +670,7 @@ JNIEXPORT jstring JNICALL Java_org_violetlib_aqua_fc_OSXFile_nativeGetKindString
 
 static jintArray renderImageIntoBufferForDisplay(JNIEnv *env, NSImage *image, jfloat w, jfloat h, jfloat scaleFactor)
 {
-	//NSLog(@"Calling renderImageIntoBufferForDisplay %f %f %f on thread %@", w, h, scaleFactor, NSThread.currentThread);
+    //NSLog(@"Calling renderImageIntoBufferForDisplay %f %f %f on thread %@", w, h, scaleFactor, NSThread.currentThread);
 
 //     if (scaleFactor > 1 && [[image representations] count] < 2) {
 //         return NULL;
@@ -2163,6 +2164,227 @@ JNIEXPORT jint JNICALL Java_org_violetlib_aqua_AquaVibrantSupport_disposeVisualE
     JNF_COCOA_EXIT(env);
 
     return result;
+}
+
+@interface ViewportView : NSView
+@end
+
+@implementation ViewportView
+@end
+
+// Create a view frame from a Java rectangle
+static NSRect createFrameInParentWithHeight(float parentHeight, float x, float y, float w, float h)
+{
+    return NSMakeRect(x, parentHeight - (y + h), w, h);
+}
+
+// Create a view frame from a Java rectangle
+static NSRect createFrame(NSView *parent, float x, float y, float w, float h)
+{
+    float parentHeight = parent.frame.size.height;
+    return createFrameInParentWithHeight(parentHeight, x, y, w, h);
+}
+
+static void internalHideNativeView(NSView *view)
+{
+    NSWindow *window = view.window;
+    if (window != nil) {
+        view.hidden = YES;
+    }
+}
+
+static void removeNativeView(NSView *view)
+{
+    NSView *parent = view.superview;
+    if (parent) {
+        [view removeFromSuperview];
+        if ([parent isKindOfClass:[ViewportView class]]) {
+            [parent removeFromSuperview];
+        }
+    }
+}
+
+static void internalShowNativeView(NSView *view, NSWindow *window, jint x, jint y, jint w, jint h)
+{
+    NSView *parent = getAWTView(window);
+    if (parent) {
+        NSView *currentParent = view.superview;
+        if (parent != currentParent) {
+            removeNativeView(view);
+            [parent addSubview: view];
+        }
+
+        view.hidden = NO;
+        view.frame = createFrame(view.superview, x, y, w, h);
+        view.needsDisplay = YES;
+    }
+}
+
+static void internalShowNativeViewClipped(NSView *view, NSWindow *window,
+        jint cx, jint cy, jint cw, jint ch, jint x, jint y, jint w, jint h)
+{
+    NSWindow *currentWindow = view.window;
+    NSView *currentParent = view.superview;
+
+    if (window != currentWindow || ![currentParent isKindOfClass:[ViewportView class]]) {
+        removeNativeView(view);
+    }
+
+    NSView *awtView = getAWTView(window);
+    if (awtView) {
+        view.frame = createFrameInParentWithHeight(h, cx, cy, cw, ch);
+
+        ViewportView *viewport;
+        if (view.superview == nil) {
+            viewport = [[ViewportView alloc] initWithFrame:createFrame(awtView, x, y, w, h)];
+            viewport.autoresizesSubviews = NO;
+            viewport.autoresizingMask = NSViewNotSizable;
+            [viewport addSubview:view];
+            [awtView addSubview:viewport];
+        } else {
+            viewport = (ViewportView *) view.superview;
+            viewport.frame = createFrame(awtView, x, y, w, h);
+        }
+
+        view.hidden = NO;
+        view.needsDisplay = YES;
+    }
+}
+
+/*
+ * Class:     org_violetlib_aqua_NativeOverlayView
+ * Method:    hideNativeView
+ * Signature: (J)V
+ */
+JNIEXPORT void JNICALL Java_org_violetlib_aqua_NativeOverlayView_hideNativeView
+  (JNIEnv *env, jclass cl, jlong vptr)
+{
+    NSView *view = (NSView *) vptr;
+
+    JNF_COCOA_ENTER(env);
+
+    runOnMainThread(^() {internalHideNativeView(view);});
+
+    JNF_COCOA_EXIT(env);
+}
+
+/*
+ * Class:     org_violetlib_aqua_NativeOverlayView
+ * Method:    showNativeView
+ * Signature: (JJIIII)V
+ */
+JNIEXPORT void JNICALL Java_org_violetlib_aqua_NativeOverlayView_showNativeView
+  (JNIEnv *env, jclass cl, jlong vptr, jlong wptr, jint x, jint y, jint w, jint h)
+{
+    NSView *view = (NSView *) vptr;
+    NSWindow *window = (NSWindow *) wptr;
+
+    JNF_COCOA_ENTER(env);
+
+    runOnMainThread(^() {internalShowNativeView(view, window, x, y, w, h);});
+
+    JNF_COCOA_EXIT(env);
+}
+
+/*
+ * Class:     org_violetlib_aqua_NativeOverlayView
+ * Method:    showNativeViewClipped
+ * Signature: (JJIIIIIIII)V
+ */
+JNIEXPORT void JNICALL Java_org_violetlib_aqua_NativeOverlayView_showNativeViewClipped
+  (JNIEnv *env, jclass cl, jlong vptr, jlong wptr, jint cx, jint cy, jint cw, jint ch, jint x, jint y, jint w, jint h)
+{
+    NSView *view = (NSView *) vptr;
+    NSWindow *window = (NSWindow *) wptr;
+
+    JNF_COCOA_ENTER(env);
+
+    runOnMainThread(^() {internalShowNativeViewClipped(view, window, cx, cy, cw, ch, x, y, w, h);});
+
+    JNF_COCOA_EXIT(env);
+}
+
+static NSView *internalCreatePreviewView()
+{
+    NSRect bounds = NSMakeRect(0, 0, 1, 1);
+    QLPreviewView *preview = [[QLPreviewView alloc] initWithFrame:bounds style:QLPreviewViewStyleCompact];
+    preview.shouldCloseWithWindow = NO;
+    return preview;
+}
+
+static void internalShowPreview(QLPreviewView *view, NSURL *u)
+{
+    if (u) {
+        view.hidden = YES;
+        [view setPreviewItem:u];
+        view.hidden = NO;
+    } else {
+        view.hidden = YES;
+    }
+}
+
+static void internalDisposePreviewView(NSView *view)
+{
+    [view release];
+}
+
+/*
+ * Class:     org_violetlib_aqua_fc_FilePreviewView
+ * Method:    nativeCreatePreviewView
+ * Signature: ()J
+ */
+JNIEXPORT jlong JNICALL Java_org_violetlib_aqua_fc_FilePreviewView_nativeCreatePreviewView
+  (JNIEnv *env, jclass cl)
+{
+    __block jlong result = 0;
+
+    JNF_COCOA_ENTER(env);
+
+    runOnMainThread(^() {result = (jlong) internalCreatePreviewView();});
+
+    JNF_COCOA_EXIT(env);
+
+    return result;
+}
+
+/*
+ * Class:     org_violetlib_aqua_fc_FilePreviewView
+ * Method:    nativeShowPreview
+ * Signature: (JLjava/lang/String;)V
+ */
+JNIEXPORT void JNICALL Java_org_violetlib_aqua_fc_FilePreviewView_nativeShowPreview
+  (JNIEnv *env, jclass cl, jlong vptr, jstring jpath)
+{
+    QLPreviewView *view = (QLPreviewView *) vptr;
+    NSURL *u = nil;
+
+    JNF_COCOA_ENTER(env);
+
+    if (jpath != NULL) {
+        NSString *path = JNFNormalizedNSStringForPath(env, jpath);
+        u = [NSURL fileURLWithPath:path];
+    }
+
+    runOnMainThread(^() {internalShowPreview(view, u);});
+
+    JNF_COCOA_EXIT(env);
+}
+
+/*
+ * Class:     org_violetlib_aqua_fc_FilePreviewView
+ * Method:    nativeDisposePreviewView
+ * Signature: (J)V
+ */
+JNIEXPORT void JNICALL Java_org_violetlib_aqua_fc_FilePreviewView_nativeDisposePreviewView
+  (JNIEnv *env, jclass cl, jlong vptr)
+{
+    NSView *view = (NSView *) vptr;
+
+    JNF_COCOA_ENTER(env);
+
+    runOnMainThread(^() {internalDisposePreviewView(view);});
+
+    JNF_COCOA_EXIT(env);
 }
 
 /*

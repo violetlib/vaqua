@@ -1,5 +1,5 @@
 /*
- * Changes copyright (c) 2014-2018 Alan Snyder.
+ * Changes copyright (c) 2014-2019 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -1025,11 +1025,18 @@ public class JBrowser extends JComponent implements Scrollable {
         return (cellRenderer instanceof BrowserCellRendererWrapper) ? ((BrowserCellRendererWrapper) cellRenderer).browserCellRenderer : null;
     }
 
+    public @Nullable BrowserPreviewRenderer getPreviewRenderer() {
+        if (previewColumn != null) {
+            return previewColumn.getRenderer();
+        } else {
+            return null;
+        }
+    }
+
     /**
      * Sets the delegate that's used to paint the preview column in the browser.
      * <p>
-     * The default value of this property is null. If null, no preview column
-     * is shown.
+     * The default value of this property is null. If null, no preview column is shown.
      * <p>
      * This is a JavaBeans bound property.
      *
@@ -1065,16 +1072,14 @@ public class JBrowser extends JComponent implements Scrollable {
     }
 
     /**
-     * Returns the number of columns this includes the count of list columns
-     * and the preview column (if it is shown).
+     * Returns the number of columns this includes the count of list columns and the preview column (if it is shown).
      */
     private int getColumnCount() {
         return getComponentCount();
     }
 
     /**
-     * Returns the number of list columns. This count does not include the
-     * preview column.
+     * Returns the number of list columns. This count does not include the preview column.
      */
     private int getListColumnCount() {
         int count = getComponentCount();
@@ -1094,7 +1099,7 @@ public class JBrowser extends JComponent implements Scrollable {
                 //getColumnList(i).setDropTarget(t);
             }
         }
-        if (previewColumn != null) {
+        if (previewColumn != null && previewColumn.isVisible()) {
             new DropTarget(previewColumn, getDropTarget().getDefaultActions(), getDropTarget());
         }
     }
@@ -1245,32 +1250,42 @@ public class JBrowser extends JComponent implements Scrollable {
     }
 
     /**
+     * Indicate whether the preview column is visible.
+     */
+    public boolean isPreviewColumnVisible() {
+        return previewColumn != null && previewColumn.isVisible() && previewColumn.getParent() == this;
+    }
+
+    /**
      * Display the current selection in the preview column, if a preview column is defined and the selection is not
      * empty.
      */
     public void updatePreviewColumn() {
         if (previewColumn != null) {
-            boolean wasVisible = previewColumn.getParent() != null;
+            boolean wasVisible = isPreviewColumnVisible();
             TreePath[] paths = getSelectionPaths();
             switch ((paths == null) ? 0 : paths.length) {
                 case 0:
-                    remove(previewColumn);
+                    previewColumn.setVisible(false);
                     break;
                 case 1:
                     if (treeModel.isLeaf(paths[0].getLastPathComponent())) {
                         previewColumn.updateSelection(paths);
-                        add(previewColumn);
+                        previewColumn.setVisible(true);
                     } else {
-                        remove(previewColumn);
+                        previewColumn.setVisible(false);
                     }
                     break;
                 default:
                     previewColumn.updateSelection(paths);
-                    add(previewColumn);
+                    previewColumn.setVisible(true);
                     break;
             }
-            boolean isVisible = previewColumn.getParent() != null;
+            boolean isVisible = previewColumn.isVisible();
             if (isVisible != wasVisible) {
+                if (isVisible && previewColumn.getParent() != this) {
+                    add(previewColumn);
+                }
                 previewColumnVisibilityChanged(isVisible);
             }
 
@@ -3634,8 +3649,11 @@ public class JBrowser extends JComponent implements Scrollable {
 
         public void updateSelection(@NotNull TreePath[] paths) {
             Component c = renderer.getPreviewRendererComponent(JBrowser.this, paths);
-            removeAll();
-            add(c);
+            if (c != currentComponent) {
+                removeAll();
+                add(c);
+                currentComponent = c;
+            }
             if (designatedWidth > 0) {
                 Dimension minimumSize = c.getMinimumSize();
                 int minimumWidth = minimumSize.width;

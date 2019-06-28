@@ -1000,8 +1000,8 @@ public class FileSystemTreeModel implements TreeModel {
         }
 
         private boolean isMonitoringInfoValidation(File f) {    // for debugging
-            //return false;
-            return f.getName().equals("Users");
+            return false;
+            //return f.getName().equals("Users");
         }
 
         /**

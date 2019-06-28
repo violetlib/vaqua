@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2018 Alan Snyder.
+ * Copyright (c) 2015-2019 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -319,7 +319,7 @@ final public class AquaUtils {
         int left = insets.left;
         int right = insets.right;
         return new Rectangle(bounds.x + left, bounds.y + top, bounds.width - left - right,
-          bounds.height - top - bottom);
+                bounds.height - top - bottom);
     }
 
     /**
@@ -542,17 +542,17 @@ final public class AquaUtils {
         }
 
         return layoutCompoundLabelImpl(c,
-          fm,
-          text,
-          icon,
-          verticalAlignment,
-          hAlign,
-          verticalTextPosition,
-          hTextPos,
-          viewR,
-          iconR,
-          textR,
-          textIconGap);
+                fm,
+                text,
+                icon,
+                verticalAlignment,
+                hAlign,
+                verticalTextPosition,
+                hTextPos,
+                viewR,
+                iconR,
+                textR,
+                textIconGap);
     }
 
     /**
@@ -570,18 +570,18 @@ final public class AquaUtils {
      * inserted at the middle of the text instead of at the end.
      */
     private static String layoutCompoundLabelImpl(
-      JComponent c,
-      FontMetrics fm,
-      String text,
-      Icon icon,
-      int verticalAlignment,
-      int horizontalAlignment,
-      int verticalTextPosition,
-      int horizontalTextPosition,
-      Rectangle viewR,
-      Rectangle iconR,
-      Rectangle textR,
-      int textIconGap)
+            JComponent c,
+            FontMetrics fm,
+            String text,
+            Icon icon,
+            int verticalAlignment,
+            int horizontalAlignment,
+            int verticalTextPosition,
+            int horizontalTextPosition,
+            Rectangle viewR,
+            Rectangle iconR,
+            Rectangle textR,
+            int textIconGap)
     {
         /* Initialize the icon bounds rectangle iconR.
          */
@@ -706,10 +706,10 @@ final public class AquaUtils {
          */
         int labelR_x = Math.min(iconR.x, textR.x);
         int labelR_width = Math.max(iconR.x + iconR.width,
-          textR.x + textR.width) - labelR_x;
+                textR.x + textR.width) - labelR_x;
         int labelR_y = Math.min(iconR.y, textR.y);
         int labelR_height = Math.max(iconR.y + iconR.height,
-          textR.y + textR.height) - labelR_y;
+                textR.y + textR.height) - labelR_y;
 
         int dx, dy;
 
@@ -729,7 +729,7 @@ final public class AquaUtils {
         } else { // (horizontalAlignment == CENTER)
 
             dx = (viewR.x + (viewR.width / 2))
-                   - (labelR_x + (labelR_width / 2));
+                    - (labelR_x + (labelR_width / 2));
         }
 
         /* Translate textR and glypyR by dx,dy.
@@ -828,7 +828,7 @@ final public class AquaUtils {
         @Override
         protected Boolean getInstance() {
             String sizeProperty = (String) AccessController.doPrivileged((PrivilegedAction<String>) () -> System.getProperty(
-              ANIMATIONS_PROPERTY));
+                    ANIMATIONS_PROPERTY));
             return !"false".equals(sizeProperty); // should be true by default
         }
     };
@@ -1052,6 +1052,95 @@ final public class AquaUtils {
         }
 
         return false;
+    }
+
+    /**
+     * Determine the visible bounds of the specified component in the coordinate space of the AWT content view.
+     * The bounds are normally the bounds of the component. However, if the component is within a viewport view, then
+     * the bounds are constrained by the viewport.
+     *
+     * @param c The component.
+     * @return the visible bounds, as defined above, in the coordinate space of the top component, or null if the
+     *   component is not visible or not in a window.
+     */
+
+    public static @Nullable VisibleBounds getVisibleBoundsInContentView(@NotNull Component c) {
+        if (c.getWidth() > 0 && c.getHeight() > 0) {
+            Window w = SwingUtilities.getWindowAncestor(c);
+            if (w != null) {
+                VisibleBounds bounds = getVisibleBoundsInWindow(c, w);
+                if (bounds != null) {
+                    Insets s = w.getInsets();
+                    int x = s.left;
+                    int y = s.top;
+                    int sw = w.getWidth() - (s.left + s.right);
+                    int sh = w.getHeight() - (s.top + s.bottom);
+                    Rectangle clip = new Rectangle(x, y, sw, sh);
+                    Rectangle visibleBounds = bounds.visibleBounds.intersection(clip);
+                    Rectangle oldFrame = bounds.frame;
+                    Rectangle frame = new Rectangle(oldFrame.x - x, oldFrame.y - y, oldFrame.width, oldFrame.height);
+                    return new VisibleBounds(visibleBounds, frame);
+                }
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Determine the visible bounds of the specified component in the coordinate space of the window.
+     * The bounds are normally the bounds of the component. However, if the component is within a viewport view, then
+     * the bounds are constrained by the viewport.
+     *
+     * @param c The component.
+     * @return the visible bounds, as defined above, in the coordinate space of the window, or null if the
+     *   component is not visible or not in a window.
+     */
+    public static @Nullable VisibleBounds getVisibleBoundsInWindow(@NotNull Component c) {
+        if (c.getWidth() > 0 && c.getHeight() > 0) {
+            Window w = SwingUtilities.getWindowAncestor(c);
+            if (w != null) {
+                return getVisibleBoundsInWindow(c, w);
+            }
+        }
+        return null;
+    }
+
+    private static @Nullable VisibleBounds getVisibleBoundsInWindow(@NotNull Component c, @NotNull Window w) {
+        if (w.isVisible()) {
+            Rectangle visibleRegion = new Rectangle();
+            if (computeVisibleRegion(c, visibleRegion) && !visibleRegion.isEmpty()) {
+                Rectangle vr = SwingUtilities.convertRectangle(c, visibleRegion, w);
+                Rectangle frame = SwingUtilities.convertRectangle(c.getParent(), c.getBounds(), w);
+                return new VisibleBounds(vr, frame);
+            }
+        }
+        return null;
+    }
+
+    private static boolean computeVisibleRegion(@NotNull Component c,
+                                                @NotNull Rectangle result) {
+        if (!c.isVisible()) {
+            return false;
+        }
+
+        Container p = c.getParent();
+        if (p == null || !p.isVisible()) {
+            return false;
+        }
+
+        Rectangle bounds = c.getBounds();
+        if (p instanceof Window) {
+            result.setBounds(0, 0, bounds.width, bounds.height);
+            return true;
+        } else {
+            if (!computeVisibleRegion(p, result)) {
+                return false;
+            }
+            result.x -= bounds.x;
+            result.y -= bounds.y;
+            SwingUtilities.computeIntersection(0, 0, bounds.width, bounds.height, result);
+            return true;
+        }
     }
 
     /**
@@ -1320,9 +1409,9 @@ final public class AquaUtils {
     public static Object beginGraphics(Graphics2D graphics2d) {
         Object object = graphics2d.getRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING);
         graphics2d.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING,
-          RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+                RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
         graphics2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
-          RenderingHints.VALUE_ANTIALIAS_ON);
+                RenderingHints.VALUE_ANTIALIAS_ON);
         return object;
     }
 
@@ -1330,7 +1419,7 @@ final public class AquaUtils {
     public static void endGraphics(Graphics2D graphics2d, Object oldHints) {
         if (oldHints != null) {
             graphics2d.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING,
-              oldHints);
+                    oldHints);
         }
     }
 
