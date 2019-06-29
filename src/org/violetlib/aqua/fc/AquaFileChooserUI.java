@@ -67,8 +67,9 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
       change on the file chooser, which is processed exactly the same as if the application had made the change.
     */
 
-    public static final java.lang.String PACKAGE_TRAVERSABLE_PROPERTY = "JFileChooser.packageIsTraversable";
-    public static final java.lang.String APPLICATION_TRAVERSABLE_PROPERTY = "JFileChooser.appBundleIsTraversable";
+    public static final String PACKAGE_TRAVERSABLE_PROPERTY = "JFileChooser.packageIsTraversable";
+    public static final String APPLICATION_TRAVERSABLE_PROPERTY = "JFileChooser.appBundleIsTraversable";
+    public static final String OPTIONS_PANEL_ENABLED_PROPERTY = "JFileChooser.optionsPanelEnabled";
 
     private JFileChooser fc;
     private DirectoryComboBoxModel directoryComboBoxModel;
@@ -79,8 +80,8 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
     private FileSystemTreeModel model = null;
     private SubtreeTreeModel subtreeModel = null;
 
-    private final static boolean isOptionsAvailable = OSVersion >= 1011;
-    private boolean isOptionsEnabled = !isOptionsAvailable;
+    private final static boolean isOptionsButtonAvailable = OSVersion >= 1011;
+    private boolean isOptionsEnabled = false;  // used only when the options button is displayed
     private @Nullable String windowStyle;
     private boolean useToolBar; // true if the top panel should act like a tool bar when the textured window style is used
 
@@ -696,34 +697,34 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
         GroupLayout layout = new GroupLayout(fc);
         fc.setLayout(layout);
 
-        fileNameLine.setLayout(new java.awt.GridBagLayout());
+        fileNameLine.setLayout(new GridBagLayout());
         fileNameLabel.setHorizontalAlignment(SwingConstants.RIGHT);
         fileNameLabel.setText("Save As:");
-        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints = new GridBagConstraints();
         gridBagConstraints.gridx = 0;
         gridBagConstraints.gridy = 0;
-        gridBagConstraints.fill = java.awt.GridBagConstraints.BOTH;
-        gridBagConstraints.anchor = java.awt.GridBagConstraints.EAST;
+        gridBagConstraints.fill = GridBagConstraints.BOTH;
+        gridBagConstraints.anchor = GridBagConstraints.EAST;
         gridBagConstraints.weightx = 0.5;
-        gridBagConstraints.insets = new java.awt.Insets(7, 0, 0, 6);
+        gridBagConstraints.insets = new Insets(7, 0, 0, 6);
         fileNameLine.add(fileNameLabel, gridBagConstraints);
 
-        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints = new GridBagConstraints();
         gridBagConstraints.gridx = 1;
         gridBagConstraints.gridy = 0;
         gridBagConstraints.ipadx = 250;
-        gridBagConstraints.insets = new java.awt.Insets(7, 0, 0, 0);
+        gridBagConstraints.insets = new Insets(7, 0, 0, 0);
         fileNameLine.add(fileNameTextField, gridBagConstraints);
 
         fileNameSpringPanel.setLayout(null);
         fileNameSpringPanel.setOpaque(false);
 
-        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints = new GridBagConstraints();
         gridBagConstraints.gridx = 2;
         gridBagConstraints.gridy = 0;
-        gridBagConstraints.fill = java.awt.GridBagConstraints.BOTH;
+        gridBagConstraints.fill = GridBagConstraints.BOTH;
         gridBagConstraints.weightx = 0.5;
-        gridBagConstraints.insets = new java.awt.Insets(0, 6, 0, 0);
+        gridBagConstraints.insets = new Insets(0, 6, 0, 0);
         fileNameLine.add(fileNameSpringPanel, gridBagConstraints);
 
         if (OSXSystemProperties.OSVersion >= 1013) {
@@ -784,7 +785,7 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
         splitPane.setLeftComponent(sidebarScrollPane);
         splitPane.setRightComponent(viewsPanel);
 
-        accessoryPanel.setLayout(new java.awt.BorderLayout());
+        accessoryPanel.setLayout(new BorderLayout());
         optionsPanel.add(accessoryPanel);
         controlsPanel.add(optionsPanel);
 
@@ -792,28 +793,28 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
         formatPanel.setOpaque(false);
         buttonsPanel.setOpaque(false);
 
-        formatPanel.setLayout(new java.awt.GridBagLayout());
+        formatPanel.setLayout(new GridBagLayout());
         formatPanel.setBorder(BorderFactory.createEmptyBorder(6, 0, 6, 0));
         filesOfTypeLabel.setHorizontalAlignment(SwingConstants.RIGHT);
         filesOfTypeLabel.setText("Format:");
-        gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
-        gridBagConstraints.anchor = java.awt.GridBagConstraints.EAST;
+        gridBagConstraints = new GridBagConstraints();
+        gridBagConstraints.fill = GridBagConstraints.HORIZONTAL;
+        gridBagConstraints.anchor = GridBagConstraints.EAST;
         gridBagConstraints.weightx = 0.5;
-        gridBagConstraints.insets = new java.awt.Insets(0, 0, 0, 6);
+        gridBagConstraints.insets = new Insets(0, 0, 0, 6);
         formatPanel.add(filesOfTypeLabel, gridBagConstraints);
 
-        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints = new GridBagConstraints();
         gridBagConstraints.ipadx = 250;
         formatPanel.add(filterComboBox, gridBagConstraints);
 
         formatSpringPanel.setLayout(null);
         formatSpringPanel.setOpaque(false);
 
-        gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.fill = java.awt.GridBagConstraints.BOTH;
+        gridBagConstraints = new GridBagConstraints();
+        gridBagConstraints.fill = GridBagConstraints.BOTH;
         gridBagConstraints.weightx = 0.5;
-        gridBagConstraints.insets = new java.awt.Insets(0, 6, 0, 0);
+        gridBagConstraints.insets = new Insets(0, 6, 0, 0);
         formatPanel.add(formatSpringPanel, gridBagConstraints);
 
         optionsPanel.add(formatPanel);
@@ -822,8 +823,10 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
         newFolderButton.setText("New Folder");
         optionsButton.setText("Options");
 
-        gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
+        isOptionsEnabled = getOptionsPanelEnabledProperty();
+
+        gridBagConstraints = new GridBagConstraints();
+        gridBagConstraints.anchor = GridBagConstraints.WEST;
         gridBagConstraints.weightx = 1.0;
 
         buttonsPanel.add(newFolderButton, gridBagConstraints);
@@ -2069,12 +2072,36 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
     }
 
     private void updateOptionsPanel() {
-        optionsPanel.setVisible(
-          (!isOptionsAvailable || fc.getDialogType() != JFileChooser.OPEN_DIALOG || isOptionsEnabled)
+        // TBD: could respond to changes to accessoryPanel and formatPanel visible state
+       optionsPanel.setVisible(
+          (!isOptionsButtonAvailable || fc.getDialogType() != JFileChooser.OPEN_DIALOG || isOptionsEnabled)
             && (accessoryPanel.isVisible() || formatPanel.isVisible()));
         optionsPanel.revalidate();
         optionsPanel.repaint();
         updateButtons();
+    }
+
+    private void doOptionsPanelEnabledChanged(@NotNull PropertyChangeEvent e) {
+        if (isOptionsButtonAvailable) {
+            boolean b = getOptionsPanelEnabledProperty();
+            if (b != isOptionsEnabled) {
+                isOptionsEnabled = b;
+                updateOptionsPanel();
+            }
+        }
+    }
+
+    private boolean getOptionsPanelEnabledProperty() {
+        Boolean b = AquaUtils.getBooleanProperty(fc, OPTIONS_PANEL_ENABLED_PROPERTY);
+        return Boolean.TRUE.equals(b);
+    }
+
+    private void setOptionsPanelEnabledProperty(boolean b) {
+        if (isOptionsButtonAvailable) {
+            ++isAdjusting;
+            fc.putClientProperty(OPTIONS_PANEL_ENABLED_PROPERTY, b);
+            --isAdjusting;
+        }
     }
 
     private void doApproveButtonTextChanged(PropertyChangeEvent e) {
@@ -2089,9 +2116,9 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
         fileNameTextField.setEnabled(isSave);
         savePanel.setVisible(isSave);
         updateApproveButtonState();
-        updateOptionsPanel(); // also updates buttons
-        reconfigureChooser();   // some display properties are different for open and save dialogs
-        configureDialog();      // dialog window properties are different for open and save dialogs
+        updateOptionsPanel();  // also updates buttons
+        reconfigureChooser();  // some display properties are different for open and save dialogs
+        configureDialog();     // dialog window properties are different for open and save dialogs
     }
 
     private void doApproveButtonMnemonicChanged(PropertyChangeEvent e) {
@@ -2118,7 +2145,7 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
     }
 
     private void updateButtons() {
-        optionsButton.setVisible(isOptionsAvailable
+        optionsButton.setVisible(isOptionsButtonAvailable
                                    && fc.getDialogType() == JFileChooser.OPEN_DIALOG
                                    && (accessoryPanel.isVisible() || formatPanel.isVisible()));
         newFolderButton.setVisible(fc.getDialogType() == JFileChooser.SAVE_DIALOG);
@@ -2208,6 +2235,8 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
                 doApplicationTraversableChanged(e);
             } else if (s.equals("Aqua.FileChooser.preview")) {
                 doPreviewComponentChanged(e);
+            } else if (s.equals(OPTIONS_PANEL_ENABLED_PROPERTY)) {
+                doOptionsPanelEnabledChanged(e);
             }
         }
     }
@@ -2961,6 +2990,7 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
         @Override
         public void actionPerformed(ActionEvent e) {
             isOptionsEnabled = !isOptionsEnabled;
+            setOptionsPanelEnabledProperty(isOptionsEnabled);
             updateOptionsPanel();
         }
     }
@@ -3728,9 +3758,9 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
 //            TreePath fullPath = model.toPath(f, subtreeModel.getPathToRoot());
 //            TreePath subPath = subtreeModel.toSubPath(fullPath);
 //            if (subPath == null) {
-//                isAdjusting++;
+//                ++isAdjusting;
 //                selectRoot(f);
-//                isAdjusting--;
+//                --isAdjusting;
 //            }
 //            browser.ensurePathIsVisible(fullPath);
 //        }
