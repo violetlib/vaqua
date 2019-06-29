@@ -137,10 +137,9 @@ final public class AquaUtils {
         try {
             while (st.hasMoreTokens()) {
                 String token = st.nextToken();
-                if (token.endsWith("-internal")) {
-                    token = token.substring(0, token.length() - 9);
-                } else if (token.endsWith("-ea")) {
-                    token = token.substring(0, token.length() - 3);
+                int pos = token.indexOf("-");
+                if (pos > 0) {
+                    token = token.substring(0, pos);
                 }
                 int n = Integer.parseInt(token);
                 ++tokenCount;
