@@ -52,6 +52,7 @@
     <property name="cc" location="/usr/bin/cc"/>
 
     <property name="debug" value="false"/>
+    <property name="debugoption" value=""/>
 
     <target name="init">
         <echo level="info" message="${fullReleaseName}"/>
@@ -185,6 +186,8 @@
             <arg value="_VAppearances_updateAppearance"/>
             <arg value="-undefined"/>
             <arg value="dynamic_lookup"/>
+
+            <arg value="${debugoption}"/>
 
             <arg value="${jnisrc}/AquaNativeSupport.m"/>
             <arg value="${jnisrc}/AquaSidebarBackground.m"/>
