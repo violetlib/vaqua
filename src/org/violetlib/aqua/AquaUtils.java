@@ -358,6 +358,17 @@ final public class AquaUtils {
     }
 
     /**
+     * Convenience method to get the layered pane of a window.
+     */
+    public static @Nullable JLayeredPane getLayeredPane(Window w) {
+        if (w instanceof RootPaneContainer) {
+            RootPaneContainer rpc = (RootPaneContainer) w;
+            return rpc.getLayeredPane();
+        }
+        return null;
+    }
+
+    /**
      * Convenience function for determining ComponentOrientation.  Helps us
      * avoid having Munge directives throughout the code.
      */
@@ -1447,6 +1458,23 @@ final public class AquaUtils {
             return c.getFontMetrics(font);
         }
         return Toolkit.getDefaultToolkit().getFontMetrics(font);
+    }
+
+    /**
+     * Return the layer number where the specified component is painted.
+     * @param c The component.
+     * @return the layer number, or zero if the component is not contained in a JLayeredPane.
+     */
+    public static int getComponentLayer(@NotNull Component c) {
+        Container parent = c.getParent();
+        if (parent instanceof JLayeredPane) {
+            JLayeredPane lp = (JLayeredPane) parent;
+            return lp.getLayer(c);
+        } else if (parent != null) {
+            return getComponentLayer(parent);
+        } else {
+            return 0;
+        }
     }
 
     /**

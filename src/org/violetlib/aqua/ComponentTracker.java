@@ -33,8 +33,8 @@ public abstract class ComponentTracker
     private final HierarchyBoundsListener hierarchyBoundsListener;
     private final ComponentListener componentListener;
 
-    private Component tracked;              // the currently configured component being tracked
-    private Window window;                  // the window containing the tracked component
+    private @Nullable Component tracked;    // the currently configured component being tracked
+    private @Nullable Window window;        // the window containing the tracked component
     private boolean windowIsDisplayable;    // the last known displayability of the window
 
     /**
@@ -45,38 +45,38 @@ public abstract class ComponentTracker
         // We need to know when the component is added to a containment hierarchy, removed from a containment hierarchy,
         // or its bounds are changed.
 
-        hierarchyListener = new HierarchyListener() {
-            public void hierarchyChanged(HierarchyEvent e) {
-                long flags = e.getChangeFlags();
+        hierarchyListener = e -> {
+            long flags = e.getChangeFlags();
 
-                if ((flags & (HierarchyEvent.PARENT_CHANGED)) != 0) {
-                    Window w = SwingUtilities.getWindowAncestor(tracked);
-                    if (!Objects.equals(window, w)) {
-                        Window oldWindow = window;
-                        window = w;
-                        windowIsDisplayable = w != null && w.isDisplayable();
-                        windowChanged(oldWindow, window);
+            if ((flags & (HierarchyEvent.PARENT_CHANGED)) != 0) {
+                Window w = SwingUtilities.getWindowAncestor(tracked);
+                if (!Objects.equals(window, w)) {
+                    Window oldWindow = window;
+                    window = w;
+                    windowIsDisplayable = w != null && w.isDisplayable();
+                    windowChanged(oldWindow, window);
+                } else {
+                    ancestorChanged();
+                }
+            }
+
+            if ((flags & (HierarchyEvent.DISPLAYABILITY_CHANGED)) != 0) {
+                // Displayability change events are generated for adding and removing the tracked component.
+                // These events are redundant with parent changed.
+                // The only time we want to call windowChanged() with identical arguments is when the
+                // window is not null and its displayability has changed.
+                Window w = SwingUtilities.getWindowAncestor(tracked);
+                if (w != null && w == window) {
+                    boolean isDisplayable = w.isDisplayable();
+                    if (isDisplayable != windowIsDisplayable) {
+                        windowIsDisplayable = isDisplayable;
+                        windowChanged(window, window);
                     }
                 }
+            }
 
-                if ((flags & (HierarchyEvent.DISPLAYABILITY_CHANGED)) != 0) {
-                    // Displayability change events are generated for adding and removing the tracked component.
-                    // These events are redundant with parent changed.
-                    // The only time we want to call windowChanged() with identical arguments is when the
-                    // window is not null and its displayability has changed.
-                    Window w = SwingUtilities.getWindowAncestor(tracked);
-                    if (w != null && w == window) {
-                        boolean isDisplayable = w.isDisplayable();
-                        if (isDisplayable != windowIsDisplayable) {
-                            windowIsDisplayable = isDisplayable;
-                            windowChanged(window, window);
-                        }
-                    }
-                }
-
-                if ((flags & (HierarchyEvent.SHOWING_CHANGED)) != 0) {
-                    visibleBoundsChanged(window);
-                }
+            if ((flags & (HierarchyEvent.SHOWING_CHANGED)) != 0) {
+                visibleBoundsChanged(window);
             }
         };
 
@@ -160,6 +160,14 @@ public abstract class ComponentTracker
      * are different. However, they may be the same if the window containing the component becomes displayable.
      */
     protected void windowChanged(@Nullable Window oldWindow, @Nullable Window newWindow) {
+    }
+
+
+    /**
+     * Called when the component is moved within a window hierarchy.
+     * (Can this ever happen? Not if move is implemented as remove followed by add.)
+     */
+    protected void ancestorChanged() {
     }
 
     /**
