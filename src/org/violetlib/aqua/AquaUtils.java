@@ -349,21 +349,32 @@ final public class AquaUtils {
     /**
      * Convenience method to get the root pane of a window.
      */
-    public static @Nullable JRootPane getRootPane(Window w) {
-        if (w instanceof RootPaneContainer) {
-            RootPaneContainer rpc = (RootPaneContainer) w;
-            return rpc.getRootPane();
-        }
-        return null;
+    public static @Nullable JRootPane getRootPane(@NotNull Window w) {
+        RootPaneContainer rpc = getRootPaneContainer(w);
+        return rpc != null ? rpc.getRootPane() : null;
     }
 
     /**
      * Convenience method to get the layered pane of a window.
      */
-    public static @Nullable JLayeredPane getLayeredPane(Window w) {
+    public static @Nullable JLayeredPane getLayeredPane(@NotNull Window w) {
+        RootPaneContainer rpc = getRootPaneContainer(w);
+        return rpc != null ? rpc.getLayeredPane() : null;
+    }
+
+    /**
+     * Convenience method to map a window to a root pane container.
+     */
+    public static @Nullable RootPaneContainer getRootPaneContainer(@NotNull Window w) {
         if (w instanceof RootPaneContainer) {
-            RootPaneContainer rpc = (RootPaneContainer) w;
-            return rpc.getLayeredPane();
+            return (RootPaneContainer) w;
+        }
+        // Special case for EmbeddedFrame
+        if (w.getComponentCount() == 1) {
+            Component c = w.getComponent(0);
+            if (c instanceof RootPaneContainer) {
+                return (RootPaneContainer) c;
+            }
         }
         return null;
     }
@@ -1569,12 +1580,12 @@ final public class AquaUtils {
      * @param style The title bar style.
      * @throws UnsupportedOperationException if the title bar style could not be changed.
      */
-    public static void setTitleBarStyle(Window w, int style) {
+    public static void setTitleBarStyle(@NotNull Window w, int style) {
         ensureWindowPeer(w);
         execute(w, ptr -> setTitleBarStyle(w, ptr, style));
     }
 
-    private static long setTitleBarStyle(Window w, long wptr, int style) {
+    private static long setTitleBarStyle(@NotNull Window w, long wptr, int style) {
 
         JRootPane rp = getRootPane(w);
         assert rp != null;
@@ -1716,7 +1727,7 @@ final public class AquaUtils {
      * @return the custom styled window object for {@code w}, or null if {@code w} does not use one of our custom window
      * styles.
      */
-    public static AquaCustomStyledWindow getCustomStyledWindow(Window w) {
+    public static AquaCustomStyledWindow getCustomStyledWindow(@NotNull Window w) {
         JRootPane rp = getRootPane(w);
         if (rp != null) {
             AquaRootPaneUI ui = getUI(rp, AquaRootPaneUI.class);
@@ -1802,9 +1813,9 @@ final public class AquaUtils {
      * See bug JDK-7124236.
      */
     private static class ShadowMaker implements ActionListener, Runnable {
-        private final Window w;
+        private final @NotNull Window w;
 
-        public ShadowMaker(Window w) {
+        public ShadowMaker(@NotNull Window w) {
             this.w = w;
             SwingUtilities.invokeLater(this);
             Timer t = new Timer(100, this);
@@ -1925,7 +1936,7 @@ final public class AquaUtils {
      * Perform an action that requires the native NSWindow pointer for a window.
      */
 
-    public static long execute(Window w, NativeAction action) {
+    public static long execute(@NotNull Window w, NativeAction action) {
         Object[] data = new Object[1];
         long ptr = nativeGetNativeWindow(w, data);
         if (ptr == 0) {

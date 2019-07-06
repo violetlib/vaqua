@@ -113,8 +113,8 @@ public abstract class OverlayPainterComponent extends JComponent {
             return;
         }
 
-        JLayeredPane oldLayeredPane = AquaUtils.getLayeredPane(baseWindow);
-        JLayeredPane newLayeredPane = AquaUtils.getLayeredPane(newWindow);
+        JLayeredPane oldLayeredPane = baseWindow != null ? AquaUtils.getLayeredPane(baseWindow) : null;
+        JLayeredPane newLayeredPane = newWindow != null ? AquaUtils.getLayeredPane(newWindow) : null;
         baseWindow = newWindow;
 
         if (oldLayeredPane != null) {
@@ -153,7 +153,7 @@ public abstract class OverlayPainterComponent extends JComponent {
      * into which we are allowed to paint.
      */
     private void visibleBoundsChanged() {
-        JRootPane rp = AquaUtils.getRootPane(baseWindow);
+        JRootPane rp = baseWindow != null ? AquaUtils.getRootPane(baseWindow) : null;
         if (rp == null || base == null || !base.isVisible()) {
             baseBounds = null;
             visibleBounds = null;
