@@ -1,5 +1,5 @@
 /*
- * Changes Copyright (c) 2015-2018 Alan Snyder.
+ * Changes Copyright (c) 2015-2019 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -569,8 +569,7 @@ public class AquaRootPaneUI extends BasicRootPaneUI {
     }
 
     protected @Nullable Window getWindow() {
-        Container parent = rootPane.getParent();
-        return parent instanceof Window ? (Window) parent : null;
+        return SwingUtilities.getWindowAncestor(rootPane);
     }
 
     protected void updateVisualEffectView() {

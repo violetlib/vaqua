@@ -1491,36 +1491,48 @@ static jobject getPlatformWindow(JNIEnv *env, jobject windowPeer)
     return windowPeer != NULL ? JNFCallObjectMethod(env, windowPeer, jm_getPlatformWindow) : NULL;
 }
 
-/*
- * Class:     org_violetlib_aqua_AquaUtils
- * Method:    nativeGetNativeWindow
- * Signature: (Ljava/awt/Window;[Ljava/lang/Object;)J
- */
-JNIEXPORT jlong JNICALL Java_org_violetlib_aqua_AquaUtils_nativeGetNativeWindow
-  (JNIEnv *env, jclass cl, jobject w, jobjectArray data)
+static NSWindow *getNativeWindowFromPlatformWindow(JNIEnv *env, jobject platformWindow, jobject *readLockOutput)
 {
+    static JNF_CLASS_CACHE(jc_CPlatformWindow, "sun/lwawt/macosx/CPlatformWindow");
     static JNF_CLASS_CACHE(jc_CFRetainedResource, "sun/lwawt/macosx/CFRetainedResource");
     static JNF_MEMBER_CACHE(jf_ptr, jc_CFRetainedResource, "ptr", "J");
     static JNF_MEMBER_CACHE(jf_readLock, jc_CFRetainedResource, "readLock", "Ljava/util/concurrent/locks/Lock;");
 
-    jlong result = 0;
-    jobject readLock = NULL;
+    *readLockOutput = NULL;
 
-    JNF_COCOA_ENTER(env);
+    // Check for the normal case (CPlatformWindow)
+    if (JNFIsInstanceOf(env, platformWindow, &jc_CPlatformWindow)) {
+        jlong ptr = JNFGetLongField(env, platformWindow, jf_ptr);
+        if (ptr != 0) {
+            *readLockOutput = JNFGetObjectField(env, platformWindow, jf_readLock);
+        }
+        return (NSWindow *) ptr;
+    }
 
+    NSLog(@"Unsupported platform window: %@", JNFObjectClassName(env, platformWindow));
+    return NULL;
+}
+
+static NSWindow *getNativeWindow(JNIEnv *env, jobject w, jobject *readLockOutput)
+{
+    static JNF_CLASS_CACHE(jc_CViewEmbeddedFrame, "sun/lwawt/macosx/CViewEmbeddedFrame");
+    static JNF_MEMBER_CACHE(jm_getEmbedderHandle, jc_CViewEmbeddedFrame, "getEmbedderHandle", "()J");
+
+    *readLockOutput = NULL;
+
+    // Check for an embedded frame (CViewEmbeddedFrame)
+    if (JNFIsInstanceOf(env, w, &jc_CViewEmbeddedFrame)) {
+        NSView *v = (NSView *) JNFCallLongMethod(env, w, jm_getEmbedderHandle);
+        return v != NULL ? v.window : NULL;
+    }
+
+    NSWindow *result = 0;
     jobject peer = getWindowPeer(env, w);
     if (peer != NULL) {
         jobject platformWindow = getPlatformWindow(env, peer);
         if (platformWindow != NULL) {
-            result = JNFGetLongField(env, platformWindow, jf_ptr);
-            if (result != 0) {
-                jclass c = (*env)->GetObjectClass(env, platformWindow);
-                jfieldID f_readLock = (*env)->GetFieldID(env, c, "readLock", "Ljava/util/concurrent/locks/Lock;");
-                if (f_readLock != NULL) {
-                    readLock = JNFGetObjectField(env, platformWindow, jf_readLock);
-                }
-                (*env)->ExceptionClear(env);
-            } else {
+            result = getNativeWindowFromPlatformWindow(env, platformWindow, readLockOutput);
+            if (result == NULL) {
                 NSLog(@"nativeGetNativeWindow: No pointer");
             }
         } else {
@@ -1529,6 +1541,23 @@ JNIEXPORT jlong JNICALL Java_org_violetlib_aqua_AquaUtils_nativeGetNativeWindow
     } else {
         NSLog(@"nativeGetNativeWindow: No window peer");
     }
+    return result;
+}
+
+/*
+ * Class:     org_violetlib_aqua_AquaUtils
+ * Method:    nativeGetNativeWindow
+ * Signature: (Ljava/awt/Window;[Ljava/lang/Object;)J
+ */
+JNIEXPORT jlong JNICALL Java_org_violetlib_aqua_AquaUtils_nativeGetNativeWindow
+  (JNIEnv *env, jclass cl, jobject w, jobjectArray data)
+{
+    jlong result = 0;
+    jobject readLock = NULL;
+
+    JNF_COCOA_ENTER(env);
+
+    result = (jlong) getNativeWindow(env, w, &readLock);
 
     (*env)->SetObjectArrayElement(env, data, 0, readLock);
 
@@ -1828,7 +1857,7 @@ JNIEXPORT jint JNICALL Java_org_violetlib_aqua_AquaUtils_nativeSetTitleBarProper
 
         BOOL isWindowTitled = (w.styleMask & NSWindowStyleMaskTitled) != 0;
         if (isWindowTitled != hasTitleBar) {
-            jobject jPlatformWindow = getJavaPlatformWindow(env, wptr);
+            jobject jPlatformWindow = getJavaPlatformWindow(env, w);
             if (jPlatformWindow) {
                 int DECORATED = 1 << 1;
                 JNFCallVoidMethod(env, jPlatformWindow, jm_setStyleBits, DECORATED, hasTitleBar);

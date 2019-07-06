@@ -1984,9 +1984,7 @@ final public class AquaUtils {
                 Frame fr = (Frame) w;
                 name = fr.getTitle() + " " + name;
             }
-            UnsupportedOperationException ex = new UnsupportedOperationException("Unable to get NSWindow for window " + name);
-            ex.printStackTrace();
-            throw ex;
+            throw new UnsupportedOperationException("Unable to get NSWindow for window " + name);
         } else {
             Lock lock = (Lock) data[0];
             if (lock != null) {
