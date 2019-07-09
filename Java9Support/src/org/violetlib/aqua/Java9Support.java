@@ -28,8 +28,14 @@ public class Java9Support implements JavaSupport.JavaSupportImpl {
     {
         // This works in Java 9. Before that, it returned 1.
         Graphics2D gg = (Graphics2D) g;
+        AffineTransform t;
         GraphicsConfiguration gc = gg.getDeviceConfiguration();
-        AffineTransform t = gc.getDefaultTransform();
+        if (gc != null) {
+            t = gc.getDefaultTransform();
+        } else {
+            // avoid an NPE in unusual cases
+            t = gg.getTransform();
+        }
         double sx = t.getScaleX();
         double sy = t.getScaleY();
         return (int) Math.max(sx, sy);

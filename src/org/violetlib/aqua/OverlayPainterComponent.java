@@ -119,7 +119,9 @@ public abstract class OverlayPainterComponent extends JComponent {
 
         if (oldLayeredPane != null) {
             Container p = getParent();
-            p.remove(this);
+            if (p != null) {
+                p.remove(this);
+            }
         }
 
         if (newLayeredPane != null) {
@@ -138,6 +140,7 @@ public abstract class OverlayPainterComponent extends JComponent {
     }
 
     private void addToLayeredPane(@NotNull JLayeredPane layeredPane) {
+        assert base != null;
         int componentLayer = AquaUtils.getComponentLayer(base);
         int overlayLayer = componentLayer + 1;
         if (layer != overlayLayer) {
@@ -191,6 +194,7 @@ public abstract class OverlayPainterComponent extends JComponent {
     @Override
     public final void paintComponent(@NotNull Graphics g) {
         if (visibleBounds != null) {
+            assert baseBounds != null;
             Graphics2D gg = (Graphics2D) g.create();
             // Updating the bounds may make the user clip obsolete, so we remove it.
             gg.setClip(-1000, -1000, 1000000, 1000000);
