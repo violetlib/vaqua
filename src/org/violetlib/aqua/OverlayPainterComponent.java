@@ -41,7 +41,7 @@ public abstract class OverlayPainterComponent extends JComponent {
         this.layer = 1;
 
         // We need to know when the base component is added to a containment hierarchy, removed from a containment
-        // hierarchy, reparented within a containment hierarhcy, or its bounds are changed.
+        // hierarchy, reparented within a containment hierarchy, or its bounds are changed.
 
         tracker = new ComponentTracker() {
             @Override
@@ -69,6 +69,7 @@ public abstract class OverlayPainterComponent extends JComponent {
         };
 
         super.setOpaque(false);
+        super.setFocusable(false);
         setVisible(false);
     }
 
@@ -94,8 +95,17 @@ public abstract class OverlayPainterComponent extends JComponent {
     }
 
     /**
+     * This method has no effect. It does not make sense for an overlay painter to be focusable.
+     */
+    @Override
+    public final void setFocusable(boolean b) {
+
+    }
+
+    /**
      * Because the pane may be painted using transparency, it must not be made opaque.
      */
+    @Override
     public final void setOpaque(boolean b) {
     }
 
