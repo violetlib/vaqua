@@ -80,6 +80,7 @@ public abstract class OverlayPainterComponent extends JComponent {
     public void attach(@Nullable JComponent c) {
         if (base != c) {
             baseWindow = null;
+            layer = -100000;
             if (c != null) {
                 base = c;
                 tracker.attach(c);
