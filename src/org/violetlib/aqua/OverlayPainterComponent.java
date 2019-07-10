@@ -79,6 +79,7 @@ public abstract class OverlayPainterComponent extends JComponent {
      */
     public void attach(@Nullable JComponent c) {
         if (base != c) {
+            baseWindow = null;
             if (c != null) {
                 base = c;
                 tracker.attach(c);
@@ -99,7 +100,6 @@ public abstract class OverlayPainterComponent extends JComponent {
      */
     @Override
     public final void setFocusable(boolean b) {
-
     }
 
     /**
