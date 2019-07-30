@@ -28,105 +28,97 @@ import javax.swing.table.TableCellEditor;
 
 public interface TableInterface extends Scrollable {
 
-	public int convertColumnIndexToView(int modelColumnIndex);
+    int convertColumnIndexToView(int modelColumnIndex);
 
-	public int convertColumnIndexToModel(int viewColumnIndex);
+    int convertColumnIndexToModel(int viewColumnIndex);
 
+    boolean getDragEnabled();
 
-	public boolean getDragEnabled();
+    void setDragEnabled(boolean dragEnabled);
 
-	public void setDragEnabled(boolean dragEnabled);
+    DropMode getDropMode();
 
-	public DropMode getDropMode();
+    void setDropMode(DropMode dropMode);
 
-	public void setDropMode(DropMode dropMode);
+    boolean getAutoCreateColumnsFromModel();
 
+    void setAutoCreateColumnsFromModel(boolean autoCreateColumnsFromModel);
 
-    public boolean getAutoCreateColumnsFromModel();
+    int getAutoResizeMode();
 
-	public void setAutoCreateColumnsFromModel(boolean autoCreateColumnsFromModel);
+    void setAutoResizeMode(int mode);
 
-	public int getAutoResizeMode();
+    boolean getCellSelectionEnabled();
 
-	public void setAutoResizeMode(int mode);
+    void setCellSelectionEnabled(boolean cellSelectionEnabled);
 
-	public boolean getCellSelectionEnabled();
+    boolean getColumnSelectionAllowed();
 
-	public void setCellSelectionEnabled(boolean cellSelectionEnabled);
+    void setColumnSelectionAllowed(boolean columnSelectionAllowed);
 
-	public boolean getColumnSelectionAllowed();
+    Color getGridColor();
 
-	public void setColumnSelectionAllowed(boolean columnSelectionAllowed);
+    void setGridColor(Color gridColor);
 
-	public Color getGridColor();
+    Dimension getIntercellSpacing();
 
-	public void setGridColor(Color gridColor);
+    void setIntercellSpacing(Dimension intercellSpacing);
 
-	public Dimension getIntercellSpacing();
+    boolean getRowSelectionAllowed();
 
-	public void setIntercellSpacing(Dimension intercellSpacing);
+    void setRowSelectionAllowed(boolean rowSelectionAllowed);
 
-	public boolean getRowSelectionAllowed();
+    boolean getShowHorizontalLines();
 
-	public void setRowSelectionAllowed(boolean rowSelectionAllowed);
+    void setShowHorizontalLines(boolean showHorizontalLines);
 
-	public boolean getShowHorizontalLines();
+    boolean getShowVerticalLines();
 
-	public void setShowHorizontalLines(boolean showHorizontalLines);
+    void setShowVerticalLines(boolean showVerticalLines);
 
-	public boolean getShowVerticalLines();
+    void setShowGrid(boolean showGrid);
 
-	public void setShowVerticalLines(boolean showVerticalLines);
+    JTableHeader getTableHeader();
 
-	public void setShowGrid(boolean showGrid);
+    void setTableHeader(JTableHeader tableHeader);
 
-	public JTableHeader getTableHeader();
+    void changeSelection(int row, int column, boolean toggle, boolean extend);
 
-	public void setTableHeader(JTableHeader tableHeader);
+    Color getSelectionForeground();
 
-	public void changeSelection(int row, int column, boolean toggle, boolean extend);
+    void setSelectionForeground(Color selectionForeground);
 
-	public Color getSelectionForeground();
+    Color getSelectionBackground();
 
-	public void setSelectionForeground(Color selectionForeground);
+    void setSelectionBackground(Color selectionBackground);
 
-	public Color getSelectionBackground();
+    void addPropertyChangeListener(PropertyChangeListener l);
 
-	public void setSelectionBackground(Color selectionBackground);
+    void removePropertyChangeListener(PropertyChangeListener l);
 
+    int columnAtPoint(Point pt);
 
-	public void addPropertyChangeListener(PropertyChangeListener l);
+    int rowAtPoint(Point pt);
 
-	public void removePropertyChangeListener(PropertyChangeListener l);
+    Rectangle getCellBounds(int row, int col, boolean includeSpacing);
 
+    void setRowHeight(int height);
 
-	public int columnAtPoint(Point pt);
+    int getRowHeight(int row);
 
-	public int rowAtPoint(Point pt);
+    void setRowHeight(int row, int height);
 
-	public Rectangle getCellBounds(int row, int col, boolean includeSpacing);
+    void doLayout();
 
-	public void setRowHeight(int height);
+    boolean editCellAt(int row, int column);
 
-	public int getRowHeight(int row);
+    TableCellEditor getCellEditor();
 
-	public void setRowHeight(int row, int height);
+    boolean isEditing();
 
-	public void doLayout();
+    Component getEditorComponent();
 
+    int getEditingColumn();
 
-	public boolean editCellAt(int row, int column);
-
-	public TableCellEditor getCellEditor();
-
-	public boolean isEditing();
-
-	public Component getEditorComponent();
-
-	public int getEditingColumn();
-
-	public int getEditingRow();
-
-
-
+    int getEditingRow();
 }

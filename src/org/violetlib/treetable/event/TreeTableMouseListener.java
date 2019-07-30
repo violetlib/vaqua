@@ -18,10 +18,9 @@ import java.util.EventListener;
 
 public interface TreeTableMouseListener extends EventListener {
 
-    public void mouseClicked(TreeTableMouseEvent e);
+    void mouseClicked(TreeTableMouseEvent e);
 
-    public void mousePressed(TreeTableMouseEvent e);
+    void mousePressed(TreeTableMouseEvent e);
 
-    public void mouseReleased(TreeTableMouseEvent e);
-
+    void mouseReleased(TreeTableMouseEvent e);
 }

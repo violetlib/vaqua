@@ -27,149 +27,141 @@ import javax.swing.tree.TreeSelectionModel;
 
 public interface TreeInterface extends Scrollable {
 
-	public void setModel(TreeModel model);
+    void setModel(TreeModel model);
 
+    Enumeration<TreePath> getExpandedDescendants(TreePath parent);
 
+    void collapsePath(TreePath path);
 
-	public Enumeration<TreePath> getExpandedDescendants(TreePath parent);
+    void expandPath(TreePath path);
 
-	public void collapsePath(TreePath path);
+    void makeVisible(TreePath path);
 
-	public void expandPath(TreePath path);
+    void scrollPathToVisible(TreePath path);
 
-	public void makeVisible(TreePath path);
+    Rectangle getPathBounds(TreePath path);
 
-	public void scrollPathToVisible(TreePath path);
+    TreePath getClosestPathForLocation(int x, int y);
 
+    TreePath getPathForLocation(int x, int y);
 
+    TreePath getPathForRow(int row);
 
-	public Rectangle getPathBounds(TreePath path);
+    int getRowCount();
 
-	public TreePath getClosestPathForLocation(int x, int y);
+    int getClosestRowForLocation(int x, int y);
 
-	public TreePath getPathForLocation(int x, int y);
+    int getRowForLocation(int x, int y);
 
-	public TreePath getPathForRow(int row);
+    int getRowForPath(TreePath path);
 
-	public int getRowCount();
+    boolean isCollapsed(TreePath path);
 
-	public int getClosestRowForLocation(int x, int y);
+    boolean isExpanded(TreePath path);
 
-	public int getRowForLocation(int x, int y);
+    boolean hasBeenExpanded(TreePath path);
 
-	public int getRowForPath(TreePath path);
+    boolean isFixedRowHeight();
 
-	public boolean isCollapsed(TreePath path);
+    boolean isLargeModel();
 
-	public boolean isExpanded(TreePath path);
+    void setLargeModel(boolean largeModel);
 
-	public boolean hasBeenExpanded(TreePath path);
+    boolean isRootVisible();
 
-	public boolean isFixedRowHeight();
+    void setRootVisible(boolean rootVisible);
 
-	public boolean isLargeModel();
+    boolean getScrollsOnExpand();
 
-	public void setLargeModel(boolean largeModel);
+    void setScrollsOnExpand(boolean scrollsOnExpand);
 
-	public boolean isRootVisible();
+    boolean getShowsRootHandles();
 
-	public void setRootVisible(boolean rootVisible);
+    void setShowsRootHandles(boolean newValue);
 
-	public boolean getScrollsOnExpand();
+    void setToggleClickCount(int clickCount);
 
-	public void setScrollsOnExpand(boolean scrollsOnExpand);
+    int getToggleClickCount();
 
-	public boolean getShowsRootHandles();
+    int getVisibleRowCount();
 
-	public void setShowsRootHandles(boolean newValue);
+    void setVisibleRowCount(int newCount);
 
-	public void setToggleClickCount(int clickCount);
+    int getRowHeight();
 
-	public int getToggleClickCount();
+    void setRowHeight(int rowHeight);
 
-	public int getVisibleRowCount();
+    TreeSelectionModel getSelectionModel();
 
-	public void setVisibleRowCount(int newCount);
+    void setSelectionModel(TreeSelectionModel selectionModel);
 
-	public int getRowHeight();
+    void clearSelection();
 
-	public void setRowHeight(int rowHeight);
+    boolean isSelectionEmpty();
 
+    int getSelectionCount();
 
-	public TreeSelectionModel getSelectionModel();
+    int getMaxSelectionRow();
 
-	public void setSelectionModel(TreeSelectionModel selectionModel);
+    int getMinSelectionRow();
 
-	public void clearSelection();
+    boolean isPathSelected(TreePath path);
 
-	public boolean isSelectionEmpty();
+    TreePath getAnchorSelectionPath();
 
-	public int getSelectionCount();
+    void setAnchorSelectionPath(TreePath newPath);
 
-	public int getMaxSelectionRow();
+    TreePath getLeadSelectionPath();
 
-	public int getMinSelectionRow();
+    void setLeadSelectionPath(TreePath newPath);
 
-	public boolean isPathSelected(TreePath path);
+    int getLeadSelectionRow();
 
-	public TreePath getAnchorSelectionPath();
+    boolean getExpandsSelectedPaths();
 
-	public void setAnchorSelectionPath(TreePath newPath);
+    void setExpandsSelectedPaths(boolean newValue);
 
-	public TreePath getLeadSelectionPath();
+    TreePath getSelectionPath();
 
-	public void setLeadSelectionPath(TreePath newPath);
+    void addSelectionInterval(int index0, int index1);
 
-	public int getLeadSelectionRow();
+    void addSelectionPath(TreePath path);
 
-	public boolean getExpandsSelectedPaths();
+    void addSelectionPaths(TreePath[] paths);
 
-	public void setExpandsSelectedPaths(boolean newValue);
+    void addSelectionRows(int[] rows);
 
-	public TreePath getSelectionPath();
+    void removeSelectionInterval(int index0, int index1);
 
-	public void addSelectionInterval(int index0, int index1);
+    void removeSelectionPath(TreePath path);
 
-	public void addSelectionPath(TreePath path);
+    void removeSelectionPaths(TreePath[] paths);
 
-	public void addSelectionPaths(TreePath[] paths);
+    void removeSelectionRows(int[] rows);
 
-	public void addSelectionRows(int[] rows);
+    void setSelectionPath(TreePath path);
 
-	public void removeSelectionInterval(int index0, int index1);
+    TreePath[] getSelectionPaths();
 
-	public void removeSelectionPath(TreePath path);
+    void setSelectionPaths(TreePath[] paths);
 
-	public void removeSelectionPaths(TreePath[] paths);
+    int[] getSelectionRows();
 
-	public void removeSelectionRows(int[] rows);
+    void setSelectionRows(int[] rows);
 
-	public void setSelectionPath(TreePath path);
+    void setSelectionInterval(int index0, int index1);
 
-	public TreePath[] getSelectionPaths();
+    void addPropertyChangeListener(PropertyChangeListener l);
 
-	public void setSelectionPaths(TreePath[] paths);
+    void removePropertyChangeListener(PropertyChangeListener l);
 
-	public int[] getSelectionRows();
+    void addTreeExpansionListener(TreeExpansionListener l);
 
-	public void setSelectionRows(int[] rows);
+    void removeTreeExpansionListener(TreeExpansionListener l);
 
-	public void setSelectionInterval(int index0, int index1);
+    void addTreeWillExpandListener(TreeWillExpandListener l);
 
+    void removeTreeWillExpandListener(TreeWillExpandListener l);
 
-	public void addPropertyChangeListener(PropertyChangeListener l);
-
-	public void removePropertyChangeListener(PropertyChangeListener l);
-
-	public void addTreeExpansionListener(TreeExpansionListener l);
-
-	public void removeTreeExpansionListener(TreeExpansionListener l);
-
-	public void addTreeWillExpandListener(TreeWillExpandListener l);
-
-	public void removeTreeWillExpandListener(TreeWillExpandListener l);
-
-
-	public void doLayout();
-
+    void doLayout();
 }

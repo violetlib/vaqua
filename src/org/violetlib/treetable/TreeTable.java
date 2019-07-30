@@ -263,7 +263,6 @@ public class TreeTable extends JComponent implements Scrollable {
 
     private void updateUIEditors() {
         // TODO
-
     }
 
     public void processTreeExpansion(TreePath path, int rowsAdded) {
@@ -528,7 +527,6 @@ public class TreeTable extends JComponent implements Scrollable {
             fireTreeTableMouseMotionEvent(e);
         super.processMouseMotionEvent(e);
     }
-
 
     private void fireTreeTableMouseMotionEvent(MouseEvent e) {
         TreeTableMouseEvent evt = new TreeTableMouseEvent(this, e);
@@ -1262,6 +1260,7 @@ public class TreeTable extends JComponent implements Scrollable {
     public void setToggleClickCount(int clickCount) {
         tree.setToggleClickCount(clickCount);
     }
+
     public int getToggleClickCount() {
         return tree.getToggleClickCount();
     }
@@ -1927,7 +1926,6 @@ public class TreeTable extends JComponent implements Scrollable {
             }
             fireTreeNodesInserted(path, childIndices, childNodes);
         }
-
 
         private void processTreeNodesRemoved(TreePath path, int[] childIndices, Object[] childNodes) {
             if (rowSorter != null) {
@@ -2948,7 +2946,6 @@ public class TreeTable extends JComponent implements Scrollable {
             setDropLocation(null);
             dtde.rejectDrag();
         }
-
     }
 
     private class DT extends DropTarget {

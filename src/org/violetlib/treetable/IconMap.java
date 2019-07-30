@@ -17,7 +17,5 @@ package org.violetlib.treetable;
 import javax.swing.Icon;
 
 public interface IconMap {
-
-	Icon getIcon(TreeTable treeTable, Object node, boolean expanded, boolean leaf);
-
+    Icon getIcon(TreeTable treeTable, Object node, boolean expanded, boolean leaf);
 }

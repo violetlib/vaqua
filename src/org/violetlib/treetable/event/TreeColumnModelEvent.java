@@ -23,24 +23,23 @@ import org.violetlib.treetable.TreeColumnModel;
 
 public class TreeColumnModelEvent extends EventObject {
 
-	public static final int ALL_COLUMNS = TableModelEvent.ALL_COLUMNS;
+    public static final int ALL_COLUMNS = TableModelEvent.ALL_COLUMNS;
 
-	public TreeColumnModelEvent(TreeColumnModel source, TreePath path, int column) {
-		super(source);
-		this.path = path;
-		this.column = column;
-	}
+    public TreeColumnModelEvent(TreeColumnModel source, TreePath path, int column) {
+        super(source);
+        this.path = path;
+        this.column = column;
+    }
 
-	private TreePath path;
+    private TreePath path;
 
-	private int column;
+    private int column;
 
-	public TreePath getTreePath() {
-		return path;
-	}
+    public TreePath getTreePath() {
+        return path;
+    }
 
-	public int getColumn() {
-		return column;
-	}
-
+    public int getColumn() {
+        return column;
+    }
 }
