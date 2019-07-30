@@ -101,8 +101,8 @@ public class TreeTableMouseEvent extends MouseEvent {
     }
 
     /**
-     * @return true if the location if over the leading margin
-     * 		of the node bounds and not over the tree handle
+     * @return true if the location is over the leading margin
+     * of the node bounds and not over the tree handle
      */
     public boolean isOverTreeMargin() {
         return getColumn() == getTreeTable().getHierarchicalColumn()

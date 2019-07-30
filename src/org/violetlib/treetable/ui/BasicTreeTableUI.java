@@ -14,97 +14,31 @@
  */
 package org.violetlib.treetable.ui;
 
-import java.awt.AlphaComposite;
-import java.awt.Color;
-import java.awt.Component;
-import java.awt.ComponentOrientation;
-import java.awt.Composite;
-import java.awt.Container;
-import java.awt.Dimension;
-import java.awt.Font;
-import java.awt.Graphics;
-import java.awt.Graphics2D;
-import java.awt.Point;
-import java.awt.Rectangle;
-import java.awt.Shape;
+import java.awt.*;
 import java.awt.dnd.DragSource;
-import java.awt.event.FocusEvent;
-import java.awt.event.FocusListener;
-import java.awt.event.InputEvent;
-import java.awt.event.KeyEvent;
-import java.awt.event.KeyListener;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
-import java.awt.event.MouseMotionListener;
+import java.awt.event.*;
 import java.awt.geom.Rectangle2D;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.lang.reflect.Field;
-import java.util.Collections;
-import java.util.Enumeration;
-import java.util.EventObject;
 import java.util.List;
-import java.util.Map;
-
-import javax.swing.AbstractCellEditor;
-import javax.swing.CellEditor;
-import javax.swing.CellRendererPane;
-import javax.swing.DefaultListSelectionModel;
-import javax.swing.Icon;
-import javax.swing.InputMap;
-import javax.swing.JCheckBox;
-import javax.swing.JComponent;
-import javax.swing.JTable;
-import javax.swing.JTree;
-import javax.swing.KeyStroke;
-import javax.swing.ListSelectionModel;
-import javax.swing.LookAndFeel;
-import javax.swing.RowSorter;
-import javax.swing.SortOrder;
-import javax.swing.SwingConstants;
-import javax.swing.TransferHandler;
-import javax.swing.UIDefaults;
-import javax.swing.UIManager;
+import java.util.*;
+import javax.swing.*;
 import javax.swing.RowSorter.SortKey;
 import javax.swing.border.Border;
 import javax.swing.border.EmptyBorder;
-import javax.swing.event.CellEditorListener;
-import javax.swing.event.ChangeEvent;
-import javax.swing.event.RowSorterListener;
-import javax.swing.event.TableColumnModelEvent;
-import javax.swing.event.TableColumnModelListener;
-import javax.swing.event.TableModelEvent;
+import javax.swing.event.*;
 import javax.swing.plaf.TreeUI;
 import javax.swing.plaf.UIResource;
 import javax.swing.plaf.basic.BasicTreeUI;
 import javax.swing.plaf.synth.Region;
-import javax.swing.table.DefaultTableCellRenderer;
-import javax.swing.table.DefaultTableColumnModel;
-import javax.swing.table.DefaultTableModel;
-import javax.swing.table.JTableHeader;
-import javax.swing.table.TableCellEditor;
-import javax.swing.table.TableCellRenderer;
-import javax.swing.table.TableColumn;
-import javax.swing.table.TableColumnModel;
-import javax.swing.table.TableModel;
+import javax.swing.table.*;
 import javax.swing.text.Position;
-import javax.swing.tree.DefaultTreeModel;
-import javax.swing.tree.DefaultTreeSelectionModel;
-import javax.swing.tree.TreeCellRenderer;
-import javax.swing.tree.TreeModel;
-import javax.swing.tree.TreePath;
+import javax.swing.tree.*;
 
 import org.violetlib.aqua.AquaUtils;
-import org.violetlib.treetable.TreeTable;
+import org.violetlib.treetable.*;
 import org.violetlib.treetable.TreeTable.DropLocation;
-import org.violetlib.treetable.CellEditorContainer;
-import org.violetlib.treetable.DefaultTreeTableCellEditor;
-import org.violetlib.treetable.DefaultTreeTableCellRenderer;
-import org.violetlib.treetable.TreeColumnModel;
-import org.violetlib.treetable.TreeTableCellEditor;
-import org.violetlib.treetable.TreeTableCellRenderer;
-import org.violetlib.treetable.TreeTableSorter;
 
 public class BasicTreeTableUI extends TreeTableUI {
 
@@ -292,22 +226,22 @@ public class BasicTreeTableUI extends TreeTableUI {
     }
 
     private void updateTreeClientProperties(JTree tree) {
-//		if (isNimbus()) {
-//			UIDefaults map = new UIDefaults();
-//			// Problematic for 1.6 & 1.7 compatibility
+//        if (isNimbus()) {
+//            UIDefaults map = new UIDefaults();
+//            // Problematic for 1.6 & 1.7 compatibility
 //            // Use raw types to allow compilation in 1.6 and 1.7
-//			Painter painter = new Painter() {
-//				public void paint(Graphics2D g, Object c, int w, int h) {}
-//			};
+//            Painter painter = new Painter() {
+//                public void paint(Graphics2D g, Object c, int w, int h) {}
+//            };
 //
-//			map.put("Tree:TreeCell[Enabled+Selected].backgroundPainter", painter);
-//			map.put("Tree:TreeCell[Focused+Selected].backgroundPainter", painter);
-////			map.put("\"Tree.cellEditor\"[Enabled+Focused].backgroundPainter", painter);
+//            map.put("Tree:TreeCell[Enabled+Selected].backgroundPainter", painter);
+//            map.put("Tree:TreeCell[Focused+Selected].backgroundPainter", painter);
+////            map.put("\"Tree.cellEditor\"[Enabled+Focused].backgroundPainter", painter);
 //
-//			tree.putClientProperty("Nimbus.Overrides", map);
-//		} else {
-//			tree.putClientProperty("Nimus.Overrides", null);
-//		}
+//            tree.putClientProperty("Nimbus.Overrides", map);
+//        } else {
+//            tree.putClientProperty("Nimus.Overrides", null);
+//        }
     }
 
     private boolean isNimbus() {
@@ -774,8 +708,8 @@ public class BasicTreeTableUI extends TreeTableUI {
                                       boolean hasFocus, int row, int column) {
         treeTableCellRenderer.configureCellRenderer(renderer,
                 treeTable, value, selected, hasFocus, row, column);
-//		renderer.getTableCellRendererComponent(
-//				table, value, selected, hasFocus, row, column);
+//        renderer.getTableCellRendererComponent(
+//                table, value, selected, hasFocus, row, column);
     }
 
     @Override
@@ -785,8 +719,8 @@ public class BasicTreeTableUI extends TreeTableUI {
                                       boolean leaf) {
         treeTableCellRenderer.configureCellRenderer(renderer, treeTable,
                 value, selected, hasFocus, row, column, expanded, leaf);
-//		renderer.getTreeCellRendererComponent(
-//				tree, value, selected, expanded, leaf, row, hasFocus);
+//        renderer.getTreeCellRendererComponent(
+//                tree, value, selected, expanded, leaf, row, hasFocus);
     }
 
     @Override
@@ -918,11 +852,11 @@ public class BasicTreeTableUI extends TreeTableUI {
          * Overridden to safe-guard against external changing of the
          * cell renderer.
          */
-//		public void setCellRenderer(TreeCellRenderer renderer) {
-//			if (renderer != null && getCellRenderer() != null && (renderer == null || !(renderer instanceof Renderer)))
-//				throw new UnsupportedOperationException();
-//			super.setCellRenderer(renderer);
-//		}
+//        public void setCellRenderer(TreeCellRenderer renderer) {
+//            if (renderer != null && getCellRenderer() != null && (renderer == null || !(renderer instanceof Renderer)))
+//                throw new UnsupportedOperationException();
+//            super.setCellRenderer(renderer);
+//        }
 
         @Override
         public boolean processKeyBinding(KeyStroke ks,
@@ -986,8 +920,8 @@ public class BasicTreeTableUI extends TreeTableUI {
 
         @Override
         protected void setExpandedState(TreePath path, boolean state) {
-//			if (isExpanded(path) == state)
-//				return;
+//            if (isExpanded(path) == state)
+//                return;
             TreePath updatePath = path;
             if (state) {
                 for (;;) {
@@ -1035,20 +969,20 @@ public class BasicTreeTableUI extends TreeTableUI {
         /**
          * Override to safe-guard against changing the model.
          */
-//		public void setModel(TableModel model) {
-//			if (dataModel != null)
-//				throw new UnsupportedOperationException();
-//			super.setModel(model);
-//		}
+//        public void setModel(TableModel model) {
+//            if (dataModel != null)
+//                throw new UnsupportedOperationException();
+//            super.setModel(model);
+//        }
 
         /**
          * Override to safe-guard against changing the selection model.
          */
-//		public void setSelectionModel(ListSelectionModel model) {
-//			if (selectionModel != null)
-//				throw new UnsupportedOperationException();
-//			super.setSelectionModel(model);
-//		}
+//        public void setSelectionModel(ListSelectionModel model) {
+//            if (selectionModel != null)
+//                throw new UnsupportedOperationException();
+//            super.setSelectionModel(model);
+//        }
 
         @Override
         public boolean processKeyBinding(KeyStroke ks,
@@ -1166,11 +1100,11 @@ public class BasicTreeTableUI extends TreeTableUI {
             boolean hier = column == t.getHierarchicalColumn();
             Object value = hier ? "" : getValueAt(row, column);
             boolean sel = !isPaintingForPrint() && isCellSelected(row, column);
-//			boolean foc = t.isColumnFocusEnabled()
-//				&& t.getFocusRenderer() == null
-//				&& column == t.getLeadSelectionColumn()
-//				&& row == t.getLeadSelectionRow()
-//				&& t.isFocusOwner();
+//            boolean foc = t.isColumnFocusEnabled()
+//                && t.getFocusRenderer() == null
+//                && column == t.getLeadSelectionColumn()
+//                && row == t.getLeadSelectionRow()
+//                && t.isFocusOwner();
             // Renderer will determine hasFocus value
             boolean foc = false;
             return renderer.getTableCellRendererComponent(
@@ -1238,72 +1172,72 @@ public class BasicTreeTableUI extends TreeTableUI {
             return super.getTransferHandler();
         }
 
-//		private int limit(int i, int a, int b) {
-//			return Math.min(b, Math.max(i, a));
-//		}
-//		private int getAdjustedIndex(int index, boolean row) {
-//			int compare = row ? getRowCount() : getColumnCount();
-//			return index < compare ? index : -1;
-//		}
+//        private int limit(int i, int a, int b) {
+//            return Math.min(b, Math.max(i, a));
+//        }
+//        private int getAdjustedIndex(int index, boolean row) {
+//            int compare = row ? getRowCount() : getColumnCount();
+//            return index < compare ? index : -1;
+//        }
 
-//		/**
-//		 * Overridden to include intercell spacing in repaint
-//		 */
-//		@Override
-//		public void columnSelectionChanged(ListSelectionEvent e) {
-////			boolean isAdjusting = e.getValueIsAdjusting();
-////			if (columnSelectionAdjusting && !isAdjusting) {
-////				// The assumption is that when the model is no longer adjusting
-////				// we will have already gotten all the changes, and therefore
-////				// don't need to do an additional paint.
-////				columnSelectionAdjusting = false;
-////				return;
-////			}
-////			columnSelectionAdjusting = isAdjusting;
-//			// The getCellRect() call will fail unless there is at least one row.
-//			if (getRowCount() <= 0 || getColumnCount() <= 0) {
-//				return;
-//			}
-//			int firstIndex = limit(e.getFirstIndex(), 0, getColumnCount()-1);
-//			int lastIndex = limit(e.getLastIndex(), 0, getColumnCount()-1);
-//			int minRow = 0;
-//			int maxRow = getRowCount() - 1;
-//			if (getRowSelectionAllowed()) {
-//				minRow = selectionModel.getMinSelectionIndex();
-//				maxRow = selectionModel.getMaxSelectionIndex();
-//				int leadRow = getAdjustedIndex(selectionModel.getLeadSelectionIndex(), true);
+//        /**
+//         * Overridden to include intercell spacing in repaint
+//         */
+//        @Override
+//        public void columnSelectionChanged(ListSelectionEvent e) {
+////            boolean isAdjusting = e.getValueIsAdjusting();
+////            if (columnSelectionAdjusting && !isAdjusting) {
+////                // The assumption is that when the model is no longer adjusting
+////                // we will have already gotten all the changes, and therefore
+////                // don't need to do an additional paint.
+////                columnSelectionAdjusting = false;
+////                return;
+////            }
+////            columnSelectionAdjusting = isAdjusting;
+//            // The getCellRect() call will fail unless there is at least one row.
+//            if (getRowCount() <= 0 || getColumnCount() <= 0) {
+//                return;
+//            }
+//            int firstIndex = limit(e.getFirstIndex(), 0, getColumnCount()-1);
+//            int lastIndex = limit(e.getLastIndex(), 0, getColumnCount()-1);
+//            int minRow = 0;
+//            int maxRow = getRowCount() - 1;
+//            if (getRowSelectionAllowed()) {
+//                minRow = selectionModel.getMinSelectionIndex();
+//                maxRow = selectionModel.getMaxSelectionIndex();
+//                int leadRow = getAdjustedIndex(selectionModel.getLeadSelectionIndex(), true);
 //
-//				if (minRow == -1 || maxRow == -1) {
-//					if (leadRow == -1) {
-//						// nothing to repaint, return
-//						return;
-//					}
+//                if (minRow == -1 || maxRow == -1) {
+//                    if (leadRow == -1) {
+//                        // nothing to repaint, return
+//                        return;
+//                    }
 //
-//					// only thing to repaint is the lead
-//					minRow = maxRow = leadRow;
-//				} else {
-//					// We need to consider more than just the range between
-//					// the min and max selected index. The lead row, which could
-//					// be outside this range, should be considered also.
-//					if (leadRow != -1) {
-//						minRow = Math.min(minRow, leadRow);
-//						maxRow = Math.max(maxRow, leadRow);
-//					}
-//				}
-//			}
-//			Rectangle r = getCellRect(minRow, firstIndex, true);
-//			r.add(getCellRect(maxRow, lastIndex, true));
-//			repaint(r);
-//		}
+//                    // only thing to repaint is the lead
+//                    minRow = maxRow = leadRow;
+//                } else {
+//                    // We need to consider more than just the range between
+//                    // the min and max selected index. The lead row, which could
+//                    // be outside this range, should be considered also.
+//                    if (leadRow != -1) {
+//                        minRow = Math.min(minRow, leadRow);
+//                        maxRow = Math.max(maxRow, leadRow);
+//                    }
+//                }
+//            }
+//            Rectangle r = getCellRect(minRow, firstIndex, true);
+//            r.add(getCellRect(maxRow, lastIndex, true));
+//            repaint(r);
+//        }
 
         public Rectangle getCellBounds(int row, int column, boolean includeSpacing) {
             return super.getCellRect(row, column, includeSpacing);
         }
 
-//		@Override
-//		public Rectangle getCellRect(int row, int column, boolean includeSpacing) {
-//			return super.getCellRect(row, column, true);
-//		}
+//        @Override
+//        public Rectangle getCellRect(int row, int column, boolean includeSpacing) {
+//            return super.getCellRect(row, column, true);
+//        }
     }
 
     /**
@@ -1521,13 +1455,13 @@ public class BasicTreeTableUI extends TreeTableUI {
 
         private static final String expanded = "Tree[Enabled].expandedIconPainter";
 
-//		private static final String collapsedFocused = "Tree[Enabled+Focused].collapsedIconPainter";
+//        private static final String collapsedFocused = "Tree[Enabled+Focused].collapsedIconPainter";
 //
-//		private static final String expandedFocused = "Tree[Enabled+Focused].expandedIconPainter";
+//        private static final String expandedFocused = "Tree[Enabled+Focused].expandedIconPainter";
 //
-//		private static final String collapsedFocusedSelected = "Tree[Enabled+Focused+Selected].collapsedIconPainter";
+//        private static final String collapsedFocusedSelected = "Tree[Enabled+Focused+Selected].collapsedIconPainter";
 //
-//		private static final String expandedFocusedSelected = "Tree[Enabled+Focused+Selected].expandedIconPainter";
+//        private static final String expandedFocusedSelected = "Tree[Enabled+Focused+Selected].expandedIconPainter";
 
         NimbusRenderer() {
             current = (UIDefaults)tree.getClientProperty("Nimbus.Overrides");
@@ -2512,7 +2446,7 @@ public class BasicTreeTableUI extends TreeTableUI {
                         TransferHandler th = treeTable.getTransferHandler();
                         int actions = th == null ? 0 : th.getSourceActions(treeTable);
                         if (actions != 0) {
-//							isDragging = true;
+//                            isDragging = true;
                             // TODO, determine action
                             int action = TransferHandler.MOVE;
                             th.exportAsDrag(treeTable, dndArmedEvent, action);
@@ -2526,11 +2460,11 @@ public class BasicTreeTableUI extends TreeTableUI {
 
         /**
          * Implementation of Key Binding order:
-         * 		treeTable WHEN_FOCUS
-         * 		treeTable WHEN_ANCESTOR_OF_FOCUSED_COMPONENT
-         * 		table or tree WHEN_FOCUSED
-         * 		table or tree WHEN_ANCESTOR_OF_FOCUSED_COMPONENT
-         * 		treeTable WHEN_IN_FOCUS_WINDOW
+         *         treeTable WHEN_FOCUS
+         *         treeTable WHEN_ANCESTOR_OF_FOCUSED_COMPONENT
+         *         table or tree WHEN_FOCUSED
+         *         table or tree WHEN_ANCESTOR_OF_FOCUSED_COMPONENT
+         *         treeTable WHEN_IN_FOCUS_WINDOW
          *
          * KeyListeners are notified before the Key Binding mechanism.
          *
@@ -2805,21 +2739,21 @@ public class BasicTreeTableUI extends TreeTableUI {
                 g.setColor(color);
                 g.fillRect(rect.x, rect.y, rect.width, rect.height);
             }
-//			if (!loc.isInsertColumn() && shortColor != null) {
-//				g.setColor(shortColor);
-//				if (loc.getColumn() == treeTable.getHierarchicalColumn()) {
-//					TreePath path = loc.getPath();
-//					Object child = tree.getModel().getChild(
-//							path.getLastPathComponent(), 0);
-//					Rectangle node = tree.getPathBounds(
-//							path.pathByAddingChild(child));
-//					if (node != null) {
-//						x += node.x;
-//						w -= node.x;
-//					}
-//				}
-//				g.fillRect(x, rect.y, w, rect.height);
-//			}
+//            if (!loc.isInsertColumn() && shortColor != null) {
+//                g.setColor(shortColor);
+//                if (loc.getColumn() == treeTable.getHierarchicalColumn()) {
+//                    TreePath path = loc.getPath();
+//                    Object child = tree.getModel().getChild(
+//                            path.getLastPathComponent(), 0);
+//                    Rectangle node = tree.getPathBounds(
+//                            path.pathByAddingChild(child));
+//                    if (node != null) {
+//                        x += node.x;
+//                        w -= node.x;
+//                    }
+//                }
+//                g.fillRect(x, rect.y, w, rect.height);
+//            }
         }
 
         rect = getVDropLineRect(loc);
@@ -2831,10 +2765,10 @@ public class BasicTreeTableUI extends TreeTableUI {
                 g.setColor(color);
                 g.fillRect(rect.x, rect.y, rect.width, rect.height);
             }
-//			if (!loc.isInsertRow() && shortColor != null) {
-//				g.setColor(shortColor);
-//				g.fillRect(rect.x, y, rect.width, h);
-//			}
+//            if (!loc.isInsertRow() && shortColor != null) {
+//                g.setColor(shortColor);
+//                g.fillRect(rect.x, y, rect.width, h);
+//            }
         }
     }
 

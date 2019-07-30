@@ -143,12 +143,12 @@ public class TreeTable extends JComponent implements Scrollable {
         super.setUI(ui);
         tree = getUI().getTreeInterface(this);
         table = getUI().getTableInterface(this);
-//		if (columnModel == null) {
-//			columnModel = table.getColumnModel();
-//			int hc = getTreeColumnModel().getHierarchicalColumn();
-//			if (hc >= 0)
-//				columnModel.getColumn(hc).setPreferredWidth(150);
-//		}
+//      if (columnModel == null) {
+//          columnModel = table.getColumnModel();
+//          int hc = getTreeColumnModel().getHierarchicalColumn();
+//          if (hc >= 0)
+//              columnModel.getColumn(hc).setPreferredWidth(150);
+//      }
         getSelectionModel().addTreeSelectionListener(adapter);
         table.addPropertyChangeListener(adapter);
         tree.addPropertyChangeListener(adapter);
@@ -1750,8 +1750,8 @@ public class TreeTable extends JComponent implements Scrollable {
         }
 
         // TODO, maybe add these?
-        //		public void treeColumnAdded(TreeColumnModelEvent e);
-        //		public void treeColumnRemoved(TreeColumnModelEvent e);
+        //  public void treeColumnAdded(TreeColumnModelEvent e);
+        //  public void treeColumnRemoved(TreeColumnModelEvent e);
 
         // TreeModelListener interface
 
@@ -2003,7 +2003,7 @@ public class TreeTable extends JComponent implements Scrollable {
                     lastRow, TableModelEvent.ALL_COLUMNS, eventType));
             if (eventType != TableModelEvent.DELETE && getRowHeight() <= 0) {
                 // tree view has already updated the node bounds
-//				invalidateRows(firstRow, lastRow);
+//              invalidateRows(firstRow, lastRow);
                 updateTableRowHeights(firstRow, lastRow+1);
             }
         }
@@ -2366,7 +2366,7 @@ public class TreeTable extends JComponent implements Scrollable {
         // TreeTableSorterListener Interface
 
         public void sorterChanged(TreeTableSorterEvent e) {
-//			String debugMessage = e.getType().name();
+//          String debugMessage = e.getType().name();
             switch (e.getType()) {
             case SORT_ORDER_CHANGED:
                 JTableHeader header = getTableHeader();
@@ -2380,11 +2380,11 @@ public class TreeTable extends JComponent implements Scrollable {
                     updateTableRowHeights();
                 break;
             case NODE_SORTED:
-//				debugMessage = debugMessage + " " + e.getTreePath() + " " + ignoreSortedChange);
+//              debugMessage = debugMessage + " " + e.getTreePath() + " " + ignoreSortedChange);
                 nodeSorted(e.getTreePath());
                 break;
             }
-//			AquaUtils.logDebug(debugMessage);
+//          AquaUtils.logDebug(debugMessage);
         }
 
         private void nodeSorted(TreePath path) {

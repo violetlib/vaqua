@@ -66,4 +66,3 @@ public interface TreeTableSorter<T extends TreeModel, C extends TreeColumnModel>
         List<SortOrder> getSortCycle();
     }
 }
-

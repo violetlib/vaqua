@@ -588,5 +588,3 @@ public class DefaultTreeTableSorter<T extends TreeModel, C extends TreeColumnMod
         }
     }
 }
-
-
