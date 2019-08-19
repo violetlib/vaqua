@@ -1,5 +1,5 @@
 /*
- * Changes copyright (c) 2018 Alan Snyder.
+ * Changes copyright (c) 2018-2019 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -108,6 +108,7 @@ public class AquaCaret extends DefaultCaret
     // --- FocusListener methods --------------------------
 
     private boolean temporaryInhibitSelectAllOnFocusGained = false;
+    private boolean temporaryInhibitMouseReleaseBehavior = false; // fix for JDK-8229856
 
     @Override
     public void focusGained(FocusEvent e) {
@@ -163,10 +164,21 @@ public class AquaCaret extends DefaultCaret
     // see radar # 3125390
     @Override
     public void mousePressed(MouseEvent e) {
-        if (!e.isPopupTrigger()) {
+        if (e.isPopupTrigger()) {
+            temporaryInhibitMouseReleaseBehavior = true;
+        } else {
+            temporaryInhibitMouseReleaseBehavior = false;
             super.mousePressed(e);
             temporaryInhibitSelectAllOnFocusGained = true;
         }
+    }
+
+    @Override
+    public void mouseReleased(MouseEvent e) {
+        if (!temporaryInhibitMouseReleaseBehavior) {
+            super.mouseReleased(e);
+        }
+        temporaryInhibitMouseReleaseBehavior = false;
     }
 
 // The following code has been removed because it causes caret painting problems after scrolling.
