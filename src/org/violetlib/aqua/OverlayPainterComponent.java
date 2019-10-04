@@ -28,7 +28,7 @@ public abstract class OverlayPainterComponent extends JComponent {
     private @Nullable Rectangle visibleBounds;  // the bounds within our coordinate space where we may paint or null if not paintable
     private @Nullable Window baseWindow;        // the window last known to contain the base component
 
-    private int layer;                  // the layer number of the layer containing the overlay painter component
+    private int layer;                          // the layer number of the layer containing the overlay painter component
 
     /**
      * Create a component for painting an overlay over a base component.
@@ -156,8 +156,11 @@ public abstract class OverlayPainterComponent extends JComponent {
         int overlayLayer = componentLayer + 1;
         if (layer != overlayLayer) {
             this.layer = overlayLayer;
-            layeredPane.setLayer(this, layer);
-            layeredPane.add(this);
+            // If this component is already a child of the layered pane, it must be removed before calling add.
+            // The problem is that add will remove the component *after* the new index has been computed, with the
+            // result that the component may be inserted at the wrong position.
+            layeredPane.remove(this);
+            layeredPane.add(this, (Integer) layer);
             visibleBoundsChanged();
         }
     }
