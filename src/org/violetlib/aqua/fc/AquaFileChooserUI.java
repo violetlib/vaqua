@@ -3459,7 +3459,7 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
                 }
             }
             if ((flags & HierarchyEvent.SHOWING_CHANGED) != 0) {
-                if (c.isVisible()) {
+                if (c.isShowing()) {
                     configureForShowing();
                 } else {
                     configureForHiding();
