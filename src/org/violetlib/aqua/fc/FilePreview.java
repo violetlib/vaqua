@@ -432,7 +432,7 @@ public class FilePreview extends JComponent implements BrowserPreviewRenderer {
             if (info != null) {
                 File file = info.lazyGetResolvedFile();
                 if (file != null) {
-                    view.show(file);
+                    view.configure(file);
                 }
             }
         }

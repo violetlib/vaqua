@@ -25,7 +25,7 @@ public class FilePreviewView {
     private @Nullable NativeOverlayView overlayView;
 
     public FilePreviewView()
-            throws UnsupportedOperationException {
+      throws UnsupportedOperationException {
         vptr = nativeCreatePreviewView();
         if (vptr == 0) {
             throw new UnsupportedOperationException("Unable to create file preview view");
@@ -44,13 +44,13 @@ public class FilePreviewView {
 
     public void clear() {
         if (vptr != 0) {
-            nativeShowPreview(vptr, null);
+            nativeConfigurePreview(vptr, null);
         }
     }
 
-    public void show(@NotNull File f) {
+    public void configure(@NotNull File f) {
         if (vptr != 0) {
-            nativeShowPreview(vptr, f.getAbsolutePath());
+            nativeConfigurePreview(vptr, f.getAbsolutePath());
         }
     }
 
@@ -66,6 +66,6 @@ public class FilePreviewView {
     }
 
     private static native long nativeCreatePreviewView();
-    private static native void nativeShowPreview(long vptr, @Nullable String path);
+    private static native void nativeConfigurePreview(long vptr, @Nullable String path);
     private static native void nativeDisposePreviewView(long vptr);
 }

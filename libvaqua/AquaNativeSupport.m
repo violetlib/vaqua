@@ -2341,12 +2341,13 @@ static NSView *internalCreatePreviewView()
     return preview;
 }
 
-static void internalShowPreview(QLPreviewView *view, NSURL *u)
+static void internalConfigurePreview(QLPreviewView *view, NSURL *u)
 {
     if (u) {
+        BOOL oldHidden = view.hidden;
         view.hidden = YES;
         [view setPreviewItem:u];
-        view.hidden = NO;
+        view.hidden = oldHidden;
     } else {
         view.hidden = YES;
     }
@@ -2378,10 +2379,10 @@ JNIEXPORT jlong JNICALL Java_org_violetlib_aqua_fc_FilePreviewView_nativeCreateP
 
 /*
  * Class:     org_violetlib_aqua_fc_FilePreviewView
- * Method:    nativeShowPreview
+ * Method:    nativeConfigurePreview
  * Signature: (JLjava/lang/String;)V
  */
-JNIEXPORT void JNICALL Java_org_violetlib_aqua_fc_FilePreviewView_nativeShowPreview
+JNIEXPORT void JNICALL Java_org_violetlib_aqua_fc_FilePreviewView_nativeConfigurePreview
   (JNIEnv *env, jclass cl, jlong vptr, jstring jpath)
 {
     QLPreviewView *view = (QLPreviewView *) vptr;
@@ -2394,7 +2395,7 @@ JNIEXPORT void JNICALL Java_org_violetlib_aqua_fc_FilePreviewView_nativeShowPrev
         u = [NSURL fileURLWithPath:path];
     }
 
-    runOnMainThread(^() {internalShowPreview(view, u);});
+    runOnMainThread(^() {internalConfigurePreview(view, u);});
 
     JNF_COCOA_EXIT(env);
 }
