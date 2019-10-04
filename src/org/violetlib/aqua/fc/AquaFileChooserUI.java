@@ -230,7 +230,7 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
                 }*/
 
                 if (file.isDirectory()) {
-                    selectDirectory(file, SELECT_DIRECTORY_BY_KEYSTROKE, null);
+                    selectDirectory(file, SELECT_DIRECTORY_BY_KEYSTROKE);
                 } else if (isAcceptable(file)) {
                     // Here we want to respond to a change event
                     fc.setSelectedFile(file);
@@ -286,7 +286,7 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
             protected void accepted() {
                 File file = getSelection();
                 if (file.isDirectory()) {
-                    selectDirectory(file, SELECT_DIRECTORY_BY_KEYSTROKE, null);
+                    selectDirectory(file, SELECT_DIRECTORY_BY_KEYSTROKE);
                 } else if (isAcceptable(file)) {
                     // Here we want to respond to a change event
                     fc.setSelectedFile(file);
@@ -1490,7 +1490,7 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
                 commonParentPath = fullPath.getParentPath();
             } else {
                 TreePath parentPath = fullPath.getParentPath();
-                if (!Object_equals(commonParentPath, parentPath)) {
+                if (!Objects.equals(commonParentPath, parentPath)) {
                     continue;
                 }
             }
@@ -1523,7 +1523,7 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
 
             SwingUtilities.invokeLater(new Runnable() {
                 public void run() {
-                    selectDirectory(dir, source, r);
+                    selectDirectory(dir, source, false, r);
                 }
             });
 
@@ -1549,7 +1549,7 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
             SwingUtilities.invokeLater(new Runnable() {
                 public void run() {
                     File dir = fc.getCurrentDirectory();
-                    selectDirectory(dir, source, r);
+                    selectDirectory(dir, source, true, r);
                 }
             });
         }
@@ -1559,7 +1559,7 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
         if (originalFiles.size() != newSelection.size()) {
             // We filtered out some selected files because they did not share a common parent
             int count = newSelection.size();
-            java.util.List<File> files = new ArrayList<File>(count);
+            java.util.List<File> files = new ArrayList<>(count);
             for (TreePath path : newSelection) {
                 File f = ((FileInfo) path.getLastPathComponent()).getFile();
                 files.add(f);
@@ -1571,7 +1571,7 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
     }
 
     private java.util.List<TreePath> getSubtreePaths(java.util.List<TreePath> paths) {
-        java.util.List<TreePath> result = new ArrayList<TreePath>();
+        java.util.List<TreePath> result = new ArrayList<>();
         for (TreePath fullPath : paths) {
             TreePath subtreePath = subtreeModel.toSubPath(fullPath);
             if (subtreePath != null) {
@@ -1590,10 +1590,6 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
             }
         }
         return null;
-    }
-
-    public static boolean Object_equals(Object o1, Object o2) {
-        return o1 == null ? o2 == null :  o1.equals(o2);
     }
 
     /**
@@ -1776,13 +1772,13 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
      * is where a single unacceptable, traversable node is selected in the view.
      */
     private java.util.List<File> getFileSelectionFromViewSelection(java.util.List<TreePath> paths) {
-        java.util.List<File> fs = new ArrayList<File>();
+        java.util.List<File> fs = new ArrayList<>();
 
         for (TreePath p : paths) {
             FileSystemTreeModel.Node node = (FileSystemTreeModel.Node) p.getLastPathComponent();
             if (paths.size() == 1 && !node.isAcceptable()) {
                 // Must be a traversable node
-                return new ArrayList<File>();
+                return new ArrayList<>();
             }
             File f = node.getFile();
             fs.add(f);
@@ -1798,7 +1794,7 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
             FileInfo info = (FileInfo) subtreePath.getLastPathComponent();
             File f = info.getResolvedFile();
             File current = fc.getCurrentDirectory();
-            if (!Object_equals(current, f)) {
+            if (!Objects.equals(current, f)) {
                 ++isAdjusting;
                 fc.setSelectedFiles(null);
                 fc.setCurrentDirectory(f);
@@ -1895,7 +1891,7 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
             File f = info.getFile();
             if (info.isTraversable()) {
                 if (viewMode == ViewModeControl.LIST_VIEW) {
-                    AquaFileChooserUI.this.selectDirectory(f, SELECT_DIRECTORY_BY_DOUBLE_CLICK, null);
+                    AquaFileChooserUI.this.selectDirectory(f, SELECT_DIRECTORY_BY_DOUBLE_CLICK);
                 }
             } else if (info.isAcceptable()) {
                 /*
@@ -1903,7 +1899,7 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
                   selected.
                 */
                 if (!isSelected(f)) {
-                    java.util.List<File> files = new ArrayList<File>();
+                    java.util.List<File> files = new ArrayList<>();
                     files.add(f);
                     installSelectedFiles(files);
                 }
@@ -1941,7 +1937,7 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
         */
 
         File dir = (File) e.getNewValue();
-        selectDirectory(dir, SELECT_DIRECTORY_FROM_API, null);
+        selectDirectory(dir, SELECT_DIRECTORY_FROM_API);
     }
 
     /**
@@ -2280,7 +2276,7 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
                 }
 
                 if (file != null) {
-                    selectDirectory(file, SELECT_DIRECTORY_FROM_SIDEBAR, null);
+                    selectDirectory(file, SELECT_DIRECTORY_FROM_SIDEBAR);
                 }
             }
         }
@@ -2299,6 +2295,23 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
     protected final int SELECT_DIRECTORY_NEW_VIEW = 7;          // the view has been changed
 
     /**
+     * Select the specified directory. Update the current view to display the directory. A new view root may be chosen and the sidebar
+     * selection may be changed. The file chooser current directory will be changed if needed and the combo box model
+     * updated. The view selection will be updated as needed. The approve button enabled state is updated.
+     *
+     * This method may perform some updates asynchronously.
+     *
+     * @param f The traversable file to become the current directory. If {@code f} is not a traversable file, the
+     *          nearest traversable ancestor is used (should be the parent).
+     * @param source The source of this change. (See constants above.)
+     */
+
+    protected void selectDirectory(File f, int source) {
+        selectDirectory(f, source, true, null);
+    }
+
+
+    /**
      * Update the current view to display the specified directory. A new view root may be chosen and the sidebar
      * selection may be changed. The file chooser current directory will be changed if needed and the combo box model
      * updated. The view selection will be updated as needed. The approve button enabled state is updated.
@@ -2310,7 +2323,7 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
      * @param source The source of this change. (See constants above.)
      * @param r This runnable is invoked after all updates have been completed.
      */
-    protected void selectDirectory(File f, int source, Runnable r) {
+    protected void selectDirectory(File f, int source, boolean updateSelection, Runnable r) {
 
         /*
           Smart folders are displayed when they are selected using the sidebar. If a smart folder is already displayed
@@ -2346,13 +2359,13 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
 
         if (source == SELECT_DIRECTORY_FROM_SIDEBAR) {
             setViewRoot(fullPath);
-            finishSelectDirectory(source, fullPath, r);
+            finishDisplayDirectory(source, fullPath, updateSelection, r);
         } else if (!(model instanceof SavedSearchFileSystemTreeModel)) {
             File theFile = f;
             sidebarTreeModel.invokeWhenValid(new Runnable() {
                 public void run() {
                     TreePath sidebarPath = selectViewRoot(theFile, viewMode == ViewModeControl.COLUMN_VIEW);
-                    finishSelectDirectory(source, fullPath, r);
+                    finishDisplayDirectory(source, fullPath, updateSelection, r);
                     /*
                       Seems to be a race condition causing AquaTreeUI to get confused about which row is selected
                       when new items have been added to the sidebar tree model but not yet displayed.
@@ -2368,9 +2381,9 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
     }
 
     /**
-     * Complete the selection of a specified directory. This method is called after any update to the view root.
+     * Complete the display of a specified directory. This method is called after any update to the view root.
      */
-    private void finishSelectDirectory(int source, TreePath fullPath, Runnable r) {
+    private void finishDisplayDirectory(int source, TreePath fullPath, boolean updateSelection, Runnable r) {
         if (fullPath != null) {
             model.lazyInvalidatePath(fullPath);
         } else {
@@ -2382,7 +2395,9 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
             viewPath = subtreeModel.getPathToRoot();
         }
 
-        setViewSelection(viewPath);
+        if (updateSelection) {
+            setViewSelection(viewPath);
+        }
 
         if (viewMode == ViewModeControl.LIST_VIEW) {
             viewPath = subtreeModel.getPathToRoot();
@@ -2481,7 +2496,7 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
             if (nf != null) {
                 File rf = OSXFile.resolve(f);
                 File nrf = OSXFile.resolve(nf);
-                if (rf.equals(nrf)) {
+                if (rf != null && rf.equals(nrf)) {
                     return new TreePath(sidebarTreeModel.getPathToRoot(node));
                 }
             }
@@ -3022,7 +3037,7 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
                 File dir = info.getResolvedFile();
                 SwingUtilities.invokeLater(new Runnable() {
                     public void run() {
-                        selectDirectory(dir, SELECT_DIRECTORY_FROM_COMBO_BOX, null);
+                        selectDirectory(dir, SELECT_DIRECTORY_FROM_COMBO_BOX);
                     }
                 });
             }
@@ -3073,13 +3088,13 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
             */
 
             if (isDirectorySelectedInSaveDialogListView(selectedFile)) {
-                selectDirectory(selectedFile, SELECT_DIRECTORY_BY_DOUBLE_CLICK, null);
+                selectDirectory(selectedFile, SELECT_DIRECTORY_BY_DOUBLE_CLICK);
                 return;
             }
 
             File parent = selectedFile.isDirectory() ? selectedFile : selectedFile.getParentFile();
             File f = new File(parent, filename);
-            selectedFiles = new ArrayList<File>();
+            selectedFiles = new ArrayList<>();
             selectedFiles.add(f);
         }
 
@@ -3128,8 +3143,8 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
 
         java.util.List<TreePath> paths = activeView.getSelection();
         if (!paths.isEmpty()) {
-            java.util.List<TreePath> acceptablePaths = new ArrayList<TreePath>();
-            java.util.List<TreePath> traversablePaths = new ArrayList<TreePath>();    // traversable but not acceptable
+            java.util.List<TreePath> acceptablePaths = new ArrayList<>();
+            java.util.List<TreePath> traversablePaths = new ArrayList<>();    // traversable but not acceptable
             boolean isChanged = false;
             for (TreePath path : paths) {
                 FileInfo info = (FileInfo) path.getLastPathComponent();
@@ -3153,12 +3168,12 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
                     }
                 } else {
                     // allow no traversable items
-                    traversablePaths = new ArrayList<TreePath>();
+                    traversablePaths = new ArrayList<>();
                     isChanged = true;
                 }
             }
 
-            java.util.List<TreePath> result = new ArrayList<TreePath>();
+            java.util.List<TreePath> result = new ArrayList<>();
             result.addAll(acceptablePaths);
             result.addAll(traversablePaths);
             if (result.size() > 1 && !isMultipleSelection()) {
@@ -3186,7 +3201,7 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
      */
 
     protected java.util.List<File> getUISelection(boolean useDefault) {
-        java.util.List<File> result = new ArrayList<File>();
+        java.util.List<File> result = new ArrayList<>();
 
         java.util.List<TreePath> paths = activeView.getSelection();
         for (TreePath path : paths) {
@@ -3218,8 +3233,8 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
         java.util.List<File> files = getChooserSelection();
 
         if (!files.isEmpty()) {
-            java.util.List<File> acceptableFiles = new ArrayList<File>();
-            java.util.List<File> traversableFiles = new ArrayList<File>();    // traversable but not acceptable
+            java.util.List<File> acceptableFiles = new ArrayList<>();
+            java.util.List<File> traversableFiles = new ArrayList<>();    // traversable but not acceptable
             boolean isChanged = false;
             for (File file : files) {
                 if (isAcceptable(file)) {
@@ -3240,12 +3255,12 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
                     }
                 } else {
                     // allow no traversable files
-                    traversableFiles = new ArrayList<File>();
+                    traversableFiles = new ArrayList<>();
                     isChanged = true;
                 }
             }
 
-            java.util.List<File> result = new ArrayList<File>();
+            java.util.List<File> result = new ArrayList<>();
             result.addAll(acceptableFiles);
             result.addAll(traversableFiles);
             if (result.size() > 1 && !isMultipleSelection()) {
@@ -3271,7 +3286,7 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
      * The returned files are guaranteed to be absolute.
      */
     private java.util.List<File> getChooserSelection() {
-        java.util.List<File> files = new ArrayList<File>();
+        java.util.List<File> files = new ArrayList<>();
         File dir = fc.getCurrentDirectory();
 
         if (isMultipleSelection()) {
@@ -3368,7 +3383,7 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
                         }
                     }
                     fc.rescanCurrentDirectory();
-                    selectDirectory(newFolder, SELECT_DIRECTORY_BY_KEYSTROKE, null);
+                    selectDirectory(newFolder, SELECT_DIRECTORY_BY_KEYSTROKE);
                 } catch (Exception e) {
                     JOptionPane.showMessageDialog(
                       fc,
