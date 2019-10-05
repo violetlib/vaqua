@@ -174,18 +174,6 @@ public class FilePreview extends JComponent implements BrowserPreviewRenderer {
         }
     }
 
-    @Override
-    public void addNotify() {
-        super.addNotify();
-        AquaUtils.logDebug("FilePreview added");
-    }
-
-    @Override
-    public void removeNotify() {
-        super.removeNotify();
-        AquaUtils.logDebug("FilePreview removed");
-    }
-
     public void dispose() {
         if (view != null) {
             view.dispose();
