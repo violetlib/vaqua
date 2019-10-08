@@ -18,6 +18,7 @@ import java.beans.PropertyChangeListener;
 import javax.swing.*;
 import javax.swing.border.Border;
 import javax.swing.plaf.UIResource;
+import javax.swing.plaf.basic.BasicBorders;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -128,7 +129,7 @@ public class AquaTextPaneUIBase extends AquaTextComponentUIBase {
                 installingBorder = true;
                 if (JavaSupport.hasOpaqueBeenExplicitlySet(editor)) {
                     // If the application set the opaque attribute, do not install our border
-                    editor.setBorder(null);
+                    editor.setBorder(new BasicBorders.MarginBorder());
                 } else {
                     if (!(textComponentBorder instanceof AquaTextComponentBorder)) {
                         Border b = new AquaTextComponentBorder(editor);
