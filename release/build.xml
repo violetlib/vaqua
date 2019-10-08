@@ -58,7 +58,7 @@
     <property name="SDKroot" location="/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk" />
     <property name="cc" location="/usr/bin/cc"/>
 
-    <property name="debug" value="false"/>
+    <property name="debug" value="true"/>
     <property name="debugoption" value=""/>
 
     <target name="init">
