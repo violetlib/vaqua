@@ -788,6 +788,12 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
                     "MenuBar.selectedBackgroundPainter", NOTHING_BORDER,
             };
             table.putDefaults(menuBarDefaults);
+            // In addition, the AquaLAF must be encouraged to load its native library
+            try {
+                Class.forName("com.apple.laf.AquaNativeResources");
+            } catch (Exception ex) {
+                System.err.println("Unable to load AquaNativeResources");
+            }
         }
 
         JavaSupport.installAATextInfo(table);
