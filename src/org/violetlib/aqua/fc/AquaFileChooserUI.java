@@ -1414,7 +1414,7 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
         fileSystemModel = new FileSystemTreeModel(fc);
         model = fileSystemModel;
         subtreeModel = new SubtreeTreeModel(model);
-        savedSearches = new HashMap<File, FileSystemTreeModel>();
+        savedSearches = new HashMap<>();
     }
 
     public FileSystemTreeModel getSavedSearchTreeModel(File savedSearchFile) {
@@ -3549,9 +3549,11 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
         if (model != null) {
             model.setAutoValidate(false);
             model.stopValidation();
-            TreePath subtreePath = first(activeView.getSelection());
-            TreePath fullPath = subtreeModel.toFullPath(subtreePath);
-            model.invalidatePath(fullPath);
+            if (activeView != null) {
+                TreePath subtreePath = first(activeView.getSelection());
+                TreePath fullPath = subtreeModel.toFullPath(subtreePath);
+                model.invalidatePath(fullPath);
+            }
             clearIconCache();
         }
     }
