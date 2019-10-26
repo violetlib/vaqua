@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2018 Alan Snyder.
+ * Copyright (c) 2015-2019 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -34,16 +34,15 @@
 package org.violetlib.aqua;
 
 import java.awt.*;
-import java.beans.*;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import java.security.PrivilegedAction;
-
 import javax.swing.*;
-import javax.swing.plaf.*;
-
-import org.violetlib.jnr.aqua.AquaUIPainter.Size;
+import javax.swing.plaf.UIResource;
 
 import org.violetlib.aqua.AquaUtils.RecyclableSingleton;
 import org.violetlib.aqua.AquaUtils.RecyclableSingletonFromDefaultConstructor;
+import org.violetlib.jnr.aqua.AquaUIPainter.Size;
 
 public class AquaUtilControlSize {
     protected final static String CLIENT_PROPERTY_KEY = "JComponent.sizeVariant";

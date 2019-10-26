@@ -566,6 +566,12 @@ public abstract class AquaButtonBorder extends AquaBorder implements BackgroundP
         Font font = AquaUtilControlSize.isOKToInstallDefaultFont(b)
                 ? AquaButtonExtendedTypes.getFont(AquaButtonUI.getGenericDefaultFont(b), widget, size)
                 : b.getFont();
+
+        // If the font cannot be determined, a fixed height widget is not usable.
+        if (font == null) {
+            return false;
+        }
+
         Dimension contentSize = AquaButtonUI.getPreferredContentSize(b, font, b.getIconTextGap());
         Dimension requiredSize = insetter.expand(contentSize);
         return requiredSize.height <= fixedHeight;

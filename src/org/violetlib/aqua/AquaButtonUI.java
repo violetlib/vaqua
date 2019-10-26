@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2018 Alan Snyder.
+ * Copyright (c) 2015-2019 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -86,6 +86,8 @@ public class AquaButtonUI extends BasicButtonUI
 
     protected static final RecyclableSingleton<AquaButtonUI> buttonUI = new RecyclableSingletonFromDefaultConstructor<AquaButtonUI>(AquaButtonUI.class);
 
+    private static boolean isConfiguring;
+
     public static ComponentUI createUI(JComponent c) {
         return buttonUI.get();
     }
@@ -125,53 +127,64 @@ public class AquaButtonUI extends BasicButtonUI
      */
     public void configure(AbstractButton b) {
 
-        // The configuration of a button is rather complex. It potentially affects the border, the font, the foreground
-        // color, the minimum and preferred component sizes. The configuration potentially depends upon client
-        // properties (for button type, segment position, and size variant), whether the button is contained in a tool
-        // bar, whether the button has an icon or any child components (e.g. images). Instead of trying to figure out
-        // exactly which parts of the configuration depend upon which inputs, we do a complete reconfiguration whenever
-        // an input has potentially changed.
+        if (isConfiguring) {
+            // Avoid recursion caused by installing the default font
+            return;
+        }
 
-        // Note that the choice of border does not depend upon the size variant, but the border may use the size variant
-        // as part of its configuration of the button. The border performs all of the configuration based on a defined
-        // button type.
+        isConfiguring = true;
+        try {
 
-        boolean isToolbar = Boolean.TRUE.equals(b.getClientProperty(CACHED_TOOLBAR_STATUS_PROPERTY));
-        AquaButtonExtendedTypes.TypeSpecifier type = AquaButtonExtendedTypes.getTypeSpecifier(b, isToolbar);
-        installBorder(b, type, isToolbar);
+            // The configuration of a button is rather complex. It potentially affects the border, the font, the foreground
+            // color, the minimum and preferred component sizes. The configuration potentially depends upon client
+            // properties (for button type, segment position, and size variant), whether the button is contained in a tool
+            // bar, whether the button has an icon or any child components (e.g. images). Instead of trying to figure out
+            // exactly which parts of the configuration depend upon which inputs, we do a complete reconfiguration whenever
+            // an input has potentially changed.
 
-        LayoutConfiguration g = null;
-        Border border = b.getBorder();
-        if (border instanceof AquaButtonBorder) {
-            AquaButtonBorder bb = (AquaButtonBorder) border;
-            g = bb.determineLayoutConfiguration(b);
-            if (bb.isRolloverEnabled(b)) {
-                LookAndFeel.installProperty(b, "rolloverEnabled", true);
+            // Note that the choice of border does not depend upon the size variant, but the border may use the size variant
+            // as part of its configuration of the button. The border performs all of the configuration based on a defined
+            // button type.
+
+            boolean isToolbar = Boolean.TRUE.equals(b.getClientProperty(CACHED_TOOLBAR_STATUS_PROPERTY));
+            AquaButtonExtendedTypes.TypeSpecifier type = AquaButtonExtendedTypes.getTypeSpecifier(b, isToolbar);
+            installBorder(b, type, isToolbar);
+
+            LayoutConfiguration g = null;
+            Border border = b.getBorder();
+            if (border instanceof AquaButtonBorder) {
+                AquaButtonBorder bb = (AquaButtonBorder) border;
+                g = bb.determineLayoutConfiguration(b);
+                if (bb.isRolloverEnabled(b)) {
+                    LookAndFeel.installProperty(b, "rolloverEnabled", true);
+                }
+                int iconTextGap = bb.getIconTextGap(b);
+                LookAndFeel.installProperty(b, "iconTextGap", iconTextGap);
             }
-            int iconTextGap = bb.getIconTextGap(b);
-            LookAndFeel.installProperty(b, "iconTextGap", iconTextGap);
+            b.putClientProperty(LAYOUT_CONFIGURATION_PROPERTY, g);
+
+            // Perform configuration of the button based on the size variant, whether specified or implied.
+            // This may change the button font, foreground color, and layout sizes.
+            Size size = AquaUtilControlSize.getUserSizeFrom(b);
+            if (AquaUtilControlSize.isOKToInstallDefaultFont(b)) {
+                Font df = getDefaultFont(b, size);
+                df = getCustomDefaultFont(b, size, df);
+                AquaUtilControlSize.installDefaultFont(b, df);
+            }
+
+            updateTemplateIconStatus(b);
+
+            if (!isColorWell(b)) {
+                disconnectColorChooser(b);
+            }
+
+            b.setRequestFocusEnabled(false);
+
+            b.revalidate();
+            b.repaint();
+        } finally {
+            isConfiguring = false;
         }
-        b.putClientProperty(LAYOUT_CONFIGURATION_PROPERTY, g);
-
-        // Perform configuration of the button based on the size variant, whether specified or implied.
-        // This may change the button font, foreground color, and layout sizes.
-        Size size = AquaUtilControlSize.getUserSizeFrom(b);
-        if (AquaUtilControlSize.isOKToInstallDefaultFont(b)) {
-            Font df = getDefaultFont(b, size);
-            df = getCustomDefaultFont(b, size, df);
-            AquaUtilControlSize.installDefaultFont(b, df);
-        }
-
-        updateTemplateIconStatus(b);
-
-        if (!isColorWell(b)) {
-            disconnectColorChooser(b);
-        }
-
-        b.setRequestFocusEnabled(false);
-
-        b.revalidate();
-        b.repaint();
     }
 
     /**
