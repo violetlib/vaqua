@@ -25,7 +25,7 @@ import org.violetlib.aqua.JavaSupport;
 
 /**
  * An implementation of the file icon service that uses the Quick Look Thumbnailing framework, introduced in macOS
- * 0.15 (Catalina).
+ * 10.15 (Catalina).
  */
 public class CatalinaFileIconServiceImpl
         extends FileIconServiceImplBase
