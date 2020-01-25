@@ -316,7 +316,7 @@ public class AquaSliderUI extends BasicSliderUI
             }
         }
 
-        double thumbPosition = valueRange > 0 ? slider.getValue() / ((double) valueRange) : 0;
+        double thumbPosition = valueRange > 0 ? (slider.getValue() - slider.getMinimum()) / ((double) valueRange) : 0;
         SliderWidget widget = getSliderWidget();
         TickMarkPosition tickPosition = getTickMarkPosition();
         boolean isFocused = slider.hasFocus();
