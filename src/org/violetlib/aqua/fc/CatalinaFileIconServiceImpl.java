@@ -8,6 +8,7 @@
 
 package org.violetlib.aqua.fc;
 
+import java.awt.*;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -19,6 +20,7 @@ import java.util.concurrent.TimeUnit;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.violetlib.aqua.AquaImageFactory;
 import org.violetlib.aqua.AquaMultiResolutionImage;
 import org.violetlib.aqua.AquaUtils;
 import org.violetlib.aqua.JavaSupport;
@@ -31,6 +33,8 @@ public class CatalinaFileIconServiceImpl
         extends FileIconServiceImplBase
         implements FileIconService {
 
+    private static final @NotNull ConcurrentDispatcher dispatcher = new ConcurrentDispatcher();
+
     public CatalinaFileIconServiceImpl() {
         if (debugFlag) {
             AquaUtils.logDebug("File Icon Service: Using Quick Look Thumbnailing");
@@ -39,18 +43,70 @@ public class CatalinaFileIconServiceImpl
 
     @Override
     public @NotNull Request requestIcon(@NotNull File f, int size, float scale, @NotNull Handler handler) {
-        RequestImpl request = new RequestImpl(f, handler);
 
-        // First deliver a generic icon, if we can determine that the file is a folder or an ordinary file.
+        // Finder specific issues:
+        // Custom icons are used for specific folders and for images. Other files use generic, type-specific icons.
+        // Except for image files, the Finder apparently uses Launch Services to get the icon.
+        // Launch Services returns type-specific icons for files that are clipped to a document shape and have the
+        // file type name superimposed.
+        // The icon for an image file is given a border, installed by Finder.
+        // The border is 2 points wide. The image is painted over a white background.
+
+        // TBD: the border is not implemented
+
+        RequestImpl request = new RequestImpl(f, handler, FileIconService.ICON_CUSTOM_LOW);
+
+        // Deliver a generic icon, if we can determine that the file is a folder or an ordinary file.
+        // This icon is a backup in case the other attempts fail.
         installGenericFileIcon(f, request);
 
-        long upcallID = upcallRegistry.registerRequest(request);
-        if (debugFlag) {
-            AquaUtils.logDebug("Thumbnail request #" + upcallID + ": " + f.getAbsolutePath());
+        if (OSXFile.isImageFile(f)) {
+            long upcallID = upcallRegistry.registerRequest(request);
+            if (debugFlag) {
+                AquaUtils.logDebug("Thumbnail request #" + upcallID + ": " + f.getAbsolutePath());
+            }
+            installQuickLookFileIcon(f, size, scale, upcallID);
+        } else {
+            dispatcher.dispatch(() -> {
+                installLaunchServicesFileIcon(f, size, scale, request, FileIconService.ICON_TYPE);
+            });
+        }
+
+        return request;
+    }
+
+    private void installLaunchServicesFileIcon(@NotNull File f, int size, float scale,
+                                               @NotNull RequestImpl request, int priority)
+    {
+        String path = f.getAbsolutePath();
+        int[][] buffers = new int[2][];
+        if (!AquaFileIcons.nativeRenderFileImage(path, false, true, buffers, size, size)) {
+            if (AquaImageFactory.debugNativeRendering) {
+                String type = "Launch Services";
+                AquaUtils.logDebug("Failed to render " + type + " image for " + path);
+            }
+        } else {
+            if (AquaImageFactory.debugNativeRendering) {
+                String type = "Launch Services";
+                AquaUtils.logDebug("Rendered " + type + " image for " + path);
+            }
+            Image image = AquaMultiResolutionImage.createImage(size, size, buffers[0], buffers[1]);
+            request.installImage(image, priority);
+        }
+    }
+
+    private void installQuickLookFileIcon(@NotNull File f, int size, float scale, long upcallID)
+    {
+        // Workaround: macOS 10.15 delivers an incorrect generic icon for a symlink.
+        // This workaround does not produce a correct generic icon for a broken symlink.
+        if (OSXFile.getFileType(f) == OSXFile.FILE_TYPE_ALIAS) {
+            File rf = OSXFile.resolve(f);
+            if (rf != null) {
+                f = rf;
+            }
         }
 
         nativeInstallThumbnails(f.getAbsolutePath(), size, scale, upcallID);
-        return request;
     }
 
     public static class MyHandler {
@@ -60,7 +116,7 @@ public class CatalinaFileIconServiceImpl
             if (request != null) {
                 if (debugFlag) {
                     AquaUtils.logDebug("Received image " + priority + " for request #" + upcallID
-                      + width + "x" + height + " " + data.length + " " + scale);
+                            + width + "x" + height + " " + data.length + " " + scale);
                 }
                 AquaMultiResolutionImage image = JavaSupport.createImage(width, height, data, scale);
                 request.installImage(image, priority);

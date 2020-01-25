@@ -51,18 +51,26 @@ public class FileIconServiceImplBase {
     protected class RequestImpl
             implements FileIconService.Request {
 
-        private @NotNull File f;
+        private final @NotNull File f;
+        private final int highestAcceptedPriority;
         private @Nullable FileIconService.Handler handler;
         private int highestReceivedPriority = -1;
 
         public RequestImpl(@NotNull File f, @Nullable FileIconService.Handler handler) {
             this.f = f;
             this.handler = handler;
+            this.highestAcceptedPriority = Integer.MAX_VALUE;
+        }
+
+        public RequestImpl(@NotNull File f, @Nullable FileIconService.Handler handler, int highestAcceptedPriority) {
+            this.f = f;
+            this.handler = handler;
+            this.highestAcceptedPriority = highestAcceptedPriority;
         }
 
         public synchronized void installIcon(@NotNull ImageIcon icon, int priority)
         {
-            if (priority > highestReceivedPriority && handler != null) {
+            if (priority > highestReceivedPriority && priority <= highestAcceptedPriority && handler != null) {
                 debug(icon, priority);
                 handler.provideIcon(icon, priority);
                 highestReceivedPriority = priority;

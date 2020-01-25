@@ -9,8 +9,7 @@ package org.violetlib.aqua.fc;
 import java.awt.*;
 import java.io.*;
 import java.nio.charset.Charset;
-import java.util.ArrayList;
-import java.util.Date;
+import java.util.*;
 import java.util.List;
 import javax.swing.*;
 
@@ -387,6 +386,33 @@ public class OSXFile {
         } else {
             return null;
         }
+    }
+
+    private static Set<String> imageFileExtensions = new HashSet<>(Arrays.asList("gif",
+            "jpg",
+            "jpeg",
+            "png"));
+
+    /**
+     * Indicate whether the specified file is a known type of image file.
+     */
+    public static boolean isImageFile(@NotNull File file) {
+        // The intent is to recognize image files that NSImage can render.
+
+        if (isNativeCodeAvailable()) {
+            String uti = nativeGetFileUTI(file.getAbsolutePath());
+            if (uti != null) {
+                // TBD: match against UTIs returned by NSImage.imageTypes
+            }
+        }
+
+        String name = file.getName();
+        int pos = name.lastIndexOf('.');
+        if (pos >= 0) {
+            String ext = name.substring(pos+1).toLowerCase();
+            return imageFileExtensions.contains(ext);
+        }
+        return false;
     }
 
     /**
@@ -861,6 +887,8 @@ public class OSXFile {
      * @return the display name.
      */
     private static native @Nullable String nativeGetDisplayName(String path);
+
+    private static native @Nullable String nativeGetFileUTI(String path);
 
     /**
      * Return the time of last use, as recorded by Launch Services. Called the "Date Last Opened" by Finder.

@@ -29,7 +29,7 @@ public class AquaFileIcons {
     public static @NotNull AquaFileIcon getThumbnail(@NotNull File f)
     {
         AquaFileIcon result = new AquaFileIcon(16, 16);
-        fis.requestIcon(f, 16, 2, (icon, quality) -> result.installIcon(icon));
+        fis.requestIcon(f, 28, 2, (icon, quality) -> result.installIcon(icon));
         return result;
     }
 

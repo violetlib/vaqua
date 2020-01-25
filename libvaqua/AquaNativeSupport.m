@@ -1073,6 +1073,27 @@ JNIEXPORT jstring JNICALL Java_org_violetlib_aqua_fc_OSXFile_nativeGetDisplayNam
     return displayNameJ;
 }
 
+JNIEXPORT jstring JNICALL Java_org_violetlib_aqua_fc_OSXFile_nativeGetFileUTI
+    (JNIEnv *env, jclass javaClass, jstring jpath)
+{
+    jstring result = NULL;
+
+    JNF_COCOA_ENTER(env);
+
+    if (jpath != NULL) {
+        NSString *path = JNFNormalizedNSStringForPath(env, jpath);
+        NSURL *u = [NSURL fileURLWithPath:path];
+        NSString *type = nil;
+        if ([u getResourceValue:&type forKey:NSURLTypeIdentifierKey error:nil]) {
+            result = (*env)->NewStringUTF(env, [type UTF8String]);
+        }
+    }
+
+    JNF_COCOA_EXIT(env);
+
+    return result;
+}
+
 /*
  * Class:     org_violetlib_aqua_fc_OSXFile
  * Method:    nativeGetLastUsedDate
