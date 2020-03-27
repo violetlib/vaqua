@@ -1,5 +1,5 @@
 /*
- * Changes copyright (c) 2015-2018 Alan Snyder.
+ * Changes copyright (c) 2015-2020 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -62,8 +62,6 @@ import org.violetlib.jnr.aqua.SliderLayoutConfiguration;
 
 public class AquaSliderUI extends BasicSliderUI
         implements AquaUtilControlSize.Sizeable, FocusRingOutlineProvider, AquaComponentUI {
-
-    // TBD: circular slider support is not ready for prime time
 
     public final static String AQUA_SLIDER_STYLE_KEY = "Aqua.sliderStyle";
 
@@ -494,7 +492,7 @@ public class AquaSliderUI extends BasicSliderUI
         int maximum = slider.getMaximum();
         double range = maximum - minimum;
         if (range > 0) {
-            return minimum + value / range;
+            return (value - minimum) / range;
         }
         return 0;
     }
