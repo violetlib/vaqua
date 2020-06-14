@@ -81,7 +81,6 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
 
     private final static boolean isOptionsButtonAvailable = OSVersion >= 1011;
     private boolean isOptionsEnabled = false;  // used only when the options button is displayed
-    private boolean useNewFolderButton;
     private @Nullable String windowStyle;
     private boolean useToolBar;  // true if the top panel should act like a tool bar when the textured window style is used
 
@@ -155,17 +154,17 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
      * TBD: These keystrokes should go into an InputMap created by the AquaLookAndFeel class.
      */
     private KeyStroke[] KEYSTROKES = {
-      KeyStroke.getKeyStroke(KeyEvent.VK_A, InputEvent.META_MASK | InputEvent.SHIFT_MASK),
-      KeyStroke.getKeyStroke(KeyEvent.VK_C, InputEvent.META_MASK | InputEvent.SHIFT_MASK),
-      KeyStroke.getKeyStroke(KeyEvent.VK_D, InputEvent.META_MASK),
-      KeyStroke.getKeyStroke(KeyEvent.VK_D, InputEvent.META_MASK | InputEvent.SHIFT_MASK),
-      KeyStroke.getKeyStroke(KeyEvent.VK_G, InputEvent.META_MASK | InputEvent.SHIFT_MASK),
-      KeyStroke.getKeyStroke(KeyEvent.VK_H, InputEvent.META_MASK | InputEvent.SHIFT_MASK),
-      KeyStroke.getKeyStroke(KeyEvent.VK_I, InputEvent.META_MASK | InputEvent.SHIFT_MASK),
-      KeyStroke.getKeyStroke(KeyEvent.VK_O, InputEvent.META_MASK | InputEvent.SHIFT_MASK),
-      KeyStroke.getKeyStroke(KeyEvent.VK_K, InputEvent.META_MASK | InputEvent.SHIFT_MASK),
-      KeyStroke.getKeyStroke(KeyEvent.VK_U, InputEvent.META_MASK | InputEvent.SHIFT_MASK),
-      KeyStroke.getKeyStroke(KeyEvent.VK_PERIOD, InputEvent.META_MASK | InputEvent.SHIFT_MASK),
+            KeyStroke.getKeyStroke(KeyEvent.VK_A, InputEvent.META_MASK | InputEvent.SHIFT_MASK),
+            KeyStroke.getKeyStroke(KeyEvent.VK_C, InputEvent.META_MASK | InputEvent.SHIFT_MASK),
+            KeyStroke.getKeyStroke(KeyEvent.VK_D, InputEvent.META_MASK),
+            KeyStroke.getKeyStroke(KeyEvent.VK_D, InputEvent.META_MASK | InputEvent.SHIFT_MASK),
+            KeyStroke.getKeyStroke(KeyEvent.VK_G, InputEvent.META_MASK | InputEvent.SHIFT_MASK),
+            KeyStroke.getKeyStroke(KeyEvent.VK_H, InputEvent.META_MASK | InputEvent.SHIFT_MASK),
+            KeyStroke.getKeyStroke(KeyEvent.VK_I, InputEvent.META_MASK | InputEvent.SHIFT_MASK),
+            KeyStroke.getKeyStroke(KeyEvent.VK_O, InputEvent.META_MASK | InputEvent.SHIFT_MASK),
+            KeyStroke.getKeyStroke(KeyEvent.VK_K, InputEvent.META_MASK | InputEvent.SHIFT_MASK),
+            KeyStroke.getKeyStroke(KeyEvent.VK_U, InputEvent.META_MASK | InputEvent.SHIFT_MASK),
+            KeyStroke.getKeyStroke(KeyEvent.VK_PERIOD, InputEvent.META_MASK | InputEvent.SHIFT_MASK),
     };
 
     private class KeyListenerAction extends AbstractAction {
@@ -276,7 +275,7 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
         }
 
         RequestFileSelectionPathPane pane
-          = new RequestFileSelectionPathPane(dialog, initialText, prompt, cancelLabel, acceptLabel, errorText) {
+                = new RequestFileSelectionPathPane(dialog, initialText, prompt, cancelLabel, acceptLabel, errorText) {
             @Override
             protected void canceled() {
             }
@@ -618,9 +617,44 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
     // Button panel: depends upon Open/Save dialog type
 
     private class ButtonPanel extends JPanel implements Reconfigurable {
+        private Component spacer1 = Box.createHorizontalStrut(8);
+
         public ButtonPanel() {
             setLayout(new BoxLayout(this, BoxLayout.X_AXIS));
             reconfigure();
+        }
+
+        protected void hideControlButtons() {
+            newFolderButton.setVisible(false);
+            optionsButton.setVisible(false);
+            cancelButton.setVisible(false);
+            approveButton.setVisible(false);
+        }
+
+        protected void showControlButtons() {
+            newFolderButton.setVisible(shouldDisplayNewFolderButton());
+            optionsButton.setVisible(shouldDisplayOptionsButton());
+            cancelButton.setVisible(true);
+            approveButton.setVisible(true);
+            spacer1.setVisible(newFolderButton.isVisible() && optionsButton.isVisible());
+        }
+
+        public void populate() {
+            add(newFolderButton);
+            add(spacer1);
+            add(optionsButton);
+            add(Box.createHorizontalGlue());
+            add(cancelButton);
+            add(Box.createHorizontalStrut(8));
+            add(approveButton);
+            updateButtons();
+        }
+
+        public void updateButtons() {
+            updateButton(newFolderButton);
+            updateButton(optionsButton);
+            updateButton(cancelButton);
+            updateButton(approveButton);
         }
 
         @Override
@@ -817,32 +851,23 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
         optionsPanel.add(formatPanel);
         optionsPanel.add(optionsSeparator);
 
-        newFolderButton.setText("New Folder");
-        optionsButton.setText("Options");
-
         isOptionsEnabled = getOptionsPanelEnabledProperty();
 
         gridBagConstraints = new GridBagConstraints();
         gridBagConstraints.anchor = GridBagConstraints.WEST;
         gridBagConstraints.weightx = 1.0;
 
-        buttonsPanel.add(newFolderButton, gridBagConstraints);
-        buttonsPanel.add(optionsButton, gridBagConstraints);
-        buttonsPanel.add(Box.createHorizontalGlue());
-        buttonsPanel.add(cancelButton);
-        buttonsPanel.add(Box.createHorizontalStrut(8));
-        buttonsPanel.add(approveButton);
-
+        buttonsPanel.populate();
         controlsPanel.add(buttonsPanel);
 
         layout.setVerticalGroup(layout.createSequentialGroup()
-          .addComponent(topPanel, GroupLayout.PREFERRED_SIZE, GroupLayout.PREFERRED_SIZE, GroupLayout.PREFERRED_SIZE)
-          .addComponent(splitPane, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE, Short.MAX_VALUE)
-          .addComponent(controlsPanel, GroupLayout.PREFERRED_SIZE, GroupLayout.PREFERRED_SIZE, GroupLayout.PREFERRED_SIZE));
+                .addComponent(topPanel, GroupLayout.PREFERRED_SIZE, GroupLayout.PREFERRED_SIZE, GroupLayout.PREFERRED_SIZE)
+                .addComponent(splitPane, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE, Short.MAX_VALUE)
+                .addComponent(controlsPanel, GroupLayout.PREFERRED_SIZE, GroupLayout.PREFERRED_SIZE, GroupLayout.PREFERRED_SIZE));
         layout.setHorizontalGroup(layout.createParallelGroup()
-          .addComponent(topPanel, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE, Short.MAX_VALUE)
-          .addComponent(splitPane, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE, Short.MAX_VALUE)
-          .addComponent(controlsPanel, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE, Short.MAX_VALUE));
+                .addComponent(topPanel, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE, Short.MAX_VALUE)
+                .addComponent(splitPane, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE, Short.MAX_VALUE)
+                .addComponent(controlsPanel, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE, Short.MAX_VALUE));
 
         separator.putClientProperty("Quaqua.Component.visualMargin", new Insets(3, 0, 3, 0));
 
@@ -950,11 +975,7 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
 
         newFolderButton.setMargin(new Insets(0, 10, 0, 10));
 
-        if (!fc.getControlButtonsAreShown()) {
-            optionsButton.setVisible(false);
-            cancelButton.setVisible(false);
-            approveButton.setVisible(false);
-        }
+        updateControlButtonVisibility();
 
         fileNameTextField.setDocument(new FilenameDocument());
         if (defaultInitialSaveFileName != null) {
@@ -1047,7 +1068,7 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
 
         // Button state
         updateApproveButtonState();
-        updateOptionsPanel(); // also update buttons
+        updateOptionsPanelVisibility(); // also update buttons
 
         // Configure size of split pane
         int columnWidth = 207 + 16;
@@ -1248,7 +1269,6 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
         // New Folder Dialog
         newFolderErrorText = getString("FileChooser.newFolderErrorText", l, "Error occurred during folder creation");
         newFolderExistsErrorText = getString("FileChooser.newFolderExistsErrorText", l, "That name is already taken");
-        // FIXME - There is no "FileChooser.newFolderButtonText", so we use the newFolderTitleText.
         newFolderButtonText = getString("FileChooser.newFolderButtonText", l, "New Folder");
         newFolderTitleText = getString("FileChooser.newFolderTitleText", l, "New Folder");
         newFolderDialogPrompt = getString("FileChooser.newFolderPromptText", l, "Name of new folder:");
@@ -2039,7 +2059,7 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
         formatPanel.setVisible(ffs.length > 1);
         accessoryPanel.revalidate();
         accessoryPanel.repaint();
-        updateOptionsPanel();
+        updateOptionsPanelVisibility();
     }
 
     private void installAccessory(JComponent c) {
@@ -2060,26 +2080,26 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
                 accessoryPanel.add(wrapper, BorderLayout.CENTER);
             }
             accessoryPanel.setVisible(c != null);
-            updateOptionsPanel();
+            updateOptionsPanelVisibility();
         }
     }
 
-    private void updateOptionsPanel() {
+    private void updateOptionsPanelVisibility() {
         // TBD: could respond to changes to accessoryPanel and formatPanel visible state
-       optionsPanel.setVisible(
-          (!isOptionsButtonAvailable || fc.getDialogType() != JFileChooser.OPEN_DIALOG || isOptionsEnabled)
-            && (accessoryPanel.isVisible() || formatPanel.isVisible()));
+        optionsPanel.setVisible(
+                (!isOptionsButtonAvailable || fc.getDialogType() != JFileChooser.OPEN_DIALOG || isOptionsEnabled)
+                        && (accessoryPanel.isVisible() || formatPanel.isVisible()));
         optionsPanel.revalidate();
         optionsPanel.repaint();
-        updateButtons();
+        updateControlButtonVisibility();
     }
 
-    private void doOptionsPanelEnabledChanged(@NotNull PropertyChangeEvent e) {
+    private void doOptionsPanelEnabledChanged() {
         if (isOptionsButtonAvailable) {
             boolean b = getOptionsPanelEnabledProperty();
             if (b != isOptionsEnabled) {
                 isOptionsEnabled = b;
-                updateOptionsPanel();
+                updateOptionsPanelVisibility();
             }
         }
     }
@@ -2098,11 +2118,7 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
     }
 
     private void doCanCreateDirectoriesChanged(@NotNull PropertyChangeEvent e) {
-        boolean b = getCanCreateDirectoriesProperty();
-        if (b != useNewFolderButton) {
-            useNewFolderButton = b;
-            updateNewFolderButton();
-        }
+        updateControlButtonVisibility();
     }
 
     private boolean getCanCreateDirectoriesProperty() {
@@ -2122,7 +2138,8 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
         fileNameTextField.setEnabled(isSave);
         savePanel.setVisible(isSave);
         updateApproveButtonState();
-        updateOptionsPanel();  // also updates buttons
+        buttonsPanel.updateButtons();
+        updateOptionsPanelVisibility();  // also updates buttons
         reconfigureChooser();  // some display properties are different for open and save dialogs
         configureDialog();     // dialog window properties are different for open and save dialogs
     }
@@ -2133,9 +2150,9 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
 
     private void doControlButtonsChanged(PropertyChangeEvent e) {
         if (fc.getControlButtonsAreShown()) {
-            showControlButtons();
+            buttonsPanel.showControlButtons();
         } else {
-            hideControlButtons();
+            buttonsPanel.hideControlButtons();
         }
     }
 
@@ -2150,13 +2167,10 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
         }
     }
 
-    private void updateButtons() {
-        optionsButton.setVisible(isOptionsButtonAvailable
-                                   && fc.getDialogType() == JFileChooser.OPEN_DIALOG
-                                   && (accessoryPanel.isVisible() || formatPanel.isVisible()));
-        updateNewFolderButton();
-        updateButton(cancelButton);
-        updateButton(approveButton);
+    private boolean shouldDisplayOptionsButton() {
+        return isOptionsButtonAvailable
+                && fc.getDialogType() == JFileChooser.OPEN_DIALOG
+                && (accessoryPanel.isVisible() || formatPanel.isVisible());
     }
 
     private void updateButton(JButton b) {
@@ -2223,7 +2237,7 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
             } else if (s.equals(JFileChooser.CHOOSABLE_FILE_FILTER_CHANGED_PROPERTY)) {
                 doChoosableFilterChanged(e);
             } else if (s.equals(JFileChooser.APPROVE_BUTTON_TEXT_CHANGED_PROPERTY)
-                         || s.equals(JFileChooser.APPROVE_BUTTON_TOOL_TIP_TEXT_CHANGED_PROPERTY)) {
+                    || s.equals(JFileChooser.APPROVE_BUTTON_TOOL_TIP_TEXT_CHANGED_PROPERTY)) {
                 doApproveButtonTextChanged(e);
             } else if (s.equals(JFileChooser.DIALOG_TYPE_CHANGED_PROPERTY)) {
                 doDialogTypeChanged(e);
@@ -2242,27 +2256,23 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
             } else if (s.equals("Aqua.FileChooser.preview")) {
                 doPreviewComponentChanged(e);
             } else if (s.equals(OPTIONS_PANEL_ENABLED_PROPERTY)) {
-                doOptionsPanelEnabledChanged(e);
+                doOptionsPanelEnabledChanged();
             } else if (s.equals(CAN_CREATE_DIRECTORIES_PROPERTY)) {
                 doCanCreateDirectoriesChanged(e);
             }
         }
     }
 
-    protected void hideControlButtons() {
-        optionsButton.setVisible(false);
-        cancelButton.setVisible(false);
-        approveButton.setVisible(false);
+    private void updateControlButtonVisibility() {
+        if (fc.getControlButtonsAreShown()) {
+            buttonsPanel.showControlButtons();
+        } else {
+            buttonsPanel.hideControlButtons();
+        }
     }
 
-    protected void showControlButtons() {
-        optionsButton.setVisible(true);
-        cancelButton.setVisible(true);
-        approveButton.setVisible(true);
-    }
-
-    protected void updateNewFolderButton() {
-        newFolderButton.setVisible(getCanCreateDirectoriesProperty());
+    protected boolean shouldDisplayNewFolderButton() {
+        return getCanCreateDirectoriesProperty();
     }
 
     @Override
@@ -2347,12 +2357,12 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
         */
 
         if ((source == SELECT_DIRECTORY_FROM_SIDEBAR || source == SELECT_DIRECTORY_TO_INITIALIZE || source == SELECT_DIRECTORY_NEW_VIEW)
-              && OSXFile.isSavedSearch(f)) {
+                && OSXFile.isSavedSearch(f)) {
             installModel(getSavedSearchTreeModel(f));
         } else {
             f = toTraversableFile(f);
             if (viewMode != ViewModeControl.COLUMN_VIEW
-                  || source == SELECT_DIRECTORY_FROM_SIDEBAR || model.toPath(f, null) == null) {
+                    || source == SELECT_DIRECTORY_FROM_SIDEBAR || model.toPath(f, null) == null) {
                 ensureFileSystemModel();
             }
         }
@@ -2734,7 +2744,7 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
                                                       boolean isSelected, boolean isExpanded, boolean isLeaf,
                                                       int row, boolean cellHasFocus) {
             super.getTreeCellRendererComponent(tree, value, isSelected,
-              isExpanded, isLeaf, row, false);
+                    isExpanded, isLeaf, row, false);
 
             if (value instanceof SidebarTreeNode) {
                 SidebarTreeNode info = (SidebarTreeNode) value;
@@ -2794,7 +2804,7 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
         }
     }
 
-//
+    //
 // DataModel for DirectoryComboxbox
 //
     protected DirectoryComboBoxModel createDirectoryComboBoxModel(JFileChooser fc) {
@@ -2807,7 +2817,7 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
      * the computer).
      */
     protected class DirectoryComboBoxModel extends AbstractListModel
-      implements ComboBoxModel {
+            implements ComboBoxModel {
 
         TreePath path;
         FileSystemTreeModel.Node selectedDirectory = null;
@@ -2872,7 +2882,7 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
         }
     }
 
-//
+    //
 // Renderer for Types ComboBox
 //
     protected FilterComboBoxRenderer createFilterComboBoxRenderer(JComboBox cb) {
@@ -2903,7 +2913,7 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
         }
     }
 
-//
+    //
 // DataModel for Types ComboBox
 //
     protected FilterComboBoxModel createFilterComboBoxModel() {
@@ -2914,8 +2924,8 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
      * Data model for a type-face selection combo-box.
      */
     protected class FilterComboBoxModel
-      extends AbstractListModel
-      implements ComboBoxModel, PropertyChangeListener {
+            extends AbstractListModel
+            implements ComboBoxModel, PropertyChangeListener {
 
         protected FileFilter[] filters;
 
@@ -3016,9 +3026,8 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
     protected class OptionsAction extends AbstractAction {
         @Override
         public void actionPerformed(ActionEvent e) {
-            isOptionsEnabled = !isOptionsEnabled;
-            setOptionsPanelEnabledProperty(isOptionsEnabled);
-            updateOptionsPanel();
+            setOptionsPanelEnabledProperty(!isOptionsEnabled);
+            doOptionsPanelEnabledChanged();
         }
     }
 
@@ -3322,7 +3331,7 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
         return files;
     }
 
-// *****************************
+    // *****************************
 // ***** Directory Actions *****
 // *****************************
     @Override
@@ -3341,9 +3350,9 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
 
         private String showNewFolderDialog() {
             JOptionPane optionPane = new JOptionPane(
-              newFolderDialogPrompt,
-              JOptionPane.PLAIN_MESSAGE,
-              JOptionPane.OK_CANCEL_OPTION);
+                    newFolderDialogPrompt,
+                    JOptionPane.PLAIN_MESSAGE,
+                    JOptionPane.OK_CANCEL_OPTION);
             // Setup Input
             optionPane.setWantsInput(true);
             optionPane.putClientProperty(AquaOptionPaneUI.TEXT_FIELD_DOCUMENT_KEY, new FilenameDocument());
@@ -3351,8 +3360,8 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
 
             // Setup Options
             optionPane.setOptions(new Object[]{
-              UIManager.getString("FileChooser.createFolderButtonText"),
-              UIManager.getString("FileChooser.cancelButtonText")
+                    UIManager.getString("FileChooser.createFolderButtonText"),
+                    UIManager.getString("FileChooser.cancelButtonText")
             });
             optionPane.setInitialValue(UIManager.getString("FileChooser.createFolderButtonText"));
 
@@ -3362,7 +3371,7 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
             dialog.dispose();
 
             return (optionPane.getValue() == UIManager.getString("FileChooser.createFolderButtonText"))
-                     ? (String) optionPane.getInputValue() : null;
+                    ? (String) optionPane.getInputValue() : null;
         }
 
         @Override
@@ -3381,9 +3390,9 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
                 newFolder = new File(currentFile, newFolderName);
                 if (newFolder.exists()) {
                     JOptionPane.showMessageDialog(
-                      fc,
-                      newFolderExistsErrorText,
-                      newFolderTitleText, JOptionPane.ERROR_MESSAGE);
+                            fc,
+                            newFolderExistsErrorText,
+                            newFolderTitleText, JOptionPane.ERROR_MESSAGE);
                     return;
                 }
 
@@ -3397,9 +3406,9 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
                     selectDirectory(newFolder, SELECT_DIRECTORY_BY_KEYSTROKE);
                 } catch (Exception e) {
                     JOptionPane.showMessageDialog(
-                      fc,
-                      newFolderErrorText,
-                      newFolderTitleText, JOptionPane.ERROR_MESSAGE);
+                            fc,
+                            newFolderErrorText,
+                            newFolderTitleText, JOptionPane.ERROR_MESSAGE);
                 }
             }
         }
