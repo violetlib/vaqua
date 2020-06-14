@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2011-2013 Werner Randelshofer, Switzerland.
- * Copyright (c) 2014-2019 Alan Snyder.
+ * Copyright (c) 2014-2020 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the
@@ -45,12 +45,10 @@ import static org.violetlib.aqua.OSXSystemProperties.OSVersion;
 /**
  * Provides a list view and a column view similar to the one provided with the native Aqua user interface.
  *
- * @author Werner Randelshofer
- * @version $Id$
+ * Original author: Werner Randelshofer
  */
 public class AquaFileChooserUI extends BasicFileChooserUI implements AquaComponentUI {
     // Implementation derived from MetalFileChooserUI
-    /* Models. */
 
     /*
       In general, this class makes changes to the user interface directly, rather than making changes to the file
@@ -70,6 +68,7 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
     public static final String PACKAGE_TRAVERSABLE_PROPERTY = "JFileChooser.packageIsTraversable";
     public static final String APPLICATION_TRAVERSABLE_PROPERTY = "JFileChooser.appBundleIsTraversable";
     public static final String OPTIONS_PANEL_ENABLED_PROPERTY = "JFileChooser.optionsPanelEnabled";
+    public static final String CAN_CREATE_DIRECTORIES_PROPERTY = "JFileChooser.canCreateDirectories";
 
     private JFileChooser fc;
     private DirectoryComboBoxModel directoryComboBoxModel;
@@ -82,8 +81,9 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
 
     private final static boolean isOptionsButtonAvailable = OSVersion >= 1011;
     private boolean isOptionsEnabled = false;  // used only when the options button is displayed
+    private boolean useNewFolderButton;
     private @Nullable String windowStyle;
-    private boolean useToolBar; // true if the top panel should act like a tool bar when the textured window style is used
+    private boolean useToolBar;  // true if the top panel should act like a tool bar when the textured window style is used
 
     /**
      * Each saved search has its own file system tree model.
@@ -151,8 +151,8 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
      */
     private static String goToFolderText = "";
 
-    /** XXX - These keystrokes should go into an InputMap created by the
-     * AquaLookAndFeel class.
+    /*
+     * TBD: These keystrokes should go into an InputMap created by the AquaLookAndFeel class.
      */
     private KeyStroke[] KEYSTROKES = {
       KeyStroke.getKeyStroke(KeyEvent.VK_A, InputEvent.META_MASK | InputEvent.SHIFT_MASK),
@@ -169,7 +169,7 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
     };
 
     private class KeyListenerAction extends AbstractAction {
-        // XXX - This should be rewritten using an ActionMap
+        // TBD: This should be rewritten using an ActionMap
 
         @Override
         public void actionPerformed(ActionEvent ae) {
@@ -189,7 +189,7 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
                     file = new File("/Network");
                     break;
                 case 'i':
-                    //not doing iDisk for now
+                    // not doing iDisk for now
                     file = null;
                     return;
                 case 'a':
@@ -211,10 +211,10 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
                     fc.setFileHidingEnabled(!isHiding);
                     return;
                 default:
-                    //Unknown Key Command in: + ae );
+                    // Unknown Key Command in: + ae );
                     break;
             }
-            //set the dir if non-null:
+            // set the dir if non-null:
             if (file != null) {
                 // if the dir is in the sidebar,
                 // select the sidebar, otherwise just
@@ -260,7 +260,6 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
     /**
      * Ask the user for a path for a new file selection.
      */
-
     protected void requestFileSelectionPath(String initialText) {
         Window parent = SwingUtilities.getWindowAncestor(fc);
 
@@ -495,9 +494,7 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
     @Override
     public void installUI(JComponent c) {
         fc = (JFileChooser) c;
-
         super.installUI(c);
-
         installSelectedView(false, true);
     }
 
@@ -1541,10 +1538,10 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
                 }
             };
 
-                /*
-                  Because this method may be called from a property change listener, it is better to defer any change to
-                  the file chooser state, otherwise other property change listeners may be invoked in the wrong order.
-                */
+            /*
+              Because this method may be called from a property change listener, it is better to defer any change to the
+              file chooser state, otherwise other property change listeners may be invoked in the wrong order.
+            */
 
             SwingUtilities.invokeLater(new Runnable() {
                 public void run() {
@@ -1768,8 +1765,8 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
     }
 
     /**
-     * Determine the (possibly new) selected files based on the selected files in the active view. The special case
-     * is where a single unacceptable, traversable node is selected in the view.
+     * Determine the (possibly new) selected files based on the selected files in the active view. The special case is
+     * where a single unacceptable, traversable node is selected in the view.
      */
     private java.util.List<File> getFileSelectionFromViewSelection(java.util.List<TreePath> paths) {
         java.util.List<File> fs = new ArrayList<>();
@@ -2100,6 +2097,19 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
         }
     }
 
+    private void doCanCreateDirectoriesChanged(@NotNull PropertyChangeEvent e) {
+        boolean b = getCanCreateDirectoriesProperty();
+        if (b != useNewFolderButton) {
+            useNewFolderButton = b;
+            updateNewFolderButton();
+        }
+    }
+
+    private boolean getCanCreateDirectoriesProperty() {
+        Boolean b = AquaUtils.getBooleanProperty(fc, CAN_CREATE_DIRECTORIES_PROPERTY);
+        return b != null ? b : fc.getDialogType() == JFileChooser.SAVE_DIALOG;
+    }
+
     private void doApproveButtonTextChanged(PropertyChangeEvent e) {
         approveButton.setText(getApproveButtonText(fc));
         approveButton.setToolTipText(getApproveButtonToolTipText(fc));
@@ -2144,7 +2154,7 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
         optionsButton.setVisible(isOptionsButtonAvailable
                                    && fc.getDialogType() == JFileChooser.OPEN_DIALOG
                                    && (accessoryPanel.isVisible() || formatPanel.isVisible()));
-        newFolderButton.setVisible(fc.getDialogType() == JFileChooser.SAVE_DIALOG);
+        updateNewFolderButton();
         updateButton(cancelButton);
         updateButton(approveButton);
     }
@@ -2233,6 +2243,8 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
                 doPreviewComponentChanged(e);
             } else if (s.equals(OPTIONS_PANEL_ENABLED_PROPERTY)) {
                 doOptionsPanelEnabledChanged(e);
+            } else if (s.equals(CAN_CREATE_DIRECTORIES_PROPERTY)) {
+                doCanCreateDirectoriesChanged(e);
             }
         }
     }
@@ -2247,6 +2259,10 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
         optionsButton.setVisible(true);
         cancelButton.setVisible(true);
         approveButton.setVisible(true);
+    }
+
+    protected void updateNewFolderButton() {
+        newFolderButton.setVisible(getCanCreateDirectoriesProperty());
     }
 
     @Override
@@ -2305,11 +2321,9 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
      *          nearest traversable ancestor is used (should be the parent).
      * @param source The source of this change. (See constants above.)
      */
-
     protected void selectDirectory(File f, int source) {
         selectDirectory(f, source, true, null);
     }
-
 
     /**
      * Update the current view to display the specified directory. A new view root may be chosen and the sidebar
@@ -2433,7 +2447,6 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
      *
      * @return a path identifying the matching sidebar item, or null if none.
      */
-
     protected TreePath selectViewRoot(File f, boolean isRestrictedToSidebar) {
 
         /*
@@ -2530,7 +2543,7 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
      * Update the view selection.
      */
     protected void setViewSelection(TreePath path) {
-        setViewSelection(Arrays.asList(path));
+        setViewSelection(Collections.singletonList(path));
     }
 
     /**
@@ -2566,7 +2579,6 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
     /**
      * Update the contents of the filename text field.
      */
-
     protected void setFileNameTextField(String text) {
         ++isAdjusting;
         if (fileNameTextField != null && (text == null || !fileNameTextField.getText().equals(text))) {
@@ -2782,9 +2794,9 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
         }
     }
 
-    //
-    // DataModel for DirectoryComboxbox
-    //
+//
+// DataModel for DirectoryComboxbox
+//
     protected DirectoryComboBoxModel createDirectoryComboBoxModel(JFileChooser fc) {
         return new DirectoryComboBoxModel();
     }
@@ -2860,9 +2872,9 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
         }
     }
 
-    //
-    // Renderer for Types ComboBox
-    //
+//
+// Renderer for Types ComboBox
+//
     protected FilterComboBoxRenderer createFilterComboBoxRenderer(JComboBox cb) {
         return new FilterComboBoxRenderer(cb);
     }
@@ -2891,9 +2903,9 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
         }
     }
 
-    //
-    // DataModel for Types ComboBox
-    //
+//
+// DataModel for Types ComboBox
+//
     protected FilterComboBoxModel createFilterComboBoxModel() {
         return new FilterComboBoxModel();
     }
@@ -3199,7 +3211,6 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
      * @param useDefault If true and no files are selected in the view, return the display subtree root.
      * @return the selected files.
      */
-
     protected java.util.List<File> getUISelection(boolean useDefault) {
         java.util.List<File> result = new ArrayList<>();
 
@@ -3311,9 +3322,9 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
         return files;
     }
 
-    // *****************************
-    // ***** Directory Actions *****
-    // *****************************
+// *****************************
+// ***** Directory Actions *****
+// *****************************
     @Override
     public Action getNewFolderAction() {
         return newFolderAction;
@@ -3534,9 +3545,8 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
                 sidebarTreeModel.lazyValidate();
             }
         }
-        // We update the approve button state here, because the approve
-        // button can only be made the default button if it has a root pane
-        // ancestor.
+        // We update the approve button state here, because the approve button can only be made the default button if
+        // it has a root pane ancestor.
         updateApproveButtonState();
         if (fc.getSelectedFile() != null) {
             ensureFileIsVisible(fc, fc.getSelectedFile());
@@ -3730,9 +3740,9 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
         return AquaUtils.getScreenBounds(loc, w);
     }
 
-    // *******************************************************
-    // ************ FileChooserUI PLAF methods ***************
-    // *******************************************************
+// *******************************************************
+// ************ FileChooserUI PLAF methods ***************
+// *******************************************************
 
     /**
      * API method of FileChooserUI.
@@ -3824,12 +3834,13 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
             model.validatePath(fullPath);
         }
     }
-    // *******************************************************
-    // ******** End of FileChooserUI PLAF methods ************
-    // *******************************************************
-    // *******************************************************
-    // ********** BasicFileChooserUI PLAF methods ************
-    // *******************************************************
+// *******************************************************
+// ******** End of FileChooserUI PLAF methods ************
+// *******************************************************
+
+// *******************************************************
+// ********** BasicFileChooserUI PLAF methods ************
+// *******************************************************
 
     @Override
     public void clearIconCache() {
@@ -3839,9 +3850,9 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
         }
     }
 
-    // *******************************************************
-    // ******* End of BasicFileChooserUI PLAF methods ********
-    // *******************************************************
+// *******************************************************
+// ******* End of BasicFileChooserUI PLAF methods ********
+// *******************************************************
 
     private class SidebarSelectionListener implements TreeSelectionListener {
 
