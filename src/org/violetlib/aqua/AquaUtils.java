@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2019 Alan Snyder.
+ * Copyright (c) 2015-2020 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -1873,6 +1873,10 @@ final public class AquaUtils {
         execute(w, ptr -> nativeSetWindowCornerRadius(ptr, radius));
     }
 
+    public static void setWindowRepresentedFilename(@NotNull Window w, @NotNull String filename) {
+        execute(w, ptr -> nativeSetWindowRepresentedFilename(ptr, filename));
+    }
+
     // for debugging
     public static void setAWTViewVisibility(Window w, boolean isVisible) {
         execute(w, ptr -> nativeSetAWTViewVisibility(ptr, isVisible));
@@ -2021,6 +2025,7 @@ final public class AquaUtils {
     private static native int nativeSetTitleBarProperties(long w, boolean hasTitleBar, boolean isMovable, boolean isHidden, boolean isFixNeeded);
     private static native int nativeAddToolbarToWindow(long w);
     private static native int nativeSetWindowCornerRadius(long w, float radius);
+    private static native int nativeSetWindowRepresentedFilename(long w, String name);
     private static native int nativeSetAWTViewVisibility(long w, boolean isVisible);
     private static native int nativeSyncAWTView(long w);
     private static native int nativeGetLeftSideBearing(JComponent c, FontMetrics fm, char firstChar);

@@ -1691,6 +1691,31 @@ JNIEXPORT void JNICALL Java_org_violetlib_aqua_AquaUtils_nativeSetWindowBackgrou
 
 /*
  * Class:     org_violetlib_aqua_AquaUtils
+ * Method:    nativeSetWindowRepresentedFilename
+ * Signature: (JLjava/lang/String;)I
+ */
+JNIEXPORT jint JNICALL Java_org_violetlib_aqua_AquaUtils_nativeSetWindowRepresentedFilename
+  (JNIEnv *env, jclass cl, jlong wptr, jstring jFilename)
+{
+    jint result = -1;
+
+    JNF_COCOA_ENTER(env);
+
+    NSWindow *w = (NSWindow *) wptr;
+    if (jFilename) {
+        NSString *filename = JNFJavaToNSString(env, jFilename);
+        runOnMainThread(^() {
+            w.representedFilename = filename;
+        });
+        result = 0;
+    }
+
+    JNF_COCOA_EXIT(env);
+    return result;
+}
+
+/*
+ * Class:     org_violetlib_aqua_AquaUtils
  * Method:    nativeIsFullScreenWindow
  * Signature: (J)Z
  */

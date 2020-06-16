@@ -45,6 +45,7 @@ import javax.swing.event.ChangeListener;
 import javax.swing.plaf.ComponentUI;
 import javax.swing.plaf.MenuBarUI;
 import javax.swing.plaf.basic.BasicRootPaneUI;
+import javax.swing.text.Utilities;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -57,11 +58,10 @@ public class AquaRootPaneUI extends BasicRootPaneUI {
     public final static String AQUA_WINDOW_STYLE_KEY = "Aqua.windowStyle";
     public final static String AQUA_WINDOW_TOP_MARGIN_KEY = "Aqua.windowTopMargin";
     public final static String AQUA_WINDOW_BOTTOM_MARGIN_KEY = "Aqua.windowBottomMargin";
+    public final static String AQUA_WINDOW_REPRESENTED_FILENAME_KEY = "Aqua.windowRepresentedFilename";
 
     // Internally, an appearance is represented by an instance of AquaAppearance.
     // Externally, the colors are made available as a map from string to color.
-
-    // TBD: allow the application to set an appearance name for a window
 
     static final boolean sUseScreenMenuBar = AquaUtils.getScreenMenuBarProperty();
 
@@ -251,6 +251,8 @@ public class AquaRootPaneUI extends BasicRootPaneUI {
             updateVibrantStyleFromProperty(o);
         } else if (AQUA_WINDOW_STYLE_KEY.equals(prop) || AQUA_WINDOW_TOP_MARGIN_KEY.equals(prop) || AQUA_WINDOW_BOTTOM_MARGIN_KEY.equals(prop)) {
             reconfigureCustomWindowStyle();
+        } else if (AQUA_WINDOW_REPRESENTED_FILENAME_KEY.equals(prop)) {
+            configureRepresentedFilename();
         } else if ("ancestor".equals(prop)) {
             Component parent = rootPane.getParent();
             if (parent instanceof Window) {
@@ -379,6 +381,7 @@ public class AquaRootPaneUI extends BasicRootPaneUI {
             updatePopupStyle(rootPane);
             reconfigureCustomWindowStyle();
             updateVisualEffectView();
+            configureRepresentedFilename();
         }
     }
 
@@ -401,6 +404,7 @@ public class AquaRootPaneUI extends BasicRootPaneUI {
             updatePopupStyle(rootPane);
             reconfigureCustomWindowStyle();
             updateVisualEffectView();
+            configureRepresentedFilename();
         }
     }
 
@@ -531,6 +535,18 @@ public class AquaRootPaneUI extends BasicRootPaneUI {
                     }
                 }
             }
+        }
+    }
+
+    protected void configureRepresentedFilename() {
+        Window w = getWindow();
+        if (w != null && w.isDisplayable()) {
+            Object o = rootPane.getClientProperty(AQUA_WINDOW_REPRESENTED_FILENAME_KEY);
+            String filename = "";
+            if (o instanceof String) {
+                filename = (String) o;
+            }
+            AquaUtils.setWindowRepresentedFilename(w, filename);
         }
     }
 
