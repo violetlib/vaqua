@@ -677,6 +677,7 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
                 "Table.font", viewFont, // [3577901] Aqua HIG says "default font of text in lists and tables" should be 12 point (vm).
                 "Table.focusCellHighlightBorder", cellBorder,
                 "Table.focusSelectedCellHighlightBorder", cellBorder,
+                "Table.focusCellBackground", AquaColors.CLEAR, // used when table is focused, cell is clicked but selection is disabled
                 "Table.cellFocusNoBorder", cellBorder,
                 "Table.scrollPaneBorder", scrollPaneBorder,
                 "Table.scrollPaneCornerComponent",

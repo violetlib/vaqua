@@ -48,6 +48,7 @@ import javax.swing.plaf.ColorUIResource;
 import javax.swing.plaf.ComponentUI;
 import javax.swing.plaf.UIResource;
 import javax.swing.plaf.basic.BasicTableUI;
+import javax.swing.table.TableCellEditor;
 import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableColumn;
 import javax.swing.table.TableColumnModel;
@@ -76,6 +77,7 @@ public class AquaTableUI extends BasicTableUI
 
     protected final PropertyChangeListener propertyChangeListener;
     protected final ListSelectionListener selectionListener;
+    private @Nullable CellEditorFocusManager cellEditorFocusManager;
     protected TableCellRenderer originalBooleanRenderer;
     protected AquaTablePainter painter;
 
@@ -118,6 +120,71 @@ public class AquaTableUI extends BasicTableUI
         }
     }
 
+    // This class removes the cell editor when it loses focus permanently.
+
+    protected class CellEditorFocusManager implements PropertyChangeListener, FocusListener {
+        private KeyboardFocusManager focusManager;
+        private @Nullable Component managedCellEditorComponent;
+
+        public CellEditorFocusManager(KeyboardFocusManager fm) {
+            this.focusManager = fm;
+        }
+
+        public void propertyChange(@NotNull PropertyChangeEvent ev) {
+            Component c = focusManager.getPermanentFocusOwner();
+            if (c != null && isCellEditorComponent(c)) {
+                attach(c);
+            }
+        }
+
+        private void attach(@NotNull Component c) {
+            detach();
+            managedCellEditorComponent = c;
+            managedCellEditorComponent.addFocusListener(this);
+        }
+
+        public void detach() {
+            if (managedCellEditorComponent != null) {
+                managedCellEditorComponent.removeFocusListener(this);
+                managedCellEditorComponent = null;
+            }
+        }
+
+        public void cellEditorChanged(@Nullable TableCellEditor oldEditor, @Nullable TableCellEditor currentEditor) {
+            if (currentEditor == null) {
+                detach();
+            }
+        }
+
+        private boolean isCellEditorComponent(@NotNull Component c) {
+            if (table.isEditing() && c.getParent() == table) {
+                int row = table.getEditingRow();
+                int column = table.getEditingColumn();
+                Rectangle cellBounds = table.getCellRect(row, column, false);
+                if (cellBounds.equals(c.getBounds())) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        @Override
+        public void focusGained(FocusEvent e) {
+        }
+
+        @Override
+        public void focusLost(FocusEvent e) {
+            if (!e.isTemporary()) {
+                TableCellEditor editor = table.getCellEditor();
+                if (editor != null) {
+                    if (!editor.stopCellEditing()) {
+                        editor.cancelCellEditing();
+                    }
+                }
+            }
+        }
+    }
+
     protected class TablePropertyChangeListener implements PropertyChangeListener {
         public void propertyChange(PropertyChangeEvent ev) {
             String pn = ev.getPropertyName();
@@ -137,6 +204,13 @@ public class AquaTableUI extends BasicTableUI
                 if (pn.equals("background")) {
                     repaintScrollPaneCorner();
                 }
+                if (pn.equals("tableCellEditor")) {
+                    if (cellEditorFocusManager != null) {
+                        TableCellEditor oldEditor = (TableCellEditor) ev.getOldValue();
+                        TableCellEditor editor = (TableCellEditor) ev.getNewValue();
+                        cellEditorFocusManager.cellEditorChanged(oldEditor, editor);
+                    }
+                }
             }
         }
     }
@@ -146,6 +220,7 @@ public class AquaTableUI extends BasicTableUI
         super.installDefaults();
         painter = new AquaTablePainter(table, rendererPane);
         table.putClientProperty("terminateEditOnFocusLost", true);
+        table.putClientProperty("JTable.autoStartsEdit", false);  // do not simulate an open cell editor
         table.putClientProperty(AquaCellEditorPolicy.IS_CELL_CONTAINER_PROPERTY, true);
         table.setShowHorizontalLines(false);
         table.setShowVerticalLines(false);
@@ -168,6 +243,9 @@ public class AquaTableUI extends BasicTableUI
     @Override
     protected void installListeners() {
         super.installListeners();
+        KeyboardFocusManager fm = KeyboardFocusManager.getCurrentKeyboardFocusManager();
+        cellEditorFocusManager = new CellEditorFocusManager(fm);
+        fm.addPropertyChangeListener("permanentFocusOwner", cellEditorFocusManager);
         table.addPropertyChangeListener(propertyChangeListener);
         updateSelectionListener(null);
         AppearanceManager.installListener(table);
@@ -178,6 +256,10 @@ public class AquaTableUI extends BasicTableUI
         AppearanceManager.uninstallListener(table);
         table.getSelectionModel().removeListSelectionListener(selectionListener);
         table.removePropertyChangeListener(propertyChangeListener);
+        KeyboardFocusManager fm = KeyboardFocusManager.getCurrentKeyboardFocusManager();
+        fm.removePropertyChangeListener("permanentFocusOwner", cellEditorFocusManager);
+        cellEditorFocusManager.detach();
+        cellEditorFocusManager = null;
         super.uninstallListeners();
     }
 
@@ -192,53 +274,6 @@ public class AquaTableUI extends BasicTableUI
         public void mouseDragged(MouseEvent e) {
             super.mouseDragged(new SelectionMouseEvent(e));
         }*/
-    }
-
-    @Override
-    protected KeyListener createKeyListener() {
-        KeyListener base = super.createKeyListener();
-        return new AquaTableKeyHandler(base);
-    }
-
-    protected class AquaTableKeyHandler implements KeyListener {
-        protected KeyListener base;
-
-        public AquaTableKeyHandler(KeyListener base) {
-            this.base = base;
-        }
-
-        @Override
-        public void keyPressed(KeyEvent e) {
-            // Eat away META down keys..
-            // We need to do this, because the JTable.processKeyBinding(…)
-            // method does not treat VK_META as a modifier key, and starts
-            // editing a cell whenever this key is pressed.
-
-            // XXX - This is bogus but seems to work. Consider disabling
-            // automatic editing in JTable by setting the client property
-            // "JTable.autoStartsEdit" to Boolean.FALSE and doing all the
-            // processing here.
-
-            if (e.getKeyCode() == KeyEvent.VK_META) {
-                e.consume();
-            } else if (base != null) {
-                base.keyPressed(e);
-            }
-        }
-
-        @Override
-        public void keyReleased(KeyEvent e) {
-            if (base != null) {
-                base.keyReleased(e);
-            }
-        }
-
-        @Override
-        public void keyTyped(KeyEvent e) {
-            if (base != null) {
-                base.keyTyped(e);
-            }
-        }
     }
 
     protected void updateSelectionListener(ListSelectionModel old) {
