@@ -495,6 +495,10 @@ public class AquaTableUI extends BasicTableUI
 
             int nextRowY = 0;
 
+            boolean isEditing = table.isEditing();
+            int editingRow = table.getEditingRow();
+            int editingColumn = table.getEditingColumn();
+
             for (int row = rMin; row <= rMax; row++) {
                 Rectangle cellRect = table.getCellRect(row, cMin, true);
                 boolean isSelected = isRowSelection && table.isRowSelected(row);
@@ -511,7 +515,24 @@ public class AquaTableUI extends BasicTableUI
                     }
                 }
                 g.setColor(rowBackground);
-                g.fillRect(clip.x, cellRect.y, clip.width, cellRect.height);
+
+                // If this row contains the active cell editor, do not paint the selection background under it.
+                // Paint the striped background instead, if appropriate.
+                if (isSelected && isEditing && editingRow == row && editingColumn >= cMin && editingColumn <= cMax) {
+                    Rectangle editorCellRect = table.getCellRect(row, editingColumn, true);
+                    int x1 = editorCellRect.x;
+                    int x2 = x1 + editorCellRect.width;
+                    g.fillRect(clip.x, cellRect.y, x1-clip.x, cellRect.height);
+                    g.fillRect(x2, cellRect.y, clip.x+clip.width-x2, cellRect.height);
+                    if (isStriped) {
+                        colors.configureForRow(row, false);
+                        Color cellBackground = colors.getBackground(appearanceContext);
+                        g.setColor(cellBackground);
+                        g.fillRect(x1, cellRect.y, x2-x1, cellRect.height);
+                    }
+                } else {
+                    g.fillRect(clip.x, cellRect.y, clip.width, cellRect.height);
+                }
                 nextRowY = cellRect.y + cellRect.height;
             }
 
