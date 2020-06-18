@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014-2018 Alan Snyder.
+ * Copyright (c) 2014-2020 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -36,8 +36,6 @@ package org.violetlib.aqua;
 import java.awt.*;
 import java.awt.event.FocusEvent;
 import java.awt.event.FocusListener;
-import java.awt.event.KeyEvent;
-import java.awt.event.KeyListener;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import javax.swing.*;
@@ -61,13 +59,14 @@ import org.violetlib.jnr.aqua.AquaUIPainter;
  * A table UI based on AquaTableUI for Yosemite. It implements the striped style. It paints the selection background
  * behind the entire selected row, to avoid gaps between cells. It disables the grid by default. It displays using an
  * inactive style when not the focus owner. It works around a problem in JTable that interprets Meta (Command) as an
- * ordinary key instead of a modifier.
+ * ordinary key instead of a modifier. It avoids installing a non-focused cell editor. Where possible, it substitutes
+ * default cell renderers and editors for ones that conflict with the native appearance and behavior.
  *
  * For best results using the striped style, cell renderer components should not be opaque, and the table should use
  * auto resizing and setFillsViewportHeight(true).
  */
 public class AquaTableUI extends BasicTableUI
-        implements SelectionRepaintable, AquaComponentUI {
+  implements SelectionRepaintable, AquaComponentUI {
     public static ComponentUI createUI(JComponent c) {
         return new AquaTableUI();
     }
@@ -78,7 +77,9 @@ public class AquaTableUI extends BasicTableUI
     protected final PropertyChangeListener propertyChangeListener;
     protected final ListSelectionListener selectionListener;
     private @Nullable CellEditorFocusManager cellEditorFocusManager;
-    protected TableCellRenderer originalBooleanRenderer;
+    private @Nullable TableCellRenderer originalBooleanRenderer;
+    private @Nullable TableCellEditor originalObjectEditor;
+    private @Nullable TableCellEditor originalNumberEditor;
     protected AquaTablePainter painter;
 
     private boolean isStriped = false;
@@ -93,16 +94,10 @@ public class AquaTableUI extends BasicTableUI
         this.colors = AquaColors.CONTAINER_COLORS;
     }
 
-    /**
-     * Creates the focus listener to repaint the selection when the focus changes.
-     */
     protected FocusListener createFocusListener() {
         return new AquaTableUI.FocusHandler();
     }
 
-    /**
-     * Creates the mouse listener for the JTable.
-     */
     protected MouseInputListener createMouseInputListener() {
         return new AquaTableUI.MouseInputHandler();
     }
@@ -121,18 +116,25 @@ public class AquaTableUI extends BasicTableUI
         }
     }
 
-    // This class removes the cell editor when it permanently loses focus.
-
+    /**
+     * This class removes the cell editor when it permanently loses focus. It monitors the cell editor property of the
+     * table to attach a focus listener to the active cell editor component. It also ensures that the component of a
+     * newly installed cell editor requests focus.
+     *
+     * The superclass CellEditorRemover fails to remove the editor when the focus is transferred to the table itself or
+     * the focus owner is cleared. The latter case is a consequence of implementing the remover by monitoring the
+     * permanent focus owner property of the keyboard focus manager, which may report a null value during a focus
+     * transfer.
+     */
     protected class CellEditorFocusManager implements FocusListener {
         private @Nullable Component managedCellEditorComponent;
-
-        public CellEditorFocusManager() {
-        }
 
         public void cellEditorChanged(@Nullable TableCellEditor oldEditor, @Nullable TableCellEditor currentEditor) {
             detach();
             if (currentEditor != null) {
+                // In some cases, such as direct calls to editCellAt, the cell editor does not request focus
                 managedCellEditorComponent = table.getEditorComponent();
+                managedCellEditorComponent.requestFocus();
                 managedCellEditorComponent.addFocusListener(this);
             }
         }
@@ -201,7 +203,9 @@ public class AquaTableUI extends BasicTableUI
         table.setShowHorizontalLines(false);
         table.setShowVerticalLines(false);
         LookAndFeel.installProperty(table, "rowHeight", 19);
-        originalBooleanRenderer = installRendererIfPossible(Boolean.class, new AquaBooleanRenderer());
+        originalBooleanRenderer = installRendererIfPossible(Boolean.class, AquaBooleanRenderer.class);
+        originalObjectEditor = installEditorIfPossible(Object.class, AquaObjectEditor.class);
+        originalNumberEditor = installEditorIfPossible(Number.class, AquaNumberEditor.class);
         isStriped = getStripedValue();
         configureAppearanceContext(null);
     }
@@ -211,6 +215,14 @@ public class AquaTableUI extends BasicTableUI
         TableCellRenderer booleanRenderer = table.getDefaultRenderer(Boolean.class);
         if (booleanRenderer instanceof AquaBooleanRenderer) {
             table.setDefaultRenderer(Boolean.class, originalBooleanRenderer);
+        }
+        TableCellEditor objectEditor = table.getDefaultEditor(Object.class);
+        if (objectEditor instanceof AquaObjectEditor) {
+            table.setDefaultEditor(Object.class, originalObjectEditor);
+        }
+        TableCellEditor numberEditor = table.getDefaultEditor(Number.class);
+        if (numberEditor instanceof AquaNumberEditor) {
+            table.setDefaultEditor(Object.class, originalNumberEditor);
         }
         painter = null;
         super.uninstallDefaults();
@@ -301,8 +313,8 @@ public class AquaTableUI extends BasicTableUI
 
     protected AquaUIPainter.State getState() {
         return table.isEnabled()
-                ? (shouldDisplayAsFocused() ? AquaUIPainter.State.ACTIVE_DEFAULT : AquaUIPainter.State.ACTIVE)
-                : AquaUIPainter.State.DISABLED;
+          ? (shouldDisplayAsFocused() ? AquaUIPainter.State.ACTIVE_DEFAULT : AquaUIPainter.State.ACTIVE)
+          : AquaUIPainter.State.DISABLED;
     }
 
     protected boolean shouldDisplayAsFocused() {
@@ -360,7 +372,6 @@ public class AquaTableUI extends BasicTableUI
 
     @Override
     public void update(Graphics g, JComponent c) {
-
         AquaAppearance appearance = AppearanceManager.registerCurrentAppearance(c);
         Color background = getBackgroundColor();
         if (background != null) {
@@ -420,7 +431,7 @@ public class AquaTableUI extends BasicTableUI
             tableHasFocus = tableHasFocus();
 
             boolean isSelection = table.getSelectedRowCount() > 0 && table.getRowSelectionAllowed()
-                    || table.getSelectedColumnCount() > 0 && table.getColumnSelectionAllowed();
+              || table.getSelectedColumnCount() > 0 && table.getColumnSelectionAllowed();
 
             // Most of the following code is copied from BasicTableUI, with minor changes.
 
@@ -440,7 +451,7 @@ public class AquaTableUI extends BasicTableUI
 
             Point upperLeft = clip.getLocation();
             Point lowerRight = new Point(clip.x + clip.width - 1,
-                    clip.y + clip.height - 1);
+              clip.y + clip.height - 1);
 
             int rMin = table.rowAtPoint(upperLeft);
             int rMax = table.rowAtPoint(lowerRight);
@@ -637,7 +648,7 @@ public class AquaTableUI extends BasicTableUI
             TableCellRenderer renderer = table.getCellRenderer(row, column);
             Component rendererComponent = table.prepareRenderer(renderer, row, column);
             rendererPane.paintComponent(g, rendererComponent, table, cellRect.x, cellRect.y,
-                    cellRect.width, cellRect.height, true);
+              cellRect.width, cellRect.height, true);
         }
 
         protected void paintDraggedArea(Graphics g, int rMin, int rMax, TableColumn draggedColumn, int distance) {
@@ -651,7 +662,7 @@ public class AquaTableUI extends BasicTableUI
             // Paint a gray well in place of the moving column.
             g.setColor(table.getParent().getBackground());
             g.fillRect(vacatedColumnRect.x, vacatedColumnRect.y,
-                    vacatedColumnRect.width, vacatedColumnRect.height);
+              vacatedColumnRect.width, vacatedColumnRect.height);
 
             // Move to the where the cell has been dragged.
             vacatedColumnRect.x += distance;
@@ -714,15 +725,130 @@ public class AquaTableUI extends BasicTableUI
         }
     }
 
-    protected TableCellRenderer installRendererIfPossible(Class<?> objectClass, TableCellRenderer renderer) {
-        TableCellRenderer currentRenderer = table.getDefaultRenderer(objectClass);
-        if (currentRenderer instanceof UIResource) {
-            table.setDefaultRenderer(objectClass, renderer);
+    protected TableCellRenderer installRendererIfPossible(@NotNull Class<?> valueClass,
+                                                          @NotNull Class<? extends TableCellRenderer> rendererClass) {
+        TableCellRenderer currentRenderer = table.getDefaultRenderer(valueClass);
+        if (isDefault(valueClass, currentRenderer)) {
+            TableCellRenderer renderer = AquaUtils.instantiate(rendererClass);
+            if (renderer != null) {
+                table.setDefaultRenderer(valueClass, renderer);
+            }
         }
         return currentRenderer;
     }
 
-    protected class AquaBooleanRenderer extends JCheckBox implements TableCellRenderer, UIResource {
+    protected TableCellEditor installEditorIfPossible(@NotNull Class<?> valueClass,
+                                                      @NotNull Class<? extends TableCellEditor> editorClass) {
+        TableCellEditor currentEditor = table.getDefaultEditor(valueClass);
+        if (isDefault(valueClass, currentEditor)) {
+            TableCellEditor editor = AquaUtils.instantiate(editorClass);
+            if (editor != null) {
+                table.setDefaultEditor(valueClass, editor);
+            }
+        }
+        return currentEditor;
+    }
+
+    protected boolean isDefault(@NotNull Class<?> valueClass, @Nullable Object o) {
+
+        if (o instanceof UIResource) {
+            return true;
+        }
+
+        if (o instanceof DefaultCellEditor) {
+            DefaultCellEditor d = (DefaultCellEditor) o;
+            Component c = d.getComponent();
+            if ("Table.editor".equals(c.getName())) {
+                String className = d.getClass().getName();
+                if (valueClass == Object.class) {
+                    return className.equals("javax.swing.JTable$GenericEditor");
+                }
+                if (valueClass == Number.class) {
+                    return className.equals("javax.swing.JTable$NumberEditor");
+                }
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * A version of the standard default cell editor for Object values that avoids installing a line border.
+     * The line border acts as a focus ring, conflicting with our native styled focus ring.
+     */
+    protected static class AquaObjectEditor extends DefaultCellEditor implements UIResource {
+        Class<?>[] argTypes = new Class<?>[]{String.class};
+        java.lang.reflect.Constructor<?> constructor;
+        Object value;
+
+        public AquaObjectEditor() {
+            super(new JTextField());
+            getComponent().setName("Table.editor");
+        }
+
+        public boolean stopCellEditing() {
+            String s = (String)super.getCellEditorValue();
+            // Here we are dealing with the case where a user
+            // has deleted the string value in a cell, possibly
+            // after a failed validation. Return null, so that
+            // they have the option to replace the value with
+            // null or use escape to restore the original.
+            // For Strings, return "" for backward compatibility.
+            try {
+                if ("".equals(s)) {
+                    if (constructor.getDeclaringClass() == String.class) {
+                        value = s;
+                    }
+                    return super.stopCellEditing();
+                }
+                value = constructor.newInstance(s);
+            }
+            catch (Exception e) {
+                return false;
+            }
+            return super.stopCellEditing();
+        }
+
+        public Component getTableCellEditorComponent(JTable table, Object value,
+                                                     boolean isSelected,
+                                                     int row, int column) {
+            this.value = null;
+            try {
+                Class<?> type = table.getColumnClass(column);
+                // Since our obligation is to produce a value which is
+                // assignable for the required type it is OK to use the
+                // String constructor for columns which are declared
+                // to contain Objects. A String is an Object.
+                if (type == Object.class) {
+                    type = String.class;
+                }
+                constructor = type.getConstructor(argTypes);
+            }
+            catch (Exception e) {
+                return null;
+            }
+            return super.getTableCellEditorComponent(table, value, isSelected, row, column);
+        }
+
+        public Object getCellEditorValue() {
+            return value;
+        }
+    }
+
+    /**
+     * A version of the standard default cell editor for Number values that avoids installing a line border.
+     * The line border acts as a focus ring, conflicting with our native styled focus ring.
+     */
+    protected static class AquaNumberEditor extends AquaObjectEditor {
+        public AquaNumberEditor() {
+            ((JTextField)getComponent()).setHorizontalAlignment(JTextField.RIGHT);
+        }
+    }
+
+    /**
+     * A version of the standard default cell renderer for Boolean values that avoids painting a background color.
+     */
+    protected static class AquaBooleanRenderer extends JCheckBox implements TableCellRenderer, UIResource {
 
         public AquaBooleanRenderer() {
             setHorizontalAlignment(JLabel.CENTER);

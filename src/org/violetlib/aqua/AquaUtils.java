@@ -819,12 +819,7 @@ final public class AquaUtils {
 
         @Override
         protected @Nullable T getInstance() {
-            try {
-                //ReflectUtil.checkPackageAccess(clazz);
-                return clazz.newInstance();
-            } catch (InstantiationException | IllegalAccessException ignored) {
-            }
-            return null;
+            return instantiate(clazz);
         }
     }
 
@@ -1424,6 +1419,14 @@ final public class AquaUtils {
         ref = new SoftReference<>(object);
         put(key, ref);
         return object;
+    }
+
+    public static @Nullable <T> T instantiate(@NotNull Class<T> c) {
+        try {
+            return c.getDeclaredConstructor().newInstance();
+        } catch (Exception ex) {
+            return null;
+        }
     }
 
     /** Turns on common rendering hints for UI delegates. */
