@@ -89,6 +89,7 @@ public class AquaTableUI extends BasicTableUI
     public AquaTableUI() {
         propertyChangeListener = new TablePropertyChangeListener();
         selectionListener = new SelectionListener();
+        cellEditorFocusManager = new CellEditorFocusManager();
         this.colors = AquaColors.CONTAINER_COLORS;
     }
 
@@ -120,27 +121,20 @@ public class AquaTableUI extends BasicTableUI
         }
     }
 
-    // This class removes the cell editor when it loses focus permanently.
+    // This class removes the cell editor when it permanently loses focus.
 
-    protected class CellEditorFocusManager implements PropertyChangeListener, FocusListener {
-        private KeyboardFocusManager focusManager;
+    protected class CellEditorFocusManager implements FocusListener {
         private @Nullable Component managedCellEditorComponent;
 
-        public CellEditorFocusManager(KeyboardFocusManager fm) {
-            this.focusManager = fm;
+        public CellEditorFocusManager() {
         }
 
-        public void propertyChange(@NotNull PropertyChangeEvent ev) {
-            Component c = focusManager.getPermanentFocusOwner();
-            if (c != null && isCellEditorComponent(c)) {
-                attach(c);
-            }
-        }
-
-        private void attach(@NotNull Component c) {
+        public void cellEditorChanged(@Nullable TableCellEditor oldEditor, @Nullable TableCellEditor currentEditor) {
             detach();
-            managedCellEditorComponent = c;
-            managedCellEditorComponent.addFocusListener(this);
+            if (currentEditor != null) {
+                managedCellEditorComponent = table.getEditorComponent();
+                managedCellEditorComponent.addFocusListener(this);
+            }
         }
 
         public void detach() {
@@ -148,24 +142,6 @@ public class AquaTableUI extends BasicTableUI
                 managedCellEditorComponent.removeFocusListener(this);
                 managedCellEditorComponent = null;
             }
-        }
-
-        public void cellEditorChanged(@Nullable TableCellEditor oldEditor, @Nullable TableCellEditor currentEditor) {
-            if (currentEditor == null) {
-                detach();
-            }
-        }
-
-        private boolean isCellEditorComponent(@NotNull Component c) {
-            if (table.isEditing() && c.getParent() == table) {
-                int row = table.getEditingRow();
-                int column = table.getEditingColumn();
-                Rectangle cellBounds = table.getCellRect(row, column, false);
-                if (cellBounds.equals(c.getBounds())) {
-                    return true;
-                }
-            }
-            return false;
         }
 
         @Override
@@ -243,9 +219,6 @@ public class AquaTableUI extends BasicTableUI
     @Override
     protected void installListeners() {
         super.installListeners();
-        KeyboardFocusManager fm = KeyboardFocusManager.getCurrentKeyboardFocusManager();
-        cellEditorFocusManager = new CellEditorFocusManager(fm);
-        fm.addPropertyChangeListener("permanentFocusOwner", cellEditorFocusManager);
         table.addPropertyChangeListener(propertyChangeListener);
         updateSelectionListener(null);
         AppearanceManager.installListener(table);
@@ -256,10 +229,7 @@ public class AquaTableUI extends BasicTableUI
         AppearanceManager.uninstallListener(table);
         table.getSelectionModel().removeListSelectionListener(selectionListener);
         table.removePropertyChangeListener(propertyChangeListener);
-        KeyboardFocusManager fm = KeyboardFocusManager.getCurrentKeyboardFocusManager();
-        fm.removePropertyChangeListener("permanentFocusOwner", cellEditorFocusManager);
         cellEditorFocusManager.detach();
-        cellEditorFocusManager = null;
         super.uninstallListeners();
     }
 
@@ -645,7 +615,6 @@ public class AquaTableUI extends BasicTableUI
 
             TableCellRenderer renderer = table.getCellRenderer(row, column);
             Component rendererComponent = table.prepareRenderer(renderer, row, column);
-
             rendererPane.paintComponent(g, rendererComponent, table, cellRect.x, cellRect.y,
                     cellRect.width, cellRect.height, true);
         }
