@@ -155,11 +155,24 @@ public class AquaTableUI extends BasicTableUI
             if (!e.isTemporary()) {
                 TableCellEditor editor = table.getCellEditor();
                 if (editor != null) {
-                    if (!editor.stopCellEditing()) {
-                        editor.cancelCellEditing();
+                    Component opposite = e.getOppositeComponent();
+                    if (opposite == null || !isPartOfEditor(table.getEditorComponent(), opposite)) {
+                        if (!editor.stopCellEditing()) {
+                            editor.cancelCellEditing();
+                        }
                     }
                 }
             }
+        }
+
+        private boolean isPartOfEditor(@NotNull Component editorComponent, @NotNull Component c) {
+            while (c != null && c != table) {
+                if (c == editorComponent) {
+                    return true;
+                }
+                c = c.getParent();
+            }
+            return false;
         }
     }
 
