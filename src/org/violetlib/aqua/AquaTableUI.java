@@ -38,6 +38,7 @@ import java.awt.event.FocusEvent;
 import java.awt.event.FocusListener;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
+import java.util.EventObject;
 import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
@@ -80,6 +81,7 @@ public class AquaTableUI extends BasicTableUI
     private @Nullable TableCellRenderer originalBooleanRenderer;
     private @Nullable TableCellEditor originalObjectEditor;
     private @Nullable TableCellEditor originalNumberEditor;
+    private @Nullable TableCellEditor originalBooleanEditor;
     protected AquaTablePainter painter;
 
     private boolean isStriped = false;
@@ -120,7 +122,7 @@ public class AquaTableUI extends BasicTableUI
      * This class removes the cell editor when it permanently loses focus. It monitors the cell editor property of the
      * table to attach a focus listener to the active cell editor component. It also ensures that the component of a
      * newly installed cell editor requests focus.
-     *
+     * <p>
      * The superclass CellEditorRemover fails to remove the editor when the focus is transferred to the table itself or
      * the focus owner is cleared. The latter case is a consequence of implementing the remover by monitoring the
      * permanent focus owner property of the keyboard focus manager, which may report a null value during a focus
@@ -219,6 +221,7 @@ public class AquaTableUI extends BasicTableUI
         originalBooleanRenderer = installRendererIfPossible(Boolean.class, AquaBooleanRenderer.class);
         originalObjectEditor = installEditorIfPossible(Object.class, AquaObjectEditor.class);
         originalNumberEditor = installEditorIfPossible(Number.class, AquaNumberEditor.class);
+        originalBooleanEditor = installEditorIfPossible(Boolean.class, AquaBooleanEditor.class);
         isStriped = getStripedValue();
         configureAppearanceContext(null);
     }
@@ -235,7 +238,11 @@ public class AquaTableUI extends BasicTableUI
         }
         TableCellEditor numberEditor = table.getDefaultEditor(Number.class);
         if (numberEditor instanceof AquaNumberEditor) {
-            table.setDefaultEditor(Object.class, originalNumberEditor);
+            table.setDefaultEditor(Number.class, originalNumberEditor);
+        }
+        TableCellEditor booleanEditor = table.getDefaultEditor(Boolean.class);
+        if (booleanEditor instanceof AquaBooleanEditor) {
+            table.setDefaultEditor(Boolean.class, originalBooleanEditor);
         }
         painter = null;
         super.uninstallDefaults();
@@ -289,7 +296,7 @@ public class AquaTableUI extends BasicTableUI
                 return;
             }
             int firstIndex = limit(e.getFirstIndex(), 0, table.getRowCount() - 1);
-            int lastIndex = limit(e.getLastIndex(), 0, table.getRowCount()-1);
+            int lastIndex = limit(e.getLastIndex(), 0, table.getRowCount() - 1);
             Rectangle firstRowRect = table.getCellRect(firstIndex, 0, true);
             Rectangle lastRowRect = table.getCellRect(lastIndex, 0, true);
             Rectangle dirtyRegion = new Rectangle(firstRowRect.x, firstRowRect.y, table.getWidth(), lastRowRect.y + lastRowRect.height);
@@ -389,7 +396,7 @@ public class AquaTableUI extends BasicTableUI
         Color background = getBackgroundColor();
         if (background != null) {
             g.setColor(background);
-            g.fillRect(0, 0, c.getWidth(),c.getHeight());
+            g.fillRect(0, 0, c.getWidth(), c.getHeight());
         }
 
         paint(g, c);
@@ -546,13 +553,13 @@ public class AquaTableUI extends BasicTableUI
                     Rectangle editorCellRect = table.getCellRect(row, editingColumn, true);
                     int x1 = editorCellRect.x;
                     int x2 = x1 + editorCellRect.width;
-                    g.fillRect(clip.x, cellRect.y, x1-clip.x, cellRect.height);
-                    g.fillRect(x2, cellRect.y, clip.x+clip.width-x2, cellRect.height);
+                    g.fillRect(clip.x, cellRect.y, x1 - clip.x, cellRect.height);
+                    g.fillRect(x2, cellRect.y, clip.x + clip.width - x2, cellRect.height);
                     if (isStriped) {
                         colors.configureForRow(row, false);
                         Color cellBackground = colors.getBackground(appearanceContext);
                         g.setColor(cellBackground);
-                        g.fillRect(x1, cellRect.y, x2-x1, cellRect.height);
+                        g.fillRect(x1, cellRect.y, x2 - x1, cellRect.height);
                     }
                 } else {
                     g.fillRect(clip.x, cellRect.y, clip.width, cellRect.height);
@@ -589,7 +596,7 @@ public class AquaTableUI extends BasicTableUI
 
             Rectangle minCell = table.getCellRect(rMin, cMin, true);
             Rectangle maxCell = table.getCellRect(rMax, cMax, true);
-            Rectangle damagedArea = minCell.union( maxCell );
+            Rectangle damagedArea = minCell.union(maxCell);
 
             if (table.getShowHorizontalLines()) {
                 if (xHorizontal) {
@@ -604,7 +611,7 @@ public class AquaTableUI extends BasicTableUI
                     int y = damagedArea.y;
                     for (int row = rMin; row <= rMax; row++) {
                         y += table.getRowHeight(row);
-                        g.fillRect(damagedArea.x, y-1, tableWidth, 1);
+                        g.fillRect(damagedArea.x, y - 1, tableWidth, 1);
                     }
                 }
             }
@@ -637,7 +644,7 @@ public class AquaTableUI extends BasicTableUI
 
         @Override
         protected void paintCell(Graphics g, Rectangle cellRect, int row, int column) {
-            if (table.isEditing() && table.getEditingRow()==row && table.getEditingColumn()==column) {
+            if (table.isEditing() && table.getEditingRow() == row && table.getEditingColumn() == column) {
                 paintEditorCell(g, cellRect, row, column);
             } else {
                 paintRenderedCell(g, cellRect, row, column);
@@ -694,12 +701,12 @@ public class AquaTableUI extends BasicTableUI
                 int x2 = x1 + vacatedColumnRect.width - 1;
                 int y2 = y1 + vacatedColumnRect.height - 1;
                 // Left
-                g.drawLine(x1-1, y1, x1-1, y2);
+                g.drawLine(x1 - 1, y1, x1 - 1, y2);
                 // Right
                 g.drawLine(x2, y1, x2, y2);
             }
 
-            for(int row = rMin; row <= rMax; row++) {
+            for (int row = rMin; row <= rMax; row++) {
                 // Render the cell value
                 Rectangle r = table.getCellRect(row, draggedColumnIndex, false);
                 r.x += distance;
@@ -724,7 +731,7 @@ public class AquaTableUI extends BasicTableUI
                 Graphics gg = g.create();
                 try {
                     gg.clipRect(columnRect.x, columnRect.y, columnRect.width, columnRect.height);
-                    paintBackground(gg, rMin, rMax, 0, table.getColumnCount()-1);
+                    paintBackground(gg, rMin, rMax, 0, table.getColumnCount() - 1);
                 } finally {
                     gg.dispose();
                 }
@@ -770,15 +777,15 @@ public class AquaTableUI extends BasicTableUI
 
         if (o instanceof DefaultCellEditor) {
             DefaultCellEditor d = (DefaultCellEditor) o;
-            Component c = d.getComponent();
-            if ("Table.editor".equals(c.getName())) {
-                String className = d.getClass().getName();
-                if (valueClass == Object.class) {
-                    return className.equals("javax.swing.JTable$GenericEditor");
-                }
-                if (valueClass == Number.class) {
-                    return className.equals("javax.swing.JTable$NumberEditor");
-                }
+            String className = d.getClass().getName();
+            if (valueClass == Object.class) {
+                return className.equals("javax.swing.JTable$GenericEditor");
+            }
+            if (valueClass == Number.class) {
+                return className.equals("javax.swing.JTable$NumberEditor");
+            }
+            if (valueClass == Boolean.class) {
+                return className.equals("javax.swing.JTable$BooleanEditor");
             }
         }
 
@@ -800,7 +807,7 @@ public class AquaTableUI extends BasicTableUI
         }
 
         public boolean stopCellEditing() {
-            String s = (String)super.getCellEditorValue();
+            String s = (String) super.getCellEditorValue();
             // Here we are dealing with the case where a user
             // has deleted the string value in a cell, possibly
             // after a failed validation. Return null, so that
@@ -815,8 +822,7 @@ public class AquaTableUI extends BasicTableUI
                     return super.stopCellEditing();
                 }
                 value = constructor.newInstance(s);
-            }
-            catch (Exception e) {
+            } catch (Exception e) {
                 return false;
             }
             return super.stopCellEditing();
@@ -836,8 +842,7 @@ public class AquaTableUI extends BasicTableUI
                     type = String.class;
                 }
                 constructor = type.getConstructor(argTypes);
-            }
-            catch (Exception e) {
+            } catch (Exception e) {
                 return null;
             }
             return super.getTableCellEditorComponent(table, value, isSelected, row, column);
@@ -854,7 +859,7 @@ public class AquaTableUI extends BasicTableUI
      */
     protected static class AquaNumberEditor extends AquaObjectEditor {
         public AquaNumberEditor() {
-            ((JTextField)getComponent()).setHorizontalAlignment(JTextField.RIGHT);
+            ((JTextField) getComponent()).setHorizontalAlignment(JTextField.RIGHT);
         }
     }
 
@@ -881,6 +886,31 @@ public class AquaTableUI extends BasicTableUI
             setBackground(AquaColors.CLEAR);
             setSelected((value != null && (Boolean) value));
             return this;
+        }
+    }
+
+    /**
+     * A version of the standard default cell editor for Boolean values that avoids painting a background when clicked
+     * and does not try to change the row selection when clicked.
+     */
+    protected static class AquaBooleanEditor extends DefaultCellEditor {
+        public AquaBooleanEditor() {
+            super(new JCheckBox());
+            JCheckBox checkBox = (JCheckBox) getComponent();
+            checkBox.setHorizontalAlignment(JCheckBox.CENTER);
+        }
+
+        public Component getTableCellEditorComponent(JTable table, Object value,
+                                                     boolean isSelected,
+                                                     int row, int column) {
+            delegate.setValue(value);
+            editorComponent.setOpaque(false);
+            return editorComponent;
+        }
+
+        @Override
+        public boolean shouldSelectCell(EventObject anEvent) {
+            return false;
         }
     }
 }
