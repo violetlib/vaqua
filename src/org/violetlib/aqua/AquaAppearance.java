@@ -336,9 +336,20 @@ public class AquaAppearance implements VAppearance {
         colors.add("pushPopText_pressed", 0, 224);
 
         // colors related to segmented buttons
-        colors.add("selectedSegmentedText", 255);
-        colors.add("selectedSegmentedText_disabled", 172);
-        colors.add("selectedSegmentedText_inactive", 34);
+
+        if (OSVersion >= 1016) {
+            // Tab = Exclusive Rounded, but no longer the same as Exclusive Separated
+            colors.add("segmentedText", "controlText");
+            colors.add("selectedSegmentedText_disabled", 0, 112);
+            colors.add("selectedSegmentedText_inactive", 0, 192);
+            colors.add("selectedSegmentedSeparatedText", 255);
+            colors.add("selectedSegmentedSeparatedText_disabled", 172);
+            colors.add("selectedSegmentedSeparatedText_inactive", 34);
+        } else {
+            colors.add("selectedSegmentedText", 255);
+            colors.add("selectedSegmentedText_disabled", 172);
+            colors.add("selectedSegmentedText_inactive", 34);
+        }
 
         // colors related to textured segmented buttons
         if (OSVersion < 1011) {
@@ -353,10 +364,15 @@ public class AquaAppearance implements VAppearance {
             colors.add("selectedNonexclusiveTexturedText_inactive", "segmentedText_disabled");
         }
 
-        colors.add("texturedSegmentedText", 0, 150);
-        colors.add("texturedSegmentedText_disabled", 0, 64);
-        colors.add("texturedSegmentedText_inactive", 0, 64);
-        colors.add("texturedSegmentedText_inactive_disabled", 0, 32);
+        if (OSVersion >= 1016) {
+            // Exclusive textured is like rounded, except for selected disabled and selected inactive
+            colors.add("texturedSegmentedText", "controlText");
+        } else {
+            colors.add("texturedSegmentedText", 0, 150);
+            colors.add("texturedSegmentedText_disabled", 0, 64);
+            colors.add("texturedSegmentedText_inactive", 0, 64);
+            colors.add("texturedSegmentedText_inactive_disabled", 0, 32);
+        }
         colors.add("selectedTexturedSegmentedText_disabled", 255, 144);
         colors.add("selectedTexturedSegmentedText_inactive", 0, 64);
         colors.add("selectedTexturedSegmentedText_inactive_disabled", 0, 32);
@@ -996,8 +1012,8 @@ public class AquaAppearance implements VAppearance {
 
         public void defineNoInactive(@NotNull String root)
         {
-           // define inactive variants in terms of the non-inactive variant
-           for (String suffix : AquaColors.getAllColorSuffixes()) {
+            // define inactive variants in terms of the non-inactive variant
+            for (String suffix : AquaColors.getAllColorSuffixes()) {
                 String nonInactiveSuffix = AquaColors.withoutInactive(suffix);
                 if (nonInactiveSuffix != null) {
                     add(root + suffix, root + nonInactiveSuffix);

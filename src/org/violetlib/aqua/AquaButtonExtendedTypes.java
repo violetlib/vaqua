@@ -223,6 +223,8 @@ public class AquaButtonExtendedTypes {
                 return 11;
             case MINI:
                 return 9;
+            case LARGE:
+                return 13;
             default:
                 return 13;
         }

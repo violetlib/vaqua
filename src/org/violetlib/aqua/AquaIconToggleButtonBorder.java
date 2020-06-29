@@ -8,10 +8,10 @@
 
 package org.violetlib.aqua;
 
-import org.violetlib.jnr.aqua.AquaUIPainter.Size;
-
-import javax.swing.*;
 import java.awt.*;
+import javax.swing.*;
+
+import org.violetlib.jnr.aqua.AquaUIPainter.Size;
 
 /**
  * The border used for the icon button style.
