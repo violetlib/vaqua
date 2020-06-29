@@ -1,5 +1,5 @@
 /*
- * Changes copyright (c) 2015-2019 Alan Snyder.
+ * Changes copyright (c) 2015-2020 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -357,6 +357,7 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
         Color windowBackgroundColor = new ColorUIResource(237, 237, 237); // needed in macOS 10.13 and earlier
         Color panelBackgroundColor = windowBackgroundColor;
 
+        LazyValue controlLargeFont = t -> AquaFonts.getControlTextLargeFont();
         LazyValue controlFont = t -> AquaFonts.getControlTextFont();
         LazyValue controlSmallFont = t -> AquaFonts.getControlTextSmallFont();
         LazyValue controlMiniFont = t -> AquaFonts.getControlTextMiniFont();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2019 Alan Snyder.
+ * Copyright (c) 2015-2020 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -200,8 +200,9 @@ public class AquaUtilControlSize {
             f = new AquaFonts.DerivedUIResourceFont(f);
         }
 
-        if (size == Size.MINI) return f.deriveFont(AquaFonts.getMiniControlTextFont().getSize2D());
-        if (size == Size.SMALL) return f.deriveFont(AquaFonts.getSmallControlTextFont().getSize2D());
+        if (size == Size.MINI) return f.deriveFont(AquaFonts.getControlTextMiniFont().getSize2D());
+        if (size == Size.SMALL) return f.deriveFont(AquaFonts.getControlTextSmallFont().getSize2D());
+        if (size == Size.LARGE) return f.deriveFont(AquaFonts.getControlTextLargeFont().getSize2D());
         return f.deriveFont(AquaFonts.getControlTextFont().getSize2D());
     }
 }
