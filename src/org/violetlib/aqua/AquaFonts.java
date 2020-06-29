@@ -132,14 +132,6 @@ public class AquaFonts {
         return lucida9Pt.get();
     }
 
-    public static FontUIResource getIconButtonFont() {
-        return lucida12Pt.get();
-    }
-
-    public static FontUIResource getIconButtonSmallFont() {
-        return lucida11Pt.get();
-    }
-
     public static FontUIResource getMenuFont() {
         return lucida14Pt.get();
     }

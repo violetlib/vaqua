@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2019 Alan Snyder.
+ * Copyright (c) 2015-2020 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -298,19 +298,7 @@ public class AquaButtonUI extends BasicButtonUI
     }
 
     protected Font getDefaultFont(AbstractButton b, Size size) {
-        if (shouldUseIconFont(b)) {
-            return size == Size.SMALL || size == Size.MINI
-                    ? UIManager.getFont("IconButton.smallFont")
-                    : UIManager.getFont("IconButton.font");
-        } else {
-            return (Font) b.getClientProperty(DEFAULT_FONT_PROPERTY);
-        }
-    }
-
-    protected static boolean shouldUseIconFont(AbstractButton b) {
-        // Aqua LAF used the icon font for buttons on the toolbar.
-        // Commented out because this does not match the behavior of native buttons on Yosemite or El Capitan.
-        return b.getIcon() != null || b.getComponentCount() > 0 /* || isOnToolbar(b) */;
+        return (Font) b.getClientProperty(DEFAULT_FONT_PROPERTY);
     }
 
     protected Font getCustomDefaultFont(AbstractButton b, Size size, Font df) {

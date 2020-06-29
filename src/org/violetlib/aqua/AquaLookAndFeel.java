@@ -361,8 +361,6 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
         LazyValue controlFont = t -> AquaFonts.getControlTextFont();
         LazyValue controlSmallFont = t -> AquaFonts.getControlTextSmallFont();
         LazyValue controlMiniFont = t -> AquaFonts.getControlTextMiniFont();
-        LazyValue iconButtonFont = t -> AquaFonts.getIconButtonFont();
-        LazyValue iconButtonSmallFont = t -> AquaFonts.getIconButtonSmallFont();
         LazyValue alertHeaderFont = t -> AquaFonts.getAlertHeaderFont();
         LazyValue menuFont = t -> AquaFonts.getMenuFont();
         LazyValue viewFont = t -> AquaFonts.getViewFont();
@@ -491,9 +489,6 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
                 "FormattedTextField.caretBlinkRate", textCaretBlinkRate,
                 "FormattedTextField.border", textFieldBorder,
                 "FormattedTextField.margin", zeroInsets,
-
-                "IconButton.font", iconButtonFont,
-                "IconButton.smallFont", iconButtonSmallFont,
 
                 "InternalFrame.titleFont", controlFont,
                 "InternalFrame.background", windowBackgroundColor,
