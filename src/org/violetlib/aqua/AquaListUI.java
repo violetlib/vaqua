@@ -1,5 +1,5 @@
 /*
- * Changes Copyright (c) 2015-2018 Alan Snyder.
+ * Changes Copyright (c) 2015-2020 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -53,22 +53,29 @@ import org.violetlib.jnr.aqua.AquaUIPainter;
 /**
  * A Mac L&F implementation of JList
  */
-public class AquaListUI extends BasicListUI implements AquaComponentUI {
+public class AquaListUI extends BasicListUI implements AquaComponentUI, AquaViewStyleContainerUI {
     public static ComponentUI createUI(JComponent c) {
         return new AquaListUI();
     }
 
     public static final String LIST_STYLE_KEY = "JList.style";
     public static final String QUAQUA_LIST_STYLE_KEY = "Quaqua.List.style";
+    public static final String LIST_VIEW_STYLE_KEY = "JList.viewStyle";
 
     private boolean isStriped = false;
+    private boolean isInset = false;
     private boolean isFocused = false;
+    private boolean isMenu = false;
     protected @NotNull ContainerContextualColors colors;
     protected @Nullable AppearanceContext appearanceContext;
     protected @Nullable Color actualListBackground;
 
     public AquaListUI() {
         colors = AquaColors.CONTAINER_COLORS;
+    }
+
+    public void setMenu(boolean b) {
+        isMenu = b;
     }
 
     public void setColors(@NotNull ContainerContextualColors colors) {
@@ -97,6 +104,7 @@ public class AquaListUI extends BasicListUI implements AquaComponentUI {
         super.installDefaults();
         list.putClientProperty(AquaCellEditorPolicy.IS_CELL_CONTAINER_PROPERTY, true);
         isStriped = getStripedValue();
+        isInset = getInsetValue();
         updateOpaque();
         configureAppearanceContext(null);
     }
@@ -110,10 +118,12 @@ public class AquaListUI extends BasicListUI implements AquaComponentUI {
     protected void installListeners() {
         super.installListeners();
         AppearanceManager.installListener(list);
+        AquaUtils.installInsetViewListener(list);
     }
 
     @Override
     protected void uninstallListeners() {
+        AquaUtils.uninstallInsetViewListener(list);
         AppearanceManager.uninstallListener(list);
         super.uninstallListeners();
     }
@@ -181,6 +191,8 @@ public class AquaListUI extends BasicListUI implements AquaComponentUI {
                     updateStriped();
                 } else if ("layoutOrientation".equals(prop)) {
                     updateStriped();
+                } else if (isViewStyleProperty(prop)) {
+                    updateInset();
                 }
                 super.propertyChange(e);
             }
@@ -242,17 +254,36 @@ public class AquaListUI extends BasicListUI implements AquaComponentUI {
         }
     }
 
-    private void updateOpaque() {
-        // JList forces opaque to be true, so LookAndFeel.installProperty cannot be used
-        list.setOpaque(!isStriped);
-    }
-
     private boolean getStripedValue() {
         String value = getStyleProperty();
         return "striped".equals(value)
                 && list.getLayoutOrientation() == JList.VERTICAL
                 && isBackgroundClear()
                 ;
+    }
+
+    @Override
+    public void scrollPaneAncestorChanged(@Nullable JScrollPane sp) {
+    }
+
+    private void updateInset() {
+        boolean value = getInsetValue();
+        if (value != isInset) {
+            isInset = value;
+            configureAppearanceContext(null);
+            // If the default cell renderer is being used, its insets will be different.
+            updateLayoutState();
+        }
+    }
+
+    private boolean getInsetValue() {
+        String value = getViewStyleProperty();
+        return "inset".equals(value);
+    }
+
+    private void updateOpaque() {
+        // JList forces opaque to be true, so LookAndFeel.installProperty cannot be used
+        list.setOpaque(!isStriped);
     }
 
     private boolean isBackgroundClear() {
@@ -264,12 +295,25 @@ public class AquaListUI extends BasicListUI implements AquaComponentUI {
         return isStriped;
     }
 
+    @Override
+    public boolean isInset() {
+        return isInset;
+    }
+
     protected boolean isStyleProperty(String prop) {
         return AquaUtils.isProperty(prop, LIST_STYLE_KEY, QUAQUA_LIST_STYLE_KEY);
     }
 
-    protected String getStyleProperty() {
+    protected @Nullable String getStyleProperty() {
         return AquaUtils.getProperty(list, LIST_STYLE_KEY, QUAQUA_LIST_STYLE_KEY);
+    }
+
+    protected boolean isViewStyleProperty(String prop) {
+        return AquaUtils.isProperty(prop, LIST_VIEW_STYLE_KEY);
+    }
+
+    protected @Nullable String getViewStyleProperty() {
+        return AquaUtils.getProperty(list, LIST_VIEW_STYLE_KEY);
     }
 
     @Override
@@ -299,7 +343,7 @@ public class AquaListUI extends BasicListUI implements AquaComponentUI {
     @Override
     public void paint(Graphics g, JComponent c) {
         if (appearanceContext != null) {
-            paintStripes(g, c);
+            paintStripes(g);
             super.paint(g, c);
         }
     }
@@ -307,12 +351,12 @@ public class AquaListUI extends BasicListUI implements AquaComponentUI {
     /**
      * Paint stripes, if appropriate.
      */
-    public void paintStripes(Graphics g, JComponent c) {
+    public void paintStripes(Graphics g) {
         if (isStriped && list.getModel() != null) {
 
             assert appearanceContext != null;
 
-            Dimension vs = c.getSize();
+            Dimension vs = list.getSize();
             int rh = list.getFixedCellHeight();
             int n = list.getModel().getSize();
             if (rh <= 0) {
@@ -325,7 +369,7 @@ public class AquaListUI extends BasicListUI implements AquaComponentUI {
 
             while (row < visibleRowCount) {
                 boolean isSelected = selectionModel.isSelectedIndex(row);
-                colors.configureForRow(row, isSelected);
+                colors.configureForRow(row, isSelected && !isInset);
                 Color background = colors.getBackground(appearanceContext);
                 g.setColor(background);
                 g.fillRect(0, y, vs.width, rh);
@@ -356,10 +400,19 @@ public class AquaListUI extends BasicListUI implements AquaComponentUI {
         boolean isFocused = isEnabled && AquaFocusHandler.hasFocus(list);
         boolean cellHasFocus = isFocused && (row == leadIndex);
 
-        if (isSelected && !isStriped) {
-            Color background = colors.getBackground(appearanceContext.withSelected(true));
+        if (isSelected) {
+            colors.configureForRow(row, true);
+            Color background = colors.getBackground(appearanceContext);
             g.setColor(background);
-            g.fillRect(cx, cy, cw, ch);
+            if (isInset) {
+                if (isMenu) {
+                    AquaUtils.paintInsetMenuItemSelection((Graphics2D) g, cx, cy, cw, ch);
+                } else {
+                    AquaUtils.paintInsetCellSelection((Graphics2D) g, cx, cy, cw, ch);
+                }
+            } else if (!isStriped) {
+                g.fillRect(cx, cy, cw, ch);
+            }
         }
 
         Object value = dataModel.getElementAt(row);
@@ -368,6 +421,11 @@ public class AquaListUI extends BasicListUI implements AquaComponentUI {
 
         if (rendererComponent instanceof JTextComponent) {
             ((JTextComponent) rendererComponent).putClientProperty(AquaColors.COMPONENT_COLORS_KEY, AquaColors.CELL_TEXT_COLORS);
+        }
+
+        if (isInset && rendererComponent.isOpaque() && rendererComponent instanceof JComponent) {
+            JComponent jc = (JComponent) rendererComponent;
+            jc.setOpaque(false);
         }
 
         rendererPane.paintComponent(g, rendererComponent, list, cx, cy, cw, ch, true);

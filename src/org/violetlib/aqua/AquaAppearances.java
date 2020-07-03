@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Alan Snyder.
+ * Copyright (c) 2018-2020 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -8,6 +8,7 @@
 
 package org.violetlib.aqua;
 
+import java.awt.*;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -17,8 +18,11 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
 import org.jetbrains.annotations.NotNull;
+import org.violetlib.jnr.aqua.AquaNativeRendering;
 import org.violetlib.vappearances.VAppearance;
 import org.violetlib.vappearances.VAppearances;
+
+import static org.violetlib.aqua.OSXSystemProperties.OSVersion;
 
 /**
  * All methods must be called on the UI event thread.
@@ -30,8 +34,8 @@ public class AquaAppearances {
     private static final @NotNull List<ChangeListener> changeListeners = new ArrayList<>();
 
     static {
-         VAppearances.addChangeListener(AquaAppearances::appearanceChanged);
-     }
+        VAppearances.addChangeListener(AquaAppearances::appearanceChanged);
+    }
 
     /**
      * Return the current appearance with the specified name.
@@ -44,7 +48,8 @@ public class AquaAppearances {
         if (appearance == null) {
             try {
                 VAppearance a = VAppearances.getAppearance(appearanceName);
-                appearance = new AquaAppearance(a);
+                Map<String, Color> nativeColors = AquaNativeRendering.createPainter().getColors(a);
+                appearance = new AquaAppearance(a, OSVersion, nativeColors);
             } catch (IOException ex) {
                 AquaUtils.syslog("Unable to get " + appearanceName + ": " + ex.getMessage());
                 appearance = getDefaultAppearance();
@@ -65,7 +70,8 @@ public class AquaAppearances {
         if (appearance == null) {
             try {
                 VAppearance a = VAppearances.getAppearance(defaultAppearanceName);
-                appearance = new AquaAppearance(a);
+                Map<String, Color> nativeColors = AquaNativeRendering.createPainter().getColors(a);
+                appearance = new AquaAppearance(a, OSVersion, nativeColors);
             } catch (IOException ex) {
                 AquaUtils.syslog("Unable to get " + defaultAppearanceName + ": " + ex.getMessage());
                 ex.printStackTrace();
@@ -114,7 +120,8 @@ public class AquaAppearances {
             if (false) {
                 AquaUtils.logDebug("AquaAppearances: appearance " + name + " updated");
             }
-            AquaAppearance appearance = new AquaAppearance(a);
+            Map<String, Color> nativeColors = AquaNativeRendering.createPainter().getColors(a);
+            AquaAppearance appearance = new AquaAppearance(a, OSVersion, nativeColors);
             appearances.put(name, appearance);
             for (ChangeListener listener : changeListeners) {
                 listener.stateChanged(ev);

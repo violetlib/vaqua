@@ -1,8 +1,6 @@
 /*
- * @(#)FileRenderer.java
- *
  * Copyright (c) 2007-2013 Werner Randelshofer, Switzerland.
- * Copyright (c) 2018 Alan Snyder.
+ * Copyright (c) 2018-2020 Alan Snyder.
  * You may not use, copy or modify this file, except in compliance with the
  * accompanying license terms.
  */
@@ -156,8 +154,8 @@ public class FileRenderer extends JLabel implements ListCellRenderer, GenericCel
 
         Color background = colors.getBackground(context);
         Color foreground = colors.getForeground(context);
-        setBackground(AquaColors.getOrdinaryColor(background));
-        setForeground(AquaColors.getOrdinaryColor(foreground));
+        setBackground(AquaAppearance.getOrdinaryColor(background));
+        setForeground(AquaAppearance.getOrdinaryColor(foreground));
 
         arrowColor = getArrowColor(info, cellHasFocus, appearance);
 

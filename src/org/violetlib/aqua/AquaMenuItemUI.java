@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Alan Snyder.
+ * Copyright (c) 2018-2020 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -74,9 +74,9 @@ public class AquaMenuItemUI extends BasicMenuItemUI implements AquaComponentUI {
     }
 
     protected void installDefaults() {
-         super.installDefaults();
-         configureAppearanceContext(null);
-     }
+        super.installDefaults();
+        configureAppearanceContext(null);
+    }
 
     @Override
     protected void installListeners() {
@@ -124,7 +124,8 @@ public class AquaMenuItemUI extends BasicMenuItemUI implements AquaComponentUI {
         if (c.isOpaque()) {
             Color background = colors.getBackground(appearanceContext);
             g.setColor(background);
-            g.fillRect(0, 0, c.getWidth(), c.getHeight());
+            AquaUtils.paintInsetMenuItemSelection((Graphics2D)g, 0, 0, c.getWidth(), c.getHeight());
+            //g.fillRect(0, 0, c.getWidth(), c.getHeight());
         }
         AquaMenuSupport.instance().paintMenuItem((Graphics2D) g, menuItem, checkIcon, arrowIcon,
                 appearanceContext, colors, defaultTextIconGap, acceleratorFont);

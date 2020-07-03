@@ -9,9 +9,6 @@
 package org.violetlib.aqua;
 
 import java.awt.*;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
 import javax.swing.*;
 import javax.swing.plaf.ColorUIResource;
 import javax.swing.text.JTextComponent;
@@ -150,54 +147,6 @@ public class AquaColors {
 
     public static boolean isDebugging() {
         return currentColorsDebugFlag;
-    }
-
-    private static final List<String> allColorSuffixes = Collections.unmodifiableList(Arrays.asList(
-            "_rollover",
-            "_pressed",
-            "_inactive",
-            "_disabled",
-            "_inactive_disabled",
-            "_focused"
-    ));
-
-    public static class TintedEraser extends ColorUIResource {
-        public TintedEraser(int intensity, int alpha) {
-            super(new Color(intensity, intensity, intensity, alpha));
-        }
-    }
-
-    public static class GradientColor extends ColorUIResource {
-        private final @NotNull Color finish;
-        private final boolean useMagicEraser;
-
-        public GradientColor(@NotNull Color start, @NotNull Color finish) {
-            super(start);
-            this.finish = finish;
-            this.useMagicEraser = false;
-        }
-
-        public GradientColor(@NotNull Color start, @NotNull Color finish, boolean useMagicEraser) {
-            super(start);
-            this.finish = finish;
-            this.useMagicEraser = useMagicEraser;
-
-            if (useMagicEraser && (start.getAlpha() == 255 && finish.getAlpha() == 255)) {
-                AquaUtils.logDebug("Magic eraser not needed with opaque gradient");
-            }
-        }
-
-        public @NotNull Color getStart() {
-            return this;
-        }
-
-        public @NotNull Color getFinish() {
-            return finish;
-        }
-
-        public boolean useMagicEraser() {
-            return useMagicEraser;
-        }
     }
 
     public static @NotNull String toString(@Nullable Color c) {
@@ -363,7 +312,7 @@ public class AquaColors {
     }
 
     private static @NotNull BasicContextualColors
-        createButtonColors(@NotNull String name, @NotNull String basicColorName) {
+    createButtonColors(@NotNull String name, @NotNull String basicColorName) {
 
         String backgroundName = name + ".background";
         AquaContextualColorImpl background = new AquaContextualColorImpl(backgroundName, "clear");
@@ -510,11 +459,13 @@ public class AquaColors {
         } else if (c instanceof JTable) {
             JTable table = (JTable) c;
             boolean isStriped = getTableStriped(table);
-            installTableColors(table, context, colors, isStriped);
+            boolean isInset = getTableInset(table);
+            installTableColors(table, context, colors, isStriped, isInset);
         } else if (c instanceof JList) {
             JList list = (JList) c;
             boolean isStriped = getListStriped(list);
-            installListColors(list, context, colors, isStriped);
+            boolean isInset = getListInset(list);
+            installListColors(list, context, colors, isStriped, isInset);
         } else {
             installBasicColors(c, context, colors);
         }
@@ -528,6 +479,16 @@ public class AquaColors {
     private static boolean getTableStriped(@NotNull JTable table) {
         AquaTableUI ui = AquaUtils.getUI(table, AquaTableUI.class);
         return ui != null && ui.isStriped();
+    }
+
+    private static boolean getListInset(@NotNull JList list) {
+        AquaListUI ui = AquaUtils.getUI(list, AquaListUI.class);
+        return ui != null && ui.isInset();
+    }
+
+    private static boolean getTableInset(@NotNull JTable table) {
+        AquaTableUI ui = AquaUtils.getUI(table, AquaTableUI.class);
+        return ui != null && ui.isInset();
     }
 
     private static void installBasicColors(@NotNull Component c,
@@ -584,7 +545,8 @@ public class AquaColors {
     private static void installTableColors(@NotNull JTable c,
                                            @NotNull AppearanceContext context,
                                            @NotNull BasicContextualColors colors,
-                                           boolean isStriped) {
+                                           boolean isStriped,
+                                           boolean isInset) {
 
         // A striped table must have a clear background, so that a well-behaved table cell renderer will paint a clear
         // background and preserve the stripes. The reason is that table cell renderers are supposed to obtain their
@@ -607,21 +569,24 @@ public class AquaColors {
             }
         }
 
-        AppearanceContext selectedContent = context.withSelected(true);
+        AppearanceContext selectedContext = context.withSelected(true);
 
-        if (!AquaColors.isPriority(c.getSelectionBackground())) {
-            c.setSelectionBackground(colors.getBackground(selectedContent));
+        if (isInset) {
+            c.setSelectionBackground(AquaColors.CLEAR);
+        } else if (!AquaColors.isPriority(c.getSelectionBackground())) {
+            c.setSelectionBackground(colors.getBackground(selectedContext));
         }
 
         if (!AquaColors.isPriority(c.getSelectionForeground())) {
-            c.setSelectionForeground(colors.getForeground(selectedContent));
+            c.setSelectionForeground(colors.getForeground(selectedContext));
         }
     }
 
     private static void installListColors(@NotNull JList c,
                                           @NotNull AppearanceContext context,
                                           @NotNull BasicContextualColors colors,
-                                          boolean isStriped) {
+                                          boolean isStriped,
+                                          boolean isInset) {
 
         // A striped list must have a clear background, so that a well-behaved list cell renderer will paint a clear
         // background and preserve the stripes. The reason is that list cell renderers are supposed to obtain their
@@ -637,53 +602,16 @@ public class AquaColors {
             c.setForeground(colors.getForeground(context));
         }
 
-        AppearanceContext selectedContent = context.withSelected(true);
+        AppearanceContext selectedContext = context.withSelected(true);
 
-        if (!AquaColors.isPriority(c.getSelectionBackground())) {
-            c.setSelectionBackground(colors.getBackground(selectedContent));
+        if (isInset) {
+            c.setSelectionBackground(AquaColors.CLEAR);
+        } else if (!AquaColors.isPriority(c.getSelectionBackground())) {
+            c.setSelectionBackground(colors.getBackground(selectedContext));
         }
 
         if (!AquaColors.isPriority(c.getSelectionForeground())) {
-            c.setSelectionForeground(colors.getForeground(selectedContent));
+            c.setSelectionForeground(colors.getForeground(selectedContext));
         }
-    }
-
-    public static @NotNull Color getOrdinaryColor(@NotNull Color c) {
-        if (c.getClass() == Color.class) {
-            return c;
-        }
-        return new Color(c.getRed(), c.getGreen(), c.getBlue(), c.getAlpha());
-    }
-
-    public static @NotNull List<String> getAllColorSuffixes()
-    {
-        return allColorSuffixes;
-    }
-
-    public static @Nullable String withoutInactive(@NotNull String suffix)
-    {
-        if (suffix.equals("_inactive")) {
-            return "";
-        }
-        if (suffix.equals("_inactive_disabled")) {
-            return "_disabled";
-        }
-        return null;
-    }
-
-    public static @NotNull String createSelectedColorName(@NotNull String name)
-    {
-        return "selected" + capitalize(name);
-    }
-
-    public static @NotNull String capitalize(@NotNull String s)
-    {
-        if (!s.isEmpty()) {
-            char first = s.charAt(0);
-            if (!Character.isUpperCase(first)) {
-                return Character.toUpperCase(first) + s.substring(1);
-            }
-        }
-        return s;
     }
 }

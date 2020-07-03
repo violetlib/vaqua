@@ -67,13 +67,14 @@ import org.violetlib.jnr.aqua.AquaUIPainter;
  * auto resizing and setFillsViewportHeight(true).
  */
 public class AquaTableUI extends BasicTableUI
-  implements SelectionRepaintable, AquaComponentUI {
+        implements SelectionRepaintable, AquaComponentUI, AquaViewStyleContainerUI {
     public static ComponentUI createUI(JComponent c) {
         return new AquaTableUI();
     }
 
     public static final String TABLE_STYLE_KEY = "JTable.style";
     public static final String QUAQUA_TABLE_STYLE_KEY = "Quaqua.Table.style";
+    public static final String TABLE_VIEW_STYLE_KEY = "JTable.viewStyle";
 
     protected final PropertyChangeListener propertyChangeListener;
     protected final ListSelectionListener selectionListener;
@@ -85,6 +86,7 @@ public class AquaTableUI extends BasicTableUI
     protected AquaTablePainter painter;
 
     private boolean isStriped = false;
+    private boolean isInset = false;
     protected @NotNull ContainerContextualColors colors;
     protected @Nullable AppearanceContext appearanceContext;
     protected @Nullable Color actualTableBackground;
@@ -194,6 +196,9 @@ public class AquaTableUI extends BasicTableUI
                     updateStriped();
                     table.repaint();
                 }
+                if (isViewStyleProperty(pn)) {
+                    updateInset();
+                }
                 if (pn.equals("background")) {
                     repaintScrollPaneCorner();
                 }
@@ -254,10 +259,12 @@ public class AquaTableUI extends BasicTableUI
         table.addPropertyChangeListener(propertyChangeListener);
         updateSelectionListener(null);
         AppearanceManager.installListener(table);
+        AquaUtils.installInsetViewListener(table);
     }
 
     @Override
     protected void uninstallListeners() {
+        AquaUtils.uninstallInsetViewListener(table);
         AppearanceManager.uninstallListener(table);
         table.getSelectionModel().removeListSelectionListener(selectionListener);
         table.removePropertyChangeListener(propertyChangeListener);
@@ -333,8 +340,8 @@ public class AquaTableUI extends BasicTableUI
 
     protected AquaUIPainter.State getState() {
         return table.isEnabled()
-          ? (shouldDisplayAsFocused() ? AquaUIPainter.State.ACTIVE_DEFAULT : AquaUIPainter.State.ACTIVE)
-          : AquaUIPainter.State.DISABLED;
+                ? (shouldDisplayAsFocused() ? AquaUIPainter.State.ACTIVE_DEFAULT : AquaUIPainter.State.ACTIVE)
+                : AquaUIPainter.State.DISABLED;
     }
 
     protected boolean shouldDisplayAsFocused() {
@@ -354,6 +361,23 @@ public class AquaTableUI extends BasicTableUI
         return "striped".equals(value) && isBackgroundClear();
     }
 
+    @Override
+    public void scrollPaneAncestorChanged(@Nullable JScrollPane sp) {
+    }
+
+    private void updateInset() {
+        boolean value = getInsetValue();
+        if (value != isInset) {
+            isInset = value;
+            configureAppearanceContext(null);
+        }
+    }
+
+    private boolean getInsetValue() {
+        String value = getViewStyleProperty();
+        return "inset".equals(value);
+    }
+
     private boolean isBackgroundClear() {
         Color c = table.getBackground();
         return c == null || c.getAlpha() == 0 || c instanceof ColorUIResource;
@@ -361,6 +385,11 @@ public class AquaTableUI extends BasicTableUI
 
     public boolean isStriped() {
         return isStriped;
+    }
+
+    @Override
+    public boolean isInset() {
+        return isInset;
     }
 
     protected boolean tableHasFocus() {
@@ -377,6 +406,14 @@ public class AquaTableUI extends BasicTableUI
 
     protected static String getStyleProperty(JTable table) {
         return AquaUtils.getProperty(table, TABLE_STYLE_KEY, QUAQUA_TABLE_STYLE_KEY);
+    }
+
+    protected boolean isViewStyleProperty(String prop) {
+        return AquaUtils.isProperty(prop, TABLE_VIEW_STYLE_KEY);
+    }
+
+    protected String getViewStyleProperty() {
+        return AquaUtils.getProperty(table, TABLE_VIEW_STYLE_KEY);
     }
 
     /**
@@ -451,7 +488,7 @@ public class AquaTableUI extends BasicTableUI
             tableHasFocus = tableHasFocus();
 
             boolean isSelection = table.getSelectedRowCount() > 0 && table.getRowSelectionAllowed()
-              || table.getSelectedColumnCount() > 0 && table.getColumnSelectionAllowed();
+                    || table.getSelectedColumnCount() > 0 && table.getColumnSelectionAllowed();
 
             // Most of the following code is copied from BasicTableUI, with minor changes.
 
@@ -471,7 +508,7 @@ public class AquaTableUI extends BasicTableUI
 
             Point upperLeft = clip.getLocation();
             Point lowerRight = new Point(clip.x + clip.width - 1,
-              clip.y + clip.height - 1);
+                    clip.y + clip.height - 1);
 
             int rMin = table.rowAtPoint(upperLeft);
             int rMax = table.rowAtPoint(lowerRight);
@@ -529,6 +566,7 @@ public class AquaTableUI extends BasicTableUI
             boolean isEditing = table.isEditing();
             int editingRow = table.getEditingRow();
             int editingColumn = table.getEditingColumn();
+            int tableWidth = table.getWidth();
 
             for (int row = rMin; row <= rMax; row++) {
                 Rectangle cellRect = table.getCellRect(row, cMin, true);
@@ -547,9 +585,11 @@ public class AquaTableUI extends BasicTableUI
                 }
                 g.setColor(rowBackground);
 
-                // If this row contains the active cell editor, do not paint the selection background under it.
-                // Paint the striped background instead, if appropriate.
-                if (isSelected && isEditing && editingRow == row && editingColumn >= cMin && editingColumn <= cMax) {
+                if (isSelected && isInset) {
+                    AquaUtils.paintInsetCellSelection((Graphics2D) g, 0, cellRect.y, tableWidth, cellRect.height);
+                } else if (isSelected && isEditing && editingRow == row && editingColumn >= cMin && editingColumn <= cMax) {
+                    // If this row contains the active cell editor, do not paint the selection background under it.
+                    // Paint the striped background instead, if appropriate.
                     Rectangle editorCellRect = table.getCellRect(row, editingColumn, true);
                     int x1 = editorCellRect.x;
                     int x2 = x1 + editorCellRect.width;
@@ -668,7 +708,7 @@ public class AquaTableUI extends BasicTableUI
             TableCellRenderer renderer = table.getCellRenderer(row, column);
             Component rendererComponent = table.prepareRenderer(renderer, row, column);
             rendererPane.paintComponent(g, rendererComponent, table, cellRect.x, cellRect.y,
-              cellRect.width, cellRect.height, true);
+                    cellRect.width, cellRect.height, true);
         }
 
         protected void paintDraggedArea(Graphics g, int rMin, int rMax, TableColumn draggedColumn, int distance) {
@@ -682,7 +722,7 @@ public class AquaTableUI extends BasicTableUI
             // Paint a gray well in place of the moving column.
             g.setColor(table.getParent().getBackground());
             g.fillRect(vacatedColumnRect.x, vacatedColumnRect.y,
-              vacatedColumnRect.width, vacatedColumnRect.height);
+                    vacatedColumnRect.width, vacatedColumnRect.height);
 
             // Move to the where the cell has been dragged.
             vacatedColumnRect.x += distance;

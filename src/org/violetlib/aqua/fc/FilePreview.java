@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2009-2010 Werner Randelshofer, Switzerland.
- * Copyright (c) 2014-2019 Alan Snyder.
+ * Copyright (c) 2014-2020 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the
@@ -28,10 +28,7 @@ import javax.swing.plaf.basic.BasicHTML;
 import javax.swing.table.*;
 import javax.swing.tree.TreePath;
 
-import org.violetlib.aqua.AppearanceManager;
-import org.violetlib.aqua.AquaColors;
-import org.violetlib.aqua.AquaUtils;
-import org.violetlib.aqua.OSXSystemProperties;
+import org.violetlib.aqua.*;
 
 /**
  * The FilePreview is used to render the preview column in the file chooser browser view.
@@ -189,12 +186,12 @@ public class FilePreview extends JComponent implements BrowserPreviewRenderer {
         Color labelForeground = AquaColors.getSystemColor(this, "secondaryLabel");
         Color valueForeground = AquaColors.getSystemColor(this, "label");
 
-        nameRenderer.setColor(AquaColors.getOrdinaryColor(labelForeground));
-        valueRenderer.setColor(AquaColors.getOrdinaryColor(valueForeground));
+        nameRenderer.setColor(AquaAppearance.getOrdinaryColor(labelForeground));
+        valueRenderer.setColor(AquaAppearance.getOrdinaryColor(valueForeground));
         if (typeSizeView != null) {
-            typeSizeView.setForeground(AquaColors.getOrdinaryColor(labelForeground));
+            typeSizeView.setForeground(AquaAppearance.getOrdinaryColor(labelForeground));
         } else if (OSXSystemProperties.OSVersion >= 1010) {
-            valueRenderer.setRowZeroColor(AquaColors.getOrdinaryColor(labelForeground));
+            valueRenderer.setRowZeroColor(AquaAppearance.getOrdinaryColor(labelForeground));
         }
 
         // Avoid the magic eraser when displayed as a sheet

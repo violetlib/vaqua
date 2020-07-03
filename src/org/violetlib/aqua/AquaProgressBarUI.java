@@ -1,5 +1,5 @@
 /*
- * Changes Copyright (c) 2015-2018 Alan Snyder.
+ * Changes Copyright (c) 2015-2020 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -251,9 +251,9 @@ public class AquaProgressBarUI
         State state = getState();
         Orientation orientation = isHorizontal() ? Orientation.HORIZONTAL : Orientation.VERTICAL;
         if (progressBar.isIndeterminate()) {
-            int frameCount = isCircular ? (OSVersion >= 1016 ? 12 : 15) : 90;
+            int frameCount = isCircular ? (OSVersion >= 1016 ? 24 : 15) : 90;
             long intervals = System.currentTimeMillis() / (repaintInterval > 0 ? repaintInterval : 100);
-            int speed = isCircular ? 1 : 4;
+            int speed = isCircular ? 3 : 4;
             int animationFrame = (int) (speed * intervals % frameCount);
             AquaUIPainter.ProgressWidget w = isCircular ? ProgressWidget.INDETERMINATE_SPINNER : ProgressWidget.INDETERMINATE_BAR;
             return new IndeterminateProgressIndicatorConfiguration(w, sizeVariant, state, orientation, animationFrame);

@@ -1,5 +1,5 @@
 /*
- * Changes copyright (c) 2015-2018 Alan Snyder.
+ * Changes copyright (c) 2015-2020 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -48,6 +48,7 @@ import org.violetlib.jnr.aqua.AquaUIPainter.Size;
  */
 public abstract class AquaButtonLabeledUI extends AquaButtonUI {
 
+    protected RecyclableSizingIcon largeIcon;
     protected RecyclableSizingIcon regularIcon;
     protected RecyclableSizingIcon smallIcon;
     protected RecyclableSizingIcon miniIcon;
@@ -83,12 +84,14 @@ public abstract class AquaButtonLabeledUI extends AquaButtonUI {
 
     public Icon getDefaultIcon(JComponent c) {
         if (regularIcon == null) {
+            largeIcon = createDefaultIcon(Size.LARGE);
             regularIcon = createDefaultIcon(Size.REGULAR);
             smallIcon = createDefaultIcon(Size.SMALL);
             miniIcon = createDefaultIcon(Size.MINI);
         }
 
         Size componentSize = AquaUtilControlSize.getUserSizeFrom(c);
+        if (componentSize == Size.LARGE) return largeIcon.get();
         if (componentSize == Size.REGULAR) return regularIcon.get();
         if (componentSize == Size.SMALL) return smallIcon.get();
         if (componentSize == Size.MINI) return miniIcon.get();

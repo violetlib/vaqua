@@ -477,7 +477,7 @@ public class AquaButtonExtendedTypes {
 
         WidgetInfo segmentedGradient = gradient.copy().withSegmented()
                 .withColors(AquaColors.GRADIENT_SEGMENTED_BUTTON_COLORS).withMargin(9);
-        result.put(BUTTON_SEGMENTED_INSET, segmentedGradient);
+        result.put(BUTTON_SEGMENTED_INSET, segmentedGradient);  // segmented rounded rect
         result.put(BUTTON_SEGMENTED_SCURVE, segmentedGradient);
         result.put(BUTTON_SEGMENTED_SMALL_SQUARE, segmentedGradient);
 
@@ -546,12 +546,12 @@ public class AquaButtonExtendedTypes {
             new BorderDefinedTypeSpecifier("roundRect", BUTTON_ROUNDED_RECT),
             new BorderDefinedTypeSpecifier("recessed", BUTTON_RECESSED),
             new BorderDefinedTypeSpecifier("inline", BUTTON_INLINE),
-            new BorderDefinedTypeSpecifier("well", BUTTON_TOOLBAR_ITEM),   // old name from Aqua LAF
+            new BorderDefinedTypeSpecifier("well", BUTTON_TOOLBAR_ITEM),  // old name from Aqua LAF
             new BorderDefinedTypeSpecifier("toolbarItem", BUTTON_TOOLBAR_ITEM),
             new BorderDefinedTypeSpecifier("help", BUTTON_HELP),
             new BorderDefinedTypeSpecifier("round", BUTTON_ROUND),
             new BorderDefinedTypeSpecifier("round-onToolbar", OSXSystemProperties.OSVersion >= 1011 ? BUTTON_ROUND_TOOLBAR : BUTTON_ROUND),
-            new BorderDefinedTypeSpecifier("texturedRound", BUTTON_ROUND_INSET),   // TBD: this is not correct, but the button type is undocumented
+            new BorderDefinedTypeSpecifier("texturedRound", BUTTON_ROUND_INSET),  // TBD: this is not correct, but the button type is undocumented
             new BorderDefinedTypeSpecifier("roundTextured", BUTTON_ROUND_TEXTURED),
             new BorderDefinedTypeSpecifier("roundTextured-onToolbar", OSXSystemProperties.OSVersion >= 1011 ? BUTTON_ROUND_TOOLBAR : BUTTON_ROUND_TEXTURED),
             new BorderDefinedTypeSpecifier("roundInset", BUTTON_ROUND_INSET),

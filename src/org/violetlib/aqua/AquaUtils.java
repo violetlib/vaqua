@@ -39,6 +39,7 @@ import java.awt.event.ActionListener;
 import java.awt.event.HierarchyEvent;
 import java.awt.event.HierarchyListener;
 import java.awt.geom.Rectangle2D;
+import java.awt.geom.RoundRectangle2D;
 import java.awt.image.BufferedImage;
 import java.awt.image.ConvolveOp;
 import java.awt.image.Kernel;
@@ -80,6 +81,8 @@ final public class AquaUtils {
             toolbarStatusChanged(e);
         }
     };
+
+    private static final HierarchyListener insetViewHierarchyListener = new InsetViewHierarchyListener();
 
     private interface WindowAppearanceChangedCallback {
         void windowAppearanceChanged(@NotNull Window w, @NotNull String appearanceName);
@@ -1260,6 +1263,76 @@ final public class AquaUtils {
         return false;
     }
 
+    private static class InsetViewHierarchyListener implements HierarchyListener {
+        @Override
+        public void hierarchyChanged(@NotNull HierarchyEvent e) {
+            JComponent c = (JComponent) e.getComponent();
+            AquaViewStyleContainerUI ui = AquaUtils.getUI(c, AquaViewStyleContainerUI.class);
+            if (ui != null) {
+                JScrollPane sp = findScrollPaneAncestor(c);
+                ui.scrollPaneAncestorChanged(sp);
+            }
+        }
+    }
+
+    private static @Nullable JScrollPane findScrollPaneAncestor(@NotNull JComponent c) {
+        Container parent = c.getParent();
+        if (parent instanceof JViewport) {
+            parent = parent.getParent();
+            if (parent instanceof OverlayScrollPaneHack.AquaOverlayViewportHolder) {
+                parent = parent.getParent();
+            }
+            if (parent instanceof JScrollPane) {
+                return (JScrollPane) parent;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Install event listeners to help manage the automatic use of the inset selection style on the specified component.
+     * @param c The component.
+     * @throws IllegalArgumentException if {@code c} does not support {@link AquaViewStyleContainerUI}.
+     */
+    public static void installInsetViewListener(@NotNull JComponent c) {
+        AquaViewStyleContainerUI ui = AquaUtils.getUI(c, AquaViewStyleContainerUI.class);
+        if (ui != null) {
+            c.addHierarchyListener(insetViewHierarchyListener);
+        } else {
+            throw new IllegalArgumentException("Component must support AquaViewStyleContainerUI");
+        }
+    }
+
+    /**
+     * Uninstall the event listeners installed by {@link #installInsetViewListener}.
+     * @param c The component.
+     */
+    public static void uninstallInsetViewListener(@NotNull Component c) {
+        c.removeHierarchyListener(insetViewHierarchyListener);
+    }
+
+    /**
+     * Paint the inset style highlight for a selected cell.
+     */
+    public static void paintInsetCellSelection(@NotNull Graphics2D g, int cx, int cy, int cw, int ch) {
+        int top = 3;
+        int side = 5;
+        int radius = 8;
+        RoundRectangle2D r = new RoundRectangle2D.Float(cx + side, cy + top, cw - 2 * side, ch - 2 * top, radius, radius);
+        g.fill(r);
+    }
+
+    /**
+     * Paint the inset style highlight for a selected menu item.
+     */
+    public static void paintInsetMenuItemSelection(@NotNull Graphics2D g, int cx, int cy, int cw, int ch) {
+        int top = 0;
+        int side = 5;
+        int radius = 8;
+        RoundRectangle2D r = new RoundRectangle2D.Float(cx + side, cy + top, cw - 2 * side, ch - 2 * top, radius, radius);
+        g.fill(r);
+    }
+
     /**
      * Fill with specified color or erase.
      * @param g The graphics context.
@@ -1269,8 +1342,8 @@ final public class AquaUtils {
         Graphics cg = g.create();
 
         try {
-            if (color instanceof AquaColors.GradientColor && cg instanceof Graphics2D) {
-                AquaColors.GradientColor gradientColor = (AquaColors.GradientColor) color;
+            if (color instanceof AquaAppearance.GradientColor && cg instanceof Graphics2D) {
+                AquaAppearance.GradientColor gradientColor = (AquaAppearance.GradientColor) color;
                 Graphics2D gg = (Graphics2D) cg;
                 if (gradientColor.useMagicEraser()) {
                     gg.setComposite(AlphaComposite.Src);
@@ -1282,13 +1355,13 @@ final public class AquaUtils {
                 GradientPaint gp = new GradientPaint(0, y, start, 0, y + h, finish);
                 gg.setPaint(gp);
                 gg.fillRect(x, y, w, h);
-            } else if (color instanceof AquaColors.TintedEraser && cg instanceof Graphics2D) {
-                AquaColors.TintedEraser tintedEraser = (AquaColors.TintedEraser) color;
+            } else if (color instanceof AquaAppearance.TintedEraser && cg instanceof Graphics2D) {
+                AquaAppearance.TintedEraser tintedEraser = (AquaAppearance.TintedEraser) color;
                 Graphics2D gg = (Graphics2D) cg;
                 gg.setComposite(AlphaComposite.Src);
                 gg.setColor(AquaColors.CLEAR);
                 gg.fillRect(x, y, w, h);
-                cg.setColor(color);
+                cg.setColor(tintedEraser);
                 cg.fillRect(x, y, w, h);
             } else if (color != null && color != AquaColors.MAGIC_ERASER) {
                 cg.setColor(color);
@@ -1324,7 +1397,7 @@ final public class AquaUtils {
         return false;
     }
 
-    public static String getProperty(JComponent c, String... props) {
+    public static @Nullable String getProperty(JComponent c, String... props) {
         for (String prop : props) {
             Object o = c.getClientProperty(prop);
             if (o != null) {
@@ -1334,14 +1407,14 @@ final public class AquaUtils {
         return null;
     }
 
-    public static String toString(Object o) {
+    public static @Nullable String toString(@Nullable Object o) {
         if (o instanceof String) {
             return (String) o;
         }
         return null;
     }
 
-    public static Boolean getBooleanProperty(JComponent c, String... props) {
+    public static @Nullable Boolean getBooleanProperty(JComponent c, String... props) {
         for (String prop : props) {
             Object o = c.getClientProperty(prop);
             if (o != null) {
@@ -1351,14 +1424,14 @@ final public class AquaUtils {
         return null;
     }
 
-    public static Boolean toBoolean(Object o) {
+    public static @Nullable Boolean toBoolean(@Nullable Object o) {
         if (o instanceof Boolean) {
             return (Boolean) o;
         }
         return null;
     }
 
-    public static Integer getIntegerProperty(JComponent c, String... props) {
+    public static @Nullable Integer getIntegerProperty(JComponent c, String... props) {
         for (String prop : props) {
             Object o = c.getClientProperty(prop);
             if (o instanceof String) {
@@ -1374,7 +1447,7 @@ final public class AquaUtils {
         return null;
     }
 
-    public static String getProperty(String key) {
+    public static @Nullable String getProperty(@NotNull String key) {
         try {
             return System.getProperty(key);
         } catch (SecurityException ex) {
@@ -1382,7 +1455,7 @@ final public class AquaUtils {
         }
     }
 
-    public static String getProperty(String key, String def) {
+    public static @Nullable String getProperty(@NotNull String key, @Nullable String def) {
         try {
             return System.getProperty(key, def);
         } catch (SecurityException ex) {
@@ -1394,13 +1467,13 @@ final public class AquaUtils {
      * For use outside of the JDK in place of AppContext.get()
      */
 
-    public static Object get(Object key) {
+    public static @Nullable Object get(@NotNull Object key) {
         synchronized (appContextMap) {
             return appContextMap.get(key);
         }
     }
 
-    public static Object put(Object key, Object value) {
+    public static @Nullable Object put(@NotNull Object key, @Nullable Object value) {
         synchronized (appContextMap) {
             return appContextMap.put(key, value);
         }

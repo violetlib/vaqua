@@ -352,7 +352,7 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
         Color toolBarDragHandleColor = new ColorUIResource(140, 140, 140);
 
         LazyValue internalFrameBorder = t -> BasicBorders.getInternalFrameBorder();
-        Border cellBorder = new BorderUIResource.EmptyBorderUIResource(1, 1, 1, 1);
+        Border cellBorder = new AquaCellBorder();
 
         Color windowBackgroundColor = new ColorUIResource(237, 237, 237); // needed in macOS 10.13 and earlier
         Color panelBackgroundColor = windowBackgroundColor;
