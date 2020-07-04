@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2017 Alan Snyder.
+ * Copyright (c) 2015-2020 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -119,18 +119,19 @@ public class OverlayScrollPaneHack {
 
         if (holder != null && viewport != null && viewport.getParent() != holder) {
             holder.add(viewport);
-            scrollPane.revalidate();    // force layout, which will reinstall the viewport into the layout manager
+            scrollPane.revalidate();  // force layout, which will reinstall the viewport into the layout manager
         }
 
         Component view = viewport != null ? SwingUtilities.getUnwrappedView(viewport) : null;
 
         if (holder != null && (isNewHolder || view != lastKnownView)) {
             // Normally JTable does this, but it will be confused by our intermediate container
+            if (lastKnownView instanceof JTable) {
+                scrollPane.setColumnHeaderView(null);
+            }
             if (view instanceof JTable) {
                 JTable t = (JTable) view;
                 scrollPane.setColumnHeaderView(t.getTableHeader());
-            } else if (lastKnownView instanceof JTable) {
-                scrollPane.setColumnHeaderView(null);
             }
         }
 
