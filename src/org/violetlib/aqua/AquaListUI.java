@@ -240,8 +240,8 @@ public class AquaListUI extends BasicListUI implements AquaComponentUI, AquaView
 
     protected AquaUIPainter.State getState() {
         return list.isEnabled()
-                ? (isFocused ? AquaUIPainter.State.ACTIVE_DEFAULT : AquaUIPainter.State.ACTIVE)
-                : AquaUIPainter.State.DISABLED;
+          ? (isFocused ? AquaUIPainter.State.ACTIVE_DEFAULT : AquaUIPainter.State.ACTIVE)
+          : AquaUIPainter.State.DISABLED;
     }
 
     private void updateStriped() {
@@ -257,9 +257,9 @@ public class AquaListUI extends BasicListUI implements AquaComponentUI, AquaView
     private boolean getStripedValue() {
         String value = getStyleProperty();
         return "striped".equals(value)
-                && list.getLayoutOrientation() == JList.VERTICAL
-                && isBackgroundClear()
-                ;
+          && list.getLayoutOrientation() == JList.VERTICAL
+          && isBackgroundClear()
+          ;
     }
 
     @Override
@@ -381,13 +381,13 @@ public class AquaListUI extends BasicListUI implements AquaComponentUI, AquaView
 
     @Override
     protected void paintCell(
-            Graphics g,
-            int row,
-            Rectangle rowBounds,
-            ListCellRenderer cellRenderer,
-            ListModel dataModel,
-            ListSelectionModel selModel,
-            int leadIndex) {
+      Graphics g,
+      int row,
+      Rectangle rowBounds,
+      ListCellRenderer cellRenderer,
+      ListModel dataModel,
+      ListSelectionModel selModel,
+      int leadIndex) {
 
         int cx = rowBounds.x;
         int cy = rowBounds.y;
@@ -399,16 +399,22 @@ public class AquaListUI extends BasicListUI implements AquaComponentUI, AquaView
         boolean isEnabled = list.isEnabled();
         boolean isFocused = isEnabled && AquaFocusHandler.hasFocus(list);
         boolean cellHasFocus = isFocused && (row == leadIndex);
+        boolean isWrapped = list.getLayoutOrientation() != JList.VERTICAL;
 
+        colors.configureForRow(row, isSelected);
         if (isSelected) {
-            colors.configureForRow(row, true);
             Color background = colors.getBackground(appearanceContext);
             g.setColor(background);
             if (isInset) {
+                Graphics2D gg = (Graphics2D) g;
                 if (isMenu) {
-                    AquaUtils.paintInsetMenuItemSelection((Graphics2D) g, cx, cy, cw, ch);
+                    AquaUtils.paintInsetMenuItemSelection(gg, cx, cy, cw, ch);
+                } else if (isWrapped) {
+                    AquaUtils.paintInsetCellSelection(gg, cx, cy, cw, ch);
                 } else {
-                    AquaUtils.paintInsetCellSelection((Graphics2D) g, cx, cy, cw, ch);
+                    boolean isSelectedAbove = row > 0 && selModel.isSelectedIndex(row-1);
+                    boolean isSelectedBelow = row < list.getModel().getSize()-1 && selModel.isSelectedIndex(row+1);
+                    AquaUtils.paintInsetCellSelection(gg, isSelectedAbove, isSelectedBelow, cx, cy, cw, ch);
                 }
             } else if (!isStriped) {
                 g.fillRect(cx, cy, cw, ch);
@@ -417,7 +423,7 @@ public class AquaListUI extends BasicListUI implements AquaComponentUI, AquaView
 
         Object value = dataModel.getElementAt(row);
         Component rendererComponent =
-                cellRenderer.getListCellRendererComponent(list, value, row, isSelected, cellHasFocus);
+          cellRenderer.getListCellRendererComponent(list, value, row, isSelected, cellHasFocus);
 
         if (rendererComponent instanceof JTextComponent) {
             ((JTextComponent) rendererComponent).putClientProperty(AquaColors.COMPONENT_COLORS_KEY, AquaColors.CELL_TEXT_COLORS);

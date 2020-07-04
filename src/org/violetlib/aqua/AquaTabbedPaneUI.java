@@ -834,12 +834,13 @@ public class AquaTabbedPaneUI extends AquaTabbedPaneCopyFromBasicUI
 
     /**
      * Identify a region of the content background that should not be painted. This feature is needed to support
-     * tabbed panes that use translucent buttons (a feature currently only used in dark mode).
+     * tabbed panes that use translucent buttons (a feature originally used only in dark mode, but needed in light
+     * mode starting with macOS 11).
      */
     protected @Nullable Shapes getContentBorderCutout() {
         int tabCount = tabPane.getTabCount();
         if (tabCount > 0) {
-            if (DEBUG_CUTOUT || isDark) {
+            if (DEBUG_CUTOUT || isDark || OSXSystemProperties.OSVersion >= 1016) {
                 Shapes shapes = new Shapes();
 
                 if (visibleTabState.needsScrollTabs()) {

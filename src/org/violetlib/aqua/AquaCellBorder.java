@@ -16,7 +16,7 @@ import javax.swing.plaf.UIResource;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * A context dependent border for list and table cells.
+ * A context dependent border for list cells.
  */
 @SuppressWarnings("serial")
 public class AquaCellBorder extends AbstractBorder implements UIResource {

@@ -8,31 +8,28 @@
 
 package org.violetlib.aqua;
 
-import java.awt.Color;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
+import java.awt.*;
 import java.util.List;
-import java.util.Map;
+import java.util.*;
 import javax.swing.plaf.ColorUIResource;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.violetlib.vappearances.VAppearance;
 
-import org.jetbrains.annotations.*;
-
 /**
-  * An object representing a specific appearance, including the current accent and highlight colors.
-*/
+ * An object representing a specific appearance, including the current accent and highlight colors.
+ */
 
 public class BasicAquaAppearance implements VAppearance {
 
     private static final List<String> allColorSuffixes = Collections.unmodifiableList(Arrays.asList(
-      "_rollover",
-      "_pressed",
-      "_inactive",
-      "_disabled",
-      "_inactive_disabled",
-      "_focused"
+            "_rollover",
+            "_pressed",
+            "_inactive",
+            "_disabled",
+            "_inactive_disabled",
+            "_focused"
     ));
 
     public static @NotNull Color getOrdinaryColor(@NotNull Color c) {
@@ -114,10 +111,10 @@ public class BasicAquaAppearance implements VAppearance {
     }
 
     /**
-      * Return the color with the specified name.
-      * @param colorName The color name.
+     * Return the color with the specified name.
+     * @param colorName The color name.
      * @return the color, as a ColorUIResource, or null if the color name not defined in this appearance.
-    */
+     */
 
     public @Nullable Color getColor(@NotNull String colorName) {
         return colors.get(colorName);
@@ -191,8 +188,8 @@ public class BasicAquaAppearance implements VAppearance {
     }
 
     protected @NotNull Colors createColors(int OSVersion,
-                                              @NotNull SystemColors systemColors,
-                                              @NotNull Map<String,Color> nativeColors)
+                                           @NotNull SystemColors systemColors,
+                                           @NotNull Map<String,Color> nativeColors)
     {
         return new Colors();
     }
@@ -232,8 +229,8 @@ public class BasicAquaAppearance implements VAppearance {
         public final @NotNull Map<String,String> synonyms = new HashMap<>();
 
         /**
-          * This method is for final consumption only.
-        */
+         * This method is for final consumption only.
+         */
         public @NotNull Map<String,Color> getColors() {
             applySynonyms(synonyms);
             return Collections.unmodifiableMap(colors);

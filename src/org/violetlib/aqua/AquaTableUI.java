@@ -186,23 +186,19 @@ public class AquaTableUI extends BasicTableUI
             if (pn != null) {
                 if (pn.equals("enabled")) {
                     configureAppearanceContext(null);
-                    return;
-                }
-                if (pn.equals("selectionModel")) {
+                } else if (pn.equals("selectionModel")) {
                     ListSelectionModel old = (ListSelectionModel) ev.getOldValue();
                     updateSelectionListener(old);
-                }
-                if (isStyleProperty(pn)) {
+                } else if (isStyleProperty(pn)) {
                     updateStriped();
                     table.repaint();
-                }
-                if (isViewStyleProperty(pn)) {
+                } else if (isViewStyleProperty(pn)) {
                     updateInset();
-                }
-                if (pn.equals("background")) {
+                } else if (pn.equals("showHorizontalLines") || pn.equals("rowMargin")) {
+                    updateInset();
+                } else if (pn.equals("background")) {
                     repaintScrollPaneCorner();
-                }
-                if (pn.equals("tableCellEditor")) {
+                } else if (pn.equals("tableCellEditor")) {
                     if (cellEditorFocusManager != null) {
                         TableCellEditor oldEditor = (TableCellEditor) ev.getOldValue();
                         TableCellEditor editor = (TableCellEditor) ev.getNewValue();
@@ -229,6 +225,7 @@ public class AquaTableUI extends BasicTableUI
         originalBooleanEditor = installEditorIfPossible(Boolean.class, AquaBooleanEditor.class);
         isStriped = getStripedValue();
         configureAppearanceContext(null);
+        updateInset();
     }
 
     @Override
@@ -369,13 +366,21 @@ public class AquaTableUI extends BasicTableUI
         boolean value = getInsetValue();
         if (value != isInset) {
             isInset = value;
-            configureAppearanceContext(null);
+            table.setRowMargin(isInset ? 0 : 1);
+            table.revalidate();
+            table.repaint();
         }
     }
 
     private boolean getInsetValue() {
+        // The inset view style is inhibited if the row margin is greater than 1 or horizontal lines are displayed. When
+        // the inset view style is installed, the row margin is set to zero, to allow joining of adjacent selected
+        // rows.
+
         String value = getViewStyleProperty();
-        return "inset".equals(value);
+        return "inset".equals(value)
+                && table.getRowMargin() <= 1
+                && !table.getShowHorizontalLines();
     }
 
     private boolean isBackgroundClear() {
@@ -586,7 +591,12 @@ public class AquaTableUI extends BasicTableUI
                 g.setColor(rowBackground);
 
                 if (isSelected && isInset) {
-                    AquaUtils.paintInsetCellSelection((Graphics2D) g, 0, cellRect.y, tableWidth, cellRect.height);
+                    Graphics2D gg = (Graphics2D) g;
+                    int y = cellRect.y;
+                    int h = cellRect.height;
+                    boolean isSelectedAbove = row > 0 && table.isRowSelected(row-1);
+                    boolean isSelectedBelow = row < table.getRowCount()-1 && table.isRowSelected(row+1);
+                    AquaUtils.paintInsetCellSelection(gg, isSelectedAbove, isSelectedBelow, 0, y, tableWidth, h);
                 } else if (isSelected && isEditing && editingRow == row && editingColumn >= cMin && editingColumn <= cMax) {
                     // If this row contains the active cell editor, do not paint the selection background under it.
                     // Paint the striped background instead, if appropriate.
@@ -721,8 +731,7 @@ public class AquaTableUI extends BasicTableUI
 
             // Paint a gray well in place of the moving column.
             g.setColor(table.getParent().getBackground());
-            g.fillRect(vacatedColumnRect.x, vacatedColumnRect.y,
-                    vacatedColumnRect.width, vacatedColumnRect.height);
+            g.fillRect(vacatedColumnRect.x, vacatedColumnRect.y, vacatedColumnRect.width, vacatedColumnRect.height);
 
             // Move to the where the cell has been dragged.
             vacatedColumnRect.x += distance;

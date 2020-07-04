@@ -61,6 +61,7 @@ import javax.swing.text.View;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.violetlib.aqua.AquaImageFactory.SlicedImageControl;
+import org.violetlib.geom.GeneralRoundRectangle;
 import org.violetlib.jnr.Insets2D;
 import org.violetlib.jnr.Insetter;
 import org.violetlib.jnr.aqua.AquaUIPainter;
@@ -1312,7 +1313,7 @@ final public class AquaUtils {
     }
 
     /**
-     * Paint the inset style highlight for a selected cell.
+     * Paint the isolated inset style highlight for a selected cell.
      */
     public static void paintInsetCellSelection(@NotNull Graphics2D g, int cx, int cy, int cw, int ch) {
         int top = 3;
@@ -1320,6 +1321,30 @@ final public class AquaUtils {
         int radius = 8;
         RoundRectangle2D r = new RoundRectangle2D.Float(cx + side, cy + top, cw - 2 * side, ch - 2 * top, radius, radius);
         g.fill(r);
+    }
+
+    /**
+     * Paint the inset style highlight for a selected cell that might be part of a vertical group.
+     */
+    public static void paintInsetCellSelection(@NotNull Graphics2D g, boolean isSelectedAbove, boolean isSelectedBelow,
+                                               int cx, int cy, int cw, int ch) {
+        int top = 0;
+        int side = 5;
+        int r = 8;
+        int x = cx + side;
+        int w = cw - 2 * side;
+
+        Shape s;
+        if (isSelectedAbove && isSelectedBelow) {
+            s = new Rectangle(x, cy, w, ch);
+        } else if (isSelectedAbove) {
+            s = new GeneralRoundRectangle(x, cy, w, ch - top, 0, 0, 0, 0, r, r, r, r);
+        } else if (isSelectedBelow) {
+            s = new GeneralRoundRectangle(x, cy + top, w, ch - top, r, r, r, r, 0, 0, 0, 0);
+        } else {
+            s = new RoundRectangle2D.Float(cx + side, cy + top, cw - 2 * side, ch - 2 * top, r, r);
+        }
+        g.fill(s);
     }
 
     /**
