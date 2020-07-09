@@ -24,7 +24,7 @@
             self.material = NSVisualEffectMaterialSidebar;
         }
         self.style = SIDEBAR_STYLE;
-        selectionMaterial = 4;
+        selectionMaterial = NSVisualEffectMaterialSelection;
 
         self.wantsLayer = YES;
         self.autoresizesSubviews = YES;
@@ -63,6 +63,11 @@
             v.autoresizingMask = NSViewWidthSizable;
             v.blendingMode = NSVisualEffectBlendingModeBehindWindow;
             v.material = selectionMaterial;
+
+            // The following works on macOS 11, but does nothing on 10.14
+            v.layer.cornerRadius = 5;
+            v.layer.masksToBounds = YES;
+
             [selectionViews addObject: v];
             [self addSubview: v];
         }

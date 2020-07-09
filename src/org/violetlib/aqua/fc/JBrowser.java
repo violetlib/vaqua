@@ -1,5 +1,5 @@
 /*
- * Changes copyright (c) 2014-2019 Alan Snyder.
+ * Changes copyright (c) 2014-2020 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -77,7 +77,6 @@ public class JBrowser extends JComponent implements Scrollable {
 
     /**
      * @see #getUIClassID
-     * @see #writeObject
      */
     private static final String uiClassID = "BrowserUI";
 
@@ -1508,7 +1507,11 @@ public class JBrowser extends JComponent implements Scrollable {
     }
 
     protected @NotNull JList createColumnList(@NotNull ColumnListModel m) {
-        return new ColumnList(m);
+        JList list = new ColumnList(m);
+        if (OSXSystemProperties.OSVersion >= 1016) {
+            list.putClientProperty("JList.viewStyle", "inset");
+        }
+        return list;
     }
 
     protected class ColumnList extends JList {

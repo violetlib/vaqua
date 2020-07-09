@@ -33,6 +33,8 @@
 
 package org.violetlib.aqua;
 
+import javax.swing.*;
+
 import org.violetlib.jnr.aqua.AquaUIPainter;
 import org.violetlib.jnr.aqua.AquaUIPainter.Position;
 import org.violetlib.jnr.aqua.AquaUIPainter.SegmentedButtonWidget;
@@ -41,8 +43,6 @@ import org.violetlib.jnr.aqua.AquaUIPainter.State;
 import org.violetlib.jnr.aqua.Configuration;
 import org.violetlib.jnr.aqua.SegmentedButtonConfiguration;
 import org.violetlib.jnr.aqua.SegmentedButtonLayoutConfiguration;
-
-import javax.swing.*;
 
 import static org.violetlib.jnr.aqua.SegmentedButtonConfiguration.DividerState;
 
@@ -88,12 +88,12 @@ public class AquaSegmentedButtonBorder extends AquaButtonBorder implements Focus
         // (hopefully) configured properly. Therefore, we cannot determine anything about the button to the left or
         // right.
 
-        boolean isSelected = model.isSelected();
+        AquaButtonExtendedTypes.WidgetInfo info = getWidgetInfo(b);
 
+        boolean isSelected = model.isSelected();
         if (isSelected) {
             // Special case for nonexclusive selected textured segmented buttons. Use the same background as the
             // non-selected button.
-            AquaButtonExtendedTypes.WidgetInfo info = getWidgetInfo(b);
             if (info.isTextured()) {
                 boolean useNonexclusive = shouldUseNonexclusiveStyle(b, info);
                 if (useNonexclusive) {
@@ -103,6 +103,15 @@ public class AquaSegmentedButtonBorder extends AquaButtonBorder implements Focus
         }
 
         AquaUIPainter.Direction d = AquaUIPainter.Direction.NONE;
+
+        // Special case for exclusive rounded buttons in macOS 11: use the TAB UP style.
+        if (OSXSystemProperties.OSVersion >= 1016
+                && g.getWidget() == SegmentedButtonWidget.BUTTON_SEGMENTED
+                && isButtonInGroup(b)) {
+            g = new SegmentedButtonLayoutConfiguration(SegmentedButtonWidget.BUTTON_TAB, g.getSize(), g.getPosition());
+            d = AquaUIPainter.Direction.UP;
+        }
+
         Position pos = g.getPosition();
         DividerState leftState = AquaSegmentedButtonBorder.getDividerState(false, false);
         DividerState rightState = AquaSegmentedButtonBorder.getDividerState(pos == Position.FIRST || pos == Position.MIDDLE, false);

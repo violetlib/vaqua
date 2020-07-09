@@ -348,6 +348,7 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
         Border listHeaderBorder = AquaTableHeaderBorder.getListHeaderBorder();
         Border zeroBorder = new BorderUIResource.EmptyBorderUIResource(0, 0, 0, 0);
         Border scrollPaneBorder = new AquaLineBorder("scrollPaneBorder");
+        Border treeBorder = new AquaTreeBorder();
 
         Color toolBarDragHandleColor = new ColorUIResource(140, 140, 140);
 
@@ -671,10 +672,10 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
 
                 // *** Table
                 "Table.font", viewFont, // [3577901] Aqua HIG says "default font of text in lists and tables" should be 12 point (vm).
-                "Table.focusCellHighlightBorder", cellBorder,
-                "Table.focusSelectedCellHighlightBorder", cellBorder,
+                "Table.cellNoFocusBorder", zeroBorder,
+                "Table.focusCellHighlightBorder", zeroBorder,
+                "Table.focusSelectedCellHighlightBorder", zeroBorder,
                 "Table.focusCellBackground", AquaColors.CLEAR, // used when table is focused, cell is clicked but selection is disabled
-                "Table.cellFocusNoBorder", cellBorder,
                 "Table.scrollPaneBorder", scrollPaneBorder,
                 "Table.scrollPaneCornerComponent",
                 (UIDefaults.ActiveValue) table1 -> new AquaTableScrollPaneCorner(),
@@ -732,6 +733,7 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
                 "ToolTip.border", toolTipBorder,
 
                 // *** Tree
+                "Tree.border", treeBorder,
                 "Tree.font", viewFont, // [3577901] Aqua HIG says "default font of text in lists and tables" should be 12 point (vm).
                 "Tree.editorBorder", zeroBorder,
                 "Tree.leftChildIndent", 8,

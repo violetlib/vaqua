@@ -55,7 +55,10 @@ public class AquaAppearance extends BasicAquaAppearance {
 
         String extendedName = colorName + "_" + effectName;
         Color c = getColor(extendedName);
-        return c;
+        if (c != null) {
+            return c;
+        }
+        return getColor(colorName);
     }
 
     /**

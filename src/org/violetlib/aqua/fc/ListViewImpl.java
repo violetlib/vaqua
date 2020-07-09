@@ -68,6 +68,9 @@ public class ListViewImpl extends ListView {
         tree = new MyTreeTable(fakeTreeModel, new MyTreeColumnModel(), tableColumnModel);
         tree.setUI(new MyTreeTableUI(fc, tree));
         tree.putClientProperty("JTree.style", "striped");   // this probably has no effect
+        if (OSXSystemProperties.OSVersion >= 1016) {
+            tree.putClientProperty("JTree.viewStyle", "inset");
+        }
         tree.setRootVisible(false);
         tree.setAlternateRowColor(tree.getBackground());
         tree.setBackground(UIManager.getColor("List.alternateBackground.0"));

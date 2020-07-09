@@ -253,7 +253,7 @@ public class AquaProgressBarUI
         if (progressBar.isIndeterminate()) {
             int frameCount = isCircular ? (OSVersion >= 1016 ? 24 : 15) : 90;
             long intervals = System.currentTimeMillis() / (repaintInterval > 0 ? repaintInterval : 100);
-            int speed = isCircular ? 3 : 4;
+            int speed = isCircular ? (OSVersion >= 1016 ? 3 : 1) : 4;
             int animationFrame = (int) (speed * intervals % frameCount);
             AquaUIPainter.ProgressWidget w = isCircular ? ProgressWidget.INDETERMINATE_SPINNER : ProgressWidget.INDETERMINATE_BAR;
             return new IndeterminateProgressIndicatorConfiguration(w, sizeVariant, state, orientation, animationFrame);

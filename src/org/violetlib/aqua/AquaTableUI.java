@@ -87,6 +87,8 @@ public class AquaTableUI extends BasicTableUI
 
     private boolean isStriped = false;
     private boolean isInset = false;
+    private int insetMargin = 15;
+    private @Nullable AquaTableMarginHack.ExtendedTable extendedTable;
     protected @NotNull ContainerContextualColors colors;
     protected @Nullable AppearanceContext appearanceContext;
     protected @Nullable Color actualTableBackground;
@@ -191,7 +193,6 @@ public class AquaTableUI extends BasicTableUI
                     updateSelectionListener(old);
                 } else if (isStyleProperty(pn)) {
                     updateStriped();
-                    table.repaint();
                 } else if (isViewStyleProperty(pn)) {
                     updateInset();
                 } else if (pn.equals("showHorizontalLines") || pn.equals("rowMargin")) {
@@ -225,6 +226,10 @@ public class AquaTableUI extends BasicTableUI
         originalBooleanEditor = installEditorIfPossible(Boolean.class, AquaBooleanEditor.class);
         isStriped = getStripedValue();
         configureAppearanceContext(null);
+        extendedTable = AquaTableMarginHack.getExtendedTable(table);
+        if (extendedTable != null) {
+            extendedTable.installDefaultMargins(0, 0);
+        }
         updateInset();
     }
 
@@ -366,6 +371,10 @@ public class AquaTableUI extends BasicTableUI
         boolean value = getInsetValue();
         if (value != isInset) {
             isInset = value;
+            if (extendedTable != null) {
+                int margin = isInset ? insetMargin : 0;
+                extendedTable.installDefaultMargins(margin, margin);
+            }
             table.setRowMargin(isInset ? 0 : 1);
             table.revalidate();
             table.repaint();
@@ -383,11 +392,6 @@ public class AquaTableUI extends BasicTableUI
                 && !table.getShowHorizontalLines();
     }
 
-    private boolean isBackgroundClear() {
-        Color c = table.getBackground();
-        return c == null || c.getAlpha() == 0 || c instanceof ColorUIResource;
-    }
-
     public boolean isStriped() {
         return isStriped;
     }
@@ -395,6 +399,11 @@ public class AquaTableUI extends BasicTableUI
     @Override
     public boolean isInset() {
         return isInset;
+    }
+
+    private boolean isBackgroundClear() {
+        Color c = table.getBackground();
+        return c == null || c.getAlpha() == 0 || c instanceof ColorUIResource;
     }
 
     protected boolean tableHasFocus() {
@@ -419,6 +428,32 @@ public class AquaTableUI extends BasicTableUI
 
     protected String getViewStyleProperty() {
         return AquaUtils.getProperty(table, TABLE_VIEW_STYLE_KEY);
+    }
+
+    @Override
+    public @NotNull Dimension getMinimumSize(JComponent c) {
+        Dimension d = super.getMinimumSize(c);
+        return isInset ? expand(d) : d;
+    }
+
+    @Override
+    public @NotNull Dimension getPreferredSize(JComponent c) {
+        Dimension d = super.getPreferredSize(c);
+        return isInset ? expand(d) : d;
+    }
+
+    @Override
+    public @NotNull Dimension getMaximumSize(JComponent c) {
+        Dimension d = super.getMaximumSize(c);
+        return isInset ? expand(d) : d;
+    }
+
+    private @NotNull Dimension expand(@NotNull Dimension d) {
+        long expanded = (long) d.width + 2 * insetMargin;
+        if (expanded > Integer.MAX_VALUE) {
+            expanded = Integer.MAX_VALUE;
+        }
+        return new Dimension((int) expanded, d.height);
     }
 
     /**

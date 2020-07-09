@@ -16,28 +16,24 @@ import javax.swing.plaf.UIResource;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * A context dependent border for list cells.
+ * A context dependent border for trees that supports side margins when the inset view style is in use.
  */
 @SuppressWarnings("serial")
-public class AquaCellBorder extends AbstractBorder implements UIResource {
+public class AquaTreeBorder extends AbstractBorder implements UIResource {
 
     public Insets getBorderInsets(@NotNull Component c, @NotNull Insets insets) {
         boolean isInset = computeIsInset((JComponent)c);
-        int top = isInset ? 5 : 1;
-        int side = isInset ? 20 : 1;
+        int top = 0;
+        int side = isInset ? 10 : 1;
         insets.top = insets.bottom = top;
         insets.left = insets.right = side;
         return insets;
     }
 
     private boolean computeIsInset(@NotNull JComponent c) {
-        Container parent = c.getParent();
-        if (parent instanceof CellRendererPane) {
-            parent = parent.getParent();
-            AquaViewStyleContainerUI ui = AquaUtils.getUI((JComponent) parent, AquaViewStyleContainerUI.class);
-            if (ui != null) {
-                return ui.isInset();
-            }
+        AquaTreeUI ui = AquaUtils.getUI(c, AquaTreeUI.class);
+        if (ui != null) {
+            return ui.isInset();
         }
         return false;
     }

@@ -469,6 +469,11 @@ public class AquaColors {
             boolean isStriped = getListStriped(list);
             boolean isInset = getListInset(list);
             installListColors(list, context, colors, isStriped, isInset);
+        } else if (c instanceof JTree) {
+            JTree tree = (JTree) c;
+            boolean isStriped = getTreeStriped(tree);
+            boolean isInset = getTreeInset(tree);
+            installTreeColors(tree, context, colors, isStriped, isInset);
         } else {
             installBasicColors(c, context, colors);
         }
@@ -484,6 +489,11 @@ public class AquaColors {
         return ui != null && ui.isStriped();
     }
 
+    private static boolean getTreeStriped(@NotNull JTree tree) {
+        AquaTreeUI ui = AquaUtils.getUI(tree, AquaTreeUI.class);
+        return ui != null && ui.isStriped();
+    }
+
     private static boolean getListInset(@NotNull JList list) {
         AquaListUI ui = AquaUtils.getUI(list, AquaListUI.class);
         return ui != null && ui.isInset();
@@ -491,6 +501,11 @@ public class AquaColors {
 
     private static boolean getTableInset(@NotNull JTable table) {
         AquaTableUI ui = AquaUtils.getUI(table, AquaTableUI.class);
+        return ui != null && ui.isInset();
+    }
+
+    private static boolean getTreeInset(@NotNull JTree tree) {
+        AquaTreeUI ui = AquaUtils.getUI(tree, AquaTreeUI.class);
         return ui != null && ui.isInset();
     }
 
@@ -574,7 +589,7 @@ public class AquaColors {
 
         AppearanceContext selectedContext = context.withSelected(true);
 
-        if (isInset) {
+        if (isInset && c.getRowSelectionAllowed() && !c.getColumnSelectionAllowed()) {
             c.setSelectionBackground(AquaColors.CLEAR);
         } else if (!AquaColors.isPriority(c.getSelectionBackground())) {
             c.setSelectionBackground(colors.getBackground(selectedContext));
@@ -615,6 +630,27 @@ public class AquaColors {
 
         if (!AquaColors.isPriority(c.getSelectionForeground())) {
             c.setSelectionForeground(colors.getForeground(selectedContext));
+        }
+    }
+
+    private static void installTreeColors(@NotNull JTree c,
+                                          @NotNull AppearanceContext context,
+                                          @NotNull BasicContextualColors colors,
+                                          boolean isStriped,
+                                          boolean isInset) {
+
+        // A striped tree must have a clear background, so that a well-behaved tree cell renderer will paint a clear
+        // background and preserve the stripes. The reason is that tree cell renderers are supposed to obtain their
+        // colors from the tree. There is no generic interface that the tree UI can use to configure a renderer.
+
+        if (isStriped) {
+            c.setBackground(AquaColors.CLEAR);
+        } else if (!AquaColors.isPriority(c.getBackground())) {
+            c.setBackground(colors.getBackground(context));
+        }
+
+        if (!AquaColors.isPriority(c.getForeground())) {
+            c.setForeground(colors.getForeground(context));
         }
     }
 }

@@ -1317,7 +1317,7 @@ final public class AquaUtils {
      */
     public static void paintInsetCellSelection(@NotNull Graphics2D g, int cx, int cy, int cw, int ch) {
         int top = 3;
-        int side = 5;
+        int side = 10;
         int radius = 8;
         RoundRectangle2D r = new RoundRectangle2D.Float(cx + side, cy + top, cw - 2 * side, ch - 2 * top, radius, radius);
         g.fill(r);
@@ -1329,7 +1329,7 @@ final public class AquaUtils {
     public static void paintInsetCellSelection(@NotNull Graphics2D g, boolean isSelectedAbove, boolean isSelectedBelow,
                                                int cx, int cy, int cw, int ch) {
         int top = 0;
-        int side = 5;
+        int side = 10;
         int r = 8;
         int x = cx + side;
         int w = cw - 2 * side;
@@ -1352,7 +1352,7 @@ final public class AquaUtils {
      */
     public static void paintInsetMenuItemSelection(@NotNull Graphics2D g, int cx, int cy, int cw, int ch) {
         int top = 0;
-        int side = 5;
+        int side = 4;
         int radius = 8;
         RoundRectangle2D r = new RoundRectangle2D.Float(cx + side, cy + top, cw - 2 * side, ch - 2 * top, radius, radius);
         g.fill(r);

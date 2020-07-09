@@ -67,7 +67,7 @@ import org.violetlib.jnr.aqua.AquaUIPainter.UILayoutDirection;
  * AquaTreeUI supports the client property "value-add" system of customization See MetalTreeUI
  * This is heavily based on the 1.3.1 AquaTreeUI implementation.
  */
-public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, AquaComponentUI {
+public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, AquaComponentUI, AquaViewStyleContainerUI {
 
     public static ComponentUI createUI(JComponent c) {
         return new AquaTreeUI();
@@ -78,6 +78,7 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
 
     public static final String TREE_STYLE_KEY = "JTree.style";
     public static final String QUAQUA_TREE_STYLE_KEY = "Quaqua.Tree.style";
+    public static final String TREE_VIEW_STYLE_KEY = "JTree.viewStyle";
 
     // Begin Line Stuff from Metal
 
@@ -112,6 +113,7 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
     protected boolean isCellFilled;
     protected boolean isSideBar;
     protected boolean isStriped;
+    protected boolean isInset;
 
     // state variables for painting, needed because we share painting implementation with the superclass
     protected boolean shouldPaintSelection;
@@ -143,6 +145,7 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
     protected void installDefaults() {
         super.installDefaults();
 
+        LookAndFeel.installBorder(tree, "Tree.border");
         Object lineStyleFlag = tree.getClientProperty(LINE_STYLE);
         decodeLineStyle(lineStyleFlag);
 
@@ -156,6 +159,7 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
         isStriped = getStripedValue();  // avoid an unnecessary recalculation
         updateProperties();
         configureAppearanceContext(null);
+        updateInset();
     }
 
     @Override
@@ -325,7 +329,7 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
     }
 
     protected boolean shouldDisplayAsFocused() {
-        return tree.isEditing() || AquaFocusHandler.hasFocus(tree);
+        return AquaFocusHandler.hasFocus(tree) || tree.isEditing() && AquaFocusHandler.isActive(tree);
     }
 
     private void updateStriped() {
@@ -341,13 +345,36 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
         return "striped".equals(value) && isBackgroundClear();
     }
 
-    private boolean isBackgroundClear() {
-        Color c = tree.getBackground();
-        return c.getAlpha() == 0 || c instanceof ColorUIResource;
+    @Override
+    public void scrollPaneAncestorChanged(@Nullable JScrollPane sp) {
+    }
+
+    private void updateInset() {
+        boolean value = getInsetValue();
+        if (value != isInset) {
+            isInset = value;
+            tree.revalidate();
+            tree.repaint();
+        }
+    }
+
+    private boolean getInsetValue() {
+        String value = getViewStyleProperty();
+        return "inset".equals(value);
     }
 
     public boolean isStriped() {
         return isStriped;
+    }
+
+    @Override
+    public boolean isInset() {
+        return isInset;
+    }
+
+    private boolean isBackgroundClear() {
+        Color c = tree.getBackground();
+        return c.getAlpha() == 0 || c instanceof ColorUIResource;
     }
 
     protected boolean isCellFilledProperty(String prop) {
@@ -360,6 +387,14 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
 
     protected String getStyleProperty() {
         return AquaUtils.getProperty(tree, TREE_STYLE_KEY, QUAQUA_TREE_STYLE_KEY);
+    }
+
+    protected boolean isViewStyleProperty(String prop) {
+        return AquaUtils.isProperty(prop, TREE_VIEW_STYLE_KEY);
+    }
+
+    protected String getViewStyleProperty() {
+        return AquaUtils.getProperty(tree, TREE_VIEW_STYLE_KEY);
     }
 
     @Override
@@ -742,10 +777,22 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
                 return; // should not happen
             }
 
-            Color bc = getSpecialBackgroundForRow(row);
+            boolean isRowSelected = tree.isRowSelected(row) && shouldPaintSelection;
+            Color bc = getSpecialBackgroundForRow(row, isRowSelected);
             if (bc != null) {
-                g.setColor(bc);
-                g.fillRect(insets.left, bounds.y, rwidth, bounds.height);
+                Graphics2D gg = (Graphics2D) g;
+                gg.setColor(bc);
+                int cx = insets.left;
+                int cy = bounds.y;
+                int cw = rwidth;
+                int ch = bounds.height;
+                if (isInset && isRowSelected) {
+                    boolean isSelectedAbove = row > 0 && tree.isRowSelected(row-1);
+                    boolean isSelectedBelow = row < tree.getRowCount()-1 && tree.isRowSelected(row+1);
+                    AquaUtils.paintInsetCellSelection(gg, isSelectedAbove, isSelectedBelow, cx, cy, cw, ch);
+                } else {
+                    gg.fillRect(cx, cy, cw, ch);
+                }
             }
 
             if ((bounds.y + bounds.height) >= endY) {
@@ -758,11 +805,9 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
         colors.configureForContainer();
     }
 
-    protected @Nullable Color getSpecialBackgroundForRow(int row) {
+    protected @Nullable Color getSpecialBackgroundForRow(int row, boolean isRowSelected) {
 
         AppearanceContext ac = appearanceContext;
-
-        boolean isRowSelected = tree.isRowSelected(row) && shouldPaintSelection;
         if (isRowSelected) {
             if (sidebarVibrantEffects != null) {
                 // sidebar selection backgrounds are managed using special views
@@ -772,7 +817,6 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
         } else if (!isStriped) {
             return null;
         }
-
         colors.configureForRow(row, isRowSelected);
         return colors.getBackground(ac);
     }
@@ -1024,11 +1068,15 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
 
     class AquaPropertyChangeListener implements PropertyChangeListener {
         public void propertyChange(PropertyChangeEvent e) {
-            String name = e.getPropertyName();
-            if (name.equals(LINE_STYLE)) {
+            String pn = e.getPropertyName();
+            if (pn.equals(LINE_STYLE)) {
                 decodeLineStyle(e.getNewValue());
-            } else if (name.equals("enabled")) {
+            } else if (pn.equals("enabled")) {
                 configureAppearanceContext(null);
+            } else if (isStyleProperty(pn)) {
+                updateStriped();
+            } else if (isViewStyleProperty(pn)) {
+                updateInset();
             }
         }
     }

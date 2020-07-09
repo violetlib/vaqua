@@ -212,7 +212,7 @@ public abstract class AquaButtonBorder extends AquaBorder implements BackgroundP
 
     protected boolean shouldUseNonexclusiveStyle(AbstractButton b, AquaButtonExtendedTypes.WidgetInfo info) {
         // Some segmented buttons should use a special style when selected and they are not in a button
-        // group. This correponds to the "select any" option in AppKit.
+        // group. This corresponds to the "select any" option in AppKit.
 
         // These buttons are textured or separated.
 
