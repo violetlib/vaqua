@@ -37,6 +37,7 @@ import javax.swing.text.Position;
 import javax.swing.tree.*;
 
 import org.violetlib.aqua.AquaUtils;
+import org.violetlib.aqua.OSXSystemProperties;
 import org.violetlib.treetable.*;
 import org.violetlib.treetable.TreeTable.DropLocation;
 
@@ -286,6 +287,9 @@ public class BasicTreeTableUI extends TreeTableUI {
         table.setShowVerticalLines(false);
         table.setRowHeight(20);
         table.setColumnModel(new ColumnModelAdapter(cm));
+        if (OSXSystemProperties.useInsetViewStyle()) {
+            table.putClientProperty("JTable.viewStyle", "inset");
+        }
         return table;
     }
 
@@ -960,7 +964,7 @@ public class BasicTreeTableUI extends TreeTableUI {
         }
     }
 
-    private class Table extends JTable implements TableInterface, ProcessKeyBinding {
+    private class Table extends InternalTableWithMargins implements TableInterface, ProcessKeyBinding {
 
         Table(TableModel tm, TableColumnModel cm, ListSelectionModel sm) {
             super(tm, cm, sm);

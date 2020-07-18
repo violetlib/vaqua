@@ -211,14 +211,12 @@ public class AquaSliderUI extends BasicSliderUI
         boolean isHorizontal = slider.getOrientation() == SwingConstants.HORIZONTAL;
         TickMarkPosition tickPosition = isHorizontal ? TickMarkPosition.BELOW : TickMarkPosition.RIGHT;
         SliderWidget widget = getSliderWidget();
-
         SliderLayoutConfiguration sg = new SliderLayoutConfiguration(widget, sizeVariant, tickCount, tickPosition);
         LayoutInfo layoutInfo = painter.getLayoutInfo().getLayoutInfo(sg);
         fixedWidth = (int) Math.ceil(layoutInfo.getFixedVisualWidth());
         fixedHeight = (int) Math.ceil(layoutInfo.getFixedVisualHeight());
 
         // the following should be unnecessary
-
         if (isHorizontal) {
             if (fixedHeight == 0) {
                 fixedHeight = 23;
@@ -303,9 +301,7 @@ public class AquaSliderUI extends BasicSliderUI
 
     protected SliderConfiguration getConfiguration() {
         State state = getState();
-
         int valueRange = (slider.getMaximum() - slider.getMinimum());
-
         int tickCount = 0;
         if (slider.getPaintTicks() && valueRange > 0) {
             int tickSpacing = getTickSpacing();
@@ -313,7 +309,6 @@ public class AquaSliderUI extends BasicSliderUI
                 tickCount = valueRange / tickSpacing + 1;
             }
         }
-
         double thumbPosition = valueRange > 0 ? (slider.getValue() - slider.getMinimum()) / ((double) valueRange) : 0;
         SliderWidget widget = getSliderWidget();
         TickMarkPosition tickPosition = getTickMarkPosition();
@@ -324,10 +319,8 @@ public class AquaSliderUI extends BasicSliderUI
     protected TickMarkPosition getTickMarkPosition() {
 
         // TBD: should be an option for tick mark position
-
         boolean isLeftToRight = slider.getComponentOrientation().isLeftToRight();
         boolean isHorizontal = slider.getOrientation() == SwingConstants.HORIZONTAL;
-
         if (isHorizontal) {
             return TickMarkPosition.BELOW;
         } else {
@@ -707,7 +700,7 @@ public class AquaSliderUI extends BasicSliderUI
         AquaFocusRingManager.focusRingOutlineChanged(slider);
     }
 
-    public void paintLabels( Graphics g ) {
+    public void paintLabels(Graphics g) {
 
         // TBD: support labels on circular sliders
         if (isCircular) {

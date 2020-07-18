@@ -496,7 +496,7 @@ final public class AquaUtils {
         return result != 0;
     }
 
-    // The following are copied from SwingUtililties, with modification.
+    // The following are copied from SwingUtilities, with modification.
 
     /**
      * Compute and return the location of the icons origin, the
@@ -507,9 +507,9 @@ final public class AquaUtils {
      * into account and translated into LEFT/RIGHT values accordingly.
      *
      * @param c the component
-     * @param fm the instance of {@code FontMetrics}
+     * @param fm the instance of {@code FontMetrics}, may be null if the text does not matter
      * @param text the text
-     * @param icon the icon
+     * @param iconSize the size of the icon, or null if there is no icon
      * @param verticalAlignment the vertical alignment
      * @param horizontalAlignment the horizontal alignment
      * @param verticalTextPosition the vertical text position
@@ -522,9 +522,9 @@ final public class AquaUtils {
      * @return the possibly clipped version of the compound labels string
      */
     public static String layoutCompoundLabel(JComponent c,
-                                             FontMetrics fm,
+                                             @Nullable FontMetrics fm,
                                              String text,
-                                             Icon icon,
+                                             @Nullable Dimension iconSize,
                                              int verticalAlignment,
                                              int horizontalAlignment,
                                              int verticalTextPosition,
@@ -569,7 +569,7 @@ final public class AquaUtils {
         return layoutCompoundLabelImpl(c,
                 fm,
                 text,
-                icon,
+                iconSize,
                 verticalAlignment,
                 hAlign,
                 verticalTextPosition,
@@ -590,15 +590,16 @@ final public class AquaUtils {
      * horizontalAlignment (they will default to CENTER).
      * Use the other version of layoutCompoundLabel() instead.
      *
-     * This is the same as SwingUtilities.layoutCompoundLabelImpl, except for
-     * the algorithm for clipping the text. If a text is too long, "..." are
+     * This is the same as SwingUtilities.layoutCompoundLabelImpl, except:
+     * An icon size is provided instead of the actual icon.
+     * The algorithm for clipping the text is different. If a text is too long, "..." is
      * inserted at the middle of the text instead of at the end.
      */
     private static String layoutCompoundLabelImpl(
             JComponent c,
-            FontMetrics fm,
+            @Nullable FontMetrics fm,
             String text,
-            Icon icon,
+            @Nullable Dimension iconSize,  // null if no icon
             int verticalAlignment,
             int horizontalAlignment,
             int verticalTextPosition,
@@ -611,9 +612,9 @@ final public class AquaUtils {
         /* Initialize the icon bounds rectangle iconR.
          */
 
-        if (icon != null) {
-            iconR.width = icon.getIconWidth();
-            iconR.height = icon.getIconHeight();
+        if (iconSize != null) {
+            iconR.width = iconSize.width;
+            iconR.height = iconSize.height;
         } else {
             iconR.width = iconR.height = 0;
         }
@@ -635,9 +636,8 @@ final public class AquaUtils {
             if (v != null) {
                 textR.width = (int) v.getPreferredSpan(View.X_AXIS);
                 textR.height = (int) v.getPreferredSpan(View.Y_AXIS);
-            } else {
+            } else if (fm != null) {
                 textR.width = SwingUtilities.computeStringWidth(fm, text);
-
                 lsb = getLeftSideBearing(c, fm, text);
                 if (lsb < 0) {
                     // If lsb is negative, add it to the width, the
@@ -653,7 +653,7 @@ final public class AquaUtils {
          * value of gap instead of textIconGap.
          */
 
-        int gap = (textIsEmpty || (icon == null)) ? 0 : textIconGap;
+        int gap = (textIsEmpty || (iconSize == null)) ? 0 : textIconGap;
 
         if (!textIsEmpty) {
 
@@ -671,7 +671,7 @@ final public class AquaUtils {
             }
 
             if (textR.width > availTextWidth) {
-                if (v != null) {
+                if (v != null || fm == null) {
                     textR.width = availTextWidth;
                 } else {
                     String clipString = "...";
@@ -690,7 +690,6 @@ final public class AquaUtils {
                 }
             }
         }
-
 
         /* Compute textR.x,y given the verticalTextPosition and
          * horizontalTextPosition properties
@@ -1310,6 +1309,16 @@ final public class AquaUtils {
      */
     public static void uninstallInsetViewListener(@NotNull Component c) {
         c.removeHierarchyListener(insetViewHierarchyListener);
+    }
+
+    /**
+     * Apply equal side margins to the specified bounds.
+     */
+    public static @NotNull Rectangle applySideMargins(@NotNull Rectangle r, int margin) {
+        if (margin > 0) {
+            r = new Rectangle(r.x + margin, r.y, r.width - 2 * margin, r.height);
+        }
+        return r.isEmpty() ? new Rectangle(0, 0, 0, 0) : r;
     }
 
     /**

@@ -1,5 +1,5 @@
 /*
- * Changes Copyright (c) 2015-2018 Alan Snyder.
+ * Changes Copyright (c) 2015-2020 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -35,6 +35,8 @@ package org.violetlib.aqua;
 
 import javax.swing.*;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.violetlib.jnr.aqua.AquaUIPainter;
 import org.violetlib.jnr.aqua.AquaUIPainter.Position;
 import org.violetlib.jnr.aqua.AquaUIPainter.SegmentedButtonWidget;
@@ -52,28 +54,49 @@ import static org.violetlib.jnr.aqua.SegmentedButtonConfiguration.DividerState;
  */
 public class AquaSegmentedButtonBorder extends AquaButtonBorder implements FocusRingOutlineProvider {
 
-    protected final SegmentedButtonWidget widget;
-    protected final AquaButtonExtendedTypes.WidgetInfo info;
-    protected final Position position;
+    protected final @NotNull SegmentedButtonWidget widget;
+    protected final @NotNull AquaButtonExtendedTypes.WidgetInfo info;
+    protected final @NotNull Position position;
 
-    public AquaSegmentedButtonBorder(SegmentedButtonWidget widget, AquaButtonExtendedTypes.WidgetInfo info, Position position) {
+    /**
+     * Create a border for a segmented button. The widget is provisional. The widget may be superseded in some cases
+     * based on the group membership of the button at the time the widget is used.
+     */
+    public AquaSegmentedButtonBorder(@NotNull SegmentedButtonWidget widget,
+                                     @NotNull AquaButtonExtendedTypes.WidgetInfo info,
+                                     @NotNull Position position) {
         this.widget = widget;
         this.info = info;
         this.position = position;
     }
 
     @Override
-    public SegmentedButtonWidget getButtonWidget(AbstractButton b) {
+    public SegmentedButtonWidget getButtonWidget(@NotNull AbstractButton b) {
+        AquaButtonUI ui = AquaUtils.getUI(b, AquaButtonUI.class);
+        if (ui != null && ui.isGroupMember(b)) {
+            return getWidgetForGroupMember(b);
+        }
+        return widget;
+    }
+
+    private @NotNull SegmentedButtonWidget getWidgetForGroupMember(@NotNull AbstractButton b) {
+        // Special case for exclusive rounded buttons starting in macOS 11
+        if (OSXSystemProperties.OSVersion >= 1016 && widget == SegmentedButtonWidget.BUTTON_SEGMENTED) {
+            SegmentedButtonWidget w = getSegmentedSliderWidget();
+            if (w != null) {
+                return w;
+            }
+        }
         return widget;
     }
 
     @Override
-    protected AquaButtonExtendedTypes.WidgetInfo getWidgetInfo(AbstractButton b) {
+    protected @NotNull AquaButtonExtendedTypes.WidgetInfo getWidgetInfo(@NotNull AbstractButton b) {
         return info;
     }
 
     @Override
-    public Configuration getConfiguration(AbstractButton b, int width, int height) {
+    public @Nullable Configuration getConfiguration(AbstractButton b, int width, int height) {
         SegmentedButtonLayoutConfiguration g = (SegmentedButtonLayoutConfiguration) getLayoutConfiguration(b);
         if (g == null) {
             // should not happen
@@ -102,24 +125,27 @@ public class AquaSegmentedButtonBorder extends AquaButtonBorder implements Focus
             }
         }
 
+        SegmentedButtonWidget widget = getButtonWidget(b);
+        Size sz = g.getSize();
         AquaUIPainter.Direction d = AquaUIPainter.Direction.NONE;
-
-        // Special case for exclusive rounded buttons in macOS 11: use the TAB UP style.
-        if (OSXSystemProperties.OSVersion >= 1016
-                && g.getWidget() == SegmentedButtonWidget.BUTTON_SEGMENTED
-                && isButtonInGroup(b)) {
-            g = new SegmentedButtonLayoutConfiguration(SegmentedButtonWidget.BUTTON_TAB, g.getSize(), g.getPosition());
-            d = AquaUIPainter.Direction.UP;
-        }
-
         Position pos = g.getPosition();
         DividerState leftState = AquaSegmentedButtonBorder.getDividerState(false, false);
         DividerState rightState = AquaSegmentedButtonBorder.getDividerState(pos == Position.FIRST || pos == Position.MIDDLE, false);
-        return new SegmentedButtonConfiguration(g, state, isSelected, isFocused, d, leftState, rightState);
+        return new SegmentedButtonConfiguration(widget, sz, state, isSelected, isFocused, d, pos, leftState, rightState);
+    }
+
+    private @Nullable SegmentedButtonWidget getSegmentedSliderWidget() {
+        // This field was introduced in release 10 of VAquaRendering
+        try {
+            return SegmentedButtonWidget.BUTTON_SEGMENTED_SLIDER;
+        } catch (NoSuchFieldError e) {
+            return null;
+        }
     }
 
     @Override
-    public SegmentedButtonLayoutConfiguration determineLayoutConfiguration(AbstractButton b) {
+    public @NotNull SegmentedButtonLayoutConfiguration determineLayoutConfiguration(@NotNull AbstractButton b) {
+        SegmentedButtonWidget widget = getButtonWidget(b);
         Size size = AquaUtilControlSize.getUserSizeFrom(b);
         return new SegmentedButtonLayoutConfiguration(widget, size, position);
     }
@@ -128,6 +154,8 @@ public class AquaSegmentedButtonBorder extends AquaButtonBorder implements Focus
         if (!isPainted) {
             return SegmentedButtonConfiguration.DividerState.NONE;
         }
-        return isSelected ? SegmentedButtonConfiguration.DividerState.SELECTED : SegmentedButtonConfiguration.DividerState.ORDINARY;
+        return isSelected
+                ? SegmentedButtonConfiguration.DividerState.SELECTED
+                : SegmentedButtonConfiguration.DividerState.ORDINARY;
     }
 }

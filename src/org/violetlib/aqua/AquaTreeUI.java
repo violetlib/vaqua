@@ -1,5 +1,5 @@
 /*
- * Changes Copyright (c) 2015-2018 Alan Snyder.
+ * Changes Copyright (c) 2015-2020 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -205,7 +205,7 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
     }
 
     protected @NotNull ContainerContextualColors determineColors() {
-        if (isSideBar) {
+        if (isSideBar()) {
             return AquaColors.SIDEBAR_CONTAINER_COLORS;
         }
         if (isStriped) {
@@ -216,7 +216,7 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
 
     protected void repaintScrollPane() {
         // The following supports the translucent legacy scroll bar used for a sidebar tree
-        if (isSideBar) {
+        if (isSideBar()) {
             Container parent = tree.getParent();
             if (parent instanceof JViewport) {
                 JViewport vp = (JViewport) parent;
@@ -243,14 +243,19 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
             updateStriped();
             if (newIsSidebar != isSideBar) {
                 isSideBar = newIsSidebar;
+                boolean oldInset = isInset();
                 updateSidebar();
+                if (oldInset != isInset()) {
+                    tree.revalidate();
+                    tree.repaint();
+                }
             }
         }
     }
 
     // Called on a change to isSideBar or the ancestry of the tree
     protected void updateSidebar() {
-        if (isSideBar && tree.isDisplayable()) {
+        if (isSideBar() && tree.isDisplayable()) {
             ensureSidebarVibrantEffects();
         } else {
             disposeSidebarVibrantEffects();
@@ -369,7 +374,7 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
 
     @Override
     public boolean isInset() {
-        return isInset;
+        return isInset || (isSideBar() && OSXSystemProperties.useInsetViewStyle());
     }
 
     private boolean isBackgroundClear() {
@@ -666,7 +671,7 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
      */
     @Override
     protected int getRowX(int row, int depth) {
-        if (isSideBar) {
+        if (isSideBar()) {
             if (depth > 1) {
                 depth--;
             }
@@ -735,7 +740,7 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
     }
 
     public @Nullable Color getCurrentBackground() {
-        if (isSideBar) {
+        if (isSideBar()) {
             return null;
         } else {
             return tree.getBackground();
@@ -786,7 +791,7 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
                 int cy = bounds.y;
                 int cw = rwidth;
                 int ch = bounds.height;
-                if (isInset && isRowSelected) {
+                if (isInset() && isRowSelected) {
                     boolean isSelectedAbove = row > 0 && tree.isRowSelected(row-1);
                     boolean isSelectedBelow = row < tree.getRowCount()-1 && tree.isRowSelected(row+1);
                     AquaUtils.paintInsetCellSelection(gg, isSelectedAbove, isSelectedBelow, cx, cy, cw, ch);
@@ -933,7 +938,7 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
             Color fc = appearanceContext != null ? colors.getForeground(appearanceContext) : null;
             Font f = null;
 
-            if (isSideBar) {
+            if (isSideBar()) {
                 Color iconColor = null;
 
                 if (appearanceContext != null) {

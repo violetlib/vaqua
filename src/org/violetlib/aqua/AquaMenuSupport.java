@@ -1,5 +1,5 @@
 /*
- * Changes Copyright (c) 2015-2018 Alan Snyder.
+ * Changes Copyright (c) 2015-2020 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -399,9 +399,15 @@ public class AquaMenuSupport {
         return (menuItem instanceof JMenu) && (((JMenu)menuItem).isTopLevelMenu());
     }
 
-    private String layoutMenuItem(JMenuItem menuItem, FontMetrics fm, String text, FontMetrics fmAccel, String keyString, String modifiersString, Icon icon, Icon checkIcon, Icon arrowIcon, int verticalAlignment, int horizontalAlignment, int verticalTextPosition, int horizontalTextPosition, Rectangle viewR, Rectangle iconR, Rectangle textR, Rectangle acceleratorR, Rectangle checkIconR, Rectangle arrowIconR, int textIconGap, int menuItemGap) {
+    private String layoutMenuItem(JMenuItem menuItem, FontMetrics fm, String text, FontMetrics fmAccel,
+                                  String keyString, String modifiersString, Icon icon, Icon checkIcon,
+                                  Icon arrowIcon, int verticalAlignment, int horizontalAlignment,
+                                  int verticalTextPosition, int horizontalTextPosition, Rectangle viewR,
+                                  Rectangle iconR, Rectangle textR, Rectangle acceleratorR, Rectangle checkIconR,
+                                  Rectangle arrowIconR, int textIconGap, int menuItemGap) {
         // Force it to do "LEFT", then flip the rects if we're right-to-left
-        AquaUtils.layoutCompoundLabel(menuItem, fm, text, icon, verticalAlignment, SwingConstants.LEFT, verticalTextPosition, horizontalTextPosition, viewR, iconR, textR, textIconGap);
+        Dimension iconSize = icon != null ? new Dimension(icon.getIconWidth(), icon.getIconHeight()) : null;
+        AquaUtils.layoutCompoundLabel(menuItem, fm, text, iconSize, verticalAlignment, SwingConstants.LEFT, verticalTextPosition, horizontalTextPosition, viewR, iconR, textR, textIconGap);
 
         boolean acceleratorTextIsEmpty = (keyString == null) || keyString.equals("");
 

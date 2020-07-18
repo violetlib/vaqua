@@ -1,5 +1,5 @@
 /*
- * Changes copyright (c) 2018 Alan Snyder.
+ * Changes copyright (c) 2018-2020 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -36,6 +36,7 @@ package org.violetlib.aqua;
 import javax.swing.*;
 import javax.swing.plaf.ComponentUI;
 
+import org.jetbrains.annotations.NotNull;
 import org.violetlib.aqua.AquaUtils.RecyclableSingleton;
 import org.violetlib.aqua.AquaUtils.RecyclableSingletonFromDefaultConstructor;
 
@@ -49,5 +50,19 @@ public class AquaButtonToggleUI extends AquaButtonUI {
 
     protected String getPropertyPrefix() {
         return "ToggleButton" + ".";
+    }
+
+    // The layout parameters and rendering of a toggle button may be impacted by whether or not the button is a member
+    // of a group. Unfortunately, there are no notifications when group membership changes. To reduce overhead, we
+    // limit group membership checking to those cases where it might make a difference.
+
+    @Override
+    public boolean isPotentiallyGroupSensitive(@NotNull AbstractButton b) {
+        // Group membership sensitivity was introduced in macOS 11 for rounded segmented buttons.
+        if (OSXSystemProperties.OSVersion < 1016) {
+            return false;
+        }
+        String buttonType = AquaButtonExtendedTypes.getBasicButtonType(b, false);
+        return "segmented".equals(buttonType);
     }
 }

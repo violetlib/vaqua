@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014-2015 Alan Snyder.
+ * Copyright (c) 2014-2020 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -10,6 +10,8 @@ package org.violetlib.aqua;
 
 import javax.swing.*;
 import java.awt.*;
+
+import org.jetbrains.annotations.Nullable;
 
 /**
  * An interface to allow a component UI to return a focus ring outline for a component.
@@ -31,5 +33,5 @@ public interface FocusRingOutlineProvider {
      * @return the focus ring outline, relative to the component bounds, or null if the component should not display a
      * focus ring.
      */
-    Shape getFocusRingOutline(JComponent c);
+    @Nullable Shape getFocusRingOutline(JComponent c);
 }

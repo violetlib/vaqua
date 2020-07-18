@@ -1,5 +1,5 @@
 /*
- * Changes Copyright (c) 2015-2018 Alan Snyder.
+ * Changes Copyright (c) 2015-2020 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -483,13 +483,12 @@ public class AquaTabbedPaneUI extends AquaTabbedPaneCopyFromBasicUI
             g = gg;
         }
 
-        paintTabBackground(g, tabRect, isSelected, isLeftToRight, nonRectIndex);
-
+        SegmentedButtonConfiguration bg = getConfiguration(isSelected, isLeftToRight, nonRectIndex);
+        paintTabBackground(g, tabRect, bg);
         Insets labelInsets = getTabInsets(tabPlacement, nonRectIndex);
         fContentRect.setBounds(tabRect.x + labelInsets.left, tabRect.y + labelInsets.top,
                 tabRect.width - labelInsets.left - labelInsets.right, tabRect.height - labelInsets.top - labelInsets.bottom);
-
-        paintContents(g, tabPlacement, nonRectIndex, tabRect, iconRect, textRect, isSelected);
+        paintTabContents(g, tabPlacement, nonRectIndex, tabRect, iconRect, textRect, bg);
 
         if (isVertical) {
             g.dispose();
@@ -499,11 +498,8 @@ public class AquaTabbedPaneUI extends AquaTabbedPaneCopyFromBasicUI
 
     protected void paintTabBackground(@NotNull Graphics g,
                                       @NotNull Rectangle tabRect,
-                                      boolean isSelected,
-                                      boolean isLeftToRight,
-                                      int nonRectIndex) {
+                                      @NotNull SegmentedButtonConfiguration bg) {
         AquaUtils.configure(painter, tabPane, tabRect.width, tabRect.height);
-        SegmentedButtonConfiguration bg = getConfiguration(isSelected, isLeftToRight, nonRectIndex);
         Painter p = painter.getPainter(bg);
         p.paint(g, tabRect.x, tabRect.y);
     }
@@ -556,13 +552,13 @@ public class AquaTabbedPaneUI extends AquaTabbedPaneCopyFromBasicUI
                 isFocused, Direction.UP, segmentPosition, leftState, rightState);
     }
 
-    protected void paintContents(@NotNull Graphics g,
-                                 int tabPlacement,
-                                 int tabIndex,
-                                 Rectangle tabRect,
-                                 Rectangle iconRect,
-                                 Rectangle textRect,
-                                 boolean isSelected) {
+    protected void paintTabContents(@NotNull Graphics g,
+                                    int tabPlacement,
+                                    int tabIndex,
+                                    Rectangle tabRect,
+                                    Rectangle iconRect,
+                                    Rectangle textRect,
+                                    @NotNull SegmentedButtonConfiguration bg) {
         String title;
         Icon icon;
 
@@ -596,11 +592,11 @@ public class AquaTabbedPaneUI extends AquaTabbedPaneCopyFromBasicUI
 
         // not for the scrolling tabs
         if (tabIndex >= 0) {
-            paintTitle(g2d, font, metrics, textRect, tabIndex, isSelected, title);
+            paintTitle(g2d, font, metrics, textRect, tabIndex, title, bg);
         }
 
         if (icon != null) {
-            paintIcon(g, tabPlacement, tabIndex, icon, iconRect, isSelected);
+            paintIcon(g, tabPlacement, tabIndex, icon, iconRect, bg);
         }
 
         g.setClip(temp);
@@ -611,8 +607,8 @@ public class AquaTabbedPaneUI extends AquaTabbedPaneCopyFromBasicUI
                               FontMetrics metrics,
                               Rectangle textRect,
                               int tabIndex,
-                              boolean isSelected,
-                              String title) {
+                              String title,
+                              @NotNull SegmentedButtonConfiguration bg) {
         View v = getTextViewForTab(tabIndex);
         if (v != null) {
             v.paint(g2d, textRect);
@@ -625,7 +621,7 @@ public class AquaTabbedPaneUI extends AquaTabbedPaneCopyFromBasicUI
 
         Color color = tabPane.getForegroundAt(tabIndex);
         if (color instanceof UIResource) {
-            g2d.setColor(getTabTextColor(tabIndex, isSelected));
+            g2d.setColor(getTabTextColor(bg));
         } else {
             g2d.setColor(color);
         }
@@ -634,19 +630,21 @@ public class AquaTabbedPaneUI extends AquaTabbedPaneCopyFromBasicUI
         JavaSupport.drawString(tabPane, g2d, title, textRect.x, textRect.y + metrics.getAscent());
     }
 
-    protected @NotNull Color getTabTextColor(int tabIndex, boolean isSelected) {
+    protected @NotNull Color getTabTextColor(@NotNull SegmentedButtonConfiguration bg) {
         assert appearanceContext != null;
-        AppearanceContext tabContext = appearanceContext;
-        if (appearanceContext.getState() == State.ACTIVE) {
-            if (!tabPane.isEnabledAt(tabIndex)) {
-                tabContext = tabContext.withState(State.DISABLED);
-            }  else if (isPressedAt(tabIndex)) {
-                tabContext = tabContext.withState(State.PRESSED);
-            }
-        }
-        tabContext = tabContext.withSelected(isSelected);
-
+        AppearanceContext tabContext = appearanceContext.withSelected(bg.isSelected()).withState(bg.getState());
         return colors.getForeground(tabContext);
+    }
+
+    protected void paintIcon(Graphics g,
+                             int tabPlacement,
+                             int tabIndex,
+                             Icon icon,
+                             Rectangle iconRect,
+                             @NotNull SegmentedButtonConfiguration bg) {
+        if (icon != null) {
+            icon.paintIcon(tabPane, g, iconRect.x, iconRect.y);
+        }
     }
 
     protected boolean isPressedAt(int index) {

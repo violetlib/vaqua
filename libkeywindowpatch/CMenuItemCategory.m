@@ -9,6 +9,7 @@
 #import <Cocoa/Cocoa.h>
 #import <JavaNativeFoundation/JavaNativeFoundation.h>
 #include <Carbon/Carbon.h>
+#import <sys/time.h>
 #import "KeyWindowPatch.h"
 #import "CMenuItemCategory.h"
 

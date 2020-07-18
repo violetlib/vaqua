@@ -56,21 +56,15 @@ public class ListViewImpl extends ListView {
 
         setFocusable(false);
 
-        /*
-          A fake tree model is needed to work around a problem. JTree maintains a cache of tree model nodes for layout
-          purposes. The cache is not flushed when a new tree model is supplied. The result is that the model adapter in
-          TreeTable tries to ask the new model whether a cached node is a leaf. This produces a ClassCastException in
-          the new model.
-        */
+        // A fake tree model is needed to work around a problem. JTree maintains a cache of tree model nodes for layout
+        // purposes. The cache is not flushed when a new tree model is supplied. The result is that the model adapter in
+        // TreeTable tries to ask the new model whether a cached node is a leaf. This produces a ClassCastException in
+        // the new model.
 
         TreeModel fakeTreeModel = new FileSystemTreeModel(fc);
         tableColumnModel = createColumnModel();
         tree = new MyTreeTable(fakeTreeModel, new MyTreeColumnModel(), tableColumnModel);
         tree.setUI(new MyTreeTableUI(fc, tree));
-        tree.putClientProperty("JTree.style", "striped");   // this probably has no effect
-        if (OSXSystemProperties.OSVersion >= 1016) {
-            tree.putClientProperty("JTree.viewStyle", "inset");
-        }
         tree.setRootVisible(false);
         tree.setAlternateRowColor(tree.getBackground());
         tree.setBackground(UIManager.getColor("List.alternateBackground.0"));

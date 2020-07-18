@@ -58,16 +58,17 @@ import static org.violetlib.jnr.aqua.AquaUIPainter.SegmentedButtonWidget.*;
 public class AquaButtonExtendedTypes {
 
     /**
-     * Identify a button type specifier based on the client properties of a button.
-     * @param b The button component.
-     * @return the button type specifier, or null if a button type was not declared or the button type was not recognized.
+     * Identify the basic type of a button from its client properties and its UI.
+     * @param b The button.
+     * @param isToolbar True if and only if the button should be configured for use on a toolbar.
+     * @return the button type name, or null if the button has not been configured with a recognized button type or
+     * the button type is a segmented button type but the button has not been configured with a valid segment position.
      */
-    public static TypeSpecifier getTypeSpecifier(@NotNull AbstractButton b, boolean isToolbar) {
-        Object buttonTypeProperty = b.getClientProperty(AquaButtonUI.BUTTON_TYPE);
-        Object segmentPositionProperty = b.getClientProperty(AquaButtonUI.SEGMENTED_BUTTON_POSITION);
+    public static @Nullable String getBasicButtonType(@NotNull AbstractButton b, boolean isToolbar) {
 
+        Object buttonTypeProperty = b.getClientProperty(AquaButtonUI.BUTTON_TYPE);
         if (buttonTypeProperty == null) {
-            if (segmentPositionProperty != null || b.getUI().getClass() == AquaButtonToggleUI.class) {
+            if (b.getUI().getClass() == AquaButtonToggleUI.class || getValidSegmentPosition(b) != null) {
                 buttonTypeProperty = "segmented";
             } else {
                 return null;
@@ -76,31 +77,82 @@ public class AquaButtonExtendedTypes {
 
         if (buttonTypeProperty instanceof String) {
             String buttonType = (String) buttonTypeProperty;
-
-            if (segmentPositionProperty instanceof String) {
-                String segmentPosition = (String) segmentPositionProperty;
-                if (buttonType.equals("segmented")) {
-                    if (isToolbar) {
-                        buttonType = "segmentedTextured";
-                    }
-                } else if (buttonType.equals("segmentedSeparated")) {
-                    if (isToolbar) {
-                        buttonType = "segmentedTexturedSeparated";
-                    }
+            if (buttonType.equals("segmented")) {
+                if (isToolbar) {
+                    buttonType = "segmentedTextured";
                 }
-
-                String typeName = buttonType + "-" + getRealPositionForLogicalPosition(segmentPosition, b.getComponentOrientation().isLeftToRight());
-                TypeSpecifier specifier = getSpecifierByName(b, typeName, isToolbar);
-                if (specifier != null) {
-                    return specifier;
+            } else if (buttonType.equals("segmentedSeparated")) {
+                if (isToolbar) {
+                    buttonType = "segmentedTexturedSeparated";
                 }
-            }
-
-            if (buttonType.equals("round") && isToolbar) {
+            } else if (buttonType.equals("round") && isToolbar) {
                 buttonType = "roundTextured";
             }
+            return buttonType;
+        }
 
-            return getSpecifierByName(b, buttonType, isToolbar);
+        return null;
+    }
+
+    /**
+     * Identify the type of a button from its client properties, its UI, and its component orientation.
+     * This method returns an extended type, which may include a segment position if the button is a segmented
+     * button.
+     * @param b The button.
+     * @param isToolbar True if and only if the button should be configured for use on a toolbar.
+     * @return the button type name, or null if the button has not been configured with a recognized button type.
+     */
+    public static @Nullable String getExtendedButtonType(@NotNull AbstractButton b, boolean isToolbar) {
+        String basicType = getBasicButtonType(b, isToolbar);
+        if (basicType != null) {
+            String position = getValidSegmentPosition(b);
+            if (position != null) {
+                position = getRealPositionForLogicalPosition(position, b.getComponentOrientation().isLeftToRight());
+                return basicType + "-" + position;
+            }
+        }
+        return basicType;
+    }
+
+    /**
+     * Identify the segment position of a button based on its client properties.
+     * @param b The button.
+     * @return the segment position, or null if the button has not been configured with a recognized segment position.
+     */
+    public static @Nullable String getValidSegmentPosition(@NotNull AbstractButton b) {
+        Object segmentPositionProperty = b.getClientProperty(AquaButtonUI.SEGMENTED_BUTTON_POSITION);
+        if (segmentPositionProperty instanceof String) {
+            String s = (String) segmentPositionProperty;
+            if (s.equals("first") || s.equals("last") || s.equals("middle") || s.equals("only")) {
+                return s;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Identify a button type specifier based on the client properties of a button, its UI, and its component
+     * orientation.
+     * @param b The button component.
+     * @return the button type specifier, or null if the button has not been configured with a recognized segment
+     * position.
+     */
+    public static @Nullable TypeSpecifier getTypeSpecifier(@NotNull AbstractButton b, boolean isToolbar) {
+
+        String buttonType = getExtendedButtonType(b, isToolbar);
+        if (buttonType == null) {
+            return null;
+        }
+
+        TypeSpecifier specifier = getSpecifierByName(b, buttonType, isToolbar);
+        if (specifier != null) {
+            return specifier;
+        }
+
+        if (buttonType.contains("-")) {
+            String basicType = getBasicButtonType(b, isToolbar);
+            assert basicType != null;
+            return getSpecifierByName(b, basicType, isToolbar);
         }
 
         return null;
@@ -110,10 +162,15 @@ public class AquaButtonExtendedTypes {
         return widgetDefinitions.get().get(BUTTON_TAB);
     }
 
-    protected static String getRealPositionForLogicalPosition(String logicalPosition, boolean leftToRight) {
+    protected static @NotNull String getRealPositionForLogicalPosition(@NotNull String logicalPosition,
+                                                                       boolean leftToRight) {
         if (!leftToRight) {
-            if ("first".equalsIgnoreCase(logicalPosition)) return "last";
-            if ("last".equalsIgnoreCase(logicalPosition)) return "first";
+            if ("first".equals(logicalPosition)) {
+                return "last";
+            }
+            if ("last".equals(logicalPosition)) {
+                return "first";
+            }
         }
         return logicalPosition;
     }
@@ -159,11 +216,17 @@ public class AquaButtonExtendedTypes {
     }
 
     public static class SegmentedTypeSpecifier extends TypeSpecifier {
-        private final SegmentedButtonWidget widget;
-        private final WidgetInfo info;
-        private final Position position;
+        private final @NotNull SegmentedButtonWidget widget;
+        private final @NotNull WidgetInfo info;
+        private final @NotNull Position position;
 
-        public SegmentedTypeSpecifier(String name, SegmentedButtonWidget widget, Position position) {
+        /**
+         * Create a specifier for a segmented button. The widget may be superseded in some cases based on the group
+         * membership of the button at the time the widget is used.
+         */
+        public SegmentedTypeSpecifier(@NotNull String name,
+                                      @NotNull SegmentedButtonWidget widget,
+                                      @NotNull Position position) {
             super(name);
 
             this.widget = widget;
@@ -171,7 +234,7 @@ public class AquaButtonExtendedTypes {
             this.position = position;
         }
 
-        public AquaButtonBorder getBorder() {
+        public @NotNull AquaButtonBorder getBorder() {
             return new AquaSegmentedButtonBorder(widget, info, position);
         }
     }

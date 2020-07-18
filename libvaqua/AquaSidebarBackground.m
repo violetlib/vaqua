@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2018 Alan Snyder.
+ * Copyright (c) 2015-2020 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -50,10 +50,16 @@
 //        backgroundView.frame.size.width,
 //        backgroundView.frame.size.height);
 
+    BOOL useInset = YES;  // TBD: limit to 10.16+
+
     for (index = 0; index < count; index++) {
         int y = *p++;
         int h = *p++;
         NSRect frame = NSMakeRect(0, y, width, h);
+        if (useInset) {
+            int inset = 10;
+            frame = NSMakeRect(inset, y, width - 2*inset, h);
+        }
         NSVisualEffectView *v = index < currentCount ? [selectionViews objectAtIndex:index] : nil;
         if (v) {
             v.frame = frame;
@@ -63,11 +69,11 @@
             v.autoresizingMask = NSViewWidthSizable;
             v.blendingMode = NSVisualEffectBlendingModeBehindWindow;
             v.material = selectionMaterial;
-
-            // The following works on macOS 11, but does nothing on 10.14
-            v.layer.cornerRadius = 5;
-            v.layer.masksToBounds = YES;
-
+            if (useInset) {
+                // The following works on macOS 11, but does nothing on 10.14
+                v.layer.cornerRadius = 5;
+                v.layer.masksToBounds = YES;
+            }
             [selectionViews addObject: v];
             [self addSubview: v];
         }

@@ -83,8 +83,9 @@ public class AquaButtonUI extends BasicButtonUI
     protected static final String COLOR_CHOOSER_OWNER_PROPERTY = "Aqua.Button.ColorChooserOwner";
     protected static final String SPECIAL_ICON_PROPERTY = "Aqua.Button.SpecialIcon";
     protected static final String CACHED_TOOLBAR_STATUS_PROPERTY = "Aqua.Button.IsToolbarButton";
+    protected static final String CACHED_GROUP_MEMBERSHIP_PROPERTY = "Aqua.Button.IsGroupMember";
 
-    protected static final RecyclableSingleton<AquaButtonUI> buttonUI = new RecyclableSingletonFromDefaultConstructor<AquaButtonUI>(AquaButtonUI.class);
+    protected static final RecyclableSingleton<AquaButtonUI> buttonUI = new RecyclableSingletonFromDefaultConstructor<>(AquaButtonUI.class);
 
     private static boolean isConfiguring;
 
@@ -125,28 +126,31 @@ public class AquaButtonUI extends BasicButtonUI
      * Configure a button.
      * @param b The button component to be configured.
      */
-    public void configure(AbstractButton b) {
+    public void configure(@NotNull AbstractButton b) {
 
         if (isConfiguring) {
-            // Avoid recursion caused by installing the default font
+            // Avoid recursion caused by installing the default font as part of configuring the button
             return;
         }
 
         isConfiguring = true;
         try {
 
-            // The configuration of a button is rather complex. It potentially affects the border, the font, the foreground
-            // color, the minimum and preferred component sizes. The configuration potentially depends upon client
-            // properties (for button type, segment position, and size variant), whether the button is contained in a tool
-            // bar, whether the button has an icon or any child components (e.g. images). Instead of trying to figure out
-            // exactly which parts of the configuration depend upon which inputs, we do a complete reconfiguration whenever
-            // an input has potentially changed.
+            // The configuration of a button is rather complex. It potentially affects the border, the font, the
+            // foreground color, the minimum and preferred component sizes. The configuration potentially depends upon
+            // client properties (for button type, segment position, and size variant), whether the button is contained
+            // in a tool bar, whether the button is a member of a button group, whether the button has an icon or any
+            // child components (e.g. images). Instead of trying to figure out exactly which parts of the configuration
+            // depend upon which inputs, we do a complete reconfiguration whenever an input has potentially changed.
 
-            // Note that the choice of border does not depend upon the size variant, but the border may use the size variant
-            // as part of its configuration of the button. The border performs all of the configuration based on a defined
-            // button type.
+            // Unfortunately, there are no notifications when a button is added to or removed from a button group.
+            // Button group membership potentially affects layout and painting, but only of JToggleButtons.
 
-            boolean isToolbar = Boolean.TRUE.equals(b.getClientProperty(CACHED_TOOLBAR_STATUS_PROPERTY));
+            // Note that the choice of border does not depend upon the size variant, but the border may use the size
+            // variant as part of its configuration of the button. The border performs all of the configuration based on
+            // a defined button type.
+
+            boolean isToolbar = isToolbar(b);
             AquaButtonExtendedTypes.TypeSpecifier type = AquaButtonExtendedTypes.getTypeSpecifier(b, isToolbar);
             installBorder(b, type, isToolbar);
 
@@ -252,7 +256,7 @@ public class AquaButtonUI extends BasicButtonUI
      * @param b The button component.
      * @return the border to use for the button component.
      */
-    protected Border getDefaultBorder(AbstractButton b, boolean isToolbar) {
+    protected Border getDefaultBorder(@NotNull AbstractButton b, boolean isToolbar) {
         if (isToolbar) {
             if (b instanceof JToggleButton) {
                 return AquaButtonBorder.getToolBarToggleButtonBorder();
@@ -269,7 +273,7 @@ public class AquaButtonUI extends BasicButtonUI
     }
 
     @Override
-    public Shape getFocusRingOutline(JComponent c) {
+    public @Nullable Shape getFocusRingOutline(JComponent c) {
         Border border = c.getBorder();
         if (border instanceof FocusRingOutlineProvider) {
             FocusRingOutlineProvider bb = (FocusRingOutlineProvider) border;
@@ -311,13 +315,7 @@ public class AquaButtonUI extends BasicButtonUI
         }
     }
 
-    protected Color getForegroundColor(AbstractButton b) {
-        Border border = b.getBorder();
-        if (border instanceof AquaButtonBorder) {
-            AquaButtonBorder bb = (AquaButtonBorder) border;
-            return bb.getForegroundColor(b, false);
-        }
-
+    protected Color getDefaultForegroundColor(AbstractButton b) {
         boolean isEnabled = b.getModel().isEnabled();
         Color existingColor = b.getForeground();
         if (existingColor == null || existingColor instanceof UIResource || !isEnabled) {
@@ -468,122 +466,89 @@ public class AquaButtonUI extends BasicButtonUI
         AppearanceManager.restoreCurrentAppearance(appearance);
     }
 
-    public void paint(Graphics g, JComponent c) {
+    public final void paint(Graphics g, JComponent c) {
+        paint((Graphics2D) g, (AbstractButton) c);
+    }
 
-        AbstractButton b = (AbstractButton)c;
-        ButtonModel model = b.getModel();
-
-        Insets i = c.getInsets();
-
-        int width = b.getWidth();
-        int height = b.getHeight();
-
-        Rectangle viewRect = new Rectangle(width, height);
-        Rectangle iconRect = new Rectangle();
-        Rectangle textRect = new Rectangle();
-
-        boolean isColorWell = isColorWell(b);
-
+    protected void paint(@NotNull Graphics2D g, @NotNull AbstractButton b) {
+        Rectangle viewRect = new Rectangle(b.getWidth(), b.getHeight());
         AquaButtonBorder aquaBorder = null;
         if (b.isBorderPainted()) {
-            Border border = c.getBorder();
+            Border border = b.getBorder();
             if (border instanceof AquaButtonBorder) {
                 aquaBorder = (AquaButtonBorder) border;
             }
         }
-
-        if (isColorWell && aquaBorder != null) {
-            // Special background for color well contains black and white areas to allow translucent colors to be
-            // recognized.
-            g.setColor(Color.BLACK);
-            g.fillRect(viewRect.x, viewRect.y, viewRect.width, viewRect.height);
-            g.setColor(Color.WHITE);
-            Insets margins = new Insets(6, 6, 6, 6);
-            int x1 = viewRect.x + margins.left;
-            int x2 = viewRect.x + viewRect.width - margins.right;
-            int y1 = viewRect.y + margins.top;
-            int y2 = viewRect.y + viewRect.height - margins.bottom;
-            int x[] = {x1, x2, x2};
-            int y[] = {y2, y1, y2};
-            g.fillPolygon(x, y, 3);
-        } else {
-            // we are overdrawing here with translucent colors so we get
-            // a darkening effect. How can we avoid it. Try clear rect?
-            if (b.isOpaque()) {
-                g.setColor(c.getBackground());
-                g.fillRect(viewRect.x, viewRect.y, viewRect.width, viewRect.height);
-            }
-        }
-
+        Icon icon = getIcon(b);
         if (aquaBorder != null) {
-            // only do this if borders are on!
-            // this also takes care of focus painting.
-            aquaBorder.paintBackground(c, g, viewRect.x, viewRect.y, viewRect.width, viewRect.height);
+            aquaBorder.paintButton(g, b, icon, viewRect);
         } else {
-            if (b.isOpaque()) {
-                viewRect.x = i.left - 2;
-                viewRect.y = i.top - 2;
-                viewRect.width = width - (i.right + viewRect.x) + 4;
-                viewRect.height = height - (i.bottom + viewRect.y) + 4;
-                if (b.isContentAreaFilled() || model.isSelected()) {
-                    if (model.isSelected()) {
-                        // Toggle buttons
-                        g.setColor(c.getBackground().darker());
-                    } else {
-                        g.setColor(c.getBackground());
-                    }
-                    g.fillRect(viewRect.x, viewRect.y, viewRect.width, viewRect.height);
-                }
-            }
-
-//            // needs focus to be painted
-//            // for now we don't know exactly what to do...we'll see!
-//            if (b.isFocusPainted() && b.hasFocus()) {
-//                // paint UI specific focus
-//                paintFocus(g, b, viewRect, textRect, iconRect);
-//            }
-        }
-
-        // Some button types do not allow any application provided content. For example, a help button.
-
-        if (aquaBorder != null && !aquaBorder.allowsContent()) {
-            return;
-        }
-
-        // performs icon and text rect calculations
-        Icon sizingIcon = null;
-        if (aquaBorder != null) {
-            sizingIcon = aquaBorder.getSizingIcon(b);
-        }
-        String text = layoutAndGetText(g, b, aquaBorder, i, viewRect, iconRect, textRect, sizingIcon);
-
-        // Paint the Icon
-        if (b.getIcon() != null) {
-            paintIcon(g, b, iconRect);
-        }
-
-        if (textRect.width == 0) {
-            textRect.width = 50;
-        }
-
-        if (text != null && !text.equals("")) {
-            View v = (View)c.getClientProperty(BasicHTML.propertyKey);
-            if (v != null) {
-                v.paint(g, textRect);
-            } else {
-                paintText(g, b, textRect, text);
-            }
+            paintButtonDefault(g, b, icon, viewRect);
         }
     }
 
-    protected String layoutAndGetText(Graphics g,
-                                      AbstractButton b,
-                                      AquaButtonBorder aquaBorder,
-                                      Insets i,
-                                      Rectangle viewRect,
-                                      Rectangle iconRect,
-                                      Rectangle textRect,
-                                      Icon sizingIcon) {
+    /**
+     * Paint a button whose appearance is not defined by VAqua.
+     */
+    protected void paintButtonDefault(@NotNull Graphics2D g,
+                                      @NotNull AbstractButton b,
+                                      @Nullable Icon icon,
+                                      @NotNull Rectangle viewRect) {
+        ButtonModel model = b.getModel();
+        boolean isColorWell = isColorWell(b);
+        if (isColorWell) {
+            // we are overdrawing here with translucent colors so we get
+            // a darkening effect. How can we avoid it. Try clear rect?
+            if (b.isOpaque()) {
+                g.setColor(b.getBackground());
+                g.fillRect(viewRect.x, viewRect.y, viewRect.width, viewRect.height);
+            }
+        }
+        int width = b.getWidth();
+        int height = b.getHeight();
+        if (b.isOpaque()) {
+            Insets i = b.getInsets();
+            viewRect.x = i.left - 2;
+            viewRect.y = i.top - 2;
+            viewRect.width = width - (i.right + viewRect.x) + 4;
+            viewRect.height = height - (i.bottom + viewRect.y) + 4;
+            if (b.isContentAreaFilled() || model.isSelected()) {
+                if (model.isSelected()) {
+                    // Toggle buttons
+                    g.setColor(b.getBackground().darker());
+                } else {
+                    g.setColor(b.getBackground());
+                }
+                g.fillRect(viewRect.x, viewRect.y, viewRect.width, viewRect.height);
+            }
+        }
+        Color textColor = getDefaultForegroundColor(b);
+        paintIconAndText(g, b, b.getInsets(), icon, textColor, viewRect, null);
+    }
+
+    public static void paintIconAndText(@NotNull Graphics2D g,
+                                          @NotNull AbstractButton b,
+                                          @NotNull Insets insets,
+                                          @Nullable Icon icon,
+                                          @NotNull Color textColor,
+                                          @NotNull Rectangle viewRect,
+                                          @Nullable Dimension iconSize) {
+        Rectangle iconRect = new Rectangle();
+        Rectangle textRect = new Rectangle();
+        String text = AquaButtonUI.layoutAndGetText(g, b, insets, viewRect, iconRect, textRect, iconSize);
+        if (icon != null) {
+            paintIcon(g, b, icon, iconRect);
+        }
+        paintText(g, b, textRect, textColor, text);
+    }
+
+    public static @NotNull String layoutAndGetText(@Nullable Graphics2D g,
+                                                   @NotNull AbstractButton b,
+                                                   @NotNull Insets i,
+                                                   @NotNull Rectangle viewRect,
+                                                   @NotNull Rectangle iconRect,
+                                                   @NotNull Rectangle textRect,
+                                                   @Nullable Dimension iconSize) {
         // re-initialize the view rect to the selected insets
         viewRect.x = i.left;
         viewRect.y = i.top;
@@ -594,71 +559,99 @@ public class AquaButtonUI extends BasicButtonUI
         textRect.x = textRect.y = textRect.width = textRect.height = 0;
         iconRect.x = iconRect.y = iconRect.width = iconRect.height = 0;
 
-        // setup the font
-        g.setFont(b.getFont());
-        FontMetrics fm = g.getFontMetrics();
+        // setup the font metrics
+        // If no graphics context is provided, the request is to determine the icon location under the
+        // assumption that the text does not matter.
+        FontMetrics fm = null;
+        if (g != null) {
+            g.setFont(b.getFont());
+            fm = g.getFontMetrics();
+        }
 
         // layout the text and icon
         String originalText = b.getText();
-        Icon ic = sizingIcon != null ? sizingIcon : b.getIcon();
-        String text = AquaUtils.layoutCompoundLabel(b, fm, originalText, ic, b.getVerticalAlignment(), b.getHorizontalAlignment(), b.getVerticalTextPosition(), b.getHorizontalTextPosition(), viewRect, iconRect, textRect, originalText == null ? 0 : b.getIconTextGap());
-        if (text == originalText || aquaBorder == null) return text; // everything fits
-
-        // if the text didn't fit - check if the aqua border has alternate Insets that are more adhering
-        Insets alternateContentInsets = aquaBorder.getContentInsets(b, b.getWidth(), b.getHeight());
-        if (alternateContentInsets != null) {
-            // recursively call and don't pass AquaBorder
-            return layoutAndGetText(g, b, null, alternateContentInsets, viewRect, iconRect, textRect, sizingIcon);
+        if (iconSize == null) {
+            Icon icon = b.getIcon();
+            if (icon != null) {
+                iconSize = new Dimension(icon.getIconWidth(), icon.getIconHeight());
+            }
         }
-
-        // there is no Aqua border, go with what we've got
+        String text = AquaUtils.layoutCompoundLabel(b, fm, originalText, iconSize, b.getVerticalAlignment(),
+                b.getHorizontalAlignment(), b.getVerticalTextPosition(), b.getHorizontalTextPosition(),
+                viewRect, iconRect, textRect, originalText == null ? 0 : b.getIconTextGap());
         return text;
     }
 
     /**
-     * Paint the appropriate icon based on the button state.
+     * Paint the icon.
      */
-    protected void paintIcon(Graphics g, AbstractButton b, Rectangle localIconRect) {
-        Icon icon = getIcon(b);
-        if (icon != null) {
-            Graphics2D gg = null;
-
-            if (icon.getIconWidth() != localIconRect.width || icon.getIconHeight() != localIconRect.height) {
-                gg = (Graphics2D) g.create();
-                g = gg;
-                gg.translate(localIconRect.x, localIconRect.y);
-                gg.scale(localIconRect.getWidth() / icon.getIconWidth(), localIconRect.getHeight() / icon.getIconHeight());
-                gg.translate(-localIconRect.x, -localIconRect.y);
-            }
-
-            icon.paintIcon(b, g, localIconRect.x, localIconRect.y);
-
-            if (gg != null) {
-                gg.dispose();
-            }
+    public static void paintIcon(Graphics2D g, @NotNull AbstractButton b, @NotNull Icon icon, Rectangle iconRect) {
+        Graphics2D gg = null;
+        if (icon.getIconWidth() != iconRect.width || icon.getIconHeight() != iconRect.height) {
+            gg = (Graphics2D) g.create();
+            g = gg;
+            gg.translate(iconRect.x, iconRect.y);
+            gg.scale(iconRect.getWidth() / icon.getIconWidth(), iconRect.getHeight() / icon.getIconHeight());
+            gg.translate(-iconRect.x, -iconRect.y);
+        }
+        icon.paintIcon(b, g, iconRect.x, iconRect.y);
+        if (gg != null) {
+            gg.dispose();
         }
     }
 
     /**
+     * Paint the text.
+     */
+    public static void paintText(@NotNull Graphics2D g,
+                                 @NotNull AbstractButton b,
+                                 @NotNull Rectangle textRect,
+                                 @NotNull Color textColor,
+                                 @NotNull String text) {
+
+        if (!text.isEmpty()) {
+            if (textRect.width == 0) {
+                textRect.width = 50;
+            }
+            Object o = b.getClientProperty(BasicHTML.propertyKey);
+            if (o instanceof View) {
+                View v = (View) o;
+                v.paint(g, textRect);
+            } else {
+                FontMetrics fm = g.getFontMetrics();
+                int mnemonicIndex = AquaMnemonicHandler.isMnemonicHidden() ? -1 : b.getDisplayedMnemonicIndex();
+                g.setColor(textColor);
+                int x = textRect.x;
+                int y = textRect.y + fm.getAscent();
+                JavaSupport.drawStringUnderlineCharAt(b, g, text, mnemonicIndex, x, y);
+            }
+        }
+    }
+
+    @Override
+    protected final void paintText(Graphics g, AbstractButton b, Rectangle localTextRect, String text) {
+        throw new UnsupportedOperationException("This method should not be used");
+    }
+
+    @Override
+    protected final void paintText(Graphics g, JComponent c, Rectangle localTextRect, String text) {
+        throw new UnsupportedOperationException("This method should not be used");
+    }
+
+    /**
      * Obtain the icon to use based on the button state.
-     * This method should not be called unless the button has an icon.
-     * @param b The button.
-     * @return the icon to use.
      */
     protected @Nullable Icon getIcon(AbstractButton b) {
         ButtonIconState bs = getIconState(b);
         Icon definedIcon = getDefinedIcon(b, bs);
-
         if (definedIcon != null && bs != ButtonIconState.DEFAULT) {
             return definedIcon;
         }
-
         // The special icon creates state specific renderings based on the button default icon.
         Icon icon = getSpecialIcon(b);
         if (icon != null) {
             return icon;
         }
-
         return definedIcon;
     }
 
@@ -694,8 +687,7 @@ public class AquaButtonUI extends BasicButtonUI
      * @param b The button.
      * @return the button icon state.
      */
-
-    protected static @NotNull ButtonIconState getIconState(AbstractButton b) {
+    public static @NotNull ButtonIconState getIconState(AbstractButton b) {
         ButtonModel model = b.getModel();
         if (!model.isEnabled()) {
             if (model.isSelected()) {
@@ -728,12 +720,22 @@ public class AquaButtonUI extends BasicButtonUI
         switch (bs) {
             case DISABLED:              return getDisabledIcon(b);
             case DISABLED_SELECTED:     return getDisabledSelectedIcon(b);
-            case PRESSED:               return b.getPressedIcon();
-            case ROLLOVER_SELECTED:     return b.getRolloverSelectedIcon();
+            case PRESSED:               return getIconForPressedState(b);
+            case ROLLOVER_SELECTED:     return getIconForRolloverSelectedState(b);
             case ROLLOVER:              return b.getRolloverIcon();
             case SELECTED:              return b.getSelectedIcon();
             default:                    return b.getIcon();
         }
+    }
+
+    private static @Nullable Icon getIconForPressedState(@NotNull AbstractButton b) {
+        Icon icon = b.getPressedIcon();
+        return icon != null ? icon : b.getSelectedIcon();
+    }
+
+    private static @Nullable Icon getIconForRolloverSelectedState(@NotNull AbstractButton b) {
+        Icon icon = b.getRolloverSelectedIcon();
+        return icon != null ? icon : b.getSelectedIcon();
     }
 
     /**
@@ -791,24 +793,6 @@ public class AquaButtonUI extends BasicButtonUI
         return new ImageIconUIResource(AquaImageFactory.getProcessedImage(source.getImage(), AquaImageFactory.LIGHTEN_FOR_DISABLED));
     }
 
-    protected void paintText(Graphics g, AbstractButton b, Rectangle localTextRect, String text) {
-        paintText(g, (JComponent) b, localTextRect, text);
-    }
-
-    /**
-     * As of Java 2 platform v 1.4 this method should not be used or overridden.
-     * Use the paintText method which takes the AbstractButton argument.
-     */
-    protected void paintText(Graphics g, JComponent c, Rectangle localTextRect, String text) {
-        AbstractButton b = (AbstractButton)c;
-        FontMetrics fm = g.getFontMetrics();
-        int mnemonicIndex = AquaMnemonicHandler.isMnemonicHidden() ? -1 : b.getDisplayedMnemonicIndex();
-
-        Color foreground = getForegroundColor(b);
-        g.setColor(foreground);
-        JavaSupport.drawStringUnderlineCharAt(c, (Graphics2D) g, text, mnemonicIndex, localTextRect.x, localTextRect.y + fm.getAscent());
-    }
-
     protected void paintButtonPressed(Graphics g, AbstractButton b) {
         paint(g, b);
     }
@@ -816,13 +800,12 @@ public class AquaButtonUI extends BasicButtonUI
     // Layout Methods
     public Dimension getMinimumSize(JComponent c) {
         AbstractButton b = (AbstractButton) c;
+        updateGroupMembership(b);
         Border border = b.getBorder();
-
         Dimension d;
-
         if (border instanceof AquaButtonBorder) {
             AquaButtonBorder bb = (AquaButtonBorder) border;
-            d = bb.getMinimumButtonSize(b);
+            d = bb.getPreferredButtonSize(b);
         } else {
             d = getPreferredSize(b);
         }
@@ -836,9 +819,8 @@ public class AquaButtonUI extends BasicButtonUI
 
     public Dimension getPreferredSize(JComponent c) {
         AbstractButton b = (AbstractButton) c;
-
+        updateGroupMembership(b);
         Border border = b.getBorder();
-
         if (border instanceof AquaButtonBorder) {
             AquaButtonBorder bb = (AquaButtonBorder) border;
             return bb.getPreferredButtonSize(b);
@@ -849,17 +831,64 @@ public class AquaButtonUI extends BasicButtonUI
 
     public Dimension getMaximumSize(JComponent c) {
         Dimension d = getPreferredSize(c);
-
         View v = (View)c.getClientProperty(BasicHTML.propertyKey);
         if (v != null) {
             d.width += v.getMaximumSpan(View.X_AXIS) - v.getPreferredSpan(View.X_AXIS);
         }
-
         return d;
     }
 
+    // The layout parameters and rendering of a toggle button may be impacted by whether or not the button is a member
+    // of a group. Unfortunately, there are no notifications when group membership changes. To avoid overhead, we
+    // limit group membership checking to those cases where it might make a difference. Group membership affects only
+    // toggle buttons.
 
-    private boolean isToolbarSensitive(AbstractButton b) {
+    /**
+     * Indicate whether a button is believed to be a group member and its layout and rendering are potentially
+     * sensitive to group membership. This method relies on cached information.
+     */
+    public boolean isGroupMember(@NotNull AbstractButton b) {
+        return Boolean.TRUE.equals(b.getClientProperty(CACHED_GROUP_MEMBERSHIP_PROPERTY));
+    }
+
+    /**
+     * Examine the button to determine if it is a group member and its layout and rendering are potentially
+     * sensitive to group membership. Update the cached information and reconfigure if needed.
+     */
+    protected void updateGroupMembership(@NotNull AbstractButton b) {
+        if (isPotentiallyGroupSensitive(b)) {
+            boolean isActualGroupMember = identifyGroupMembership(b);
+            boolean cachedValue = isGroupMember(b);
+            if (isActualGroupMember != cachedValue) {
+                b.putClientProperty(CACHED_GROUP_MEMBERSHIP_PROPERTY, isActualGroupMember);
+                groupMembershipChanged(b);
+            }
+        }
+    }
+
+    private boolean identifyGroupMembership(@NotNull AbstractButton b) {
+        ButtonModel m = b.getModel();
+        if (m instanceof DefaultButtonModel) {
+            DefaultButtonModel d = (DefaultButtonModel) m;
+            return d.getGroup() != null;
+
+        }
+        return false;
+    }
+
+    public boolean isPotentiallyGroupSensitive(@NotNull AbstractButton b) {
+        return false;
+    }
+
+    protected void groupMembershipChanged(@NotNull AbstractButton b) {
+        configure(b);
+    }
+
+    public boolean isToolbar(@NotNull AbstractButton b) {
+        return Boolean.TRUE.equals(b.getClientProperty(CACHED_TOOLBAR_STATUS_PROPERTY));
+    }
+
+    private boolean isToolbarSensitive(@NotNull AbstractButton b) {
         // Checkboxes and radio buttons are not toolbar sensitive
         return b instanceof JButton
                 || b instanceof JToggleButton && !(b instanceof JCheckBox) && !(b instanceof JRadioButton);
@@ -1048,38 +1077,39 @@ public class AquaButtonUI extends BasicButtonUI
         }
     }
 
-    public static Dimension getPreferredButtonSize(AbstractButton b, int textIconGap, Icon substituteIcon) {
+    public static @Nullable Dimension getPreferredButtonSize(@NotNull AbstractButton b,
+                                                             int textIconGap,
+                                                             @Nullable Dimension iconSize) {
         if (b.getComponentCount() > 0) {
             return null;
         }
 
-        Icon icon = substituteIcon != null ? substituteIcon : b.getIcon();
-        String text = b.getText();
+        if (iconSize == null) {
+            Icon icon = b.getIcon();
+            if (icon != null) {
+                iconSize = new Dimension(icon.getIconWidth(), icon.getIconHeight());
+            }
+        }
 
+        String text = b.getText();
         Font font = b.getFont();
         FontMetrics fm = b.getFontMetrics(font);
-
         Rectangle iconR = new Rectangle();
         Rectangle textR = new Rectangle();
         Rectangle viewR = new Rectangle(Short.MAX_VALUE, Short.MAX_VALUE);
 
-        SwingUtilities.layoutCompoundLabel(
-                b, fm, text, icon,
+        AquaUtils.layoutCompoundLabel(
+                b, fm, text, iconSize,
                 b.getVerticalAlignment(), b.getHorizontalAlignment(),
                 b.getVerticalTextPosition(), b.getHorizontalTextPosition(),
                 viewR, iconR, textR, (text == null ? 0 : textIconGap)
         );
 
-        /* The preferred size of the button is the size of
-         * the text and icon rectangles plus the buttons insets.
-         */
-
+        // The preferred size of the button is the size of the text and icon rectangles plus the insets.
         Rectangle r = iconR.union(textR);
-
         Insets insets = b.getInsets();
         r.width += insets.left + insets.right;
         r.height += insets.top + insets.bottom;
-
         return r.getSize();
     }
 
@@ -1090,6 +1120,7 @@ public class AquaButtonUI extends BasicButtonUI
      */
     public static Dimension getPreferredContentSize(AbstractButton b, Font font, int textIconGap) {
         Icon icon = b.getIcon();
+        Dimension iconSize = icon != null ? new Dimension(icon.getIconWidth(), icon.getIconHeight()) : null;
         String text = b.getText();
         FontMetrics fm = b.getFontMetrics(font);
 
@@ -1097,8 +1128,8 @@ public class AquaButtonUI extends BasicButtonUI
         Rectangle textR = new Rectangle();
         Rectangle viewR = new Rectangle(Short.MAX_VALUE, Short.MAX_VALUE);
 
-        SwingUtilities.layoutCompoundLabel(
-                b, fm, text, icon,
+        AquaUtils.layoutCompoundLabel(
+                b, fm, text, iconSize,
                 b.getVerticalAlignment(), b.getHorizontalAlignment(),
                 b.getVerticalTextPosition(), b.getHorizontalTextPosition(),
                 viewR, iconR, textR, (text == null ? 0 : textIconGap)

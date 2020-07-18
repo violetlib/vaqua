@@ -654,14 +654,14 @@ public class BasicAquaAppearance implements VAppearance {
             colors.add("recessedText_rollover", 255);
             colors.add("recessedText_inactive_disabled", 0, 32);
 
-            if (OSVersion >= 1016) {
-                colors.add("selectedRecessedText", 0, 160);
-                colors.add("selectedRecessedText_disabled", 0, 64);
-                colors.add("selectedRecessedText_pressed", 255);
-                colors.add("selectedRecessedText_rollover", 255);
-                colors.add("selectedRecessedText_inactive", 0, 64);
-                colors.add("selectedRecessedText_inactive_disabled", 0, 32);
-            }
+//            if (OSVersion >= 1016) {
+//                colors.add("selectedRecessedText", 0, 160);
+//                colors.add("selectedRecessedText_disabled", 0, 64);
+//                colors.add("selectedRecessedText_pressed", 255);
+//                colors.add("selectedRecessedText_rollover", 255);
+//                colors.add("selectedRecessedText_inactive", 0, 64);
+//                colors.add("selectedRecessedText_inactive_disabled", 0, 32);
+//            }
 
             // colors related to push buttons
             colors.add("pushButtonText", 34);
@@ -931,7 +931,11 @@ public class BasicAquaAppearance implements VAppearance {
             colors.add("scrollPaneBorder", 155, 128);
 
             // colors related to textured buttons and text fields used as textured combo box renderers (dark mode)
-            colors.add("texturedText", "controlText");
+            if (OSVersion < 1016) {
+                colors.add("texturedText", "controlText");
+            } else {
+                colors.add("texturedText", 255, 115);
+            }
             colors.add("texturedText_focused", 0, 192);
             colors.add("texturedText_disabled", "disabledControlText");
             colors.add("texturedText_inactive", "disabledControlText");
@@ -990,11 +994,10 @@ public class BasicAquaAppearance implements VAppearance {
             colors.add("selectedNonexclusiveTexturedToolbarText_inactive", 255, 80);
 
             // colors related to recessed buttons (dark mode)
-            colors.add("recessedText", "controlText");
-            colors.add("recessedText_disabled", 255, 50);
-            colors.add("recessedText_inactive", "recessedText_disabled");
-            colors.add("recessedText_pressed", "controlText_pressed");
-            colors.add("recessedText_rollover", "controlText_rollover");
+            colors.addAll("recessedText", "controlText");
+            if (OSVersion >= 1016) {
+                colors.add("recessedText", 255, 115);
+            }
 
             if (OSVersion < 1016) {
                 colors.add("selectedRecessedText", 0, 192);
@@ -1056,6 +1059,10 @@ public class BasicAquaAppearance implements VAppearance {
             colors.add("roundText_disabled", "disabledControlText");
             colors.add("selectedRoundText_disabled", 0, 64);
 
+            if (OSVersion >= 1016) {
+                colors.add("selectedRoundText_inactive", "selectedRoundText");
+            }
+
             // colors related to toolbar items (dark mode)
             colors.add("toolbarItemText", "controlText");
             colors.add("toolbarItemText_inactive", "disabledControlText");
@@ -1066,12 +1073,11 @@ public class BasicAquaAppearance implements VAppearance {
             colors.add("selectedToolbarItemText_inactive_disabled", "alternateSelectedControlText_disabled");
 
             // colors related to inline buttons (dark mode)
-            colors.add("inlineButtonText", 50); // native appears to use a blending operation
-            colors.add("inlineButtonText_disabled", 50);
-            colors.add("inlineButtonText_inactive", 50);
-
+            //  note: native rendering appears to use a blending operation
             if (OSVersion >= 1016) {
-                colors.add("selectedInlineButtonText", 0);
+                colors.add("inlineButtonText", 35);
+            } else {
+                colors.add("inlineButtonText", 50);
             }
 
             // colors related to sidebars (dark mode)

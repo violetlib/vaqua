@@ -1508,7 +1508,7 @@ public class JBrowser extends JComponent implements Scrollable {
 
     protected @NotNull JList createColumnList(@NotNull ColumnListModel m) {
         JList list = new ColumnList(m);
-        if (OSXSystemProperties.OSVersion >= 1016) {
+        if (OSXSystemProperties.useInsetViewStyle()) {
             list.putClientProperty("JList.viewStyle", "inset");
         }
         return list;

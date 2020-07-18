@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2018 Alan Snyder.
+ * Copyright (c) 2015-2020 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -19,7 +19,7 @@ import java.util.List;
  */
 public class OSXSystemProperties {
 
-    public final static int OSVersion = getOSVersion();
+    public final static int OSVersion = getOSVersion();  // for example: 1014 = macOS 10.14
 
     private static boolean hasBeenSynchronized;
     private static boolean isFullKeyboardAccessEnabled; // cached value
@@ -36,6 +36,14 @@ public class OSXSystemProperties {
         p = s.indexOf('.');
         int minor = Integer.parseInt(p >= 0 ? s.substring(0, p) : s);
         return major * 100 + minor;
+    }
+
+    public static boolean useInsetViewStyle() {
+        if (true) {
+            // debug
+            return OSVersion >= 1014;
+        }
+        return OSVersion >= 1016;
     }
 
     public static boolean isFullKeyboardAccessEnabled() {

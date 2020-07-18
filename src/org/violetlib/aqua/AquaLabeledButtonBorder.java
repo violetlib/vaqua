@@ -11,51 +11,89 @@ package org.violetlib.aqua;
 import java.awt.*;
 import javax.swing.*;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.violetlib.geom.ExpandableOutline;
 import org.violetlib.jnr.LayoutInfo;
-import org.violetlib.jnr.aqua.AquaUIPainter;
 import org.violetlib.jnr.aqua.AquaUIPainter.ButtonState;
 import org.violetlib.jnr.aqua.AquaUIPainter.ButtonWidget;
-import org.violetlib.jnr.aqua.AquaUIPainter.Size;
+import org.violetlib.jnr.aqua.ButtonConfiguration;
 import org.violetlib.jnr.aqua.ButtonLayoutConfiguration;
+import org.violetlib.jnr.aqua.Configuration;
 import org.violetlib.jnr.aqua.LayoutConfiguration;
 
 import static org.violetlib.jnr.aqua.AquaUIPainter.ButtonState.*;
 
 /**
  * The base class for a radio button or check box button border.
+ * A radio button or check box uses a natively rendered icon. The button icon is not used.
  */
 public abstract class AquaLabeledButtonBorder extends AquaNamedButtonBorder {
 
-    public AquaLabeledButtonBorder(ButtonWidget widget, AquaButtonExtendedTypes.WidgetInfo info) {
+    public AquaLabeledButtonBorder(@NotNull ButtonWidget widget, @NotNull AquaButtonExtendedTypes.WidgetInfo info) {
         super(widget, info);
     }
 
-    public Shape getFocusRingOutline(AbstractButton b, Rectangle iconBounds) {
-        // The focus ring is drawn around the icon, not the entire component
-        LayoutConfiguration g = getLayoutConfiguration(b);
-        if (g != null) {
-            AppearanceManager.ensureAppearance(b);
-            AquaUtils.configure(painter, b, iconBounds.width, iconBounds.height);
-            Shape s = painter.getOutline(g);
-            if (s != null) {
-                return ExpandableOutline.createTranslatedShape(s, iconBounds.x, iconBounds.y);
-            }
+    @Override
+    public void paintButton(@NotNull Graphics2D g,
+                            @NotNull AbstractButton b,
+                            @Nullable Icon icon,
+                            @NotNull Rectangle viewRect) {
+        Configuration c = getConfiguration(b, viewRect.width, viewRect.height);
+        if (c instanceof ButtonConfiguration) {
+            ButtonConfiguration bg = (ButtonConfiguration) c;
+            Insets insets = new Insets(0, 0, 0, 0);
+            Rectangle iconRect = new Rectangle();
+            Rectangle textRect = new Rectangle();
+            Dimension iconSize = getIconSize((ButtonLayoutConfiguration) bg);
+            String text = AquaButtonUI.layoutAndGetText(g, b, insets, viewRect, iconRect, textRect, iconSize);
+            paintBackground(g, b, bg, iconRect);
+            Color textColor = getForegroundColor(b, bg, false);
+            AquaButtonUI.paintText(g, b, textRect, textColor, text);
         }
+    }
 
+    private @Nullable ButtonLayoutConfiguration getButtonLayoutConfiguration(@NotNull AbstractButton b) {
+        LayoutConfiguration bg = getLayoutConfiguration(b);
+        if (bg instanceof ButtonLayoutConfiguration) {
+            return (ButtonLayoutConfiguration) bg;
+        }
         return null;
     }
 
-    protected AquaButtonLabeledUI.RecyclableSizingIcon createDefaultIcon(Size size) {
-        ButtonLayoutConfiguration g = new ButtonLayoutConfiguration(widget, size, AquaUIPainter.UILayoutDirection.LEFT_TO_RIGHT);
-        LayoutInfo layoutInfo = painter.getLayoutInfo().getLayoutInfo(g);
-        int width = (int) layoutInfo.getFixedVisualWidth();
-        int height = (int) layoutInfo.getFixedVisualHeight();
-        return new AquaButtonLabeledUI.RecyclableSizingIcon(width, height);
+    @Override
+    public @Nullable Shape getFocusRingOutline(@NotNull JComponent c) {
+        // The focus ring is drawn around the icon, not the entire component
+        AbstractButton b = (AbstractButton) c;
+        ButtonLayoutConfiguration g = getButtonLayoutConfiguration(b);
+        if (g != null) {
+            Insets insets = new Insets(0, 0, 0, 0);
+            Rectangle viewRect = new Rectangle(0, 0, c.getWidth(), c.getHeight());
+            Rectangle iconRect = new Rectangle();
+            Rectangle textRect = new Rectangle();
+            Dimension iconSize = getIconSize(g);
+            // Assuming that the location of the icon does not depend upon the text
+            AquaButtonUI.layoutAndGetText(null, b, insets, viewRect, iconRect, textRect, iconSize);
+            AppearanceManager.ensureAppearance(b);
+            AquaUtils.configure(painter, b, iconRect.width, iconRect.height);
+            Shape s = painter.getOutline(g);
+            if (s != null) {
+                return ExpandableOutline.createTranslatedShape(s, iconRect.x, iconRect.y);
+            }
+        }
+        return null;
     }
 
     @Override
-    protected ButtonState getButtonState(AbstractButton b) {
+    protected @Nullable Dimension getIconSize(@NotNull LayoutConfiguration g) {
+        LayoutInfo info = painter.getLayoutInfo().getLayoutInfo(g);
+        int iconWidth = (int) Math.ceil(info.getFixedVisualWidth());
+        int iconHeight = (int) Math.ceil(info.getFixedVisualHeight());
+        return new Dimension(iconWidth, iconHeight);
+    }
+
+    @Override
+    protected @NotNull ButtonState getButtonState(AbstractButton b) {
         return isIndeterminate(b) ? MIXED : b.getModel().isSelected() ? ON : OFF;
     }
 
@@ -64,7 +102,7 @@ public abstract class AquaLabeledButtonBorder extends AquaNamedButtonBorder {
         return null;
     }
 
-    static boolean isIndeterminate(AbstractButton b) {
+    static boolean isIndeterminate(@NotNull AbstractButton b) {
         return "indeterminate".equals(b.getClientProperty(AquaButtonUI.SELECTED_STATE_KEY));
     }
 }

@@ -48,8 +48,17 @@ public class FileRenderer extends JLabel implements ListCellRenderer, GenericCel
         this.textArrowIconGap = UIManager.getInt("FileChooser.browserCellTextArrowIconGap");
         aliasBadgeIcon = UIManager.getIcon("FileView.aliasBadgeIcon");
         arrowIcon = AquaIcon.getBrowserExpandArrowTemplate();
-        border = new EmptyBorder(0, 4, 2, 0);
+        border = createBorder();
         setOpaque(true);
+    }
+
+    private static @NotNull Border createBorder() {
+        if (OSXSystemProperties.useInsetViewStyle()) {
+            // Margins are needed to work with the inset view style
+            return new EmptyBorder(2, 18, 2, 18);
+        } else {
+            return new EmptyBorder(0, 4, 2, 0);
+        }
     }
 
     // Overridden for performance reasons.
@@ -374,9 +383,10 @@ public class FileRenderer extends JLabel implements ListCellRenderer, GenericCel
 
         viewRect.width -= labelWidth + textArrowIconGap;
 
+        Dimension iconSize = icon != null ? new Dimension(icon.getIconWidth(), icon.getIconHeight()) : null;
         text = AquaUtils.layoutCompoundLabel(
                 this, textFM, text,
-                icon, SwingConstants.CENTER, SwingConstants.LEFT,
+                iconSize, SwingConstants.CENTER, SwingConstants.LEFT,
                 SwingConstants.CENTER, SwingConstants.RIGHT,
                 viewRect, iconRect, textRect,
                 textIconGap);

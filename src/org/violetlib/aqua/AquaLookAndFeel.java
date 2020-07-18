@@ -350,6 +350,8 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
         Border scrollPaneBorder = new AquaLineBorder("scrollPaneBorder");
         Border treeBorder = new AquaTreeBorder();
 
+        int sidebarRowHeight = OSXSystemProperties.useInsetViewStyle() ? 28 : 24;
+
         Color toolBarDragHandleColor = new ColorUIResource(140, 140, 140);
 
         LazyValue internalFrameBorder = t -> BasicBorders.getInternalFrameBorder();
@@ -477,7 +479,7 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
                 "FileChooser.fileNameLabelMnemonic", zero,
                 "FileChooser.filesOfTypeLabelMnemonic", zero,
 
-                "FileChooser.sideBarRowHeight", 24,
+                "FileChooser.sideBarRowHeight", sidebarRowHeight,
 
                 "FileView.aliasBadgeIcon", OSXFile.getAliasBadgeIcon(),
                 "FileView.computerIcon", AquaImageFactory.getComputerIcon(),

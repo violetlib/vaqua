@@ -306,9 +306,27 @@ public class AquaTableUI extends BasicTableUI
             }
             int firstIndex = limit(e.getFirstIndex(), 0, table.getRowCount() - 1);
             int lastIndex = limit(e.getLastIndex(), 0, table.getRowCount() - 1);
+            if (isInset() && table.getSelectionModel().getSelectionMode() != ListSelectionModel.SINGLE_SELECTION) {
+                // When the inset selection style is used, a change to the selection can affect rows that are not
+                // within the range of changed rows. Consider an isolated selected row in a table that supports
+                // multiple selection. If a row adjacent to that row is selected, then the previously isolated row is
+                // now the top or bottom row of a group, so its rendering must change.
+                int[] selectedRows = table.getSelectedRows();
+                if (selectedRows.length > 0) {
+                    int firstSelectedRow = selectedRows[0];
+                    int lastSelectedRow = selectedRows[selectedRows.length-1];
+                    if (firstSelectedRow < firstIndex) {
+                        firstIndex = firstSelectedRow;
+                    }
+                    if (lastSelectedRow > lastIndex) {
+                        lastIndex = lastSelectedRow;
+                    }
+                }
+            }
             Rectangle firstRowRect = table.getCellRect(firstIndex, 0, true);
             Rectangle lastRowRect = table.getCellRect(lastIndex, 0, true);
-            Rectangle dirtyRegion = new Rectangle(firstRowRect.x, firstRowRect.y, table.getWidth(), lastRowRect.y + lastRowRect.height);
+            Rectangle dirtyRegion = new Rectangle(0, firstRowRect.y, table.getWidth(),
+                    lastRowRect.y + lastRowRect.height - firstRowRect.y);
             table.repaint(dirtyRegion);
         }
 
