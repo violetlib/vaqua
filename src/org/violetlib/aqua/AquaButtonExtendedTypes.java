@@ -260,27 +260,27 @@ public class AquaButtonExtendedTypes {
     /**
      * Return the font to use for a button based on a button widget.
      * This capability is needed for button types that determine the widget based on the button content size.
-     * @param buttonFont The default font without taking the button widget into account.
+     * @param defaultFont The default font without taking the button widget into account.
      * @param widget The button widget.
      * @param size The size variant.
      * @return the font to use.
      */
-    public static Font getFont(Font buttonFont, Object widget, AquaUIPainter.Size size) {
+    public static @NotNull Font getFont(@NotNull Object widget,
+                                        @NotNull AquaUIPainter.Size size,
+                                        @NotNull Font defaultFont) {
         WidgetInfo info = getWidgetInfo(widget);
-        assert info != null;
         Font font = info.getFont(size);
         if (font != null) {
             return font;
         }
-        if (size != null && size != AquaUIPainter.Size.REGULAR) {
+        if (size != AquaUIPainter.Size.REGULAR) {
             float fontSize = getFontSize(size);
-            return buttonFont.deriveFont(fontSize);
+            return defaultFont.deriveFont(fontSize);
         }
-
-        return buttonFont;
+        return defaultFont;
     }
 
-    protected static float getFontSize(AquaUIPainter.Size size) {
+    public static float getFontSize(AquaUIPainter.Size size) {
         switch (size) {
             case SMALL:
                 return 11;
@@ -316,8 +316,9 @@ public class AquaButtonExtendedTypes {
         }
     };
 
+    @FunctionalInterface
     protected interface FontFinder {
-        Font getFont(AquaUIPainter.Size size);
+        @Nullable Font getFont(@NotNull AquaUIPainter.Size size);
     }
 
     public static class WidgetInfo implements Cloneable {
@@ -329,7 +330,6 @@ public class AquaButtonExtendedTypes {
 
         private Font font;
         private FontFinder fontFinder;
-        private float fontSize;
         private boolean isRolloverEnabled;
         private int iconTextGap;
         private int margin;
@@ -339,7 +339,7 @@ public class AquaButtonExtendedTypes {
             this.colors = colors;
         }
 
-        WidgetInfo copy() {
+        @NotNull WidgetInfo copy() {
             try {
                 return (WidgetInfo) clone();
             } catch (CloneNotSupportedException ex) {
@@ -348,57 +348,52 @@ public class AquaButtonExtendedTypes {
             }
         }
 
-        WidgetInfo withSegmented() {
+        @NotNull WidgetInfo withSegmented() {
             this.isSegmented = true;
             return this;
         }
 
-        WidgetInfo withTextured() {
+        @NotNull WidgetInfo withTextured() {
             this.isTextured = true;
             return this;
         }
 
-        WidgetInfo withColors(@NotNull BasicContextualColors colors) {
+        @NotNull WidgetInfo withColors(@NotNull BasicContextualColors colors) {
             this.colors = colors;
             return this;
         }
 
-        WidgetInfo withFont(Font f) {
+        @NotNull WidgetInfo withFont(@NotNull Font f) {
             this.font = f;
             return this;
         }
 
-        WidgetInfo withFont(FontFinder ff) {
+        @NotNull WidgetInfo withFontFinder(@NotNull FontFinder ff) {
             this.fontFinder = ff;
             return this;
         }
 
-        WidgetInfo withFontSize(float fontSize) {
-            this.fontSize = fontSize;
-            return this;
-        }
-
-        WidgetInfo withIconTextGap(int gap) {
+        @NotNull WidgetInfo withIconTextGap(int gap) {
             this.iconTextGap = gap;
             return this;
         }
 
-        WidgetInfo withMargin(int margin) {
+        @NotNull WidgetInfo withMargin(int margin) {
             this.margin = margin;
             return this;
         }
 
-        WidgetInfo withNonexclusiveSelectionColors(@NotNull BasicContextualColors cs) {
+        @NotNull WidgetInfo withNonexclusiveSelectionColors(@NotNull BasicContextualColors cs) {
             this.nonExclusiveSelectionColors = cs;
             return this;
         }
 
-        WidgetInfo withRolloverEnabled() {
+        @NotNull WidgetInfo withRolloverEnabled() {
             this.isRolloverEnabled = true;
             return this;
         }
 
-        WidgetInfo withBottomMenuGap(int gap) {
+        @NotNull WidgetInfo withBottomMenuGap(int gap) {
             this.bottomMenuGap = gap;
             return this;
         }
@@ -411,13 +406,13 @@ public class AquaButtonExtendedTypes {
             return margin;
         }
 
-        public Font getFont(AquaUIPainter.Size size) {
+        public @Nullable Font getFont(@NotNull AquaUIPainter.Size size) {
             if (fontFinder != null) {
                 return fontFinder.getFont(size);
             }
 
             if (font != null) {
-                if (size != null && size != AquaUIPainter.Size.REGULAR) {
+                if (size != AquaUIPainter.Size.REGULAR) {
                     float fontSize = getFontSize(size);
                     return font.deriveFont(fontSize);
                 }
@@ -497,18 +492,35 @@ public class AquaButtonExtendedTypes {
 
         WidgetInfo gradient = new WidgetInfo(AquaColors.GRADIENT_BUTTON_COLORS);
         result.put(BUTTON_GRADIENT, gradient.copy().withMargin(2));
-        result.put(BUTTON_BEVEL, gradient.copy().withMargin(4));    // this is the "Square" style
+        result.put(BUTTON_BEVEL, gradient.copy().withMargin(4));  // this is the "Square" style in IB
 
-        result.put(BUTTON_ROUNDED_RECT, new WidgetInfo(AquaColors.ROUNDED_RECT_BUTTON_COLORS).withMargin(4));
-        result.put(BUTTON_BEVEL_ROUND, new WidgetInfo(AquaColors.BEVEL_BUTTON_COLORS).withMargin(6));
+        result.put(BUTTON_ROUNDED_RECT, new WidgetInfo(AquaColors.ROUNDED_RECT_BUTTON_COLORS)
+                .withMargin(4)
+                .withFontFinder((sz) -> UIManager.getFont("Button.font").deriveFont(fontSize(sz, 12, 12, 11, 9))));
+
+        result.put(BUTTON_BEVEL_ROUND, new WidgetInfo(AquaColors.BEVEL_BUTTON_COLORS)
+                .withMargin(6));
 
         // Round buttons are like gradient buttons, but white looks better on the blue background
         result.put(BUTTON_ROUND, new WidgetInfo(AquaColors.ROUND_BUTTON_COLORS));
 
-        result.put(BUTTON_TOOLBAR_ITEM, new WidgetInfo(AquaColors.TOOLBAR_ITEM_COLORS).withIconTextGap(2));
+        result.put(BUTTON_TOOLBAR_ITEM, new WidgetInfo(AquaColors.TOOLBAR_ITEM_COLORS)
+                .withIconTextGap(2));
 
         result.put(BUTTON_INLINE, new WidgetInfo(AquaColors.INLINE_BUTTON_COLORS)
-                .withFont(UIManager.getFont("Button.inline.font"))
+                .withFontFinder((sz) -> UIManager.getFont("Button.inline.font"))
+        );
+
+        result.put(BUTTON_RECESSED, new WidgetInfo(AquaColors.RECESSED_BUTTON_COLORS)
+                .withRolloverEnabled()
+                .withFontFinder((sz) -> {
+                    Font f = UIManager.getFont("Button.recessed.font");
+                    if (sz == AquaUIPainter.Size.MINI) {
+                        f = f.deriveFont(Font.PLAIN);
+                    }
+                    float size = sz == AquaUIPainter.Size.MINI ? 9 : 12;
+                    return f.deriveFont(size);
+                })
         );
 
         // Textured toggle push buttons and segmented buttons are not identical, but they are getting closer and
@@ -543,11 +555,6 @@ public class AquaButtonExtendedTypes {
         result.put(BUTTON_SEGMENTED_INSET, segmentedGradient);  // segmented rounded rect
         result.put(BUTTON_SEGMENTED_SCURVE, segmentedGradient);
         result.put(BUTTON_SEGMENTED_SMALL_SQUARE, segmentedGradient);
-
-        result.put(BUTTON_RECESSED, new WidgetInfo(AquaColors.RECESSED_BUTTON_COLORS)
-                .withFont(UIManager.getFont("Button.recessed.font"))
-                .withRolloverEnabled()
-        );
 
         WidgetInfo pushPopUp = new WidgetInfo(AquaColors.POP_UP_DOWN_BUTTON_COLORS)
                 .withMargin(5)
@@ -676,5 +683,18 @@ public class AquaButtonExtendedTypes {
         }
 
         return specifiersByName;
+    }
+
+    private static float fontSize(@NotNull AquaUIPainter.Size sz, float large, float regular, float small, float mini) {
+        if (sz == AquaUIPainter.Size.LARGE) {
+            return large;
+        }
+        if (sz == AquaUIPainter.Size.SMALL) {
+            return small;
+        }
+        if (sz == AquaUIPainter.Size.MINI) {
+            return mini;
+        }
+        return regular;
     }
 }

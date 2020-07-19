@@ -54,20 +54,12 @@ class AquaComboBoxButton extends JButton {
 
         this.ui = ui;
         this.comboBox = comboBox;
-
         setModel(new DefaultButtonModel() {
             public void setArmed(boolean armed) {
                 super.setArmed(isPressed() || armed);
             }
         });
-
-        setEnabled(comboBox.isEnabled());
-
         addMouseListener(new RolloverMouseListener());
-    }
-
-    public boolean isEnabled() {
-        return comboBox == null || comboBox.isEnabled();
     }
 
     @SuppressWarnings("deprecation")

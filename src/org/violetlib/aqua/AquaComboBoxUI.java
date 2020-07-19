@@ -100,6 +100,7 @@ public class AquaComboBoxUI extends BasicComboBoxUI
     protected boolean isPopDown;
     protected String style;
     protected @Nullable AquaCellEditorPolicy.CellStatus cellStatus;
+    protected boolean isDefaultStyle;
     protected boolean isTextured;
 
     // cached attributes
@@ -265,7 +266,7 @@ public class AquaComboBoxUI extends BasicComboBoxUI
         comboBox.repaint();
     }
 
-    protected AquaUIPainter.State getState() {
+    protected @NotNull AquaUIPainter.State getState() {
         boolean isActive = AquaFocusHandler.isActive(comboBox);
         if (!comboBox.isEnabled()) {
             return isActive ? State.DISABLED : State.DISABLED_INACTIVE;
@@ -299,10 +300,6 @@ public class AquaComboBoxUI extends BasicComboBoxUI
         }
 
         return State.ACTIVE;
-    }
-
-    private boolean isTemplateIconEnabled(ImageIcon ii) {
-        return AquaImageFactory.isTemplateImage(ii.getImage());
     }
 
     @Override
@@ -363,6 +360,11 @@ public class AquaComboBoxUI extends BasicComboBoxUI
         }
     }
 
+    private boolean determineIsDefaultStyle() {
+        Object w = getWidget();
+        return w == BUTTON_COMBO_BOX || w == BUTTON_POP_DOWN || w == BUTTON_POP_UP;
+    }
+
     private boolean determineIsTextured() {
         Object w = getWidget();
         return w == BUTTON_POP_DOWN_TEXTURED
@@ -382,12 +384,12 @@ public class AquaComboBoxUI extends BasicComboBoxUI
      * @param icon The supplied icon.
      * @return the icon to use.
      */
-    public Icon getIcon(@NotNull Icon icon) {
+    public @NotNull Icon getIcon(@NotNull Icon icon) {
         State st = getState();
 
         if (icon instanceof ImageIcon) {
             ImageIcon ii = (ImageIcon) icon;
-            if (isTemplateIconEnabled(ii)) {
+            if (AquaImageFactory.isTemplateImage(ii.getImage())) {
                 Color color = comboBox.getForeground();
                 if (color != null) {
                     Image im = ii.getImage();
@@ -400,11 +402,29 @@ public class AquaComboBoxUI extends BasicComboBoxUI
         if (st == State.PRESSED) {
             return AquaIcon.createPressedDarkIcon(icon);
         }
-        if (st == State.DISABLED) {
-            return AquaIcon.createDisabledLightIcon(icon);
+
+        if (shouldUseDisabledIcon()) {
+            AquaAppearance appearance = AppearanceManager.getAppearance(comboBox);
+            return appearance.isDark()
+                    ? AquaIcon.createPressedDarkIcon(icon)
+                    : AquaIcon.createDisabledLightIcon(icon);
         }
 
         return icon;
+    }
+
+    protected boolean shouldUseDisabledIcon()
+    {
+        State st = getState();
+        if (st == State.DISABLED || st == State.DISABLED_INACTIVE) {
+            return true;
+
+        } else if (st == State.INACTIVE) {
+            if (isTextured) {
+                return OSXSystemProperties.OSVersion < 1015;
+            }
+        }
+        return false;
     }
 
     @Override
@@ -418,7 +438,7 @@ public class AquaComboBoxUI extends BasicComboBoxUI
         }
     }
 
-    public void paintValue(Graphics g) {
+    public void paintValue(@NotNull Graphics g) {
         ListCellRenderer<Object> renderer = comboBox.getRenderer();
 
         Object displayedItem = null;
@@ -1347,9 +1367,10 @@ public class AquaComboBoxUI extends BasicComboBoxUI
 
         if (AquaUtilControlSize.isOKToInstallDefaultFont(comboBox)) {
             Font df = getDefaultFont();
-            AquaUtilControlSize.installDefaultFont(comboBox, df);
+            comboBox.setFont(df);
         }
 
+        isDefaultStyle = determineIsDefaultStyle();
         isTextured = determineIsTextured();
         configureAppearanceContext(null);
         comboBox.revalidate();
@@ -1382,15 +1403,10 @@ public class AquaComboBoxUI extends BasicComboBoxUI
         return size;
     }
 
-    protected Font getDefaultFont() {
+    protected @NotNull Font getDefaultFont() {
         Font font = comboBox.getFont();
-
         Object widget = getWidget();
-        if (widget != null) {
-            return AquaButtonExtendedTypes.getFont(font, widget, sizeVariant);
-        }
-
-        return font;
+        return AquaButtonExtendedTypes.getFont(widget, sizeVariant, font);
     }
 
     /**
@@ -1413,15 +1429,12 @@ public class AquaComboBoxUI extends BasicComboBoxUI
                 }
             }
         } else {
-            int bottomGap = 0;
             Object widget = getWidget();
-            if (widget != null) {
-                AquaButtonExtendedTypes.WidgetInfo info = AquaButtonExtendedTypes.getWidgetInfo(widget);
-                bottomGap = info.getBottomMenuGap();
-                if (OSXSystemProperties.OSVersion >= 1014 && isTextured) {
-                    // If no focus ring is shown, then we need less room.
-                    bottomGap -= 2;
-                }
+            AquaButtonExtendedTypes.WidgetInfo info = AquaButtonExtendedTypes.getWidgetInfo(widget);
+            int bottomGap = info.getBottomMenuGap();
+            if (OSXSystemProperties.OSVersion >= 1014 && isTextured) {
+                // If no focus ring is shown, then we need less room.
+                bottomGap -= 2;
             }
             return comboBox.getHeight() + bottomGap;
         }
@@ -1432,7 +1445,7 @@ public class AquaComboBoxUI extends BasicComboBoxUI
     /**
      * Return the widget. A widget is always defined while the UI is installed.
      */
-    protected Object getWidget() {
+    protected @NotNull Object getWidget() {
         if (layoutConfiguration instanceof ComboBoxLayoutConfiguration) {
             ComboBoxLayoutConfiguration bg = (ComboBoxLayoutConfiguration) layoutConfiguration;
             return bg.getWidget();
@@ -1440,7 +1453,7 @@ public class AquaComboBoxUI extends BasicComboBoxUI
             PopupButtonLayoutConfiguration bg = (PopupButtonLayoutConfiguration) layoutConfiguration;
             return bg.getPopupButtonWidget();
         } else {
-            return null;
+            return BUTTON_POP_UP;
         }
     }
 

@@ -11,6 +11,7 @@ package org.violetlib.aqua;
 import java.awt.*;
 import javax.swing.*;
 
+import org.jetbrains.annotations.NotNull;
 import org.violetlib.jnr.aqua.AquaUIPainter.Size;
 
 /**
@@ -19,7 +20,7 @@ import org.violetlib.jnr.aqua.AquaUIPainter.Size;
 public class AquaIconToggleButtonBorder extends AquaToggleButtonBorder {
 
     @Override
-    public Font getCustomDefaultFont(AbstractButton b, Size size, Font df) {
+    public @NotNull Font getCustomDefaultFont(@NotNull AbstractButton b, @NotNull Size size, @NotNull Font df) {
         float fontSize = AquaFonts.getControlTextSmallFont().getSize2D();
         return df.deriveFont(fontSize);
     }

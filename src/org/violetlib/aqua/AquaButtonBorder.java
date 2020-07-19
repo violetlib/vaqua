@@ -166,7 +166,7 @@ public abstract class AquaButtonBorder extends AquaBorder implements FocusRingOu
         return State.ACTIVE;
     }
 
-    protected State getState(AbstractButton b) {
+    protected @NotNull State getState(@NotNull AbstractButton b) {
         boolean isActive = AquaFocusHandler.isActive(b);
 
         if (!b.isEnabled()) {
@@ -208,16 +208,16 @@ public abstract class AquaButtonBorder extends AquaBorder implements FocusRingOu
      * @param size The size variant of the button.
      * @param df The standard default font for this button.
      */
-    public Font getCustomDefaultFont(AbstractButton b, Size size, Font df) {
+    public @NotNull Font getCustomDefaultFont(@NotNull AbstractButton b, @NotNull Size size, @NotNull Font df) {
         LayoutConfiguration g = getLayoutConfiguration(b);
         if (g instanceof ButtonLayoutConfiguration) {
             ButtonLayoutConfiguration bg = (ButtonLayoutConfiguration) g;
             AquaUIPainter.ButtonWidget widget = bg.getButtonWidget();
-            return AquaButtonExtendedTypes.getFont(df, widget, size);
+            return AquaButtonExtendedTypes.getFont(widget, size, df);
         } else if (g instanceof SegmentedButtonLayoutConfiguration) {
             SegmentedButtonLayoutConfiguration bg = (SegmentedButtonLayoutConfiguration) g;
             AquaUIPainter.SegmentedButtonWidget widget = bg.getWidget();
-            return AquaButtonExtendedTypes.getFont(df, widget, size);
+            return AquaButtonExtendedTypes.getFont(widget, size, df);
         } else {
             return df;
         }
@@ -565,7 +565,7 @@ public abstract class AquaButtonBorder extends AquaBorder implements FocusRingOu
      * Determine if a proposed button widget is usable for a button based on the fixed height (if any) imposed by the
      * widget.
      */
-    protected boolean isProposedButtonWidgetUsable(AbstractButton b, Object widget) {
+    protected boolean isProposedButtonWidgetUsable(@NotNull AbstractButton b, @NotNull Object widget) {
         LayoutConfiguration g;
 
         Size size = AquaUtilControlSize.getUserSizeFrom(b);
@@ -597,7 +597,7 @@ public abstract class AquaButtonBorder extends AquaBorder implements FocusRingOu
         // configuration of the button, which we may be in the process of replacing.
 
         Font font = AquaUtilControlSize.isOKToInstallDefaultFont(b)
-                ? AquaButtonExtendedTypes.getFont(AquaButtonUI.getGenericDefaultFont(b), widget, size)
+                ? AquaButtonExtendedTypes.getFont(widget, size, getGenericDefaultFont(b))
                 : b.getFont();
 
         // If the font cannot be determined, a fixed height widget is not usable.
@@ -608,6 +608,18 @@ public abstract class AquaButtonBorder extends AquaBorder implements FocusRingOu
         Dimension contentSize = AquaButtonUI.getPreferredContentSize(b, font, b.getIconTextGap());
         Dimension requiredSize = insetter.expand(contentSize);
         return requiredSize.height <= fixedHeight;
+    }
+
+    /**
+     * Return a configuration independent font for a button with no application defined font.
+     */
+    private static @NotNull Font getGenericDefaultFont(@NotNull AbstractButton b) {
+        Font f = getDefaultFontPropertyValue(b);
+        if (f == null) {
+            // should not happen
+            return new Font("Default", Font.PLAIN, 12);
+        }
+        return f;
     }
 
     protected @NotNull AquaUIPainter.ButtonState getButtonState(AbstractButton b) {

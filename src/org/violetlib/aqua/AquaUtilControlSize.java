@@ -40,6 +40,7 @@ import java.security.PrivilegedAction;
 import javax.swing.*;
 import javax.swing.plaf.UIResource;
 
+import org.jetbrains.annotations.NotNull;
 import org.violetlib.aqua.AquaUtils.RecyclableSingleton;
 import org.violetlib.aqua.AquaUtils.RecyclableSingletonFromDefaultConstructor;
 import org.violetlib.jnr.aqua.AquaUIPainter.Size;
@@ -170,13 +171,13 @@ public class AquaUtilControlSize {
      * Install a default font in a component. If it looks like the application has already installed a font, we do not
      * change it.
      */
-    public static void installDefaultFont(JComponent c, Font f) {
+    public static void installDefaultFont(@NotNull JComponent c, @NotNull Font f) {
         if (isOKToInstallDefaultFont(c)) {
             c.setFont(f);
         }
     }
 
-    public static boolean isOKToInstallDefaultFont(JComponent c) {
+    public static boolean isOKToInstallDefaultFont(@NotNull JComponent c) {
         Font f = c.getFont();
         return f == null || f instanceof UIResource;
     }
@@ -195,14 +196,11 @@ public class AquaUtilControlSize {
      * @return f a derived version of {@code f} at an appropriate size.
      * Note that the returned font will not be a UIResource.
      */
-    public static Font getFontForSize(Font f, Size size) {
+    public static Font getFontForSize(@NotNull Font f, @NotNull Size size) {
         if (!(f instanceof AquaFonts.DerivedUIResourceFont)) {
             f = new AquaFonts.DerivedUIResourceFont(f);
         }
-
-        if (size == Size.MINI) return f.deriveFont(AquaFonts.getControlTextMiniFont().getSize2D());
-        if (size == Size.SMALL) return f.deriveFont(AquaFonts.getControlTextSmallFont().getSize2D());
-        if (size == Size.LARGE) return f.deriveFont(AquaFonts.getControlTextLargeFont().getSize2D());
-        return f.deriveFont(AquaFonts.getControlTextFont().getSize2D());
+        float fontSize = AquaButtonExtendedTypes.getFontSize(size);
+        return f.deriveFont(fontSize);
     }
 }

@@ -99,17 +99,13 @@ public class AquaButtonUI extends BasicButtonUI
         removeCachedIcons((AbstractButton) c);
     }
 
-    protected void installDefaults(AbstractButton b) {
+    protected void installDefaults(@NotNull AbstractButton b) {
         // load shared instance defaults
         String pp = getPropertyPrefix();
-
         setButtonMarginIfNeeded(b, UIManager.getInsets(pp + "margin"));
-
         AquaUtils.installFont(b, pp + "font");
         LookAndFeel.installProperty(b, "opaque", false);
-
         b.putClientProperty(DEFAULT_FONT_PROPERTY, b.getFont());
-
         initializeToolbarStatus(b);
         configure(b);
     }
@@ -171,9 +167,8 @@ public class AquaButtonUI extends BasicButtonUI
             // This may change the button font, foreground color, and layout sizes.
             Size size = AquaUtilControlSize.getUserSizeFrom(b);
             if (AquaUtilControlSize.isOKToInstallDefaultFont(b)) {
-                Font df = getDefaultFont(b, size);
-                df = getCustomDefaultFont(b, size, df);
-                AquaUtilControlSize.installDefaultFont(b, df);
+                Font df = getFontForButton(b, size);
+                b.setFont(df);
             }
 
             updateTemplateIconStatus(b);
@@ -291,28 +286,30 @@ public class AquaButtonUI extends BasicButtonUI
     }
 
     /**
-     * Return the default font for a button independent of the button type and configuration.
+     * Identify the font to use for a button when the application has not installed a font.
+     * The font may be chosen based on the button type and size.
      */
-    public static Font getGenericDefaultFont(AbstractButton b) {
-        Font f = (Font) b.getClientProperty(DEFAULT_FONT_PROPERTY);
-        if (f != null) {
-            return f;
+    protected @NotNull Font getFontForButton(@NotNull AbstractButton b, @NotNull Size size) {
+        Font base = getDefaultFontPropertyValue(b);
+        if (base == null) {
+            // should not happen
+            base = new Font("Default", Font.PLAIN, 12);
         }
-        return b.getFont();
-    }
-
-    protected Font getDefaultFont(AbstractButton b, Size size) {
-        return (Font) b.getClientProperty(DEFAULT_FONT_PROPERTY);
-    }
-
-    protected Font getCustomDefaultFont(AbstractButton b, Size size, Font df) {
         Border border = b.getBorder();
         if (border instanceof AquaButtonBorder) {
             AquaButtonBorder bb = (AquaButtonBorder) border;
-            return bb.getCustomDefaultFont(b, size, df);
+            return bb.getCustomDefaultFont(b, size, base);
         } else {
-            return AquaUtilControlSize.getFontForSize(df, size);
+            return AquaUtilControlSize.getFontForSize(base, size);
         }
+    }
+
+    public static @Nullable Font getDefaultFontPropertyValue(@NotNull AbstractButton b) {
+        Object o = b.getClientProperty(DEFAULT_FONT_PROPERTY);
+        if (o instanceof Font) {
+            return (Font) o;
+        }
+        return null;
     }
 
     protected Color getDefaultForegroundColor(AbstractButton b) {
