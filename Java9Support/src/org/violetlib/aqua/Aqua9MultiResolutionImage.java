@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016 Alan Snyder.
+ * Copyright (c) 2016-2020 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -80,7 +80,7 @@ public class Aqua9MultiResolutionImage extends AquaMultiResolutionImage implemen
     private static @NotNull Image waitForImage(@NotNull Image image, int width, int height) {
         final boolean[] mutex = new boolean[] { false };
         ImageObserver observer = (Image img, int infoflags, int x, int y, int w, int h) -> {
-            int required = ImageObserver.ALLBITS;
+            int required = ImageObserver.WIDTH | ImageObserver.HEIGHT | ImageObserver.ALLBITS;
             if ((infoflags & required) == required || (infoflags & (ImageObserver.ABORT)) != 0) {
                 synchronized (mutex) {
                     mutex[0] = true;
