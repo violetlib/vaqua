@@ -478,19 +478,10 @@ public abstract class AquaButtonBorder extends AquaBorder implements FocusRingOu
             return new ButtonConfiguration((ButtonLayoutConfiguration) g, state, isFocused, bs);
         }
 
-//        if (g instanceof SegmentedButtonLayoutConfiguration) {
-//            AquaUIPainter.State state = getState(b);
-//            boolean isFocused = computeIsFocused(state, b);
-//            boolean isSelected = b.getModel().isSelected();
-//            AquaUIPainter.Direction d = AquaUIPainter.Direction.NONE;
-//            return new SegmentedButtonConfiguration((SegmentedButtonLayoutConfiguration) g, state, isSelected,
-//                    isFocused, d, SegmentedButtonConfiguration.DividerState.NONE, SegmentedButtonConfiguration.DividerState.NONE);
-//        }
-
         return null;
     }
 
-    private boolean computeIsFocused(@NotNull AquaUIPainter.State state, @NotNull AbstractButton b) {
+    protected boolean computeIsFocused(@NotNull AquaUIPainter.State state, @NotNull AbstractButton b) {
         if (b.isFocusPainted() && b.hasFocus()) {
             return state != State.DISABLED
                     && state != State.INACTIVE

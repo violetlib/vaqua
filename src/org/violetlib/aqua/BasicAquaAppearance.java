@@ -18,18 +18,18 @@ import org.jetbrains.annotations.Nullable;
 import org.violetlib.vappearances.VAppearance;
 
 /**
- * An object representing a specific appearance, including the current accent and highlight colors.
- */
+  * An object representing a specific appearance, including the current accent and highlight colors.
+*/
 
 public class BasicAquaAppearance implements VAppearance {
 
     private static final List<String> allColorSuffixes = Collections.unmodifiableList(Arrays.asList(
-            "_rollover",
-            "_pressed",
-            "_inactive",
-            "_disabled",
-            "_inactive_disabled",
-            "_focused"
+      "_rollover",
+      "_pressed",
+      "_inactive",
+      "_disabled",
+      "_inactive_disabled",
+      "_focused"
     ));
 
     public static @NotNull Color getOrdinaryColor(@NotNull Color c) {
@@ -111,10 +111,10 @@ public class BasicAquaAppearance implements VAppearance {
     }
 
     /**
-     * Return the color with the specified name.
-     * @param colorName The color name.
+      * Return the color with the specified name.
+      * @param colorName The color name.
      * @return the color, as a ColorUIResource, or null if the color name not defined in this appearance.
-     */
+    */
 
     public @Nullable Color getColor(@NotNull String colorName) {
         return colors.get(colorName);
@@ -230,8 +230,8 @@ public class BasicAquaAppearance implements VAppearance {
         public final @NotNull Map<String,String> synonyms = new HashMap<>();
 
         /**
-         * This method is for final consumption only.
-         */
+          * This method is for final consumption only.
+        */
         public @NotNull Map<String,Color> getColors() {
             applySynonyms(synonyms);
             return Collections.unmodifiableMap(colors);
@@ -974,25 +974,43 @@ public class BasicAquaAppearance implements VAppearance {
             colors.add("texturedSegmentedText_inactive", 255, 64);
             colors.add("texturedSegmentedText_inactive_disabled", 255, 32);
 
-            colors.add("selectedTexturedSegmentedText", 0, 176);
-            colors.add("selectedTexturedSegmentedText_disabled", 0, 64);
-            colors.add("selectedTexturedSegmentedText_inactive", 0, 96);
-            colors.add("selectedTexturedSegmentedText_inactive_disabled", 0, 64);
-
             colors.add("nonexclusiveTexturedText", 0, 224);
             colors.add("selectedNonexclusiveTexturedText", "controlAccent_rollover");
             colors.add("selectedNonexclusiveTexturedText_disabled", "controlAccent_disabled");
             colors.add("selectedNonexclusiveTexturedText_inactive", 0, 96);
             colors.add("selectedNonexclusiveTexturedText_inactive_disabled", 0, 48);
 
-            colors.add("texturedSegmentedToolbarText", 255);
-            colors.add("texturedSegmentedToolbarText_inactive", 255, 80);
-            colors.add("texturedSegmentedToolbarText_inactive_disabled", 255, 32);
 
-            colors.add("selectedTexturedSegmentedToolbarText", 0, 160);
-            colors.add("selectedTexturedSegmentedToolbarText_disabled", 0, 32);
-            colors.add("selectedTexturedSegmentedToolbarText_inactive", 0, 128);
-            colors.add("selectedTexturedSegmentedToolbarText_inactive_disabled", 0, 64);
+            if (OSVersion < 1016) {
+                colors.add("selectedTexturedSegmentedText", 0, 176);
+                colors.add("selectedTexturedSegmentedText_disabled", 0, 64);
+                colors.add("selectedTexturedSegmentedText_inactive", 0, 96);
+                colors.add("selectedTexturedSegmentedText_inactive_disabled", 0, 64);
+
+                colors.add("texturedSegmentedToolbarText", 255);
+                colors.add("texturedSegmentedToolbarText_inactive", 255, 80);
+                colors.add("texturedSegmentedToolbarText_inactive_disabled", 255, 32);
+
+                colors.add("selectedTexturedSegmentedToolbarText", 0, 160);
+                colors.add("selectedTexturedSegmentedToolbarText_disabled", 0, 32);
+                colors.add("selectedTexturedSegmentedToolbarText_inactive", 0, 128);
+                colors.add("selectedTexturedSegmentedToolbarText_inactive_disabled", 0, 64);
+            } else {
+                colors.add("selectedTexturedSegmentedText", "controlText");
+                colors.add("selectedTexturedSegmentedText_disabled", "texturedText_disabled");
+                colors.add("selectedTexturedSegmentedText_inactive", "texturedText_inactive");
+                colors.add("selectedTexturedSegmentedText_inactive_disabled", "texturedText_inactive_disabled");
+
+                colors.add("texturedSegmentedToolbarText", "texturedText");
+                colors.add("texturedSegmentedToolbarText_disabled", "texturedText_disabled");
+                colors.add("texturedSegmentedToolbarText_inactive", "texturedText_inactive");
+                colors.add("texturedSegmentedToolbarText_inactive_disabled", "texturedText_inactive_disabled");
+
+                colors.add("selectedTexturedSegmentedToolbarText", "controlText");
+                colors.add("selectedTexturedSegmentedToolbarText_disabled", "selectedTexturedText_disabled");
+                colors.add("selectedTexturedSegmentedToolbarText_inactive", "selectedTexturedText_inactive");
+                colors.add("selectedTexturedSegmentedToolbarText_inactive_disabled", "selectedTexturedText_inactive_disabled");
+            }
 
             colors.add("nonexclusiveTexturedToolbarText_inactive", 255, 80);
             colors.add("selectedNonexclusiveTexturedToolbarText_inactive", 255, 80);
@@ -1026,8 +1044,16 @@ public class BasicAquaAppearance implements VAppearance {
             colors.add("pushPopText_pressed", "controlText_pressed");
 
             // colors related to segmented buttons (dark mode)
-            colors.add("segmentedText", "controlText");
-            colors.add("segmentedText_focused", "controlText");
+            if (OSVersion < 1016) {
+                colors.add("segmentedText", "controlText");
+                colors.add("segmentedText_focused", "controlText");
+            } else {
+                colors.add("tabText", "controlText");
+                colors.add("tabText_focused", "controlText");
+                colors.add("segmentedText", "texturedText");
+                colors.add("segmentedText_inactive", "texturedText_inactive");
+                colors.add("segmentedText_focused", "texturedText");
+            }
 
             colors.addAll("selectedSegmentedText", "controlText");
             //colors.add("selectedSegmentedText_disabled", 0, 64);
@@ -1046,7 +1072,7 @@ public class BasicAquaAppearance implements VAppearance {
                 colors.add("selectedGradientText", 0, 180);
                 colors.add("selectedGradientText_inactive", 0, 192);
                 colors.add("selectedGradientText_disabled", 0, 64);
-           }
+            }
 
             if (OSVersion == 1014 || OSVersion == 1015) {
                 colors.add("gradientSegmentedText_inactive", "controlText");

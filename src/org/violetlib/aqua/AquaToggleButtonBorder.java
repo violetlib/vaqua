@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014-2018 Alan Snyder.
+ * Copyright (c) 2014-2020 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -10,7 +10,9 @@ package org.violetlib.aqua;
 
 import javax.swing.*;
 
-import org.violetlib.jnr.aqua.AquaUIPainter;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.violetlib.jnr.aqua.*;
 import org.violetlib.jnr.aqua.AquaUIPainter.ButtonWidget;
 
 /**
@@ -36,5 +38,22 @@ public class AquaToggleButtonBorder extends AquaButtonBorder implements FocusRin
         }
 
         return ButtonWidget.BUTTON_BEVEL_ROUND;
+    }
+
+    @Override
+    public @Nullable Configuration getConfiguration(@NotNull AbstractButton b, int width, int height) {
+
+        LayoutConfiguration g = getLayoutConfiguration(b);
+
+        if (g instanceof SegmentedButtonLayoutConfiguration) {
+            AquaUIPainter.State state = getState(b);
+            boolean isFocused = computeIsFocused(state, b);
+            boolean isSelected = b.getModel().isSelected();
+            AquaUIPainter.Direction d = AquaUIPainter.Direction.NONE;
+            return new SegmentedButtonConfiguration((SegmentedButtonLayoutConfiguration) g, state, isSelected,
+                    isFocused, d, SegmentedButtonConfiguration.DividerState.NONE, SegmentedButtonConfiguration.DividerState.NONE);
+        }
+
+        return super.getConfiguration(b, width, height);
     }
 }
