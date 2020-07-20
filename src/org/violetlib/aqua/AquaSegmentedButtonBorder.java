@@ -96,7 +96,7 @@ public class AquaSegmentedButtonBorder extends AquaButtonBorder implements Focus
     }
 
     @Override
-    public @Nullable Configuration getConfiguration(AbstractButton b, int width, int height) {
+    public @Nullable Configuration getConfiguration(@NotNull AbstractButton b, int width, int height) {
         SegmentedButtonLayoutConfiguration g = (SegmentedButtonLayoutConfiguration) getLayoutConfiguration(b);
         if (g == null) {
             // should not happen
@@ -105,11 +105,8 @@ public class AquaSegmentedButtonBorder extends AquaButtonBorder implements Focus
 
         ButtonModel model = b.getModel();
         State state = getState(b);
-        boolean isFocused = (state != State.DISABLED && state != State.INACTIVE && state != State.DISABLED_INACTIVE) && b.isFocusPainted() && b.hasFocus();
-
-        // Swing does not know about segmented buttons. They are just buttons that happen to be arranged in a row and
-        // (hopefully) configured properly. Therefore, we cannot determine anything about the button to the left or
-        // right.
+        boolean isFocused = (state != State.DISABLED && state != State.INACTIVE && state != State.DISABLED_INACTIVE)
+                && b.isFocusPainted() && b.hasFocus();
 
         AquaButtonExtendedTypes.WidgetInfo info = getWidgetInfo(b);
 
@@ -126,6 +123,23 @@ public class AquaSegmentedButtonBorder extends AquaButtonBorder implements Focus
         }
 
         SegmentedButtonWidget widget = getButtonWidget(b);
+
+        // Special case for exclusive textured segmented buttons in light mode on 10.14: make them active-insensitive.
+        // This is not what macOS 10.14 actually does, but it is much more readable, and it is similar to what macOS
+        // 10.15 does, which is to make all textured segmented buttons active-insensitive.
+
+        if (OSXSystemProperties.OSVersion == 1014
+                && state.isInactive()
+                && widget.isTextured()
+                && !AppearanceManager.getAppearance(b).isDark()
+                && isButtonInGroup(b)) {
+            state = state.toActive();
+        }
+
+        // Swing does not know about segmented buttons. They are just buttons that happen to be arranged in a row and
+        // (hopefully) configured properly. Therefore, we cannot determine anything about the button to the left or
+        // right.
+
         Size sz = g.getSize();
         AquaUIPainter.Direction d = AquaUIPainter.Direction.NONE;
         Position pos = g.getPosition();

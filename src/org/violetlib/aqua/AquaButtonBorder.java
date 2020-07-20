@@ -238,7 +238,8 @@ public abstract class AquaButtonBorder extends AquaBorder implements FocusRingOu
         }
     }
 
-    protected boolean shouldUseNonexclusiveStyle(AbstractButton b, AquaButtonExtendedTypes.WidgetInfo info) {
+    protected boolean shouldUseNonexclusiveStyle(@NotNull AbstractButton b,
+                                                 @NotNull AquaButtonExtendedTypes.WidgetInfo info) {
         // Some segmented buttons should use a special style when selected and they are not in a button
         // group. This corresponds to the "select any" option in AppKit.
 
@@ -466,7 +467,7 @@ public abstract class AquaButtonBorder extends AquaBorder implements FocusRingOu
     /*
      * Return the configuration for painting the button. The configuration is based on the current state of the button.
      */
-    public @Nullable Configuration getConfiguration(AbstractButton b, int width, int height) {
+    public @Nullable Configuration getConfiguration(@NotNull AbstractButton b, int width, int height) {
 
         LayoutConfiguration g = getLayoutConfiguration(b);
 
@@ -477,14 +478,14 @@ public abstract class AquaButtonBorder extends AquaBorder implements FocusRingOu
             return new ButtonConfiguration((ButtonLayoutConfiguration) g, state, isFocused, bs);
         }
 
-        if (g instanceof SegmentedButtonLayoutConfiguration) {
-            AquaUIPainter.State state = getState(b);
-            boolean isFocused = computeIsFocused(state, b);
-            boolean isSelected = b.getModel().isSelected();
-            AquaUIPainter.Direction d = AquaUIPainter.Direction.NONE;
-            return new SegmentedButtonConfiguration((SegmentedButtonLayoutConfiguration) g, state, isSelected,
-                    isFocused, d, SegmentedButtonConfiguration.DividerState.NONE, SegmentedButtonConfiguration.DividerState.NONE);
-        }
+//        if (g instanceof SegmentedButtonLayoutConfiguration) {
+//            AquaUIPainter.State state = getState(b);
+//            boolean isFocused = computeIsFocused(state, b);
+//            boolean isSelected = b.getModel().isSelected();
+//            AquaUIPainter.Direction d = AquaUIPainter.Direction.NONE;
+//            return new SegmentedButtonConfiguration((SegmentedButtonLayoutConfiguration) g, state, isSelected,
+//                    isFocused, d, SegmentedButtonConfiguration.DividerState.NONE, SegmentedButtonConfiguration.DividerState.NONE);
+//        }
 
         return null;
     }

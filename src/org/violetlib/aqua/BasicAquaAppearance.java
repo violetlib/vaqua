@@ -691,6 +691,10 @@ public class BasicAquaAppearance implements VAppearance {
                 colors.add("selectedSegmentedText", 255);
                 colors.add("selectedSegmentedText_disabled", 172);
                 colors.add("selectedSegmentedText_inactive", 34);
+                if (OSVersion == 1014 || OSVersion == 1015) {
+                    colors.add("selectedGradientSegmentedText", 255);
+                    colors.add("selectedGradientSegmentedText_disabled", 255, 144);
+                }
             }
 
             // colors related to textured segmented buttons
@@ -1027,7 +1031,10 @@ public class BasicAquaAppearance implements VAppearance {
 
             colors.addAll("selectedSegmentedText", "controlText");
             //colors.add("selectedSegmentedText_disabled", 0, 64);
-            //colors.add("selectedSegmentedText_inactive", 0, 192);
+
+            if (OSVersion == 1014 || OSVersion == 1015) {
+                colors.add("selectedSegmentedText_inactive", 0, 192);
+            }
 
             colors.add("nonexclusiveText_disabled", "disabledControlText");
             colors.add("nonexclusiveText_inactive", "controlText");
@@ -1041,9 +1048,13 @@ public class BasicAquaAppearance implements VAppearance {
                 colors.add("selectedGradientText_disabled", 0, 64);
            }
 
+            if (OSVersion == 1014 || OSVersion == 1015) {
+                colors.add("gradientSegmentedText_inactive", "controlText");
+            }
+
             colors.add("selectedGradientSegmentedText", "controlText");
             colors.add("selectedGradientSegmentedText_inactive", 0, 192);
-            colors.add("selectedGradientSegmentedText_inactive_disabled", 0,64);
+            colors.add("selectedGradientSegmentedText_inactive_disabled", 0, 64);
 
             // colors related to rounded rect buttons (dark mode)
 
@@ -1078,6 +1089,14 @@ public class BasicAquaAppearance implements VAppearance {
                 colors.add("inlineButtonText", 35);
             } else {
                 colors.add("inlineButtonText", 50);
+            }
+
+            // colors related to Tab buttons
+
+            if (OSVersion == 1014 || OSVersion == 1015) {
+                // This rule needed because AquaColors search rule favors mapping to disabled, which is probably a
+                // mistake.
+                colors.add("selectedTabText_inactive", 0, 192);
             }
 
             // colors related to sidebars (dark mode)
