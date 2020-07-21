@@ -347,7 +347,7 @@ public class AquaColors {
 
     private static @NotNull BasicContextualColors createBasicClearControlColors() {
         AquaContextualColorImpl background = new AquaContextualColorImpl("BasicClearControlColors.background", "clear");
-        background.setSelectedName("controlAccent");  // probably never used
+        background.setSelectedName("selectedContentBackground");  // used by combo box editors
 
         background.setInactiveSelectedName("unemphasizedSelectedTextBackground");
 
