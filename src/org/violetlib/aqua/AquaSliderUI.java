@@ -242,7 +242,7 @@ public class AquaSliderUI extends BasicSliderUI
     }
 
     @Override
-    public Shape getFocusRingOutline(JComponent c) {
+    public @NotNull Shape getFocusRingOutline(@NotNull JComponent c) {
         // The focus ring goes around the knob. The outline thus depends upon the thumb position as well as,
         // potentially, the slider style and the component orientation, and whether tick marks are painted.
 

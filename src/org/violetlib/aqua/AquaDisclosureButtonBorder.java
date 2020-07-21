@@ -8,11 +8,11 @@
 
 package org.violetlib.aqua;
 
-import org.jetbrains.annotations.NotNull;
-import org.violetlib.jnr.aqua.AquaUIPainter;
-import org.violetlib.jnr.aqua.AquaUIPainter.ButtonWidget;
-
 import javax.swing.*;
+
+import org.jetbrains.annotations.NotNull;
+import org.violetlib.jnr.aqua.AquaUIPainter.ButtonState;
+import org.violetlib.jnr.aqua.AquaUIPainter.ButtonWidget;
 
 import static org.violetlib.jnr.aqua.AquaUIPainter.ButtonState.OFF;
 import static org.violetlib.jnr.aqua.AquaUIPainter.ButtonState.ON;
@@ -26,12 +26,12 @@ public class AquaDisclosureButtonBorder extends AquaButtonBorder implements Focu
     }
 
     @Override
-    public ButtonWidget getButtonWidget(AbstractButton b) {
+    public @NotNull ButtonWidget getButtonWidget(@NotNull AbstractButton b) {
         return ButtonWidget.BUTTON_DISCLOSURE;
     }
 
     @Override
-    protected @NotNull AquaUIPainter.ButtonState getButtonState(AbstractButton b) {
+    protected @NotNull ButtonState getButtonState(@NotNull AbstractButton b) {
         return b.getModel().isSelected() ? ON : OFF;
     }
 

@@ -14,6 +14,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.violetlib.jnr.aqua.*;
 import org.violetlib.jnr.aqua.AquaUIPainter.ButtonWidget;
+import org.violetlib.jnr.aqua.AquaUIPainter.GenericButtonWidget;
+import org.violetlib.jnr.aqua.AquaUIPainter.SegmentedButtonWidget;
 
 /**
  * A border for a toggle button with no client specified button style. A generic button border must adapt to any size
@@ -25,10 +27,12 @@ import org.violetlib.jnr.aqua.AquaUIPainter.ButtonWidget;
 public class AquaToggleButtonBorder extends AquaButtonBorder implements FocusRingOutlineProvider {
 
     @Override
-    public final Object getButtonWidget(AbstractButton b) {
+    public final @NotNull GenericButtonWidget getButtonWidget(@NotNull AbstractButton b) {
         boolean isOnToolbar = AquaUtils.isOnToolbar(b);
 
-        Object preferredWidget = isOnToolbar ? ButtonWidget.BUTTON_TEXTURED_TOOLBAR : AquaUIPainter.SegmentedButtonWidget.BUTTON_SEGMENTED;
+        GenericButtonWidget preferredWidget = isOnToolbar
+                ? ButtonWidget.BUTTON_TEXTURED_TOOLBAR
+                : SegmentedButtonWidget.BUTTON_SEGMENTED;
         if (isProposedButtonWidgetUsable(b, preferredWidget)) {
             return preferredWidget;
         }
@@ -41,7 +45,7 @@ public class AquaToggleButtonBorder extends AquaButtonBorder implements FocusRin
     }
 
     @Override
-    public @Nullable Configuration getConfiguration(@NotNull AbstractButton b, int width, int height) {
+    public @Nullable GenericButtonConfiguration getConfiguration(@NotNull AbstractButton b, int width, int height) {
 
         LayoutConfiguration g = getLayoutConfiguration(b);
 

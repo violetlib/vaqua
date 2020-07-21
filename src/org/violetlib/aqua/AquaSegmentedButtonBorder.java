@@ -37,14 +37,11 @@ import javax.swing.*;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.violetlib.jnr.aqua.AquaUIPainter;
+import org.violetlib.jnr.aqua.*;
 import org.violetlib.jnr.aqua.AquaUIPainter.Position;
 import org.violetlib.jnr.aqua.AquaUIPainter.SegmentedButtonWidget;
 import org.violetlib.jnr.aqua.AquaUIPainter.Size;
 import org.violetlib.jnr.aqua.AquaUIPainter.State;
-import org.violetlib.jnr.aqua.Configuration;
-import org.violetlib.jnr.aqua.SegmentedButtonConfiguration;
-import org.violetlib.jnr.aqua.SegmentedButtonLayoutConfiguration;
 
 import static org.violetlib.jnr.aqua.SegmentedButtonConfiguration.DividerState;
 
@@ -71,7 +68,7 @@ public class AquaSegmentedButtonBorder extends AquaButtonBorder implements Focus
     }
 
     @Override
-    public SegmentedButtonWidget getButtonWidget(@NotNull AbstractButton b) {
+    public @NotNull SegmentedButtonWidget getButtonWidget(@NotNull AbstractButton b) {
         AquaButtonUI ui = AquaUtils.getUI(b, AquaButtonUI.class);
         if (ui != null && ui.isGroupMember(b)) {
             return getWidgetForGroupMember(b);
@@ -96,7 +93,7 @@ public class AquaSegmentedButtonBorder extends AquaButtonBorder implements Focus
     }
 
     @Override
-    public @Nullable Configuration getConfiguration(@NotNull AbstractButton b, int width, int height) {
+    public @Nullable GenericButtonConfiguration getConfiguration(@NotNull AbstractButton b, int width, int height) {
         SegmentedButtonLayoutConfiguration g = (SegmentedButtonLayoutConfiguration) getLayoutConfiguration(b);
         if (g == null) {
             // should not happen

@@ -15,12 +15,9 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.violetlib.geom.ExpandableOutline;
 import org.violetlib.jnr.LayoutInfo;
+import org.violetlib.jnr.aqua.*;
 import org.violetlib.jnr.aqua.AquaUIPainter.ButtonState;
 import org.violetlib.jnr.aqua.AquaUIPainter.ButtonWidget;
-import org.violetlib.jnr.aqua.ButtonConfiguration;
-import org.violetlib.jnr.aqua.ButtonLayoutConfiguration;
-import org.violetlib.jnr.aqua.Configuration;
-import org.violetlib.jnr.aqua.LayoutConfiguration;
 
 import static org.violetlib.jnr.aqua.AquaUIPainter.ButtonState.*;
 
@@ -39,7 +36,7 @@ public abstract class AquaLabeledButtonBorder extends AquaNamedButtonBorder {
                             @NotNull AbstractButton b,
                             @Nullable Icon icon,
                             @NotNull Rectangle viewRect) {
-        Configuration c = getConfiguration(b, viewRect.width, viewRect.height);
+        GenericButtonConfiguration c = getConfiguration(b, viewRect.width, viewRect.height);
         if (c instanceof ButtonConfiguration) {
             ButtonConfiguration bg = (ButtonConfiguration) c;
             Insets insets = new Insets(0, 0, 0, 0);
@@ -93,12 +90,12 @@ public abstract class AquaLabeledButtonBorder extends AquaNamedButtonBorder {
     }
 
     @Override
-    protected @NotNull ButtonState getButtonState(AbstractButton b) {
+    protected @NotNull ButtonState getButtonState(@NotNull AbstractButton b) {
         return isIndeterminate(b) ? MIXED : b.getModel().isSelected() ? ON : OFF;
     }
 
     @Override
-    protected Insets getSpecialMarginAdjustments(AbstractButton b) {
+    protected @Nullable Insets getSpecialMarginAdjustments(@NotNull AbstractButton b) {
         return null;
     }
 

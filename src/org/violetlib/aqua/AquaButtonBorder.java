@@ -47,6 +47,7 @@ import org.violetlib.jnr.LayoutInfo;
 import org.violetlib.jnr.aqua.*;
 import org.violetlib.jnr.aqua.AquaUIPainter.Size;
 import org.violetlib.jnr.aqua.AquaUIPainter.State;
+import org.violetlib.jnr.aqua.AquaUIPainter.GenericButtonWidget;
 
 import static org.violetlib.aqua.AquaButtonUI.*;
 import static org.violetlib.jnr.aqua.AquaUIPainter.ButtonState.OFF;
@@ -103,7 +104,7 @@ public abstract class AquaButtonBorder extends AquaBorder implements FocusRingOu
                             @NotNull AbstractButton b,
                             @Nullable Icon icon,
                             @NotNull Rectangle viewRect) {
-        Configuration bg = getConfiguration(b, viewRect.width, viewRect.height);
+        GenericButtonConfiguration bg = getConfiguration(b, viewRect.width, viewRect.height);
         if (bg != null) {
             paintBackground(g, b, bg, viewRect);
             if (allowsContent()) {
@@ -223,8 +224,10 @@ public abstract class AquaButtonBorder extends AquaBorder implements FocusRingOu
         }
     }
 
-    public @NotNull Color getForegroundColor(@NotNull AbstractButton b, @NotNull Configuration g, boolean isIcon) {
-        State state = getState(g);
+    public @NotNull Color getForegroundColor(@NotNull AbstractButton b,
+                                             @NotNull GenericButtonConfiguration g,
+                                             boolean isIcon) {
+        State state = g.getState();
         AquaButtonExtendedTypes.WidgetInfo info = getWidgetInfo(b);
         boolean isEnabled = b.getModel().isEnabled();
         boolean useNonexclusive = shouldUseNonexclusiveStyle(b, info);
@@ -300,7 +303,7 @@ public abstract class AquaButtonBorder extends AquaBorder implements FocusRingOu
      * @param b The button.
      * @return the margin adjustments, or null if none.
      */
-    protected Insets getMarginAdjustments(AbstractButton b) {
+    protected @Nullable Insets getMarginAdjustments(@NotNull AbstractButton b) {
         Insets margin = b.getMargin();
         if (margin != null && !(margin instanceof UIResource)) {
             // always use an application provided margin
@@ -313,7 +316,7 @@ public abstract class AquaButtonBorder extends AquaBorder implements FocusRingOu
         }
     }
 
-    protected Insets getSpecialMarginAdjustments(AbstractButton b) {
+    protected @Nullable Insets getSpecialMarginAdjustments(@NotNull AbstractButton b) {
         int m = getMargin(b);
         int top = 0;
         int left = m;
@@ -338,12 +341,12 @@ public abstract class AquaButtonBorder extends AquaBorder implements FocusRingOu
         return new Insets(top, left, bottom, right);
     }
 
-    protected int getMargin(AbstractButton b) {
+    protected int getMargin(@NotNull AbstractButton b) {
         AquaButtonExtendedTypes.WidgetInfo info = getWidgetInfo(b);
         return info.getMargin();
     }
 
-    protected Insetter getContentInsets(AbstractButton b) {
+    protected @Nullable Insetter getContentInsets(@NotNull AbstractButton b) {
         LayoutConfiguration g = getLayoutConfiguration(b);
         return g != null ? painter.getLayoutInfo().getContentInsets(g) : null;
     }
@@ -365,28 +368,50 @@ public abstract class AquaButtonBorder extends AquaBorder implements FocusRingOu
     /**
      * Create a special icon to use for a button. The icon rendering may be context dependent.
      */
-    public @Nullable AquaButtonIcon createIcon(AbstractButton b, boolean isTemplate) {
+    public @Nullable AquaButtonIcon createIcon(@NotNull AbstractButton b, boolean isTemplate) {
         return new AquaButtonIcon(b, isTemplate, keySupplier);
     }
 
     private class MyImageOperatorSupplier implements AquaButtonIcon.ImageOperatorSupplier {
         @Override
         public @Nullable Object getCurrentImageProcessingOperator(@NotNull AbstractButton b, boolean isTemplate) {
-            Configuration g = getConfiguration(b, b.getWidth(), b.getHeight());
+            GenericButtonConfiguration g = getConfiguration(b, b.getWidth(), b.getHeight());
             if (isTemplate && g != null) {
                 return getForegroundColor(b, g, true);
             }
-            State state = g != null ? getState(g) : getState(b);
+            State state = g != null ? g.getState() : getState(b);
             if (state == State.PRESSED) {
                 AquaAppearance appearance = AppearanceManager.ensureAppearance(b);
                 return appearance.isDark() ? AquaImageFactory.LIGHTEN_FOR_DISABLED : AquaImageFactory.DARKEN_FOR_PRESSED;
             }
-            if (state == State.DISABLED || state == State.DISABLED_INACTIVE) {
+            if (shouldUseDisabledIcon(g, state)) {
                 AquaAppearance appearance = AppearanceManager.ensureAppearance(b);
                 return appearance.isDark() ? AquaImageFactory.DARKEN_FOR_PRESSED : AquaImageFactory.LIGHTEN_FOR_DISABLED;
             }
             return null;
         }
+    }
+
+    protected boolean shouldUseDisabledIcon(@Nullable GenericButtonConfiguration g, @NotNull State state)
+    {
+        if (g != null) {
+            return shouldUseDisabledIcon(g);
+        }
+        return state == State.DISABLED || state == State.DISABLED_INACTIVE;
+    }
+
+    protected boolean shouldUseDisabledIcon(@NotNull GenericButtonConfiguration g)
+    {
+        State st = g.getState();
+        if (st == State.DISABLED || st == State.DISABLED_INACTIVE) {
+            return true;
+
+        } else if (st == State.INACTIVE) {
+            if (g.isTextured()) {
+                return OSXSystemProperties.OSVersion < 1015;
+            }
+        }
+        return false;
     }
 
     public @NotNull Dimension getPreferredButtonSize(@NotNull AbstractButton b) {
@@ -449,7 +474,7 @@ public abstract class AquaButtonBorder extends AquaBorder implements FocusRingOu
         return null;
     }
 
-    protected AquaButtonExtendedTypes.WidgetInfo getWidgetInfo(AbstractButton b) {
+    protected @NotNull AquaButtonExtendedTypes.WidgetInfo getWidgetInfo(@NotNull AbstractButton b) {
         Object widget = null;
 
         LayoutConfiguration g = getLayoutConfiguration(b);
@@ -467,7 +492,7 @@ public abstract class AquaButtonBorder extends AquaBorder implements FocusRingOu
     /*
      * Return the configuration for painting the button. The configuration is based on the current state of the button.
      */
-    public @Nullable Configuration getConfiguration(@NotNull AbstractButton b, int width, int height) {
+    public @Nullable GenericButtonConfiguration getConfiguration(@NotNull AbstractButton b, int width, int height) {
 
         LayoutConfiguration g = getLayoutConfiguration(b);
 
@@ -512,7 +537,7 @@ public abstract class AquaButtonBorder extends AquaBorder implements FocusRingOu
      * Return the layout configuration for the button. They layout configuration is determined when the button is
      * configured by the button UI. The button layout is presumed to be invalid at that time.
      */
-    public LayoutConfiguration getLayoutConfiguration(AbstractButton b) {
+    public @Nullable LayoutConfiguration getLayoutConfiguration(@NotNull AbstractButton b) {
         return (LayoutConfiguration) b.getClientProperty(AquaButtonUI.LAYOUT_CONFIGURATION_PROPERTY);
     }
 
@@ -520,8 +545,8 @@ public abstract class AquaButtonBorder extends AquaBorder implements FocusRingOu
      * Determine the layout configuration for the button. They layout configuration is determined when the button is
      * configured by the button UI. The button layout is presumed to be invalid at that time.
      */
-    public LayoutConfiguration determineLayoutConfiguration(AbstractButton b) {
-        Object widget = getButtonWidget(b);
+    public @Nullable LayoutConfiguration determineLayoutConfiguration(@NotNull AbstractButton b) {
+        GenericButtonWidget widget = getButtonWidget(b);
         Size size = AquaUtilControlSize.getUserSizeFrom(b);
         if (widget instanceof AquaUIPainter.ButtonWidget) {
             AquaUIPainter.ButtonWidget bw = (AquaUIPainter.ButtonWidget) widget;
@@ -535,12 +560,10 @@ public abstract class AquaButtonBorder extends AquaBorder implements FocusRingOu
         return null;
     }
 
-    public Object getButtonWidget(AbstractButton b) {
-        return null;
-    }
+    public abstract @NotNull GenericButtonWidget getButtonWidget(@NotNull AbstractButton b);
 
     @Override
-    public Shape getFocusRingOutline(JComponent c) {
+    public @Nullable Shape getFocusRingOutline(@NotNull JComponent c) {
         LayoutConfiguration g = getLayoutConfigurationForOutline((AbstractButton) c);
         if (g != null) {
             int width = c.getWidth();
@@ -614,7 +637,7 @@ public abstract class AquaButtonBorder extends AquaBorder implements FocusRingOu
         return f;
     }
 
-    protected @NotNull AquaUIPainter.ButtonState getButtonState(AbstractButton b) {
+    protected @NotNull AquaUIPainter.ButtonState getButtonState(@NotNull AbstractButton b) {
         if (b instanceof JToggleButton && !(b instanceof JCheckBox) && !(b instanceof JRadioButton)) {
             return b.getModel().isSelected() ? ON : OFF;
         }

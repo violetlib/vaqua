@@ -11,6 +11,7 @@ package org.violetlib.aqua;
 import javax.swing.*;
 import java.awt.*;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
@@ -33,5 +34,5 @@ public interface FocusRingOutlineProvider {
      * @return the focus ring outline, relative to the component bounds, or null if the component should not display a
      * focus ring.
      */
-    @Nullable Shape getFocusRingOutline(JComponent c);
+    @Nullable Shape getFocusRingOutline(@NotNull JComponent c);
 }

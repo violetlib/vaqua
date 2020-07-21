@@ -1,5 +1,5 @@
 /*
- * Changes Copyright (c) 2015-2018 Alan Snyder.
+ * Changes Copyright (c) 2015-2020 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -54,6 +54,7 @@ import javax.swing.plaf.basic.BasicButtonUI;
 import javax.swing.text.InternationalFormatter;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.violetlib.aqua.AquaUtils.RecyclableSingleton;
 import org.violetlib.aqua.AquaUtils.RecyclableSingletonFromDefaultConstructor;
 import org.violetlib.jnr.LayoutInfo;
@@ -575,7 +576,7 @@ public class AquaSpinnerUI extends SpinnerUI implements AquaComponentUI {
 
     class SpinnerPainterUI extends ComponentUI implements FocusRingOutlineProvider {
         @Override
-        public Shape getFocusRingOutline(JComponent c) {
+        public @Nullable Shape getFocusRingOutline(@NotNull JComponent c) {
             Size size = AquaUtilControlSize.getUserSizeFrom(spinner);
             SpinnerArrowsLayoutConfiguration g = new SpinnerArrowsLayoutConfiguration(size);
             Rectangle bounds = c.getBounds();

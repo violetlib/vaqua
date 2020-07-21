@@ -428,7 +428,7 @@ public class AquaComboBoxUI extends BasicComboBoxUI
     }
 
     @Override
-    public Shape getFocusRingOutline(JComponent c) {
+    public @Nullable Shape getFocusRingOutline(@NotNull JComponent c) {
         LayoutConfiguration g = getLayoutConfiguration();
         if (g != null) {
             AquaUtils.configure(painter, comboBox, c.getWidth(), c.getHeight());
@@ -723,7 +723,7 @@ public class AquaComboBoxUI extends BasicComboBoxUI
         }
 
         @Override
-        public Shape getFocusRingOutline(JComponent c) {
+        public @Nullable Shape getFocusRingOutline(@NotNull JComponent c) {
             Component parent = c.getParent();
             if (parent instanceof JComboBox) {
                 JComboBox cb = (JComboBox) parent;

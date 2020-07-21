@@ -338,7 +338,7 @@ public class AquaTabbedPaneUI extends AquaTabbedPaneCopyFromBasicUI
     }
 
     @Override
-    public @Nullable Shape getFocusRingOutline(JComponent c) {
+    public @Nullable Shape getFocusRingOutline(@NotNull JComponent c) {
         // A tabbed pane is focusable in Full Keyboard Access mode. The selected tab displays a focus ring.
         // The individual tabs are not focusable.
 

@@ -268,7 +268,7 @@ public class AquaButtonUI extends BasicButtonUI
     }
 
     @Override
-    public @Nullable Shape getFocusRingOutline(JComponent c) {
+    public @Nullable Shape getFocusRingOutline(@NotNull JComponent c) {
         Border border = c.getBorder();
         if (border instanceof FocusRingOutlineProvider) {
             FocusRingOutlineProvider bb = (FocusRingOutlineProvider) border;
@@ -741,7 +741,7 @@ public class AquaButtonUI extends BasicButtonUI
      * @param b The button.
      * @return the special icon for the button, or null if no special icon is defined for the button.
      */
-    protected @Nullable AquaButtonIcon getSpecialIcon(AbstractButton b) {
+    protected @Nullable AquaButtonIcon getSpecialIcon(@NotNull AbstractButton b) {
         Object o = b.getClientProperty(SPECIAL_ICON_PROPERTY);
         if (o instanceof AquaButtonIcon) {
             return (AquaButtonIcon) o;

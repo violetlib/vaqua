@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2018 Alan Snyder.
+ * Copyright (c) 2015-2020 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -10,6 +10,7 @@ package org.violetlib.aqua;
 
 import javax.swing.*;
 
+import org.jetbrains.annotations.NotNull;
 import org.violetlib.jnr.aqua.AquaUIPainter.ButtonWidget;
 
 /**
@@ -22,7 +23,7 @@ import org.violetlib.jnr.aqua.AquaUIPainter.ButtonWidget;
 public class AquaPushButtonBorder extends AquaButtonBorder {
 
     @Override
-    public ButtonWidget getButtonWidget(AbstractButton b) {
+    public @NotNull ButtonWidget getButtonWidget(@NotNull AbstractButton b) {
         boolean isOnToolbar = AquaUtils.isOnToolbar(b);
 
         ButtonWidget preferredWidget = isOnToolbar ? ButtonWidget.BUTTON_TEXTURED_TOOLBAR : ButtonWidget.BUTTON_PUSH;
