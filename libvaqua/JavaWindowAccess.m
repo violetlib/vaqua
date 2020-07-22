@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Alan Snyder.
+ * Copyright (c) 2018-2020 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -9,7 +9,6 @@
 // Support for mapping a native window to a Java window.
 
 #import "JavaWindowAccess.h"
-#import <JavaNativeFoundation.h>
 
 static JNF_CLASS_CACHE(jc_CPlatformWindow, "sun/lwawt/macosx/CPlatformWindow");
 static JNF_MEMBER_CACHE(jf_target, jc_CPlatformWindow, "target", "Ljava/awt/Window;");

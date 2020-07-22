@@ -21,7 +21,19 @@ static int VERSION = 3;
 #include <stdio.h>
 #include <assert.h>
 #include <math.h>
-#include "jni.h"
+
+#import <Cocoa/Cocoa.h>
+#import <CoreServices/CoreServices.h>
+#import <CoreFoundation/CoreFoundation.h>
+#import <CoreGraphics/CoreGraphics.h>
+#import <Quartz/Quartz.h>
+#import <JavaNativeFoundation/JavaNativeFoundation.h>
+#import <Availability.h>
+
+#if __MAC_OS_X_VERSION_MAX_ALLOWED >= 101500
+#import <QuickLookThumbnailing/QuickLookThumbnailing.h>
+#endif
+
 #include "org_violetlib_aqua_fc_OSXFile.h"
 #include "org_violetlib_aqua_OSXSystemProperties.h"
 #include "org_violetlib_aqua_AquaNativeSupport.h"
@@ -31,18 +43,6 @@ static int VERSION = 3;
 #include "org_violetlib_aqua_AquaUtils.h"
 #include "org_violetlib_aqua_AquaSheetSupport.h"
 #include "org_violetlib_aqua_AquaVibrantSupport.h"
-
-#import <Cocoa/Cocoa.h>
-#import <CoreServices/CoreServices.h>
-#import <CoreFoundation/CoreFoundation.h>
-#import <CoreGraphics/CoreGraphics.h>
-#import <Quartz/Quartz.h>
-#import <JavaNativeFoundation.h>
-#import <Availability.h>
-
-#if __MAC_OS_X_VERSION_MAX_ALLOWED >= 101500
-#import <QuickLookThumbnailing/QuickLookThumbnailing.h>
-#endif
 
 #import "AquaSidebarBackground.h"
 #import "AquaWrappedAWTView.h"
