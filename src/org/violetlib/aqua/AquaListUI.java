@@ -68,7 +68,6 @@ public class AquaListUI extends BasicListUI implements AquaComponentUI, AquaView
     private boolean isMenu = false;
     protected @NotNull ContainerContextualColors colors;
     protected @Nullable AppearanceContext appearanceContext;
-    protected @Nullable Color actualListBackground;
 
     public AquaListUI() {
         colors = AquaColors.CONTAINER_COLORS;
@@ -233,7 +232,6 @@ public class AquaListUI extends BasicListUI implements AquaComponentUI, AquaView
         AquaUIPainter.State state = getState();
         appearanceContext = new AppearanceContext(appearance, state, false, false);
         colors.configureForContainer();
-        actualListBackground = colors.getBackground(appearanceContext);
         AquaColors.installColors(list, appearanceContext, colors);
         list.repaint();
     }
@@ -330,12 +328,7 @@ public class AquaListUI extends BasicListUI implements AquaComponentUI, AquaView
 
     private @Nullable Color getBackgroundColor() {
         if (list.isOpaque()) {
-            if (isStriped && actualListBackground != null) {
-                // The dark mode stripes presume a dark background.
-                return actualListBackground;
-            } else {
-                return list.getBackground();
-            }
+            return list.getBackground();
         }
         return null;
     }
@@ -353,6 +346,7 @@ public class AquaListUI extends BasicListUI implements AquaComponentUI, AquaView
      */
     public void paintStripes(Graphics g) {
         if (isStriped && list.getModel() != null) {
+            Graphics2D gg = (Graphics2D) g;
 
             assert appearanceContext != null;
 
@@ -372,7 +366,11 @@ public class AquaListUI extends BasicListUI implements AquaComponentUI, AquaView
                 colors.configureForRow(row, isSelected && !isInset);
                 Color background = colors.getBackground(appearanceContext);
                 g.setColor(background);
-                g.fillRect(0, y, vs.width, rh);
+                if (isInset) {
+                    AquaUtils.paintInsetStripedRow(gg, 0, y, vs.width, rh);
+                } else {
+                    g.fillRect(0, y, vs.width, rh);
+                }
                 row++;
                 y += rh;
             }
@@ -444,17 +442,27 @@ public class AquaListUI extends BasicListUI implements AquaComponentUI, AquaView
     // this is used for blinking combobox popup selections when they are selected
     protected void repaintCell(Object value, int selectedIndex, boolean selected) {
         Rectangle rowBounds = getCellBounds(list, selectedIndex, selectedIndex);
-        if (rowBounds == null) return;
+        if (rowBounds == null) {
+            return;
+        }
 
         ListCellRenderer<Object> renderer = list.getCellRenderer();
-        if (renderer == null) return;
+        if (renderer == null) {
+            return;
+        }
 
         Component rendererComponent = renderer.getListCellRendererComponent(list, value, selectedIndex, selected, true);
-        if (rendererComponent == null) return;
+        if (rendererComponent == null) {
+            return;
+        }
 
         AquaComboBoxRenderer aquaRenderer = renderer instanceof AquaComboBoxRenderer ? (AquaComboBoxRenderer)renderer : null;
-        if (aquaRenderer != null) aquaRenderer.setDrawCheckedItem(false);
+        if (aquaRenderer != null) {
+            aquaRenderer.setDrawCheckedItem(false);
+        }
         rendererPane.paintComponent(list.getGraphics().create(), rendererComponent, list, rowBounds.x, rowBounds.y, rowBounds.width, rowBounds.height, true);
-        if (aquaRenderer != null) aquaRenderer.setDrawCheckedItem(true);
+        if (aquaRenderer != null) {
+            aquaRenderer.setDrawCheckedItem(true);
+        }
     }
 }

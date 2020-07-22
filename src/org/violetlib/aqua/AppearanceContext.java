@@ -12,7 +12,7 @@ import org.jetbrains.annotations.NotNull;
 import org.violetlib.jnr.aqua.AquaUIPainter;
 
 /**
-
+ *
  */
 
 public class AppearanceContext {

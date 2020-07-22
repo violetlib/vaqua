@@ -47,10 +47,7 @@ import javax.swing.plaf.ColorUIResource;
 import javax.swing.plaf.ComponentUI;
 import javax.swing.plaf.UIResource;
 import javax.swing.plaf.basic.BasicTableUI;
-import javax.swing.table.TableCellEditor;
-import javax.swing.table.TableCellRenderer;
-import javax.swing.table.TableColumn;
-import javax.swing.table.TableColumnModel;
+import javax.swing.table.*;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -355,6 +352,8 @@ public class AquaTableUI extends BasicTableUI
         colors.configureForContainer();
         actualTableBackground = colors.getBackground(appearanceContext);
         AquaColors.installColors(table, appearanceContext, colors);
+        // JTable forces opaque to be true, so LookAndFeel.installProperty cannot be used
+        table.setOpaque(!isStriped);
         table.repaint();
     }
 
@@ -610,6 +609,7 @@ public class AquaTableUI extends BasicTableUI
         }
 
         protected void paintBackground(Graphics g, int rMin, int rMax, int cMin, int cMax) {
+            Graphics2D gg = (Graphics2D) g;
             Rectangle clip = g.getClipBounds();
 
             boolean isRowSelection = table.getSelectedRowCount() > 0 && table.getRowSelectionAllowed() && !table.getColumnSelectionAllowed();
@@ -644,7 +644,6 @@ public class AquaTableUI extends BasicTableUI
                 g.setColor(rowBackground);
 
                 if (isSelected && isInset) {
-                    Graphics2D gg = (Graphics2D) g;
                     int y = cellRect.y;
                     int h = cellRect.height;
                     boolean isSelectedAbove = row > 0 && table.isRowSelected(row-1);
@@ -664,6 +663,8 @@ public class AquaTableUI extends BasicTableUI
                         g.setColor(cellBackground);
                         g.fillRect(x1, cellRect.y, x2 - x1, cellRect.height);
                     }
+                } else if (isInset) {
+                    AquaUtils.paintInsetStripedRow(gg, 0, cellRect.y, tableWidth, cellRect.height);
                 } else {
                     g.fillRect(clip.x, cellRect.y, clip.width, cellRect.height);
                 }
@@ -680,7 +681,11 @@ public class AquaTableUI extends BasicTableUI
                             colors.configureForRow(row, false);
                             Color bg = colors.getBackground(appearanceContext);
                             g.setColor(bg);
-                            g.fillRect(clip.x, nextRowY, clip.width, rowHeight);
+                            if (isInset) {
+                                AquaUtils.paintInsetStripedRow(gg, 0, nextRowY, tableWidth, rowHeight);
+                            } else {
+                                g.fillRect(clip.x, nextRowY, clip.width, rowHeight);
+                            }
                             row++;
                             nextRowY += rowHeight;
                         }
@@ -782,10 +787,6 @@ public class AquaTableUI extends BasicTableUI
 
             Rectangle vacatedColumnRect = minCell.union(maxCell);
 
-            // Paint a gray well in place of the moving column.
-            g.setColor(table.getParent().getBackground());
-            g.fillRect(vacatedColumnRect.x, vacatedColumnRect.y, vacatedColumnRect.width, vacatedColumnRect.height);
-
             // Move to the where the cell has been dragged.
             vacatedColumnRect.x += distance;
 
@@ -833,6 +834,8 @@ public class AquaTableUI extends BasicTableUI
                 Graphics gg = g.create();
                 try {
                     gg.clipRect(columnRect.x, columnRect.y, columnRect.width, columnRect.height);
+                    g.setColor(table.getParent().getBackground());
+                    g.fillRect(columnRect.x, columnRect.y, columnRect.width, columnRect.height);
                     paintBackground(gg, rMin, rMax, 0, table.getColumnCount() - 1);
                 } finally {
                     gg.dispose();

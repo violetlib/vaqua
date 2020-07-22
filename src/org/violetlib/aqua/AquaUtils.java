@@ -1322,6 +1322,17 @@ final public class AquaUtils {
     }
 
     /**
+     * Paint the isolated inset style highlight for a striped row.
+     */
+    public static void paintInsetStripedRow(@NotNull Graphics2D g, int cx, int cy, int cw, int ch) {
+        int top = 0;
+        int side = 10;
+        int radius = 8;
+        RoundRectangle2D r = new RoundRectangle2D.Float(cx + side, cy + top, cw - 2 * side, ch - 2 * top, radius, radius);
+        g.fill(r);
+    }
+
+    /**
      * Paint the isolated inset style highlight for a selected cell.
      */
     public static void paintInsetCellSelection(@NotNull Graphics2D g, int cx, int cy, int cw, int ch) {

@@ -200,6 +200,7 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
         colors = determineColors();
         colors.configureForContainer();
         AquaColors.installColors(tree, appearanceContext, colors);
+        LookAndFeel.installProperty(tree, "opaque", !isStriped);
         tree.repaint();
         repaintScrollPane();
     }
@@ -792,9 +793,11 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
                 int cw = rwidth;
                 int ch = bounds.height;
                 if (isInset() && isRowSelected) {
-                    boolean isSelectedAbove = row > 0 && tree.isRowSelected(row-1);
-                    boolean isSelectedBelow = row < tree.getRowCount()-1 && tree.isRowSelected(row+1);
-                    AquaUtils.paintInsetCellSelection(gg, isSelectedAbove, isSelectedBelow, cx, cy, cw, ch);
+                    boolean isSelectedAbove = row > 0 && tree.isRowSelected(row - 1);
+                    boolean isSelectedBelow = row < tree.getRowCount() - 1 && tree.isRowSelected(row + 1);
+                    AquaUtils.paintInsetCellSelection(gg, isSelectedAbove, isSelectedBelow, 0, cy, width, ch);
+                } else if (isInset() && isStriped()) {
+                    AquaUtils.paintInsetStripedRow(gg, 0, cy, width, ch);
                 } else {
                     gg.fillRect(cx, cy, cw, ch);
                 }
@@ -811,7 +814,6 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
     }
 
     protected @Nullable Color getSpecialBackgroundForRow(int row, boolean isRowSelected) {
-
         AppearanceContext ac = appearanceContext;
         if (isRowSelected) {
             if (sidebarVibrantEffects != null) {
@@ -832,6 +834,7 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
     protected void paintEmptyTreeStripes(Graphics g) {
         assert appearanceContext != null;
 
+        Graphics2D gg = (Graphics2D) g;
         int width = tree.getWidth();
         int height = tree.getHeight();
         Insets insets = tree.getInsets();
@@ -848,7 +851,11 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
             colors.configureForRow(row, isRowSelected);
             Color background = colors.getBackground(appearanceContext);
             g.setColor(background);
-            g.fillRect(insets.left, y, rwidth, rheight);
+            if (isInset()) {
+                AquaUtils.paintInsetStripedRow(gg, 0, y, width, rheight);
+            } else {
+                g.fillRect(insets.left, y, rwidth, rheight);
+            }
             row++;
         }
     }
@@ -1189,8 +1196,12 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
     @Override
     public Icon getCollapsedIcon() {
         Icon icon = super.getCollapsedIcon();
-        if (AquaUtils.isLeftToRight(tree)) return icon;
-        if (!(icon instanceof UIResource)) return icon;
+        if (AquaUtils.isLeftToRight(tree)) {
+            return icon;
+        }
+        if (!(icon instanceof UIResource)) {
+            return icon;
+        }
         return UIManager.getIcon("Tree.rightToLeftCollapsedIcon");
     }
 
