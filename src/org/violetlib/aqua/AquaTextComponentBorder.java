@@ -1,5 +1,5 @@
 /*
- * Changes Copyright (c) 2015-2018 Alan Snyder.
+ * Changes Copyright (c) 2015-2020 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -213,13 +213,9 @@ public class AquaTextComponentBorder extends AquaBorder implements FocusRingOutl
 
     protected @NotNull State getState() {
         if (!AquaFocusHandler.isActive(tc)) {
-            return State.INACTIVE;
+            return tc.isEnabled() ? State.INACTIVE : State.DISABLED_INACTIVE;
+        } else {
+            return tc.isEnabled() ? State.ACTIVE : State.DISABLED;
         }
-
-        if (!tc.isEnabled()) {
-            return State.DISABLED;
-        }
-
-        return State.ACTIVE;
     }
 }
