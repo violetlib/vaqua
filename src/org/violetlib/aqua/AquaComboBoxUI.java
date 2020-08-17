@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2019 Alan Snyder.
+ * Copyright (c) 2015-2020 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -652,6 +652,18 @@ public class AquaComboBoxUI extends BasicComboBoxUI
     }
 
     final class AquaComboBoxEditorUI extends AquaTextFieldUI implements FocusRingOutlineProvider {
+
+        @Override
+        public void installUI(@NotNull JComponent c) {
+            // This override is needed only because of a "temporary workaround" in BasicTextUI.installUI that updates
+            // the background after installDefaults has been performed. The same workaround is performed by the
+            // BasicTextUI property change listener for edited and enabled.
+
+            super.installUI(c);
+            assert appearanceContext != null;
+            AquaColors.installColors(editor, appearanceContext, colors);
+            editor.repaint();
+        }
 
         @Override
         protected void installDefaults() {
