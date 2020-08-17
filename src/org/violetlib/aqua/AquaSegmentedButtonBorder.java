@@ -42,6 +42,7 @@ import org.violetlib.jnr.aqua.AquaUIPainter.Position;
 import org.violetlib.jnr.aqua.AquaUIPainter.SegmentedButtonWidget;
 import org.violetlib.jnr.aqua.AquaUIPainter.Size;
 import org.violetlib.jnr.aqua.AquaUIPainter.State;
+import org.violetlib.jnr.aqua.AquaUIPainter.SwitchTracking;
 
 import static org.violetlib.jnr.aqua.SegmentedButtonConfiguration.DividerState;
 
@@ -120,6 +121,7 @@ public class AquaSegmentedButtonBorder extends AquaButtonBorder implements Focus
         }
 
         SegmentedButtonWidget widget = getButtonWidget(b);
+        boolean isInGroup = isButtonInGroup(b);
 
         // Special case for exclusive textured segmented buttons in light mode on 10.14: make them active-insensitive.
         // This is not what macOS 10.14 actually does, but it is much more readable, and it is similar to what macOS
@@ -129,7 +131,7 @@ public class AquaSegmentedButtonBorder extends AquaButtonBorder implements Focus
                 && state.isInactive()
                 && widget.isTextured()
                 && !AppearanceManager.getAppearance(b).isDark()
-                && isButtonInGroup(b)) {
+                && isInGroup) {
             state = state.toActive();
         }
 
@@ -141,8 +143,11 @@ public class AquaSegmentedButtonBorder extends AquaButtonBorder implements Focus
         AquaUIPainter.Direction d = AquaUIPainter.Direction.NONE;
         Position pos = g.getPosition();
         DividerState leftState = AquaSegmentedButtonBorder.getDividerState(false, false);
-        DividerState rightState = AquaSegmentedButtonBorder.getDividerState(pos == Position.FIRST || pos == Position.MIDDLE, false);
-        return new SegmentedButtonConfiguration(widget, sz, state, isSelected, isFocused, d, pos, leftState, rightState);
+        DividerState rightState = AquaSegmentedButtonBorder.getDividerState(pos == Position.FIRST
+                || pos == Position.MIDDLE, false);
+        AquaUIPainter.SwitchTracking tracking = isInGroup ? SwitchTracking.SELECT_ONE : SwitchTracking.SELECT_ANY;
+        return new SegmentedButtonConfiguration(widget, sz, state, isSelected, isFocused, d, pos,
+                leftState, rightState, tracking);
     }
 
     private @Nullable SegmentedButtonWidget getSegmentedSliderWidget() {

@@ -16,7 +16,7 @@
 #import "AquaWrappedWindowDelegate.h"
 #import "CMenuItemCategory.h"
 #import "CMenuBarCategory.h"
-#import <JavaNativeFoundation.h>
+#import <JavaNativeFoundation/JavaNativeFoundation.h>
 
 void ensureWindowDelegateWrapper(NSWindow *w);
 

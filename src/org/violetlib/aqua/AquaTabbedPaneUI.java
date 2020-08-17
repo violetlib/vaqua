@@ -549,7 +549,7 @@ public class AquaTabbedPaneUI extends AquaTabbedPaneCopyFromBasicUI
         DividerState leftState = AquaSegmentedButtonBorder.getDividerState(segmentLeadingSeparator, showLeftNeighborSelected);
         DividerState rightState = AquaSegmentedButtonBorder.getDividerState(segmentTrailingSeparator, showRightNeighborSelected);
         return new SegmentedButtonConfiguration(buttonWidget, sizeVariant, state, showSelected,
-                isFocused, Direction.UP, segmentPosition, leftState, rightState);
+                isFocused, Direction.UP, segmentPosition, leftState, rightState, SwitchTracking.SELECT_ONE);
     }
 
     protected void paintTabContents(@NotNull Graphics g,

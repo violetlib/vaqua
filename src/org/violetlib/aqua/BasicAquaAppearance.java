@@ -18,8 +18,8 @@ import org.jetbrains.annotations.Nullable;
 import org.violetlib.vappearances.VAppearance;
 
 /**
-  * An object representing a specific appearance, including the current accent and highlight colors.
-*/
+ * An object representing a specific appearance, including the current accent and highlight colors.
+ */
 
 public class BasicAquaAppearance implements VAppearance {
 
@@ -679,8 +679,11 @@ public class BasicAquaAppearance implements VAppearance {
             if (OSVersion >= 1016) {
                 // Tab = Exclusive Rounded, but no longer the same as Exclusive Separated
                 colors.addAll("segmentedText", "controlText");
-                colors.add("selectedSegmentedText_disabled", 0, 112);
-                colors.add("selectedSegmentedText_inactive", 0, 192);
+                colors.add("segmentedText_inactive", 0, 240);
+                colors.add("segmentedText_disabled_inactive", 0, 78);
+                colors.add("selectedSegmentedText_disabled", 0, 78);
+                colors.add("selectedSegmentedText_disabled_inactive", 0, 78);
+                colors.add("selectedSegmentedText_inactive", 34);
                 colors.add("selectedSegmentedSeparatedText", 255);
                 colors.add("selectedSegmentedSeparatedText_disabled", 172);
                 colors.add("selectedSegmentedSeparatedText_inactive", 34);
@@ -753,14 +756,22 @@ public class BasicAquaAppearance implements VAppearance {
             // colors related to inline buttons
             if (OSVersion < 1014) {
                 colors.add("inlineButtonText", 255);
-            } else {
+                colors.add("inlineButtonText_inactive", "inlineButtonText");
+                colors.add("inlineButtonText_disabled", 0, 64);
+                colors.add("inlineButtonText_pressed", 255, 224);
+            } else if (OSVersion < 1016) {
                 colors.add("inlineButtonText", 255, 224);
-            }
-            colors.add("inlineButtonText_inactive", "inlineButtonText");
-            colors.add("inlineButtonText_disabled", 0, 64);
-            colors.add("inlineButtonText_pressed", 255, 224);
-            if (OSVersion >= 1016) {
-                colors.add("selectedInlineButtonText", 255);
+                colors.add("inlineButtonText_inactive", "inlineButtonText");
+                colors.add("inlineButtonText_disabled", 0, 64);
+                colors.add("inlineButtonText_pressed", 255, 224);
+            } else {
+                colors.add("inlineButtonText", 0, 160);
+                colors.add("inlineButtonText_disabled", 0, 64);
+                colors.add("inlineButtonText_inactive", 0, 64);
+                colors.add("inlineButtonText_pressed", 0);
+                colors.add("inlineButtonText_rollover", 0);
+                colors.add("inlineButtonText_inactive_disabled", 0, 32);
+                colors.add("selectedInlineButtonText", 0, 64);
             }
 
             // colors related to sidebars
@@ -948,7 +959,11 @@ public class BasicAquaAppearance implements VAppearance {
             if (OSVersion < 1016) {
                 colors.add("selectedTexturedText", 0, 192);
                 colors.add("selectedTexturedText_disabled", 0, 64);
-                colors.add("selectedTexturedText_inactive", 0, 128);
+                if (OSVersion == 1015) {
+                    colors.add("selectedTexturedText_inactive", 0, 192);
+                } else {
+                    colors.add("selectedTexturedText_inactive", 0, 128);
+                }
                 colors.add("selectedTexturedText_inactive_disabled", 0, 64);
             } else {
                 colors.addAll("selectedTexturedText", "controlText");
@@ -969,6 +984,10 @@ public class BasicAquaAppearance implements VAppearance {
             }
 
             // colors related to textured segmented buttons (dark mode)
+
+            // the "Off" state generally follows the "Off" state of a toggle button which is the same as
+            // the normal state of a stateless button (a push button)
+
             // default synonyms are used for others
 
             colors.add("texturedSegmentedText_inactive", 255, 64);
@@ -979,22 +998,33 @@ public class BasicAquaAppearance implements VAppearance {
             colors.add("selectedNonexclusiveTexturedText_disabled", "controlAccent_disabled");
             colors.add("selectedNonexclusiveTexturedText_inactive", 0, 96);
             colors.add("selectedNonexclusiveTexturedText_inactive_disabled", 0, 48);
-
+            colors.add("nonexclusiveTexturedToolbarText_inactive", 255, 80);
+            colors.add("selectedNonexclusiveTexturedToolbarText_inactive", 255, 80);
 
             if (OSVersion < 1016) {
-                colors.add("selectedTexturedSegmentedText", 0, 176);
-                colors.add("selectedTexturedSegmentedText_disabled", 0, 64);
-                colors.add("selectedTexturedSegmentedText_inactive", 0, 96);
+
+                // In 10.14 (and perhaps other releases), textured segmented buttons in the active state are the same
+                // in a window or in a toolbar, but they differ when inactive.
+
+                colors.add("selectedTexturedSegmentedText", 0, 200);
+                colors.add("selectedTexturedSegmentedText_disabled", 0, 72);
+                colors.add("selectedTexturedSegmentedText_inactive", 0, 117);
                 colors.add("selectedTexturedSegmentedText_inactive_disabled", 0, 64);
 
-                colors.add("texturedSegmentedToolbarText", 255);
-                colors.add("texturedSegmentedToolbarText_inactive", 255, 80);
-                colors.add("texturedSegmentedToolbarText_inactive_disabled", 255, 32);
+                // selected nonexclusive enabled/disabled use accent color
+                colors.add("selectedNonexclusiveTexturedText_inactive", 0, 108);
+                colors.add("selectedNonexclusiveTexturedText_inactive_disabled", 0, 64);
 
-                colors.add("selectedTexturedSegmentedToolbarText", 0, 160);
-                colors.add("selectedTexturedSegmentedToolbarText_disabled", 0, 32);
-                colors.add("selectedTexturedSegmentedToolbarText_inactive", 0, 128);
-                colors.add("selectedTexturedSegmentedToolbarText_inactive_disabled", 0, 64);
+                // toolbar buttons in the active state are the same as the non-toolbar buttons
+                colors.addAll("selectedTexturedSegmentedToolbarText", "selectedTexturedSegmentedText");
+
+                // things change when inactive
+                // in fact, in the select-any case, there is no difference between On and Off
+                // therefore, my choice for the active case is to use the normally bright accent color
+
+                colors.add("selectedTexturedSegmentedToolbarText_inactive_disabled", 255, 48);
+                colors.add("selectedNonexclusiveTexturedToolbarText_inactive_disabled", 255, 64);
+
             } else {
                 colors.add("selectedTexturedSegmentedText", "controlText");
                 colors.add("selectedTexturedSegmentedText_disabled", "texturedText_disabled");
@@ -1012,12 +1042,9 @@ public class BasicAquaAppearance implements VAppearance {
                 colors.add("selectedTexturedSegmentedToolbarText_inactive_disabled", "selectedTexturedText_inactive_disabled");
             }
 
-            colors.add("nonexclusiveTexturedToolbarText_inactive", 255, 80);
-            colors.add("selectedNonexclusiveTexturedToolbarText_inactive", 255, 80);
-
             // colors related to recessed buttons (dark mode)
             colors.addAll("recessedText", "controlText");
-            if (OSVersion >= 1016) {
+            if (OSVersion >= 1015) {
                 colors.add("recessedText", 255, 115);
             }
 
@@ -1050,9 +1077,11 @@ public class BasicAquaAppearance implements VAppearance {
             } else {
                 colors.add("tabText", "controlText");
                 colors.add("tabText_focused", "controlText");
-                colors.add("segmentedText", "texturedText");
-                colors.add("segmentedText_inactive", "texturedText_inactive");
-                colors.add("segmentedText_focused", "texturedText");
+                colors.add("tabText_inactive", "controlText");
+                colors.add("segmentedText", 255, 192);
+                colors.add("segmentedText_disabled", 255, 48);
+                colors.add("segmentedText_inactive", "segmentedText");
+                colors.add("segmentedText_inactive_disabled", "segmentedText_disabled");
             }
 
             colors.addAll("selectedSegmentedText", "controlText");
@@ -1060,6 +1089,11 @@ public class BasicAquaAppearance implements VAppearance {
 
             if (OSVersion == 1014 || OSVersion == 1015) {
                 colors.add("selectedSegmentedText_inactive", 0, 192);
+            } else if (OSVersion >= 1016) {
+                colors.add("selectedSegmentedText", 0, 192);
+                colors.add("selectedSegmentedText_disabled", 0, 64);
+                colors.add("selectedSegmentedText_inactive", "selectedSegmentedText");
+                colors.add("selectedSegmentedText_inactive_disabled", "selectedDegmentedText_disabled");
             }
 
             colors.add("nonexclusiveText_disabled", "disabledControlText");
@@ -1068,19 +1102,22 @@ public class BasicAquaAppearance implements VAppearance {
             // colors related to gradient buttons (dark mode)
             colors.addAll("gradientText", "controlText");
 
-            if (OSVersion < 1016) {
+            if (OSVersion == 1014) {
                 colors.add("selectedGradientText", 0, 180);
-                colors.add("selectedGradientText_inactive", 0, 192);
                 colors.add("selectedGradientText_disabled", 0, 64);
+                colors.add("selectedGradientText_inactive", 0, 180);
+                colors.add("selectedGradientText_inactive_disabled", 0, 64);
             }
 
-            if (OSVersion == 1014 || OSVersion == 1015) {
-                colors.add("gradientSegmentedText_inactive", "controlText");
-            }
-
-            colors.add("selectedGradientSegmentedText", "controlText");
+            colors.addAll("gradientSegmentedText", "controlText");
             colors.add("selectedGradientSegmentedText_inactive", 0, 192);
-            colors.add("selectedGradientSegmentedText_inactive_disabled", 0, 64);
+
+//            colors.add("selectedGradientSegmentedText_disabled", 255, 108);
+//            colors.add("selectedGradientSegmentedText_inactive_disabled", 255, 76);
+//            colors.add("gradientSegmentedText_inactive", "controlText");
+//            colors.add("selectedGradientSegmentedText_inactive", 0, 192);
+//            colors.add("selectedGradientSegmentedText_inactive_disabled", 0, 64);
+//            colors.add("selectedGradientSegmentedText", "controlText");
 
             // colors related to rounded rect buttons (dark mode)
 
@@ -1111,10 +1148,14 @@ public class BasicAquaAppearance implements VAppearance {
 
             // colors related to inline buttons (dark mode)
             //  note: native rendering appears to use a blending operation
-            if (OSVersion >= 1016) {
-                colors.add("inlineButtonText", 35);
-            } else {
+            if (OSVersion < 1016) {
                 colors.add("inlineButtonText", 50);
+            } else {
+                colors.add("inlineButtonText", 255, 140);
+                colors.add("inlineButtonText_inactive", 255, 115);
+                colors.add("inlineButtonText_disabled", 255, 115);
+                colors.add("inlineButtonText_inactive_disabled", 255, 115);
+                colors.add("selectedInlineButtonText", 255, 180);
             }
 
             // colors related to Tab buttons
@@ -1210,5 +1251,4 @@ public class BasicAquaAppearance implements VAppearance {
             return colors;
         }
     }
-
 }

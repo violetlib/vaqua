@@ -25,7 +25,7 @@ import org.violetlib.geom.GeneralRoundRectangle;
 public class AquaFocusRingPainter {
     protected static final int ANIMATION_DURATION = 100;
 
-    protected static final float DEFAULT_CORNER = 6;
+    protected static final float DEFAULT_CORNER = 4;
 
     private JComponent currentFocusRingOwner;
     private FocusRingOutlineProvider currentFocusRingProvider;
