@@ -227,14 +227,7 @@ public class AquaTextFieldBorder extends AquaBorder implements FocusRingOutlineP
     }
 
     public static boolean isOnToolbar(JTextComponent tc) {
-        Component parent = tc.getParent();
-        while (parent != null) {
-            if (parent instanceof JToolBar) {
-                return true;
-            }
-            parent = parent.getParent();
-        }
-        return false;
+        return AquaUtils.isOnToolbar(tc);
     }
 
     protected State getStateFor(final JTextComponent tc) {

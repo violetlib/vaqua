@@ -605,7 +605,7 @@ public class AquaButtonExtendedTypes {
                 .withSegmented()
                 .withMargin(9)
                 .withForeground(black34, white, null, null)
-                .withDisabledForeground(new GrayUIResource(172), dark64)
+                .withDisabledForeground(new AquaUtils.GrayUIResource(172), dark64)
                 .withInactiveForeground(black34, null)
                 ;
 
@@ -623,10 +623,10 @@ public class AquaButtonExtendedTypes {
         result.put(BUTTON_ROUND, new WidgetInfo().withForeground(dark220, white, dark64, null));
 
         result.put(BUTTON_TOOLBAR_ITEM, new WidgetInfo()
-                .withForeground(new GrayUIResource(89), new GrayUIResource(81), null, null)
-                .withDisabledForeground(new GrayUIResource(134), new GrayUIResource(150))
-                .withInactiveForeground(new GrayUIResource(153), new GrayUIResource(172))
-                .withInactiveDisabledForeground(new GrayUIResource(198), new GrayUIResource(173))
+                .withForeground(new AquaUtils.GrayUIResource(89), new AquaUtils.GrayUIResource(81), null, null)
+                .withDisabledForeground(new AquaUtils.GrayUIResource(134), new AquaUtils.GrayUIResource(150))
+                .withInactiveForeground(new AquaUtils.GrayUIResource(153), new AquaUtils.GrayUIResource(172))
+                .withInactiveDisabledForeground(new AquaUtils.GrayUIResource(198), new AquaUtils.GrayUIResource(173))
                 .withFont(size -> size == AquaUIPainter.Size.SMALL || size == AquaUIPainter.Size.MINI
                                 ? UIManager.getFont("IconButton.smallFont")
                                 : UIManager.getFont("IconButton.font"))
@@ -635,7 +635,7 @@ public class AquaButtonExtendedTypes {
 
         result.put(BUTTON_INLINE, new WidgetInfo()
                 .withFont(UIManager.getFont("Button.inline.font"))
-                .withForeground(white, new GrayUIResource(240 /* 208 */))  // 208 is unreadable
+                .withForeground(white, new AquaUtils.GrayUIResource(240 /* 208 */))  // 208 is unreadable
                 .withIconPressed(pressedWhite)
         );
 
@@ -647,8 +647,8 @@ public class AquaButtonExtendedTypes {
                 .withEnabledForeground(texturedSelected, texturedUnselected)
                 .withPressed(white, black34)
                 .withDisabledForeground(texturedDisabledSelected, texturedDisabledUnselected)
-                .withInactiveForeground(new GrayUIResource(164), new GrayUIResource(178))
-                .withInactiveDisabledForeground(new GrayUIResource(195), new GrayUIResource(211))
+                .withInactiveForeground(new AquaUtils.GrayUIResource(164), new AquaUtils.GrayUIResource(178))
+                .withInactiveDisabledForeground(new AquaUtils.GrayUIResource(195), new AquaUtils.GrayUIResource(211))
                 ;
 
         result.put(BUTTON_TEXTURED, textured);
@@ -796,11 +796,5 @@ public class AquaButtonExtendedTypes {
         }
 
         return specifiersByName;
-    }
-
-    protected static class GrayUIResource extends ColorUIResource {
-        public GrayUIResource(int c) {
-            super(new Color(c, c, c));
-        }
     }
 }

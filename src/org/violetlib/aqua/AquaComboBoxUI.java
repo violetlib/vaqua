@@ -408,11 +408,130 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements AquaUtilControlSi
         @Override
         protected void installDefaults() {
             super.installDefaults();
+
             JTextComponent c = getComponent();
+
+            if (c instanceof AquaCustomComboTextField) {
+                AquaCustomComboTextField e = (AquaCustomComboTextField) c;
+                String prefix = getPropertyPrefix();
+                e.focusedForeground = UIManager.getColor(prefix + ".foreground");
+                e.inactiveForeground = UIManager.getColor(prefix + ".inactiveForeground");
+                e.inactiveSelectionForeground = UIManager.getColor(prefix + ".selectionForeground");
+                e.inactiveSelectionBackground = UIManager.getColor(prefix + ".selectionBackground");
+                e.isTextured = isTextured();
+            }
+
             LookAndFeel.installProperty(c, "opaque", true);
             Border b = c.getBorder();
             if (b == null || b instanceof UIDefaults) {
                 c.setBorder(null);
+            }
+        }
+
+        @Override
+        protected void updateFocusStyle(JTextComponent c, boolean hasFocus) {
+            super.updateFocusStyle(c, hasFocus);
+            if (c instanceof AquaCustomComboTextField) {
+                AquaCustomComboTextField e = (AquaCustomComboTextField) c;
+                if (e.isTextured) {
+                    String prefix = "ComboBox.textured";
+                    Color fg = e.getForeground();
+                    if ((fg == null) || (fg instanceof UIResource)) {
+                        e.setForeground(hasFocus ? e.focusedForeground : UIManager.getColor(prefix + ".foreground"));
+                    }
+                }
+            }
+        }
+
+        @Override
+        protected void updateActiveStyle() {
+            super.updateActiveStyle();
+
+            if (editor instanceof AquaCustomComboTextField) {
+                AquaCustomComboTextField e = (AquaCustomComboTextField) editor;
+                updateActiveStyle(e);
+            }
+        }
+
+        @Override
+        public void updateStyle() {
+            super.updateStyle();
+
+            if (editor instanceof AquaCustomComboTextField) {
+                AquaCustomComboTextField e = (AquaCustomComboTextField) editor;
+                updateStyle(e);
+            }
+        }
+
+        protected void updateStyle(AquaCustomComboTextField e) {
+            boolean shouldBeTextured = isTextured();
+            if (shouldBeTextured != e.isTextured) {
+                setTextured(e, shouldBeTextured);
+            }
+        }
+
+        protected void updateActiveStyle(AquaCustomComboTextField e) {
+
+            if (e.isTextured) {
+                boolean showInactive = false;
+                if (arrowButton != null) {
+                    ComboBoxConfiguration bg = (ComboBoxConfiguration) arrowButton.getConfiguration();
+                    showInactive = (bg.getState() == AquaUIPainter.State.INACTIVE);
+                }
+
+                String prefix = "ComboBox.textured";
+                Color fg = e.getForeground();
+                if ((fg == null) || (fg instanceof UIResource)) {
+                    e.setForeground(UIManager.getColor(prefix + (showInactive ? ".inactiveForeground" : ".foreground")));
+                }
+
+                Color s = editor.getSelectionColor();
+                if ((s == null) || (s instanceof UIResource)) {
+                    editor.setSelectionColor(UIManager.getColor(prefix + (showInactive ? ".inactiveSelectionBackground" : ".selectionBackground")));
+                }
+
+                Color sfg = editor.getSelectedTextColor();
+                if ((sfg == null) || (sfg instanceof UIResource)) {
+                    editor.setSelectedTextColor(UIManager.getColor(prefix + (showInactive ? ".inactiveSelectionForeground" : ".selectionForeground")));
+                }
+            }
+        }
+
+        protected void setTextured(AquaCustomComboTextField e, boolean isTextured) {
+            e.isTextured = isTextured;
+
+            String prefix = isTextured ? "ComboBox.textured" : getPropertyPrefix();
+
+            Color fg = e.getForeground();
+            if ((fg == null) || (fg instanceof UIResource)) {
+                e.setForeground(UIManager.getColor(prefix + ".foreground"));
+            }
+
+            Color s = editor.getSelectionColor();
+            if ((s == null) || (s instanceof UIResource)) {
+                editor.setSelectionColor(UIManager.getColor(prefix + ".selectionBackground"));
+            }
+
+            Color sfg = editor.getSelectedTextColor();
+            if ((sfg == null) || (sfg instanceof UIResource)) {
+                editor.setSelectedTextColor(UIManager.getColor(prefix + ".selectionForeground"));
+            }
+
+            Color dfg = editor.getDisabledTextColor();
+            if ((dfg == null) || (dfg instanceof UIResource)) {
+                editor.setDisabledTextColor(UIManager.getColor(prefix + ".disabledForeground"));
+            }
+
+            if (isTextured) {
+                e.focusedForeground = UIManager.getColor(prefix + ".focusedForeground");
+                e.inactiveForeground = UIManager.getColor(prefix + ".inactiveForeground");
+                e.inactiveSelectionForeground = UIManager.getColor(prefix + ".inactiveSelectionForeground");
+                e.inactiveSelectionBackground = UIManager.getColor(prefix + ".inactiveSelectionBackground");
+            } else {
+                e.focusedForeground = UIManager.getColor(prefix + ".foreground");
+                e.inactiveForeground = UIManager.getColor(prefix + ".inactiveForeground");
+                e.inactiveSelectionForeground = UIManager.getColor(prefix + ".selectionForeground");
+                e.inactiveSelectionBackground = UIManager.getColor(prefix + ".selectionBackground");
             }
         }
 
@@ -439,6 +558,16 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements AquaUtilControlSi
             }
 
             super.paintBackgroundSafely(g);
+        }
+
+        protected boolean isTextured() {
+            if (arrowButton != null) {
+                arrowButton.configure(null);
+                ComboBoxConfiguration bg = (ComboBoxConfiguration) arrowButton.getConfiguration();
+                AquaUIPainter.ComboBoxWidget w = bg.getWidget();
+                return w == AquaUIPainter.ComboBoxWidget.BUTTON_COMBO_BOX_TEXTURED || w == AquaUIPainter.ComboBoxWidget.BUTTON_COMBO_BOX_TEXTURED_TOOLBAR;
+            }
+            return false;
         }
 
         @Override
@@ -530,6 +659,13 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements AquaUtilControlSi
     @SuppressWarnings("serial") // Superclass is not serializable across versions
     class AquaCustomComboTextField extends JTextField {
         @SuppressWarnings("serial") // anonymous class
+
+        boolean isTextured;
+        Color inactiveForeground;
+        Color focusedForeground;
+        Color inactiveSelectionForeground;
+        Color inactiveSelectionBackground;
+
         public AquaCustomComboTextField() {
 
             setUI(new AquaComboBoxEditorUI());

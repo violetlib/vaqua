@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014 Alan Snyder.
+ * Copyright (c) 2014-2016 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the
@@ -13,6 +13,8 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyListener;
+
+import org.violetlib.aqua.OSXSystemProperties;
 
 /**
  * Control to select list or column view in the file chooser.
@@ -92,6 +94,12 @@ public class ViewModeControlImpl extends ViewModeControl {
         JToggleButton b = new JToggleButton(ic);
         b.putClientProperty("JButton.buttonType", "segmentedTextured");
         b.putClientProperty("JButton.segmentPosition", position);
+
+        if (OSXSystemProperties.OSVersion >= 1011) {
+            b.setMargin(new Insets(5, 5, 5, 5));
+        } else {
+            b.setMargin(new Insets(6, 5, 6, 5));
+        }
 
         b.addActionListener(new ActionListener() {
             @Override

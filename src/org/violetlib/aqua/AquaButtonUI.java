@@ -317,13 +317,8 @@ public class AquaButtonUI extends BasicButtonUI implements AquaUtilControlSize.S
         return existingColor;
     }
 
-    public static boolean isOnToolbar(final AbstractButton b) {
-        Component parent = b.getParent();
-        while (parent != null) {
-            if (parent instanceof JToolBar) return true;
-            parent = parent.getParent();
-        }
-        return false;
+    public static boolean isOnToolbar(AbstractButton b) {
+        return AquaUtils.isOnToolbar(b);
     }
 
     protected void setButtonMarginIfNeeded(final AbstractButton b, final Insets insets) {

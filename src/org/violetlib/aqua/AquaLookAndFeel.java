@@ -418,6 +418,30 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
         final Color texturedButtonDisabledNonexclusiveSelectedColor
                 = OSXSystemProperties.OSVersion >= 1011 ? new ColorUIResource(new Color(37, 125, 252, 120)) : new ColorUIResource(new Color(0, 122, 255, 120));
 
+        final Color texturedComboBoxColor = texturedButtonUnselectedColor;
+        final Color texturedComboBoxSelectedColor = AquaImageFactory.getTextSelectionForegroundColorUIResource();
+        final Color texturedComboBoxFocusedColor = textForeground;
+        final Color texturedComboBoxDisabledColor = new ColorUIResource(new Color(0, 0, 0, 64));
+        final Color texturedComboBoxInactiveColor = new AquaUtils.GrayUIResource(178);
+        final Color texturedComboBoxInactiveSelectedColor = new AquaUtils.GrayUIResource(128);
+        final Color texturedComboBoxSelectionBackground = AquaImageFactory.getTextSelectionBackgroundColorUIResource();
+        final Color texturedComboBoxInactiveSelectionBackground = AquaImageFactory.getSelectionInactiveBackgroundColorUIResource();
+
+        // colors related to the unified title and toolbar window style
+        final Color unifiedTopDividerColor = new Color(246, 246, 246);
+        final Color unifiedTopDividerInactiveColor = new Color(251, 251, 251);
+        final Color unifiedTopDividerColor1 = new Color(244, 244, 244);
+        final Color unifiedTopDividerColor2 = new Color(237, 237, 237);
+        final Color unifiedTopDividerInactiveColor1 = new Color(251, 251, 251);
+        final Color unifiedTopDividerInactiveColor2 = new Color(248, 248, 248);
+
+        final Color unifiedBottomDividerColor = OSXSystemProperties.OSVersion < 1011 ? new Color(177, 177, 177) : new Color(182, 182, 182);
+        final Color unifiedBottomDividerInactiveColor = new Color(209, 209, 209);
+        final Color unifiedBottomDividerColor1 = new Color(195, 195, 195);
+        final Color unifiedBottomDividerColor2 = OSXSystemProperties.OSVersion < 1011 ? new Color(175, 175, 175) : new Color(171, 171, 171);
+        final Color unifiedBottomDividerInactiveColor1 = new Color(231, 231, 231);
+        final Color unifiedBottomDividerInactiveColor2 = new Color(206, 206, 206);
+
         final LazyValue controlFont = t -> AquaFonts.getControlTextFont();
         final LazyValue controlSmallFont = t -> AquaFonts.getControlTextSmallFont();
         final LazyValue controlMiniFont = t -> AquaFonts.getControlTextMiniFont();
@@ -571,6 +595,16 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
             "ComboBox.ancestorInputMap", aquaKeyBindings.getComboBoxInputMap(),
             "ComboBox.padding", new InsetsUIResource(1, 4, 1, 4),   // affects only non-editable combo boxes
             "ComboBox.maximumRowCount", 5,
+
+            // Editable combo box text editor colors when using textured style
+            "ComboBox.textured.foreground", texturedComboBoxColor,
+            "ComboBox.textured.disabledForeground", texturedComboBoxDisabledColor,
+            "ComboBox.textured.selectionForeground", texturedComboBoxSelectedColor,
+            "ComboBox.textured.focusedForeground", texturedComboBoxFocusedColor,
+            "ComboBox.textured.inactiveForeground", texturedComboBoxInactiveColor,
+            "ComboBox.textured.selectionBackground", texturedComboBoxSelectionBackground,
+            "ComboBox.textured.inactiveSelectionForeground", texturedComboBoxInactiveSelectedColor, // not native, but looks better
+            "ComboBox.textured.inactiveSelectionBackground", texturedComboBoxInactiveSelectionBackground,
 
             "DesktopIcon.border", internalFrameBorder,
             "DesktopIcon.borderColor", smokyGlass,
@@ -962,7 +996,7 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
             "SplitPane.border", null,
             "SplitPane.continuousLayout", Boolean.TRUE,
             "SplitPane.dividerSize", 9, // will be replaced by AquaSplitPaneUI
-            "SplitPane.dividerColor", new ColorUIResource(Color.GRAY),  // used for too-thin divider
+            "SplitPane.dividerColor", separator,  // used for too-thin divider
             "SplitPaneDivider.border", null, // AquaSplitPaneDividerUI draws it
 
             // *** TabbedPane
@@ -1169,7 +1203,22 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
 
             "Tree.focusInputMap", aquaKeyBindings.getTreeInputMap(),
             "Tree.focusInputMap.RightToLeft", aquaKeyBindings.getTreeRightToLeftInputMap(),
-            "Tree.ancestorInputMap", new UIDefaults.LazyInputMap(new Object[]{"ESCAPE", "cancel"}),};
+            "Tree.ancestorInputMap", new UIDefaults.LazyInputMap(new Object[]{"ESCAPE", "cancel"}),
+
+            "Window.unifiedTopDividerColor", unifiedTopDividerColor,
+            "Window.unifiedTopDividerInactiveColor", unifiedTopDividerInactiveColor,
+            "Window.unifiedTopDividerColor1", unifiedTopDividerColor1,
+            "Window.unifiedTopDividerColor2", unifiedTopDividerColor2,
+            "Window.unifiedTopDividerInactiveColor1", unifiedTopDividerInactiveColor1,
+            "Window.unifiedTopDividerInactiveColor2", unifiedTopDividerInactiveColor2,
+            "Window.unifiedBottomDividerColor", unifiedBottomDividerColor,
+            "Window.unifiedBottomDividerInactiveColor", unifiedBottomDividerInactiveColor,
+            "Window.unifiedBottomDividerColor1", unifiedBottomDividerColor1,
+            "Window.unifiedBottomDividerColor2", unifiedBottomDividerColor2,
+            "Window.unifiedBottomDividerInactiveColor1", unifiedBottomDividerInactiveColor1,
+            "Window.unifiedBottomDividerInactiveColor2", unifiedBottomDividerInactiveColor2,
+
+        };
 
         table.putDefaults(defaults);
 

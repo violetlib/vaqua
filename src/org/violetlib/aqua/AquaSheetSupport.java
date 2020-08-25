@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015 Alan Snyder.
+ * Copyright (c) 2015-2016 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -10,10 +10,18 @@ package org.violetlib.aqua;
 
 import java.awt.*;
 import java.awt.event.*;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import java.util.function.Consumer;
 import javax.accessibility.AccessibleContext;
 import javax.swing.*;
+import javax.swing.border.Border;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 import javax.swing.plaf.FileChooserUI;
+
+import static org.violetlib.aqua.AquaCustomStyledWindow.STYLE_UNIFIED;
+import static org.violetlib.aqua.AquaUtils.syslog;
 
 /**
  * Support for displaying windows as sheets.
@@ -201,9 +209,36 @@ public class AquaSheetSupport {
         }
 
         int oldTop = 0;
+        AquaCustomStyledWindow.CustomToolbarBorder toolbarBorder = null;
+
         if (needToUndecorate) {
-            //syslog("About to reset title window style");
-            oldTop = AquaUtils.unsetTitledWindowStyle(w);
+            oldTop = w.getInsets().top;
+            if (oldTop > 0) {
+                //syslog("About to reset title window style");
+                try {
+                    AquaUtils.unsetTitledWindowStyle(w);
+                } catch (UnsupportedOperationException ex) {
+                    throw new UnsupportedOperationException("Unable to display as sheet: " + ex.getMessage());
+                }
+            } else {
+                // AWT thinks the window is decorated, but it presumably is one of our custom window styles that is
+                // implemented using the full content view option. If the window has a unified title bar and tool bar,
+                // then we need to undo the extra top inset on the tool bar.
+                AquaCustomStyledWindow sw = AquaUtils.getCustomStyledWindow(w);
+                if (sw != null) {
+                    int style = sw.getStyle();
+                    if (style == STYLE_UNIFIED) {
+                        JToolBar tb = sw.getWindowToolbar();
+                        if (tb != null) {
+                            Border b = tb.getBorder();
+                            if (b instanceof AquaCustomStyledWindow.CustomToolbarBorder) {
+                                toolbarBorder = (AquaCustomStyledWindow.CustomToolbarBorder) b;
+                                toolbarBorder.setExtraTopSuppressed(true);
+                            }
+                        }
+                    }
+                }
+            }
         }
 
         JRootPane rp = null;
@@ -243,11 +278,73 @@ public class AquaSheetSupport {
             if (oldTop > 0) {
                 AquaUtils.restoreTitledWindowStyle(w, oldTop);
                 AquaUtils.syncAWTView(w);
+            } else if (toolbarBorder != null) {
+                toolbarBorder.setExtraTopSuppressed(false);
             }
             throw new UnsupportedOperationException("Unable to display as sheet");
         }
 
         w.setVisible(true); // cause the lightweight components to be painted -- this method blocks on a modal dialog
+    }
+
+    /**
+     * Determine whether a window is being displayed as a sheet.
+     */
+    public static boolean isSheet(Window w) {
+        if (w instanceof RootPaneContainer) {
+            RootPaneContainer rpc = (RootPaneContainer) w;
+            JRootPane rp = rpc.getRootPane();
+            return rp != null && isSheet(rp);
+        } else {
+            return false;
+        }
+    }
+
+    /**
+     * Determine whether a window is being displayed as a sheet.
+     */
+    public static boolean isSheet(JRootPane rp) {
+        Object style = rp.getClientProperty(AquaVibrantSupport.BACKGROUND_STYLE_KEY);
+        return isSheetFromBackgroundStyle(style);
+    }
+
+    public static void registerIsSheetChangeListener(JRootPane rp, ChangeListener l) {
+        rp.addPropertyChangeListener(AquaVibrantSupport.BACKGROUND_STYLE_KEY, new SheetPropertyChangeListener(rp, l));
+    }
+
+    public static void unregisterIsSheetChangeListener(JRootPane rp, ChangeListener l) {
+        PropertyChangeListener[] pcls = rp.getPropertyChangeListeners(AquaVibrantSupport.BACKGROUND_STYLE_KEY);
+        for (PropertyChangeListener pcl : pcls) {
+            if (pcl instanceof SheetPropertyChangeListener) {
+                SheetPropertyChangeListener spcl = (SheetPropertyChangeListener) pcl;
+                if (spcl.rp == rp && spcl.l == l) {
+                    rp.removePropertyChangeListener(AquaVibrantSupport.BACKGROUND_STYLE_KEY, spcl);
+                }
+            }
+        }
+    }
+
+    private static class SheetPropertyChangeListener implements PropertyChangeListener {
+        private JRootPane rp;
+        private ChangeListener l;
+
+        public SheetPropertyChangeListener(JRootPane rp, ChangeListener l) {
+            this.rp = rp;
+            this.l = l;
+        }
+
+        @Override
+        public void propertyChange(PropertyChangeEvent evt) {
+            boolean wasSheet = isSheetFromBackgroundStyle(evt.getOldValue());
+            boolean isSheet = isSheetFromBackgroundStyle(evt.getNewValue());
+            if (isSheet != wasSheet) {
+                l.stateChanged(new ChangeEvent(rp));
+            }
+        }
+    }
+
+    private static boolean isSheetFromBackgroundStyle(Object o) {
+        return "vibrantSheet".equals(o);
     }
 
     /**
