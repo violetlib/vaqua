@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015 Alan Snyder.
+ * Copyright (c) 2015-2018 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -8,9 +8,12 @@
 
 package org.violetlib.aqua;
 
+import java.awt.*;
 import javax.swing.*;
 import javax.swing.plaf.ComponentUI;
-import java.awt.*;
+
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * The UI for a combo box popup menu. It installs the intended menu border. Needed because a JPopupMenu uninstalls and
@@ -18,9 +21,11 @@ import java.awt.*;
  */
 public class AquaComboBoxPopupMenuUI extends AquaPopupMenuUI {
 
-    public static ComponentUI createUI(final JComponent x) {
+    public static ComponentUI createUI(JComponent x) {
         return new AquaComboBoxPopupMenuUI();
     }
+
+    protected @Nullable ContainerContextualColors colorsForList;
 
     @Override
     public void installUI(JComponent c) {
@@ -33,11 +38,23 @@ public class AquaComboBoxPopupMenuUI extends AquaPopupMenuUI {
     }
 
     @Override
-    protected boolean isContextualMenuStyle(Component c) {
+    protected int getContextualMenuStyle(Component c) {
         if (c instanceof JComboBox) {
             JComboBox cb = (JComboBox) c;
-            return !cb.isEditable();
+            if (cb.isEditable()) {
+                return OSXSystemProperties.OSVersion >= 1014 ? SIMPLE_CONTEXTUAL_MENU_STYLE : ORDINARY_CONTEXTUAL_MENU_STYLE;
+            }
         }
-        return super.isContextualMenuStyle(c);
+        return super.getContextualMenuStyle(c);
+    }
+
+    public void configure(@NotNull JList list) {
+        if (colorsForList == null) {
+            colorsForList = new DelegatedContainerContextualColors(colors);
+        }
+        AquaListUI ui = AquaUtils.getUI(list, AquaListUI.class);
+        if (ui != null) {
+            ui.setColors(colorsForList);
+        }
     }
 }

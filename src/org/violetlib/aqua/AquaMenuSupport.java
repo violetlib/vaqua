@@ -1,5 +1,5 @@
 /*
- * Changes Copyright (c) 2015 Alan Snyder.
+ * Changes Copyright (c) 2015-2018 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -34,35 +34,23 @@
 package org.violetlib.aqua;
 
 import java.awt.*;
-import java.awt.event.*;
-
+import java.awt.event.InputEvent;
+import java.awt.event.KeyEvent;
 import javax.swing.*;
-import javax.swing.border.Border;
 import javax.swing.plaf.basic.BasicHTML;
 import javax.swing.text.View;
 
-import org.violetlib.aqua.AquaIcon.InvertableIcon;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.violetlib.aqua.AquaUtils.RecyclableSingleton;
 import org.violetlib.aqua.AquaUtils.RecyclableSingletonFromDefaultConstructor;
+import org.violetlib.jnr.aqua.AquaUIPainter;
 
 /**
- * AquaMenuPainter, implements paintMenuItem to avoid code duplication
- *
- * BasicMenuItemUI didn't factor out the various parts of the Menu, and
- * we subclass it and its subclasses BasicMenuUI
- * Our classes need an implementation of paintMenuItem
- * that allows them to paint their own backgrounds
+ * Shared code for menus and menu items.
  */
 
-public class AquaMenuPainter {
-    // Glyph statics:
-    // ASCII character codes
-    static final byte
-        kShiftGlyph = 0x05,
-        kOptionGlyph = 0x07,
-        kControlGlyph = 0x06,
-        kPencilGlyph = 0x0F,
-        kCommandMark = 0x11;
+public class AquaMenuSupport {
 
     // Unicode character codes
     static final char
@@ -78,20 +66,15 @@ public class AquaMenuPainter {
         kUCapsLockGlyph = 0x21EA;
 
     static final int ALT_GRAPH_MASK = 1 << 5; // New to Java2
-    static final int sUnsupportedModifiersMask = ~(InputEvent.CTRL_MASK | InputEvent.ALT_MASK | InputEvent.SHIFT_MASK | InputEvent.META_MASK | ALT_GRAPH_MASK);
-
-    interface Client {
-        public void paintBackground(Graphics g, JComponent c, int menuWidth, int menuHeight);
-    }
 
     // Return a string with the proper modifier glyphs
-    static String getKeyModifiersText(final int modifiers, final boolean isLeftToRight) {
+    static String getKeyModifiersText(int modifiers, boolean isLeftToRight) {
         return getKeyModifiersUnicode(modifiers, isLeftToRight);
     }
 
     // Return a string with the proper modifier glyphs
-    private static String getKeyModifiersUnicode(final int modifiers, final boolean isLeftToRight) {
-        final StringBuilder buf = new StringBuilder(2);
+    private static String getKeyModifiersUnicode(int modifiers, boolean isLeftToRight) {
+        StringBuilder buf = new StringBuilder(2);
         // Order (from StandardMenuDef.c): control, option(alt), shift, cmd
         // reverse for right-to-left
         //$ check for substitute key glyphs for localization
@@ -125,46 +108,59 @@ public class AquaMenuPainter {
         return buf.toString();
     }
 
-    static final RecyclableSingleton<AquaMenuPainter> sPainter = new RecyclableSingletonFromDefaultConstructor<AquaMenuPainter>(AquaMenuPainter.class);
-    static AquaMenuPainter instance() {
+    static final RecyclableSingleton<AquaMenuSupport> sPainter = new RecyclableSingletonFromDefaultConstructor<AquaMenuSupport>(AquaMenuSupport.class);
+    static AquaMenuSupport instance() {
         return sPainter.get();
     }
 
-    static final int defaultMenuItemGap = 2;
-    static final int kAcceleratorArrowSpace = 16; // Accel space doesn't overlap arrow space, even though items can't have both
-
-    static class RecyclableBorder extends RecyclableSingleton<Border> {
-        final String borderName;
-        RecyclableBorder(final String borderName) { this.borderName = borderName; }
-        protected Border getInstance() { return UIManager.getBorder(borderName); }
+    public @NotNull AppearanceContext getAppearanceContext(@NotNull JMenuItem b, @Nullable AquaAppearance appearance) {
+        if (appearance == null) {
+            appearance = AppearanceManager.ensureAppearance(b);
+        }
+        ButtonModel model = b.getModel();
+        Container ancestor = getAncestor(b);
+        boolean isSelected = model.isArmed() || (b instanceof JMenu && model.isSelected());
+        boolean isEnabled = model.isEnabled() && (ancestor == null || ancestor.isVisible());
+        AquaUIPainter.State state = isEnabled ? AquaUIPainter.State.ACTIVE : AquaUIPainter.State.DISABLED;
+        return new AppearanceContext(appearance, state, isSelected, false);
     }
 
-    protected final RecyclableBorder menuBarPainter = new RecyclableBorder("MenuBar.backgroundPainter");
-    protected final RecyclableBorder selectedMenuBarItemPainter = new RecyclableBorder("MenuBar.selectedBackgroundPainter");
-    protected final RecyclableBorder selectedMenuItemPainter = new RecyclableBorder("MenuItem.selectedBackgroundPainter");
+    protected @NotNull AquaUIPainter.State getState(@NotNull JMenuItem b) {
+        Container ancestor = getAncestor(b);
+        ButtonModel model = b.getModel();
+        boolean isEnabled = model.isEnabled() && (ancestor == null || ancestor.isVisible());
 
-    public void paintMenuBarBackground(final Graphics g, final int width, final int height, final JComponent c) {
-        g.setColor(c == null ? Color.white : c.getBackground());
-        g.fillRect(0, 0, width, height);
-        menuBarPainter.get().paintBorder(null, g, 0, 0, width, height);
+        if (!isEnabled) {
+            return AquaUIPainter.State.DISABLED;
+        } else {
+            if (model.isArmed() || (b instanceof JMenu && model.isSelected())) {
+                return AquaUIPainter.State.ACTIVE_DEFAULT;
+            } else {
+                return AquaUIPainter.State.ACTIVE;
+            }
+        }
     }
 
-    public void paintSelectedMenuTitleBackground(final Graphics g, final int width, final int height) {
-        selectedMenuBarItemPainter.get().paintBorder(null, g, -1, 0, width + 2, height);
+    protected @Nullable Container getAncestor(@NotNull JMenuItem b) {
+        Container ancestor = b.getParent();
+        while (ancestor != null && !(ancestor instanceof JPopupMenu)) ancestor = ancestor.getParent();
+        return ancestor;
     }
 
-    public void paintSelectedMenuItemBackground(final Graphics g, final int width, final int height) {
-        selectedMenuItemPainter.get().paintBorder(null, g, 0, 0, width, height);
-    }
+    public void paintMenuItem(Graphics2D g,
+                              JMenuItem b,
+                              Icon checkIcon,
+                              Icon arrowIcon,
+                              AppearanceContext context,
+                              BasicContextualColors colors,
+                              int defaultTextIconGap,
+                              Font acceleratorFont) {
 
-    protected void paintMenuItem(final Client client, final Graphics g, final JComponent c, final Icon checkIcon, final Icon arrowIcon, final Color background, final Color foreground, final Color disabledForeground, final Color selectionForeground, final int defaultTextIconGap, final Font acceleratorFont) {
-        final JMenuItem b = (JMenuItem)c;
-        final ButtonModel model = b.getModel();
+        ButtonModel model = b.getModel();
 
-//        Dimension size = b.getSize();
-        final int menuWidth = b.getWidth();
-        final int menuHeight = b.getHeight();
-        final Insets i = c.getInsets();
+        int menuWidth = b.getWidth();
+        int menuHeight = b.getHeight();
+        Insets i = b.getInsets();
 
         Rectangle viewRect = new Rectangle(0, 0, menuWidth, menuHeight);
 
@@ -173,29 +169,21 @@ public class AquaMenuPainter {
         viewRect.width -= (i.right + viewRect.x);
         viewRect.height -= (i.bottom + viewRect.y);
 
-        final Font holdf = g.getFont();
-        final Color holdc = g.getColor();
-        final Font f = c.getFont();
+        Font f = b.getFont();
         g.setFont(f);
-        final FontMetrics fm = g.getFontMetrics(f);
-
-        final FontMetrics fmAccel = g.getFontMetrics(acceleratorFont);
-
-        // Paint background (doesn't touch the Graphics object's color)
-        if (c.isOpaque()) {
-            client.paintBackground(g, c, menuWidth, menuHeight);
-        }
+        FontMetrics fm = g.getFontMetrics(f);
+        FontMetrics fmAccel = g.getFontMetrics(acceleratorFont);
 
         // get Accelerator text
-        final KeyStroke accelerator = b.getAccelerator();
+        KeyStroke accelerator = b.getAccelerator();
         String modifiersString = "", keyString = "";
-        final boolean leftToRight = AquaUtils.isLeftToRight(c);
+        boolean leftToRight = AquaUtils.isLeftToRight(b);
         if (accelerator != null) {
-            final int modifiers = accelerator.getModifiers();
+            int modifiers = accelerator.getModifiers();
             if (modifiers > 0) {
                 modifiersString = getKeyModifiersText(modifiers, leftToRight);
             }
-            final int keyCode = accelerator.getKeyCode();
+            int keyCode = accelerator.getKeyCode();
             if (keyCode != 0) {
                 keyString = KeyEvent.getKeyText(keyCode);
             } else {
@@ -210,34 +198,12 @@ public class AquaMenuPainter {
         Rectangle arrowIconRect = new Rectangle();
 
         // layout the text and icon
-        final String text = layoutMenuItem(b, fm, b.getText(), fmAccel, keyString, modifiersString, b.getIcon(), checkIcon, arrowIcon, b.getVerticalAlignment(), b.getHorizontalAlignment(), b.getVerticalTextPosition(), b.getHorizontalTextPosition(), viewRect, iconRect, textRect, acceleratorRect, checkIconRect, arrowIconRect, b.getText() == null ? 0 : defaultTextIconGap, defaultTextIconGap);
+        String text = layoutMenuItem(b, fm, b.getText(), fmAccel, keyString, modifiersString, b.getIcon(), checkIcon, arrowIcon, b.getVerticalAlignment(), b.getHorizontalAlignment(), b.getVerticalTextPosition(), b.getHorizontalTextPosition(), viewRect, iconRect, textRect, acceleratorRect, checkIconRect, arrowIconRect, b.getText() == null ? 0 : defaultTextIconGap, defaultTextIconGap);
 
-        // if this is in a AquaScreenMenuBar that's attached to a DialogPeer
-        // the native menu will be disabled, though the awt Menu won't know about it
-        // so the JPopupMenu will not have visibility set and the items should draw disabled
-        // If it's not on a JPopupMenu then it should just use the model's enable state
-        final Container parent = b.getParent();
-        final boolean parentIsMenuBar = parent instanceof JMenuBar;
-
-        Container ancestor = parent;
-        while (ancestor != null && !(ancestor instanceof JPopupMenu)) ancestor = ancestor.getParent();
-
-        boolean isEnabled = model.isEnabled() && (ancestor == null || ancestor.isVisible());
-
-        // Set the accel/normal text color
-        boolean isSelected = false;
-        if (!isEnabled) {
-            // *** paint the text disabled
-            g.setColor(disabledForeground);
-        } else {
-            // *** paint the text normally
-            if (model.isArmed() || (c instanceof JMenu && model.isSelected())) {
-                g.setColor(selectionForeground);
-                isSelected = true;
-            } else {
-                g.setColor(parentIsMenuBar ? parent.getForeground() : b.getForeground()); // Which is either MenuItem.foreground or the user's choice
-            }
-        }
+        Color foreground = colors.getForeground(context);
+        g.setColor(foreground);
+        boolean isSelected = context.isSelected();
+        boolean isEnabled = context.getState() != AquaUIPainter.State.DISABLED;
 
         // We want to paint the icon after the text color is set since some icon painting depends on the correct
         // graphics color being set
@@ -249,73 +215,70 @@ public class AquaMenuPainter {
 
         // Paint the Check using the current text color
         if (checkIcon != null) {
-            paintCheck(g, b, checkIcon, checkIconRect);
+            paintCheck(g, b, foreground, checkIcon, checkIconRect);
         }
 
         // Draw the accelerator first in case the HTML renderer changes the color
-        if (keyString != null && !keyString.equals("")) {
-            final int yAccel = acceleratorRect.y + fm.getAscent();
+        if (!keyString.equals("")) {
+            int yAccel = acceleratorRect.y + fm.getAscent();
             if (modifiersString.equals("")) {
                 // just draw the keyString
-                JavaSupport.drawString(c, (Graphics2D) g, keyString, acceleratorRect.x, yAccel);
+                JavaSupport.drawString(b, g, keyString, acceleratorRect.x, yAccel);
             } else {
-                final int modifiers = accelerator.getModifiers();
+                int modifiers = accelerator.getModifiers();
                 int underlinedChar = 0;
                 if ((modifiers & ALT_GRAPH_MASK) > 0) underlinedChar = kUOptionGlyph; // This is a Java2 thing, we won't be getting kOptionGlyph
                 // The keyStrings should all line up, so always adjust the width by the same amount
                 // (if they're multi-char, they won't line up but at least they won't be cut off)
-                final int emWidth = Math.max(fm.charWidth('M'), SwingUtilities.computeStringWidth(fm, keyString));
+                int emWidth = Math.max(fm.charWidth('M'), SwingUtilities.computeStringWidth(fm, keyString));
 
                 if (leftToRight) {
                     g.setFont(acceleratorFont);
-                    drawString(g, c, modifiersString, underlinedChar, acceleratorRect.x, yAccel, isEnabled, isSelected);
+                    drawString(g, b, modifiersString, underlinedChar, acceleratorRect.x, yAccel, isEnabled, isSelected);
                     g.setFont(f);
-                    JavaSupport.drawString(c, (Graphics2D) g, keyString, acceleratorRect.x + acceleratorRect.width - emWidth, yAccel);
+                    JavaSupport.drawString(b, g, keyString, acceleratorRect.x + acceleratorRect.width - emWidth, yAccel);
                 } else {
-                    final int xAccel = acceleratorRect.x + emWidth;
+                    int xAccel = acceleratorRect.x + emWidth;
                     g.setFont(acceleratorFont);
-                    drawString(g, c, modifiersString, underlinedChar, xAccel, yAccel, isEnabled, isSelected);
+                    drawString(g, b, modifiersString, underlinedChar, xAccel, yAccel, isEnabled, isSelected);
                     g.setFont(f);
-                    JavaSupport.drawString(c, (Graphics2D) g, keyString, xAccel - fm.stringWidth(keyString), yAccel);
+                    JavaSupport.drawString(b, g, keyString, xAccel - fm.stringWidth(keyString), yAccel);
                 }
             }
         }
 
         // Draw the Text
         if (text != null && !text.equals("")) {
-            final View v = (View)c.getClientProperty(BasicHTML.propertyKey);
+            View v = (View)b.getClientProperty(BasicHTML.propertyKey);
             if (v != null) {
                 v.paint(g, textRect);
             } else {
-                final int mnemonic = (AquaMnemonicHandler.isMnemonicHidden() ? -1 : model.getMnemonic());
-                drawString(g, c, text, mnemonic, textRect.x, textRect.y + fm.getAscent(), isEnabled, isSelected);
+                int mnemonic = (AquaMnemonicHandler.isMnemonicHidden() ? -1 : model.getMnemonic());
+                drawString(g, b, text, mnemonic, textRect.x, textRect.y + fm.getAscent(), isEnabled, isSelected);
             }
         }
 
         // Paint the Arrow
         if (arrowIcon != null) {
-            paintArrow(g, b, model, arrowIcon, arrowIconRect);
+            paintArrow(g, b, model, foreground, arrowIcon, arrowIconRect);
         }
-
-        g.setColor(holdc);
-        g.setFont(holdf);
     }
 
     // All this had to be copied from BasicMenuItemUI, just to get the right keyModifiersText fn
     // and a few Mac tweaks
-    protected Dimension getPreferredMenuItemSize(final JComponent c, final Icon checkIcon, final Icon arrowIcon, final int defaultTextIconGap, final Font acceleratorFont) {
-        final JMenuItem b = (JMenuItem)c;
-        final Icon icon = b.getIcon();
-        final String text = b.getText();
-        final KeyStroke accelerator = b.getAccelerator();
+    protected Dimension getPreferredMenuItemSize(JComponent c, Icon checkIcon, Icon arrowIcon, int defaultTextIconGap, Font acceleratorFont) {
+        JMenuItem b = (JMenuItem)c;
+        Icon icon = b.getIcon();
+        String text = b.getText();
+        KeyStroke accelerator = b.getAccelerator();
         String keyString = "", modifiersString = "";
 
         if (accelerator != null) {
-            final int modifiers = accelerator.getModifiers();
+            int modifiers = accelerator.getModifiers();
             if (modifiers > 0) {
                 modifiersString = getKeyModifiersText(modifiers, true); // doesn't matter, this is just for metrics
             }
-            final int keyCode = accelerator.getKeyCode();
+            int keyCode = accelerator.getKeyCode();
             if (keyCode != 0) {
                 keyString = KeyEvent.getKeyText(keyCode);
             } else {
@@ -323,9 +286,9 @@ public class AquaMenuPainter {
             }
         }
 
-        final Font font = b.getFont();
-        final FontMetrics fm = b.getFontMetrics(font);
-        final FontMetrics fmAccel = b.getFontMetrics(acceleratorFont);
+        Font font = b.getFont();
+        FontMetrics fm = b.getFontMetrics(font);
+        FontMetrics fmAccel = b.getFontMetrics(acceleratorFont);
 
         Rectangle iconRect = new Rectangle();
         Rectangle textRect = new Rectangle();
@@ -342,7 +305,7 @@ public class AquaMenuPainter {
         //   r = iconRect.union(textRect);
 
         // Add in the accelerator
-        boolean acceleratorTextIsEmpty = (keyString == null) || keyString.equals("");
+        boolean acceleratorTextIsEmpty = keyString.equals("");
 
         if (!acceleratorTextIsEmpty) {
             r.width += acceleratorRect.width;
@@ -358,7 +321,7 @@ public class AquaMenuPainter {
             r.width += arrowIconRect.width;
         }
 
-        final Insets insets = b.getInsets();
+        Insets insets = b.getInsets();
         if (insets != null) {
             r.width += insets.left + insets.right;
             r.height += insets.top + insets.bottom;
@@ -371,18 +334,22 @@ public class AquaMenuPainter {
         return r.getSize();
     }
 
-    protected void paintCheck(final Graphics g, final JMenuItem item, Icon checkIcon, Rectangle checkIconRect) {
+    protected void paintCheck(Graphics g, JMenuItem item, Color color, Icon checkIcon, Rectangle checkIconRect) {
         if (isTopLevelMenu(item) || !item.isSelected()) return;
 
-        if (item.isArmed() && checkIcon instanceof InvertableIcon) {
-            ((InvertableIcon)checkIcon).getInvertedIcon().paintIcon(item, g, checkIconRect.x, checkIconRect.y);
-        } else {
-            checkIcon.paintIcon(item, g, checkIconRect.x, checkIconRect.y);
-        }
+        Image im = AquaImageFactory.getProcessedImage(checkIcon, color);
+        g.drawImage(im, checkIconRect.x, checkIconRect.y, null);
     }
 
-    protected void paintIcon(final Graphics g, final JMenuItem c, final Rectangle localIconRect, boolean isEnabled) {
-        final ButtonModel model = c.getModel();
+    protected void paintArrow(Graphics g, JMenuItem c, ButtonModel model, Color color, Icon arrowIcon, Rectangle arrowIconRect) {
+        if (isTopLevelMenu(c)) return;
+
+        Image im = AquaImageFactory.getProcessedImage(arrowIcon, color);
+        g.drawImage(im, arrowIconRect.x, arrowIconRect.y, null);
+    }
+
+    protected void paintIcon(Graphics g, JMenuItem c, Rectangle localIconRect, boolean isEnabled) {
+        ButtonModel model = c.getModel();
         Icon icon;
         if (!isEnabled) {
             icon = c.getDisabledIcon();
@@ -396,16 +363,8 @@ public class AquaMenuPainter {
             icon = c.getIcon();
         }
 
-        if (icon != null) icon.paintIcon(c, g, localIconRect.x, localIconRect.y);
-    }
-
-    protected void paintArrow(Graphics g, JMenuItem c, ButtonModel model, Icon arrowIcon, Rectangle arrowIconRect) {
-        if (isTopLevelMenu(c)) return;
-
-        if (c instanceof JMenu && (model.isArmed() || model.isSelected()) && arrowIcon instanceof InvertableIcon) {
-            ((InvertableIcon)arrowIcon).getInvertedIcon().paintIcon(c, g, arrowIconRect.x, arrowIconRect.y);
-        } else {
-            arrowIcon.paintIcon(c, g, arrowIconRect.x, arrowIconRect.y);
+        if (icon != null) {
+            icon.paintIcon(c, g, localIconRect.x, localIconRect.y);
         }
     }
 
@@ -413,7 +372,7 @@ public class AquaMenuPainter {
      *  The first occurrence of underlineChar in text will be underlined. The matching is
      *  not case sensitive.
      */
-    public void drawString(final Graphics g, final JComponent c, final String text, final int underlinedChar, final int x, final int y, final boolean isEnabled, final boolean isSelected) {
+    public void drawString(Graphics g, JComponent c, String text, int underlinedChar, int x, int y, boolean isEnabled, boolean isSelected) {
         char lc, uc;
         int index = -1, lci, uci;
 
@@ -436,15 +395,15 @@ public class AquaMenuPainter {
      * Returns false if the component is a JMenu and it is a top
      * level menu (on the menubar).
      */
-    private static boolean isTopLevelMenu(final JMenuItem menuItem) {
+    private static boolean isTopLevelMenu(JMenuItem menuItem) {
         return (menuItem instanceof JMenu) && (((JMenu)menuItem).isTopLevelMenu());
     }
 
-    private String layoutMenuItem(final JMenuItem menuItem, final FontMetrics fm, final String text, final FontMetrics fmAccel, String keyString, final String modifiersString, final Icon icon, final Icon checkIcon, final Icon arrowIcon, final int verticalAlignment, final int horizontalAlignment, final int verticalTextPosition, final int horizontalTextPosition, final Rectangle viewR, final Rectangle iconR, final Rectangle textR, final Rectangle acceleratorR, final Rectangle checkIconR, final Rectangle arrowIconR, final int textIconGap, final int menuItemGap) {
+    private String layoutMenuItem(JMenuItem menuItem, FontMetrics fm, String text, FontMetrics fmAccel, String keyString, String modifiersString, Icon icon, Icon checkIcon, Icon arrowIcon, int verticalAlignment, int horizontalAlignment, int verticalTextPosition, int horizontalTextPosition, Rectangle viewR, Rectangle iconR, Rectangle textR, Rectangle acceleratorR, Rectangle checkIconR, Rectangle arrowIconR, int textIconGap, int menuItemGap) {
         // Force it to do "LEFT", then flip the rects if we're right-to-left
         AquaUtils.layoutCompoundLabel(menuItem, fm, text, icon, verticalAlignment, SwingConstants.LEFT, verticalTextPosition, horizontalTextPosition, viewR, iconR, textR, textIconGap);
 
-        final boolean acceleratorTextIsEmpty = (keyString == null) || keyString.equals("");
+        boolean acceleratorTextIsEmpty = (keyString == null) || keyString.equals("");
 
         if (acceleratorTextIsEmpty) {
             acceleratorR.width = acceleratorR.height = 0;
@@ -461,7 +420,7 @@ public class AquaMenuPainter {
         /* Initialize the checkIcon bounds rectangle checkIconR.
          */
 
-        final boolean isTopLevelMenu = isTopLevelMenu(menuItem);
+        boolean isTopLevelMenu = isTopLevelMenu(menuItem);
         if (!isTopLevelMenu) {
             if (checkIcon != null) {
                 checkIconR.width = checkIcon.getIconWidth();
@@ -484,7 +443,7 @@ public class AquaMenuPainter {
             iconR.x += 12;
         }
 
-        final Rectangle labelR = iconR.union(textR);
+        Rectangle labelR = iconR.union(textR);
 
         // Position the Accelerator text rect
         // Menu shortcut text *ought* to have the letters left-justified - look at a menu with an "M" in it
@@ -508,7 +467,7 @@ public class AquaMenuPainter {
 
         if (!AquaUtils.isLeftToRight(menuItem)) {
             // Flip the rectangles so that instead of [check][icon][text][accel/arrow] it's [accel/arrow][text][icon][check]
-            final int w = viewR.width;
+            int w = viewR.width;
             checkIconR.x = w - (checkIconR.x + checkIconR.width);
             iconR.x = w - (iconR.x + iconR.width);
             textR.x = w - (textR.x + textR.width);
@@ -519,21 +478,5 @@ public class AquaMenuPainter {
         iconR.x += menuItemGap;
 
         return text;
-    }
-
-    public static Border getMenuBarPainter() {
-        // TBD: not sure what is intended here
-        final Border border = new AquaSimpleBorder("MenuBar.background", new Color(240, 240, 240));
-        return border;
-    }
-
-    public static Border getSelectedMenuBarItemPainter() {
-        final Border border = new AquaSimpleBorder("MenuBar.selectionBackground", new Color(44, 143, 245));
-        return border;
-    }
-
-    public static Border getSelectedMenuItemPainter() {
-        final Border border = new AquaSimpleBorder("MenuItem.selectionBackground", new Color(44, 143, 245));
-        return border;
     }
 }

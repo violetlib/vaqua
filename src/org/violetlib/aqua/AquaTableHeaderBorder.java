@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015 Alan Snyder.
+ * Copyright (c) 2015-2018 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -34,9 +34,8 @@
 package org.violetlib.aqua;
 
 import java.awt.*;
-
 import javax.swing.*;
-import javax.swing.border.*;
+import javax.swing.border.AbstractBorder;
 
 import org.violetlib.jnr.Insetter;
 import org.violetlib.jnr.aqua.*;
@@ -71,7 +70,7 @@ public class AquaTableHeaderBorder extends AbstractBorder {
     @Override
     public void paintBorder(Component c, Graphics g, int x, int y, int width, int height) {
 
-        final JComponent jc = (JComponent)c;
+        JComponent jc = (JComponent)c;
 
         // The painter may draw a divider on the left side as well as the right.
         // To compensate, we increase the width and offset the rendering.
@@ -79,22 +78,23 @@ public class AquaTableHeaderBorder extends AbstractBorder {
         // Unlike the Aqua Look and Feel painter, our painter should not draw a top or bottom border.
         // Therefore we do not need to offset the rendering vertically.
 
-        painter.configure(width+1, height);
+        AppearanceManager.ensureAppearance(c);
+        AquaUtils.configure(painter, c, width+1, height);
         Configuration tg = getConfiguration(jc);
         painter.getPainter(tg).paint(g, x-1, y);
     }
 
     protected Configuration getConfiguration(JComponent jc) {
-        final State state = getState(jc);
-        final boolean isFocused = jc.hasFocus();
+        State state = getState(jc);
+        boolean isFocused = jc.hasFocus();
         AquaUIPainter.UILayoutDirection ld = AquaUtils.getLayoutDirection(owner);
         return new TableColumnHeaderConfiguration(state, sortArrowDirection, false, isFocused, ld);
     }
 
-    protected State getState(final JComponent jc) {
+    protected State getState(JComponent jc) {
         if (!jc.isEnabled()) return State.DISABLED;
 
-        final JRootPane rootPane = jc.getRootPane();
+        JRootPane rootPane = jc.getRootPane();
         if (rootPane == null) return State.ACTIVE;
 
         if (!AquaFocusHandler.isActive(rootPane)) return State.INACTIVE;

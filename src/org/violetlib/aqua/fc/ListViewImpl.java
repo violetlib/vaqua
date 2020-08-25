@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014-2015 Alan Snyder.
+ * Copyright (c) 2014-2018 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -27,7 +27,8 @@ import javax.swing.tree.TreeModel;
 import javax.swing.tree.TreePath;
 import javax.swing.tree.TreeSelectionModel;
 
-import org.violetlib.aqua.AquaTableHeaderCellRenderer;
+import org.jetbrains.annotations.NotNull;
+import org.violetlib.aqua.*;
 import org.violetlib.treetable.*;
 
 /**
@@ -39,7 +40,6 @@ public class ListViewImpl extends ListView {
     protected final JScrollPane listViewScrollPane;
 
     protected final MyTableColumnModel tableColumnModel;
-    private Color labelColor;
     private Font labelFont;
     private int COLUMN_MARGIN = 10;
     private GenericCellRenderer fileRenderer;
@@ -50,10 +50,6 @@ public class ListViewImpl extends ListView {
     public ListViewImpl(JFileChooser fc) {
 
         this.fc = fc;
-
-        labelColor = UIManager.getColor("FileChooser.listView.extraColumnTextColor");
-        Color headerColor = UIManager.getColor("FileChooser.listView.headerColor");
-        Color headerBackground = UIManager.getColor("FileChooser.listView.headerBackground");
 
         labelFont = UIManager.getFont("FileChooser.listView.font");  // probably not needed
         treeSelectionListener = new MyTreeSelectionListener();
@@ -71,14 +67,14 @@ public class ListViewImpl extends ListView {
         tableColumnModel = createColumnModel();
         tree = new MyTreeTable(fakeTreeModel, new MyTreeColumnModel(), tableColumnModel);
         tree.setUI(new MyTreeTableUI(fc, tree));
-        tree.putClientProperty("JTree.style", "striped");
+        tree.putClientProperty("JTree.style", "striped");   // this probably has no effect
         tree.setRootVisible(false);
         tree.setAlternateRowColor(tree.getBackground());
         tree.setBackground(UIManager.getColor("List.alternateBackground.0"));
         tree.setNodeSortingEnabled(true);
         tree.setRowMargin(0);
         tree.setRowHeight(18);
-        tree.setOpaque(false);
+        tree.setOpaque(true);
 
         listViewScrollPane = new JScrollPane();
         listViewScrollPane.setBorder(javax.swing.BorderFactory.createEmptyBorder(0, 0, 0, 0));
@@ -91,8 +87,6 @@ public class ListViewImpl extends ListView {
         tableHeaderBorder = new EmptyBorder(3, 3, 3, 0);
 
         JTableHeader header = tree.getTableHeader();
-        header.setBackground(headerBackground);
-        header.setForeground(headerColor);
         TableCellRenderer defaultHeaderRenderer = header.getDefaultRenderer();
         TableCellRenderer leftHeaderRenderer = createHeaderCellRenderer(defaultHeaderRenderer, SwingConstants.LEFT);
         TableCellRenderer rightHeaderRenderer = createHeaderCellRenderer(defaultHeaderRenderer, SwingConstants.RIGHT);
@@ -261,10 +255,10 @@ public class ListViewImpl extends ListView {
     }
 
     protected class MyCellRenderer extends DefaultTreeTableCellRenderer {
-        protected Color fg;
+        protected @NotNull String textColorName;
 
-        public MyCellRenderer(Color fg, int alignment) {
-            this.fg = fg;
+        public MyCellRenderer(int alignment, @NotNull String textColorName) {
+            this.textColorName = textColorName;
             setHorizontalAlignment(alignment);
             setFont(labelFont);
         }
@@ -289,22 +283,26 @@ public class ListViewImpl extends ListView {
         }
 
         protected Component fix(Component c, boolean selected) {
-            if (fg != null && !selected) {
-                c.setForeground(fg);
+            AquaAppearance appearance = AppearanceManager.ensureAppearance(c);
+            Color fg = appearance.getColor(selected ? "alternateSelectedControlText" : textColorName);
+            if (fg == null) {
+                fg = Color.BLACK;
             }
-
+            c.setForeground(AquaColors.getOrdinaryColor(fg));
             return c;
         }
     }
 
     private class MyNameCellRenderer extends MyCellRenderer {
         private MyNameCellRenderer() {
-            super(null, SwingConstants.LEFT);
+            super(SwingConstants.LEFT, "label");
         }
 
         @Override
         public Component getTreeTableCellRendererComponent(TreeTable treeTable, Object value, boolean selected, boolean hasFocus, int row, int column, boolean expanded, boolean leaf) {
-            Component c = fileRenderer.getCellRendererComponent(treeTable, value, selected, hasFocus);
+            AquaAppearance appearance = AppearanceManager.ensureAppearance(treeTable);
+            ContainerContextualColors colors = AquaColors.STRIPED_CONTAINER_COLORS;
+            Component c = fileRenderer.getCellRendererComponent(treeTable, appearance, colors, value, selected, hasFocus);
             if (c == null) {
                 c = super.getTreeTableCellRendererComponent(treeTable, value, selected, hasFocus, row, column, expanded, leaf);
             }
@@ -315,7 +313,7 @@ public class ListViewImpl extends ListView {
 
     private class MyDateCellRenderer extends MyCellRenderer {
         private MyDateCellRenderer() {
-            super(labelColor, SwingConstants.LEFT);
+            super(SwingConstants.LEFT, "secondaryLabel");
         }
 
         protected Object getCellValue(Object o) {
@@ -327,7 +325,7 @@ public class ListViewImpl extends ListView {
 
     private class MySizeCellRenderer extends MyCellRenderer {
         private MySizeCellRenderer() {
-            super(labelColor, SwingConstants.RIGHT);
+            super(SwingConstants.RIGHT, "secondaryLabel");
         }
 
         protected Object getCellValue(Object o) {
@@ -338,7 +336,7 @@ public class ListViewImpl extends ListView {
 
     private class MyKindCellRenderer extends MyCellRenderer {
         private MyKindCellRenderer() {
-            super(labelColor, SwingConstants.LEFT);
+            super(SwingConstants.LEFT, "secondaryLabel");
         }
 
         protected Object getCellValue(Object o) {

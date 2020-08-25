@@ -1,5 +1,5 @@
 /*
- * Changes Copyright (c) 2015 Alan Snyder.
+ * Changes Copyright (c) 2015-2018 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -34,9 +34,9 @@
 package org.violetlib.aqua;
 
 import java.awt.*;
-
 import javax.swing.border.Border;
 
+import org.jetbrains.annotations.NotNull;
 import org.violetlib.aqua.AquaUtils.RecyclableSingletonFromDefaultConstructor;
 import org.violetlib.jnr.aqua.AquaUIPainter;
 import org.violetlib.jnr.aqua.Configuration;
@@ -61,37 +61,34 @@ public class AquaGroupBorder extends AquaBorder {
         return titlelessGroupBorder.get();
     }
 
-    protected final Insets insets;
-    protected final Insets margins;
+    protected final @NotNull Insets boxInsets;
+    protected final @NotNull Insets borderInsets;
 
-    public AquaGroupBorder(Insets insets, Insets margins) {
-        this.insets = insets;
-        this.margins = margins;
+    public AquaGroupBorder(@NotNull Insets boxInsets, @NotNull Insets borderInsets) {
+        this.boxInsets = boxInsets;
+        this.borderInsets = new Insets(boxInsets.top + borderInsets.top,
+                boxInsets.left + borderInsets.left,
+                boxInsets.bottom + borderInsets.bottom,
+                boxInsets.right + borderInsets.right);
     }
 
     @Override
-    public Insets getBorderInsets(final Component c) {
-        return (Insets) margins.clone();
+    public Insets getBorderInsets(Component c) {
+        return (Insets) borderInsets.clone();
     }
 
-    public void paintBorder(final Component c, final Graphics g, int x, int y, int width, int height) {
-        // sg2d.setColor(Color.MAGENTA);
-        // sg2d.drawRect(x, y, width - 1, height - 1);
-
-        final Insets internalInsets = insets;
-        x += internalInsets.left;
-        y += internalInsets.top;
-        width -= (internalInsets.left + internalInsets.right);
-        height -= (internalInsets.top + internalInsets.bottom);
+    public void paintBorder(Component c, Graphics g, int x, int y, int width, int height) {
+        x += boxInsets.left;
+        y += boxInsets.top;
+        width -= (boxInsets.left + boxInsets.right);
+        height -= (boxInsets.top + boxInsets.bottom);
 
         // TBD: state is not currently used, but perhaps someday it will be...
 
-        painter.configure(width, height);
+        AppearanceManager.ensureAppearance(c);
+        AquaUtils.configure(painter, c, width, height);
         Configuration bg = getConfiguration();
         painter.getPainter(bg).paint(g, x, y);
-
-        // sg2d.setColor(Color.ORANGE);
-        // sg2d.drawRect(x, y, width, height);
     }
 
     protected Configuration getConfiguration() {
@@ -100,19 +97,19 @@ public class AquaGroupBorder extends AquaBorder {
 
     protected static class TabbedPane extends AquaGroupBorder {
         public TabbedPane() {
-            super(new Insets(5, 5, 5, 5), new Insets(8, 12, 8, 12));
+            super(new Insets(5, 5, 5, 5), new Insets(3, 7, 3, 7));
         }
     }
 
     protected static class Titled extends AquaGroupBorder {
         public Titled() {
-            super(new Insets(16, 5, 4, 5), new Insets(16, 20, 16, 20));
+            super(new Insets(0, 5, 4, 5), new Insets(8, 10, 8, 10));
         }
     }
 
     protected static class Titleless extends AquaGroupBorder {
         public Titleless() {
-            super(new Insets(3, 5, 1, 5), new Insets(8, 12, 8, 12));
+            super(new Insets(3, 5, 1, 5), new Insets(5, 7, 7, 7));
         }
     }
 }

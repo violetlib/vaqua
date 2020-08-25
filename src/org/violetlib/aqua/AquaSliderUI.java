@@ -1,5 +1,5 @@
 /*
- * Changes copyright (c) 2015 Alan Snyder.
+ * Changes copyright (c) 2015-2018 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -37,27 +37,39 @@ import java.awt.*;
 import java.awt.event.MouseEvent;
 import java.util.Dictionary;
 import java.util.Enumeration;
-
 import javax.swing.*;
-import javax.swing.event.*;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
+import javax.swing.plaf.ColorUIResource;
 import javax.swing.plaf.ComponentUI;
 import javax.swing.plaf.basic.BasicSliderUI;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.violetlib.geom.ExpandableOutline;
 import org.violetlib.jnr.LayoutInfo;
-import org.violetlib.jnr.aqua.AquaUIPainter;
-import org.violetlib.jnr.aqua.AquaUIPainter.Size;
-import org.violetlib.jnr.aqua.AquaUIPainter.State;
-import org.violetlib.jnr.aqua.AquaUIPainter.SliderWidget;
-import org.violetlib.jnr.aqua.AquaUIPainter.TickMarkPosition;
 import org.violetlib.jnr.Painter;
 import org.violetlib.jnr.SliderPainter;
+import org.violetlib.jnr.aqua.AquaUIPainter;
+import org.violetlib.jnr.aqua.AquaUIPainter.Size;
+import org.violetlib.jnr.aqua.AquaUIPainter.SliderWidget;
+import org.violetlib.jnr.aqua.AquaUIPainter.State;
+import org.violetlib.jnr.aqua.AquaUIPainter.TickMarkPosition;
 import org.violetlib.jnr.aqua.SliderConfiguration;
 import org.violetlib.jnr.aqua.SliderLayoutConfiguration;
 
-public class AquaSliderUI extends BasicSliderUI implements AquaUtilControlSize.Sizeable, FocusRingOutlineProvider {
+public class AquaSliderUI extends BasicSliderUI
+        implements AquaUtilControlSize.Sizeable, FocusRingOutlineProvider, AquaComponentUI {
 
-    final AquaUIPainter painter = AquaPainting.create();
+    // Create PLAF
+    public static ComponentUI createUI(JComponent c) {
+        return new AquaSliderUI((JSlider)c);
+    }
+
+    private final AquaUIPainter painter = AquaPainting.create();
+
+    protected @NotNull BasicContextualColors colors;
+    protected @Nullable AppearanceContext appearanceContext;
 
     protected Size sizeVariant = Size.REGULAR;
     protected int fixedWidth;
@@ -72,23 +84,19 @@ public class AquaSliderUI extends BasicSliderUI implements AquaUtilControlSize.S
 
     protected transient boolean fIsDragging = false;
 
-    // Create PLAF
-    public static ComponentUI createUI(final JComponent c) {
-        return new AquaSliderUI((JSlider)c);
-    }
-
-    public AquaSliderUI(final JSlider b) {
+    public AquaSliderUI(JSlider b) {
         super(b);
+        colors = AquaColors.CLEAR_CONTROL_COLORS;
     }
 
-    public void installUI(final JComponent c) {
+    public void installUI(JComponent c) {
         super.installUI(c);
 
         LookAndFeel.installProperty(slider, "opaque", Boolean.FALSE);
         tickColor = UIManager.getColor("Slider.tickColor");
     }
 
-    protected BasicSliderUI.TrackListener createTrackListener(final JSlider s) {
+    protected BasicSliderUI.TrackListener createTrackListener(JSlider s) {
         return new TrackListener();
     }
 
@@ -97,6 +105,7 @@ public class AquaSliderUI extends BasicSliderUI implements AquaUtilControlSize.S
         super.installDefaults(slider);
         oldRequestFocusEnabled = slider.isRequestFocusEnabled();
         slider.setRequestFocusEnabled(false);
+        configureAppearanceContext(null, slider);
     }
 
     @Override
@@ -105,18 +114,40 @@ public class AquaSliderUI extends BasicSliderUI implements AquaUtilControlSize.S
         super.uninstallDefaults(slider);
     }
 
-    protected void installListeners(final JSlider s) {
+    protected void installListeners(JSlider s) {
         super.installListeners(s);
         AquaFocusHandler.install(s);
         AquaUtilControlSize.addSizePropertyListener(s);
         AquaFullKeyboardFocusableHandler.addListener(s);
+        AppearanceManager.installListener(s);
     }
 
-    protected void uninstallListeners(final JSlider s) {
+    protected void uninstallListeners(JSlider s) {
+        AppearanceManager.uninstallListener(s);
         AquaUtilControlSize.removeSizePropertyListener(s);
         AquaFocusHandler.uninstall(s);
         super.uninstallListeners(s);
         AquaFullKeyboardFocusableHandler.removeListener(s);
+    }
+
+    @Override
+    public void appearanceChanged(@NotNull JComponent c, @NotNull AquaAppearance appearance) {
+        configureAppearanceContext(appearance, (JSlider)c);
+    }
+
+    @Override
+    public void activeStateChanged(@NotNull JComponent c, boolean isActive) {
+        // colors are not active state sensitive
+    }
+
+    protected void configureAppearanceContext(@Nullable AquaAppearance appearance, @NotNull JSlider s) {
+        if (appearance == null) {
+            appearance = AppearanceManager.ensureAppearance(s);
+        }
+        AquaUIPainter.State state = AquaUIPainter.State.ACTIVE;
+        appearanceContext = new AppearanceContext(appearance, state, false, false);
+        AquaColors.installColors(s, appearanceContext, colors);
+        s.repaint();
     }
 
     @Override
@@ -185,13 +216,21 @@ public class AquaSliderUI extends BasicSliderUI implements AquaUtilControlSize.S
         return ExpandableOutline.createTranslatedShape(s, trackRect.x, trackRect.y);
     }
 
-    // Paint Methods
-    public void paint(final Graphics g, final JComponent c) {
+    @Override
+    public void update(Graphics g, JComponent c) {
+        AquaAppearance appearance = AppearanceManager.registerCurrentAppearance(c);
+        super.update(g, c);
+        AppearanceManager.restoreCurrentAppearance(appearance);
+    }
+
+    @Override
+    public void paint(Graphics g, JComponent c) {
+
         // We have to override paint of BasicSliderUI because we need slight differences.
         // We don't paint focus the same way - it is part of the thumb.
         // We also need to repaint the whole track when the thumb moves.
         recalculateIfInsetsChanged();
-        final Rectangle clip = g.getClipBounds();
+        Rectangle clip = g.getClipBounds();
 
         // We cannot implement the clip optimizations
 
@@ -201,7 +240,7 @@ public class AquaSliderUI extends BasicSliderUI implements AquaUtilControlSize.S
             //
             // <rdar://problem/3721898> JSlider in TreeCellRenderer component not painted properly.
             //
-            final boolean trackIntersectsClip = clip.intersects(trackRect);
+            boolean trackIntersectsClip = clip.intersects(trackRect);
             if (!trackIntersectsClip) {
                 calculateGeometry();
             }
@@ -216,13 +255,13 @@ public class AquaSliderUI extends BasicSliderUI implements AquaUtilControlSize.S
     }
 
     protected SliderPainter getConfiguredPainter() {
-        painter.configure(trackRect.width, trackRect.height);
+        AquaUtils.configure(painter, slider, trackRect.width, trackRect.height);
         SliderConfiguration sg = getConfiguration();
         return (SliderPainter) painter.getPainter(sg);
     }
 
     protected SliderConfiguration getConfiguration() {
-        final State state = getState();
+        State state = getState();
 
         int valueRange = (slider.getMaximum() - slider.getMinimum());
 
@@ -244,7 +283,7 @@ public class AquaSliderUI extends BasicSliderUI implements AquaUtilControlSize.S
          return new SliderConfiguration(widget, sizeVariant, state, isFocused, thumbPosition, tickCount, tickPosition);
     }
 
-    TickMarkPosition getTickMarkPosition() {
+    protected TickMarkPosition getTickMarkPosition() {
 
         // TBD: should be an option for tick mark position
 
@@ -258,7 +297,7 @@ public class AquaSliderUI extends BasicSliderUI implements AquaUtilControlSize.S
         }
     }
 
-    State getState() {
+    protected State getState() {
         if (!slider.isEnabled()) {
             return AquaFocusHandler.isActive(slider) ? State.DISABLED : State.DISABLED_INACTIVE;
         }
@@ -280,7 +319,7 @@ public class AquaSliderUI extends BasicSliderUI implements AquaUtilControlSize.S
     public void paintThumb(Graphics g) {
     }
 
-    public void paintTicks(final Graphics g) {
+    public void paintTicks(Graphics g) {
     }
 
     // Layout Methods
@@ -453,7 +492,7 @@ public class AquaSliderUI extends BasicSliderUI implements AquaUtilControlSize.S
         AquaFocusRingManager.focusRingOutlineChanged(slider);
     }
 
-    protected ChangeListener createChangeListener(final JSlider s) {
+    protected ChangeListener createChangeListener(JSlider s) {
         return new StateChangeListener();
     }
 
@@ -473,7 +512,7 @@ public class AquaSliderUI extends BasicSliderUI implements AquaUtilControlSize.S
         protected transient int offset;
         protected transient int currentMouseX = -1, currentMouseY = -1;
 
-        public void mouseReleased(final MouseEvent e) {
+        public void mouseReleased(MouseEvent e) {
             if (!slider.isEnabled()) return;
 
             currentMouseX = -1;
@@ -499,7 +538,7 @@ public class AquaSliderUI extends BasicSliderUI implements AquaUtilControlSize.S
             AquaFocusRingManager.focusRingOutlineChanged(slider);
         }
 
-        public void mousePressed(final MouseEvent e) {
+        public void mousePressed(MouseEvent e) {
             if (!slider.isEnabled()) return;
 
             // We should recalculate geometry just before
@@ -508,7 +547,7 @@ public class AquaSliderUI extends BasicSliderUI implements AquaUtilControlSize.S
             // is a cell editor in JTable. See 6348946.
             calculateGeometry();
 
-            final boolean firstClick = (currentMouseX == -1) && (currentMouseY == -1);
+            boolean firstClick = (currentMouseX == -1) && (currentMouseY == -1);
 
             currentMouseX = e.getX();
             currentMouseY = e.getY();
@@ -546,8 +585,8 @@ public class AquaSliderUI extends BasicSliderUI implements AquaUtilControlSize.S
             fIsDragging = false;
         }
 
-        public boolean shouldScroll(final int direction) {
-            final Rectangle r = thumbRect;
+        public boolean shouldScroll(int direction) {
+            Rectangle r = thumbRect;
             if (slider.getOrientation() == SwingConstants.VERTICAL) {
                 if (drawInverted() ? direction < 0 : direction > 0) {
                     if (r.y + r.height <= currentMouseY) return false;
@@ -577,7 +616,7 @@ public class AquaSliderUI extends BasicSliderUI implements AquaUtilControlSize.S
          * Set the models value to the position of the top/left
          * of the thumb relative to the origin of the track.
          */
-        public void mouseDragged(final MouseEvent e) {
+        public void mouseDragged(MouseEvent e) {
             if (!slider.isEnabled()) return;
 
             currentMouseX = e.getX();
@@ -595,7 +634,7 @@ public class AquaSliderUI extends BasicSliderUI implements AquaUtilControlSize.S
             }
         }
 
-        public void mouseMoved(final MouseEvent e) { }
+        public void mouseMoved(MouseEvent e) { }
     }
 
     protected void updateSliderFromLocation(int x, int y) {
@@ -618,7 +657,7 @@ public class AquaSliderUI extends BasicSliderUI implements AquaUtilControlSize.S
         }
 
         Dictionary dictionary = slider.getLabelTable();
-        if ( dictionary != null ) {
+        if (dictionary != null) {
 
             SliderPainter p = getConfiguredPainter();
 
@@ -626,7 +665,7 @@ public class AquaSliderUI extends BasicSliderUI implements AquaUtilControlSize.S
             int minValue = slider.getMinimum();
             int maxValue = slider.getMaximum();
             boolean enabled = slider.isEnabled();
-            while ( keys.hasMoreElements() ) {
+            while (keys.hasMoreElements()) {
                 Integer key = (Integer)keys.nextElement();
                 int value = key.intValue();
                 if (value >= minValue && value <= maxValue) {
@@ -643,11 +682,20 @@ public class AquaSliderUI extends BasicSliderUI implements AquaUtilControlSize.S
                         }
                     }
 
+                    // The default slider-provided label uses the label color if the slider has a UI color.
+                    // We want the label to use the slider color (regardless of its source) if the label has a UI
+                    // color.
+
+                    Color fg = label.getForeground();
+                    if (fg instanceof ColorUIResource) {
+                        label.setForeground(slider.getForeground());
+                    }
+
                     double thumbPosition = (value - slider.getMinimum()) / range;
                     Dimension labelSize = label.getPreferredSize();
                     Rectangle labelBounds = AquaUtils.toRectangle(p.getLabelBounds(thumbPosition, labelSize));
                     g.translate(trackRect.x + labelBounds.x, trackRect.y + labelBounds.y);
-                    label.paint( g );
+                    label.paint(g);
                     g.translate(-(trackRect.x + labelBounds.x), -(trackRect.y + labelBounds.y));
                 }
             }
@@ -659,7 +707,7 @@ public class AquaSliderUI extends BasicSliderUI implements AquaUtilControlSize.S
      * The graphics have been translated to labelRect.y already.
      * @see JSlider#setLabelTable
      */
-    protected void paintHorizontalLabel( Graphics g, int value, Component label ) {
+    protected void paintHorizontalLabel(Graphics g, int value, Component label) {
         double range = slider.getMaximum() - slider.getMinimum();
         if (range > 0) {
             double thumbPosition = (value - slider.getMinimum()) / range;
@@ -677,7 +725,7 @@ public class AquaSliderUI extends BasicSliderUI implements AquaUtilControlSize.S
      * The graphics have been translated to labelRect.x already.
      * @see JSlider#setLabelTable
      */
-    protected void paintVerticalLabel( Graphics g, int value, Component label ) {
+    protected void paintVerticalLabel(Graphics g, int value, Component label) {
         double range = slider.getMaximum() - slider.getMinimum();
         if (range > 0) {
             double thumbPosition = (value - slider.getMinimum()) / range;

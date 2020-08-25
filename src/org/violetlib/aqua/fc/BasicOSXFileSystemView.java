@@ -2,7 +2,7 @@
  * @(#)BasicOSXFileSystemView.java
  *
  * Copyright (c) 2009-2010 Werner Randelshofer, Switzerland.
- * Copyright (c) 2014-2015 Alan Snyder
+ * Copyright (c) 2014-2018 Alan Snyder
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the
@@ -13,9 +13,13 @@
 package org.violetlib.aqua.fc;
 
 import javax.swing.*;
+import java.awt.*;
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
+import java.util.List;
+
+import org.jetbrains.annotations.NotNull;
 
 /**
  * BasicOSXFileSystemView.
@@ -41,9 +45,9 @@ public abstract class BasicOSXFileSystemView extends AquaFileSystemView {
      * Apple's implementation FileSystemView, so we use this HashSet here, to
      * hide them 'manually'.
      */
-    protected final static Set<String> hiddenTopLevelNames = new HashSet<String>();
-    protected final static Set<String> hiddenDirectoryNames = new HashSet<String>();
-    protected final static Set<File> hiddenFiles = new HashSet<File>();
+    protected final static Set<String> hiddenTopLevelNames = new HashSet<>();
+    protected final static Set<String> hiddenDirectoryNames = new HashSet<>();
+    protected final static Set<File> hiddenFiles = new HashSet<>();
 
     protected BasicOSXFileSystemView() {
     }
@@ -81,11 +85,11 @@ public abstract class BasicOSXFileSystemView extends AquaFileSystemView {
                 }
             }
         }
-        // If we couldn't determine the system volume, we use the
-        // root folder instead.
+        // If we couldn't determine the system volume, we use the root folder instead.
         return (sys == null) ? unixRoot : sys;
     }
 
+    @Override
     public File getComputer() {
         return computer;
     }
@@ -148,7 +152,7 @@ public abstract class BasicOSXFileSystemView extends AquaFileSystemView {
     }
 
     @Override
-    public boolean isHiddenFile(File f) {
+    public boolean isHiddenFile(@NotNull File f) {
         if (OSXFile.isInvisible(f)) {
             return true;
         } else {
@@ -217,6 +221,62 @@ public abstract class BasicOSXFileSystemView extends AquaFileSystemView {
             }
         }
 
+        if (f.equals(getComputer())) {
+            Icon icon = UIManager.getIcon("FileView.computerIcon");
+            if (icon != null) {
+                return icon;
+            }
+        }
+
+        if (OSXFile.isAvailable()) {
+            try {
+                Image im = OSXFile.getIconImage(f, 16, false);
+                return new ImageIcon(im);
+            } catch (UnsupportedOperationException ex) {
+            }
+        }
+
         return super.getSystemIcon(f);
+    }
+
+    @Override
+    public String getSystemTypeDescription(File f) {
+        if (OSXFile.isAvailable()) {
+            return OSXFile.getKindString(f);
+        } else {
+        return super.getSystemTypeDescription(f);
+        }
+    }
+
+    @Override
+    public Boolean isTraversable(File f) {
+        if (OSXFile.isAvailable()) {
+            return OSXFile.isTraversable(f);
+        } else {
+            return super.isTraversable(f);
+        }
+    }
+
+    @Override
+    public @NotNull Boolean isTraversable(File f, boolean isPackageTraversable, boolean isApplicationTraversable) {
+        if (OSXFile.isAvailable()) {
+            return OSXFile.isTraversable(f, isPackageTraversable, isApplicationTraversable);
+        } else {
+            return super.isTraversable(f);
+        }
+    }
+
+    @Override
+    public String getSystemDisplayName(File f) {
+        if (f.equals(getComputer())) {
+            String name = OSXFile.getComputerName();
+            return name != null ? name : getSystemVolume().getName();
+        } else {
+            if (OSXFile.isAvailable()) {
+                return OSXFile.getDisplayName(f);
+            } else {
+                return super.getSystemDisplayName(f);
+            }
+        }
     }
 }

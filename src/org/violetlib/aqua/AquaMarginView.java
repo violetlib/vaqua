@@ -190,7 +190,7 @@ public class AquaMarginView extends View {
                 value = 0;
             }
 
-            // I have experienced an repaint loop with the extent going back and forth between adjacent values.
+            // I have experienced a repaint loop with the extent going back and forth between adjacent values.
             // This is an attempt at a workaround.
 
             int oldExtent = vis.getExtent();

@@ -1,4 +1,12 @@
 /*
+ * Changes copyright (c) 2018 Alan Snyder.
+ * All rights reserved.
+ *
+ * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
+ * accompanying license terms.
+ */
+
+/*
  * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -199,7 +207,7 @@ public class AquaTabbedPaneCopyFromBasicUI extends TabbedPaneUI implements Swing
     }
 
     // MACOSX adding accessor for superclass
-    protected Component getTabComponentAt(final int i) {
+    protected Component getTabComponentAt(int i) {
         return tabPane.getTabComponentAt(i);
     }
     // END MACOSX
@@ -2188,7 +2196,7 @@ public class AquaTabbedPaneCopyFromBasicUI extends TabbedPaneUI implements Swing
             super(key);
         }
 
-        static Object getUIOfType(final ComponentUI ui, final Class<AquaTabbedPaneCopyFromBasicUI> klass) {
+        static Object getUIOfType(ComponentUI ui, Class<AquaTabbedPaneCopyFromBasicUI> klass) {
             if (klass.isInstance(ui)) {
                 return ui;
             }

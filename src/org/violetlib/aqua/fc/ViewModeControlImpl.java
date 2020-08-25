@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014-2016 Alan Snyder.
+ * Copyright (c) 2014-2018 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the
@@ -8,13 +8,16 @@
 
 package org.violetlib.aqua.fc;
 
-import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyListener;
+import javax.swing.*;
 
 import org.violetlib.aqua.OSXSystemProperties;
+
+import static org.violetlib.aqua.AquaButtonUI.BUTTON_TYPE;
+import static org.violetlib.aqua.AquaButtonUI.SEGMENTED_BUTTON_POSITION;
 
 /**
  * Control to select list or column view in the file chooser.
@@ -90,10 +93,10 @@ public class ViewModeControlImpl extends ViewModeControl {
         setLayout(new FlowLayout(java.awt.FlowLayout.CENTER, 0, 0));
     }
 
-    protected JToggleButton createButton(ImageIcon ic, String position, final int viewMode) {
+    protected JToggleButton createButton(ImageIcon ic, String position, int viewMode) {
         JToggleButton b = new JToggleButton(ic);
-        b.putClientProperty("JButton.buttonType", "segmentedTextured");
-        b.putClientProperty("JButton.segmentPosition", position);
+        b.putClientProperty(BUTTON_TYPE, "segmentedTextured");
+        b.putClientProperty(SEGMENTED_BUTTON_POSITION, position);
 
         if (OSXSystemProperties.OSVersion >= 1011) {
             b.setMargin(new Insets(5, 5, 5, 5));

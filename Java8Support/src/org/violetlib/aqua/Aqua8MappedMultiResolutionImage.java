@@ -19,7 +19,7 @@ import sun.awt.image.MultiResolutionCachedImage;
 import sun.awt.image.MultiResolutionImage;
 
 /**
- * This class supports mapping of arbitrary multiresolution images in JDK 1.8. Note that caching is a necessity in the
+ * This class supports mapping of arbitrary multi-resolution images in Java 8. Note that caching is a necessity in the
  * current AWT design. If a new deferred image is returned each time a resolution variant is asked for by the graphics
  * context, the result is endless repainting that never succeeds. With caching, the image contents will eventually be
  * ready.

@@ -1,4 +1,12 @@
 /*
+ * Changes copyright (c) 2018 Alan Snyder.
+ * All rights reserved.
+ *
+ * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
+ * accompanying license terms.
+ */
+
+/*
  * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -38,14 +46,13 @@ import javax.swing.border.Border;
 public class AquaMenuBarBorder implements Border {
 
     @Override
-    public void paintBorder(final Component c, final Graphics g, final int x,
-                            final int y, final int width, final int height) {
+    public void paintBorder(Component c, Graphics g, int x, int y, int width, int height) {
         g.setColor(Color.gray);
         AquaUtils.drawHLine(g, x, x + width - 1, y + height - 1);
     }
 
     @Override
-    public Insets getBorderInsets(final Component c) {
+    public Insets getBorderInsets(Component c) {
         return new Insets(0, 0, 1, 0);
     }
 

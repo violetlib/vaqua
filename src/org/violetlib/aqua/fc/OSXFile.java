@@ -2,7 +2,7 @@
  * @(#)OSXFile.java
  *
  * Copyright (c) 2009-2013 Werner Randelshofer, Switzerland.
- * Copyright (c) 2014-2016 Alan Snyder.
+ * Copyright (c) 2014-2018 Alan Snyder.
  * You may not use, copy or modify this file, except in compliance with the
  * accompanying license terms.
  */
@@ -10,15 +10,15 @@
 package org.violetlib.aqua.fc;
 
 import java.awt.*;
-import java.awt.image.BufferedImage;
 import java.io.*;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import javax.swing.*;
-import javax.swing.plaf.IconUIResource;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.violetlib.aqua.*;
 import org.violetlib.aqua.AquaUtils.RecyclableSingleton;
 
@@ -36,14 +36,13 @@ public class OSXFile {
     public final static int FILE_TYPE_UNKNOWN = -1;
 
     /**
-     * This array holds the colors used for drawing the gradients of a file
-     * label.
+     * This array holds the colors used for drawing the gradients of a file label.
      */
     private static volatile Color[][] labelColors;
 
     private static String computerModel;
     private static boolean computerModelInitialized;
-    private static Icon computerSidebarIcon;
+    private static ImageIcon computerSidebarIcon;
 
     private static final int kLSItemInfoIsPlainFile        = 0x00000001; /* Not a directory, volume, or symlink*/
     private static final int kLSItemInfoIsPackage          = 0x00000002; /* Packaged directory*/
@@ -61,139 +60,72 @@ public class OSXFile {
     private static final int kLSItemInfoExtensionIsHidden  = 0x00100000; /* Item has a hidden extension*/
 
     private static final RecyclableFileIcon aliasBadgeIcon;
-    private static final RecyclableFileIcon genericComputerIcon;
     private static final RecyclableFileIcon directoryIcon;
     private static final RecyclableFileIcon fileIcon;
     private static final RecyclableFileIcon networkIcon;
 
-    private static final RecyclableSidebarIcon airDropSidebarIcon;
-    private static final RecyclableSidebarIcon allMyFilesSidebarIcon;
-    private static final RecyclableSidebarIcon applicationsSidebarIcon;
-    private static final RecyclableSidebarIcon desktopSidebarIcon;
-    private static final RecyclableSidebarIcon documentsSidebarIcon;
-    private static final RecyclableSidebarIcon downloadsSidebarIcon;
-    private static final RecyclableSidebarIcon dropboxSidebarIcon;
     private static final RecyclableSidebarIcon genericFileSidebarIcon;
-    private static final RecyclableSidebarIcon genericFolderSidebarIcon;
-    private static final RecyclableSidebarIcon homeSidebarIcon;
-    private static final RecyclableSidebarIcon moviesSidebarIcon;
-    private static final RecyclableSidebarIcon musicSidebarIcon;
-    private static final RecyclableSidebarIcon networkSidebarIcon;
-    private static final RecyclableSidebarIcon picturesSidebarIcon;
-    private static final RecyclableSidebarIcon smartFolderSidebarIcon;
-    private static final RecyclableSidebarIcon timeMachineSidebarIcon;
-    private static final RecyclableSidebarIcon utilitiesSidebarIcon;
-    private static final RecyclableSidebarIcon genericVolumeSidebarIcon;
 
-    private static final RecyclableSidebarIcon iMacSidebarIcon;
-    private static final RecyclableSidebarIcon macMiniSidebarIcon;
-    private static final RecyclableSidebarIcon macProSidebarIcon;
-    private static final RecyclableSidebarIcon macProCylinderSidebarIcon;
-    private static final RecyclableSidebarIcon pcSidebarIcon;
-    private static final RecyclableSidebarIcon laptopSidebarIcon;
+    private static class RecyclableFileIcon extends RecyclableSingleton<ImageIconUIResource> {
 
-    private static class RecyclableFileIcon extends RecyclableSingleton<IconUIResource> {
+        private final @NotNull File file;
+        private final boolean shouldConvertToTemplate;
 
-        final File file;
+        public RecyclableFileIcon(@NotNull File file, boolean shouldConvertToTemplate) {
+             this.file = file;
+             this.shouldConvertToTemplate = shouldConvertToTemplate;
+         }
 
-        public RecyclableFileIcon(File file) {
-            this.file = file;
-        }
-
-        public RecyclableFileIcon(String path) {
+        public RecyclableFileIcon(@NotNull String path, boolean shouldConvertToTemplate) {
             this.file = new File(path);
+            this.shouldConvertToTemplate = shouldConvertToTemplate;
         }
 
-        protected IconUIResource getInstance() {
+        protected ImageIconUIResource getInstance() {
             Image im = AquaImageFactory.getImage(file, 16);
-            return new IconUIResource(new ImageIcon(im));
+            if (shouldConvertToTemplate && !AquaImageFactory.isTemplateImage(im)) {
+                im = AquaImageFactory.generateTemplateImage(im);
+            }
+            return new ImageIconUIResource(im);
         }
 
         public Image asImage(int size) {
-            return AquaImageFactory.getImage(file, size);
+            Image im = AquaImageFactory.getImage(file, size);
+            if (shouldConvertToTemplate && !AquaImageFactory.isTemplateImage(im)) {
+                im = AquaImageFactory.generateTemplateImage(im);
+            }
+            return im;
         }
     }
 
-    private static class RecyclableSidebarIcon extends RecyclableSingleton<Icon> {
+    private static class RecyclableSidebarIcon extends RecyclableSingleton<ImageIcon> {
 
-        final File file;
+        private final @NotNull File file;
 
-        public RecyclableSidebarIcon(File file) {
+        public RecyclableSidebarIcon(@NotNull File file) {
             this.file = file;
         }
 
-        public RecyclableSidebarIcon(String path) {
+        public RecyclableSidebarIcon(@NotNull String path) {
             this.file = new File(path);
         }
 
         @Override
-        protected Icon getInstance() {
-            Image im = AquaImageFactory.getImage(file, 18);
-            return createSidebarIcon(im);
+        protected ImageIcon getInstance() {
+            return new ImageIcon(AquaImageFactory.getImage(file, 18));
         }
     }
 
-    private static Icon createSidebarIcon(Image im) {
-        Color basicColor = UIManager.getColor("Tree.sideBar.foreground");
-        Color selectedColor = UIManager.getColor("Tree.sideBar.selectionForeground");
-        Image basic = createSidebarImage(im, basicColor);
-        Image selected = createSidebarImage(im, selectedColor);
-        return new ListStateIcon(new ImageIcon(basic), new ImageIcon(selected));
+    private static RecyclableFileIcon createIcon(@NotNull String name) {
+        return createIcon(name, false);
     }
 
-    /**
-     * Create a sidebar icon image for Yosemite. Light areas remain transparent. Dark areas are mapped to the specified
-     * color.
-     */
-    protected static Image createSidebarImage(Image source, Color color) {
-        if (source instanceof AquaMultiResolutionImage) {
-            AquaMultiResolutionImage im = (AquaMultiResolutionImage) source;
-            SidebarImageMapper mapper = new SidebarImageMapper(color);
-            return im.map(mapper);
-        }
-
-        BufferedImage img = Images.toBufferedImage(source);
-        return basicCreateSidebarImage(img, color);
-    }
-
-    private static class SidebarImageMapper implements AquaMultiResolutionImage.Mapper {
-        private final Color color;
-
-        public SidebarImageMapper(Color color) {
-            this.color = color;
-        }
-
-        @Override
-        public BufferedImage map(Image source, int scaleFactor) {
-            BufferedImage img = Images.toBufferedImage(source);
-            return basicCreateSidebarImage(img, color);
-        }
-    }
-
-    /**
-     * Create a sidebar icon image for Yosemite. Light areas remain transparent. Dark areas are mapped to the specified
-     * color.
-     */
-    protected static BufferedImage basicCreateSidebarImage(BufferedImage img, Color color) {
-        int width = img.getWidth();
-        int height = img.getHeight();
-        BufferedImage iconImg = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB_PRE);
-        Graphics2D g = iconImg.createGraphics();
-        g.setComposite(AlphaComposite.Src);
-        g.drawImage(img, 0, 0, null);
-        g.setComposite(AlphaComposite.SrcIn);
-        g.setColor(color);
-        g.fillRect(0, 0, width, height);
-        g.dispose();
-        return iconImg;
-    }
-
-    private static RecyclableFileIcon createIcon(String name) {
+    private static RecyclableFileIcon createIcon(@NotNull String name, boolean convertToTemplate) {
         String prefix = "/System/Library/CoreServices/CoreTypes.bundle/Contents/Resources/";
-        return new RecyclableFileIcon(prefix + name + ".icns");
+        return new RecyclableFileIcon(prefix + name + ".icns", convertToTemplate);
     }
 
-    private static RecyclableSidebarIcon createSidebarIcon(String name) {
+    private static RecyclableSidebarIcon createSidebarIcon(@NotNull String name) {
         String prefix = "/System/Library/CoreServices/CoreTypes.bundle/Contents/Resources/Sidebar";
         RecyclableSidebarIcon icon = new RecyclableSidebarIcon(prefix + name + ".icns");
         return icon;
@@ -201,42 +133,18 @@ public class OSXFile {
 
     static {
         aliasBadgeIcon = createIcon("AliasBadgeIcon");
-        genericComputerIcon = createIcon("public.generic-pc");
         directoryIcon = createIcon("GenericFolderIcon");
-        fileIcon = createIcon("GenericDocumentIcon");
+        fileIcon = createIcon("GenericDocumentIcon", false);    // did not look good
         networkIcon = createIcon("GenericNetworkIcon");
 
-        applicationsSidebarIcon = createSidebarIcon("ApplicationsFolder");
-        desktopSidebarIcon = createSidebarIcon("DesktopFolder");
-        documentsSidebarIcon = createSidebarIcon("DocumentsFolder");
-        downloadsSidebarIcon = createSidebarIcon("DownloadsFolder");
-        dropboxSidebarIcon = createSidebarIcon("DropBoxFolder");
         genericFileSidebarIcon = createSidebarIcon("GenericFile");
-        genericFolderSidebarIcon = createSidebarIcon("GenericFolder");
-        genericVolumeSidebarIcon = createSidebarIcon("InternalDisk");
-        homeSidebarIcon = createSidebarIcon("HomeFolder");
-        moviesSidebarIcon = createSidebarIcon("MoviesFolder");
-        musicSidebarIcon = createSidebarIcon("MusicFolder");
-        networkSidebarIcon = createSidebarIcon("Network");
-        picturesSidebarIcon = createSidebarIcon("PicturesFolder");
-        smartFolderSidebarIcon = createSidebarIcon("SmartFolder");
-        timeMachineSidebarIcon = createSidebarIcon("TimeMachine");
-        utilitiesSidebarIcon = createSidebarIcon("UtilitiesFolder");
-        iMacSidebarIcon = createSidebarIcon("iMac");
-        macMiniSidebarIcon = createSidebarIcon("MacMini");
-        macProSidebarIcon = createSidebarIcon("MacPro");
-        macProCylinderSidebarIcon = createSidebarIcon("MacProCylinder");
-        pcSidebarIcon = createSidebarIcon("PC");
-        laptopSidebarIcon = createSidebarIcon("Laptop");
-        airDropSidebarIcon = createSidebarIcon("AirDrop");
-        allMyFilesSidebarIcon = createSidebarIcon("AllMyFiles");
     }
 
-    public static Icon getAliasBadgeIcon() {
+    public static ImageIcon getAliasBadgeIcon() {
         return aliasBadgeIcon.getInstance();
     }
 
-    public static Icon getDirectoryIcon() {
+    public static ImageIcon getDirectoryIcon() {
         return directoryIcon.getInstance();
     }
 
@@ -244,7 +152,7 @@ public class OSXFile {
         return directoryIcon.asImage(size);
     }
 
-    public static Icon getFileIcon() {
+    public static ImageIcon getFileIcon() {
         return fileIcon.getInstance();
     }
 
@@ -252,108 +160,12 @@ public class OSXFile {
         return fileIcon.asImage(size);
     }
 
-    public static Icon getGenericComputerIcon() {
-        return genericComputerIcon.getInstance();
-    }
-
-    public static Icon getNetworkIcon() {
+    public static ImageIcon getNetworkIcon() {
         return networkIcon.getInstance();
     }
 
-    public static Icon getAirDropSidebarIcon() {
-        return airDropSidebarIcon.getInstance();
-    }
-
-    public static Icon getAllMyFilesSidebarIcon() {
-        return allMyFilesSidebarIcon.getInstance();
-    }
-
-    public static Icon getApplicationsSidebarIcon() {
-        return applicationsSidebarIcon.getInstance();
-    }
-
-    public static Icon getDesktopSidebarIcon() {
-        return desktopSidebarIcon.getInstance();
-    }
-
-    public static Icon getDocumentsSidebarIcon() {
-        return documentsSidebarIcon.getInstance();
-    }
-
-    public static Icon getDownloadsSidebarIcon() {
-        return downloadsSidebarIcon.getInstance();
-    }
-
-    public static Icon getDropboxSidebarIcon() {
-        return dropboxSidebarIcon.getInstance();
-    }
-
-    public static Icon getGenericFileSidebarIcon() {
+    public static ImageIcon getGenericFileSidebarIcon() {
         return genericFileSidebarIcon.getInstance();
-    }
-
-    public static Icon getGenericFolderSidebarIcon() {
-        return genericFolderSidebarIcon.getInstance();
-    }
-
-    public static Icon getGenericVolumeSidebarIcon() {
-        return genericVolumeSidebarIcon.getInstance();
-    }
-
-    public static Icon getHomeSidebarIcon() {
-        return homeSidebarIcon.getInstance();
-    }
-
-    public static Icon getMoviesSidebarIcon() {
-        return moviesSidebarIcon.getInstance();
-    }
-
-    public static Icon getMusicSidebarIcon() {
-        return musicSidebarIcon.getInstance();
-    }
-
-    public static Icon getNetworkSidebarIcon() {
-        return networkSidebarIcon.getInstance();
-    }
-
-    public static Icon getPicturesSidebarIcon() {
-        return picturesSidebarIcon.getInstance();
-    }
-
-    public static Icon getSmartFolderSidebarIcon() {
-        return smartFolderSidebarIcon.getInstance();
-    }
-
-    public static Icon getTimeMachineSidebarIcon() {
-        return timeMachineSidebarIcon.getInstance();
-    }
-
-    public static Icon getUtilitiesSidebarIcon() {
-        return utilitiesSidebarIcon.getInstance();
-    }
-
-    public static Icon getiMacSidebarIcon() {
-        return iMacSidebarIcon.getInstance();
-    }
-
-    public static Icon getMacMiniSidebarIcon() {
-        return macMiniSidebarIcon.getInstance();
-    }
-
-    public static Icon getMacProSidebarIcon() {
-        return macProSidebarIcon.getInstance();
-    }
-
-    public static Icon getMacProCylinderSidebarIcon() {
-        return macProCylinderSidebarIcon.getInstance();
-    }
-
-    public static Icon getLaptopSidebarIcon() {
-        return laptopSidebarIcon.getInstance();
-    }
-
-    public static Icon getPCSidebarIcon() {
-        return pcSidebarIcon.getInstance();
     }
 
     /**
@@ -380,7 +192,7 @@ public class OSXFile {
      *
      * @param f The file which we must ensure contains an absolute path.
      */
-    public static File getAbsoluteFile(File f) {
+    public static @NotNull File getAbsoluteFile(@NotNull File f) {
         if (!f.isAbsolute()) {
             f = new File(AquaUtils.getProperty("user.home") + File.separatorChar + f.getPath());
 
@@ -426,7 +238,7 @@ public class OSXFile {
     /**
      * Returns the file type: 0=file, 1=directory, 2=alias, -1=unknown.
      */
-    public static int getFileType(File f) {
+    public static int getFileType(@NotNull File f) {
         if (isNativeCodeAvailable()) {
             int flags = nativeGetBasicItemInfoFlags(f.getAbsolutePath());
 
@@ -460,7 +272,7 @@ public class OSXFile {
     /**
      * Resolve a path that may be absolute, relative, or start with ~user.
      */
-    public static File resolvePath(String path, File currentDirectory) {
+    public static @NotNull File resolvePath(@NotNull String path, @Nullable File currentDirectory) {
         if (path.startsWith("/")) {
             return new File(path);
         }
@@ -490,7 +302,7 @@ public class OSXFile {
      * Resolve a file by converting all valid aliases in the path.
      */
 
-    public static File resolve(File f) {
+    public static @Nullable File resolve(@NotNull File f) {
         return resolveAlias(f, true);
     }
 
@@ -501,7 +313,7 @@ public class OSXFile {
      * @param noUI Set this to true, if the alias should be resolved without user interaction.
      * @return Returns the resolved File object.
      */
-    public static File resolveAlias(File f, boolean noUI) {
+    public static @Nullable File resolveAlias(@NotNull File f, boolean noUI) {
         if (isNativeCodeAvailable()) {
 
             String path = nativeResolveAlias(f.getAbsolutePath(), noUI);
@@ -536,7 +348,7 @@ public class OSXFile {
      * @param noUI Set this to true, if the alias should
      * be resolved without user interaction.
      */
-    public static File resolveAlias(byte[] serializedAlias, boolean noUI) {
+    public static @Nullable File resolveAlias(byte[] serializedAlias, boolean noUI) {
         if (isNativeCodeAvailable()) {
             String path = nativeResolveAlias(serializedAlias, noUI);
             return (path == null) ? null : new File(path);
@@ -551,7 +363,7 @@ public class OSXFile {
      * Returns -1 if the label could not be determined, e.g. if the file does
      * not exist.
      */
-    public static int getLabel(File f) {
+    public static int getLabel(@Nullable File f) {
         if (isNativeCodeAvailable() && f != null) {
             return nativeGetLabel(f.getAbsolutePath());
         } else {
@@ -560,32 +372,22 @@ public class OSXFile {
     }
 
     /**
-     * Returns the color of the specified label. Returns null, if the label
-     * does not have a color.
-     *
-     * @param label value from 0 through 7
-     * @param type 0=dark enabled,1=bright enabld,2=dark disabled,3=bright enabled
+     * Map a file tag ID to the corresponding system color name.
+     * @param tag The tag ID.
+     * @return the corresponding system color name, or null if none.
      */
-    public static Color getLabelColor(int label, int type) {
-        if (labelColors == null) {
-            synchronized (OSXFile.class) {
-                if (labelColors  == null) {
-                    labelColors = new Color[][]{
-                            // dark, bright, dark disabled, bright disabled
-                            {null, null, null, null}, // no label
-                            {new Color(0xb7b7b7), new Color(0xd8d8d8), new Color(0xe9e9e9), new Color(0xf3f3f3)}, // gray
-                            {new Color(0xc1d95e), new Color(0xdeebac), new Color(0xecf5ce), new Color(0xf5fae6)}, // green
-                            {new Color(0xcba3df), new Color(0xe7cdee), new Color(0xf0e2f6), new Color(0xf7f0fa)}, // purple
-                            {new Color(0x6db5fd), new Color(0xb8dbfe), new Color(0xd1e8ff), new Color(0xe9f4ff)}, // blue
-                            {new Color(0xf2dd60), new Color(0xfbf2ac), new Color(0xfcf6ce), new Color(0xfefce6)}, // yellow
-                            {new Color(0xfb7a70), new Color(0xfcb4ad), new Color(0xffd6d3), new Color(0xffe8e6)}, // red
-                            {new Color(0xf7b65b), new Color(0xfbd6a4), new Color(0xfee9cc), new Color(0xfff3e3)} // orange
-                    };
-                }
-            }
-        }
 
-        return (label == -1) ? null : labelColors[label][type];
+    public static @Nullable String getTagColorName(int tag) {
+        switch (tag) {
+            case 1:     return "systemGray";
+            case 2:     return "systemGreen";
+            case 3:     return "systemPurple";
+            case 4:     return "systemBlue";
+            case 5:     return "systemYellow";
+            case 6:     return "systemRed";
+            case 7:     return "systemOrange";
+        }
+        return null;
     }
 
     /**
@@ -596,7 +398,7 @@ public class OSXFile {
      * Services icon for the file wil be returned. Note that obtaining a Quick Look preview image can take a long time.
      * @throws UnsupportedOperationException if an image cannot be obtained.
      */
-    public static Image getIconImage(File file, int size, boolean useQuickLook) throws UnsupportedOperationException {
+    public static @NotNull Image getIconImage(@Nullable File file, int size, boolean useQuickLook) throws UnsupportedOperationException {
         if (isNativeCodeAvailable() && file != null) {
             FileIconCreator c = new FileIconCreator(file, size, useQuickLook, true);
             return c.getImage();
@@ -612,7 +414,7 @@ public class OSXFile {
      * @param size The desired image size.
      * @throws UnsupportedOperationException if an image cannot be obtained.
      */
-    public static Image getThumbnailImage(File file, int size) throws UnsupportedOperationException {
+    public static @NotNull Image getThumbnailImage(@Nullable File file, int size) throws UnsupportedOperationException {
         if (isNativeCodeAvailable() && file != null) {
             FileIconCreator c = new FileIconCreator(file, size, true, false);
             return c.getImage();
@@ -632,14 +434,14 @@ public class OSXFile {
         private final boolean useIconMode;
         private Image result;
 
-        public FileIconCreator(File file, int size, boolean useQuickLook, boolean useIconMode) {
+        public FileIconCreator(@NotNull File file, int size, boolean useQuickLook, boolean useIconMode) {
             this.file = file;
             this.size = size;
             this.useQuickLook = useQuickLook;
             this.useIconMode = useIconMode;
         }
 
-        public Image getImage() {
+        public @NotNull Image getImage() {
             if (result == null) {
                 String path = file.getAbsolutePath();
                 int[][] buffers = new int[2][];
@@ -665,7 +467,7 @@ public class OSXFile {
      *
      * @return The kind or null, if it couldn't be determined.
      */
-    public static String getKindString(File file) {
+    public static @Nullable String getKindString(@Nullable File file) {
         if (isNativeCodeAvailable() && file != null) {
             return nativeGetKindString(file.getAbsolutePath());
         } else {
@@ -677,7 +479,7 @@ public class OSXFile {
      * Indicate whether the specified file is a directory that is normally viewed by the user as an ordinary file,
      * i.e., something that can be opened in an application.
      */
-    public static boolean isVirtualFile(File file) {
+    public static boolean isVirtualFile(@Nullable File file) {
         if (isNativeCodeAvailable() && file != null) {
             int flags = nativeGetBasicItemInfoFlags(file.getAbsolutePath());
             return (flags & kLSItemInfoIsPackage) != 0;
@@ -686,23 +488,20 @@ public class OSXFile {
         }
     }
 
-    public static boolean isInvisible(File file) {
-        if (file != null) {
-            if (isNativeCodeAvailable()) {
-                int flags = nativeGetBasicItemInfoFlags(file.getAbsolutePath());
-                return (flags & kLSItemInfoIsInvisible) != 0;
-            } else {
-                return file.isHidden();
-            }
+    public static boolean isInvisible(@NotNull File file) {
+        if (isNativeCodeAvailable()) {
+            int flags = nativeGetBasicItemInfoFlags(file.getAbsolutePath());
+            return (flags & kLSItemInfoIsInvisible) != 0;
+        } else {
+            return file.isHidden();
         }
-        return false;
     }
 
-    public static boolean isTraversable(File file) {
+    public static boolean isTraversable(@Nullable File file) {
         return isTraversable(file, false, false);
     }
 
-    public static boolean isTraversable(File file, boolean isPackageTraversable, boolean isApplicationTraversable) {
+    public static boolean isTraversable(@Nullable File file, boolean isPackageTraversable, boolean isApplicationTraversable) {
         if (file == null) {
             return false;
 
@@ -711,6 +510,9 @@ public class OSXFile {
 
             if ((flags & kLSItemInfoIsAliasFile) != 0) {
                 file = resolve(file);
+                if (file == null) {
+                    return false;
+                }
                 flags = nativeGetBasicItemInfoFlags(file.getAbsolutePath());
             }
 
@@ -746,13 +548,13 @@ public class OSXFile {
         }
     }
 
-    private static boolean isVolumes(String s) {
+    private static boolean isVolumes(@Nullable String s) {
         return s != null && s.equals("/Volumes");
     }
 
     private static String[] nonTraversableDirectories = { ".Spotlight-V100", ".DocumentRevisions", ".Trashes" };
 
-    private static boolean basicIsTraversable(File f) {
+    private static boolean basicIsTraversable(@NotNull File f) {
         String name = f.getName();
 
         if (f.isDirectory()) {
@@ -771,43 +573,8 @@ public class OSXFile {
         return false;
     }
 
-    public static boolean isSavedSearch(File f) {
+    public static boolean isSavedSearch(@NotNull File f) {
         return f.getName().endsWith(".savedSearch");
-    }
-
-    public static Icon getSidebarComputerIcon() {
-        if (computerSidebarIcon == null) {
-            String model = getComputerModel();
-            if (model != null) {
-                if (model.startsWith("MacBook")) {
-                    computerSidebarIcon = getLaptopSidebarIcon();
-                } else if (model.startsWith("MacPro")) {
-                    computerSidebarIcon = getMacProSidebarIcon();
-                } else if (model.startsWith("Macmini")) {
-                    computerSidebarIcon = getMacMiniSidebarIcon();
-                }
-            }
-
-            if (computerSidebarIcon == null) {
-                computerSidebarIcon = getiMacSidebarIcon();
-            }
-        }
-
-        return computerSidebarIcon;
-    }
-
-    private static String getComputerModel() {
-        if (!computerModelInitialized) {
-            computerModelInitialized = true;
-            String[] cmd = { "/usr/sbin/sysctl", "hw.model" };
-            Charset cs = Charset.forName("UTF-8");
-            String result = exec(cmd, cs);
-            if (result != null) {
-                int pos = result.indexOf(":");
-                computerModel = result.substring(pos+1).trim();
-            }
-        }
-        return computerModel;
     }
 
     /**
@@ -899,7 +666,7 @@ public class OSXFile {
     /**
      * Returns the display name of the computer.
      */
-    public static String getComputerName() {
+    public static @Nullable String getComputerName() {
         if (!haveFetchedComputerName) {
             haveFetchedComputerName = true;
             String[] cmd = { "/usr/sbin/scutil", "--get", "ComputerName" };
@@ -913,18 +680,20 @@ public class OSXFile {
     /**
      * Returns the localized display name of the specified file.
      */
-    public static String getDisplayName(File f) {
+    public static @NotNull String getDisplayName(@NotNull File f) {
         if (isNativeCodeAvailable()) {
-            return nativeGetDisplayName(f.getAbsolutePath());
-        } else {
-            return f.getName();
+            String name = nativeGetDisplayName(f.getAbsolutePath());
+            if (name != null) {
+                return name;
+            }
         }
+        return f.getName();
     }
 
     /**
      * Return the time of last use of a file, as recorded by Launch Services. Called the "Date Last Opened" by Finder.
      */
-    public static Date getLastUsedDate(File f) {
+    public static @Nullable Date getLastUsedDate(@NotNull File f) {
         if (isNativeCodeAvailable()) {
             long t = nativeGetLastUsedDate(f.getAbsolutePath());
             return t > 0 ? new Date(t) : null;
@@ -939,7 +708,7 @@ public class OSXFile {
      * @param savedSearchFile The .savedSearch file that defines the query.
      * @return an array containing the files that satisfy the query or null if the query could not be performed.
      */
-    public static File[] executedSavedSearch(File savedSearchFile) {
+    public static @Nullable File[] executedSavedSearch(@NotNull File savedSearchFile) {
         String savedSearchPath = savedSearchFile.getAbsolutePath();
         String[] paths = nativeExecuteSavedSearch(savedSearchPath);
         if (paths != null) {
@@ -953,23 +722,86 @@ public class OSXFile {
         return null;
     }
 
+    /**
+     * Special items such as AirDrop and iCloud do not have a path.
+     * But we do not support them!
+     */
+
     public static class SystemItemInfo {
-        public String name;
-        public String path;
-        int sequenceNumber;
-        boolean isVisible;
-        int id; // volume ID for sidebar volumes
-        Icon icon;
+        private final @NotNull String name;
+        private final @NotNull String path;
+        private final int sequenceNumber;
+        private final boolean isVisible;
+        private int id; // volume ID for sidebar volumes
+        private final @Nullable Icon icon;
+        private final boolean isComputer;
+
+        public SystemItemInfo(@NotNull String name,
+                              @NotNull String path,
+                              int sequenceNumber,
+                              boolean isVisible,
+                              int id,
+                              @Nullable Icon icon) {
+
+            isComputer = id == 1 || (name.equals("Computer") && path.isEmpty());
+
+            if (isComputer && path.isEmpty()) {
+                path = "/Volumes";
+            }
+
+            if (path.isEmpty()) {
+                throw new IllegalArgumentException("Empty path");
+            }
+
+            this.name = determineName(name, isComputer);
+            this.path = path;
+            this.sequenceNumber = isComputer ? -2 : sequenceNumber;
+            this.isVisible = isVisible;
+            this.id = id;
+            this.icon = icon;
+        }
+
+        private static @NotNull String determineName(@NotNull String name, boolean isComputer) {
+            if (isComputer) {
+                String computerName = getComputerName();
+                if (computerName != null) {
+                    return computerName;
+                }
+            }
+            return name;
+        }
+
+        public @NotNull String getName() {
+            return name;
+        }
+
+        public @NotNull String getPath() {
+            return path;
+        }
+
+        public boolean isComputer() {
+            return isComputer;
+        }
+
+        public int getSequenceNumber() {
+            return sequenceNumber;
+        }
+
+        public boolean isVisible() {
+            return isVisible;
+        }
+
+        public int getId() {
+            return id;
+        }
+
+        public @Nullable Icon getIcon() {
+            return icon;
+        }
 
         @Override
         public String toString() {
-            String s = sequenceNumber + ": " + name;
-            if (path != null) {
-                s += " " + path;
-            } else {
-                s += " (unresolved)";
-            }
-            s += " " + id;
+            String s = sequenceNumber + ": " + name + " " + path + " " + id;
             if (!isVisible) {
                 s += " (hidden)";
             }
@@ -986,9 +818,10 @@ public class OSXFile {
         public SharedFileList(int which, String name) {
             this.which = which;
             this.name = name;
+            lastResults = new ArrayList<>();
         }
 
-        public List<SystemItemInfo> getResults() {
+        public @NotNull List<SystemItemInfo> getResults() {
             int imageSize = 18;
             Object[] data = nativeGetSidebarFiles(which, 18, lastSeed);
             if (data == null) {
@@ -1007,16 +840,21 @@ public class OSXFile {
                     String path = (String) data[i+3];
                     int[] iconData1x = (int[]) data[i+4];
                     int[] iconData2x = (int[]) data[i+5];
-                    SystemItemInfo info = new SystemItemInfo();
-                    info.name = name;
-                    info.path = path;
-                    info.sequenceNumber = sequence++;
-                    info.isVisible = flags == 0;
-                    info.id = id;
-                    if (iconData1x != null) {
-                        info.icon = createSidebarIcon(AquaMultiResolutionImage.createImage(imageSize, imageSize, iconData1x, iconData2x));
+                    if (path != null
+                            && (name.equals("Computer") || (!path.isEmpty() && !path.endsWith(".cannedSearch")))) {
+                        // An item with no path is of no use at present.
+                        // Canned searches are not supported.
+                        boolean isVisible = flags == 0;
+                        Icon icon = null;
+                        if (iconData1x != null) {
+                            icon = new ImageIcon(AquaMultiResolutionImage.createImage(imageSize, imageSize, iconData1x, iconData2x));
+                        }
+                        SystemItemInfo info = new SystemItemInfo(name, path, sequence++, isVisible, id, icon);
+                        result.add(info);
+                    } else {
+                        // debug
+                        System.err.println("Skipping " + name);
                     }
-                    result.add(info);
                 }
             }
             lastResults = result;
@@ -1037,11 +875,11 @@ public class OSXFile {
      * @param which This parameter selects favorites or volumes.
      * @return the requested list.
      */
-    public static List<SystemItemInfo> getSidebarFiles(int which) {
+    public static @NotNull List<SystemItemInfo> getSidebarFiles(int which) {
         return sharedFileLists[which].getResults();
     }
 
-    public static String exec(String[] cmd, Charset cs) {
+    public static @Nullable String exec(@NotNull String[] cmd, Charset cs) {
         try {
             Process p = Runtime.getRuntime().exec(cmd);
             InputStream stdout = p.getInputStream();
@@ -1071,11 +909,11 @@ public class OSXFile {
         /**
          * Return the collected contents, or null if not ready yet.
          */
-        public synchronized String getContents() {
+        public synchronized @Nullable String getContents() {
             return result;
         }
 
-        private synchronized void setContents(String s) {
+        private synchronized void setContents(@NotNull String s) {
             result = s;
             notifyAll();
         }
@@ -1110,7 +948,7 @@ public class OSXFile {
      * @param path The path.
      * @return the display name.
      */
-    private static native String nativeGetDisplayName(String path);
+    private static native @Nullable String nativeGetDisplayName(String path);
 
     /**
      * Return the time of last use, as recorded by Launch Services. Called the "Date Last Opened" by Finder.
@@ -1124,9 +962,9 @@ public class OSXFile {
      * @return an array containing the paths of the files that satisfy the query or null if the query could not be
      * performed.
      */
-    private static native String[] nativeExecuteSavedSearch(String path);
+    private static native @Nullable String[] nativeExecuteSavedSearch(String path);
 
-    private static native Object[] nativeGetSidebarFiles(int which, int iconSize, int lastSeed);
+    private static native @Nullable Object[] nativeGetSidebarFiles(int which, int iconSize, int lastSeed);
 
     /**
      * Obtain the icon or QuickLook image for a file.
@@ -1139,5 +977,6 @@ public class OSXFile {
      * @param h The height of the image.
      * @return true if successful, false otherwise.
      */
-    private static native boolean nativeRenderFileImage(String path, boolean isQuickLook, boolean useIconMode, int[][] buffers, int w, int h);
+    private static native boolean nativeRenderFileImage(@NotNull String path, boolean isQuickLook,
+                                                        boolean useIconMode, int[][] buffers, int w, int h);
 }

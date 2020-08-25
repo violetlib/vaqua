@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016 Alan Snyder.
+ * Copyright (c) 2016-2018 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -9,157 +9,69 @@
 package org.violetlib.aqua;
 
 import java.awt.*;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
 import javax.swing.*;
 import javax.swing.plaf.UIResource;
 
-import static org.violetlib.aqua.AquaButtonExtendedTypes.WidgetInfo;
-import static org.violetlib.jnr.aqua.AquaUIPainter.State;
-import static org.violetlib.jnr.aqua.AquaUIPainter.ButtonState;
-import static org.violetlib.aqua.AquaButtonExtendedTypes.ColorDefaults;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
- * An icon for a specific button whose rendering may depend upon the widget, state, and button state.
- * The rendering is based on a specified source image. For most buttons, that image is defined by the button's
- * default icon.
+ * An icon for a specific button whose rendering may depend upon the widget, state, button state, and appearance. The
+ * rendering is based on the button's default icon.
  */
 
-public abstract class AquaButtonIcon implements Icon, UIResource {
+public class AquaButtonIcon implements Icon, UIResource {
+
+    public interface ImageOperatorSupplier {
+        @Nullable Object getCurrentImageProcessingOperator(@NotNull AbstractButton b, boolean isTemplate);
+    }
+
+    protected final @NotNull AbstractButton b;
+    protected final boolean isTemplate;
+    protected final @NotNull ImageOperatorSupplier operatorSupplier;
 
     /**
-     * A rendering key that contains the information that potentially affects the rendering of the icon.
+     * Create a context-sensitive button icon.
+     * @param b The button.
+     * @param isTemplate True if the source image is a template image and it should be treated as such.
+     * @param operatorSupplier Determines the image processing operator to apply to the source image when the icon is
+     *                         painted.
      */
-    public static final class Key {
-        private WidgetInfo widgetInfo;
-        private State state;
-        private ButtonState bs;
-
-        public Key(WidgetInfo widgetInfo, State state, ButtonState bs) {
-            this.widgetInfo = widgetInfo;
-            this.state = state;
-            this.bs = bs;
-        }
-
-        public WidgetInfo getWidgetInfo() {
-            return widgetInfo;
-        }
-
-        public State getState() {
-            return state;
-        }
-
-        public ButtonState getButtonState() {
-            return bs;
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-            Key key = (Key) o;
-            return Objects.equals(widgetInfo, key.widgetInfo) &&
-                    state == key.state &&
-                    bs == key.bs;
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(widgetInfo, state, bs);
-        }
-    }
-
-    protected final Image source;
-    protected final boolean isTemplate;
-    protected final Map<Key,Image> imageCache;
-    protected final ColorDefaults colorDefaults;
-
-    public AquaButtonIcon(Image source, boolean isTemplate, ColorDefaults colorDefaults) {
-        this.source = source;
+    public AquaButtonIcon(@NotNull AbstractButton b,
+                          boolean isTemplate,
+                          @NotNull ImageOperatorSupplier operatorSupplier) {
+        this.b = b;
         this.isTemplate = isTemplate;
-        this.colorDefaults = colorDefaults;
-        imageCache = new HashMap<>();
-    }
-
-    public boolean isTemplate() {
-        return isTemplate;
+        this.operatorSupplier = operatorSupplier;
     }
 
     @Override
     public int getIconWidth() {
-        return source.getWidth(null);
+        Icon icon = b.getIcon();
+        return icon != null ? icon.getIconWidth() : 0;
     }
 
     @Override
     public int getIconHeight() {
-        return source.getHeight(null);
+        Icon icon = b.getIcon();
+        return icon != null ? icon.getIconHeight() : 0;
     }
-
-    protected abstract Color getExistingColor();
-    protected abstract Key getRenderingKey();
 
     @Override
     public void paintIcon(Component c, Graphics g, int x, int y) {
-        Key key = getRenderingKey();
-        Image im = imageCache.get(key);
-        if (im == null) {
-            im = createImage(key);
-            imageCache.put(key, im);
-        }
-        boolean isComplete = g.drawImage(im, x, y, c);
-        if (!isComplete) {
-            new ImageIcon(im);
-            if (!g.drawImage(im, x, y, c)) {
-                System.err.println("Button icon not drawn!");
-            }
-        }
-    }
-
-    protected boolean isNonexclusiveStyle(Key key) {
-        return false;
-    }
-
-    protected Color getTemplateColor(Key key) {
-        State state = key.getState();
-        boolean isNonexclusiveStyle = isNonexclusiveStyle(key);
-        if (state != State.DISABLED && state != State.DISABLED_INACTIVE && !isNonexclusiveStyle) {
-            Color color = getExistingColor();
-            if (color != null && !(color instanceof UIResource)) {
-                return color;
-            }
-        }
-        ButtonState bs = key.getButtonState();
-        WidgetInfo info = key.getWidgetInfo();
-        return info.getForeground(state, bs, colorDefaults, isNonexclusiveStyle, true);
-    }
-
-    /**
-     * Create an image to use for the specified rendering key.
-     * @param key
-     * @return the image to use.
-     */
-    protected Image createImage(Key key) {
-        if (isTemplate) {
-            Color color = getTemplateColor(key);
-            if (color != null) {
-                Image im = AquaImageFactory.createImageFromTemplate(source, color);
-                if (im != null) {
-                    return im;
+        Icon icon = b.getIcon();
+        if (icon != null) {
+            Object operator = operatorSupplier.getCurrentImageProcessingOperator(b, isTemplate);
+            Image im = AquaImageFactory.getProcessedImage(icon, operator);
+            if (im != null) {
+                boolean isComplete = g.drawImage(im, x, y, c);
+                if (!isComplete) {
+                    new ImageIcon(im);
+                    if (!g.drawImage(im, x, y, c)) {
+                        System.err.println("Button icon not drawn!");
+                    }
                 }
             }
         }
-        return createImageForKey(key);
-    }
-
-    protected Image createImageForKey(Key key) {
-        State st = key.getState();
-        if (st == State.PRESSED) {
-            return AquaImageFactory.generatePressedDarkImage(source);
-        }
-        if (st == State.DISABLED || st == State.DISABLED_INACTIVE) {
-            return AquaImageFactory.generateDisabledLightImage(source);
-        }
-        return source;
     }
 }

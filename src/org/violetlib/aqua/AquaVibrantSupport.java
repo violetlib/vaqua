@@ -10,7 +10,11 @@ package org.violetlib.aqua;
 
 import java.awt.*;
 import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import javax.swing.*;
+
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import static org.violetlib.aqua.AquaUtils.execute;
 
@@ -21,15 +25,28 @@ import static org.violetlib.aqua.AquaUtils.execute;
  */
 public class AquaVibrantSupport {
 
-    public static final int LIGHT_STYLE = 0;
-    public static final int DARK_STYLE = 1;
+    public static final int NO_VIBRANT_STYLE = -1;
+
+    public static final int LIGHT_STYLE = 0;    // deprecated in macOS 10.14
+    public static final int DARK_STYLE = 1;     // deprecated in macOS 10.14
     public static final int SIDEBAR_STYLE = 2;
     public static final int TITLE_BAR_STYLE = 3;
     public static final int MENU_STYLE = 4;
     public static final int POPOVER_STYLE = 5;
-    public static final int MEDIUM_LIGHT_STYLE = 6;
-    public static final int ULTRA_DARK_STYLE = 7;
-    public static final int SHEET_STYLE = 8;    // a way of indicating that the window will be displayed as a sheet
+    public static final int MEDIUM_LIGHT_STYLE = 6; // deprecated in macOS 10.14
+    public static final int ULTRA_DARK_STYLE = 7;   // deprecated in macOS 10.14
+    public static final int SELECTION_STYLE = 9;
+
+    // Materials defined in macOS 10.14
+    public static final int SHEET_STYLE = 8;    // also used as a way of indicating that the window will be displayed as a sheet
+    public static final int HEADER_STYLE = 10;
+    public static final int WINDOW_BACKGROUND_STYLE = 11;
+    public static final int HUD_WINDOW_STYLE = 12;
+    public static final int FULL_SCREEN_MODAL_STYLE = 13;
+    public static final int TOOL_TIP_STYLE = 14;
+    public static final int CONTENT_BACKGROUND_STYLE = 15;
+    public static final int UNDER_WINDOW_BACKGROUND_STYLE = 16;
+    public static final int UNDER_PAGE_BACKGROUND_STYLE = 17;
 
     /** This client property allows the client to request a vibrant background style on certain components. */
     public static final String BACKGROUND_STYLE_KEY = "Aqua.backgroundStyle";
@@ -41,10 +58,12 @@ public class AquaVibrantSupport {
     public static final String POPUP_CORNER_RADIUS_KEY = "AquaPopup.cornerRadius";
 
     /** This internal client property stores our state for vibrant components, allowing use of a singleton component UI. */
-    public static final String VIBRANT_EFFECTS_KEY = "AquaInternal.vibrantEffects";
+    private static final String VIBRANT_EFFECTS_KEY = "AquaInternal.vibrantEffects";
 
     /** This internal client property records when a window has a full size vibrant background installed. */
-    public static final String VIBRANT_WINDOW_KEY = "AquaInternal.vibrantWindow";
+    private static final String VIBRANT_WINDOW_KEY = "AquaInternal.vibrantWindow";
+
+    private static final PropertyChangeListener vibrantStylePropertyChangeListener = new VibrantStylePropertyChangeListener();
 
     public static int parseVibrantStyle(Object s, boolean allowSidebar) {
         if (s instanceof String) {
@@ -75,8 +94,35 @@ public class AquaVibrantSupport {
             if (s.equals("vibrantSheet")) {
                 return SHEET_STYLE;
             }
+            if (s.equals("vibrantSelection")) {
+                return SELECTION_STYLE;
+            }
+            if (s.equals("vibrantHeader")) {
+                return HEADER_STYLE;
+            }
+            if (s.equals("vibrantWindowBackground")) {
+                return WINDOW_BACKGROUND_STYLE;
+            }
+            if (s.equals("vibrantHUDWindow")) {
+                return HUD_WINDOW_STYLE;
+            }
+            if (s.equals("vibrantFullScreenUI")) {
+                return FULL_SCREEN_MODAL_STYLE;
+            }
+            if (s.equals("vibrantToolTip")) {
+                return TOOL_TIP_STYLE;
+            }
+            if (s.equals("vibrantContentBackground")) {
+                return CONTENT_BACKGROUND_STYLE;
+            }
+            if (s.equals("vibrantUnderWindowBackground")) {
+                return UNDER_WINDOW_BACKGROUND_STYLE;
+            }
+            if (s.equals("vibrantUnderPageBackground")) {
+                return UNDER_PAGE_BACKGROUND_STYLE;
+            }
         }
-        return -1;
+        return NO_VIBRANT_STYLE;
     }
 
     /**
@@ -97,25 +143,40 @@ public class AquaVibrantSupport {
     }
 
     /**
+     * Install support for vibrant background styles on a component.
+     * @param c The component.
+     */
+    public static void installVibrantStyle(@NotNull JComponent c) {
+        c.addPropertyChangeListener(vibrantStylePropertyChangeListener);
+        updateVibrantStyle(c);
+    }
+
+    /**
+     * Remove support for vibrant background styles on a component.
+     * @param c The component.
+     */
+    public static void uninstallVibrantStyle(@NotNull JComponent c) {
+        c.removePropertyChangeListener(vibrantStylePropertyChangeListener);
+        internalUninstallVibrantStyle(c);
+    }
+
+    /**
      * Recognize and implement a change to the component background style client property.
      * @param evt The property change event.
-     * @return true if and only if the event was for the background style client property.
      */
-    public static boolean processVibrantStyleChange(PropertyChangeEvent evt) {
+    private static void processVibrantStyleChange(@NotNull PropertyChangeEvent evt) {
         String prop = evt.getPropertyName();
         JComponent c = (JComponent) evt.getSource();
         if (BACKGROUND_STYLE_KEY.equals(prop)) {
             updateVibrantStyle(c);
-            return true;
         }
-        return false;
     }
 
     /**
      * Update the background style for a component to be consistent with its background style client property.
      * @param c The component.
      */
-    public static void updateVibrantStyle(JComponent c) {
+    private static void updateVibrantStyle(@NotNull JComponent c) {
         Object o = c.getClientProperty(BACKGROUND_STYLE_KEY);
         if (o instanceof String) {
             int style = AquaVibrantSupport.parseVibrantStyle(o, true);
@@ -124,7 +185,7 @@ public class AquaVibrantSupport {
                 return;
             }
         }
-        uninstallVibrantStyle(c);
+        internalUninstallVibrantStyle(c);
     }
 
     /**
@@ -133,7 +194,7 @@ public class AquaVibrantSupport {
      * @param style The vibrant style.
      * @param bt An optional selection bounds tracker, to support regions displaying a vibrant selection background.
      */
-    public static void installVibrantStyle(JComponent c, int style, SelectionBoundsTracker bt) {
+    private static void installVibrantStyle(@NotNull JComponent c, int style, @Nullable SelectionBoundsTracker bt) {
         Object o = c.getClientProperty(AquaVibrantSupport.VIBRANT_EFFECTS_KEY);
         if (o != null) {
             if (o instanceof VisualEffectView) {
@@ -151,10 +212,10 @@ public class AquaVibrantSupport {
     }
 
     /**
-     * Remove any implementation of a vibrant component background.
+     * Uninstall the implementation of a vibrant component background.
      * @param c The component.
      */
-    public static void uninstallVibrantStyle(JComponent c) {
+    private static void internalUninstallVibrantStyle(@NotNull JComponent c) {
         Object o = c.getClientProperty(AquaVibrantSupport.VIBRANT_EFFECTS_KEY);
         if (o != null) {
             if (o instanceof VisualEffectView) {
@@ -171,18 +232,18 @@ public class AquaVibrantSupport {
      * @param w The window.
      * @param style The vibrant style.
      */
-    public static void addFullWindowVibrantView(Window w, int style) {
+    public static void addFullWindowVibrantView(@NotNull Window w, int style) {
         // If a window can never become active, then we should force visual effect view to display the active state.
         // Otherwise, there is no point to enabling a vibrant style.
 
-        boolean forceActive = w.getType() == Window.Type.POPUP || isUndecorated(w);
+        boolean forceActive = w.getType() == Window.Type.POPUP || !AquaUtils.isDecorated(w);
         long rc = execute(w, ptr -> setupVisualEffectWindow(ptr, style, forceActive));
         if (rc != 0) {
             System.err.println("Unable to install visual effect view");
         } else {
             JRootPane rp = AquaUtils.getRootPane(w);
-            AquaUtils.setWindowBackgroundClear(w, true); // suppress Java window background
             if (rp != null) {
+                AquaUtils.enableTranslucency(w);
                 rp.putClientProperty(VIBRANT_WINDOW_KEY, Boolean.TRUE);
                 AquaUtils.paintImmediately(w, rp);
                 // The goal of the following is to transfer the new clear background to the AWTView layer immediately so
@@ -194,32 +255,21 @@ public class AquaVibrantSupport {
         }
     }
 
-    private static boolean isUndecorated(Window w) {
-        if (w instanceof Frame) {
-            return ((Frame) w).isUndecorated();
-        }
-
-        if (w instanceof Dialog) {
-            return ((Dialog) w).isUndecorated();
-        }
-
-        return true;
-    }
-
     /**
      * Remove any full window sized visual effect view installed on the specified window.
      * @param w The window.
      */
-    public static void removeFullWindowVibrantView(Window w) {
-        long rc = execute(w, AquaVibrantSupport::removeVisualEffectWindow);
-        if (rc != 0) {
-            System.err.println("Unable to remove visual effect view");
-        }
+    public static void removeFullWindowVibrantView(@NotNull Window w) {
         JRootPane rp = AquaUtils.getRootPane(w);
         if (rp != null) {
             if (rp.getClientProperty(VIBRANT_WINDOW_KEY) != null) {
-                AquaUtils.setWindowBackgroundClear(w, false); // restore Java window background
-                rp.repaint();
+                long rc = execute(w, AquaVibrantSupport::removeVisualEffectWindow);
+                if (rc != 0) {
+                    System.err.println("Unable to remove visual effect view");
+                } else {
+                    rp.putClientProperty(VIBRANT_WINDOW_KEY, null);
+                    rp.repaint();
+                }
             }
         }
     }
@@ -233,20 +283,27 @@ public class AquaVibrantSupport {
      * @return a peer that can be used to specify the bounds of the background view and the bounds of the regions
      *         displaying a vibrant selection background.
      */
-    public static VisualEffectViewPeer createVisualEffectView(Window w, int style, boolean supportSelections) {
+    public static VisualEffectViewPeer createVisualEffectView(@NotNull Window w, int style, boolean supportSelections) {
         long ptr = execute(w, wptr -> nativeCreateVisualEffectView(wptr, style, supportSelections));
         if (ptr != 0) {
-            AquaUtils.setWindowBackgroundClear(w, true); // suppress Java window background
+            AquaUtils.enableTranslucency(w);
             return new VisualEffectViewPeerImpl(w, ptr);
         }
         return null;
     }
 
+    private static class VibrantStylePropertyChangeListener implements PropertyChangeListener {
+        @Override
+        public void propertyChange(PropertyChangeEvent evt) {
+            AquaVibrantSupport.processVibrantStyleChange(evt);
+        }
+    }
+
     private static class VisualEffectViewPeerImpl implements VisualEffectViewPeer {
-        private Window w;
+        private final @NotNull Window w;
         private long nativeNSViewPointer;
 
-        public VisualEffectViewPeerImpl(Window w, long nativeNSViewPointer) {
+        public VisualEffectViewPeerImpl(@NotNull Window w, long nativeNSViewPointer) {
             this.w = w;
             this.nativeNSViewPointer = nativeNSViewPointer;
         }
@@ -261,7 +318,7 @@ public class AquaVibrantSupport {
                     }
                 }
                 nativeNSViewPointer = 0;
-                AquaUtils.setWindowBackgroundClear(w, false); // restore Java window background
+                //AquaUtils.setWindowBackgroundClear(w, false); // restore Java window background
             }
         }
 

@@ -14,87 +14,25 @@
  */
 package org.violetlib.treetable;
 
-import java.awt.Color;
-import java.awt.Component;
-import java.awt.Container;
-import java.awt.Dimension;
-import java.awt.Point;
-import java.awt.Rectangle;
-import java.awt.dnd.DropTarget;
-import java.awt.dnd.DropTargetDragEvent;
-import java.awt.dnd.DropTargetDropEvent;
-import java.awt.dnd.DropTargetEvent;
-import java.awt.dnd.DropTargetListener;
+import java.awt.*;
+import java.awt.dnd.*;
 import java.awt.event.MouseEvent;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.Enumeration;
-import java.util.EventListener;
-import java.util.HashMap;
-import java.util.IdentityHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.TooManyListenersException;
 import java.util.AbstractMap.SimpleEntry;
-
-import javax.swing.AbstractButton;
-import javax.swing.DropMode;
-import javax.swing.Icon;
-import javax.swing.JComponent;
-import javax.swing.JLabel;
-import javax.swing.JScrollPane;
-import javax.swing.JTable;
-import javax.swing.JTree;
-import javax.swing.JViewport;
-import javax.swing.ListSelectionModel;
-import javax.swing.RowSorter;
-import javax.swing.Scrollable;
-import javax.swing.SortOrder;
-import javax.swing.SwingConstants;
-import javax.swing.ToolTipManager;
-import javax.swing.TransferHandler;
-import javax.swing.UIManager;
+import java.util.*;
+import java.util.List;
+import javax.swing.*;
 import javax.swing.RowSorter.SortKey;
 import javax.swing.border.Border;
-import javax.swing.event.ListSelectionEvent;
-import javax.swing.event.ListSelectionListener;
-import javax.swing.event.TableModelEvent;
-import javax.swing.event.TableModelListener;
-import javax.swing.event.TreeExpansionEvent;
-import javax.swing.event.TreeExpansionListener;
-import javax.swing.event.TreeModelEvent;
-import javax.swing.event.TreeModelListener;
-import javax.swing.event.TreeSelectionEvent;
-import javax.swing.event.TreeSelectionListener;
-import javax.swing.event.TreeWillExpandListener;
+import javax.swing.event.*;
 import javax.swing.plaf.UIResource;
-import javax.swing.table.AbstractTableModel;
-import javax.swing.table.JTableHeader;
-import javax.swing.table.TableCellEditor;
-import javax.swing.table.TableCellRenderer;
-import javax.swing.table.TableColumn;
-import javax.swing.table.TableColumnModel;
-import javax.swing.table.TableModel;
+import javax.swing.table.*;
 import javax.swing.text.Position;
-import javax.swing.tree.DefaultTreeModel;
-import javax.swing.tree.ExpandVetoException;
-import javax.swing.tree.TreeModel;
-import javax.swing.tree.TreePath;
-import javax.swing.tree.TreeSelectionModel;
+import javax.swing.tree.*;
 
 import org.violetlib.aqua.AquaUtils;
-import org.violetlib.treetable.event.TreeColumnModelEvent;
-import org.violetlib.treetable.event.TreeColumnModelListener;
-import org.violetlib.treetable.event.TreeTableMouseEvent;
-import org.violetlib.treetable.event.TreeTableMouseListener;
-import org.violetlib.treetable.event.TreeTableMouseMotionListener;
-import org.violetlib.treetable.event.TreeTableSorterEvent;
-import org.violetlib.treetable.event.TreeTableSorterListener;
+import org.violetlib.treetable.event.*;
 import org.violetlib.treetable.ui.BasicTreeTableUI;
 import org.violetlib.treetable.ui.TableInterface;
 import org.violetlib.treetable.ui.TreeInterface;
@@ -341,7 +279,6 @@ public class TreeTable extends JComponent implements Scrollable {
         adapter.fireTableRowsDeleted(row+1, row+rowsRemoved);
         adapter.updateSorter(path, false);
     }
-
 
     @Override
     public void addNotify() {
@@ -618,7 +555,6 @@ public class TreeTable extends JComponent implements Scrollable {
         super.doLayout();
     }
 
-
     public void invalidateAllRows() {
         TreeModel model = adapter;
         TreePath root = new TreePath(model.getRoot());
@@ -672,11 +608,6 @@ public class TreeTable extends JComponent implements Scrollable {
             updateRowHeaderHeights(fromRow, toRow);
     }
 
-
-
-
-
-
     public boolean getAutoCreateColumnHeader() {
         return autoCreateColumnHeader;
     }
@@ -697,7 +628,6 @@ public class TreeTable extends JComponent implements Scrollable {
         firePropertyChange("autoCreateRowHeader", oldValue, getAutoCreateRowHeader());
     }
 
-
     public TreeTableCellRenderer getFocusRenderer() {
         return focusRenderer;
     }
@@ -709,7 +639,6 @@ public class TreeTable extends JComponent implements Scrollable {
         if (isValid())
             repaint(getLeadSelectionPath());
     }
-
 
     public ToolTipMap<TreeTable> getDefaultToolTipMap() {
         return adapter;
@@ -729,7 +658,6 @@ public class TreeTable extends JComponent implements Scrollable {
         return getToolTipMap() == null ? getToolTipText() :
             getToolTipMap().getToolTipText(this, e);
     }
-
 
     public TableColumnModel getColumnModel() {
         return columnModel;
@@ -766,7 +694,6 @@ public class TreeTable extends JComponent implements Scrollable {
             autoCreateRowSorter();
     }
 
-
     /**
      * Changes to the TreeModel/RowModel as well as row insertion/removal
      * due to tree expansion/collapse can be listened to in terms of a
@@ -783,7 +710,6 @@ public class TreeTable extends JComponent implements Scrollable {
     public TreeTableModel getTreeTableModel() {
         return adapter;
     }
-
 
     public TreeTableSorter<? extends TreeModel, ? extends TreeColumnModel> getRowSorter() {
         return adapter.rowSorter;
@@ -828,7 +754,6 @@ public class TreeTable extends JComponent implements Scrollable {
         return adapter.getSorter(path);
     }
 
-
     /**
      * @return columnFocusEnabed
      * @see #setColumnFocusEnabled(boolean)
@@ -851,8 +776,6 @@ public class TreeTable extends JComponent implements Scrollable {
         return columnModel.getColumn(columnModel.getColumnIndex(identifier));
     }
 
-
-
     public Color getAlternateRowColor() {
         return alternateRowColor;
     }
@@ -862,8 +785,6 @@ public class TreeTable extends JComponent implements Scrollable {
         this.alternateRowColor = alternateRowColor;
         firePropertyChange("alternateRowColor", oldValue, getAlternateRowColor());
     }
-
-
 
     public void setDefaultRenderer(Class<?> columnClass, TreeTableCellRenderer renderer) {
         defaultRenderers = putDefault(columnClass, renderer, defaultRenderers);
@@ -908,7 +829,6 @@ public class TreeTable extends JComponent implements Scrollable {
         T def = defaults.get(cls);
         return def != null ? def : getDefault(cls.getSuperclass(), defaults);
     }
-
 
     public TreeTableCellRenderer getCellRenderer(int row, int column) {
         if (column >= 0 && column < getColumnModel().getColumnCount()) {
@@ -969,8 +889,6 @@ public class TreeTable extends JComponent implements Scrollable {
     public TreeTableCellEditor getCellEditor() {
         return (TreeTableCellEditor)table.getCellEditor();
     }
-
-
 
     /**
      * @return the hierarchical column in view coordinates
@@ -1086,7 +1004,6 @@ public class TreeTable extends JComponent implements Scrollable {
         this.descendingSortIcon = descendingSortIcon;
         firePropertyChange("descendingSortIcon", oldValue, getDescendingSortIcon());
     }
-
 
     public Icon getIconForPath(TreePath path) {
         return getIcon(path.getLastPathComponent(), isExpanded(path), isLeaf(path));
@@ -1245,8 +1162,6 @@ public class TreeTable extends JComponent implements Scrollable {
         scrollPathToVisible(getPathForRow(row));
     }
 
-
-
     public Rectangle getPathBounds(TreePath path) {
         return ui == null ? null : getUI().getPathBounds(this, path);
     }
@@ -1378,8 +1293,6 @@ public class TreeTable extends JComponent implements Scrollable {
     public int getRowHeight(int row) {
         return table.getRowHeight(row);
     }
-
-
 
     public TreeSelectionModel getSelectionModel() {
         return tree == null ? null : tree.getSelectionModel();
@@ -1591,12 +1504,9 @@ public class TreeTable extends JComponent implements Scrollable {
         return columnModel.getSelectionModel().getMinSelectionIndex();
     }
 
-
     public int getSelectedColumnCount() {
         return columnModel.getSelectedColumnCount();
     }
-
-
 
     public Rectangle getCellRect(int row, int column, boolean includeSpacing) {
         return table.getCellBounds(row, column, includeSpacing);
@@ -1609,8 +1519,6 @@ public class TreeTable extends JComponent implements Scrollable {
     public int rowAtPoint(Point pt) {
         return table.rowAtPoint(pt);
     }
-
-
 
     // Scrollable interface
 
@@ -1668,7 +1576,6 @@ public class TreeTable extends JComponent implements Scrollable {
                 visibleRect, orientation, direction);
     }
 
-
     void repaint(TreePath path, int col) {
         if (col < 0) {
             repaint(path);
@@ -1687,7 +1594,6 @@ public class TreeTable extends JComponent implements Scrollable {
         r.width = getWidth();
         repaint(r);
     }
-
 
     protected Adapter createAdapter(TreeModel tm, TreeColumnModel tcm) {
         return new Adapter(tm, tcm);
@@ -1740,9 +1646,9 @@ public class TreeTable extends JComponent implements Scrollable {
             if (rowSorter != null)
                 rowSorter.removeTreeTableSorterListener(this);
             rowSorter = sorter;
-            if (sorter != null)
+            if (sorter != null) {
                 sorter.addTreeTableSorterListener(this);
-
+            }
         }
 
         // TableModel interface
@@ -1799,7 +1705,6 @@ public class TreeTable extends JComponent implements Scrollable {
             if (getRowHeight() <= 0)
                 updateTableRowHeights();
         }
-
 
         // TreeColumnModelListener interface
 
@@ -2057,8 +1962,6 @@ public class TreeTable extends JComponent implements Scrollable {
             fireTreeNodesRemoved(path, childIndices, childNodes);
         }
 
-
-
         private void updateTable(TreePath parent, int[] rows, int eventType) {
             if (rows == null)
                 return;
@@ -2106,7 +2009,6 @@ public class TreeTable extends JComponent implements Scrollable {
                 updateTableRowHeights(firstRow, lastRow+1);
             }
         }
-
 
         // TreeExpansionListener interface
 
@@ -2172,7 +2074,6 @@ public class TreeTable extends JComponent implements Scrollable {
         @Override
         public void addSelectionInterval(int index0, int index1) {
             tree.addSelectionInterval(index0, index1);
-
         }
 
         @Override
@@ -2298,7 +2199,6 @@ public class TreeTable extends JComponent implements Scrollable {
             }
             fireSelectionChanged(minRow, maxRow);
         }
-
 
         private void fireSelectionChanged(int firstRow, int lastRow) {
             ListSelectionEvent e = new ListSelectionEvent(this, firstRow, lastRow, false);
@@ -2579,7 +2479,6 @@ public class TreeTable extends JComponent implements Scrollable {
                 tip = treeTable.getToolTipText();
             return tip;
         }
-
     }
 
     public Map<TreePath,SortKey> getSortedPaths() {
@@ -2673,9 +2572,7 @@ public class TreeTable extends JComponent implements Scrollable {
             this.viewNodes = viewNodes;
             return true;
         }
-
     }
-
 
     // Row Header
 
@@ -2714,12 +2611,7 @@ public class TreeTable extends JComponent implements Scrollable {
         public void propertyChange(PropertyChangeEvent evt) {
             TreeTable.updateRowHeaderRenderer((JTable)evt.getSource());
         }
-
     }
-
-
-
-
 
     // Drag & Drop Support
 
@@ -2811,13 +2703,11 @@ public class TreeTable extends JComponent implements Scrollable {
         return dropLocation;
     }
 
-
     public void setTransferHandler(TransferHandler th) {
         super.setTransferHandler(th);
         if (th != null)
             setDropTarget(new DT(getDropTarget()));
     }
-
 
     private void setDropLocation(Point pt) {
         DropLocation oldLocation = dropLocation;
@@ -2859,7 +2749,6 @@ public class TreeTable extends JComponent implements Scrollable {
         r.width = getWidth();
         repaint(r);
     }
-
 
     private void maybeTogglePath(DropLocation oldLocation, Point pt) {
         if (!pt.equals(oldLocation.getDropPoint())) {
@@ -3118,7 +3007,6 @@ public class TreeTable extends JComponent implements Scrollable {
         public void removeDropTargetListener(DropTargetListener dtl) {
             delegate.removeDropTargetListener(dtl);
         }
-
     }
 
     // Fusion of JTable.DropLocation & JTree.DropLocation
@@ -3188,7 +3076,6 @@ public class TreeTable extends JComponent implements Scrollable {
                 && index            == o.index
                 && (path == null ? o.path == null : path.equals(o.path));
         }
-
     }
 
     // adapted from List.getNextMath()
@@ -3227,7 +3114,6 @@ public class TreeTable extends JComponent implements Scrollable {
         return str == null ? "" : str;
     }
 
-
     public boolean isLeaf(TreePath path) {
         return getTreeModel().isLeaf(path.getLastPathComponent());
     }
@@ -3252,7 +3138,6 @@ public class TreeTable extends JComponent implements Scrollable {
     public int getDistanceToTreeHandle(TreePath path, int x) {
         return getUI().getDistanceToTreeHandle(this, path, x);
     }
-
 
     public int getAlignment(Component rendererComponent, int row, int column) {
         if (rendererComponent instanceof JLabel) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015 Alan Snyder.
+ * Copyright (c) 2015-2018 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -10,9 +10,7 @@
 #import <Availability.h>
 
 @implementation AquaSidebarBackground {
-    NSVisualEffectView *backgroundView;
     NSMutableArray<NSVisualEffectView*> *selectionViews;
-    NSVisualEffectMaterial material;
     NSVisualEffectMaterial selectionMaterial;
 }
 
@@ -21,22 +19,17 @@
 
     if (self) {
         if (floor(NSAppKitVersionNumber) <= NSAppKitVersionNumber10_10_Max) {
-            material = NSVisualEffectMaterialAppearanceBased;
+            self.material = NSVisualEffectMaterialAppearanceBased;
         } else {
-            material = NSVisualEffectMaterialSidebar;
+            self.material = NSVisualEffectMaterialSidebar;
         }
+        self.style = SIDEBAR_STYLE;
         selectionMaterial = 4;
 
         self.wantsLayer = YES;
-        self.appearance = [NSAppearance appearanceNamed: NSAppearanceNameVibrantLight];
         self.autoresizesSubviews = YES;
-        backgroundView = [[NSVisualEffectView alloc] initWithFrame: self.bounds];
         selectionViews = [[NSMutableArray alloc] init];
-        backgroundView.wantsLayer = YES;
-        backgroundView.autoresizingMask = NSViewWidthSizable+NSViewHeightSizable;
-        backgroundView.blendingMode = NSVisualEffectBlendingModeBehindWindow;
-        [backgroundView setMaterial:material];
-        [self addSubview: backgroundView];
+        self.blendingMode = NSVisualEffectBlendingModeBehindWindow;
     }
 
     return self;
@@ -88,7 +81,7 @@
     NSVisualEffectView *v = [[NSVisualEffectView alloc] initWithFrame: frame];
     v.blendingMode = NSVisualEffectBlendingModeBehindWindow;
     v.wantsLayer = YES;
-    v.material = material;
+    v.material = self.material;
     return v;
 }
 

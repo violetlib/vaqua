@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015 Alan Snyder.
+ * Copyright (c) 2015-2018 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -50,12 +50,12 @@ public class AquaFullKeyboardFocusableHandler implements ChangeListener {
         }
     }
 
-    public static void addListener(final JComponent c) {
+    public static void addListener(JComponent c) {
         AquaFullKeyboardFocusableHandler h = new AquaFullKeyboardFocusableHandler(c);
         c.putClientProperty(CLIENT_PROPERTY_KEY, h);
     }
 
-    public static void removeListener(final JComponent c) {
+    public static void removeListener(JComponent c) {
         AquaFullKeyboardFocusableHandler h = (AquaFullKeyboardFocusableHandler) c.getClientProperty(CLIENT_PROPERTY_KEY);
         if (h != null) {
             c.putClientProperty(CLIENT_PROPERTY_KEY, null);

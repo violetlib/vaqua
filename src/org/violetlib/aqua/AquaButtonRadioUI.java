@@ -1,5 +1,5 @@
 /*
- * Changes copyright (c) 2015 Alan Snyder.
+ * Changes copyright (c) 2015-2018 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -41,9 +41,10 @@ import org.violetlib.aqua.AquaUtils.RecyclableSingleton;
 import org.violetlib.aqua.AquaUtils.RecyclableSingletonFromDefaultConstructor;
 
 public class AquaButtonRadioUI extends AquaButtonLabeledUI {
+
     protected static final RecyclableSingleton<AquaButtonRadioUI> instance = new RecyclableSingletonFromDefaultConstructor<AquaButtonRadioUI>(AquaButtonRadioUI.class);
 
-    public static ComponentUI createUI(final JComponent b) {
+    public static ComponentUI createUI(JComponent b) {
         return instance.get();
     }
 

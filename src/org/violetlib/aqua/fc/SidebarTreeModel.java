@@ -2,7 +2,7 @@
  * @(#)SidebarTreeModel.java
  *
  * Copyright (c) 2007-2013 Werner Randelshofer, Switzerland.
- * Copyright (c) 2015 Alan Snyder.
+ * Copyright (c) 2015-2018 Alan Snyder.
  * All rights reserved.
  *
  * The copyright of this software is owned by Werner Randelshofer.
@@ -13,9 +13,8 @@
 
 package org.violetlib.aqua.fc;
 
-import org.violetlib.aqua.AquaUtils;
-import org.violetlib.aqua.fc.OSXFile.SystemItemInfo;
-
+import java.io.File;
+import java.util.*;
 import javax.swing.*;
 import javax.swing.event.TreeModelEvent;
 import javax.swing.event.TreeModelListener;
@@ -23,9 +22,10 @@ import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreeNode;
 import javax.swing.tree.TreePath;
-import java.io.File;
-import java.util.*;
-import java.util.List;
+
+import org.jetbrains.annotations.NotNull;
+import org.violetlib.aqua.AquaUtils;
+import org.violetlib.aqua.fc.OSXFile.SystemItemInfo;
 
 /**
  * SidebarTreeModel.
@@ -51,10 +51,6 @@ public class SidebarTreeModel extends DefaultTreeModel implements TreeModelListe
      * Represents the "Favorites" node in the sidebar.
      */
     private DefaultMutableTreeNode favoritesNode;
-    /**
-     * The file system tree model node that represents the Computer.
-     */
-    private FileSystemTreeModel.Node computerNode;
     /**
      * The JFileChooser.
      */
@@ -84,7 +80,6 @@ public class SidebarTreeModel extends DefaultTreeModel implements TreeModelListe
         this.fileChooser = fileChooser;
         this.volumesPath = volumesPath;
         this.model = model;
-        computerNode = model.getRoot();
 
         devicesNode = new DefaultMutableTreeNode(UIManager.getString("FileChooser.devices"));
         devicesNode.setAllowsChildren(true);
@@ -108,7 +103,7 @@ public class SidebarTreeModel extends DefaultTreeModel implements TreeModelListe
     /**
      * Invoke the runnable when validation is complete, either now or later. This method does not block.
      */
-    public void invokeWhenValid(final Runnable r) {
+    public void invokeWhenValid(Runnable r) {
         r.run();
     }
 
@@ -120,7 +115,7 @@ public class SidebarTreeModel extends DefaultTreeModel implements TreeModelListe
         // TBD: Avoid replacing valid nodes because that might alter the selection.
         // Not important currently because we never update.
 
-        List<Node> favorites = getUserFavorites();
+        List<SidebarTreeNode> favorites = getUserFavorites();
         replaceNodes(favoritesNode, favorites, false);
     }
 
@@ -134,55 +129,46 @@ public class SidebarTreeModel extends DefaultTreeModel implements TreeModelListe
 
         boolean[] someNodesUpdatedState = new boolean[1];
 
-        List<SidebarViewToModelNode> devices = new ArrayList<>();
-        FileSystemTreeModel.Node computerNode = this.computerNode;
+        List<SidebarTreeNode> devices = new ArrayList<>();
         SystemItemInfo computerInfo = volumes.get("Computer");
-        if (computerInfo != null && computerInfo.isVisible) {
-            devices.add(createOrFindDeviceNode(computerNode, -2, computerInfo.icon, someNodesUpdatedState));
+        if (computerInfo != null && computerInfo.isVisible()) {
+            devices.add(createOrFindDeviceNode(computerInfo, someNodesUpdatedState));
         }
 
         for (SystemItemInfo info : volumes.values()) {
             if (info != computerInfo) {
-                String path = info.path;
-                if (path != null) {
-                    File f = new File(path);
-                    SidebarViewToModelNode node = createOrFindDeviceNode(f, info.sequenceNumber, info.icon, someNodesUpdatedState);
-                    if (!devices.contains(node)) {
-                        devices.add(node);
-                    }
+                String path = info.getPath();
+                File f = new File(path);
+                SidebarTreeNode node = createOrFindDeviceNode(info, someNodesUpdatedState);
+                if (!devices.contains(node)) {
+                    devices.add(node);
                 }
             }
         }
 
-        Collections.sort(devices, new SideBarViewToModelNodeComparator());
+        Collections.sort(devices, new SidebarTreeNodeComparator());
         replaceNodes(devicesNode, devices, someNodesUpdatedState[0]);
     }
 
-    private SidebarViewToModelNode createOrFindDeviceNode(File f, int sequenceNumber, Icon icon,
-                                                          boolean[] updatedState) {
-        TreePath tp = model.toPath(f, null);
-        FileSystemTreeModel.Node modelNode = (FileSystemTreeModel.Node) tp.getLastPathComponent();
-        return createOrFindDeviceNode(modelNode, sequenceNumber, icon, updatedState);
-    }
-
-    private SidebarViewToModelNode createOrFindDeviceNode(FileSystemTreeModel.Node modelNode, int sequenceNumber,
-                                                          Icon icon, boolean[] updatedState) {
+    private SidebarTreeNode createOrFindDeviceNode(@NotNull SystemItemInfo info, boolean[] updatedState) {
+        File f = new File(info.getPath());
         int count = devicesNode.getChildCount();
         for (int index = 0; index < count; index++) {
             TreeNode node = devicesNode.getChildAt(index);
-            if (node instanceof SidebarViewToModelNode) {
-                SidebarViewToModelNode n = (SidebarViewToModelNode) node;
-                if (n.getTarget() == modelNode) {
-                    if (!Objects.equals(n.icon, icon)) {
+            if (node instanceof SidebarTreeNode) {
+                SidebarTreeNode n = (SidebarTreeNode) node;
+                if (f.equals(n.getResolvedFile())) {
+                    // Unlikely, but the icon may have changed
+                    Icon systemIcon = info.getIcon();
+                    if (systemIcon != null && systemIcon != n.getBasicIcon()) {
                         updatedState[0] = true;
                     }
-                    n.sequenceNumber = sequenceNumber;
-                    n.icon = icon;
+                    n.update(info);
                     return n;
                 }
             }
         }
-        return new SidebarViewToModelNode(modelNode, sequenceNumber, icon);
+        return createNode(info);
     }
 
     private void replaceNodes(DefaultMutableTreeNode parent,
@@ -251,53 +237,37 @@ public class SidebarTreeModel extends DefaultTreeModel implements TreeModelListe
         }
     }
 
-    private List<Node> getUserFavorites() {
-        ArrayList<Node> result = new ArrayList<>();
-
+    private List<SidebarTreeNode> getUserFavorites() {
+        List<SidebarTreeNode> result = new ArrayList<>();
         List<SystemItemInfo> sidebarFavorites = OSXFile.getSidebarFiles(OSXFile.SIDEBAR_FAVORITES);
-        if (sidebarFavorites != null) {
-            for (SystemItemInfo favorite : sidebarFavorites) {
-                //System.err.println("Favorite: " + favorite);
-                String name = favorite.name;
-                String path = favorite.path;
-                boolean isPath = path != null && !path.isEmpty();
-
-                if (!isPath && (name.equals("AirDrop") || name.endsWith("-AirDrop"))) {
-                    // TBD
-                } else if (name.equals("iCloud")) {
-                    // TBD
-                } else if (name.equals("All My Files")) {
-                    // TBD
-                } else if (favorite.path != null) {
-                    File f = new File(path);
-                    FileNode node = new FileNode(f);
-                    Icon icon = favorite.icon;
-                    if (icon != null) {
-                        node.icon = icon;
-                    }
-                    result.add(node);
-                } else {
-                    AliasNode node = new AliasNode(name);
-                    result.add(node);
-                }
-            }
+        for (SystemItemInfo favorite : sidebarFavorites) {
+            SidebarTreeNode node = createNode(favorite);
+            result.add(node);
         }
         return result;
+    }
+
+    private @NotNull SidebarTreeNode createNode(@NotNull SystemItemInfo info) {
+        String path = info.getPath();
+        File f = new File(path);
+        Icon icon = info.getIcon();
+        if (icon == null) {
+            icon = isTraversable(f) ? UIManager.getIcon("FileView.directoryIcon")
+                                    : UIManager.getIcon("FileView.fileIcon");
+        }
+        return new SidebarTreeNode(info, icon);
     }
 
     private Map<String,SystemItemInfo> readVolumes() {
         Map<String,SystemItemInfo> result = new HashMap<>();
 
         List<SystemItemInfo> sidebarVolumes = OSXFile.getSidebarFiles(OSXFile.SIDEBAR_VOLUMES);
-        if (sidebarVolumes != null) {
-            for (SystemItemInfo volume : sidebarVolumes) {
-                String name = volume.name;
-                if (volume.id == 1) {
-                    name = "Computer";
-                }
-                //System.err.println("Volume: " + volume);
-                result.put(name, volume);
+        for (SystemItemInfo volume : sidebarVolumes) {
+            String name = volume.getName();
+            if (volume.isComputer()) {
+                name = "Computer";
             }
+            result.put(name, volume);
         }
         return result;
     }
@@ -326,220 +296,17 @@ public class SidebarTreeModel extends DefaultTreeModel implements TreeModelListe
         }
     }
 
-    private class FileNode extends Node {
-
-        private File file;
-        private Icon icon;
-        private String userName;
-        private boolean isTraversable;
-        /**
-         * Holds a Finder label for the file represented by this node.
-         * The label is a value in the interval from 0 through 7.
-         * The value -1 is used, if the label could not be determined.
-         */
-        protected int fileLabel = -1;
-
-        public FileNode(File file) {
-            this.file = file;
-            // userName = fileChooser.getName(file);
-            isTraversable = file.isDirectory();
-        }
-
-        public File getResolvedFile() {
-            return file;
-        }
-
-        public File getFile() {
-            return file;
-        }
-
-        public Icon getIcon() {
-            if (icon == null) {
-                icon = (isTraversable())
-                        ? UIManager.getIcon("FileView.directoryIcon")
-                        : UIManager.getIcon("FileView.fileIcon");
-                //
-                if (!UIManager.getBoolean("FileChooser.speed")) {
-                    dispatcher.dispatch(new Worker<Icon>() {
-
-                        public Icon construct() {
-                            return fileChooser.getIcon(file);
-                        }
-
-                        @Override
-                        public void done(Icon value) {
-                            icon = value;
-                            int[] changedIndices = {getParent().getIndex(FileNode.this)};
-                            Object[] changedChildren = {FileNode.this};
-                            SidebarTreeModel.this.fireTreeNodesChanged(
-                                    SidebarTreeModel.this,
-                                    favoritesNode.getPath(),
-                                    changedIndices, changedChildren);
-                        }
-                    });
-                }
-            }
-            return icon;
-        }
-
-        public String getUserName() {
-            if (userName == null) {
-                userName = fileChooser.getName(file);
-            }
-            return userName;
-        }
-
-        public boolean isTraversable() {
-            return isTraversable;
-        }
-
-        @Override
-        public String toString() {
-            return getUserName();
-        }
-    }
-
-    /**
-     * An AliasNode is resolved as late as possible.
-     */
-    private abstract class Node extends DefaultMutableTreeNode implements SidebarTreeFileNode {
-
-        @Override
-        public boolean getAllowsChildren() {
-            return false;
-        }
-    }
-
-    /**
-     * An AliasNode is resolved as late as possible.
-     */
-    private class AliasNode extends Node {
-
-        private File file;
-        private Icon icon;
-        private String userName;
-        private String aliasName;
-        private boolean isTraversable;
-        /**
-         * Holds a Finder label for the file represented by this node.
-         * The label is a value in the interval from 0 through 7.
-         * The value -1 is used, if the label could not be determined.
-         */
-        protected int fileLabel = -1;
-
-        public AliasNode(String aliasName) {
-            this.file = null;
-            this.aliasName = aliasName;
-            isTraversable = true;
-        }
-
-        public File getResolvedFile() {
-            if (file == null) {
-                icon = null; // clear cached icon!
-                file = OSXFile.resolveAlias(new File(aliasName), false);
-            }
-            return file;
-        }
-
-        public Icon getIcon() {
-            if (icon == null) {
-                // Note: We clear this icon, when we resolve the alias
-                icon = (isTraversable())
-                        ? UIManager.getIcon("FileView.directoryIcon")
-                        : UIManager.getIcon("FileView.fileIcon");
-                //
-                if (file != null && !UIManager.getBoolean("FileChooser.speed")) {
-                    dispatcher.dispatch(new Worker<Icon>() {
-
-                        public Icon construct() {
-                            return fileChooser.getIcon(file);
-                        }
-
-                        @Override
-                        public void done(Icon value) {
-                            icon = value;
-
-                            int[] changedIndices = new int[]{getParent().getIndex(AliasNode.this)};
-                            Object[] changedChildren = new Object[]{AliasNode.this};
-                            SidebarTreeModel.this.fireTreeNodesChanged(
-                                    SidebarTreeModel.this,
-                                    ((DefaultMutableTreeNode) AliasNode.this.getParent()).getPath(),
-                                    changedIndices, changedChildren);
-                        }
-                    });
-                }
-            }
-            return icon;
-        }
-
-        public String getUserName() {
-            if (userName == null) {
-                if (file != null) {
-                    userName = fileChooser.getName(file);
-                }
-            }
-            return (userName == null) ? aliasName : userName;
-        }
-
-        public boolean isTraversable() {
-            return isTraversable;
-        }
-
-        @Override
-        public String toString() {
-            return getUserName();
-        }
-    }
-
-    /** Note: SidebaViewToModelNode must not implement Comparable and must
-     * not override equals()/hashCode(), because this confuses the layout algorithm
-     * in JTree.
-     */
-    private class SidebarViewToModelNode extends Node {
-
-        private FileSystemTreeModel.Node target;
-        private int sequenceNumber;
-        private Icon icon;
-
-        public SidebarViewToModelNode(FileSystemTreeModel.Node target, int sequenceNumber, Icon icon) {
-            this.target = target;
-            this.sequenceNumber = sequenceNumber;
-            this.icon = icon;
-        }
-
-        public File getResolvedFile() {
-            return target.getResolvedFile();
-        }
-
-        public String getUserName() {
-            return target.getUserName();
-        }
-
-        public Icon getIcon() {
-            if (icon != null) {
-                return icon;
-            }
-            return target.getIcon();
-        }
-
-        public FileSystemTreeModel.Node getTarget() {
-            return target;
-        }
-
-        public int getSequenceNumber() {
-            return sequenceNumber;
-        }
-
-        @Override
-        public String toString() {
-            return target.toString();
-        }
-    }
-
-    private class SideBarViewToModelNodeComparator implements Comparator<SidebarViewToModelNode> {
-
-        public int compare(SidebarViewToModelNode n1, SidebarViewToModelNode n2) {
+    private class SidebarTreeNodeComparator implements Comparator<SidebarTreeNode> {
+        public int compare(@NotNull SidebarTreeNode n1, @NotNull SidebarTreeNode n2) {
             return n1.getSequenceNumber() - n2.getSequenceNumber();
+        }
+    }
+
+    public boolean isTraversable(File f) {
+        if (OSXFile.isAvailable()) {
+            return OSXFile.isTraversable(f);
+        } else {
+            return f.isDirectory();
         }
     }
 }

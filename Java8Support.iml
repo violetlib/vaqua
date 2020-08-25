@@ -8,5 +8,6 @@
     <orderEntry type="jdk" jdkName="1.8" jdkType="JavaSDK" />
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="module" module-name="VAqua" />
+    <orderEntry type="library" name="IdeaAnnotations" level="application" />
   </component>
 </module>

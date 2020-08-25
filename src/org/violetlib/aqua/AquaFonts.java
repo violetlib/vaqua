@@ -1,4 +1,12 @@
 /*
+ * Copyright (c) 2018 Alan Snyder.
+ * All rights reserved.
+ *
+ * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
+ * accompanying license terms.
+ */
+
+/*
  * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -198,41 +206,41 @@ public class AquaFonts {
      * All fonts derived from this type will also be of this type, and not a plain java.awt.Font
      */
     static class DerivedUIResourceFont extends FontUIResource implements UIResource {
-        public DerivedUIResourceFont(final Font font) {
+        public DerivedUIResourceFont(Font font) {
             super(font);
         }
 
-        public DerivedUIResourceFont(final String name, final int style, final int size) {
+        public DerivedUIResourceFont(String name, int style, int size) {
             super(name, style, size);
         }
 
         @Override
-        public Font deriveFont(final AffineTransform trans) {
+        public Font deriveFont(AffineTransform trans) {
             return new DerivedUIResourceFont(super.deriveFont(trans));
         }
 
         @Override
-        public Font deriveFont(final float derivedSize) {
+        public Font deriveFont(float derivedSize) {
             return new DerivedUIResourceFont(super.deriveFont(derivedSize));
         }
 
         @Override
-        public Font deriveFont(final int derivedStyle) {
+        public Font deriveFont(int derivedStyle) {
             return new DerivedUIResourceFont(super.deriveFont(derivedStyle));
         }
 
         @Override
-        public Font deriveFont(final int derivedStyle, final AffineTransform trans) {
+        public Font deriveFont(int derivedStyle, AffineTransform trans) {
             return new DerivedUIResourceFont(super.deriveFont(derivedStyle, trans));
         }
 
         @Override
-        public Font deriveFont(final int derivedStyle, final float derivedSize) {
+        public Font deriveFont(int derivedStyle, float derivedSize) {
             return new DerivedUIResourceFont(super.deriveFont(derivedStyle, derivedSize));
         }
 
         @Override
-        public Font deriveFont(final Map<? extends Attribute, ?> attributes) {
+        public Font deriveFont(Map<? extends Attribute, ?> attributes) {
             return new DerivedUIResourceFont(super.deriveFont(attributes));
         }
     }

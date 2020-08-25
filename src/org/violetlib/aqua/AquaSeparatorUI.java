@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014-2016 Alan Snyder.
+ * Copyright (c) 2014-2018 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -13,15 +13,26 @@ import javax.swing.plaf.ComponentUI;
 import javax.swing.plaf.SeparatorUI;
 import java.awt.*;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.violetlib.jnr.aqua.AquaUIPainter;
+
 /**
  * A customized UI for JSeparator, matching Yosemite.
  */
-public class AquaSeparatorUI extends SeparatorUI {
+public class AquaSeparatorUI extends SeparatorUI implements AquaComponentUI {
 
     private static int thickness;
 
     public static ComponentUI createUI(JComponent c) {
         return new AquaSeparatorUI();
+    }
+
+    protected @NotNull BasicContextualColors colors;
+    protected @Nullable AppearanceContext appearanceContext;
+
+    public AquaSeparatorUI() {
+        colors = AquaColors.SEPARATOR_COLORS;
     }
 
     public void installUI(JComponent c) {
@@ -36,11 +47,48 @@ public class AquaSeparatorUI extends SeparatorUI {
     }
 
     protected void installDefaults(JSeparator s) {
-        LookAndFeel.installColors(s, "Separator.background", "Separator.foreground");
-        LookAndFeel.installProperty(s, "opaque", Boolean.FALSE);
+        LookAndFeel.installProperty(s, "opaque", false);
+        installListeners(s);
+        configureAppearanceContext(null, s);
     }
 
     protected void uninstallDefaults(JSeparator s) {
+        uninstallListeners(s);
+    }
+
+    protected void installListeners(JSeparator s) {
+        AppearanceManager.installListener(s);
+    }
+
+    protected void uninstallListeners(JSeparator s) {
+        AppearanceManager.uninstallListener(s);
+    }
+
+    @Override
+    public void appearanceChanged(@NotNull JComponent c, @NotNull AquaAppearance appearance) {
+        configureAppearanceContext(appearance, (JSeparator)c);
+    }
+
+    @Override
+    public void activeStateChanged(@NotNull JComponent c, boolean isActive) {
+        // not active state sensitive
+    }
+
+    protected void configureAppearanceContext(@Nullable AquaAppearance appearance, @NotNull JSeparator s) {
+        if (appearance == null) {
+            appearance = AppearanceManager.ensureAppearance(s);
+        }
+        AquaUIPainter.State state = AquaUIPainter.State.ACTIVE;
+        appearanceContext = new AppearanceContext(appearance, state, false, false);
+        AquaColors.installColors(s, appearanceContext, colors);
+        s.repaint();
+    }
+
+    @Override
+    public void update(Graphics g, JComponent c) {
+        AquaAppearance appearance = AppearanceManager.registerCurrentAppearance(c);
+        super.update(g, c);
+        AppearanceManager.restoreCurrentAppearance(appearance);
     }
 
     public void paint(Graphics g, JComponent c) {

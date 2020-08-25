@@ -1,5 +1,5 @@
 /*
- * Changes Copyright (c) 2015-2016 Alan Snyder.
+ * Changes Copyright (c) 2015-2018 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -38,6 +38,7 @@ import javax.swing.*;
 import javax.swing.plaf.InsetsUIResource;
 import javax.swing.text.JTextComponent;
 
+import org.jetbrains.annotations.Nullable;
 import org.violetlib.aqua.AquaUtils.RecyclableSingleton;
 import org.violetlib.aqua.AquaUtils.RecyclableSingletonFromDefaultConstructor;
 import org.violetlib.jnr.*;
@@ -63,15 +64,15 @@ public class AquaTextFieldBorder extends AquaBorder implements FocusRingOutlineP
     public AquaTextFieldBorder() {
     }
 
-    public AquaTextFieldBorder(final AquaTextFieldBorder other) {
+    public AquaTextFieldBorder(AquaTextFieldBorder other) {
     }
 
     @Override
-    public void paintBorder(final Component c, final Graphics g, int x, int y, int width, int height) {
+    public void paintBorder(Component c, Graphics g, int x, int y, int width, int height) {
         // The text field border is now a background
     }
 
-    public void paintBackground(final JComponent c, final Graphics g) {
+    public void paintBackground(JComponent c, Graphics g, @Nullable Color background) {
         if (c instanceof JTextComponent) {
             JTextComponent tc = (JTextComponent) c;
             int width = tc.getWidth();
@@ -80,9 +81,11 @@ public class AquaTextFieldBorder extends AquaBorder implements FocusRingOutlineP
 //        g.setColor(Color.MAGENTA);
 //        g.drawRect(x, y, width - 1, height - 1);
 
-            g.setColor(tc.getBackground());
             if (tc.isOpaque()) {
-                g.fillRect(0, 0, width, height);
+                if (background != null) {
+                    g.setColor(background);
+                    g.fillRect(0, 0, width, height);
+                }
                 return;
             }
 
@@ -103,7 +106,8 @@ public class AquaTextFieldBorder extends AquaBorder implements FocusRingOutlineP
         if (c instanceof JTextComponent) {
             JTextComponent tc = (JTextComponent) c;
             TextFieldLayoutConfiguration g = getLayoutConfiguration(tc);
-            painter.configure(tc.getWidth(), tc.getHeight());
+            AppearanceManager.ensureAppearance(tc);
+            AquaUtils.configure(painter, tc, tc.getWidth(), tc.getHeight());
             return painter.getOutline(g);
         }
         return null;
@@ -117,7 +121,7 @@ public class AquaTextFieldBorder extends AquaBorder implements FocusRingOutlineP
     public int getTextMargin(JTextComponent tc) {
         // The cell editor test probably fails during the initial construction of the text component.
         // It should be performed again when the text field is added as a component of the table.
-        if (AquaCellEditorPolicy.getInstance().isCellEditor(tc)) {
+        if (AquaCellEditorPolicy.getInstance().getCellStatus(tc) != null) {
             return 1;
         } else {
             // The goal is to give the appearance of a specific left and right margin, but the portion of the margin
@@ -130,11 +134,11 @@ public class AquaTextFieldBorder extends AquaBorder implements FocusRingOutlineP
         }
     }
 
-    public Insets getBorderInsets(final Component c) {
+    public Insets getBorderInsets(Component c) {
         if (c instanceof JTextComponent) {
             JTextComponent tc = (JTextComponent) c;
 
-            if (AquaCellEditorPolicy.getInstance().isCellEditor(tc)) {
+            if (AquaCellEditorPolicy.getInstance().getCellStatus(tc) != null) {
                 return new InsetsUIResource(0, 0, 0, 0);
             }
 
@@ -155,11 +159,11 @@ public class AquaTextFieldBorder extends AquaBorder implements FocusRingOutlineP
         return new InsetsUIResource(3, 3, 3, 3);
     }
 
-    public Insets2D getBorderInsets2D(final Component c) {
+    public Insets2D getBorderInsets2D(Component c) {
         if (c instanceof JTextComponent) {
             JTextComponent tc = (JTextComponent) c;
 
-            if (AquaCellEditorPolicy.getInstance().isCellEditor(tc)) {
+            if (AquaCellEditorPolicy.getInstance().getCellStatus(tc) != null) {
                 return new Insets2D(0, 0, 0, 0);
             }
 
@@ -192,10 +196,11 @@ public class AquaTextFieldBorder extends AquaBorder implements FocusRingOutlineP
         }
     }
 
-    protected Painter getConfiguredPainter(final JTextComponent tc) {
+    protected Painter getConfiguredPainter(JTextComponent tc) {
         int width = tc.getWidth();
         int height = tc.getHeight();
-        painter.configure(width, height);
+        AppearanceManager.ensureAppearance(tc);
+        AquaUtils.configure(painter, tc, width, height);
         TextFieldConfiguration tg = getConfiguration(tc);
         return painter.getPainter(tg);
     }
@@ -230,7 +235,7 @@ public class AquaTextFieldBorder extends AquaBorder implements FocusRingOutlineP
         return AquaUtils.isOnToolbar(tc);
     }
 
-    protected State getStateFor(final JTextComponent tc) {
+    protected State getStateFor(JTextComponent tc) {
         if (!AquaFocusHandler.isActive(tc)) {
             return State.INACTIVE;
         }

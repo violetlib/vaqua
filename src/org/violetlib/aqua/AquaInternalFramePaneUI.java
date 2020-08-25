@@ -1,4 +1,12 @@
 /*
+ * Copyright (c) 2018 Alan Snyder.
+ * All rights reserved.
+ *
+ * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
+ * accompanying license terms.
+ */
+
+/*
  * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -34,24 +42,24 @@ import javax.swing.border.Border;
 import javax.swing.plaf.*;
 import javax.swing.plaf.basic.BasicDesktopPaneUI;
 
-public class AquaInternalFramePaneUI extends BasicDesktopPaneUI implements MouseListener {
+import org.jetbrains.annotations.NotNull;
+
+public class AquaInternalFramePaneUI extends BasicDesktopPaneUI implements MouseListener, AquaComponentUI {
 
     JComponent fDock;
     DockLayoutManager fLayoutMgr;
 
-    public static ComponentUI createUI(final JComponent c) {
+    public static ComponentUI createUI(JComponent c) {
         return new AquaInternalFramePaneUI();
     }
 
-    public void update(final Graphics g, final JComponent c) {
-        if (c.isOpaque()) {
-            super.update(g, c);
-            return;
-        }
-        paint(g, c);
+    public void update(Graphics g, JComponent c) {
+        AquaAppearance appearance = AppearanceManager.registerCurrentAppearance(c);
+        super.update(g, c);
+        AppearanceManager.restoreCurrentAppearance(appearance);
     }
 
-    public void installUI(final JComponent c) {
+    public void installUI(JComponent c) {
         super.installUI(c);
         fLayoutMgr = new DockLayoutManager();
         c.setLayout(fLayoutMgr);
@@ -59,7 +67,7 @@ public class AquaInternalFramePaneUI extends BasicDesktopPaneUI implements Mouse
         c.addMouseListener(this);
     }
 
-    public void uninstallUI(final JComponent c) {
+    public void uninstallUI(JComponent c) {
         c.removeMouseListener(this);
 
         if (fDock != null) {
@@ -73,6 +81,14 @@ public class AquaInternalFramePaneUI extends BasicDesktopPaneUI implements Mouse
         super.uninstallUI(c);
     }
 
+    @Override
+    public void appearanceChanged(@NotNull JComponent c, @NotNull AquaAppearance appearance) {
+    }
+
+    @Override
+    public void activeStateChanged(@NotNull JComponent c, boolean isActive) {
+    }
+
     // Our superclass hardcodes DefaultDesktopManager - how rude!
     protected void installDesktopManager() {
         if (desktop.getDesktopManager() == null) {
@@ -82,7 +98,7 @@ public class AquaInternalFramePaneUI extends BasicDesktopPaneUI implements Mouse
     }
 
     protected void uninstallDesktopManager() {
-        final DesktopManager manager = desktop.getDesktopManager();
+        DesktopManager manager = desktop.getDesktopManager();
         if (manager instanceof AquaDockingDesktopManager) {
             desktop.setDesktopManager(null);
         }
@@ -97,30 +113,30 @@ public class AquaInternalFramePaneUI extends BasicDesktopPaneUI implements Mouse
     }
 
     class DockLayoutManager implements LayoutManager {
-        public void addLayoutComponent(final String name, final Component comp) {
+        public void addLayoutComponent(String name, Component comp) {
         }
 
-        public void removeLayoutComponent(final Component comp) {
+        public void removeLayoutComponent(Component comp) {
         }
 
-        public Dimension preferredLayoutSize(final Container parent) {
+        public Dimension preferredLayoutSize(Container parent) {
             return parent.getSize();
         }
 
-        public Dimension minimumLayoutSize(final Container parent) {
+        public Dimension minimumLayoutSize(Container parent) {
             return parent.getSize();
         }
 
-        public void layoutContainer(final Container parent) {
+        public void layoutContainer(Container parent) {
             if (fDock != null) ((Dock)fDock).updateSize();
         }
     }
 
     @SuppressWarnings("serial") // Superclass is not serializable across versions
     class Dock extends JComponent implements Border {
-        static final int DOCK_EDGE_SLACK = 8;
+        public static final int DOCK_EDGE_SLACK = 8;
 
-        Dock(final JComponent parent) {
+        Dock(JComponent parent) {
             setBorder(this);
             setLayout(new FlowLayout(FlowLayout.CENTER, 0, 0));
             setVisible(false);
@@ -132,11 +148,11 @@ public class AquaInternalFramePaneUI extends BasicDesktopPaneUI implements Mouse
         }
 
         void updateSize() {
-            final Dimension d = getPreferredSize();
+            Dimension d = getPreferredSize();
             setBounds((getParent().getWidth() - d.width) / 2, getParent().getHeight() - d.height, d.width, d.height);
         }
 
-        public Component add(final Component c) {
+        public Component add(Component c) {
             super.add(c);
             if (!isVisible()) {
                 setVisible(true);
@@ -147,7 +163,7 @@ public class AquaInternalFramePaneUI extends BasicDesktopPaneUI implements Mouse
             return c;
         }
 
-        public void remove(final Component c) {
+        public void remove(Component c) {
             super.remove(c);
             if (getComponentCount() == 0) {
                 setVisible(false);
@@ -157,7 +173,7 @@ public class AquaInternalFramePaneUI extends BasicDesktopPaneUI implements Mouse
             }
         }
 
-        public Insets getBorderInsets(final Component c) {
+        public Insets getBorderInsets(Component c) {
             return new Insets(DOCK_EDGE_SLACK / 4, DOCK_EDGE_SLACK, 0, DOCK_EDGE_SLACK);
         }
 
@@ -165,14 +181,14 @@ public class AquaInternalFramePaneUI extends BasicDesktopPaneUI implements Mouse
             return false;
         }
 
-        public void paintBorder(final Component c, final Graphics g, final int x, final int y, final int w, final int h) {
+        public void paintBorder(Component c, Graphics g, int x, int y, int w, int h) {
             if (!(g instanceof Graphics2D)) return;
-            final Graphics2D g2d = (Graphics2D)g;
+            Graphics2D g2d = (Graphics2D)g;
 
-            final int height = getHeight();
-            final int width = getWidth();
+            int height = getHeight();
+            int width = getWidth();
 
-            final Object priorAA = g2d.getRenderingHint(RenderingHints.KEY_ANTIALIASING);
+            Object priorAA = g2d.getRenderingHint(RenderingHints.KEY_ANTIALIASING);
             g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
             g2d.setColor(UIManager.getColor("DesktopIcon.borderColor"));
@@ -188,18 +204,18 @@ public class AquaInternalFramePaneUI extends BasicDesktopPaneUI implements Mouse
 
     @SuppressWarnings("serial") // JDK implementation class
     class AquaDockingDesktopManager extends AquaInternalFrameManager {
-        public void openFrame(final JInternalFrame f) {
-            final JInternalFrame.JDesktopIcon desktopIcon = f.getDesktopIcon();
-            final Container dock = desktopIcon.getParent();
+        public void openFrame(JInternalFrame f) {
+            JInternalFrame.JDesktopIcon desktopIcon = f.getDesktopIcon();
+            Container dock = desktopIcon.getParent();
             if (dock == null) return;
 
             if (dock.getParent() != null) dock.getParent().add(f);
             removeIconFor(f);
         }
 
-        public void deiconifyFrame(final JInternalFrame f) {
-            final JInternalFrame.JDesktopIcon desktopIcon = f.getDesktopIcon();
-            final Container dock = desktopIcon.getParent();
+        public void deiconifyFrame(JInternalFrame f) {
+            JInternalFrame.JDesktopIcon desktopIcon = f.getDesktopIcon();
+            Container dock = desktopIcon.getParent();
             if (dock == null) return;
 
             if (dock.getParent() != null) dock.getParent().add(f);
@@ -210,23 +226,23 @@ public class AquaInternalFramePaneUI extends BasicDesktopPaneUI implements Mouse
             f.moveToFront();
             try {
                 f.setSelected(true);
-            } catch(final PropertyVetoException pve) { /* do nothing */ }
+            } catch(PropertyVetoException pve) { /* do nothing */ }
         }
 
-        public void iconifyFrame(final JInternalFrame f) {
-            final JInternalFrame.JDesktopIcon desktopIcon = f.getDesktopIcon();
+        public void iconifyFrame(JInternalFrame f) {
+            JInternalFrame.JDesktopIcon desktopIcon = f.getDesktopIcon();
             // paint the frame onto the icon before hiding the frame, else the contents won't show
             ((AquaInternalFrameDockIconUI)desktopIcon.getUI()).updateIcon();
             super.iconifyFrame(f);
         }
 
-        void addIcon(final Container c, final JInternalFrame.JDesktopIcon desktopIcon) {
-            final DesktopPaneUI ui = ((JDesktopPane)c).getUI();
+        void addIcon(Container c, JInternalFrame.JDesktopIcon desktopIcon) {
+            DesktopPaneUI ui = ((JDesktopPane)c).getUI();
             ((AquaInternalFramePaneUI)ui).getDock().add(desktopIcon);
         }
     }
 
-    public void mousePressed(final MouseEvent e) {
+    public void mousePressed(MouseEvent e) {
         JInternalFrame selectedFrame = desktop.getSelectedFrame();
         if (selectedFrame != null) {
             try {
@@ -236,8 +252,8 @@ public class AquaInternalFramePaneUI extends BasicDesktopPaneUI implements Mouse
         }
     }
 
-    public void mouseReleased(final MouseEvent e) { }
-    public void mouseClicked(final MouseEvent e) { }
-    public void mouseEntered(final MouseEvent e) { }
-    public void mouseExited(final MouseEvent e) { }
+    public void mouseReleased(MouseEvent e) { }
+    public void mouseClicked(MouseEvent e) { }
+    public void mouseEntered(MouseEvent e) { }
+    public void mouseExited(MouseEvent e) { }
 }

@@ -1,5 +1,5 @@
 /*
- * Changes copyright (c) 2015-2016 Alan Snyder.
+ * Changes copyright (c) 2015-2018 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -36,21 +36,14 @@ package org.violetlib.aqua;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import javax.swing.*;
-import javax.swing.plaf.IconUIResource;
 import javax.swing.plaf.UIResource;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.violetlib.aqua.AquaUtils.RecyclableSingleton;
 import org.violetlib.jnr.Painter;
 
 public class AquaIcon {
-    interface InvertableIcon extends Icon {
-        Icon getInvertedIcon();
-    }
-
-    public static Icon loadResource(String resource) {
-      Image im = AquaImageFactory.loadResource(resource);
-        return new ImageIcon(im);
-    }
 
     public static final IconImageCreator alertCautionImageCreator = new IconImageCreator("caut", 64);
     public static final IconImageCreator alertStopImageCreator = new IconImageCreator("stop", 64);
@@ -78,40 +71,44 @@ public class AquaIcon {
      * @param i The icon (may be null).
      * @return the corresponding image, or null if not possible.
      */
-    public static Image getImageForIcon(final Icon i) {
+    public static @Nullable Image getImageForIcon(@Nullable Icon i) {
         if (i == null) {
             return null;
         }
 
-        if (i instanceof ImageIcon) return ((ImageIcon)i).getImage();
+        if (i instanceof ImageIcon) {
+            return ((ImageIcon)i).getImage();
+        }
 
-        final int w = i.getIconWidth();
-        final int h = i.getIconHeight();
+        int w = i.getIconWidth();
+        int h = i.getIconHeight();
 
-        if (w <= 0 || h <= 0) return null;
+        if (w <= 0 || h <= 0) {
+            return null;
+        }
 
         // This could be any kind of icon, so we need to make a buffer for it, draw it and then pass the new image off to appkit.
-        final BufferedImage image = new BufferedImage(w, h, BufferedImage.TYPE_INT_ARGB_PRE);
-        final Graphics g = image.getGraphics();
+        BufferedImage image = new BufferedImage(w, h, BufferedImage.TYPE_INT_ARGB_PRE);
+        Graphics g = image.getGraphics();
         i.paintIcon(null, g, 0, 0);
         g.dispose();
         return image;
     }
 
-    public static Icon createPressedDarkIcon(Icon ic) {
+    public static @NotNull Icon createPressedDarkIcon(@NotNull Icon ic) {
         Image im = getImageForIcon(ic);
         if (im != null) {
-            Image pressedImage = AquaImageFactory.generatePressedDarkImage(im);
+            Image pressedImage = AquaImageFactory.getProcessedImage(im, AquaImageFactory.DARKEN_FOR_PRESSED);
             return new ImageIcon(pressedImage);
         } else {
             return ic;
         }
     }
 
-    public static Icon createDisabledLightIcon(Icon ic) {
+    public static @NotNull Icon createDisabledLightIcon(@NotNull Icon ic) {
         Image im = getImageForIcon(ic);
         if (im != null) {
-            Image disabledImage = AquaImageFactory.generateDisabledLightImage(im);
+            Image disabledImage = AquaImageFactory.getProcessedImage(im, AquaImageFactory.LIGHTEN_FOR_DISABLED);
             return new ImageIcon(disabledImage);
         } else {
             return ic;
@@ -123,19 +120,21 @@ public class AquaIcon {
         int height;
         Image image;
 
-        public CachingScalingIcon(final int width, final int height) {
+        public CachingScalingIcon(int width, int height) {
             this.width = width;
             this.height = height;
         }
 
-        void setSize(final int width, final int height) {
+        void setSize(int width, int height) {
             this.width = width;
             this.height = height;
             this.image = null;
         }
 
-        Image getImage() {
-            if (image != null) return image;
+        @Nullable Image getImage() {
+            if (image != null) {
+                return image;
+            }
 
             if (!GraphicsEnvironment.isHeadless()) {
                 image = createImage();
@@ -150,7 +149,7 @@ public class AquaIcon {
             return getImage() != null;
         }
 
-        public void paintIcon(final Component c, Graphics g, final int x, final int y) {
+        public void paintIcon(Component c, Graphics g, int x, int y) {
             g = g.create();
 
             if (g instanceof Graphics2D) {
@@ -158,7 +157,7 @@ public class AquaIcon {
                 ((Graphics2D)g).setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
             }
 
-            final Image myImage = getImage();
+            Image myImage = getImage();
             if (myImage != null) {
                 g.drawImage(myImage, x, y, getIconWidth(), getIconHeight(), null);
             }
@@ -176,17 +175,16 @@ public class AquaIcon {
     }
 
     public static abstract class ScalingNativeRenderedIcon implements Icon, UIResource {
-        final int width;
-        final int height;
+        protected final int width;
+        protected final int height;
 
-        public ScalingNativeRenderedIcon(final int width, final int height) {
+        public ScalingNativeRenderedIcon(int width, int height) {
             this.width = width;
             this.height = height;
         }
 
         @Override
-        public void paintIcon(final Component c, Graphics g,
-                final int x, final int y) {
+        public void paintIcon(Component c, Graphics g, int x, int y) {
             if (GraphicsEnvironment.isHeadless()) {
                 return;
             }
@@ -199,7 +197,7 @@ public class AquaIcon {
                         RenderingHints.VALUE_RENDER_QUALITY);
             }
 
-            final org.violetlib.jnr.Painter painter = getPainter(width, height);
+            org.violetlib.jnr.Painter painter = getPainter(width, height);
 
             g.clipRect(x, y, width, height);
             painter.paint(g, x, y);
@@ -227,8 +225,8 @@ public class AquaIcon {
         return cautionIcon.getInstance();
     }
 
-    public static IconUIResource getOpenFolderIcon() {
-        return new IconUIResource(new ImageIcon(openFolderIcon.getInstance()));
+    public static ImageIconUIResource getOpenFolderIcon() {
+        return new ImageIconUIResource(openFolderIcon.getInstance());
     }
 
     private static class IconImageCreator {

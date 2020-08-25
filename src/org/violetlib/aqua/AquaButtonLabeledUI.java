@@ -1,5 +1,5 @@
 /*
- * Changes copyright (c) 2015 Alan Snyder.
+ * Changes copyright (c) 2015-2018 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -44,7 +44,7 @@ import org.violetlib.aqua.AquaUtils.RecyclableSingleton;
 import org.violetlib.jnr.aqua.AquaUIPainter.Size;
 
 /**
- * The base class for check box and radio button UIs.
+ * The base class for check box and radio button UIs. These UIs are shared.
  */
 public abstract class AquaButtonLabeledUI extends AquaButtonUI {
 
@@ -56,11 +56,11 @@ public abstract class AquaButtonLabeledUI extends AquaButtonUI {
         final int iconWidth;
         final int iconHeight;
 
-        public RecyclableSizingIcon(final int iconSize) {
+        public RecyclableSizingIcon(int iconSize) {
             this.iconWidth = this.iconHeight = iconSize;
         }
 
-        public RecyclableSizingIcon(final int iconWidth, final int iconHeight) {
+        public RecyclableSizingIcon(int iconWidth, int iconHeight) {
             this.iconWidth = iconWidth;
             this.iconHeight = iconHeight;
         }
@@ -81,14 +81,14 @@ public abstract class AquaButtonLabeledUI extends AquaButtonUI {
         return widgetBorder;
     }
 
-    public Icon getDefaultIcon(final JComponent c) {
+    public Icon getDefaultIcon(JComponent c) {
         if (regularIcon == null) {
             regularIcon = createDefaultIcon(Size.REGULAR);
             smallIcon = createDefaultIcon(Size.SMALL);
             miniIcon = createDefaultIcon(Size.MINI);
         }
 
-        final Size componentSize = AquaUtilControlSize.getUserSizeFrom(c);
+        Size componentSize = AquaUtilControlSize.getUserSizeFrom(c);
         if (componentSize == Size.REGULAR) return regularIcon.get();
         if (componentSize == Size.SMALL) return smallIcon.get();
         if (componentSize == Size.MINI) return miniIcon.get();
@@ -104,11 +104,11 @@ public abstract class AquaButtonLabeledUI extends AquaButtonUI {
         // The focus ring goes around the button icon, not the entire component
         // TBD: much duplication of code to figure out where the button icon is
 
-        final AbstractButton b = (AbstractButton)c;
-        final Font f = c.getFont();
-        final FontMetrics fm = AquaUtils.getFontMetrics(c, null, f);
+        AbstractButton b = (AbstractButton)c;
+        Font f = c.getFont();
+        FontMetrics fm = AquaUtils.getFontMetrics(c, null, f);
 
-        final Insets i = c.getInsets();
+        Insets i = c.getInsets();
 
         Rectangle viewRect = new Rectangle(b.getWidth(), b.getHeight());
         Rectangle iconRect = new Rectangle();
@@ -133,17 +133,18 @@ public abstract class AquaButtonLabeledUI extends AquaButtonUI {
         return widgetBorder.getFocusRingOutline(b, iconRect);
     }
 
-    public synchronized void paint(final Graphics g, final JComponent c) {
-        final AbstractButton b = (AbstractButton)c;
-        final ButtonModel model = b.getModel();
+    public synchronized void paint(Graphics g, JComponent c) {
 
-        final Font f = c.getFont();
+        AbstractButton b = (AbstractButton)c;
+        ButtonModel model = b.getModel();
+
+        Font f = c.getFont();
         g.setFont(f);
-        final FontMetrics fm = g.getFontMetrics();
+        FontMetrics fm = g.getFontMetrics();
 
         Dimension size = b.getSize();
 
-        final Insets i = c.getInsets();
+        Insets i = c.getInsets();
 
         Rectangle viewRect = new Rectangle(b.getWidth(), b.getHeight());
         Rectangle iconRect = new Rectangle();
@@ -151,24 +152,9 @@ public abstract class AquaButtonLabeledUI extends AquaButtonUI {
 
         Icon altIcon = b.getIcon();
 
-        // TBD: I do not understand why a checkbox or radio button should be forced to paint a background when used as a
-        // cell renderer.
-
-        final boolean isCellEditor = c.getParent() instanceof CellRendererPane;
-
-        // This was erroneously removed to fix [3155996] but really we wanted the controls to just be
-        // opaque. So we put this back in to fix [3179839] (radio buttons not being translucent)
-        if (b.isOpaque() || isCellEditor) {
+        if (b.isOpaque()) {
             g.setColor(b.getBackground());
             g.fillRect(0, 0, size.width, size.height);
-        }
-
-        // only do this if borders are on!
-        if (((AbstractButton)c).isBorderPainted() && !isCellEditor) {
-            final Border border = c.getBorder();
-            if (border instanceof AquaButtonBorder) {
-                ((AquaButtonBorder)border).paintBackground(c, g, viewRect.x, viewRect.y, viewRect.width, viewRect.height);
-            }
         }
 
         viewRect.x = i.left;
@@ -181,7 +167,7 @@ public abstract class AquaButtonLabeledUI extends AquaButtonUI {
         // we should base this on height. Use normal unless we are under a certain size
         // see our button code!
 
-        final String text = AquaUtils.layoutCompoundLabel(c, fm, b.getText(), altIcon != null ? altIcon : getDefaultIcon(b), b.getVerticalAlignment(), b.getHorizontalAlignment(), b.getVerticalTextPosition(), b.getHorizontalTextPosition(), viewRect, iconRect, textRect, b.getText() == null ? 0 : b.getIconTextGap());
+        String text = AquaUtils.layoutCompoundLabel(c, fm, b.getText(), altIcon != null ? altIcon : getDefaultIcon(b), b.getVerticalAlignment(), b.getHorizontalAlignment(), b.getVerticalTextPosition(), b.getHorizontalTextPosition(), viewRect, iconRect, textRect, b.getText() == null ? 0 : b.getIconTextGap());
 
         // fill background
 
@@ -224,7 +210,7 @@ public abstract class AquaButtonLabeledUI extends AquaButtonUI {
 
         // Draw the Text
         if (text != null) {
-            final View v = (View)c.getClientProperty(BasicHTML.propertyKey);
+            View v = (View)c.getClientProperty(BasicHTML.propertyKey);
             if (v != null) {
                 v.paint(g, textRect);
             } else {
@@ -236,20 +222,20 @@ public abstract class AquaButtonLabeledUI extends AquaButtonUI {
     /**
      * The preferred size of the button
      */
-    public Dimension getPreferredSize(final JComponent c) {
+    public Dimension getPreferredSize(JComponent c) {
         if (c.getComponentCount() > 0) { return null; }
 
-        final AbstractButton b = (AbstractButton)c;
+        AbstractButton b = (AbstractButton)c;
 
-        final String text = b.getText();
+        String text = b.getText();
 
         Icon buttonIcon = b.getIcon();
         if (buttonIcon == null) {
             buttonIcon = getDefaultIcon(b);
         }
 
-        final Font font = b.getFont();
-        final FontMetrics fm = b.getFontMetrics(font);
+        Font font = b.getFont();
+        FontMetrics fm = b.getFontMetrics(font);
 
         Rectangle prefViewRect = new Rectangle(Short.MAX_VALUE, Short.MAX_VALUE);
         Rectangle prefIconRect = new Rectangle();
@@ -258,10 +244,10 @@ public abstract class AquaButtonLabeledUI extends AquaButtonUI {
         AquaUtils.layoutCompoundLabel(c, fm, text, buttonIcon, b.getVerticalAlignment(), b.getHorizontalAlignment(), b.getVerticalTextPosition(), b.getHorizontalTextPosition(), prefViewRect, prefIconRect, prefTextRect, text == null ? 0 : b.getIconTextGap());
 
         // find the union of the icon and text rects (from Rectangle.java)
-        final int x1 = Math.min(prefIconRect.x, prefTextRect.x);
-        final int x2 = Math.max(prefIconRect.x + prefIconRect.width, prefTextRect.x + prefTextRect.width);
-        final int y1 = Math.min(prefIconRect.y, prefTextRect.y);
-        final int y2 = Math.max(prefIconRect.y + prefIconRect.height, prefTextRect.y + prefTextRect.height);
+        int x1 = Math.min(prefIconRect.x, prefTextRect.x);
+        int x2 = Math.max(prefIconRect.x + prefIconRect.width, prefTextRect.x + prefTextRect.width);
+        int y1 = Math.min(prefIconRect.y, prefTextRect.y);
+        int y2 = Math.max(prefIconRect.y + prefIconRect.height, prefTextRect.y + prefTextRect.height);
         int width = x2 - x1;
         int height = y2 - y1;
 

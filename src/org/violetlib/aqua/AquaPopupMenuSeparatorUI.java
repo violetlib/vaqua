@@ -1,4 +1,12 @@
 /*
+ * Copyright (c) 2018 Alan Snyder.
+ * All rights reserved.
+ *
+ * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
+ * accompanying license terms.
+ */
+
+/*
  * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -31,23 +39,35 @@ import javax.swing.*;
 import javax.swing.plaf.ComponentUI;
 import javax.swing.plaf.basic.BasicSeparatorUI;
 
+import org.jetbrains.annotations.NotNull;
 import org.violetlib.aqua.AquaUtils.RecyclableSingletonFromDefaultConstructor;
 
-public class AquaPopupMenuSeparatorUI extends BasicSeparatorUI {
+public class AquaPopupMenuSeparatorUI extends BasicSeparatorUI implements AquaComponentUI {
     protected static RecyclableSingletonFromDefaultConstructor<AquaPopupMenuSeparatorUI> instance = new RecyclableSingletonFromDefaultConstructor<AquaPopupMenuSeparatorUI>(AquaPopupMenuSeparatorUI.class);
 
-    public static ComponentUI createUI(final JComponent c) {
+    public static ComponentUI createUI(JComponent c) {
         return instance.get();
     }
 
-    public void update(final Graphics g, final JComponent c) {
+    @Override
+    public void appearanceChanged(@NotNull JComponent c, @NotNull AquaAppearance appearance) {
+    }
+
+    @Override
+    public void activeStateChanged(@NotNull JComponent c, boolean isActive) {
+    }
+
+    public void update(Graphics g, JComponent c) {
         paint(g, c);
     }
 
-    public void paint(final Graphics g, final JComponent c) {
-        final Dimension s = c.getSize();
+    public void paint(Graphics g, JComponent c) {
+        Dimension s = c.getSize();
 
-        g.setColor(c.getForeground());
+        AquaAppearance appearance = AppearanceManager.ensureAppearance(c);
+        Color color = appearance.getColor("separator");
+
+        g.setColor(color);
         if (((JSeparator)c).getOrientation() == SwingConstants.VERTICAL) {
             g.fillRect(5, 0, 2, s.height);
         } else {
@@ -55,7 +75,7 @@ public class AquaPopupMenuSeparatorUI extends BasicSeparatorUI {
         }
     }
 
-    public Dimension getPreferredSize(final JComponent c) {
+    public Dimension getPreferredSize(JComponent c) {
         if (((JSeparator)c).getOrientation() == SwingConstants.VERTICAL) {
             return new Dimension(12, 0);
         }

@@ -17,6 +17,8 @@ import javax.swing.JRootPane;
 import javax.swing.JViewport;
 import javax.swing.SwingUtilities;
 
+import org.jetbrains.annotations.NotNull;
+
 /**
  * This object manages a NSVisualEffectView or a collection of NSVisualEffectViews whose bounds tracks the bounds of a
  * component. A collection of views is used to support vibrant selection backgrounds. Each region that displays a
@@ -48,6 +50,10 @@ public class VisualEffectView {
 
     public int getStyle() {
         return style;
+    }
+
+    public @NotNull JComponent getComponent() {
+        return component;
     }
 
     public void dispose() {

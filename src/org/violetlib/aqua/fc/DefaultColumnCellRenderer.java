@@ -3,6 +3,7 @@
  *
  * Copyright (c) 2003-2013 Werner Randelshofer, Switzerland.
  * http://www.randelshofer.ch
+ * Copyright (c) 2018 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the
@@ -12,6 +13,7 @@
 
 package org.violetlib.aqua.fc;
 
+import org.violetlib.aqua.AquaColors;
 import org.violetlib.aqua.AquaFocusHandler;
 
 import javax.swing.*;
@@ -34,7 +36,6 @@ public class DefaultColumnCellRenderer extends JPanel implements ListCellRendere
     protected Icon selectedExpandedIcon = null;
     protected Icon focusedSelectedExpandedIcon = null;
     private static final Border DEFAULT_NO_FOCUS_BORDER = new EmptyBorder(1, 1, 1, 1);
-    private static final Color TRANSPARENT_COLOR = new Color(0, true);
 
     public DefaultColumnCellRenderer(JBrowser browser) {
         this.browser = browser;
@@ -72,7 +73,7 @@ public class DefaultColumnCellRenderer extends JPanel implements ListCellRendere
             arrowLabel.setForeground(foreground);
             arrowLabel.setIcon(isFocused ? focusedSelectedExpandedIcon : selectedExpandedIcon);
         } else {
-            setBackground(TRANSPARENT_COLOR);
+            setBackground(AquaColors.CLEAR);
             Color foreground = list.getForeground();
             textLabel.setForeground(foreground);
             arrowLabel.setForeground(foreground);

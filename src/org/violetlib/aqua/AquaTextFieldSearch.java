@@ -1,5 +1,5 @@
 /*
- * Changes Copyright (c) 2015-2016 Alan Snyder.
+ * Changes Copyright (c) 2015-2018 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -40,7 +40,6 @@ import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.text.JTextComponent;
 
-import org.violetlib.aqua.AquaUtils.JComponentPainter;
 import org.violetlib.aqua.AquaUtils.RecyclableSingleton;
 import org.violetlib.aqua.AquaUtils.RecyclableSingletonFromDefaultConstructor;
 import org.violetlib.jnr.Insetter;
@@ -49,6 +48,8 @@ import org.violetlib.jnr.aqua.AquaUIPainter.State;
 import org.violetlib.jnr.aqua.AquaUIPainter.TextFieldWidget;
 import org.violetlib.jnr.aqua.TextFieldLayoutConfiguration;
 
+import static org.violetlib.aqua.OSXSystemProperties.OSVersion;
+
 public class AquaTextFieldSearch {
 
     private static final String FIND_POPUP_KEY = "JTextField.Search.FindPopup";
@@ -56,7 +57,7 @@ public class AquaTextFieldSearch {
     private static final String CANCEL_ACTION_KEY = "JTextField.Search.CancelAction";
     private static final String PROMPT_KEY = "JTextField.Search.Prompt";
 
-    protected static boolean hasPopupMenu(final JTextComponent c) {
+    protected static boolean hasPopupMenu(JTextComponent c) {
         return (c.getClientProperty(FIND_POPUP_KEY) instanceof JPopupMenu);
     }
 
@@ -65,11 +66,11 @@ public class AquaTextFieldSearch {
         return instance.get();
     }
 
-    protected static void installSearchField(final JTextComponent c) {
+    protected static void installSearchField(JTextComponent c) {
 
         uninstallSearchField(c);
 
-        final SearchFieldBorder border = getSearchTextFieldBorder();
+        SearchFieldBorder border = getSearchTextFieldBorder();
         c.setBorder(border);
         c.setLayout(border.getCustomLayout());
         c.add(getFindButton(c), BorderLayout.WEST);
@@ -77,7 +78,7 @@ public class AquaTextFieldSearch {
         c.add(getPromptLabel(c), BorderLayout.CENTER);
     }
 
-    protected static void uninstallSearchField(final JTextComponent c) {
+    protected static void uninstallSearchField(JTextComponent c) {
         if (c.getBorder() instanceof SearchFieldBorder) {
             c.setBorder(UIManager.getBorder("TextField.border"));
             c.removeAll();
@@ -86,7 +87,7 @@ public class AquaTextFieldSearch {
 
     // The "magnifying glass" icon that sometimes has a downward pointing triangle next to it
     // if a popup has been assigned to it. It does not appear to have a pressed state.
-//    protected static DynamicallySizingJRSUIIcon getFindIcon(final JTextComponent text) {
+//    protected static DynamicallySizingJRSUIIcon getFindIcon(JTextComponent text) {
 //        return (text.getClientProperty(FIND_POPUP_KEY) == null) ?
 //            new DynamicallySizingJRSUIIcon(new SizeDescriptor(new SizeVariant(25, 22).alterMargins(0, 4, 0, -5))) {
 //                public void initJRSUIState() {
@@ -111,14 +112,14 @@ public class AquaTextFieldSearch {
 //        };
 //    }
 
-    protected static State getState(final JButton b) {
+    protected static State getState(JButton b) {
         if (!AquaFocusHandler.isActive(b)) return State.INACTIVE;
         if (b.getModel().isPressed()) return State.PRESSED;
         return State.ACTIVE;
     }
 
-    protected static JButton createButton(final JTextComponent c, final Object /* DynamicallySizingJRSUIIcon */ icon) {
-        final JButton b = new JButton()
+    protected static JButton createButton(JTextComponent c, Object /* DynamicallySizingJRSUIIcon */ icon) {
+        JButton b = new JButton()
 //        {
 //            public void paint(Graphics g) {
 //                super.paint(g);
@@ -129,7 +130,7 @@ public class AquaTextFieldSearch {
 //        }
         ;
 
-        //final Insets i = icon.sizeVariant.margins;
+        //Insets i = icon.sizeVariant.margins;
         //b.setBorder(BorderFactory.createEmptyBorder(i.top, i.left, i.bottom, i.right));
 
         //b.setIcon(icon);
@@ -137,12 +138,12 @@ public class AquaTextFieldSearch {
         b.setFocusable(false);
         b.setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
 //        b.addChangeListener(new ChangeListener() {
-//            public void stateChanged(final ChangeEvent e) {
+//            public void stateChanged(ChangeEvent e) {
 //                icon.painter.state.set(getState(b));
 //            }
 //        });
         b.addMouseListener(new MouseAdapter() {
-            public void mousePressed(final MouseEvent e) {
+            public void mousePressed(MouseEvent e) {
                 c.requestFocusInWindow();
             }
         });
@@ -150,18 +151,18 @@ public class AquaTextFieldSearch {
         return b;
     }
 
-    protected static JButton getFindButton(final JTextComponent c) {
-        //final DynamicallySizingJRSUIIcon findIcon = getFindIcon(c);
-        final JButton b = createButton(c, null);
+    protected static JButton getFindButton(JTextComponent c) {
+        //DynamicallySizingJRSUIIcon findIcon = getFindIcon(c);
+        JButton b = createButton(c, null);
         b.setName("find");
 
-        final Object findPopup = c.getClientProperty(FIND_POPUP_KEY);
+        Object findPopup = c.getClientProperty(FIND_POPUP_KEY);
         if (findPopup instanceof JPopupMenu) {
             // if we have a popup, indicate that in the icon
             //findIcon.painter.state.set(Variant.MENU_GLYPH);
 
             b.addMouseListener(new MouseAdapter() {
-                public void mousePressed(final MouseEvent e) {
+                public void mousePressed(MouseEvent e) {
                     ((JPopupMenu)findPopup).show(b, 8, b.getHeight() - 2);
                     c.requestFocusInWindow();
                     c.repaint();
@@ -175,7 +176,7 @@ public class AquaTextFieldSearch {
     }
 
     private static class FindAction implements ActionListener {
-        private final JTextComponent tc;
+        private JTextComponent tc;
 
         public FindAction(JTextComponent tc) {
             this.tc = tc;
@@ -183,7 +184,7 @@ public class AquaTextFieldSearch {
 
         @Override
         public void actionPerformed(ActionEvent e) {
-            final Object findAction = tc.getClientProperty(FIND_ACTION_KEY);
+            Object findAction = tc.getClientProperty(FIND_ACTION_KEY);
             if (findAction instanceof ActionListener) {
                 ActionListener al = (ActionListener) findAction;
                 al.actionPerformed(e);
@@ -197,26 +198,26 @@ public class AquaTextFieldSearch {
         }
     }
 
-    private static Component getPromptLabel(final JTextComponent c) {
-        final JLabel label = new JLabel();
+    private static Component getPromptLabel(JTextComponent c) {
+        JLabel label = new JLabel();
         label.setForeground(UIManager.getColor("TextField.inactiveForeground"));
         label.setFont(null);    // use the same font as the text field
 
         c.getDocument().addDocumentListener(new DocumentListener() {
-            public void changedUpdate(final DocumentEvent e) { updatePromptLabel(label, c); }
-            public void insertUpdate(final DocumentEvent e) { updatePromptLabel(label, c); }
-            public void removeUpdate(final DocumentEvent e) { updatePromptLabel(label, c); }
+            public void changedUpdate(DocumentEvent e) { updatePromptLabel(label, c); }
+            public void insertUpdate(DocumentEvent e) { updatePromptLabel(label, c); }
+            public void removeUpdate(DocumentEvent e) { updatePromptLabel(label, c); }
         });
         c.addFocusListener(new FocusAdapter() {
-            public void focusGained(final FocusEvent e) { updatePromptLabel(label, c); }
-            public void focusLost(final FocusEvent e) { updatePromptLabel(label, c); }
+            public void focusGained(FocusEvent e) { updatePromptLabel(label, c); }
+            public void focusLost(FocusEvent e) { updatePromptLabel(label, c); }
         });
         updatePromptLabel(label, c);
 
         return label;
     }
 
-    static void updatePromptLabel(final JLabel label, final JTextComponent text) {
+    static void updatePromptLabel(JLabel label, JTextComponent text) {
         if (SwingUtilities.isEventDispatchThread()) {
             updatePromptLabelOnEDT(label, text);
         } else {
@@ -226,25 +227,25 @@ public class AquaTextFieldSearch {
         }
     }
 
-    static void updatePromptLabelOnEDT(final JLabel label, final JTextComponent text) {
+    static void updatePromptLabelOnEDT(JLabel label, JTextComponent text) {
         String promptText = " ";
         if ("".equals(text.getText())) {
-            final Object prompt = text.getClientProperty(PROMPT_KEY);
+            Object prompt = text.getClientProperty(PROMPT_KEY);
             if (prompt != null) promptText = prompt.toString();
         }
         label.setText(promptText);
     }
 
     @SuppressWarnings("serial") // anonymous class inside
-    protected static JButton getCancelButton(final JTextComponent c) {
-        final JButton b = createButton(c, null);
+    protected static JButton getCancelButton(JTextComponent c) {
+        JButton b = createButton(c, null);
         b.setName("cancel");
         b.addActionListener(new CancelAction(c));
 
         c.getDocument().addDocumentListener(new DocumentListener() {
-            public void changedUpdate(final DocumentEvent e) { updateCancelIcon(b, c); }
-            public void insertUpdate(final DocumentEvent e) { updateCancelIcon(b, c); }
-            public void removeUpdate(final DocumentEvent e) { updateCancelIcon(b, c); }
+            public void changedUpdate(DocumentEvent e) { updateCancelIcon(b, c); }
+            public void insertUpdate(DocumentEvent e) { updateCancelIcon(b, c); }
+            public void removeUpdate(DocumentEvent e) { updateCancelIcon(b, c); }
         });
 
         updateCancelIcon(b, c);
@@ -252,7 +253,7 @@ public class AquaTextFieldSearch {
     }
 
     private static class CancelAction implements ActionListener {
-        private final JTextComponent tc;
+        private JTextComponent tc;
 
         public CancelAction(JTextComponent tc) {
             this.tc = tc;
@@ -260,7 +261,7 @@ public class AquaTextFieldSearch {
 
         @Override
         public void actionPerformed(ActionEvent e) {
-            final Object cancelAction = tc.getClientProperty(CANCEL_ACTION_KEY);
+            Object cancelAction = tc.getClientProperty(CANCEL_ACTION_KEY);
             if (cancelAction instanceof ActionListener) {
                 ActionListener al = (ActionListener) cancelAction;
                 al.actionPerformed(e);
@@ -270,7 +271,7 @@ public class AquaTextFieldSearch {
     }
 
     // <rdar://problem/6444328> JTextField.variant=search: not thread-safe
-    static void updateCancelIcon(final JButton button, final JTextComponent text) {
+    static void updateCancelIcon(JButton button, JTextComponent text) {
         if (SwingUtilities.isEventDispatchThread()) {
             updateCancelIconOnEDT(button, text);
         } else {
@@ -280,22 +281,23 @@ public class AquaTextFieldSearch {
         }
     }
 
-    static void updateCancelIconOnEDT(final JButton button, final JTextComponent text) {
+    static void updateCancelIconOnEDT(JButton button, JTextComponent text) {
         button.setVisible(!"".equals(text.getText()));
     }
 
     // subclass of normal text border, because we still want all the normal text field behaviors
-    static class SearchFieldBorder extends AquaTextFieldBorder implements JComponentPainter {
+    static class SearchFieldBorder extends AquaTextFieldBorder {
         protected boolean reallyPaintBorder;
 
+        // called via reflection
         public SearchFieldBorder() {
         }
 
-        public SearchFieldBorder(final SearchFieldBorder other) {
+        public SearchFieldBorder(SearchFieldBorder other) {
             super(other);
         }
 
-        public void paint(final JComponent c, final Graphics g, final int x, final int y, final int w, final int h) {
+        public void paint(JComponent c, Graphics g, int x, int y, int w, int h) {
             reallyPaintBorder = true;
             paintBorder(c, g, x, y, w, h);
             reallyPaintBorder = false;
@@ -307,7 +309,7 @@ public class AquaTextFieldSearch {
         // Does the wobble problem still occur?
 
 //        @Override
-//        public void paintBackground(final JComponent c, final Graphics g, final int x, final int y, final int width, final int height) {
+//        public void paintBackground(JComponent c, Graphics g, int x, int y, int width, int height) {
 //            super.paintBackground(c, g, x, y - (height % 2), width, height);
 //        }
 
@@ -315,10 +317,10 @@ public class AquaTextFieldSearch {
         protected TextFieldWidget getWidget(JTextComponent tc) {
             boolean hasFocus = AquaFocusHandler.hasFocus(tc);
             String text = tc.getText();
-            boolean hasMenu = hasPopupMenu(tc) && hasFocus;
+            boolean hasMenu = hasPopupMenu(tc) && (hasFocus || OSVersion >= 1014);
             boolean hasCancelButton = !text.isEmpty();
 
-            if (!hasCancelButton && OSXSystemProperties.OSVersion < 1011) {
+            if (!hasCancelButton && OSVersion < 1011) {
                 // In Yosemite, the cancel button is shown when focused even if there is no text.
                 hasCancelButton = hasFocus;
             }
@@ -337,7 +339,7 @@ public class AquaTextFieldSearch {
                             isToolbar ? TextFieldWidget.TEXT_FIELD_SEARCH_WITH_CANCEL_TOOLBAR : TextFieldWidget.TEXT_FIELD_SEARCH_WITH_CANCEL;
         }
 
-        public Insets getBorderInsets(final Component c) {
+        public Insets getBorderInsets(Component c) {
             if (doingLayout) {
                 return new Insets(0, 0, 0, 0);
             }
