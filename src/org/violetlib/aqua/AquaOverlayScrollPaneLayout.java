@@ -38,6 +38,7 @@ package org.violetlib.aqua;
 import java.awt.*;
 import javax.swing.*;
 import javax.swing.border.Border;
+import javax.swing.plaf.ScrollPaneUI;
 import javax.swing.plaf.UIResource;
 
 /**
@@ -84,6 +85,12 @@ public class AquaOverlayScrollPaneLayout extends ScrollPaneLayout implements UIR
     {
         JScrollPane scrollPane = (JScrollPane)parent;
         sync(parent);
+
+        ScrollPaneUI ui = scrollPane.getUI();
+        if (ui instanceof AquaScrollPaneUI) {
+            AquaScrollPaneUI a = (AquaScrollPaneUI) ui;
+            a.syncOverlayScrollPaneViewportHolderSize();
+        }
 
         Rectangle availR = scrollPane.getBounds();
         availR.x = availR.y = 0;

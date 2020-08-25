@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015 Alan Snyder.
+ * Copyright (c) 2015-2016 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -46,6 +46,8 @@ public class AquaFocusRingManager {
                 if (o instanceof Component) {
                     Component c = (Component) o;
                     AquaFocusRingManager.this.update(c);
+                } else {
+                    AquaFocusRingManager.this.update(null);
                 }
             }
         };
@@ -87,7 +89,7 @@ public class AquaFocusRingManager {
 
     private boolean isValid(Component c) {
         // TBD: could improve this
-        // TBD: should this be dynamic, like Frame.isActive?
+        // TBD: should this be dynamic, like Frame.active?
 
         return c.isVisible();
     }

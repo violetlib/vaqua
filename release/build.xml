@@ -28,7 +28,7 @@
 
     <property name="renderingLibraryJAR" value="${base}/lib/VAquaRendering.jar"/>
 
-    <property name="SDKversion" value="10.10"/>
+    <property name="SDKversion" value="10.11"/>
     <property name="SDKroot" value="/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX${SDKversion}.sdk" />
     <property name="libpath" value="${base}/lib/IdeaAnnotations.jar"/>
     <property name="cc" value="/usr/bin/cc"/>
@@ -36,7 +36,7 @@
     <property name="debug" value="false"/>
 
     <target name="init">
-        <echo message="${fullReleaseName}"/>
+        <echo level="info" message="${fullReleaseName}"/>
     </target>
         
     <target name="clean" description="Remove build directories">
@@ -55,7 +55,7 @@
     <target name="copyResources">
       <copy todir="${classesdir}">
         <fileset dir="${resources}">
-          <include name="**"/>
+          <include name="org/violetlib/**"/>
         </fileset>
       </copy>
     </target>
@@ -111,6 +111,14 @@
             classpath="${classesdir}"
             destdir="${headersdir}"
             />
+        <javah class="org.violetlib.aqua.AquaSheetSupport"
+            classpath="${classesdir}"
+            destdir="${headersdir}"
+            />
+        <javah class="org.violetlib.aqua.AquaVibrantSupport"
+            classpath="${classesdir}"
+            destdir="${headersdir}"
+            />
     </target>
 
     <target name="compile-VAqua-JNI" depends="compile-VAqua-JNI-headers">
@@ -144,13 +152,15 @@
             <arg value="JavaNativeFoundation"/>
 
             <arg value="${jnisrc}/AquaNativeSupport.m"/>
+            <arg value="${jnisrc}/AquaSidebarBackground.m"/>
+            <arg value="${jnisrc}/AquaWrappedAWTView.m"/>
         </exec>
 
     </target>
 
     <target name="VAqua" depends="compile-VAqua-JNI,saveIDs">
 
-        <echo message="Building VAqua ${fullReleaseName}"/>
+        <echo level="info" message="Building VAqua ${fullReleaseName}"/>
 
         <mkdir dir="${distdir}"/>
 

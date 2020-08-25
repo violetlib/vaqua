@@ -1,4 +1,12 @@
 /*
+ * Changes copyright (c) 2016 Alan Snyder.
+ * All rights reserved.
+ *
+ * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
+ * accompanying license terms.
+ */
+
+/*
  * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -39,6 +47,9 @@ import javax.swing.plaf.basic.BasicToolBarUI;
 
 import org.violetlib.aqua.AquaUtils.RecyclableSingleton;
 import org.violetlib.aqua.AquaUtils.RecyclableSingletonFromDefaultConstructor;
+import org.violetlib.jnr.aqua.AquaUIPainter;
+import org.violetlib.jnr.aqua.ButtonLayoutConfiguration;
+import org.violetlib.jnr.aqua.LayoutConfiguration;
 
 public class AquaToolBarUI extends BasicToolBarUI implements SwingConstants {
 
@@ -65,6 +76,7 @@ public class AquaToolBarUI extends BasicToolBarUI implements SwingConstants {
         if (originalLayoutManager instanceof UIResource) {
             toolBar.setLayout(new AquaToolBarLayout());
         }
+        toolBar.setFloatable(false);
     }
 
     @Override
@@ -102,7 +114,7 @@ public class AquaToolBarUI extends BasicToolBarUI implements SwingConstants {
             g.translate(x, y);
 
             if (c.isOpaque()) {
-                AquaUtils.fillRect(g, c, c.getBackground(), 0, 0, w - 1, h - 1);
+                AquaUtils.fillRect(g, c, AquaUtils.ERASE_IF_TEXTURED|AquaUtils.ERASE_IF_VIBRANT, 0, 0, w - 1, h - 1);
             }
 
             final Color oldColor = g.getColor();
@@ -134,13 +146,18 @@ public class AquaToolBarUI extends BasicToolBarUI implements SwingConstants {
         }
 
         public Insets getBorderInsets(final java.awt.Component c, final Insets borderInsets) {
+
+            JToolBar tb = (JToolBar) c;
+
+            boolean isTallFormat = isTallFormat(tb);
+
             borderInsets.left = 4;
             borderInsets.right = 4;
-            borderInsets.top = 2;
-            borderInsets.bottom = 2;
+            borderInsets.top = 4;
+            borderInsets.bottom = isTallFormat ? 0 : 4;
 
-            if (((JToolBar)c).isFloatable()) {
-                if (((JToolBar)c).getOrientation() == HORIZONTAL) {
+            if (tb.isFloatable()) {
+                if (tb.getOrientation() == HORIZONTAL) {
                     borderInsets.left = 12;
                     // We don't have to adjust for right-to-left
                 } else { // vertical
@@ -148,7 +165,7 @@ public class AquaToolBarUI extends BasicToolBarUI implements SwingConstants {
                 }
             }
 
-            final Insets margin = ((JToolBar)c).getMargin();
+            final Insets margin = tb.getMargin();
 
             if (margin != null) {
                 borderInsets.left += margin.left;
@@ -165,10 +182,48 @@ public class AquaToolBarUI extends BasicToolBarUI implements SwingConstants {
         }
     }
 
+    /**
+     * Determine if the toolbar contains a tall format button. A tall format button is a toggle button that uses the
+     * toolbar item button style. A tall format button should have no space below it in the toolbar.
+     */
+    public static boolean isTallFormat(JToolBar tb) {
+        int count = tb.getComponentCount();
+        for (int i = 0; i < count; i++) {
+            Component c = tb.getComponent(i);
+            if (c instanceof AbstractButton) {
+                AbstractButton b = (AbstractButton) c;
+                if (isTallFormat(b)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Determine if the specified button is a tall format button. A tall format button is a toggle button that uses the
+     * toolbar item button style. A tall format button should have no space below it in the toolbar.
+     */
+    protected static boolean isTallFormat(AbstractButton b) {
+        final Border border = b.getBorder();
+
+        if (border instanceof AquaButtonBorder) {
+            AquaButtonBorder bb = (AquaButtonBorder) border;
+            LayoutConfiguration g = bb.getLayoutConfiguration(b);
+            if (g instanceof ButtonLayoutConfiguration) {
+                ButtonLayoutConfiguration bg = (ButtonLayoutConfiguration) g;
+                AquaUIPainter.ButtonWidget bw = bg.getButtonWidget();
+                return bw == AquaUIPainter.ButtonWidget.BUTTON_TOOLBAR_ITEM;
+            }
+        }
+
+        return false;
+    }
+
     @Override
     public final void update(final Graphics g, final JComponent c) {
         if (c.isOpaque()) {
-            AquaUtils.fillRect(g, c);
+            AquaUtils.fillRect(g, c, AquaUtils.ERASE_IF_TEXTURED|AquaUtils.ERASE_IF_VIBRANT);
         }
         paint(g, c);
     }

@@ -1,5 +1,5 @@
 /*
- * Changes Copyright (c) 2015 Alan Snyder.
+ * Changes Copyright (c) 2015-2016 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -48,6 +48,7 @@ import javax.swing.text.*;
 import org.violetlib.aqua.AquaUtils.JComponentPainter;
 import org.violetlib.jnr.Insets2D;
 import org.violetlib.jnr.Insetter;
+import org.violetlib.jnr.LayoutInfo;
 
 public class AquaTextFieldUI extends BasicTextFieldUI implements FocusRingOutlineProvider {
 
@@ -127,6 +128,9 @@ public class AquaTextFieldUI extends BasicTextFieldUI implements FocusRingOutlin
             final String prop = e.getPropertyName();
             if (isStyleProperty(prop) || AquaCellEditorPolicy.isCellEditorProperty(prop)) {
                 updateStyle();
+            } else if (AquaFocusHandler.FRAME_ACTIVE_PROPERTY.equals(prop)) {
+                // Starting in 10.11, toolbar search and round styles look different when the window is inactive
+                editor.repaint();
             }
         }
     }
@@ -250,6 +254,19 @@ public class AquaTextFieldUI extends BasicTextFieldUI implements FocusRingOutlin
     }
 
     protected Dimension getLayoutSize(LayoutOption opt) {
+        Dimension size = getLayoutSizeFromText(opt);
+        Border b = editor.getBorder();
+        if (b instanceof AquaTextFieldBorder) {
+            AquaTextFieldBorder tb = (AquaTextFieldBorder) b;
+            LayoutInfo info = tb.getLayoutInfo(editor);
+            int width = (int) Math.max(size.width, info.getMinimumVisualWidth());
+            int height = (int) Math.max(size.height, info.getMinimumVisualHeight());
+            return new Dimension(width, height);
+        }
+        return size;
+    }
+
+    protected Dimension getLayoutSizeFromText(LayoutOption opt) {
         // The text size includes the margin
         Dimension td = getTextSize(opt);
         int textWidth = td.width;

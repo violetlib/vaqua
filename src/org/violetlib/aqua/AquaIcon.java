@@ -1,5 +1,5 @@
 /*
- * Changes copyright (c) 2015 Alan Snyder.
+ * Changes copyright (c) 2015-2016 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -74,8 +74,16 @@ public class AquaIcon {
     private static final RecyclableIconImageSingleton stopIcon = new RecyclableIconImageSingleton(alertStopImageCreator);
     private static final RecyclableIconImageSingleton openFolderIcon = new RecyclableIconImageSingleton(openFolderImageCreator);
 
-    // converts an object that is an icon into an image so we can hand it off to AppKit
+    /**
+     * Create an image for an icon, if possible.
+     * @param i The icon (may be null).
+     * @return the corresponding image, or null if not possible.
+     */
     public static Image getImageForIcon(final Icon i) {
+        if (i == null) {
+            return null;
+        }
+
         if (i instanceof ImageIcon) return ((ImageIcon)i).getImage();
 
         final int w = i.getIconWidth();
@@ -89,6 +97,26 @@ public class AquaIcon {
         i.paintIcon(null, g, 0, 0);
         g.dispose();
         return image;
+    }
+
+    public static Icon createPressedDarkIcon(Icon ic) {
+        Image im = getImageForIcon(ic);
+        if (im != null) {
+            Image pressedImage = AquaImageFactory.generatePressedDarkImage(im);
+            return new ImageIcon(pressedImage);
+        } else {
+            return ic;
+        }
+    }
+
+    public static Icon createDisabledLightIcon(Icon ic) {
+        Image im = getImageForIcon(ic);
+        if (im != null) {
+            Image disabledImage = AquaImageFactory.generateDisabledLightImage(im);
+            return new ImageIcon(disabledImage);
+        } else {
+            return ic;
+        }
     }
 
     public static abstract class CachingScalingIcon implements Icon, UIResource {

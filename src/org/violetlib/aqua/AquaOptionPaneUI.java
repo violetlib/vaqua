@@ -1,5 +1,5 @@
 /*
- * Changes Copyright (c) 2015 Alan Snyder.
+ * Changes Copyright (c) 2015-2016 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -41,6 +41,7 @@ import javax.swing.*;
 import javax.swing.plaf.ComponentUI;
 import javax.swing.plaf.basic.BasicOptionPaneUI;
 import javax.swing.text.Document;
+import javax.swing.text.View;
 
 public class AquaOptionPaneUI extends BasicOptionPaneUI {
     private static final int kOKCancelButtonWidth = 79;
@@ -65,6 +66,14 @@ public class AquaOptionPaneUI extends BasicOptionPaneUI {
      */
     public static ComponentUI createUI(final JComponent x) {
         return new AquaOptionPaneUI();
+    }
+
+    @Override
+    public final void update(final Graphics g, final JComponent c) {
+        if (c.isOpaque()) {
+            AquaUtils.fillRect(g, c, AquaUtils.ERASE_IF_VIBRANT);
+        }
+        paint(g, c);
     }
 
     /**
@@ -298,9 +307,20 @@ public class AquaOptionPaneUI extends BasicOptionPaneUI {
         if (maxll > 100000) {
             maxll = 80;
         }
-        int width = 15 * Math.max(maxll, 100);
         JLabel label = new JLabel(text, JLabel.LEADING);
-        label.setMaximumSize(new Dimension(width, 10000));
+        Dimension preferredSize = label.getPreferredSize();
+        int preferredWidth = preferredSize.width;
+        int columnWidth = label.getFontMetrics(label.getFont()).charWidth('n');
+        int width = columnWidth * maxll;
+        if (preferredWidth > width) {
+            View view = (View) label.getClientProperty(javax.swing.plaf.basic.BasicHTML.propertyKey);
+            if (view != null) {
+                view.setSize(width, 0);
+                float w = view.getPreferredSpan(View.X_AXIS);
+                float h = view.getPreferredSpan(View.Y_AXIS);
+                label.setPreferredSize(new Dimension((int) Math.ceil(w), (int) Math.ceil(h)));
+            }
+        }
         return label;
     }
 
@@ -318,11 +338,12 @@ public class AquaOptionPaneUI extends BasicOptionPaneUI {
             textArea.setFont(UIManager.getFont("Label.font"));
             textArea.setWrapStyleWord(true);
             textArea.setLineWrap(true);
-            textArea.setColumns(maxll);
             textArea.setText(text);
             // The following is a pitiful attempt to get JTextArea to compute a plausible
-            // preferred size. It is better than nothing.
-            textArea.setSize(maxll * 15, 10000);
+            // preferred size. It is better than nothing. Do not set columns, it just increases the
+            // preferred width.
+            int columnWidth = textArea.getFontMetrics(textArea.getFont()).charWidth('n');
+            textArea.setSize(maxll * columnWidth, 10000);
             return textArea;
         }
     }

@@ -1,5 +1,5 @@
 /*
- * Changes copyright (c) 2015 Alan Snyder.
+ * Changes copyright (c) 2015-2016 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -45,6 +45,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.*;
+import java.util.function.Consumer;
 
 import javax.swing.*;
 import javax.swing.border.Border;
@@ -61,6 +62,9 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
 
     private AquaFocusRingManager focusRingManager;
     private PropertyChangeListener uiChangeListener;
+    private AquaPopupFactory popupFactory;
+
+    public static boolean suppressCreationOfDisabledButtonIcons;
 
     public String getName() {
         return "VAqua";
@@ -89,6 +93,14 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
     public void initialize() {
         super.initialize();
 
+        // Popups must be heavy to use the vibrant background
+        if (popupFactory == null) {
+            popupFactory = new AquaPopupFactory();
+            PopupFactory.setSharedInstance(popupFactory);
+        }
+
+        popupFactory.setActive(true);
+
         focusRingManager = AquaFocusRingManager.getInstance();
         //focusRingManager.install();
 
@@ -110,7 +122,45 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
             focusRingManager = null;
         }
 
+        popupFactory.setActive(false);
+
         super.uninitialize();
+    }
+
+    @Override
+    public Icon getDisabledIcon(JComponent component, Icon icon) {
+        if (!suppressCreationOfDisabledButtonIcons) {
+            if (icon instanceof ImageIcon) {
+                if (component instanceof AbstractButton) {
+                    AquaButtonUI ui = AquaUtils.getUI(component, AquaButtonUI.class);
+                    if (ui != null) {
+                        return ui.createDisabledIcon((AbstractButton) component, (ImageIcon) icon);
+                    }
+                }
+            }
+
+            return super.getDisabledIcon(component, icon);
+        } else {
+            return null;
+        }
+    }
+
+    @Override
+    public Icon getDisabledSelectedIcon(JComponent component, Icon icon) {
+        if (!suppressCreationOfDisabledButtonIcons) {
+            if (icon instanceof ImageIcon) {
+                if (component instanceof AbstractButton) {
+                    AquaButtonUI ui = AquaUtils.getUI(component, AquaButtonUI.class);
+                    if (ui != null) {
+                        return ui.createDisabledSelectedIcon((AbstractButton) component, (ImageIcon) icon);
+                    }
+                }
+            }
+
+            return super.getDisabledSelectedIcon(component, icon);
+        } else {
+            return null;
+        }
     }
 
     protected class MyUIChangeListener implements PropertyChangeListener {
@@ -147,7 +197,25 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
      */
     public void displayAsSheet(Window w, Runnable closeHandler) throws UnsupportedOperationException {
         // access point for VSheet which accesses using reflection
-        AquaUtils.displayAsSheet(w, closeHandler);
+        AquaSheetSupport.displayAsSheet(w, closeHandler);
+    }
+
+    public void showOptionPaneAsSheet(JDialog d, JOptionPane pane, Consumer<Integer> resultConsumer) {
+        // access point for VSheet which accesses using reflection
+        AquaSheetSupport.showOptionPaneAsSheet(d, pane, resultConsumer);
+    }
+
+    public void showFileChooserAsSheet(Window owner, JFileChooser fc, Consumer<Integer> resultConsumer) {
+        // access point for VSheet which accesses using reflection
+        AquaSheetSupport.showFileChooserAsSheet(owner, fc, resultConsumer);
+    }
+
+    /**
+     * Set the debugging option to force all windows to display as active. Used to compare a Java window with a native
+     * active window.
+     */
+    public void setForceActiveWindowDisplay(boolean b) {
+        AquaRootPaneUI.setForceActiveWindowDisplay(b);
     }
 
     @Override
@@ -185,7 +253,6 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
         table.put("ClassLoader", getClass().getClassLoader());
 
         try {
-            // PopupFactory.getSharedInstance().setPopupType(2);
             initClassDefaults(table);
 
             // Here we install all the Basic defaults in case we missed some in our System color
@@ -240,9 +307,6 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
         final InsetsUIResource zeroInsets = new InsetsUIResource(0, 0, 0, 0);
         final InsetsUIResource menuItemMargin = zeroInsets;
 
-        // <rdar://problem/5189013> Entire Java application window refreshes when moving off Shortcut menu item
-        final Boolean useOpaqueComponents = Boolean.TRUE;
-
         // *** List value objects
         final Object listCellRendererActiveValue = new UIDefaults.ActiveValue(){
             public Object createValue(UIDefaults defaultsTable) {
@@ -267,15 +331,19 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
         final ColorUIResource disabledShadow = new ColorUIResource(0.25f, 0.25f, 0.25f);
         final ColorUIResource selected = new ColorUIResource(1.0f, 0.4f, 0.4f);
         final ColorUIResource alternateBackground = new ColorUIResource(245, 245, 245);
+        final ColorUIResource separator = new ColorUIResource(new Color(0, 0, 0, 25));
 
-        // Contrast tab UI colors
+        // Tabbed pane title colors
 
-        final ColorUIResource selectedTabTitlePressedColor = new ColorUIResource(240, 240, 240);
-        final ColorUIResource selectedTabTitleDisabledColor = black;
+        final ColorUIResource selectedTabTitlePressedColor = white;
+        final ColorUIResource selectedTabTitleDisabledColor = disabled;
         final ColorUIResource selectedTabTitleNormalColor = white;
-        final ColorUIResource selectedTabTitleShadowDisabledColor = new ColorUIResource(new Color(0, 0, 0, 0.25f));
-        final ColorUIResource selectedTabTitleShadowNormalColor = mediumTranslucentBlack;
+        final ColorUIResource selectedTabTitleInactiveColor = black;
+
+        final ColorUIResource nonSelectedTabTitlePressedColor = black;
+        final ColorUIResource nonSelectedTabTitleDisabledColor = disabled;
         final ColorUIResource nonSelectedTabTitleNormalColor = black;
+        final ColorUIResource nonSelectedTabTitleInactiveColor = black;
 
         final ColorUIResource toolbarDragHandleColor = new ColorUIResource(140, 140, 140);
 
@@ -341,6 +409,15 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
         final Color tabBackgroundColor = windowBackgroundColor;
         final Color controlBackgroundColor = windowBackgroundColor;
 
+        final Color texturedButtonUnselectedColor = new ColorUIResource(new Color(0, 0, 0, 170));
+        final Color texturedButtonDisabledUnselectedColor = new ColorUIResource(new Color(0, 0, 0, 75));
+        final Color texturedButtonSelectedColor = new ColorUIResource(Color.WHITE);
+        final Color texturedButtonDisabledSelectedColor = new ColorUIResource(new Color(255, 255, 255, 155));
+        final Color texturedButtonNonexclusiveSelectedColor
+                = OSXSystemProperties.OSVersion >= 1011 ? new ColorUIResource(37, 125, 252) : new ColorUIResource(0, 122, 255);
+        final Color texturedButtonDisabledNonexclusiveSelectedColor
+                = OSXSystemProperties.OSVersion >= 1011 ? new ColorUIResource(new Color(37, 125, 252, 120)) : new ColorUIResource(new Color(0, 122, 255, 120));
+
         final LazyValue controlFont = t -> AquaFonts.getControlTextFont();
         final LazyValue controlSmallFont = t -> AquaFonts.getControlTextSmallFont();
         final LazyValue controlMiniFont = t -> AquaFonts.getControlTextMiniFont();
@@ -361,20 +438,23 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
         final LazyValue recessedFont = t -> AquaFonts.getRecessedButtonFont();
         final LazyValue inlineFont = t -> AquaFonts.getInlineButtonFont();
 
-        // can only approximate sidebar background colors using averages
-        final Color sideBarBackgroundColor = new ColorUIResource(230, 230, 230);
-        final Color sideBarInactiveBackgroundColor = new ColorUIResource(245, 245, 245);
-        final Color sideBarSelectionBackgroundColor = new ColorUIResource(200, 200, 200);
+        final Color clearColor = new ColorUIResource(new Color(0, 0, 0, 0));
+
+        // can only approximate vibrant sidebar colors
+        //final Color sideBarBackgroundColor = new ColorUIResource(230, 230, 230);
+        //final Color sideBarInactiveBackgroundColor = new ColorUIResource(245, 245, 245);
+        final Color sideBarSelectionBackgroundColor = new ColorUIResource(new Color(0, 0, 0, 67));
         final Color sideBarSelectionInactiveBackgroundColor = new ColorUIResource(205, 205, 205);
-        final Color sideBarForegroundColor = new ColorUIResource(60, 60, 60);
+        final Color sideBarForegroundColor = new ColorUIResource(new Color(31, 31, 31, 217));
         final Color sideBarInactiveForegroundColor = new ColorUIResource(68, 68, 68);
         final Color sideBarSelectionForegroundColor = new ColorUIResource(30, 30, 30);
         final Color sideBarSelectionInactiveForegroundColor = new ColorUIResource(0, 0, 0);
-        final Color sideBarCategoryForegroundColor = new ColorUIResource(115, 115, 115);
+        final Color sideBarCategoryForegroundColor = new ColorUIResource(new Color(85, 85, 85, 217));
         final Color sideBarCategorySelectionForegroundColor = new ColorUIResource(0, 0, 0);
 
         final Color menuBorderColor = new ColorUIResource(209, 209, 209);
-        final Color menuBackgroundColor = new ColorUIResource(new Color(240, 240, 240));
+        final Color menuBarBackgroundColor = new ColorUIResource(new Color(246, 246, 246));
+        final Color menuBackgroundColor = clearColor; // new ColorUIResource(new Color(240, 240, 240));
         final Color menuForegroundColor = black;
 
         final Color menuSelectedForegroundColor = white;
@@ -382,6 +462,7 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
 
         final Color menuDisabledBackgroundColor = menuBackgroundColor;
         final Color menuDisabledForegroundColor = disabled;
+        final Color menuBarDisabledBackgroundColor = menuBarBackgroundColor;
 
         final Color menuAccelForegroundColor = black;
         final Color menuAccelSelectionForegroundColor = black;
@@ -439,10 +520,17 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
             "Button.textIconGap", new Integer(4),
             "Button.textShiftOffset", zero, // radar 3308129 - aqua doesn't move images when pressed.
             "Button.focusInputMap", controlFocusInputMap,
-            "Button.margin", new InsetsUIResource(0, 2, 0, 2),
+            "Button.margin", new InsetsUIResource(0, 0, 0, 0),
             "Button.opaque", false,
             "Button.recessed.font", recessedFont,
+            "Button.recessed.rolloverText", white,
             "Button.inline.font", inlineFont,
+            "Button.texturedSelectedColor", texturedButtonSelectedColor,
+            "Button.texturedDisabledSelectedColor", texturedButtonDisabledSelectedColor,
+            "Button.texturedUnselectedColor", texturedButtonUnselectedColor,
+            "Button.texturedDisabledUnselectedColor", texturedButtonDisabledUnselectedColor,
+            "Button.texturedNonexclusiveSelectedColor", texturedButtonNonexclusiveSelectedColor,
+            "Button.texturedDisabledNonexclusiveSelectedColor", texturedButtonDisabledNonexclusiveSelectedColor,
 
             "CheckBox.background", controlBackgroundColor,
             "CheckBox.foreground", black,
@@ -481,7 +569,7 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
             "ComboBox.disabledBackground", menuDisabledBackgroundColor,
             "ComboBox.disabledForeground", menuDisabledForegroundColor,
             "ComboBox.ancestorInputMap", aquaKeyBindings.getComboBoxInputMap(),
-            "ComboBox.padding", new InsetsUIResource(1, 5, 1, 5),   // affects only non-editable combo boxes
+            "ComboBox.padding", new InsetsUIResource(1, 4, 1, 4),   // affects only non-editable combo boxes
             "ComboBox.maximumRowCount", 5,
 
             "DesktopIcon.border", internalFrameBorder,
@@ -572,7 +660,7 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
             "FileChooser.sideBarIcon.TimeMachineVolume", OSXFile.getTimeMachineSidebarIcon(),
 
             "FileView.aliasBadgeIcon", OSXFile.getAliasBadgeIcon(),
-            "FileView.computerIcon", OSXFile.getComputerIcon(),
+            "FileView.computerIcon", AquaImageFactory.getComputerIcon(),
             "FileView.directoryIcon", OSXFile.getDirectoryIcon(),
             "FileView.fileIcon", OSXFile.getFileIcon(),
             //"FileView.hardDriveIcon", OSXFile.getHardDriveIcon(),
@@ -635,7 +723,7 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
             // Radar [3543438]. We now define the TitledBorder properties for font and color.
             // Aqua HIG doesn't define TitledBorders as Swing does. Eventually, we might want to
             // re-think TitledBorder to behave more like a Box (NSBox). (vm)
-            "TitledBorder.font", controlFont,
+            "TitledBorder.font", controlSmallFont,
             "TitledBorder.titleColor", black,
             "TitledBorder.aquaVariant", aquaTitledBorder, // this is the border that matches what aqua really looks like
             "InsetBorder.aquaVariant", aquaInsetBorder, // this is the title-less variant
@@ -646,7 +734,6 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
             "Label.foreground", black,
             "Label.disabledForeground", disabled,
             "Label.disabledShadow", disabledShadow,
-            "Label.opaque", useOpaqueComponents,
             "Label.border", null,
 
             "List.font", viewFont, // [3577901] Aqua HIG says "default font of text in lists and tables" should be 12 point (vm).
@@ -698,13 +785,13 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
             "Menu.submenuPopupOffsetY", new Integer(-4),
 
             "MenuBar.font", menuFont,
-            "MenuBar.background", menuBackgroundColor, // not a menu item, not selected
+            "MenuBar.background", menuBarBackgroundColor, // not a menu item, not selected
             "MenuBar.foreground", menuForegroundColor,
             "MenuBar.border", new AquaMenuBarBorder(), // sja make lazy!
             "MenuBar.margin", new InsetsUIResource(0, 8, 0, 8), // sja make lazy!
             "MenuBar.selectionBackground", menuSelectedBackgroundColor, // not a menu item, is selected
             "MenuBar.selectionForeground", menuSelectedForegroundColor,
-            "MenuBar.disabledBackground", menuDisabledBackgroundColor, //ThemeBrush.GetThemeBrushForMenu(false, false), // not a menu item, not selected
+            "MenuBar.disabledBackground", menuBarDisabledBackgroundColor, //ThemeBrush.GetThemeBrushForMenu(false, false), // not a menu item, not selected
             "MenuBar.disabledForeground", menuDisabledForegroundColor,
             "MenuBar.backgroundPainter",(LazyValue) t -> AquaMenuPainter.getMenuBarPainter(),
             "MenuBar.selectedBackgroundPainter",(LazyValue) t -> AquaMenuPainter.getSelectedMenuBarItemPainter(),
@@ -761,7 +848,6 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
             "Panel.font", controlFont,
             "Panel.background", panelBackgroundColor, //new ColorUIResource(0.5647f, 0.9957f, 0.5059f),
             "Panel.foreground", black,
-            "Panel.opaque", useOpaqueComponents,
 
             "PasswordField.focusInputMap", aquaKeyBindings.getPasswordFieldInputMap(),
             "PasswordField.font", controlFont,
@@ -779,7 +865,7 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
             "PasswordField.capsLockIconColor", textPasswordFieldCapsLockIconColor,
 
             "PopupMenu.font", menuFont,
-            "PopupMenu.background", menuBackgroundColor,
+            "PopupMenu.background", clearColor,
             // Fix for 7154516: make popups opaque
             "PopupMenu.translucentBackground", white,
             "PopupMenu.foreground", menuForegroundColor,
@@ -824,7 +910,8 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
             //"RadioButtonMenuItem.arrowIcon", null,
 
             "Separator.background", null,
-            "Separator.foreground", new ColorUIResource(216, 216, 216),
+            "Separator.foreground", separator,
+            "Separator.width", 1,
 
             "ScrollBar.border", null,
             "ScrollBar.focusInputMap", aquaKeyBindings.getScrollBarInputMap(),
@@ -890,7 +977,6 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
             //"TabbedPane.shadow", table.get("controlShadow"),
             //"TabbedPane.darkShadow", table.get("controlDkShadow"),
             //"TabbedPane.focus", table.get("controlText"),
-            "TabbedPane.opaque", useOpaqueComponents,
             "TabbedPane.textIconGap", new Integer(4),
             "TabbedPane.tabInsets", new InsetsUIResource(0, 10, 3, 10), // Label within tab (top, left, bottom, right)
             //"TabbedPane.rightTabInsets", new InsetsUIResource(0, 10, 3, 10), // Label within tab (top, left, bottom, right)
@@ -906,9 +992,11 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
             "TabbedPane.selectedTabTitlePressedColor", selectedTabTitlePressedColor,
             "TabbedPane.selectedTabTitleDisabledColor", selectedTabTitleDisabledColor,
             "TabbedPane.selectedTabTitleNormalColor", selectedTabTitleNormalColor,
-            "TabbedPane.selectedTabTitleShadowDisabledColor", selectedTabTitleShadowDisabledColor,
-            "TabbedPane.selectedTabTitleShadowNormalColor", selectedTabTitleShadowNormalColor,
+            "TabbedPane.selectedTabTitleInactiveColor", selectedTabTitleInactiveColor,
+            "TabbedPane.nonSelectedTabTitlePressedColor", nonSelectedTabTitlePressedColor,
+            "TabbedPane.nonSelectedTabTitleDisabledColor", nonSelectedTabTitleDisabledColor,
             "TabbedPane.nonSelectedTabTitleNormalColor", nonSelectedTabTitleNormalColor,
+            "TabbedPane.nonSelectedTabTitleInactiveColor", nonSelectedTabTitleInactiveColor,
             "TabbedPane.selectedLabelShift", -1,
             "TabbedPane.labelShift", 1,
             "TabbedPane.selectionFollowsFocus", true,
@@ -1009,7 +1097,7 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
             "ToggleButton.textIconGap", new Integer(4),
             "ToggleButton.textShiftOffset", zero, // radar 3308129 - aqua doesn't move images when pressed.
             "ToggleButton.focusInputMap", controlFocusInputMap,
-            "ToggleButton.margin", new InsetsUIResource(0, 2, 0, 2),
+            "ToggleButton.margin", new InsetsUIResource(0, 0, 0, 0),
             "ToggleButton.opaque", false,
 
             // *** ToolBar
@@ -1025,10 +1113,6 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
             //"ToolBar.separatorSize", new DimensionUIResource( 10, 10 ),
             "ToolBar.separatorSize", null,
             "ToolBar.title.background", toolBarTitleBackground,
-
-            // *** ToolBarButton
-            "ToolBarButton.margin", new InsetsUIResource(3, 3, 3, 3),
-            "ToolBarButton.insets", new InsetsUIResource(1, 1, 1, 1),
 
             // *** ToolTips
             "ToolTip.font", controlSmallFont,
@@ -1063,8 +1147,8 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
             // no expand or collapse icons
             "Tree.changeSelectionWithFocus", Boolean.TRUE,
             "Tree.drawsFocusBorderAroundIcon", Boolean.FALSE,
-            "Tree.evenRowBackground", alternateBackground,
-            "Tree.oddRowBackground", white,
+            "Tree.evenRowBackground", white,
+            "Tree.oddRowBackground", alternateBackground,
 
             "Tree.sideBar.font", sideBarFont,
             "Tree.sideBar.selectionFont", sideBarSelectionFont,
@@ -1072,8 +1156,8 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
             "Tree.sideBarCategory.selectionFont", sideBarCategorySelectionFont,
 
             // Fairly arbitrary choices for backgrounds, since actual colors depend upon what is underneath
-            "Tree.sideBar.background", sideBarBackgroundColor,
-            "Tree.sideBar.inactiveBackground", sideBarInactiveBackgroundColor,
+            //"Tree.sideBar.background", sideBarBackgroundColor,
+            //"Tree.sideBar.inactiveBackground", sideBarInactiveBackgroundColor,
             "Tree.sideBar.selectionBackground", sideBarSelectionBackgroundColor,
             "Tree.sideBar.selectionInactiveBackground", sideBarSelectionInactiveBackgroundColor,
             "Tree.sideBar.foreground", sideBarForegroundColor,
@@ -1185,8 +1269,7 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
 
             "ColorChooserUI", basicPackageName + "BasicColorChooserUI",
 
-            // text UIs
-            "ViewportUI", basicPackageName + "BasicViewportUI",
+            "ViewportUI", PKG_PREFIX + "AquaViewportUI",
         };
         table.putDefaults(uiDefaults);
     }

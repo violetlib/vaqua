@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014-2015 Alan Snyder.
+ * Copyright (c) 2014-2016 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -18,11 +18,16 @@ import java.awt.*;
  */
 public class AquaSeparatorUI extends SeparatorUI {
 
+    private static int thickness;
+
     public static ComponentUI createUI(JComponent c) {
         return new AquaSeparatorUI();
     }
 
     public void installUI(JComponent c) {
+        if (thickness == 0) {
+            thickness = UIManager.getInt("Separator.width");
+        }
         installDefaults((JSeparator) c);
     }
 
@@ -42,11 +47,18 @@ public class AquaSeparatorUI extends SeparatorUI {
         Dimension size = c.getSize();
         Insets s = c.getInsets();
         g.setColor(c.getForeground());
+        int x = s.left;
+        int y = s.top;
+        int w = Math.max(0, size.width - s.left - s.right);
+        int h = Math.max(0, size.height - s.top - s.bottom);
         if (((JSeparator) c).getOrientation() == JSeparator.VERTICAL) {
-            g.drawLine(s.left, s.top, s.left, size.height - s.bottom - 1);
+            int w1 = Math.min(w, thickness);
+            w = w1 + (w - w1) / 2;
         } else {
-            g.drawLine(s.left, s.top, size.width - s.right - 1, s.top);
+            int h1 = Math.min(h, thickness);
+            h = h1 + (h - h1) / 2;
         }
+        g.fillRect(x, y, w, h);
     }
 
     public Dimension getMinimumSize(JComponent c) {
@@ -56,9 +68,9 @@ public class AquaSeparatorUI extends SeparatorUI {
     public Dimension getPreferredSize(JComponent c) {
         Insets insets = c.getInsets();
         if (((JSeparator) c).getOrientation() == JSeparator.VERTICAL) {
-            return new Dimension(1 + insets.left + insets.right, insets.top + insets.bottom);
+            return new Dimension(thickness + insets.left + insets.right, insets.top + insets.bottom);
         } else {
-            return new Dimension(insets.left + insets.right, 1 + insets.top + insets.bottom);
+            return new Dimension(insets.left + insets.right, thickness + insets.top + insets.bottom);
         }
     }
 

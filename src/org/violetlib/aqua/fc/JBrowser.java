@@ -215,6 +215,10 @@ public class JBrowser extends javax.swing.JComponent implements Scrollable {
      * Should the preview column be filled?
      **/
     private boolean shouldFillPreviewColumn = false;
+    /**
+     * Should the preview column be filled?
+     **/
+    private boolean isPreviewColumnScrollable = false;
     /** This border is used when the Look and Feel does not specify a
      * "List.cellNoFocusBorder".
      */
@@ -924,6 +928,7 @@ public class JBrowser extends javax.swing.JComponent implements Scrollable {
     public boolean isPreviewColumnFilled() {
         return shouldFillPreviewColumn;
     }
+
     /**
      * Sets whether the preview column should expand to fill available horizontal space.
      *
@@ -933,6 +938,28 @@ public class JBrowser extends javax.swing.JComponent implements Scrollable {
     public void setPreviewColumnFilled(boolean newValue) {
         boolean oldValue = shouldFillPreviewColumn;
         shouldFillPreviewColumn = newValue;
+        if (oldValue != newValue) {
+            revalidate();
+            repaint();
+        }
+    }
+
+    /**
+     * Gets whether the preview column should be scrollable.
+     **/
+    public boolean isPreviewColumnScrollable() {
+        return isPreviewColumnScrollable;
+    }
+
+    /**
+     * Sets whether the preview column should be scrollable.
+     *
+     * @param newValue
+     *            The new value.
+     **/
+    public void setPreviewColumnScrollable(boolean newValue) {
+        boolean oldValue = isPreviewColumnScrollable;
+        isPreviewColumnScrollable = newValue;
         if (oldValue != newValue) {
             revalidate();
             repaint();
@@ -3467,18 +3494,23 @@ public class JBrowser extends javax.swing.JComponent implements Scrollable {
 
         public Column(JComponent c, int columnIndex) {
             this.columnIndex = columnIndex;
-            scrollPane = createScrollPane(c, columnIndex);
             setLayout(new BorderLayout());
-            add(scrollPane);
-            configureFromScrollBars();
-            scrollPane.addPropertyChangeListener(new PropertyChangeListener() {
-                @Override
-                public void propertyChange(PropertyChangeEvent evt) {
-                    if (AquaScrollPaneUI.SCROLL_PANE_AQUA_OVERLAY_SCROLL_BARS_KEY.equals(evt.getPropertyName())) {
-                        configureFromScrollBars();
+
+            if (columnIndex >= 0 || isPreviewColumnScrollable()) {
+                scrollPane = createScrollPane(c, columnIndex);
+                add(scrollPane);
+                configureFromScrollBars();
+                scrollPane.addPropertyChangeListener(new PropertyChangeListener() {
+                    @Override
+                    public void propertyChange(PropertyChangeEvent evt) {
+                        if (AquaScrollPaneUI.SCROLL_PANE_AQUA_OVERLAY_SCROLL_BARS_KEY.equals(evt.getPropertyName())) {
+                            configureFromScrollBars();
+                        }
                     }
-                }
-            });
+                });
+            } else {
+                add(c);
+            }
         }
 
         protected void configureFromScrollBars() {
@@ -3518,7 +3550,7 @@ public class JBrowser extends javax.swing.JComponent implements Scrollable {
         }
 
         public Component getView() {
-            return scrollPane.getViewport().getView();
+            return scrollPane != null ? scrollPane.getViewport().getView() : getComponent(0);
         }
 
         public void setResizable(boolean b) {

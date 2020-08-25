@@ -1,5 +1,5 @@
 /*
- * Changes copyright (c) 2015 Alan Snyder.
+ * Changes copyright (c) 2015-2016 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -34,7 +34,7 @@
 package org.violetlib.aqua;
 
 import java.awt.*;
-import java.awt.image.BufferedImage;
+import java.awt.image.*;
 import java.io.File;
 import java.net.URL;
 import java.security.PrivilegedAction;
@@ -46,11 +46,24 @@ import javax.swing.plaf.UIResource;
 import org.violetlib.aqua.AquaIcon.InvertableIcon;
 import org.violetlib.aqua.AquaUtils.RecyclableSingleton;
 import org.violetlib.aqua.fc.OSXFile;
+import org.violetlib.jnr.aqua.AquaUIPainter.Size;
 
 public class AquaImageFactory {
 
     public static boolean debugNativeRendering = false;
     private static final int kAlertIconSize = 64;
+
+    private static InvertableImageIcon regularPopupMenuCheckIcon;
+    private static InvertableImageIcon smallPopupMenuCheckIcon;
+    private static InvertableImageIcon miniPopupMenuCheckIcon;
+
+    public static IconUIResource getComputerIcon() {
+        return new IconUIResource(new AquaIcon.CachingScalingIcon(16, 16) {
+            Image createImage() {
+                return getNSIcon("NSComputer");
+            }
+        });
+    }
 
     public static IconUIResource getConfirmImageIcon() {
         // public, because UIDefaults.ProxyLazyValue uses reflection to get this value
@@ -97,10 +110,10 @@ public class AquaImageFactory {
 
     private static class AppIconCompositor implements AquaMultiResolutionImage.Mapper {
         @Override
-        public Image map(Image source, int scaleFactor) {
+        public BufferedImage map(Image source, int scaleFactor) {
             return getAppIconImageCompositedOn(source, scaleFactor);
         }
-   }
+    }
 
     static BufferedImage getAppIconImageCompositedOn(final Image background, int scaleFactor) {
         final int scaledAlertIconSize = background.getWidth(null) * scaleFactor;
@@ -108,10 +121,10 @@ public class AquaImageFactory {
         final int kAlertSubIconInset = scaledAlertIconSize - kAlertSubIconSize;
         final Icon smallAppIconScaled = new AquaIcon.CachingScalingIcon(
                 kAlertSubIconSize, kAlertSubIconSize) {
-                    Image createImage() {
-                        return getGenericJavaIcon();
-                    }
-                };
+            Image createImage() {
+                return getGenericJavaIcon();
+            }
+        };
 
         final BufferedImage image = new BufferedImage(scaledAlertIconSize,
                 scaledAlertIconSize, BufferedImage.TYPE_INT_ARGB_PRE);
@@ -131,8 +144,8 @@ public class AquaImageFactory {
     }
 
     public static Image loadResource(String resource) {
-      URL u = AquaImageFactory.class.getResource(resource);
-      return u != null ? Toolkit.getDefaultToolkit().createImage(u) : null;
+        URL u = AquaImageFactory.class.getResource(resource);
+        return u != null ? Toolkit.getDefaultToolkit().createImage(u) : null;
     }
 
     public static Image getImage(File file, int size) {
@@ -256,7 +269,7 @@ public class AquaImageFactory {
         @Override
         public Icon getInvertedIcon() {
             if (invertedImage != null) return invertedImage;
-            return invertedImage = new IconUIResource(new ImageIcon(AquaUtils.generateLightenedImage(getImage(), 100)));
+            return invertedImage = new IconUIResource(new ImageIcon(generateLightenedImage(getImage(), 100)));
         }
     }
 
@@ -298,15 +311,55 @@ public class AquaImageFactory {
     }
 
     public static Icon getMenuArrowIcon() {
-        return new InvertableImageIcon(AquaUtils.generateLightenedImage(eastArrow.get(), 25));
+        return new InvertableImageIcon(generateLightenedImage(eastArrow.get(), 25));
+    }
+
+    public static Icon getPopupMenuItemCheckIcon(Size sizeVariant) {
+        if (sizeVariant == Size.SMALL) {
+            return getSmallPopupMenuItemCheckIcon();
+        } else if (sizeVariant == Size.MINI) {
+            return getMiniPopupMenuItemCheckIcon();
+        } else {
+            return getRegularPopupMenuItemCheckIcon();
+        }
+    }
+
+    private static Icon getRegularPopupMenuItemCheckIcon() {
+        if (regularPopupMenuCheckIcon == null) {
+            regularPopupMenuCheckIcon = getPopupMenuItemCheckIcon(10);
+        }
+        return regularPopupMenuCheckIcon;
+    }
+
+    private static Icon getSmallPopupMenuItemCheckIcon() {
+        if (smallPopupMenuCheckIcon == null) {
+            smallPopupMenuCheckIcon = getPopupMenuItemCheckIcon(8);
+        }
+        return smallPopupMenuCheckIcon;
+    }
+
+    private static Icon getMiniPopupMenuItemCheckIcon() {
+        if (miniPopupMenuCheckIcon == null) {
+            miniPopupMenuCheckIcon = getPopupMenuItemCheckIcon(6);
+        }
+        return miniPopupMenuCheckIcon;
+    }
+
+    private static InvertableImageIcon getPopupMenuItemCheckIcon(int size) {
+        Image im = getNSImage("NSMenuCheckmark", size, size);
+        return new InvertableImageIcon(im);
     }
 
     public static Icon getMenuItemCheckIcon() {
-        return new InvertableImageIcon(AquaUtils.generateLightenedImage(getNSIcon("NSMenuCheckmark"), 25));
+        return new InvertableImageIcon(generateLightenedImage(getNSIcon("NSMenuCheckmark"), 25));
     }
 
     public static Icon getMenuItemDashIcon() {
-        return new InvertableImageIcon(AquaUtils.generateLightenedImage(getNSIcon("NSMenuMixedState"), 25));
+        return new InvertableImageIcon(generateLightenedImage(getNSIcon("NSMenuMixedState"), 25));
+    }
+
+    private static Image getNSImage(String imageName, int width, int height) {
+        return getNativeImage(imageName, width, height);
     }
 
     private static Image getNSIcon(String imageName) {
@@ -459,49 +512,67 @@ public class AquaImageFactory {
         }
     }
 
+    // We cannot change the system colors
+    private static Color windowBackgroundColor = new ColorUIResource(236, 236, 236); // new SystemColorProxy(SystemColor.window);
+    private static Color desktopBackgroundColor = new ColorUIResource(65, 105, 170); //SystemColor.desktop
+    private static Color textSelectionBackgroundColor = new ColorUIResource(179, 215, 255); // new SystemColorProxy(SystemColor.textHighlight);
+    private static Color textSelectionForegroundColor = new ColorUIResource(0, 0, 0); // new SystemColorProxy(SystemColor.textHighlightText);
+    private static Color selectionBackgroundColor = new ColorUIResource(0, 104, 217); // new SystemColorProxy(SystemColor.controlHighlight);
+    private static Color selctionForegroundColor = new ColorUIResource(255, 255, 255); // new SystemColorProxy(SystemColor.controlLtHighlight);
+    private static Color comboBoxSelectionBackgroundColor = new ColorUIResource(0, 104, 217);
+    private static Color comboBoxSelectionForegroundColor = new ColorUIResource(217, 233, 250);
+    private static Color focusRingColor = new Color(62, 156, 246, 128); // new SystemColorProxy(LWCToolkit.getAppleColor(LWCToolkit.KEYBOARD_FOCUS_COLOR));
+    private static Color selectionInactiveBackgroundColor = new ColorUIResource(220, 220, 220);
+    private static Color selectionInactiveForegroundColor = new ColorUIResource(0, 0, 0); // new SystemColorProxy(LWCToolkit.getAppleColor(LWCToolkit.INACTIVE_SELECTION_FOREGROUND_COLOR));
+
     public static Color getWindowBackgroundColorUIResource() {
-        return new ColorUIResource(236, 236, 236); // new SystemColorProxy(SystemColor.window);
+        return windowBackgroundColor;
     }
 
     public static Color getDesktopBackgroundColorUIResource() {
-        return new ColorUIResource(65, 105, 170); //SystemColor.desktop
+        return desktopBackgroundColor;
     }
 
     public static Color getTextSelectionBackgroundColorUIResource() {
-        return new ColorUIResource(179, 215, 255); // new SystemColorProxy(SystemColor.textHighlight);
+        return textSelectionBackgroundColor;
     }
 
     public static Color getTextSelectionForegroundColorUIResource() {
-        return new ColorUIResource(0, 0, 0); // new SystemColorProxy(SystemColor.textHighlightText);
+        return textSelectionForegroundColor;
     }
 
     public static Color getSelectionBackgroundColorUIResource() {
-        return new ColorUIResource(0, 104, 217); // new SystemColorProxy(SystemColor.controlHighlight);
+        return selectionBackgroundColor;
     }
 
     public static Color getSelectionForegroundColorUIResource() {
-        return new ColorUIResource(255, 255, 255); // new SystemColorProxy(SystemColor.controlLtHighlight);
+        return selctionForegroundColor;
     }
 
     public static Color getComboBoxSelectionBackgroundColorUIResource() {
-        return new ColorUIResource(0, 104, 217);
+        return comboBoxSelectionBackgroundColor;
     }
 
     public static Color getComboBoxSelectionForegroundColorUIResource() {
-        return new ColorUIResource(217, 233, 250);
+        return comboBoxSelectionForegroundColor;
     }
 
     public static Color getFocusRingColorUIResource() {
-        return new Color(62, 156, 246, 128); // new SystemColorProxy(LWCToolkit.getAppleColor(LWCToolkit.KEYBOARD_FOCUS_COLOR));
+        return focusRingColor;
     }
 
     public static Color getSelectionInactiveBackgroundColorUIResource() {
-        return new ColorUIResource(220, 220, 220);
+        return selectionInactiveBackgroundColor;
     }
 
     public static Color getSelectionInactiveForegroundColorUIResource() {
-        return new ColorUIResource(0, 0, 0); // new SystemColorProxy(LWCToolkit.getAppleColor(LWCToolkit.INACTIVE_SELECTION_FOREGROUND_COLOR));
+        return selectionInactiveForegroundColor;
     }
+
+    /**
+     * Obtain a native image with a specified logical size.
+     */
+    private static native Image getNativeImage(String name, int width, int height);
 
     /**
      * Render an image file.
@@ -513,4 +584,164 @@ public class AquaImageFactory {
      * @return true if successful, false otherwise.
      */
     private static native boolean nativeRenderImageFile(String path, int[][] buffers, int w, int h);
+
+    public static Image generateSelectedDarkImage(final Image image) {
+        return applyFilter(image, new GenerateSelectedDarkFilter());
+    }
+
+    private static class GenerateSelectedDarkFilter extends IconImageFilter {
+        @Override
+        int getGreyFor(final int gray) {
+            return gray * 75 / 100;
+        }
+    }
+
+    public static Image generatePressedDarkImage(Image image) {
+        return applyFilter(image, new GeneratePressedDarkFilter());
+    }
+
+    private static class GeneratePressedDarkFilter extends RGBImageFilter {
+        public GeneratePressedDarkFilter() {
+            canFilterIndexColorModel = true;
+        }
+
+        @Override
+        public int filterRGB(int x, int y, int rgb) {
+            int red = (rgb >> 16) & 0xff;
+            int green = (rgb >> 8) & 0xff;
+            int blue = rgb & 0xff;
+
+            return (rgb & 0xff000000) | (transform(red) << 16) | (transform(green) << 8) | (transform(blue) << 0);
+        }
+
+        protected int transform(int c) {
+            int result = (c * 40) / 100;
+            if (result < 0) result = 0;
+            if (result > 255) result = 255;
+            return result;
+        }
+    }
+
+    public static Image generateDisabledLightImage(Image image) {
+        return applyFilter(image, new GenerateDisabledLightFilter());
+    }
+
+    private static class GenerateDisabledLightFilter extends RGBImageFilter {
+        public GenerateDisabledLightFilter() {
+            canFilterIndexColorModel = true;
+        }
+
+        @Override
+        public int filterRGB(int x, int y, int rgb) {
+            int red = (rgb >> 16) & 0xff;
+            int green = (rgb >> 8) & 0xff;
+            int blue = rgb & 0xff;
+
+            return (rgb & 0xff000000) | (transform(red) << 16) | (transform(green) << 8) | (transform(blue) << 0);
+        }
+
+        protected int transform(int c) {
+            int result = 255 - ((255 - c) * 50) / 100;
+            if (result < 0) result = 0;
+            if (result > 255) result = 255;
+            return result;
+        }
+    }
+
+    public static Image generateLightenedImage(final Image image, final int percent) {
+        final GrayFilter filter = new GrayFilter(true, percent);
+        return AquaMultiResolutionImage.apply(image, filter);
+    }
+
+    private abstract static class IconImageFilter extends RGBImageFilter {
+        IconImageFilter() {
+            super();
+            canFilterIndexColorModel = true;
+        }
+
+        @Override
+        public final int filterRGB(final int x, final int y, final int rgb) {
+            final int red = (rgb >> 16) & 0xff;
+            final int green = (rgb >> 8) & 0xff;
+            final int blue = rgb & 0xff;
+            final int gray = getGreyFor((int) ((0.30 * red + 0.59 * green + 0.11 * blue) / 3));
+
+            return (rgb & 0xff000000) | (grayTransform(red, gray) << 16) | (grayTransform(green, gray) << 8) | (grayTransform(blue, gray) << 0);
+        }
+
+        private static int grayTransform(final int color, final int gray) {
+            int result = color - gray;
+            if (result < 0) result = 0;
+            if (result > 255) result = 255;
+            return result;
+        }
+
+        abstract int getGreyFor(int gray);
+    }
+
+    /**
+     * Determine whether an image is a template image. A template image is an image that contains only clear or
+     * (possibly translucent) black pixels.
+     */
+    public static boolean isTemplateImage(Image image) {
+        // Run the template filter in a special way that allows us to observe its behavior.
+        TemplateFilter filter = new TemplateFilter(Color.BLACK, true);
+        Image im = applyFilter(image, filter);
+        // force the image to be created
+        new ImageIcon(im);
+        return filter.isTemplate();
+    }
+
+    /**
+     * Create an image by replacing the visible pixels in a template image with the specified color. A template image
+     * is an image that contains only clear or (possibly translucent) black pixels.
+     * @param image The template image.
+     * @param replacementColor The replacement color.
+     * @return the new image, or null if the source image is not a template image.
+     */
+    public static Image createImageFromTemplate(Image image, Color replacementColor) {
+        return applyFilter(image, new TemplateFilter(replacementColor, false));
+    }
+
+    public static Image applyFilter(Image image, ImageFilter filter) {
+        return Aqua8MultiResolutionImage.apply(image, filter);
+    }
+
+    private static class TemplateFilter extends RGBImageFilter {
+        private final int replacementAlpha;
+        private final int replacementRGB;
+        private final boolean isForTesting;
+        private boolean isTemplate;
+
+        public TemplateFilter(Color replacementColor, boolean isForTesting) {
+            this.replacementRGB = replacementColor.getRGB() & 0xffffff;
+            this.replacementAlpha = replacementColor.getAlpha();
+            this.isForTesting = isForTesting;
+            canFilterIndexColorModel = true;
+            isTemplate = true;
+        }
+
+        @Override
+        public Object clone() {
+            if (isForTesting) {
+                return this;  // special case for filter used once, we need to retain access to the isTemplate flag
+            }
+            return super.clone();
+        }
+
+        public boolean isTemplate() {
+            return isTemplate;
+        }
+
+        @Override
+        public int filterRGB(int x, int y, int rgb) {
+            int alpha = rgb >> 24 & 0xff;
+            int color = rgb & 0xffffff;
+            if (alpha != 0 && color != 0) {
+                isTemplate = false;
+            }
+            alpha = alpha * replacementAlpha / 255;
+            return alpha << 24 | replacementRGB;
+        }
+    }
 }

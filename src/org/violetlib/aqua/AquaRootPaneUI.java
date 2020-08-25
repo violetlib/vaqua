@@ -1,5 +1,5 @@
 /*
- * Changes Copyright (c) 2015 Alan Snyder.
+ * Changes Copyright (c) 2015-2016 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -36,6 +36,7 @@ package org.violetlib.aqua;
 import java.awt.*;
 import java.awt.event.*;
 import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import javax.swing.*;
 import javax.swing.event.AncestorEvent;
 import javax.swing.event.AncestorListener;
@@ -60,10 +61,41 @@ public class AquaRootPaneUI extends BasicRootPaneUI implements AncestorListener,
         return new AquaRootPaneUI();
     }
 
+    private static boolean forceActiveWindowDisplay;
+
     protected JRootPane rootPane;
     protected WindowHierarchyListener hierarchyListener;
+    protected AncestorChangeListener ancestorChangeListener;
+    protected PropertyChangeListener windowStylePropertyChangeListener;
     protected boolean isInitialized;
     protected AquaCustomStyledWindow customStyledWindow;
+    protected int vibrantStyle = -1;
+
+    /**
+     * Set the debugging option to force all windows to display as active. Used to compare a Java window with a native
+     * active window.
+     */
+    public static void setForceActiveWindowDisplay(boolean b) {
+        if (b != forceActiveWindowDisplay) {
+            forceActiveWindowDisplay = b;
+            Window[] windows = Window.getWindows();
+            for (Window w : windows) {
+                if (w instanceof RootPaneContainer) {
+                    RootPaneContainer rpc = (RootPaneContainer) w;
+                    JRootPane rp = rpc.getRootPane();
+                    AquaRootPaneUI ui = AquaUtils.getUI(rp, AquaRootPaneUI.class);
+                    if (ui != null) {
+                        boolean shouldBeActive = b || w.isActive();
+                        boolean isActiveStyle = Boolean.TRUE.equals(rp.getClientProperty(AquaFocusHandler.FRAME_ACTIVE_PROPERTY));
+                        if (shouldBeActive != isActiveStyle) {
+                            rp.repaint();
+                            updateComponentTreeUIActivation(rp, shouldBeActive);
+                        }
+                    }
+                }
+            }
+        }
+    }
 
     public void installUI(final JComponent c) {
 
@@ -72,6 +104,8 @@ public class AquaRootPaneUI extends BasicRootPaneUI implements AncestorListener,
         super.installUI(c);
 
         c.addAncestorListener(this);
+
+        ancestorChangeListener = new AncestorChangeListener();
 
         if (c.isShowing() && c.isEnabled()) {
             updateDefaultButton(rootPane);
@@ -113,6 +147,8 @@ public class AquaRootPaneUI extends BasicRootPaneUI implements AncestorListener,
             customStyledWindow = null;
         }
 
+        removeVisualEffectView();
+
 //        if (sUseScreenMenuBar) {
 //            final JRootPane root = (JRootPane)c;
 //            root.removeContainerListener(this);
@@ -135,7 +171,13 @@ public class AquaRootPaneUI extends BasicRootPaneUI implements AncestorListener,
     protected void uninstallListeners(JRootPane root) {
         root.removeHierarchyListener(hierarchyListener);
         hierarchyListener = null;
+        root.removePropertyChangeListener("ancestor", ancestorChangeListener);
+        ancestorChangeListener = null;
         super.uninstallListeners(root);
+        if (windowStylePropertyChangeListener != null) {
+            root.removePropertyChangeListener(windowStylePropertyChangeListener);
+            windowStylePropertyChangeListener = null;
+        }
     }
 
     /**
@@ -222,6 +264,48 @@ public class AquaRootPaneUI extends BasicRootPaneUI implements AncestorListener,
 //                    stopTimer();
                 }
             }
+        } else if (AquaVibrantSupport.BACKGROUND_STYLE_KEY.equals(prop)) {
+            Object o = e.getNewValue();
+            setupBackgroundStyle(o, true);
+        }
+    }
+
+    /**
+     * A property change listener for the {@code ancestor} property. The intent is for this listener to run after the
+     * similar listener used by CPlatformWindow to configure itself from root pane client properties. The problem we
+     * are trying to solve is that CPlatformWindow does not know about the full content view style bit and it clears
+     * that bit every time it updates the NSWindow style mask.
+     */
+    protected class AncestorChangeListener implements PropertyChangeListener {
+        @Override
+        public void propertyChange(PropertyChangeEvent e) {
+            if (e.getNewValue() != null) {
+                refreshWindowStyleMask();
+                if (windowStylePropertyChangeListener == null) {
+                    windowStylePropertyChangeListener = new WindowStylePropertyChangeListener();
+                    rootPane.addPropertyChangeListener(windowStylePropertyChangeListener);
+                }
+            }
+        }
+    }
+
+    protected class WindowStylePropertyChangeListener implements PropertyChangeListener {
+        @Override
+        public void propertyChange(PropertyChangeEvent e) {
+            String prop = e.getPropertyName();
+            if (prop != null) {
+                if (prop.equals("Window.closeable") || prop.equals("Window.minimizable")) {
+                    // These properties can be changed after the window peer is created and they alter the window
+                    // style mask.
+                    refreshWindowStyleMask();
+                }
+            }
+        }
+    }
+
+    protected void refreshWindowStyleMask() {
+        if (customStyledWindow != null) {
+            customStyledWindow.refreshWindowStyleMask();
         }
     }
 
@@ -272,8 +356,9 @@ public class AquaRootPaneUI extends BasicRootPaneUI implements AncestorListener,
     public void ancestorAdded(final AncestorEvent event) {
         // this is so we can handle window activated and deactivated events so
         // our swing controls can color/enable/disable/focus draw correctly
-        final Container ancestor = event.getComponent();
-        final Window owningWindow = SwingUtilities.getWindowAncestor(ancestor);
+        final JComponent comp = event.getComponent();
+        final Window owningWindow = SwingUtilities.getWindowAncestor(comp);
+        JRootPane rp = comp instanceof JRootPane ? (JRootPane) comp : null;
 
         if (owningWindow != null) {
             // We get this message even when a dialog is opened and the owning window is a window
@@ -288,12 +373,8 @@ public class AquaRootPaneUI extends BasicRootPaneUI implements AncestorListener,
         // button to start the throbbing.  Since the UI is a singleton make sure the root pane
         // we are checking has a default button before calling update otherwise we will stop
         // throbbing the current default button.
-        final JComponent comp = event.getComponent();
-        if (comp instanceof JRootPane) {
-            final JRootPane rp = (JRootPane)comp;
-            if (rp.isEnabled() && rp.getDefaultButton() != null) {
-                updateDefaultButton((JRootPane)comp);
-            }
+        if (rp != null && rp.isEnabled() && rp.getDefaultButton() != null) {
+            updateDefaultButton(rp);
         }
     }
 
@@ -307,11 +388,11 @@ public class AquaRootPaneUI extends BasicRootPaneUI implements AncestorListener,
     public void ancestorMoved(final AncestorEvent event) { }
 
     public void windowActivated(final WindowEvent e) {
-        updateComponentTreeUIActivation((Component)e.getSource(), Boolean.TRUE);
+        updateWindowActivation(e, Boolean.TRUE);
     }
 
     public void windowDeactivated(final WindowEvent e) {
-        updateComponentTreeUIActivation((Component)e.getSource(), Boolean.FALSE);
+        updateWindowActivation(e, Boolean.FALSE);
     }
 
     public void windowOpened(final WindowEvent e) { }
@@ -328,6 +409,15 @@ public class AquaRootPaneUI extends BasicRootPaneUI implements AncestorListener,
     public void windowStateChanged(final WindowEvent e) { }
     public void windowGainedFocus(final WindowEvent e) { }
     public void windowLostFocus(final WindowEvent e) { }
+
+    private static void updateWindowActivation(WindowEvent e, Object active) {
+        if (forceActiveWindowDisplay) {
+            active = Boolean.TRUE;
+        }
+        Component c = (Component) e.getSource();
+        c.repaint(); // much faster to make one repaint call rather than repainting individual components
+        updateComponentTreeUIActivation(c, active);
+    }
 
     private static void updateComponentTreeUIActivation(final Component c, Object active) {
         if (c instanceof javax.swing.JInternalFrame) {
@@ -357,8 +447,8 @@ public class AquaRootPaneUI extends BasicRootPaneUI implements AncestorListener,
     public final void update(final Graphics g, final JComponent c) {
         if (customStyledWindow != null) {
             customStyledWindow.paintBackground(g);
-        } else if (c.isOpaque()) {
-            AquaUtils.fillRect(g, c);
+        } else if (c.isOpaque() || vibrantStyle >= 0) {
+            AquaUtils.fillRect(g, c, AquaUtils.ERASE_IF_TEXTURED|AquaUtils.ERASE_IF_VIBRANT);
         }
         paint(g, c);
     }
@@ -366,10 +456,97 @@ public class AquaRootPaneUI extends BasicRootPaneUI implements AncestorListener,
     protected class WindowHierarchyListener implements HierarchyListener {
         @Override
         public void hierarchyChanged(HierarchyEvent e) {
-            if (e.getChangeFlags() == HierarchyEvent.DISPLAYABILITY_CHANGED && rootPane.isDisplayable() && !isInitialized) {
-                isInitialized = true;
-                installCustomWindowStyle();
+            if (!isInitialized && e.getChangeFlags() == HierarchyEvent.DISPLAYABILITY_CHANGED) {
+                // Add listener now because we want to be called after the window peer property change listener
+                rootPane.addPropertyChangeListener("ancestor", ancestorChangeListener);
+                configure();
             }
+        }
+    }
+
+    /**
+     * Configure or reconfigure the window based on root pane client properties.
+     * This method has no effect if the root pane parent is not displayable.
+     */
+    public void configure() {
+        if (rootPane.getParent() != null && rootPane.getParent().isDisplayable()) {
+            isInitialized = true;
+            updatePopupStyle(rootPane);
+            installCustomWindowStyle();
+            updateVisualEffectView();
+        }
+    }
+
+    protected void updatePopupStyle(JRootPane rp) {
+        Window w = SwingUtilities.getWindowAncestor(rp);
+        if (w != null && w.getType() == Window.Type.POPUP) {
+            Container cp = rp.getContentPane();
+            if (cp != null) {
+                int count = cp.getComponentCount();
+                if (count == 1) {
+                    Component c = cp.getComponent(0);
+                    if (c instanceof JComponent) {
+                        JComponent jc = (JComponent) c;
+                        Object o = jc.getClientProperty(AquaVibrantSupport.POPUP_BACKGROUND_STYLE_KEY);
+                        setupBackgroundStyle(o, false);
+                        o = jc.getClientProperty(AquaVibrantSupport.POPUP_CORNER_RADIUS_KEY);
+                        setupCornerRadius(o);
+                    }
+                }
+            }
+        }
+    }
+
+    protected void setupBackgroundStyle(Object o, boolean update) {
+        int style = AquaVibrantSupport.parseVibrantStyle(o, false);
+        if (style != vibrantStyle) {
+            vibrantStyle = style;
+            rootPane.setBackground(vibrantStyle >= 0 ? new Color(0, 0, 0, 0) : null);
+            if (isInitialized && update) {
+                updateVisualEffectView();
+            }
+        }
+    }
+
+    protected void setupCornerRadius(Object o) {
+        float radius = 0;
+        if (o != null) {
+            if (o instanceof String) {
+                String s = (String) o;
+                if (s.equals("default")) {
+                    radius = 6;
+                }
+            } else if (o instanceof Number) {
+                radius = ((Number) o).floatValue();
+            }
+            if (radius < 0) {
+                radius = 0;
+            }
+        }
+        Window w = SwingUtilities.getWindowAncestor(rootPane);
+        AquaUtils.setCornerRadius(w, radius);
+    }
+
+    protected void updateVisualEffectView() {
+        Window w = SwingUtilities.getWindowAncestor(rootPane);
+        if (w != null) {
+            if (vibrantStyle >= 0) {
+                try {
+                    AquaVibrantSupport.addFullWindowVibrantView(w, vibrantStyle);
+                } catch (IllegalArgumentException ex) {
+                    System.err.println("Unable to install visual effect view: " + ex.getMessage());
+                }
+            } else {
+                AquaVibrantSupport.removeFullWindowVibrantView(w);
+                // TBD: cannot really undo this
+            }
+        }
+    }
+
+    protected void removeVisualEffectView() {
+        Window w = SwingUtilities.getWindowAncestor(rootPane);
+        if (w != null) {
+            AquaVibrantSupport.removeFullWindowVibrantView(w);
         }
     }
 

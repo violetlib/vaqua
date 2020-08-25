@@ -1,5 +1,5 @@
 /*
- * Changes Copyright (c) 2015 Alan Snyder.
+ * Changes Copyright (c) 2015-2016 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -56,20 +56,14 @@ public class AquaSegmentedButtonBorder extends AquaButtonBorder implements Focus
     protected final AquaButtonExtendedTypes.WidgetInfo info;
     protected final Position position;
 
-    protected AquaSegmentedButtonBorder(SegmentedButtonWidget widget, AquaButtonExtendedTypes.WidgetInfo info, Position position) {
+    public AquaSegmentedButtonBorder(SegmentedButtonWidget widget, AquaButtonExtendedTypes.WidgetInfo info, Position position) {
         this.widget = widget;
         this.info = info;
         this.position = position;
     }
 
     @Override
-    public SegmentedButtonLayoutConfiguration getLayoutConfiguration(AbstractButton b) {
-        Size size = AquaUtilControlSize.getUserSizeFrom(b);
-        return new SegmentedButtonLayoutConfiguration(widget, size, position);
-    }
-
-    @Override
-    protected SegmentedButtonWidget getButtonWidget(AbstractButton b) {
+    public SegmentedButtonWidget getButtonWidget(AbstractButton b) {
         return widget;
     }
 
@@ -80,25 +74,43 @@ public class AquaSegmentedButtonBorder extends AquaButtonBorder implements Focus
 
     @Override
     public Configuration getConfiguration(AbstractButton b, int width, int height) {
-        SegmentedButtonLayoutConfiguration g = (SegmentedButtonLayoutConfiguration) b.getClientProperty(AquaButtonUI.LAYOUT_CONFIGURATION_PROPERTY);
+        SegmentedButtonLayoutConfiguration g = (SegmentedButtonLayoutConfiguration) getLayoutConfiguration(b);
         if (g == null) {
             // should not happen
-            g = getLayoutConfiguration(b);
+            return null;
         }
 
         ButtonModel model = b.getModel();
         final State state = getState(b);
         boolean isFocused = (state != State.DISABLED && state != State.INACTIVE && state != State.DISABLED_INACTIVE) && b.isFocusPainted() && b.hasFocus();
 
-        // Swing does not know about segmented buttons. They are just buttons that happen to be arranged in
-        // a row and (hopefully) configured properly. Therefore, we cannot determine anything about the button
-        // to the left or right.
+        // Swing does not know about segmented buttons. They are just buttons that happen to be arranged in a row and
+        // (hopefully) configured properly. Therefore, we cannot determine anything about the button to the left or
+        // right.
 
         boolean isSelected = model.isSelected();
+
+        if (isSelected) {
+            // Special case for nonexclusive selected textured segmented buttons. Use the same background as the
+            // non-selected button.
+            AquaButtonExtendedTypes.WidgetInfo info = getWidgetInfo(b);
+            boolean useNonexclusive = shouldUseNonexclusiveStyle(b, info);
+            if (useNonexclusive) {
+                isSelected = false;
+            }
+        }
+
         AquaUIPainter.Direction d = AquaUIPainter.Direction.NONE;
+        Position pos = g.getPosition();
         DividerState leftState = AquaSegmentedButtonBorder.getDividerState(false, false);
-        DividerState rightState = AquaSegmentedButtonBorder.getDividerState(true, false);
+        DividerState rightState = AquaSegmentedButtonBorder.getDividerState(pos == Position.FIRST || pos == Position.MIDDLE, false);
         return new SegmentedButtonConfiguration(g, state, isSelected, isFocused, d, leftState, rightState);
+    }
+
+    @Override
+    public SegmentedButtonLayoutConfiguration determineLayoutConfiguration(AbstractButton b) {
+        Size size = AquaUtilControlSize.getUserSizeFrom(b);
+        return new SegmentedButtonLayoutConfiguration(widget, size, position);
     }
 
     public static SegmentedButtonConfiguration.DividerState getDividerState(boolean isPainted, boolean isSelected) {

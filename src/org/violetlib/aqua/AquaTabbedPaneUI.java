@@ -1,5 +1,5 @@
 /*
- * Changes Copyright (c) 2015 Alan Snyder.
+ * Changes Copyright (c) 2015-2016 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -188,31 +188,13 @@ public class AquaTabbedPaneUI extends AquaTabbedPaneCopyFromBasicUI implements A
         LayoutInfo layoutInfo = painter.getLayoutInfo().getLayoutInfo(g);
         fixedTabHeight = (int) layoutInfo.getFixedVisualHeight();
 
-        Insetter s;
-        Insets n;
-
         // The renderer does not know about right to left orientation, because the rendering is symmetric.
         // Therefore the First position is always on the left side.
 
-        g = new SegmentedButtonLayoutConfiguration(buttonWidget, sizeVariant, ONLY);
-        s = painter.getLayoutInfo().getSegmentedButtonLabelInsets(g);
-        n = s.asInsets();
-        onlyTabInsets = n != null ? n : new Insets(3, 10, 3, 10);
-
-        g = new SegmentedButtonLayoutConfiguration(buttonWidget, sizeVariant, FIRST);
-        s = painter.getLayoutInfo().getSegmentedButtonLabelInsets(g);
-        n = s.asInsets();
-        leftTabInsets = n != null ? n : new Insets(3, 10, 3, 10);
-
-        g = new SegmentedButtonLayoutConfiguration(buttonWidget, sizeVariant, LAST);
-        s = painter.getLayoutInfo().getSegmentedButtonLabelInsets(g);
-        n = s.asInsets();
-        rightTabInsets = n != null ? n : new Insets(3, 10, 3, 10);
-
-        g = new SegmentedButtonLayoutConfiguration(buttonWidget, sizeVariant, MIDDLE);
-        s = painter.getLayoutInfo().getSegmentedButtonLabelInsets(g);
-        n = s.asInsets();
-        middleTabInsets = n != null ? n : new Insets(3, 10, 3, 10);
+        onlyTabInsets = getTabInsets(ONLY);
+        leftTabInsets = getTabInsets(FIRST);
+        rightTabInsets = getTabInsets(LAST);
+        middleTabInsets = getTabInsets(MIDDLE);
 
         // Icon size is less than text height because having icons touch the border is uglier...
         int delta = onlyTabInsets.top + onlyTabInsets.bottom + 1;
@@ -220,6 +202,18 @@ public class AquaTabbedPaneUI extends AquaTabbedPaneCopyFromBasicUI implements A
             delta++;
         }
         maxIconSize = fixedTabHeight - delta;
+    }
+
+    protected Insets getTabInsets(Position pos) {
+        SegmentedButtonLayoutConfiguration g = new SegmentedButtonLayoutConfiguration(buttonWidget, sizeVariant, pos);
+        Insetter s = painter.getLayoutInfo().getSegmentedButtonLabelInsets(g);
+        Insets n = s.asInsets();
+        if (n == null) {
+            n = new Insets(3, 0, 3, 0);
+        }
+        AquaButtonExtendedTypes.WidgetInfo info = AquaButtonExtendedTypes.getTabWidgetInfo(sizeVariant, pos);
+        int margin = info.getMargin();
+        return new Insets(n.top, n.left + margin, n.bottom, n.right + margin);
     }
 
     protected void assureRectsCreated(final int tabCount) {
@@ -258,6 +252,15 @@ public class AquaTabbedPaneUI extends AquaTabbedPaneCopyFromBasicUI implements A
     final Rectangle fTextRect = new Rectangle();
 
     // UI Rendering
+
+    @Override
+    public void update(Graphics g, JComponent c) {
+        if (c.isOpaque()) {
+            AquaUtils.fillRect(g, c, AquaUtils.ERASE_IF_VIBRANT);
+        }
+        paint(g, c);
+    }
+
     public void paint(final Graphics g, final JComponent c) {
 
         final int tabPlacement = tabPane.getTabPlacement();
@@ -394,7 +397,7 @@ public class AquaTabbedPaneUI extends AquaTabbedPaneCopyFromBasicUI implements A
         Image image = AquaImageFactory.getArrowImageForDirection(direction);
         assert image != null;
         if (!enabled) {
-            image = AquaUtils.generateDisabledImage(image);
+            image = AquaImageFactory.generateDisabledLightImage(image);
         }
 
         if (sizeVariant == Size.MINI) {
@@ -515,7 +518,7 @@ public class AquaTabbedPaneUI extends AquaTabbedPaneCopyFromBasicUI implements A
         DividerState leftState = AquaSegmentedButtonBorder.getDividerState(segmentLeadingSeparator, showLeftNeighborSelected);
         DividerState rightState = AquaSegmentedButtonBorder.getDividerState(segmentTrailingSeparator, showRightNeighborSelected);
         return new SegmentedButtonConfiguration(buttonWidget, sizeVariant, state, showSelected,
-                isFocused, direction, segmentPosition, leftState, rightState);
+                isFocused, Direction.UP, segmentPosition, leftState, rightState);
     }
 
     protected void paintContents(final Graphics g, final int tabPlacement, final int tabIndex, final Rectangle tabRect, final Rectangle iconRect, final Rectangle textRect, final boolean isSelected, final boolean frameActive) {
@@ -524,7 +527,7 @@ public class AquaTabbedPaneUI extends AquaTabbedPaneCopyFromBasicUI implements A
 
         if (isScrollTabIndex(tabIndex)) {
             title = null;
-            icon = getIconForScrollTab(tabPlacement, tabIndex, true);
+            icon = getIconForScrollTab(tabPlacement, tabIndex, tabPane.isEnabled());
         } else {
             Component component = getTabComponentAt(tabIndex);
             if (component != null) {
@@ -575,18 +578,35 @@ public class AquaTabbedPaneUI extends AquaTabbedPaneCopyFromBasicUI implements A
 
         final Color color = tabPane.getForegroundAt(tabIndex);
         if (color instanceof UIResource) {
-            // sja fix getTheme().setThemeTextColor(g, isSelected, isPressed && tracking, tabPane.isEnabledAt(tabIndex));
-            if (tabPane.isEnabledAt(tabIndex) && frameActive) {
-                g2d.setColor(Color.black);
-            } else {
-                g2d.setColor(Color.gray);
-            }
+            g2d.setColor(getTabTextColor(tabIndex, frameActive));
         } else {
             g2d.setColor(color);
         }
 
         g2d.setFont(font);
         AquaUtils.drawString(tabPane, g2d, title, textRect.x, textRect.y + metrics.getAscent());
+    }
+
+    protected Color getTabTextColor(int tabIndex, boolean frameActive) {
+        String base;
+
+        if (!tabPane.isEnabledAt(tabIndex)) {
+            base = "Disabled";
+        } else if (!frameActive) {
+            base = "Inactive";
+        } else if (isPressedAt(tabIndex)) {
+            base = "Pressed";
+        } else {
+            base = "Normal";
+        }
+
+        String prefix = tabPane.getSelectedIndex() == tabIndex ? "selected" : "nonSelected";
+        String property = "TabbedPane." + prefix + "TabTitle" + base + "Color";
+        return UIManager.getColor(property);
+    }
+
+    protected boolean isPressedAt(int index) {
+        return false;   // not needed, so not implemented
     }
 
     protected Direction getDirection() {

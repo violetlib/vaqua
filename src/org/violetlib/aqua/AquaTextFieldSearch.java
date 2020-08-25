@@ -1,5 +1,5 @@
 /*
- * Changes Copyright (c) 2015 Alan Snyder.
+ * Changes Copyright (c) 2015-2016 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -35,12 +35,9 @@ package org.violetlib.aqua;
 
 import java.awt.*;
 import java.awt.event.*;
-import java.beans.PropertyChangeEvent;
-import java.beans.PropertyChangeListener;
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
-import javax.swing.plaf.TextUI;
 import javax.swing.text.JTextComponent;
 
 import org.violetlib.aqua.AquaUtils.JComponentPainter;
@@ -172,12 +169,32 @@ public class AquaTextFieldSearch {
             });
         }
 
-        final Object findAction = c.getClientProperty(FIND_ACTION_KEY);
-        if (findAction instanceof ActionListener) {
-            b.addActionListener((ActionListener) findAction);
-        }
+        b.addActionListener(new FindAction(c));
 
         return b;
+    }
+
+    private static class FindAction implements ActionListener {
+        private final JTextComponent tc;
+
+        public FindAction(JTextComponent tc) {
+            this.tc = tc;
+        }
+
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            final Object findAction = tc.getClientProperty(FIND_ACTION_KEY);
+            if (findAction instanceof ActionListener) {
+                ActionListener al = (ActionListener) findAction;
+                al.actionPerformed(e);
+            } else if (tc instanceof JTextField) {
+                JTextField tf = (JTextField) tc;
+                Action a = tf.getAction();
+                if (a != null) {
+                    a.actionPerformed(e);
+                }
+            }
+        }
     }
 
     private static Component getPromptLabel(final JTextComponent c) {
@@ -222,17 +239,7 @@ public class AquaTextFieldSearch {
     protected static JButton getCancelButton(final JTextComponent c) {
         final JButton b = createButton(c, null);
         b.setName("cancel");
-
-        final Object cancelAction = c.getClientProperty(CANCEL_ACTION_KEY);
-        if (cancelAction instanceof ActionListener) {
-            b.addActionListener((ActionListener)cancelAction);
-        }
-
-        b.addActionListener(new AbstractAction("cancel") {
-            public void actionPerformed(final ActionEvent e) {
-                c.setText("");
-            }
-        });
+        b.addActionListener(new CancelAction(c));
 
         c.getDocument().addDocumentListener(new DocumentListener() {
             public void changedUpdate(final DocumentEvent e) { updateCancelIcon(b, c); }
@@ -242,6 +249,24 @@ public class AquaTextFieldSearch {
 
         updateCancelIcon(b, c);
         return b;
+    }
+
+    private static class CancelAction implements ActionListener {
+        private final JTextComponent tc;
+
+        public CancelAction(JTextComponent tc) {
+            this.tc = tc;
+        }
+
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            final Object cancelAction = tc.getClientProperty(CANCEL_ACTION_KEY);
+            if (cancelAction instanceof ActionListener) {
+                ActionListener al = (ActionListener) cancelAction;
+                al.actionPerformed(e);
+            }
+            tc.setText("");
+        }
     }
 
     // <rdar://problem/6444328> JTextField.variant=search: not thread-safe
@@ -298,10 +323,18 @@ public class AquaTextFieldSearch {
                 hasCancelButton = hasFocus;
             }
 
+            boolean isToolbar = isOnToolbar(tc);
+
             return !hasCancelButton ?
-                    hasMenu ? TextFieldWidget.TEXT_FIELD_SEARCH_WITH_MENU : TextFieldWidget.TEXT_FIELD_SEARCH
+                    hasMenu ?
+                            isToolbar ? TextFieldWidget.TEXT_FIELD_SEARCH_WITH_MENU_TOOLBAR : TextFieldWidget.TEXT_FIELD_SEARCH_WITH_MENU
+                            :
+                            isToolbar ? TextFieldWidget.TEXT_FIELD_SEARCH_TOOLBAR: TextFieldWidget.TEXT_FIELD_SEARCH
                     :
-                    hasMenu ? TextFieldWidget.TEXT_FIELD_SEARCH_WITH_MENU_AND_CANCEL : TextFieldWidget.TEXT_FIELD_SEARCH_WITH_CANCEL;
+                    hasMenu ?
+                            isToolbar ? TextFieldWidget.TEXT_FIELD_SEARCH_WITH_MENU_AND_CANCEL_TOOLBAR : TextFieldWidget.TEXT_FIELD_SEARCH_WITH_MENU_AND_CANCEL
+                            :
+                            isToolbar ? TextFieldWidget.TEXT_FIELD_SEARCH_WITH_CANCEL_TOOLBAR : TextFieldWidget.TEXT_FIELD_SEARCH_WITH_CANCEL;
         }
 
         public Insets getBorderInsets(final Component c) {

@@ -1912,7 +1912,7 @@ public class FileSystemTreeModel implements TreeModel {
         @Override
         public Icon getIcon() {
             validateInfo();
-            return OSXFile.getComputerIcon();
+            return UIManager.getIcon("FileView.computerIcon");
         }
     }
 

@@ -1,5 +1,5 @@
 /*
- * Changes Copyright (c) 2015 Alan Snyder.
+ * Changes Copyright (c) 2015-2016 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -35,11 +35,12 @@ package org.violetlib.aqua;
 
 import java.awt.*;
 import javax.swing.*;
-import javax.swing.plaf.InsetsUIResource;
+import javax.swing.plaf.UIResource;
 
 import org.violetlib.aqua.AquaUtils.RecyclableSingleton;
 import org.violetlib.aqua.AquaUtils.RecyclableSingletonFromDefaultConstructor;
 import org.violetlib.aqua.fc.EmptyIcon;
+import org.violetlib.jnr.Insets2D;
 import org.violetlib.jnr.Insetter;
 import org.violetlib.jnr.LayoutInfo;
 import org.violetlib.jnr.aqua.*;
@@ -94,7 +95,7 @@ public abstract class AquaButtonBorder extends AquaBorder implements BackgroundP
         // These borders generally paint as backgrounds, unlike normal borders that are painted on top the component.
     }
 
-    public final void paintBackground(final Component c, final Graphics g, final int x, final int y, final int width, final int height) {
+    public final void paintBackground(final JComponent c, final Graphics g, final int x, final int y, final int width, final int height) {
         final AbstractButton b = (AbstractButton)c;
         doButtonPaint(b, g, x, y, width, height);
     }
@@ -103,7 +104,7 @@ public abstract class AquaButtonBorder extends AquaBorder implements BackgroundP
         Configuration bg = getConfiguration(b, width, height);
         if (bg != null) {
 
-            // Special case for button wells. The button background should show through the center.
+            // Special case for color wells. The button background should show through the center.
             // Not all the way to the edge because the outer border is translucent when disabled.
 
             if (bg instanceof ButtonConfiguration) {
@@ -122,8 +123,10 @@ public abstract class AquaButtonBorder extends AquaBorder implements BackgroundP
     }
 
     protected State getState(final AbstractButton b) {
+        boolean isActive = AquaFocusHandler.isActive(b);
+
         if (!b.isEnabled()) {
-            return AquaFocusHandler.isActive(b) ? State.DISABLED : State.DISABLED_INACTIVE;
+            return isActive ? State.DISABLED : State.DISABLED_INACTIVE;
         }
 
         // The default button shouldn't draw its color when the window is inactive.
@@ -133,7 +136,7 @@ public abstract class AquaButtonBorder extends AquaBorder implements BackgroundP
         // if we set dimmed we would appear disabled despite being enabled and click through
         // works so this now matches the text drawing and most importantly the HIG
 
-        if (!AquaFocusHandler.isActive(b)) {
+        if (!isActive) {
             return State.INACTIVE;
         }
 
@@ -141,12 +144,15 @@ public abstract class AquaButtonBorder extends AquaBorder implements BackgroundP
         if (model.isArmed() && model.isPressed()) {
             return State.PRESSED;
         }
+
         if (model.isRollover()) {
             return State.ROLLOVER;
         }
+
         if ((b instanceof JButton) && ((JButton)b).isDefaultButton()) {
             return State.ACTIVE_DEFAULT;
         }
+
         return State.ACTIVE;
     }
 
@@ -166,7 +172,7 @@ public abstract class AquaButtonBorder extends AquaBorder implements BackgroundP
      * @param df The standard default font for this button.
      */
     public Font getCustomDefaultFont(AbstractButton b, Size size, Font df) {
-        LayoutConfiguration g = (LayoutConfiguration) b.getClientProperty(AquaButtonUI.LAYOUT_CONFIGURATION_PROPERTY);
+        LayoutConfiguration g = getLayoutConfiguration(b);
         if (g instanceof ButtonLayoutConfiguration) {
             ButtonLayoutConfiguration bg = (ButtonLayoutConfiguration) g;
             AquaUIPainter.ButtonWidget widget = bg.getButtonWidget();
@@ -180,11 +186,34 @@ public abstract class AquaButtonBorder extends AquaBorder implements BackgroundP
         }
     }
 
-    public Color getTextColor(AbstractButton b, AquaButtonExtendedTypes.ColorDefaults colorDefaults) {
+    public Color getForegroundColor(AbstractButton b,
+                                    AquaButtonExtendedTypes.ColorDefaults colorDefaults,
+                                    boolean isIcon) {
         AquaButtonExtendedTypes.WidgetInfo info = getWidgetInfo(b);
-        State state = getState(b);
-        AquaUIPainter.ButtonState bs = getButtonState(b);
-        return info.getForeground(state, bs, colorDefaults);
+        boolean isEnabled = b.getModel().isEnabled();
+        boolean useNonexclusive = shouldUseNonexclusiveStyle(b, info);
+        Color existingColor = b.getForeground();
+        if (existingColor == null || existingColor instanceof UIResource || !isEnabled || useNonexclusive) {
+            State state = getState(b);
+            AquaUIPainter.ButtonState bs = getButtonState(b);
+            return info.getForeground(state, bs, colorDefaults, useNonexclusive, isIcon);
+        } else {
+            return existingColor;
+        }
+    }
+
+    protected boolean shouldUseNonexclusiveStyle(AbstractButton b, AquaButtonExtendedTypes.WidgetInfo info) {
+        // A textured segmented button that is not in a button group uses a special style when selected.
+        if (info.isSegmented() && info.isTextured() && b.getModel().isSelected()) {
+            ButtonModel m = b.getModel();
+            if (m instanceof DefaultButtonModel) {
+                DefaultButtonModel dm = (DefaultButtonModel) m;
+                if (dm.getGroup() == null) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     public int getIconTextGap(AbstractButton b) {
@@ -198,20 +227,86 @@ public abstract class AquaButtonBorder extends AquaBorder implements BackgroundP
      * @param c the component for which this border insets value applies
      */
     public final Insets getBorderInsets(final Component c) {
-        if (c == null || !(c instanceof AbstractButton)) return new Insets(0, 0, 0, 0);
+        if (c == null || !(c instanceof AbstractButton)) {
+            return new Insets(0, 0, 0, 0);
+        }
 
         AbstractButton b = (AbstractButton) c;
+        Insetter s = getContentInsets(b);
+        Insets adjustments = getMarginAdjustments(b);
+        return AquaUtils.combineAsInsets(s, adjustments);
+   }
 
+    /**
+     * Returns the insets of the border.
+     * @param c the component for which this border insets value applies
+     */
+    public final Insets2D getBorderInsets2D(final Component c) {
+        if (c == null || !(c instanceof AbstractButton)) {
+            return new Insets2D(0, 0, 0, 0);
+        }
+
+        AbstractButton b = (AbstractButton) c;
+        Insetter s = getContentInsets(b);
+        Insets adjustments = getMarginAdjustments(b);
+        return AquaUtils.combineAsInsets2D(s, adjustments);
+   }
+
+    /**
+     * Return the margin adjustments to use for the specified button.
+     * @param b The button.
+     * @return the margin adjustments, or null if none.
+     */
+    protected Insets getMarginAdjustments(AbstractButton b) {
         Insets margin = b.getMargin();
-        margin = (margin == null) ? new InsetsUIResource(0, 0, 0, 0) : (Insets)margin.clone();
+        if (margin != null && !(margin instanceof UIResource)) {
+            // always use an application provided margin
+            return margin;
+        } else {
+            // Check for a style specific margin
+            // Use the UI default if there is no type specific margin
+            Insets specialInsets = getSpecialMarginAdjustments(b);
+            return specialInsets != null ? specialInsets : margin;
+        }
+    }
 
-        alterBorderInsets(b, margin);
+    protected Insets getSpecialMarginAdjustments(AbstractButton b) {
+        int m = getMargin(b);
+        int top = 0;
+        int left = m;
+        int bottom = 0;
+        int right = m;
 
-        return margin;
+        // TBD: at present, there is no organized way to support size specific adjustments
+
+        LayoutConfiguration g = getLayoutConfiguration(b);
+        if (g instanceof SegmentedButtonLayoutConfiguration) {
+            SegmentedButtonLayoutConfiguration sg = (SegmentedButtonLayoutConfiguration) g;
+            AquaUIPainter.SegmentedButtonWidget w = sg.getWidget();
+            if (w == AquaUIPainter.SegmentedButtonWidget.BUTTON_SEGMENTED_SMALL_SQUARE
+                    || w == AquaUIPainter.SegmentedButtonWidget.BUTTON_SEGMENTED
+                    || w == AquaUIPainter.SegmentedButtonWidget.BUTTON_TAB) {
+                if (sg.getSize() == Size.MINI) {
+                    top = 1;
+                }
+            }
+        }
+
+        return new Insets(top, left, bottom, right);
+    }
+
+    protected int getMargin(AbstractButton b) {
+        AquaButtonExtendedTypes.WidgetInfo info = getWidgetInfo(b);
+        return info.getMargin();
+    }
+
+    protected Insetter getContentInsets(AbstractButton b) {
+        LayoutConfiguration g = getLayoutConfiguration(b);
+        return g != null ? painter.getLayoutInfo().getContentInsets(g) : null;
     }
 
     public Insets getContentInsets(final AbstractButton b, final int w, final int h) {
-        ButtonLayoutConfiguration g = (ButtonLayoutConfiguration) b.getClientProperty(AquaButtonUI.LAYOUT_CONFIGURATION_PROPERTY);
+        LayoutConfiguration g = getLayoutConfiguration(b);
         if (g != null) {
             Insetter s = painter.getLayoutInfo().getContentInsets(g);
             if (s != null) {
@@ -221,25 +316,43 @@ public abstract class AquaButtonBorder extends AquaBorder implements BackgroundP
         return null;
     }
 
-    protected void alterBorderInsets(AbstractButton b, Insets margin) {
-        LayoutConfiguration g = (LayoutConfiguration) b.getClientProperty(AquaButtonUI.LAYOUT_CONFIGURATION_PROPERTY);
-        if (g != null) {
-            Insetter s = painter.getLayoutInfo().getContentInsets(g);
-            if (s != null) {
-                Insets n = s.asInsets();
-                if (n != null) {
-                    margin.top += n.top;
-                    margin.bottom += n.bottom;
-                    margin.left += n.left;
-                    margin.right += n.right;
-                }
-            }
+    /**
+     * Create a special icon to use for a button. The icon rendering may be state dependent.
+     */
+    public AquaButtonIcon createIcon(AbstractButton b, boolean isTemplate, AquaButtonExtendedTypes.ColorDefaults colorDefaults) {
+        return new MyButtonIcon(b, isTemplate, colorDefaults);
+    }
+
+    protected class MyButtonIcon extends AquaButtonIcon {
+        protected final AbstractButton b;
+
+        public MyButtonIcon(AbstractButton b, boolean isTemplate, AquaButtonExtendedTypes.ColorDefaults colorDefaults) {
+            super(AquaIcon.getImageForIcon(b.getIcon()), isTemplate, colorDefaults);
+            this.b = b;
+        }
+
+        @Override
+        protected Color getExistingColor() {
+            return b.getForeground();
+        }
+
+        @Override
+        protected Key getRenderingKey() {
+            AquaButtonExtendedTypes.WidgetInfo info = getWidgetInfo(b);
+            State state = getState(b);
+            AquaUIPainter.ButtonState bs = getButtonState(b);
+            return new Key(info, state, bs);
+        }
+
+        @Override
+        protected boolean isNonexclusiveStyle(Key key) {
+            return shouldUseNonexclusiveStyle(b, key.getWidgetInfo());
         }
     }
 
     public Dimension getMinimumButtonSize(AbstractButton b) {
         Dimension d = new Dimension(10, 10);
-        LayoutConfiguration g = (LayoutConfiguration) b.getClientProperty(AquaButtonUI.LAYOUT_CONFIGURATION_PROPERTY);
+        LayoutConfiguration g = getLayoutConfiguration(b);
         if (g != null) {
             LayoutInfo layoutInfo = painter.getLayoutInfo().getLayoutInfo(g);
             int minimumWidth = (int) Math.ceil(layoutInfo.getMinimumVisualWidth());
@@ -285,7 +398,7 @@ public abstract class AquaButtonBorder extends AquaBorder implements BackgroundP
     }
 
     public Icon getSizingIcon(AbstractButton b) {
-        LayoutConfiguration g = (LayoutConfiguration) b.getClientProperty(AquaButtonUI.LAYOUT_CONFIGURATION_PROPERTY);
+        LayoutConfiguration g = getLayoutConfiguration(b);
         if (g instanceof ButtonLayoutConfiguration) {
             ButtonLayoutConfiguration bg = (ButtonLayoutConfiguration) g;
             AquaUIPainter.ButtonWidget widget = bg.getButtonWidget();
@@ -306,7 +419,7 @@ public abstract class AquaButtonBorder extends AquaBorder implements BackgroundP
     protected AquaButtonExtendedTypes.WidgetInfo getWidgetInfo(AbstractButton b) {
         Object widget = null;
 
-        LayoutConfiguration g = (LayoutConfiguration) b.getClientProperty(AquaButtonUI.LAYOUT_CONFIGURATION_PROPERTY);
+        LayoutConfiguration g = getLayoutConfiguration(b);
         if (g instanceof ButtonLayoutConfiguration) {
             widget = ((ButtonLayoutConfiguration) g).getButtonWidget();
         }
@@ -319,34 +432,11 @@ public abstract class AquaButtonBorder extends AquaBorder implements BackgroundP
     }
 
     /*
-     * Return the layout configuration for the button. They layout configuration is determined when the button is
-     * configured by the button UI. The button layout is presumed to be invalid at that time.
-     */
-    public LayoutConfiguration getLayoutConfiguration(AbstractButton b) {
-        Object widget = getButtonWidget(b);
-        Size size = AquaUtilControlSize.getUserSizeFrom(b);
-        if (widget instanceof AquaUIPainter.ButtonWidget) {
-            AquaUIPainter.ButtonWidget bw = (AquaUIPainter.ButtonWidget) widget;
-            AquaUIPainter.UILayoutDirection ld = AquaUtils.getLayoutDirection(b);
-            return new ButtonLayoutConfiguration(bw, size, ld);
-        }
-        if (widget instanceof AquaUIPainter.SegmentedButtonWidget) {
-            AquaUIPainter.SegmentedButtonWidget bw = (AquaUIPainter.SegmentedButtonWidget) widget;
-            return new SegmentedButtonLayoutConfiguration(bw, size, AquaUIPainter.Position.ONLY);
-        }
-        return null;
-    }
-
-    /*
      * Return the configuration for painting the button. The configuration is based on the current state of the button.
      */
     public Configuration getConfiguration(AbstractButton b, int width, int height) {
 
-        LayoutConfiguration g = (LayoutConfiguration) b.getClientProperty(AquaButtonUI.LAYOUT_CONFIGURATION_PROPERTY);
-        if (g == null) {
-            // should not happen
-            g = getLayoutConfiguration(b);
-        }
+        LayoutConfiguration g = getLayoutConfiguration(b);
 
         if (g instanceof ButtonLayoutConfiguration) {
             final AquaUIPainter.State state = getState(b);
@@ -367,13 +457,40 @@ public abstract class AquaButtonBorder extends AquaBorder implements BackgroundP
         return null;
     }
 
-    protected Object getButtonWidget(AbstractButton b) {
+    /*
+     * Return the layout configuration for the button. They layout configuration is determined when the button is
+     * configured by the button UI. The button layout is presumed to be invalid at that time.
+     */
+    public LayoutConfiguration getLayoutConfiguration(AbstractButton b) {
+        return (LayoutConfiguration) b.getClientProperty(AquaButtonUI.LAYOUT_CONFIGURATION_PROPERTY);
+    }
+
+    /*
+     * Determine the layout configuration for the button. They layout configuration is determined when the button is
+     * configured by the button UI. The button layout is presumed to be invalid at that time.
+     */
+    public LayoutConfiguration determineLayoutConfiguration(AbstractButton b) {
+        Object widget = getButtonWidget(b);
+        Size size = AquaUtilControlSize.getUserSizeFrom(b);
+        if (widget instanceof AquaUIPainter.ButtonWidget) {
+            AquaUIPainter.ButtonWidget bw = (AquaUIPainter.ButtonWidget) widget;
+            AquaUIPainter.UILayoutDirection ld = AquaUtils.getLayoutDirection(b);
+            return new ButtonLayoutConfiguration(bw, size, ld);
+        }
+        if (widget instanceof AquaUIPainter.SegmentedButtonWidget) {
+            AquaUIPainter.SegmentedButtonWidget bw = (AquaUIPainter.SegmentedButtonWidget) widget;
+            return new SegmentedButtonLayoutConfiguration(bw, size, AquaUIPainter.Position.ONLY);
+        }
+        return null;
+    }
+
+    public Object getButtonWidget(AbstractButton b) {
         return null;
     }
 
     @Override
     public Shape getFocusRingOutline(JComponent c) {
-        LayoutConfiguration g = (LayoutConfiguration) c.getClientProperty(AquaButtonUI.LAYOUT_CONFIGURATION_PROPERTY);
+        LayoutConfiguration g = getLayoutConfiguration((AbstractButton) c);
         if (g != null) {
             int width = c.getWidth();
             int height = c.getHeight();
@@ -432,7 +549,7 @@ public abstract class AquaButtonBorder extends AquaBorder implements BackgroundP
             return b.getModel().isSelected() ? ON : OFF;
         }
 
-        LayoutConfiguration g = (LayoutConfiguration) b.getClientProperty(AquaButtonUI.LAYOUT_CONFIGURATION_PROPERTY);
+        LayoutConfiguration g = getLayoutConfiguration(b);
         if (g instanceof ButtonLayoutConfiguration) {
             ButtonLayoutConfiguration bg = (ButtonLayoutConfiguration) g;
             if (bg.getButtonWidget() == AquaUIPainter.ButtonWidget.BUTTON_COLOR_WELL) {

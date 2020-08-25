@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015 Alan Snyder.
+ * Copyright (c) 2015-2016 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -57,6 +57,8 @@ import org.violetlib.jnr.LayoutInfo;
 import org.violetlib.jnr.aqua.*;
 import org.violetlib.jnr.aqua.AquaUIPainter.Size;
 
+import static org.violetlib.jnr.aqua.AquaUIPainter.PopupButtonWidget.*;
+
 // Inspired by MetalComboBoxUI, which also has a combined text-and-arrow button for noneditables
 public class AquaComboBoxUI extends BasicComboBoxUI implements AquaUtilControlSize.Sizeable, FocusRingOutlineProvider {
     public static ComponentUI createUI(final JComponent c) {
@@ -77,10 +79,10 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements AquaUtilControlSi
     private static OptionallyFocusableComponentHandler focusHandler = new MyOptionalFocusHandler();
 
     private int oldMaximumRowCount;
-
+    protected Size sizeVariant;
     protected Dimension cachedPreferredSize = new Dimension( 0, 0 );
-
     protected AquaComboBoxButton arrowButton;
+    protected HierarchyListener hierarchyListener;
 
     public void installUI(final JComponent c) {
         super.installUI(c);
@@ -113,9 +115,13 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements AquaUtilControlSi
 
         comboBox.putClientProperty(AquaFullKeyboardFocusableHandler.OPTIONAL_FOCUSABILITY_HANDLER_KEY, focusHandler);
         AquaFullKeyboardFocusableHandler.addListener(comboBox);
+        hierarchyListener = new MyHierarchyListener();
+        comboBox.addHierarchyListener(hierarchyListener);
     }
 
     protected void uninstallListeners() {
+        comboBox.removeHierarchyListener(hierarchyListener);
+        hierarchyListener = null;
         AquaUtilControlSize.removeSizePropertyListener(comboBox);
         AquaFullKeyboardFocusableHandler.removeListener(comboBox);
         super.uninstallListeners();
@@ -132,6 +138,16 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements AquaUtilControlSi
     protected void uninstallComponents() {
         getApplicator().removeFrom(comboBox);
         super.uninstallComponents();
+    }
+
+    private class MyHierarchyListener implements HierarchyListener {
+        @Override
+        public void hierarchyChanged(HierarchyEvent e) {
+            AquaComboBoxUI ui = AquaUtils.getUI(comboBox, AquaComboBoxUI.class);
+            if (ui != null) {
+                ui.configure(null);
+            }
+        }
     }
 
     private static class MyOptionalFocusHandler implements OptionallyFocusableComponentHandler {
@@ -242,15 +258,14 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements AquaUtilControlSi
         if (type == AquaComboBoxType.PULL_DOWN_MENU_BUTTON) {
             Object value = comboBox.getClientProperty(TITLE_CLIENT_PROPERTY_KEY);
             if (value != null) {
+                if (value instanceof Icon) {
+                    value = arrowButton.getIcon((Icon) value);
+                }
                 displayedItem = value;
             }
         } else {
             displayedItem = comboBox.getSelectedItem();
         }
-
-        // fake it out! not renderPressed
-        final Component c = renderer.getListCellRendererComponent(listBox, displayedItem, -1, false, false);
-        // System.err.println("Renderer: " + renderer);
 
         int top = 0;
         int left = 0;
@@ -268,10 +283,19 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements AquaUtilControlSi
             }
         }
 
+        if (padding != null) {
+            left += padding.left;
+            top += padding.top;
+            width -= padding.left;  // do not use right padding here, if we need the room we should use it
+            height -= padding.top;  // do not use bottom padding here, if we need the room we should use it
+        }
+
+        // fake it out! not renderPressed
+        Component c = renderer.getListCellRendererComponent(listBox, displayedItem, -1, false, false);
+        // System.err.println("Renderer: " + renderer);
         c.setFont(currentValuePane.getFont());
 
         Color foreground = arrowButton.getForeground();
-
         c.setForeground(foreground);
 
         // Sun Fix for 4238829: should lay out the JPanel.
@@ -280,27 +304,9 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements AquaUtilControlSi
             shouldValidate = true;
         }
 
-//        final int iconWidth = 0;
-//        final int cWidth = width - (insets.right + iconWidth);
-//
-//        // fix for 3156483 we need to crop images that are too big.
-//        // if (height > 18)
-//        // always crop.
-//        {
-//            top = height / 2 - 8;
-//            height = 19;
-//        }
-
         // It doesn't need to draw its background, we handled it
         final Color background = c.getBackground();
-            c.setBackground(new Color(0, 0, 0, 0));
-
-        if (padding != null) {
-            left += padding.left;
-            top += padding.top;
-            width -= padding.left + padding.right;
-            height -= padding.top + padding.bottom;
-        }
+        c.setBackground(new Color(0, 0, 0, 0));
 
         currentValuePane.paintComponent(g, c, comboBox, left, top, width, height, shouldValidate);
 
@@ -415,6 +421,23 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements AquaUtilControlSi
             if (comboBox.getParent() instanceof CellRendererPane) {
                 return;
             }
+
+            if (arrowButton != null) {
+                ComboBoxConfiguration bg = (ComboBoxConfiguration) arrowButton.getConfiguration();
+                if (bg.getState() == AquaUIPainter.State.INACTIVE) {
+                    AquaUIPainter.ComboBoxWidget w = bg.getWidget();
+                    if (w == AquaUIPainter.ComboBoxWidget.BUTTON_COMBO_BOX_TEXTURED || w == AquaUIPainter.ComboBoxWidget.BUTTON_COMBO_BOX_TEXTURED_TOOLBAR) {
+                        // Textured combo boxes change background color when inactive
+                        int width = editor.getWidth();
+                        int height = editor.getHeight();
+                        Color c = new Color(245, 245, 245);
+                        g.setColor(c);
+                        g.fillRect(0, 0, width, height);
+                        return;
+                    }
+                }
+            }
+
             super.paintBackgroundSafely(g);
         }
 
@@ -454,6 +477,13 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements AquaUtilControlSi
         AquaComboBoxEditor() {
             editor.addFocusListener(this);
             editor.getDocument().addDocumentListener(this);
+        }
+
+        public void configure(AquaUIPainter.ComboBoxWidget widget) {
+            if (editor instanceof AquaCustomComboTextField) {
+                AquaCustomComboTextField f = (AquaCustomComboTextField) editor;
+                f.configure(widget);
+            }
         }
 
         @Override
@@ -537,12 +567,14 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements AquaUtilControlSi
             });
         }
 
-        @Override
-        public void addNotify() {
-            super.addNotify();
-
-            if (!(comboBox.getParent() instanceof CellRendererPane)) {
-                requestFocusInWindow();
+        public void configure(AquaUIPainter.ComboBoxWidget widget) {
+            if (widget == AquaUIPainter.ComboBoxWidget.BUTTON_COMBO_BOX_CELL) {
+                setBackground(Color.WHITE);
+                setOpaque(true);
+            } else {
+                // On 10.11, a textured editable combo box has a gradient background. See TextEdit.
+                setBackground(new Color(0, 0, 0, 0));
+                setOpaque(false);
             }
         }
 
@@ -853,11 +885,39 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements AquaUtilControlSi
     };
 
     public void applySizeFor(JComponent c, Size size, boolean isDefaultSize) {
+        sizeVariant = size;
         if (isDefaultSize) {
             size = determineDefaultSize(size);
         }
 
         configure(size);
+    }
+
+    /**
+     * Return the effective size variant. The effective size variant may differ from the specified size variant if the
+     * selected style does not support the specified size variant.
+     */
+    public Size getSizeVariant() {
+        if (sizeVariant == null) {
+            return Size.REGULAR;
+        }
+
+        if (sizeVariant != Size.REGULAR) {
+            AbstractComboBoxLayoutConfiguration g = getLayoutConfiguration();
+            if (g != null) {
+                // TBD: ideally, should get this information from the LayoutInfo
+                Size size = g.getSize();
+                if (size == Size.MINI) {
+                    AquaUIPainter.PopupButtonWidget w = getPopupButtonWidget();
+                    if (w == BUTTON_POP_UP_SQUARE || w == BUTTON_POP_DOWN_SQUARE || w == BUTTON_POP_UP_CELL || w == BUTTON_POP_DOWN_CELL) {
+                        size = Size.SMALL;
+                    }
+                }
+                return size;
+            }
+        }
+
+        return sizeVariant;
     }
 
     protected Size determineDefaultSize(Size size) {
@@ -930,6 +990,17 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements AquaUtilControlSi
         isMinimumSizeDirty = false;
     }
 
+    // Overridden to use the proper renderer
+    @Override
+    protected Dimension getDefaultSize() {
+        ListCellRenderer r = comboBox.getRenderer();
+        if (r == null)  {
+            r = new DefaultListCellRenderer();
+        }
+        Dimension d = getSizeForComponent(r.getListCellRendererComponent(listBox, " ", -1, false, false));
+        return new Dimension(d.width, d.height);
+    }
+
     /**
      * Style related configuration affecting layout
      *
@@ -944,6 +1015,45 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements AquaUtilControlSi
         }
     }
 
+    /**
+     * Return the offset needed to align a popup menu item label with the combo box button label.
+     * @return the offset, or null if none.
+     */
+    public Point getPopupButtonLabelOffset() {
+        // For a pop up menu, the goal is for the menu item label to exactly overlay the combo box button label, at
+        // least in the case where our default renderer is used. The correction factors are based on a number of
+        // parameters, many of which are not currently accessible. We can get a good approximation with the following
+        // values.
+
+        // TBD: calculate exactly based on layout information
+
+        int labelXOffset = 0;
+        int labelYOffset = 0;
+
+        AquaComboBoxType type = getComboBoxType(comboBox);
+        if (type == AquaComboBoxType.POP_UP_MENU_BUTTON) {
+            labelXOffset -= 8;
+            labelYOffset = 1;
+
+            AquaUIPainter.PopupButtonWidget w = getPopupButtonWidget();
+            if (w != AquaUIPainter.PopupButtonWidget.BUTTON_POP_UP) {
+                labelXOffset -= 2;
+                labelYOffset = 2;
+            }
+        }
+
+        return labelXOffset != 0 || labelYOffset != 0 ? new Point(labelXOffset, labelYOffset) : null;
+    }
+
+    public AquaUIPainter.PopupButtonWidget getPopupButtonWidget() {
+        AbstractComboBoxLayoutConfiguration g = getLayoutConfiguration();
+        if (g instanceof PopupButtonLayoutConfiguration) {
+            PopupButtonLayoutConfiguration pg = (PopupButtonLayoutConfiguration) g;
+            return pg.getPopupButtonWidget();
+        }
+        return null;
+    }
+
     @SuppressWarnings("unchecked")
     static final RecyclableSingleton<ClientPropertyApplicator<JComboBox<?>, AquaComboBoxUI>> APPLICATOR = new
             RecyclableSingleton<ClientPropertyApplicator<JComboBox<?>, AquaComboBoxUI>>() {
@@ -956,6 +1066,9 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements AquaUtilControlSi
                             if (target.comboBox != null) target.comboBox.hidePopup();
                         }
                         if (target.listBox != null) target.listBox.repaint();
+                        if (target.comboBox != null) {
+                            target.comboBox.repaint();
+                        }
                     }
                 },
                 new Property<AquaComboBoxUI>("editable") {
@@ -995,7 +1108,11 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements AquaUtilControlSi
                 new Property<AquaComboBoxUI>(TITLE_CLIENT_PROPERTY_KEY) {
                     public void applyProperty(final AquaComboBoxUI target, final Object value) {
                         if (target.comboBox != null) {
-                            target.comboBox.repaint();
+                            AquaComboBoxType type = getComboBoxType(target.comboBox);
+                            if (type == AquaComboBoxType.PULL_DOWN_MENU_BUTTON) {
+                                target.comboBox.setPrototypeDisplayValue(value);
+                                target.comboBox.repaint();
+                            }
                         }
                     }
                 }

@@ -1,3 +1,11 @@
+/*
+ * Copyright (c) 2015 Alan Snyder.
+ * All rights reserved.
+ *
+ * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
+ * accompanying license terms.
+ */
+
 package org.violetlib.aqua;
 
 import java.awt.*;
@@ -7,7 +15,7 @@ import javax.swing.*;
 /**
  * Supports the behavior of a scroll pane using overlay scroll bars.
  */
-public abstract class AquaOverlayScrollPaneController {
+public class AquaOverlayScrollPaneController {
 
     protected final Timer deactivationTimer;
     protected final AnimationController fadeOutController;
@@ -142,7 +150,8 @@ public abstract class AquaOverlayScrollPaneController {
         }
     }
 
-    protected abstract void reconfigure(JScrollBar sb, String which);
+    protected void reconfigure(JScrollBar sb, String which) {
+    }
 
     /**
      * If there is an active (visible) scroll bar that is not already scheduled to be deactivated, schedule its

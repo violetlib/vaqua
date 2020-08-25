@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014-2015 Alan Snyder.
+ * Copyright (c) 2014-2016 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -26,10 +26,10 @@ import static org.violetlib.jnr.aqua.AquaUIPainter.SegmentedButtonWidget.BUTTON_
 public class AquaToggleButtonBorder extends AquaButtonBorder implements FocusRingOutlineProvider {
 
     @Override
-    protected final Object getButtonWidget(AbstractButton b) {
+    public final Object getButtonWidget(AbstractButton b) {
         boolean isOnToolbar = AquaButtonUI.isOnToolbar(b);
 
-        Object preferredWidget = isOnToolbar ? ButtonWidget.BUTTON_TEXTURED : BUTTON_SEGMENTED;
+        Object preferredWidget = isOnToolbar ? ButtonWidget.BUTTON_TEXTURED_TOOLBAR : BUTTON_SEGMENTED;
         if (isProposedButtonWidgetUsable(b, preferredWidget)) {
             return preferredWidget;
         }

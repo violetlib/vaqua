@@ -21,6 +21,7 @@ import javax.swing.event.TreeModelEvent;
 import javax.swing.event.TreeModelListener;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
+import javax.swing.tree.TreeNode;
 import javax.swing.tree.TreePath;
 import java.io.File;
 import java.util.*;
@@ -115,8 +116,12 @@ public class SidebarTreeModel extends DefaultTreeModel implements TreeModelListe
      * Update the user favorites subtree.
      */
     private void updateUserNode() {
+
+        // TBD: Avoid replacing valid nodes because that might alter the selection.
+        // Not important currently because we never update.
+
         List<Node> favorites = getUserFavorites();
-        replaceNodes(favoritesNode, favorites);
+        replaceNodes(favoritesNode, favorites, false);
     }
 
     /**
@@ -125,11 +130,15 @@ public class SidebarTreeModel extends DefaultTreeModel implements TreeModelListe
     private void updateDevicesNode() {
         Map<String,SystemItemInfo> volumes = readVolumes();
 
+        // Avoid replacing valid nodes because that might alter the selection
+
+        boolean[] someNodesUpdatedState = new boolean[1];
+
         List<SidebarViewToModelNode> devices = new ArrayList<>();
         FileSystemTreeModel.Node computerNode = this.computerNode;
         SystemItemInfo computerInfo = volumes.get("Computer");
         if (computerInfo != null && computerInfo.isVisible) {
-            devices.add(createDeviceNode(computerNode, -2, computerInfo.icon));
+            devices.add(createOrFindDeviceNode(computerNode, -2, computerInfo.icon, someNodesUpdatedState));
         }
 
         for (SystemItemInfo info : volumes.values()) {
@@ -137,60 +146,109 @@ public class SidebarTreeModel extends DefaultTreeModel implements TreeModelListe
                 String path = info.path;
                 if (path != null) {
                     File f = new File(path);
-                    devices.add(createDeviceNode(f, info.sequenceNumber, info.icon));
+                    SidebarViewToModelNode node = createOrFindDeviceNode(f, info.sequenceNumber, info.icon, someNodesUpdatedState);
+                    if (!devices.contains(node)) {
+                        devices.add(node);
+                    }
                 }
             }
         }
 
         Collections.sort(devices, new SideBarViewToModelNodeComparator());
-        replaceNodes(devicesNode, devices);
+        replaceNodes(devicesNode, devices, someNodesUpdatedState[0]);
     }
 
-    private SidebarViewToModelNode createDeviceNode(FileSystemTreeModel.Node modelNode, int sequenceNumber, Icon icon) {
-        return new SidebarViewToModelNode(modelNode, sequenceNumber, icon);
-    }
-
-    private SidebarViewToModelNode createDeviceNode(File f, int sequenceNumber, Icon icon) {
+    private SidebarViewToModelNode createOrFindDeviceNode(File f, int sequenceNumber, Icon icon,
+                                                          boolean[] updatedState) {
         TreePath tp = model.toPath(f, null);
         FileSystemTreeModel.Node modelNode = (FileSystemTreeModel.Node) tp.getLastPathComponent();
+        return createOrFindDeviceNode(modelNode, sequenceNumber, icon, updatedState);
+    }
+
+    private SidebarViewToModelNode createOrFindDeviceNode(FileSystemTreeModel.Node modelNode, int sequenceNumber,
+                                                          Icon icon, boolean[] updatedState) {
+        int count = devicesNode.getChildCount();
+        for (int index = 0; index < count; index++) {
+            TreeNode node = devicesNode.getChildAt(index);
+            if (node instanceof SidebarViewToModelNode) {
+                SidebarViewToModelNode n = (SidebarViewToModelNode) node;
+                if (n.getTarget() == modelNode) {
+                    if (!Objects.equals(n.icon, icon)) {
+                        updatedState[0] = true;
+                    }
+                    n.sequenceNumber = sequenceNumber;
+                    n.icon = icon;
+                    return n;
+                }
+            }
+        }
         return new SidebarViewToModelNode(modelNode, sequenceNumber, icon);
     }
 
-    private void replaceNodes(DefaultMutableTreeNode parent, List<? extends DefaultMutableTreeNode> nodes) {
-        int oldCount = parent.getChildCount();
-         if (oldCount > 0) {
-             int[] removedIndices = new int[oldCount];
-             Object[] removedChildren = new Object[oldCount];
-             for (int i = 0; i < oldCount; i++) {
-                 removedIndices[i] = i;
-                 removedChildren[i] = parent.getChildAt(i);
-             }
-             parent.removeAllChildren();
-             fireTreeNodesRemoved(
-               SidebarTreeModel.this,
-               parent.getPath(),
-               removedIndices,
-               removedChildren);
-         }
+    private void replaceNodes(DefaultMutableTreeNode parent,
+                              List<? extends DefaultMutableTreeNode> nodes,
+                              boolean someNodesPossiblyUpdated) {
+        List<DefaultMutableTreeNode> removedNodes = new ArrayList<>();
+        List<DefaultMutableTreeNode> insertedNodes = new ArrayList<>();
+        List<DefaultMutableTreeNode> changedNodes = new ArrayList<>();
+        List<Integer> removedIndexes = new ArrayList<>();
+        List<Integer> insertedIndexes = new ArrayList<>();
+        List<Integer> changedIndexes = new ArrayList<>();
 
-         if (nodes.size() > 0) {
-             int[] insertedIndices = new int[nodes.size()];
-             Object[] insertedChildren = new Object[nodes.size()];
-             for (int i = 0; i < nodes.size(); i++) {
-                 insertedIndices[i] = i;
-                 insertedChildren[i] = nodes.get(i);
-                 if (nodes.get(i) == null) {
-                     parent.add(new DefaultMutableTreeNode("null?"));
-                 } else {
-                     parent.add(nodes.get(i));
-                 }
-             }
-             fireTreeNodesInserted(
-               SidebarTreeModel.this,
-               parent.getPath(),
-               insertedIndices,
-               insertedChildren);
-         }
+        int oldCount = parent.getChildCount();
+        for (int index = 0; index < oldCount; index++) {
+            DefaultMutableTreeNode node = (DefaultMutableTreeNode) parent.getChildAt(index);
+            if (!(nodes.contains(node))) {
+                removedNodes.add(node);
+                removedIndexes.add(index);
+            } else {
+                changedNodes.add(node);
+                changedIndexes.add(nodes.indexOf(node));
+            }
+        }
+
+        int newCount = nodes.size();
+        for (int index = 0; index < newCount; index++) {
+            DefaultMutableTreeNode node = nodes.get(index);
+            if (node != null && !changedNodes.contains(node)) {
+                insertedNodes.add(node);
+                insertedIndexes.add(index);
+            }
+        }
+
+        if (!removedNodes.isEmpty() || !insertedNodes.isEmpty()) {
+            parent.removeAllChildren();
+            for (DefaultMutableTreeNode node : nodes) {
+                parent.add(node);
+            }
+        }
+
+        if (!removedNodes.isEmpty()) {
+            int[] indexes = new int[removedNodes.size()];
+            for (int i = 0; i < indexes.length; i++) {
+                indexes[i] = removedIndexes.get(i);
+            }
+            Object[] ns = removedNodes.toArray();
+            fireTreeNodesRemoved(SidebarTreeModel.this, parent.getPath(), indexes, ns);
+        }
+
+        if (!insertedNodes.isEmpty()) {
+            int[] indexes = new int[insertedNodes.size()];
+            for (int i = 0; i < indexes.length; i++) {
+                indexes[i] = insertedIndexes.get(i);
+            }
+            Object[] ns = insertedNodes.toArray();
+            fireTreeNodesInserted(SidebarTreeModel.this, parent.getPath(), indexes, ns);
+        }
+
+        if (someNodesPossiblyUpdated && !changedNodes.isEmpty()) {
+            int[] indexes = new int[changedNodes.size()];
+            for (int i = 0; i < indexes.length; i++) {
+                indexes[i] = changedIndexes.get(i);
+            }
+            Object[] ns = changedNodes.toArray();
+            fireTreeNodesChanged(SidebarTreeModel.this, parent.getPath(), indexes, ns);
+        }
     }
 
     private List<Node> getUserFavorites() {

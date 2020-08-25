@@ -1,5 +1,5 @@
 /*
- * Changes Copyright (c) 2015 Alan Snyder.
+ * Changes Copyright (c) 2015-2016 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -43,10 +43,12 @@ import javax.swing.plaf.UIResource;
 
 import org.violetlib.jnr.Painter;
 import org.violetlib.jnr.aqua.*;
+import org.violetlib.jnr.aqua.AquaUIPainter.ComboBoxWidget;
 import org.violetlib.jnr.aqua.AquaUIPainter.PopupButtonWidget;
 import org.violetlib.jnr.aqua.AquaUIPainter.Size;
 import org.violetlib.jnr.aqua.AquaUIPainter.State;
 
+import static org.violetlib.jnr.aqua.AquaUIPainter.ComboBoxWidget.*;
 import static org.violetlib.jnr.aqua.AquaUIPainter.PopupButtonWidget.*;
 
 @SuppressWarnings("serial") // Superclass is not serializable across versions
@@ -70,6 +72,9 @@ class AquaComboBoxButton extends JButton {
     protected String style;
     protected Size sizeVariant;
     protected boolean isRollover;
+
+    protected ImageIcon lastTestedIcon;
+    protected boolean lastTestedIconIsTemplate;
 
     @SuppressWarnings("serial") // anonymous class
     protected AquaComboBoxButton(final AquaComboBoxUI ui,
@@ -135,6 +140,10 @@ class AquaComboBoxButton extends JButton {
                 }
             }
 
+            if ("textured".equals(style) && isOnToolbar(comboBox)) {
+                style = "textured-onToolbar";
+            }
+
             this.style = style;
         }
 
@@ -151,8 +160,13 @@ class AquaComboBoxButton extends JButton {
         AquaUIPainter.UILayoutDirection ld = AquaUtils.getLayoutDirection(comboBox);
 
         if (isEditable) {
-            AquaUIPainter.ComboBoxWidget widget = getComboBoxWidget();
+            ComboBoxWidget widget = getComboBoxWidget();
             layoutConfiguration = new ComboBoxLayoutConfiguration(widget, sizeVariant, ld);
+            ComboBoxEditor editor = comboBox.getEditor();
+            if (editor instanceof AquaComboBoxUI.AquaComboBoxEditor) {
+                AquaComboBoxUI.AquaComboBoxEditor e = (AquaComboBoxUI.AquaComboBoxEditor) editor;
+                e.configure(widget);
+            }
         } else {
             PopupButtonWidget widget = getPopupButtonWidget();
             sizeVariant = canonicalize(sizeVariant, widget);
@@ -215,15 +229,33 @@ class AquaComboBoxButton extends JButton {
         }
     }
 
-    protected AquaUIPainter.ComboBoxWidget getComboBoxWidget() {
-        boolean isCell = cellEditorPolicy.isCellEditor(comboBox);
-        return isCell ? AquaUIPainter.ComboBoxWidget.BUTTON_COMBO_BOX_CELL : AquaUIPainter.ComboBoxWidget.BUTTON_COMBO_BOX;
+    protected ComboBoxWidget getComboBoxWidget() {
+        if (cellEditorPolicy.isCellEditor(comboBox)) {
+            return BUTTON_COMBO_BOX_CELL;
+        }
+
+        if (style != null) {
+            switch (style) {
+                case "tableHeader":
+                case "cell":
+                case "borderless":
+                    return BUTTON_COMBO_BOX_CELL;
+                case "textured":
+                    return BUTTON_COMBO_BOX_TEXTURED;
+                case "textured-onToolbar":
+                    return BUTTON_COMBO_BOX_TEXTURED_TOOLBAR;
+            }
+        }
+
+        if (isOnToolbar(comboBox)) {
+            return BUTTON_COMBO_BOX_TEXTURED_TOOLBAR;
+        }
+
+        return BUTTON_COMBO_BOX;
     }
 
     protected PopupButtonWidget getPopupButtonWidget() {
-        boolean isCell = cellEditorPolicy.isCellEditor(comboBox);
-
-        if (isCell) {
+        if (cellEditorPolicy.isCellEditor(comboBox)) {
             return isPopDown ? BUTTON_POP_DOWN_CELL : BUTTON_POP_UP_CELL;
         }
 
@@ -247,15 +279,36 @@ class AquaComboBoxButton extends JButton {
                     return isPopDown ? BUTTON_POP_DOWN_RECESSED : BUTTON_POP_UP_RECESSED;
                 case "textured":
                     return isPopDown ? BUTTON_POP_DOWN_TEXTURED : BUTTON_POP_UP_TEXTURED;
+                case "textured-onToolbar":
+                    return isPopDown ? BUTTON_POP_DOWN_TEXTURED_TOOLBAR : BUTTON_POP_UP_TEXTURED_TOOLBAR;
                 case "gradient":
                     return isPopDown ? BUTTON_POP_DOWN_GRADIENT : BUTTON_POP_UP_GRADIENT;
             }
         }
+
+        if (isOnToolbar(comboBox)) {
+            return isPopDown ? BUTTON_POP_DOWN_TEXTURED_TOOLBAR : BUTTON_POP_UP_TEXTURED_TOOLBAR;
+        }
+
         return isPopDown ? BUTTON_POP_DOWN : BUTTON_POP_UP;
     }
 
-    public Color getForeground() {
+    public static boolean isOnToolbar(JComboBox b) {
+        Component parent = b.getParent();
+        while (parent != null) {
+            if (parent instanceof JToolBar) {
+                return true;
+            }
+            parent = parent.getParent();
+        }
+        return false;
+    }
 
+    public Color getForeground() {
+        return getForeground(false);
+    }
+
+    protected Color getForeground(boolean isIcon) {
         if (comboBox == null) {
             return super.getForeground();
         }
@@ -265,10 +318,7 @@ class AquaComboBoxButton extends JButton {
             Object widget = getWidget(getLayoutConfiguration());
             AquaButtonExtendedTypes.WidgetInfo info = AquaButtonExtendedTypes.getWidgetInfo(widget);
             State state = getState();
-            if (state == State.INACTIVE) {
-                state = State.ACTIVE;   // foreground color does not change when inactive
-            }
-            Color c = info.getForeground(state, AquaUIPainter.ButtonState.STATELESS, colorDefaults);
+            Color c = info.getForeground(state, AquaUIPainter.ButtonState.STATELESS, colorDefaults, false, isIcon);
             if (c != null) {
                 return c;
             }
@@ -277,9 +327,56 @@ class AquaComboBoxButton extends JButton {
         return existingColor;
     }
 
+    /**
+     * Modify the title icon if necessary based on the combo box (button) style and state.
+     * @param icon The supplied icon.
+     * @return the icon to use.
+     */
+    public Icon getIcon(Icon icon) {
+        State st = getState();
+
+        if (icon instanceof ImageIcon) {
+            ImageIcon ii = (ImageIcon) icon;
+            if (isTemplateIconEnabled(ii)) {
+                Color color = getForeground(true);
+                if (color != null) {
+                    Image im = ii.getImage();
+                    im = AquaImageFactory.createImageFromTemplate(im, color);
+                    if (im != null) {
+                        return new ImageIconUIResource(im);
+                    }
+                }
+            }
+        }
+
+        if (st == State.PRESSED) {
+            return AquaIcon.createPressedDarkIcon(icon);
+        }
+        if (st == State.DISABLED || st == State.DISABLED_INACTIVE) {
+            return AquaIcon.createDisabledLightIcon(icon);
+        }
+
+        return icon;
+    }
+
+    private boolean isTemplateIconEnabled(ImageIcon ii) {
+        if (ii == lastTestedIcon) {
+            return lastTestedIconIsTemplate;
+        }
+        lastTestedIcon = ii;
+        lastTestedIconIsTemplate = AquaImageFactory.isTemplateImage(ii.getImage());
+        return lastTestedIconIsTemplate;
+    }
+
     protected State getState() {
+        boolean isActive = AquaFocusHandler.isActive(comboBox);
+
         if (!comboBox.isEnabled()) {
-            return AquaFocusHandler.isActive(comboBox) ? State.DISABLED : State.DISABLED_INACTIVE;
+            return isActive ? State.DISABLED : State.DISABLED_INACTIVE;
+        }
+
+        if (!isActive) {
+            return State.INACTIVE;
         }
 
         ButtonModel model = getModel();
@@ -291,7 +388,7 @@ class AquaComboBoxButton extends JButton {
             return State.ROLLOVER;
         }
 
-        return AquaFocusHandler.isActive(comboBox) ? State.ACTIVE : State.INACTIVE;
+        return State.ACTIVE;
     }
 
     @Override
@@ -356,7 +453,7 @@ class AquaComboBoxButton extends JButton {
     }
 
     static class AquaComboBoxHierarchyListener implements HierarchyListener {
-        // A hierarchy change may indicate a change in the combo box style (cell or not).
+        // A hierarchy change may indicate a change in the combo box style (cell or not or toolbar or not)
         public void hierarchyChanged(HierarchyEvent ev) {
             if ((ev.getChangeFlags() & HierarchyEvent.PARENT_CHANGED) != 0) {
                 Object o = ev.getSource();

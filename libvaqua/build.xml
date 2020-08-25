@@ -28,6 +28,12 @@
 		<javah class="org.violetlib.aqua.AquaUtils"
            classpath="/Users/alan/build/working/VAqua/classes"
            destdir="."/>
+		<javah class="org.violetlib.aqua.AquaVibrantSupport"
+           classpath="/Users/alan/build/working/VAqua/classes"
+           destdir="."/>
+		<javah class="org.violetlib.aqua.AquaSheetSupport"
+           classpath="/Users/alan/build/working/VAqua/classes"
+           destdir="."/>
 	</target>
 
 	<target name="libvaqua" depends="headers">

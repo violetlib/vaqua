@@ -2,7 +2,7 @@
  * @(#AquaFileChooserUI.java
  *
  * Copyright (c) 2011-2013 Werner Randelshofer, Switzerland.
- * Copyright (c) 2014-2015 Alan Snyder.
+ * Copyright (c) 2014-2016 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the
@@ -20,7 +20,6 @@ import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.File;
 import java.io.IOException;
-import java.lang.reflect.Constructor;
 import java.util.*;
 import javax.swing.*;
 import javax.swing.border.Border;
@@ -36,7 +35,6 @@ import javax.swing.tree.DefaultTreeSelectionModel;
 import javax.swing.tree.TreeNode;
 import javax.swing.tree.TreePath;
 
-import com.apple.laf.*;
 import org.violetlib.aqua.*;
 import org.violetlib.aqua.AquaGroupBorder;
 import org.violetlib.aqua.AquaOptionPaneUI;
@@ -292,7 +290,7 @@ public class AquaFileChooserUI extends BasicFileChooserUI {
         pane.setComponentOrientation(parent.getComponentOrientation());
         dialog.setContentPane(pane);
         dialog.pack();
-        AquaUtils.displayAsSheet(dialog, null);
+        AquaSheetSupport.displayAsSheet(dialog, null);
         //dialog.setVisible(true);
     }
 
@@ -485,7 +483,7 @@ public class AquaFileChooserUI extends BasicFileChooserUI {
 
         super.installUI(c);
 
-        installSelectedView(true);
+        installSelectedView(false, true);
     }
 
     private class NavigationPanel extends JToolBar {
@@ -875,7 +873,7 @@ public class AquaFileChooserUI extends BasicFileChooserUI {
 
         filterComboBoxModel = createFilterComboBoxModel();
         filterComboBox.setModel(filterComboBoxModel);
-        filterComboBox.setRenderer(createFilterComboBoxRenderer());
+        filterComboBox.setRenderer(createFilterComboBoxRenderer(filterComboBox));
         // Model and Renderer assignment
 
         // Listener assignment
@@ -1154,14 +1152,16 @@ public class AquaFileChooserUI extends BasicFileChooserUI {
         if (mode == ViewModeControl.COLUMN_VIEW || listView != null && mode == ViewModeControl.LIST_VIEW) {
             if (mode != viewMode) {
                 viewMode = mode;
-                installSelectedView(false);
-                activeView.requestFocusInWindow();
+                installSelectedView(false, false);
+                if (activeView != null) {
+                    activeView.requestFocusInWindow();
+                }
             }
         }
     }
 
-    private void installSelectedView(boolean forceReconfigure) {
-        if (!fc.isShowing()) {
+    private void installSelectedView(boolean forceInstall, boolean forceReconfigure) {
+        if (!fc.isShowing() && !forceInstall) {
             isViewInstalled = false;
         } else {
             isViewInstalled = true;
@@ -1759,11 +1759,10 @@ public class AquaFileChooserUI extends BasicFileChooserUI {
     /**
      * Update a model after a change in the file chooser configuration that might impact the model.
      */
-
     private void updateModel() {
         model.invalidateAll();
 
-        if (fc.isShowing()) {
+        if (fc.isShowing() && activeView != null) {
             reconfigureView();
             java.util.List<TreePath> oldSelection = activeView.getSelection();
             java.util.List<TreePath> newSelection = getNormalizedUISelection();
@@ -2411,13 +2410,22 @@ public class AquaFileChooserUI extends BasicFileChooserUI {
      */
     static class DirectoryComboBoxRenderer extends AquaComboBoxRendererInternal {
 
-        private Border border = new EmptyBorder(1, 0, 1, 0);
         IndentIcon ii = new IndentIcon();
         private JSeparator separator = new JSeparator();
 
         public DirectoryComboBoxRenderer(JComboBox cb) {
             super(cb);
             separator.setPreferredSize(new Dimension(9, 9));
+        }
+
+        @Override
+        public Insets getInsets(Insets insets) {
+            Insets s = super.getInsets(insets);
+            if (fInList) {
+                s.top++;
+                s.bottom++;
+            }
+            return s;
         }
 
         @Override
@@ -2453,7 +2461,6 @@ public class AquaFileChooserUI extends BasicFileChooserUI {
             }
             ii.depth = 0;
             setIcon(ii);
-            setBorder(border);
             return this;
         }
     }
@@ -2675,28 +2682,29 @@ public class AquaFileChooserUI extends BasicFileChooserUI {
     //
     // Renderer for Types ComboBox
     //
-    protected FilterComboBoxRenderer createFilterComboBoxRenderer() {
-        return new FilterComboBoxRenderer();
+    protected FilterComboBoxRenderer createFilterComboBoxRenderer(JComboBox cb) {
+        return new FilterComboBoxRenderer(cb);
     }
 
     /**
      * Render different type sizes and styles.
      */
-    protected static class FilterComboBoxRenderer extends DefaultListCellRenderer {
+    protected static class FilterComboBoxRenderer extends AquaComboBoxRendererInternal {
 
-        private Border border = new EmptyBorder(1, 0, 1, 0);
+        public FilterComboBoxRenderer(JComboBox cb) {
+            super(cb);
+        }
 
         @Override
         public Component getListCellRendererComponent(JList list,
                 Object value, int index, boolean isSelected,
                 boolean cellHasFocus) {
 
-            super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
-
             if (value != null && value instanceof FileFilter) {
-                setText(((FileFilter) value).getDescription());
+                value = ((FileFilter) value).getDescription();
             }
-            setBorder(border);
+
+            super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
 
             return this;
         }
@@ -2767,19 +2775,25 @@ public class AquaFileChooserUI extends BasicFileChooserUI {
               code, so I guess it is too late to change except as a configurable option.
             */
 
-            FileFilter currentFilter = fc.getFileFilter();
-            boolean found = false;
-            if (currentFilter != null) {
-                for (int i = 0; i < filters.length; i++) {
-                    if (filters[i] == currentFilter) {
-                        found = true;
+            // If no list of choosable filters is currently displayable, then we do not want to start displaying one.
+
+            FileFilter[] filters = fc.getChoosableFileFilters();
+            if (filters.length > 1) {
+                FileFilter currentFilter = fc.getFileFilter();
+                boolean found = false;
+                if (currentFilter != null) {
+                    for (int i = 0; i < filters.length; i++) {
+                        if (filters[i] == currentFilter) {
+                            found = true;
+                        }
+                    }
+                    if (!found) {
+                        // Here we want to respond to a change event
+                        fc.addChoosableFileFilter(currentFilter);
                     }
                 }
-                if (!found) {
-                    // Here we want to respond to a change event
-                    fc.addChoosableFileFilter(currentFilter);
-                }
             }
+
             return fc.getFileFilter();
         }
 
@@ -3318,21 +3332,14 @@ public class AquaFileChooserUI extends BasicFileChooserUI {
     }
 
     protected void configureForShowing() {
-        installSelectedView(true);
+        installSelectedView(true, true);
 
-        // invokeLater is a workaround for a bug in Java 1.6 (fixed in Java 1.7)
-        // without it, the focus system goes into a limbo state
-
-        SwingUtilities.invokeLater(new Runnable() {
-            public void run() {
-                if (fileNameTextField != null && isFileNameFieldVisible()) {
-                    fileNameTextField.selectAll();
-                    fileNameTextField.requestFocusInWindow();
-                } else {
-                    activeView.requestFocusInWindow();
-                }
-            }
-        });
+        if (fileNameTextField != null && isFileNameFieldVisible()) {
+            fileNameTextField.selectAll();
+            fileNameTextField.requestFocusInWindow();
+        } else {
+            activeView.requestFocusInWindow();
+        }
 
         if (model != null) {
             model.setAutoValidate(UIManager.getBoolean("FileChooser.autovalidate"));
