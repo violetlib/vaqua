@@ -9,7 +9,10 @@
 package org.violetlib.aqua;
 
 import java.awt.*;
-import java.awt.image.*;
+import java.awt.image.BufferedImage;
+import java.awt.image.ImageFilter;
+import java.awt.image.ImageObserver;
+import java.awt.image.ImageProducer;
 import java.util.function.Function;
 
 /**

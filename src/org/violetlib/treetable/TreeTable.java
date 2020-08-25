@@ -20,8 +20,8 @@ import java.awt.event.MouseEvent;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.util.AbstractMap.SimpleEntry;
-import java.util.*;
 import java.util.List;
+import java.util.*;
 import javax.swing.*;
 import javax.swing.RowSorter.SortKey;
 import javax.swing.border.Border;
@@ -143,12 +143,12 @@ public class TreeTable extends JComponent implements Scrollable {
         super.setUI(ui);
         tree = getUI().getTreeInterface(this);
         table = getUI().getTableInterface(this);
-//		if (columnModel == null) {
-//			columnModel = table.getColumnModel();
-//			int hc = getTreeColumnModel().getHierarchicalColumn();
-//			if (hc >= 0)
-//				columnModel.getColumn(hc).setPreferredWidth(150);
-//		}
+//      if (columnModel == null) {
+//          columnModel = table.getColumnModel();
+//          int hc = getTreeColumnModel().getHierarchicalColumn();
+//          if (hc >= 0)
+//              columnModel.getColumn(hc).setPreferredWidth(150);
+//      }
         getSelectionModel().addTreeSelectionListener(adapter);
         table.addPropertyChangeListener(adapter);
         tree.addPropertyChangeListener(adapter);
@@ -263,7 +263,6 @@ public class TreeTable extends JComponent implements Scrollable {
 
     private void updateUIEditors() {
         // TODO
-
     }
 
     public void processTreeExpansion(TreePath path, int rowsAdded) {
@@ -528,7 +527,6 @@ public class TreeTable extends JComponent implements Scrollable {
             fireTreeTableMouseMotionEvent(e);
         super.processMouseMotionEvent(e);
     }
-
 
     private void fireTreeTableMouseMotionEvent(MouseEvent e) {
         TreeTableMouseEvent evt = new TreeTableMouseEvent(this, e);
@@ -1262,6 +1260,7 @@ public class TreeTable extends JComponent implements Scrollable {
     public void setToggleClickCount(int clickCount) {
         tree.setToggleClickCount(clickCount);
     }
+
     public int getToggleClickCount() {
         return tree.getToggleClickCount();
     }
@@ -1751,8 +1750,8 @@ public class TreeTable extends JComponent implements Scrollable {
         }
 
         // TODO, maybe add these?
-        //		public void treeColumnAdded(TreeColumnModelEvent e);
-        //		public void treeColumnRemoved(TreeColumnModelEvent e);
+        //  public void treeColumnAdded(TreeColumnModelEvent e);
+        //  public void treeColumnRemoved(TreeColumnModelEvent e);
 
         // TreeModelListener interface
 
@@ -1928,7 +1927,6 @@ public class TreeTable extends JComponent implements Scrollable {
             fireTreeNodesInserted(path, childIndices, childNodes);
         }
 
-
         private void processTreeNodesRemoved(TreePath path, int[] childIndices, Object[] childNodes) {
             if (rowSorter != null) {
                 RowSorter<?> sorter = rowSorter.getRowSorter(path.getLastPathComponent());
@@ -2005,7 +2003,7 @@ public class TreeTable extends JComponent implements Scrollable {
                     lastRow, TableModelEvent.ALL_COLUMNS, eventType));
             if (eventType != TableModelEvent.DELETE && getRowHeight() <= 0) {
                 // tree view has already updated the node bounds
-//				invalidateRows(firstRow, lastRow);
+//              invalidateRows(firstRow, lastRow);
                 updateTableRowHeights(firstRow, lastRow+1);
             }
         }
@@ -2368,7 +2366,7 @@ public class TreeTable extends JComponent implements Scrollable {
         // TreeTableSorterListener Interface
 
         public void sorterChanged(TreeTableSorterEvent e) {
-//			System.out.print(e.getType().name());
+//          String debugMessage = e.getType().name();
             switch (e.getType()) {
             case SORT_ORDER_CHANGED:
                 JTableHeader header = getTableHeader();
@@ -2382,11 +2380,11 @@ public class TreeTable extends JComponent implements Scrollable {
                     updateTableRowHeights();
                 break;
             case NODE_SORTED:
-//				System.out.print(" " + e.getTreePath() + " " + ignoreSortedChange);
+//              debugMessage = debugMessage + " " + e.getTreePath() + " " + ignoreSortedChange);
                 nodeSorted(e.getTreePath());
                 break;
             }
-//			System.out.println();
+//          AquaUtils.logDebug(debugMessage);
         }
 
         private void nodeSorted(TreePath path) {
@@ -2948,7 +2946,6 @@ public class TreeTable extends JComponent implements Scrollable {
             setDropLocation(null);
             dtde.rejectDrag();
         }
-
     }
 
     private class DT extends DropTarget {

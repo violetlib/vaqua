@@ -1,10 +1,7 @@
 /*
- * @(#)OSXFile.java
- *
  * Copyright (c) 2009-2013 Werner Randelshofer, Switzerland.
- * Copyright (c) 2014-2018 Alan Snyder.
- * You may not use, copy or modify this file, except in compliance with the
- * accompanying license terms.
+ * Copyright (c) 2014-2019 Alan Snyder.
+ * You may not use, copy or modify this file, except in compliance with the accompanying license terms.
  */
 
 package org.violetlib.aqua.fc;
@@ -12,8 +9,7 @@ package org.violetlib.aqua.fc;
 import java.awt.*;
 import java.io.*;
 import java.nio.charset.Charset;
-import java.util.ArrayList;
-import java.util.Date;
+import java.util.*;
 import java.util.List;
 import javax.swing.*;
 
@@ -23,10 +19,7 @@ import org.violetlib.aqua.*;
 import org.violetlib.aqua.AquaUtils.RecyclableSingleton;
 
 /**
- * Provides access to Mac OS X file meta data and can resolve file aliases.
- *
- * @author Werner Randelshofer
- * @version $Id$
+ * Provides access to Mac OS X file metadata and icons and can resolve file aliases.
  */
 public class OSXFile {
 
@@ -34,15 +27,6 @@ public class OSXFile {
     public final static int FILE_TYPE_DIRECTORY = 1;
     public final static int FILE_TYPE_FILE = 0;
     public final static int FILE_TYPE_UNKNOWN = -1;
-
-    /**
-     * This array holds the colors used for drawing the gradients of a file label.
-     */
-    private static volatile Color[][] labelColors;
-
-    private static String computerModel;
-    private static boolean computerModelInitialized;
-    private static ImageIcon computerSidebarIcon;
 
     private static final int kLSItemInfoIsPlainFile        = 0x00000001; /* Not a directory, volume, or symlink*/
     private static final int kLSItemInfoIsPackage          = 0x00000002; /* Packaged directory*/
@@ -72,9 +56,9 @@ public class OSXFile {
         private final boolean shouldConvertToTemplate;
 
         public RecyclableFileIcon(@NotNull File file, boolean shouldConvertToTemplate) {
-             this.file = file;
-             this.shouldConvertToTemplate = shouldConvertToTemplate;
-         }
+            this.file = file;
+            this.shouldConvertToTemplate = shouldConvertToTemplate;
+        }
 
         public RecyclableFileIcon(@NotNull String path, boolean shouldConvertToTemplate) {
             this.file = new File(path);
@@ -195,19 +179,19 @@ public class OSXFile {
     public static @NotNull File getAbsoluteFile(@NotNull File f) {
         if (!f.isAbsolute()) {
             f = new File(AquaUtils.getProperty("user.home") + File.separatorChar + f.getPath());
+        }
 
-        } // Windows does not support relative path segments, so we quit here
+        // Windows does not support relative path segments, so we quit here
         if (File.separatorChar == '\\') {
             return f;
+        }
 
-        } // The following code assumes that absolute paths start with a
-        // File.separatorChar.
+        // The following code assumes that absolute paths start with a File.separatorChar.
         StringBuffer buf = new StringBuffer(f.getPath().length());
 
         int skip = 0;
 
-        for (File i = f; i
-                != null; i = i.getParentFile()) {
+        for (File i = f; i != null; i = i.getParentFile()) {
             String name = i.getName();
             if (name.equals(".")) {
                 if (skip > 0) {
@@ -391,77 +375,6 @@ public class OSXFile {
     }
 
     /**
-     * Return the icon image for a file.
-     * @param file The file.
-     * @param size The desired icon size.
-     * @param useQuickLook If true, an icon based on the Quick Look preview will be returned. If false, the Launch
-     * Services icon for the file wil be returned. Note that obtaining a Quick Look preview image can take a long time.
-     * @throws UnsupportedOperationException if an image cannot be obtained.
-     */
-    public static @NotNull Image getIconImage(@Nullable File file, int size, boolean useQuickLook) throws UnsupportedOperationException {
-        if (isNativeCodeAvailable() && file != null) {
-            FileIconCreator c = new FileIconCreator(file, size, useQuickLook, true);
-            return c.getImage();
-        }
-
-        // TBD: return a default image
-        throw new UnsupportedOperationException();
-    }
-
-    /**
-     * Return the Quick Look thumbnail image for a file.
-     * @param file The file.
-     * @param size The desired image size.
-     * @throws UnsupportedOperationException if an image cannot be obtained.
-     */
-    public static @NotNull Image getThumbnailImage(@Nullable File file, int size) throws UnsupportedOperationException {
-        if (isNativeCodeAvailable() && file != null) {
-            FileIconCreator c = new FileIconCreator(file, size, true, false);
-            return c.getImage();
-        }
-
-        throw new UnsupportedOperationException();
-    }
-
-    /**
-     * Render the system icon for a file.
-     * This renderer should be invoked on a background thread.
-     */
-    private static class FileIconCreator {
-        private final File file;
-        private final int size;
-        private final boolean useQuickLook;
-        private final boolean useIconMode;
-        private Image result;
-
-        public FileIconCreator(@NotNull File file, int size, boolean useQuickLook, boolean useIconMode) {
-            this.file = file;
-            this.size = size;
-            this.useQuickLook = useQuickLook;
-            this.useIconMode = useIconMode;
-        }
-
-        public @NotNull Image getImage() {
-            if (result == null) {
-                String path = file.getAbsolutePath();
-                int[][] buffers = new int[2][];
-                if (!nativeRenderFileImage(path, useQuickLook, useIconMode, buffers, size, size)) {
-                    if (AquaImageFactory.debugNativeRendering) {
-                        System.err.println("Failed to render image for " + path);
-                    }
-                    throw new UnsupportedOperationException();
-                }
-
-                if (AquaImageFactory.debugNativeRendering) {
-                    System.err.println("Rendered image for " + path);
-                }
-                result = AquaMultiResolutionImage.createImage(size, size, buffers[0], buffers[1]);
-            }
-            return result;
-        }
-    }
-
-    /**
      * Returns the kind string of the specified file. The description is
      * localized in the current Locale of the Finder.
      *
@@ -473,6 +386,33 @@ public class OSXFile {
         } else {
             return null;
         }
+    }
+
+    private static Set<String> imageFileExtensions = new HashSet<>(Arrays.asList("gif",
+            "jpg",
+            "jpeg",
+            "png"));
+
+    /**
+     * Indicate whether the specified file is a known type of image file.
+     */
+    public static boolean isImageFile(@NotNull File file) {
+        // The intent is to recognize image files that NSImage can render.
+
+        if (isNativeCodeAvailable()) {
+            String uti = nativeGetFileUTI(file.getAbsolutePath());
+            if (uti != null) {
+                // TBD: match against UTIs returned by NSImage.imageTypes
+            }
+        }
+
+        String name = file.getName();
+        int pos = name.lastIndexOf('.');
+        if (pos >= 0) {
+            String ext = name.substring(pos+1).toLowerCase();
+            return imageFileExtensions.contains(ext);
+        }
+        return false;
     }
 
     /**
@@ -538,7 +478,7 @@ public class OSXFile {
                       Special case: the program wants to see volumes as directories.
                     */
 
-                    return true;
+                return true;
 
             } else {
                 return false;
@@ -567,7 +507,7 @@ public class OSXFile {
             return true;
 
         } else if (isSavedSearch(f)) {
-           return true;
+            return true;
         }
 
         return false;
@@ -828,8 +768,7 @@ public class OSXFile {
                 return lastResults;
             }
             lastSeed = (Integer) data[0];
-            // debug
-            //System.err.println("Updating " + name + " #" + lastSeed);
+            //AquaUtils.logDebug("Updating " + name + " #" + lastSeed);
             int sequence = 0;
             List<SystemItemInfo> result = new ArrayList<>();
             for (int i = 1; i < data.length; i += 6) {
@@ -852,8 +791,7 @@ public class OSXFile {
                         SystemItemInfo info = new SystemItemInfo(name, path, sequence++, isVisible, id, icon);
                         result.add(info);
                     } else {
-                        // debug
-                        System.err.println("Skipping " + name);
+                        AquaUtils.logDebug("Skipping " + name);
                     }
                 }
             }
@@ -866,8 +804,8 @@ public class OSXFile {
     public static final int SIDEBAR_VOLUMES = 1;
 
     private static final SharedFileList[] sharedFileLists = new SharedFileList[] {
-        new SharedFileList(0, "Sidebar Favorites"),
-        new SharedFileList(1, "Sidebar Volumes")
+            new SharedFileList(0, "Sidebar Favorites"),
+            new SharedFileList(1, "Sidebar Volumes")
     };
 
     /**
@@ -950,6 +888,8 @@ public class OSXFile {
      */
     private static native @Nullable String nativeGetDisplayName(String path);
 
+    private static native @Nullable String nativeGetFileUTI(String path);
+
     /**
      * Return the time of last use, as recorded by Launch Services. Called the "Date Last Opened" by Finder.
      */
@@ -965,18 +905,4 @@ public class OSXFile {
     private static native @Nullable String[] nativeExecuteSavedSearch(String path);
 
     private static native @Nullable Object[] nativeGetSidebarFiles(int which, int iconSize, int lastSeed);
-
-    /**
-     * Obtain the icon or QuickLook image for a file.
-     *
-     * @param path the path to the file.
-     * @param isQuickLook True to get the QuickLook image, false to get the file icon.
-     * @param useIconMode True to use Icon mode when using Quick Look, false otherwise.
-     * @param buffers 1x and 2x rasters stored are here (2x is optional)
-     * @param w The width of the image.
-     * @param h The height of the image.
-     * @return true if successful, false otherwise.
-     */
-    private static native boolean nativeRenderFileImage(@NotNull String path, boolean isQuickLook,
-                                                        boolean useIconMode, int[][] buffers, int w, int h);
 }

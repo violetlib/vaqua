@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014-2015 Alan Snyder.
+ * Copyright (c) 2014-2019 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -11,38 +11,41 @@ package org.violetlib.aqua;
 import java.awt.*;
 import javax.swing.*;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
 /**
  * A base class for a component that paints an overlay over a base component. The overlay tracks the base component as
  * it moves, changes visibility, or is scrolled in or out of view.
  */
 public abstract class OverlayPainterComponent extends JComponent {
-    protected final Insets margins;
-    private final Integer layer;
+    protected final @NotNull Insets margins;
 
     private final ComponentTracker tracker;
 
-    private Component base;             // the currently configured base component
-    private Rectangle baseBounds;       // the bounds of the base component in our coordinate space
-    private Rectangle visibleBounds;    // the bounds within our coordinate space where we may paint or null if not paintable
-    private Window baseWindow;          // the window last known to contain the base component
+    private @Nullable Component base;           // the currently configured base component
+    private @Nullable Rectangle baseBounds;     // the bounds of the base component in our coordinate space
+    private @Nullable Rectangle visibleBounds;  // the bounds within our coordinate space where we may paint or null if not paintable
+    private @Nullable Window baseWindow;        // the window last known to contain the base component
+
+    private int layer;                          // the layer number of the layer containing the overlay painter component
 
     /**
      * Create a component for painting an overlay over a base component.
      * @param margins The margins that determine the size of this component. The size of this component is determined
      *                by adding the margins to the bounds of the base component.
-     * @param layer The layer in the layered pane to use for this component.
      */
-    public OverlayPainterComponent(Insets margins, int layer) {
+    public OverlayPainterComponent(@NotNull Insets margins) {
 
         this.margins = margins;
-        this.layer = layer;
+        this.layer = 1;
 
         // We need to know when the base component is added to a containment hierarchy, removed from a containment
-        // hierarchy, or its bounds are changed.
+        // hierarchy, reparented within a containment hierarchy, or its bounds are changed.
 
         tracker = new ComponentTracker() {
             @Override
-            protected void attached(Window w) {
+            protected void attached(@Nullable Window w) {
                 if (w != null) {
                     OverlayPainterComponent.this.windowChanged(w);
                     OverlayPainterComponent.this.visibleBoundsChanged();
@@ -50,17 +53,23 @@ public abstract class OverlayPainterComponent extends JComponent {
             }
 
             @Override
-            protected void windowChanged(Window oldWindow, Window newWindow) {
+            protected void windowChanged(@Nullable Window oldWindow, @Nullable Window newWindow) {
                 OverlayPainterComponent.this.windowChanged(newWindow);
             }
 
             @Override
-            protected void visibleBoundsChanged(Window window) {
+            protected void ancestorChanged() {
+                OverlayPainterComponent.this.ancestorChanged();
+            }
+
+            @Override
+            protected void visibleBoundsChanged(@Nullable Window window) {
                 OverlayPainterComponent.this.visibleBoundsChanged();
             }
         };
 
         super.setOpaque(false);
+        super.setFocusable(false);
         setVisible(false);
     }
 
@@ -68,8 +77,10 @@ public abstract class OverlayPainterComponent extends JComponent {
      * Attach this component to the specified base component.
      * @param c The base component, or null to detach this component from any previous base component.
      */
-    public void attach(JComponent c) {
+    public void attach(@Nullable JComponent c) {
         if (base != c) {
+            baseWindow = null;
+            layer = -100000;
             if (c != null) {
                 base = c;
                 tracker.attach(c);
@@ -86,8 +97,16 @@ public abstract class OverlayPainterComponent extends JComponent {
     }
 
     /**
+     * This method has no effect. It does not make sense for an overlay painter to be focusable.
+     */
+    @Override
+    public final void setFocusable(boolean b) {
+    }
+
+    /**
      * Because the pane may be painted using transparency, it must not be made opaque.
      */
+    @Override
     public final void setOpaque(boolean b) {
     }
 
@@ -100,23 +119,48 @@ public abstract class OverlayPainterComponent extends JComponent {
     /**
      * Ensure that this component is properly located in the containment hierarchy that contains the base component.
      */
-    private void windowChanged(Window newWindow) {
+    private void windowChanged(@Nullable Window newWindow) {
         if (newWindow == baseWindow) {
             return;
         }
 
-        JRootPane orp = AquaUtils.getRootPane(baseWindow);
-        JRootPane nrp = AquaUtils.getRootPane(newWindow);
+        JLayeredPane oldLayeredPane = baseWindow != null ? AquaUtils.getLayeredPane(baseWindow) : null;
+        JLayeredPane newLayeredPane = newWindow != null ? AquaUtils.getLayeredPane(newWindow) : null;
         baseWindow = newWindow;
 
-        if (orp != null) {
+        if (oldLayeredPane != null) {
             Container p = getParent();
-            p.remove(this);
+            if (p != null) {
+                p.remove(this);
+            }
         }
 
-        if (nrp != null) {
-            JLayeredPane lp = nrp.getLayeredPane();
-            lp.add(this, layer);
+        if (newLayeredPane != null) {
+            addToLayeredPane(newLayeredPane);
+        }
+    }
+
+    private void ancestorChanged() {
+        // I'm not sure this method can ever be called...
+        if (baseWindow != null) {
+            JLayeredPane layeredPane = AquaUtils.getLayeredPane(baseWindow);
+            if (layeredPane != null) {
+                addToLayeredPane(layeredPane);
+            }
+        }
+    }
+
+    private void addToLayeredPane(@NotNull JLayeredPane layeredPane) {
+        assert base != null;
+        int componentLayer = AquaUtils.getComponentLayer(base);
+        int overlayLayer = componentLayer + 1;
+        if (layer != overlayLayer) {
+            this.layer = overlayLayer;
+            // If this component is already a child of the layered pane, it must be removed before calling add.
+            // The problem is that add will remove the component *after* the new index has been computed, with the
+            // result that the component may be inserted at the wrong position.
+            layeredPane.remove(this);
+            layeredPane.add(this, (Integer) layer);
             visibleBoundsChanged();
         }
     }
@@ -126,7 +170,7 @@ public abstract class OverlayPainterComponent extends JComponent {
      * into which we are allowed to paint.
      */
     private void visibleBoundsChanged() {
-        JRootPane rp = AquaUtils.getRootPane(baseWindow);
+        JRootPane rp = baseWindow != null ? AquaUtils.getRootPane(baseWindow) : null;
         if (rp == null || base == null || !base.isVisible()) {
             baseBounds = null;
             visibleBounds = null;
@@ -162,8 +206,9 @@ public abstract class OverlayPainterComponent extends JComponent {
     }
 
     @Override
-    public final void paintComponent(Graphics g) {
+    public final void paintComponent(@NotNull Graphics g) {
         if (visibleBounds != null) {
+            assert baseBounds != null;
             Graphics2D gg = (Graphics2D) g.create();
             // Updating the bounds may make the user clip obsolete, so we remove it.
             gg.setClip(-1000, -1000, 1000000, 1000000);
@@ -177,7 +222,7 @@ public abstract class OverlayPainterComponent extends JComponent {
      * Paint the overlay for the current base component.
      * @param g The graphics context. The top left corner of the component is at the origin of the base component.
      */
-    protected abstract void internalPaint(Graphics2D g);
+    protected abstract void internalPaint(@NotNull Graphics2D g);
 
     /**
      * Determine the bounds within which it is acceptable to paint an overlay for a given base component. The bounds are
@@ -188,7 +233,7 @@ public abstract class OverlayPainterComponent extends JComponent {
      * @return the visible bounds, as defined above, in the coordinate space of the base component, or null if the
      * component is not visible.
      */
-    protected static Rectangle getVisibleBounds(Component base) {
+    protected static Rectangle getVisibleBounds(@NotNull Component base) {
         int x = 0;
         int y = 0;
 

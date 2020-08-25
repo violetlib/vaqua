@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Alan Snyder.
+ * Copyright (c) 2018-2020 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -101,12 +101,14 @@ public class AquaFonts {
             return new DerivedUIResourceFont(MAC_DEFAULT_FONT_NAME, Font.BOLD, 13);
         }
     };
+
     private static final RecyclableSingleton<FontUIResource> lucida14PtBold = new RecyclableSingleton<FontUIResource>() {
         @Override
         protected FontUIResource getInstance() {
             return new DerivedUIResourceFont(MAC_DEFAULT_FONT_NAME, Font.BOLD, 14);
         }
     };
+
     private static final RecyclableSingleton<FontUIResource> lucida18Pt = new RecyclableSingleton<FontUIResource>() {
         @Override
         protected FontUIResource getInstance() {
@@ -114,12 +116,8 @@ public class AquaFonts {
         }
     };
 
-    protected static FontUIResource getMiniControlTextFont() {
-        return lucida9Pt.get();
-    }
-
-    protected static FontUIResource getSmallControlTextFont() {
-        return lucida11Pt.get();
+    public static FontUIResource getControlTextLargeFont() {
+        return lucida13Pt.get();
     }
 
     public static FontUIResource getControlTextFont() {
@@ -127,14 +125,6 @@ public class AquaFonts {
     }
 
     public static FontUIResource getControlTextSmallFont() {
-        return lucida11Pt.get();
-    }
-
-    public static FontUIResource getIconButtonFont() {
-        return lucida12Pt.get();
-    }
-
-    public static FontUIResource getIconButtonSmallFont() {
         return lucida11Pt.get();
     }
 

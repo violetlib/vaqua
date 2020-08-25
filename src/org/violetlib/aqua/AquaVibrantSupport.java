@@ -239,7 +239,7 @@ public class AquaVibrantSupport {
         boolean forceActive = w.getType() == Window.Type.POPUP || !AquaUtils.isDecorated(w);
         long rc = execute(w, ptr -> setupVisualEffectWindow(ptr, style, forceActive));
         if (rc != 0) {
-            System.err.println("Unable to install visual effect view");
+            AquaUtils.logError("Unable to install visual effect view");
         } else {
             JRootPane rp = AquaUtils.getRootPane(w);
             if (rp != null) {
@@ -267,7 +267,7 @@ public class AquaVibrantSupport {
                 if (w.isDisplayable()) {
                     long rc = execute(w, AquaVibrantSupport::removeVisualEffectWindow);
                     if (rc != 0) {
-                        System.err.println("Unable to remove visual effect view");
+                        AquaUtils.logError("Unable to remove visual effect view");
                     } else {
                         rp.repaint();
                     }
@@ -316,7 +316,7 @@ public class AquaVibrantSupport {
                 if (w.isDisplayable()) {
                     int rc = disposeVisualEffectView(nativeNSViewPointer);
                     if (rc != 0) {
-                        System.err.println("disposeVisualEffectView failed");
+                        AquaUtils.logError("disposeVisualEffectView failed");
                     }
                 }
                 nativeNSViewPointer = 0;
@@ -334,14 +334,14 @@ public class AquaVibrantSupport {
             int yflipped = w.getHeight() - (y + height);
             int rc = setViewFrame(nativeNSViewPointer, x, y, width, height, yflipped);
             if (rc != 0) {
-                System.err.println("setViewFrame failed");
+                AquaUtils.logError("setViewFrame failed");
             }
         }
 
         public void updateSelectionBackgrounds(SelectionBoundsDescription sd) {
             int rc = nativeUpdateSelectionBackgrounds(nativeNSViewPointer, sd != null ? sd.getData() : null);
             if (rc != 0) {
-                System.err.println("updateSelectionBackgrounds failed");
+                AquaUtils.logError("updateSelectionBackgrounds failed");
             }
         }
     }

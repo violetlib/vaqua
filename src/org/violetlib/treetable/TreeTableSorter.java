@@ -26,47 +26,43 @@ import org.violetlib.treetable.event.TreeTableSorterListener;
 
 public interface TreeTableSorter<T extends TreeModel, C extends TreeColumnModel> {
 
-	public List<? extends SortKey> getSortKeys();
+    List<? extends SortKey> getSortKeys();
 
-	public void setSortKeys(List<? extends SortKey> keys);
+    void setSortKeys(List<? extends SortKey> keys);
 
-	public void toggleSortOrder(int column);
+    void toggleSortOrder(int column);
 
-	/**
-	 * Retrieves the RowSorter for the specified path,
-	 * creates it if necessary.
-	 *
-	 * @see #getRowSorter(Object)
-	 */
-	public RowSorter<T> getRowSorter(TreePath path);
+    /**
+     * Retrieves the RowSorter for the specified path,
+     * creates it if necessary.
+     *
+     * @see #getRowSorter(Object)
+     */
+    RowSorter<T> getRowSorter(TreePath path);
 
-	/**
-	 * Differs from the TreePath variety as it won't
-	 * (lacks the necessary information) create
-	 * the row sorter if it doesn't exist.
-	 *
-	 * @see #getRowSorter(TreePath)
-	 */
-	public RowSorter<T> getRowSorter(Object node);
+    /**
+     * Differs from the TreePath variety as it won't
+     * (lacks the necessary information) create
+     * the row sorter if it doesn't exist.
+     *
+     * @see #getRowSorter(TreePath)
+     */
+    RowSorter<T> getRowSorter(Object node);
 
-	public void addTreeTableSorterListener(TreeTableSorterListener l);
+    void addTreeTableSorterListener(TreeTableSorterListener l);
 
-	public void removeTreeTableSorterListener(TreeTableSorterListener l);
+    void removeTreeTableSorterListener(TreeTableSorterListener l);
 
+    void setVisible(TreePath path, List<TreePath> subPaths, boolean visible);
 
-	public void setVisible(TreePath path, List<TreePath> subPaths, boolean visible);
+    void structureChanged(TreePath path, boolean newRoot);
 
-	public void structureChanged(TreePath path, boolean newRoot);
+    void nodesRemoved(TreePath path, Object[] childNodes);
 
-	public void nodesRemoved(TreePath path, Object[] childNodes);
+    interface SortCycle {
 
-	public interface SortCycle {
+        void setSortCycle(List<SortOrder> cycle);
 
-		void setSortCycle(List<SortOrder> cycle);
-
-		List<SortOrder> getSortCycle();
-
-	}
-
+        List<SortOrder> getSortCycle();
+    }
 }
-

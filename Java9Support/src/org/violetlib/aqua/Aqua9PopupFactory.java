@@ -29,7 +29,7 @@ public class Aqua9PopupFactory extends AquaPopupFactory {
         try {
             AquaUtils.disablePopupCache(p);
         } catch (Throwable th) {
-            System.err.println("Unable to prevent popup from being reused");
+            AquaUtils.logError("Unable to prevent popup from being reused", th);
         }
 
         return p;

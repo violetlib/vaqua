@@ -91,7 +91,7 @@ public class AquaAppearance implements VAppearance {
     public @Nullable Color getColor(@NotNull String colorName) {
         Color color = colors.get(colorName);
         if (AquaColors.isDebugging()) {
-            System.err.println("  Color " + colorName + ": " + AquaColors.toString(color));
+            AquaUtils.logDebug("  Color " + colorName + ": " + AquaColors.toString(color));
         }
         return color;
     }
@@ -836,7 +836,7 @@ public class AquaAppearance implements VAppearance {
                     results.put(name, c);
                 } else if (false) {
                     String s = getIndirectPath(name, 5);
-                    System.err.println("Color " + name + " has no indirect definition: " + s);
+                    AquaUtils.logDebug("Color " + name + " has no indirect definition: " + s);
                 }
             }
 

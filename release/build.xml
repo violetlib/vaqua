@@ -47,12 +47,12 @@
     <property name="renderingLibraryJAR" location="${libdir}/VAquaRendering.jar"/>
     <property name="activationJAR" location="${libdir}/javax.activation-1.2.0.jar"/>
 
-    <property name="SDKversion" value="10.14"/>
-    <property name="SDKroot" location="/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX${SDKversion}.sdk" />
+    <property name="SDKroot" location="/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk" />
     <property name="libpath" location="${libdir}/IdeaAnnotations.jar"/>
     <property name="cc" location="/usr/bin/cc"/>
 
     <property name="debug" value="false"/>
+    <property name="debugoption" value=""/>
 
     <target name="init">
         <echo level="info" message="${fullReleaseName}"/>
@@ -173,6 +173,10 @@
             <arg value="JavaVM"/>
             <arg value="-framework"/>
             <arg value="Cocoa"/>
+            <arg value="-framework"/>
+            <arg value="QuickLookThumbnailing"/>
+            <arg value="-framework"/>
+            <arg value="Quartz"/>
 
             <arg value="-F/${SDKroot}/System/Library/Frameworks/JavaVM.framework/Versions/A/Frameworks"/>
             <arg value="-framework"/>
@@ -182,6 +186,8 @@
             <arg value="_VAppearances_updateAppearance"/>
             <arg value="-undefined"/>
             <arg value="dynamic_lookup"/>
+
+            <arg value="${debugoption}"/>
 
             <arg value="${jnisrc}/AquaNativeSupport.m"/>
             <arg value="${jnisrc}/AquaSidebarBackground.m"/>

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2016 Alan Snyder.
+ * Copyright (c) 2015-2020 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -16,6 +16,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
 
+import org.jetbrains.annotations.NotNull;
 import sun.awt.image.MultiResolutionCachedImage;
 import sun.awt.image.MultiResolutionImage;
 
@@ -38,14 +39,15 @@ public class Aqua8MultiResolutionImage extends AquaMultiResolutionImage implemen
 
     @Override
     public List<Image> getResolutionVariants() {
-        java.util.List<Image> result = new ArrayList<>();
+        List<Image> result = new ArrayList<>();
         result.add(baseImage);
         return result;
     }
 
     @Override
     public AquaMultiResolutionImage map(Mapper mapper) {
-        return new Aqua8MultiResolutionImage(mapper.map(baseImage, 1));
+        int scaleFactor = baseImageWidth / baseImage.getWidth(null);
+        return new Aqua8MultiResolutionImage(mapper.map(baseImage, scaleFactor));
     }
 
     @Override
@@ -65,19 +67,21 @@ public class Aqua8MultiResolutionImage extends AquaMultiResolutionImage implemen
         return createFilteredImage(image, filter);
     }
 
-    private static Image createFilteredImage(Image image, ImageFilter filter) {
-        final ImageProducer prod = new FilteredImageSource(image.getSource(), filter);
-        return waitForImage(Toolkit.getDefaultToolkit().createImage(prod));
+    private static @NotNull Image createFilteredImage(@NotNull Image image, @NotNull ImageFilter filter) {
+        int width = image.getWidth(null);
+        int height = image.getHeight(null);
+        ImageProducer prod = new FilteredImageSource(image.getSource(), filter);
+        return waitForImage(Toolkit.getDefaultToolkit().createImage(prod), width, height);
     }
 
     // The following is a workaround for a JDK 8 problem - trying to draw a MultiResolutionImage that is not ready
     // throws an exception.
 
-    private static Image waitForImage(Image image) {
+    private static @NotNull Image waitForImage(@NotNull Image image, int width, int height) {
         final boolean[] mutex = new boolean[] { false };
-        ImageObserver observer = (Image img, int infoflags, int x, int y, int width, int height) -> {
-            if ((width != -1 && height != -1 && (infoflags & ImageObserver.ALLBITS) != 0)
-                    || (infoflags & (ImageObserver.ABORT | ImageObserver.FRAMEBITS)) != 0) {
+        ImageObserver observer = (Image img, int infoflags, int x, int y, int w, int h) -> {
+            int required = ImageObserver.ALLBITS;
+            if ((infoflags & required) == required || (infoflags & (ImageObserver.ABORT)) != 0) {
                 synchronized (mutex) {
                     mutex[0] = true;
                     mutex.notify();
@@ -87,12 +91,14 @@ public class Aqua8MultiResolutionImage extends AquaMultiResolutionImage implemen
                 return true;
             }
         };
-        synchronized (mutex) {
-            while (!mutex[0] && image.getWidth(observer) == -1) {
-                try {
-                    mutex.wait();
-                } catch (InterruptedException e) {
-                    break;
+        if (!Toolkit.getDefaultToolkit().prepareImage(image, width, height, observer)) {
+            synchronized (mutex) {
+                while (!mutex[0]) {
+                    try {
+                        mutex.wait();
+                    } catch (InterruptedException e) {
+                        break;
+                    }
                 }
             }
         }
@@ -151,9 +157,9 @@ public class Aqua8MultiResolutionImage extends AquaMultiResolutionImage implemen
             } catch (Exception ex) {
                 if (ex instanceof InvocationTargetException) {
                     Throwable th = ((InvocationTargetException) ex).getTargetException();
-                    System.err.println("Unable to map image: " + th);
+                    AquaUtils.logError("Unable to map image", th);
                 } else {
-                    System.err.println("Unable to map image: " + ex);
+                    AquaUtils.logError("Unable to map image", ex);
                 }
             }
         }

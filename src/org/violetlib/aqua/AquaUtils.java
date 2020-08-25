@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2018 Alan Snyder.
+ * Copyright (c) 2015-2020 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -109,6 +109,18 @@ final public class AquaUtils {
         });
     };
 
+    public static void logError(@NotNull String message) {
+        System.err.println(message);
+    }
+
+    public static void logError(@NotNull String message, @NotNull Throwable th) {
+        System.err.println(message + ": " + th);
+    }
+
+    public static void logDebug(@NotNull String message) {
+        System.err.println(message);
+    }
+
     public static int getJavaVersion() {
         return javaVersion;
     }
@@ -125,10 +137,9 @@ final public class AquaUtils {
         try {
             while (st.hasMoreTokens()) {
                 String token = st.nextToken();
-                if (token.endsWith("-internal")) {
-                    token = token.substring(0, token.length() - 9);
-                } else if (token.endsWith("-ea")) {
-                    token = token.substring(0, token.length() - 3);
+                int pos = token.indexOf("-");
+                if (pos > 0) {
+                    token = token.substring(0, pos);
                 }
                 int n = Integer.parseInt(token);
                 ++tokenCount;
@@ -307,7 +318,7 @@ final public class AquaUtils {
         int left = insets.left;
         int right = insets.right;
         return new Rectangle(bounds.x + left, bounds.y + top, bounds.width - left - right,
-          bounds.height - top - bottom);
+                bounds.height - top - bottom);
     }
 
     /**
@@ -338,10 +349,32 @@ final public class AquaUtils {
     /**
      * Convenience method to get the root pane of a window.
      */
-    public static @Nullable JRootPane getRootPane(Window w) {
+    public static @Nullable JRootPane getRootPane(@NotNull Window w) {
+        RootPaneContainer rpc = getRootPaneContainer(w);
+        return rpc != null ? rpc.getRootPane() : null;
+    }
+
+    /**
+     * Convenience method to get the layered pane of a window.
+     */
+    public static @Nullable JLayeredPane getLayeredPane(@NotNull Window w) {
+        RootPaneContainer rpc = getRootPaneContainer(w);
+        return rpc != null ? rpc.getLayeredPane() : null;
+    }
+
+    /**
+     * Convenience method to map a window to a root pane container.
+     */
+    public static @Nullable RootPaneContainer getRootPaneContainer(@NotNull Window w) {
         if (w instanceof RootPaneContainer) {
-            RootPaneContainer rpc = (RootPaneContainer) w;
-            return rpc.getRootPane();
+            return (RootPaneContainer) w;
+        }
+        // Special case for EmbeddedFrame
+        if (w.getComponentCount() == 1) {
+            Component c = w.getComponent(0);
+            if (c instanceof RootPaneContainer) {
+                return (RootPaneContainer) c;
+            }
         }
         return null;
     }
@@ -530,17 +563,17 @@ final public class AquaUtils {
         }
 
         return layoutCompoundLabelImpl(c,
-          fm,
-          text,
-          icon,
-          verticalAlignment,
-          hAlign,
-          verticalTextPosition,
-          hTextPos,
-          viewR,
-          iconR,
-          textR,
-          textIconGap);
+                fm,
+                text,
+                icon,
+                verticalAlignment,
+                hAlign,
+                verticalTextPosition,
+                hTextPos,
+                viewR,
+                iconR,
+                textR,
+                textIconGap);
     }
 
     /**
@@ -558,18 +591,18 @@ final public class AquaUtils {
      * inserted at the middle of the text instead of at the end.
      */
     private static String layoutCompoundLabelImpl(
-      JComponent c,
-      FontMetrics fm,
-      String text,
-      Icon icon,
-      int verticalAlignment,
-      int horizontalAlignment,
-      int verticalTextPosition,
-      int horizontalTextPosition,
-      Rectangle viewR,
-      Rectangle iconR,
-      Rectangle textR,
-      int textIconGap)
+            JComponent c,
+            FontMetrics fm,
+            String text,
+            Icon icon,
+            int verticalAlignment,
+            int horizontalAlignment,
+            int verticalTextPosition,
+            int horizontalTextPosition,
+            Rectangle viewR,
+            Rectangle iconR,
+            Rectangle textR,
+            int textIconGap)
     {
         /* Initialize the icon bounds rectangle iconR.
          */
@@ -694,10 +727,10 @@ final public class AquaUtils {
          */
         int labelR_x = Math.min(iconR.x, textR.x);
         int labelR_width = Math.max(iconR.x + iconR.width,
-          textR.x + textR.width) - labelR_x;
+                textR.x + textR.width) - labelR_x;
         int labelR_y = Math.min(iconR.y, textR.y);
         int labelR_height = Math.max(iconR.y + iconR.height,
-          textR.y + textR.height) - labelR_y;
+                textR.y + textR.height) - labelR_y;
 
         int dx, dy;
 
@@ -717,7 +750,7 @@ final public class AquaUtils {
         } else { // (horizontalAlignment == CENTER)
 
             dx = (viewR.x + (viewR.width / 2))
-                   - (labelR_x + (labelR_width / 2));
+                    - (labelR_x + (labelR_width / 2));
         }
 
         /* Translate textR and glypyR by dx,dy.
@@ -786,12 +819,7 @@ final public class AquaUtils {
 
         @Override
         protected @Nullable T getInstance() {
-            try {
-                //ReflectUtil.checkPackageAccess(clazz);
-                return clazz.newInstance();
-            } catch (InstantiationException | IllegalAccessException ignored) {
-            }
-            return null;
+            return instantiate(clazz);
         }
     }
 
@@ -816,7 +844,7 @@ final public class AquaUtils {
         @Override
         protected Boolean getInstance() {
             String sizeProperty = (String) AccessController.doPrivileged((PrivilegedAction<String>) () -> System.getProperty(
-              ANIMATIONS_PROPERTY));
+                    ANIMATIONS_PROPERTY));
             return !"false".equals(sizeProperty); // should be true by default
         }
     };
@@ -1043,6 +1071,95 @@ final public class AquaUtils {
     }
 
     /**
+     * Determine the visible bounds of the specified component in the coordinate space of the AWT content view.
+     * The bounds are normally the bounds of the component. However, if the component is within a viewport view, then
+     * the bounds are constrained by the viewport.
+     *
+     * @param c The component.
+     * @return the visible bounds, as defined above, in the coordinate space of the top component, or null if the
+     *   component is not visible or not in a window.
+     */
+
+    public static @Nullable VisibleBounds getVisibleBoundsInContentView(@NotNull Component c) {
+        if (c.getWidth() > 0 && c.getHeight() > 0) {
+            Window w = SwingUtilities.getWindowAncestor(c);
+            if (w != null) {
+                VisibleBounds bounds = getVisibleBoundsInWindow(c, w);
+                if (bounds != null) {
+                    Insets s = w.getInsets();
+                    int x = s.left;
+                    int y = s.top;
+                    int sw = w.getWidth() - (s.left + s.right);
+                    int sh = w.getHeight() - (s.top + s.bottom);
+                    Rectangle clip = new Rectangle(x, y, sw, sh);
+                    Rectangle visibleBounds = bounds.visibleBounds.intersection(clip);
+                    Rectangle oldFrame = bounds.frame;
+                    Rectangle frame = new Rectangle(oldFrame.x - x, oldFrame.y - y, oldFrame.width, oldFrame.height);
+                    return new VisibleBounds(visibleBounds, frame);
+                }
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Determine the visible bounds of the specified component in the coordinate space of the window.
+     * The bounds are normally the bounds of the component. However, if the component is within a viewport view, then
+     * the bounds are constrained by the viewport.
+     *
+     * @param c The component.
+     * @return the visible bounds, as defined above, in the coordinate space of the window, or null if the
+     *   component is not visible or not in a window.
+     */
+    public static @Nullable VisibleBounds getVisibleBoundsInWindow(@NotNull Component c) {
+        if (c.getWidth() > 0 && c.getHeight() > 0) {
+            Window w = SwingUtilities.getWindowAncestor(c);
+            if (w != null) {
+                return getVisibleBoundsInWindow(c, w);
+            }
+        }
+        return null;
+    }
+
+    private static @Nullable VisibleBounds getVisibleBoundsInWindow(@NotNull Component c, @NotNull Window w) {
+        if (w.isVisible()) {
+            Rectangle visibleRegion = new Rectangle();
+            if (computeVisibleRegion(c, visibleRegion) && !visibleRegion.isEmpty()) {
+                Rectangle vr = SwingUtilities.convertRectangle(c, visibleRegion, w);
+                Rectangle frame = SwingUtilities.convertRectangle(c.getParent(), c.getBounds(), w);
+                return new VisibleBounds(vr, frame);
+            }
+        }
+        return null;
+    }
+
+    private static boolean computeVisibleRegion(@NotNull Component c,
+                                                @NotNull Rectangle result) {
+        if (!c.isVisible()) {
+            return false;
+        }
+
+        Container p = c.getParent();
+        if (p == null || !p.isVisible()) {
+            return false;
+        }
+
+        Rectangle bounds = c.getBounds();
+        if (p instanceof Window) {
+            result.setBounds(0, 0, bounds.width, bounds.height);
+            return true;
+        } else {
+            if (!computeVisibleRegion(p, result)) {
+                return false;
+            }
+            result.x -= bounds.x;
+            result.y -= bounds.y;
+            SwingUtilities.computeIntersection(0, 0, bounds.width, bounds.height, result);
+            return true;
+        }
+    }
+
+    /**
      * Determine the appropriate background for a component that displays the window content background color.
      * @param c A component in the window.
      * @return the color.
@@ -1077,7 +1194,7 @@ final public class AquaUtils {
         Color bc = appearance.getColor(colorName);
         if (bc == null) {
             // should not happen
-            System.err.println("Undefined window margin background color: " + colorName);
+            logError("Undefined window margin background color: " + colorName);
             return AquaColors.CLEAR;
         } else {
             return bc;
@@ -1093,7 +1210,7 @@ final public class AquaUtils {
         Color color = appearance.getColor(colorName);
         if (color == null) {
             // should not happen
-            System.err.println("Undefined window divider color: " + colorName);
+            logError("Undefined window divider color: " + colorName);
             return AquaColors.CLEAR;
         } else {
             return color;
@@ -1304,13 +1421,21 @@ final public class AquaUtils {
         return object;
     }
 
+    public static @Nullable <T> T instantiate(@NotNull Class<T> c) {
+        try {
+            return c.getDeclaredConstructor().newInstance();
+        } catch (Exception ex) {
+            return null;
+        }
+    }
+
     /** Turns on common rendering hints for UI delegates. */
     public static Object beginGraphics(Graphics2D graphics2d) {
         Object object = graphics2d.getRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING);
         graphics2d.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING,
-          RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+                RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
         graphics2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
-          RenderingHints.VALUE_ANTIALIAS_ON);
+                RenderingHints.VALUE_ANTIALIAS_ON);
         return object;
     }
 
@@ -1318,7 +1443,7 @@ final public class AquaUtils {
     public static void endGraphics(Graphics2D graphics2d, Object oldHints) {
         if (oldHints != null) {
             graphics2d.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING,
-              oldHints);
+                    oldHints);
         }
     }
 
@@ -1347,6 +1472,23 @@ final public class AquaUtils {
             return c.getFontMetrics(font);
         }
         return Toolkit.getDefaultToolkit().getFontMetrics(font);
+    }
+
+    /**
+     * Return the layer number where the specified component is painted.
+     * @param c The component.
+     * @return the layer number, or zero if the component is not contained in a JLayeredPane.
+     */
+    public static int getComponentLayer(@NotNull Component c) {
+        Container parent = c.getParent();
+        if (parent instanceof JLayeredPane) {
+            JLayeredPane lp = (JLayeredPane) parent;
+            return lp.getLayer(c);
+        } else if (parent != null) {
+            return getComponentLayer(parent);
+        } else {
+            return 0;
+        }
     }
 
     /**
@@ -1441,12 +1583,12 @@ final public class AquaUtils {
      * @param style The title bar style.
      * @throws UnsupportedOperationException if the title bar style could not be changed.
      */
-    public static void setTitleBarStyle(Window w, int style) {
+    public static void setTitleBarStyle(@NotNull Window w, int style) {
         ensureWindowPeer(w);
         execute(w, ptr -> setTitleBarStyle(w, ptr, style));
     }
 
-    private static long setTitleBarStyle(Window w, long wptr, int style) {
+    private static long setTitleBarStyle(@NotNull Window w, long wptr, int style) {
 
         JRootPane rp = getRootPane(w);
         assert rp != null;
@@ -1578,7 +1720,7 @@ final public class AquaUtils {
             w.invalidate();
             w.validate();
         } catch (Exception ex) {
-            System.err.println("Unable to restore titled window style: " + ex);
+            logError("Unable to restore titled window style", ex);
         }
     }
 
@@ -1588,7 +1730,7 @@ final public class AquaUtils {
      * @return the custom styled window object for {@code w}, or null if {@code w} does not use one of our custom window
      * styles.
      */
-    public static AquaCustomStyledWindow getCustomStyledWindow(Window w) {
+    public static AquaCustomStyledWindow getCustomStyledWindow(@NotNull Window w) {
         JRootPane rp = getRootPane(w);
         if (rp != null) {
             AquaRootPaneUI ui = getUI(rp, AquaRootPaneUI.class);
@@ -1651,7 +1793,7 @@ final public class AquaUtils {
         try {
             nativeSetWindowTextured(w, isTextured);
         } catch (Throwable ex) {
-            System.err.println("Unable to set textured: " + ex);
+            logError("Unable to set textured", ex);
         }
     }
 
@@ -1674,9 +1816,9 @@ final public class AquaUtils {
      * See bug JDK-7124236.
      */
     private static class ShadowMaker implements ActionListener, Runnable {
-        private final Window w;
+        private final @NotNull Window w;
 
-        public ShadowMaker(Window w) {
+        public ShadowMaker(@NotNull Window w) {
             this.w = w;
             SwingUtilities.invokeLater(this);
             Timer t = new Timer(100, this);
@@ -1723,7 +1865,7 @@ final public class AquaUtils {
             try {
                 nativeSetWindowBackground(w, c);
             } catch (Throwable th) {
-                System.err.println("Unable to set window background: " + th);
+                logError("Unable to set window background", th);
             }
         } finally {
             JavaSupport.unlockRenderQueue();
@@ -1732,6 +1874,14 @@ final public class AquaUtils {
 
     public static void configurePopup(Window w, float radius) {
         execute(w, ptr -> nativeSetWindowCornerRadius(ptr, radius));
+    }
+
+    public static void setWindowRepresentedFilename(@NotNull Window w, @NotNull String filename) {
+        try {
+            execute(w, ptr -> nativeSetWindowRepresentedFilename(ptr, filename));
+        } catch (UnsupportedOperationException ex) {
+            // This operation fails on an embedded frame
+        }
     }
 
     // for debugging
@@ -1797,7 +1947,7 @@ final public class AquaUtils {
      * Perform an action that requires the native NSWindow pointer for a window.
      */
 
-    public static long execute(Window w, NativeAction action) {
+    public static long execute(@NotNull Window w, NativeAction action) {
         Object[] data = new Object[1];
         long ptr = nativeGetNativeWindow(w, data);
         if (ptr == 0) {
@@ -1807,7 +1957,7 @@ final public class AquaUtils {
                 name = fr.getTitle() + " " + name;
             }
             UnsupportedOperationException ex = new UnsupportedOperationException("Unable to get NSWindow for window " + name);
-            ex.printStackTrace();
+            //ex.printStackTrace();
             throw ex;
         } else {
             Lock lock = (Lock) data[0];
@@ -1845,9 +1995,7 @@ final public class AquaUtils {
                 Frame fr = (Frame) w;
                 name = fr.getTitle() + " " + name;
             }
-            UnsupportedOperationException ex = new UnsupportedOperationException("Unable to get NSWindow for window " + name);
-            ex.printStackTrace();
-            throw ex;
+            throw new UnsupportedOperationException("Unable to get NSWindow for window " + name);
         } else {
             Lock lock = (Lock) data[0];
             if (lock != null) {
@@ -1884,6 +2032,7 @@ final public class AquaUtils {
     private static native int nativeSetTitleBarProperties(long w, boolean hasTitleBar, boolean isMovable, boolean isHidden, boolean isFixNeeded);
     private static native int nativeAddToolbarToWindow(long w);
     private static native int nativeSetWindowCornerRadius(long w, float radius);
+    private static native int nativeSetWindowRepresentedFilename(long w, String name);
     private static native int nativeSetAWTViewVisibility(long w, boolean isVisible);
     private static native int nativeSyncAWTView(long w);
     private static native int nativeGetLeftSideBearing(JComponent c, FontMetrics fm, char firstChar);

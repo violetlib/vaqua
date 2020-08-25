@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2018 Alan Snyder.
+ * Copyright (c) 2015-2020 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -11,10 +11,11 @@ package org.violetlib.aqua;
 import java.awt.*;
 import java.awt.geom.Rectangle2D;
 import java.awt.geom.RoundRectangle2D;
-import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import javax.swing.*;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.violetlib.geom.ExpandableOutline;
 import org.violetlib.geom.GeneralRoundRectangle;
 
@@ -42,17 +43,15 @@ public class AquaFocusRingPainter {
         animationController = new AnimationController(new MyAnimation(), ANIMATION_DURATION);
         defaultFocusRingProvider = new AquaDefaultFocusRingProvider();
         cellEditorPolicy = AquaCellEditorPolicy.getInstance();
-        myActiveChangeListener = new PropertyChangeListener() {
-            public void propertyChange(PropertyChangeEvent ev) {
-                String name = ev.getPropertyName();
-                if (AquaFocusHandler.FRAME_ACTIVE_PROPERTY.equals(name)) {
-                    painterComponent.repaint();
-                }
+        myActiveChangeListener = ev -> {
+            String name = ev.getPropertyName();
+            if (AquaFocusHandler.FRAME_ACTIVE_PROPERTY.equals(name)) {
+                painterComponent.repaint();
             }
         };
     }
 
-    public void setFocusOwner(JComponent c) {
+    public void setFocusOwner(@Nullable JComponent c) {
         clear();
         if (c != null) {
             currentFocusRingProvider = AquaUtils.getUI(c, FocusRingOutlineProvider.class);
@@ -67,6 +66,8 @@ public class AquaFocusRingPainter {
                         currentFocusRingOwner = sp;
                         currentFocusRingProvider = defaultFocusRingProvider;
                     }
+                } else {
+                    currentFocusRingProvider = null;
                 }
             }
         }
@@ -98,11 +99,11 @@ public class AquaFocusRingPainter {
 
     protected class MyFocusRingPainterComponent extends OverlayPainterComponent {
         public MyFocusRingPainterComponent() {
-            super(new Insets(100, 100, 100, 100), 1);
+            super(new Insets(100, 100, 100, 100));
         }
 
         @Override
-        protected void internalPaint(Graphics2D g) {
+        protected void internalPaint(@NotNull Graphics2D g) {
             if (currentFocusRingOwner != null && AquaFocusHandler.isActive(currentFocusRingOwner) && currentFocusRingProvider != null) {
                 Shape s = currentFocusRingProvider.getFocusRingOutline(currentFocusRingOwner);
                 if (s != null) {
@@ -119,7 +120,8 @@ public class AquaFocusRingPainter {
     // Another aspect of the policy is to create a smaller focus ring if the component is being used as a cell editor.
     // Not sure how best to do that, but one idea is to base it on the existence of an AquaBorder.
 
-    protected FocusRingPainter getFocusRingPainter(Shape s) {
+    protected FocusRingPainter getFocusRingPainter(@NotNull Shape s) {
+        assert currentFocusRingOwner != null;
         boolean useSmallRing = isCellEditor(currentFocusRingOwner);
         float outerOffset = useSmallRing ? 2 : 3f;
         float innerOffset = useSmallRing ? 0 : -0.5f;
@@ -166,7 +168,7 @@ public class AquaFocusRingPainter {
      * Decide whether a given component should use a standard focus ring or a cell focus ring. The basic idea is that a
      * cell editor should use a smaller focus ring that does not overlap other cells.
      */
-    protected boolean isCellEditor(JComponent c) {
+    protected boolean isCellEditor(@NotNull JComponent c) {
         return cellEditorPolicy.getCellStatus(c) != null;
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2018 Alan Snyder.
+ * Copyright (c) 2015-2020 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -440,12 +440,7 @@ public class AquaButtonExtendedTypes {
         // Round buttons are like gradient buttons, but white looks better on the blue background
         result.put(BUTTON_ROUND, new WidgetInfo(AquaColors.ROUND_BUTTON_COLORS));
 
-        result.put(BUTTON_TOOLBAR_ITEM, new WidgetInfo(AquaColors.TOOLBAR_ITEM_COLORS)
-                .withFont(size -> size == AquaUIPainter.Size.SMALL || size == AquaUIPainter.Size.MINI
-                                ? UIManager.getFont("IconButton.smallFont")
-                                : UIManager.getFont("IconButton.font"))
-                .withIconTextGap(2)
-        );
+        result.put(BUTTON_TOOLBAR_ITEM, new WidgetInfo(AquaColors.TOOLBAR_ITEM_COLORS).withIconTextGap(2));
 
         result.put(BUTTON_INLINE, new WidgetInfo(AquaColors.INLINE_BUTTON_COLORS)
                 .withFont(UIManager.getFont("Button.inline.font"))

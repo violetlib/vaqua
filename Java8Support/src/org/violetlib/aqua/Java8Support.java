@@ -19,9 +19,9 @@ import java.util.function.Function;
 import javax.swing.*;
 
 import org.jetbrains.annotations.NotNull;
+import sun.awt.image.MultiResolutionImage;
 import sun.java2d.opengl.OGLRenderQueue;
 import sun.swing.SwingUtilities2;
-import sun.awt.image.MultiResolutionImage;
 
 /**
  * Support for Java 8
@@ -151,6 +151,14 @@ public class Java8Support implements JavaSupport.JavaSupportImpl {
     }
 
     @Override
+    public @NotNull AquaMultiResolutionImage createImage(int rasterWidth, int rasterHeight, int[] data, float scale) {
+        BufferedImage basicImage = createImage(rasterWidth, rasterHeight, data);
+        int width = (int) (rasterWidth / scale);
+        int height = (int) (rasterHeight /scale);
+        return new Aqua8MultiResolutionImage(width, height, basicImage);
+    }
+
+    @Override
     public Image applyFilter(Image image, ImageFilter filter) {
         return Aqua8MultiResolutionImage.apply(image, filter);
     }
@@ -176,7 +184,7 @@ public class Java8Support implements JavaSupport.JavaSupportImpl {
     }
 
     @Override
-    public BufferedImage createImage(int width, int height, int[] data) {
+    public @NotNull BufferedImage createImage(int width, int height, int[] data) {
         BufferedImage b = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB_PRE);
         WritableRaster raster = b.getRaster();
         DataBufferInt buffer = (DataBufferInt) raster.getDataBuffer();
@@ -209,7 +217,7 @@ public class Java8Support implements JavaSupport.JavaSupportImpl {
                     };
                     m.invoke(image, observer);
                 } catch (Exception ex) {
-                    System.err.println("Unable to preload image: " + ex);
+                    AquaUtils.logError("Unable to preload image", ex);
                 }
             }
         }

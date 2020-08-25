@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014-2018 Alan Snyder.
+ * Copyright (c) 2014-2019 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -198,8 +198,11 @@ public class ColumnViewImpl extends ColumnView {
                     }
                 });
             } else {
-                BrowserPreviewRenderer previewRenderer = createFilePreview(fc);
-                browser.setPreviewRenderer(previewRenderer);
+                BrowserPreviewRenderer oldRenderer = browser.getPreviewRenderer();
+                if (!(oldRenderer instanceof FilePreview)) {
+                    BrowserPreviewRenderer previewRenderer = new FilePreview(fc);
+                    browser.setPreviewRenderer(previewRenderer);
+                }
             }
         }
     }
@@ -276,9 +279,5 @@ public class ColumnViewImpl extends ColumnView {
      */
     protected boolean isFileNameFieldVisible() {
         return (fc.getDialogType() == JFileChooser.SAVE_DIALOG) || (fc.getDialogType() == JFileChooser.CUSTOM_DIALOG);
-    }
-
-    protected BrowserPreviewRenderer createFilePreview(JFileChooser fc) {
-        return new FilePreview(fc);
     }
 }

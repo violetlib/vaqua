@@ -209,7 +209,7 @@ public class AquaContextualColorImpl implements ContextualColor {
             if (isIcon) {
                 message = message + " ICON";
             }
-            System.err.println(message);
+            AquaUtils.logDebug(message);
         }
 
         if (state == ROLLOVER) {

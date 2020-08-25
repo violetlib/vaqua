@@ -112,8 +112,7 @@ public class AquaAppearances {
             VAppearance a = ace.getAppearance();
             String name = a.getName();
             if (false) {
-                // debug
-                System.err.println("AquaAppearances: appearance " + name + " updated");
+                AquaUtils.logDebug("AquaAppearances: appearance " + name + " updated");
             }
             AquaAppearance appearance = new AquaAppearance(a);
             appearances.put(name, appearance);

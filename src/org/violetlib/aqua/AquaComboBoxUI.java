@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2018 Alan Snyder.
+ * Copyright (c) 2015-2020 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -146,8 +146,10 @@ public class AquaComboBoxUI extends BasicComboBoxUI
         hierarchyListener = new MyHierarchyListener();
         comboBox.addHierarchyListener(hierarchyListener);
         comboBox.addPropertyChangeListener(propertyChangeListener);
-        AquaComboBoxPopup popup = (AquaComboBoxPopup) getPopup();
-        popup.addHierarchyListener(popupListener);
+        ComboPopup popup = getPopup();
+        if (popup instanceof AquaComboBoxPopup) {
+            ((AquaComboBoxPopup) popup).addHierarchyListener(popupListener);
+        }
         AppearanceManager.installListener(comboBox);
         AquaUtils.installToolbarSensitivity(comboBox);
     }
@@ -155,10 +157,11 @@ public class AquaComboBoxUI extends BasicComboBoxUI
     protected void uninstallListeners() {
         AquaUtils.uninstallToolbarSensitivity(comboBox);
         AppearanceManager.uninstallListener(comboBox);
-        AquaComboBoxPopup popup = (AquaComboBoxPopup) getPopup();
-        popup.removeHierarchyListener(popupListener);
+        ComboPopup popup = getPopup();
+        if (popup instanceof AquaComboBoxPopup) {
+            ((AquaComboBoxPopup) popup).removeHierarchyListener(popupListener);
+        }
         comboBox.removePropertyChangeListener(propertyChangeListener);
-        comboBox.removeHierarchyListener(hierarchyListener);
         hierarchyListener = null;
         AquaUtilControlSize.removeSizePropertyListener(comboBox);
         AquaFullKeyboardFocusableHandler.removeListener(comboBox);
@@ -460,7 +463,7 @@ public class AquaComboBoxUI extends BasicComboBoxUI
         currentValueListBox.setBackground(AquaColors.CLEAR);
         currentValueListBox.setForeground(comboBox.getForeground());
         Component c = renderer.getListCellRendererComponent(currentValueListBox, displayedItem, -1, false, false);
-        // System.err.println("Renderer: " + renderer);
+        // AquaUtils.logDebug("Renderer: " + renderer);
         c.setFont(currentValuePane.getFont());
         updateRendererStyle(c);
 
@@ -649,6 +652,18 @@ public class AquaComboBoxUI extends BasicComboBoxUI
     }
 
     final class AquaComboBoxEditorUI extends AquaTextFieldUI implements FocusRingOutlineProvider {
+
+        @Override
+        public void installUI(@NotNull JComponent c) {
+            // This override is needed only because of a "temporary workaround" in BasicTextUI.installUI that updates
+            // the background after installDefaults has been performed. The same workaround is performed by the
+            // BasicTextUI property change listener for edited and enabled.
+
+            super.installUI(c);
+            assert appearanceContext != null;
+            AquaColors.installColors(editor, appearanceContext, colors);
+            editor.repaint();
+        }
 
         @Override
         protected void installDefaults() {

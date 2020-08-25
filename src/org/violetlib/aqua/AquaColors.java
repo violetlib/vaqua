@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Alan Snyder.
+ * Copyright (c) 2018-2020 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -183,7 +183,7 @@ public class AquaColors {
             this.useMagicEraser = useMagicEraser;
 
             if (useMagicEraser && (start.getAlpha() == 255 && finish.getAlpha() == 255)) {
-                System.err.println("Magic eraser not needed with opaque gradient");
+                AquaUtils.logDebug("Magic eraser not needed with opaque gradient");
             }
         }
 
@@ -315,7 +315,7 @@ public class AquaColors {
      * @throws UnsupportedOperationException if the specified color is not defined.
      */
     public static @NotNull Color getSystemColor(@NotNull JComponent c, @NotNull String colorName) {
-        AquaAppearance appearance = AppearanceManager.getAppearance(c);
+        AquaAppearance appearance = AppearanceManager.ensureAppearance(c);
         Color appearanceColor = appearance.getColor(colorName);
         if (appearanceColor != null) {
             return appearanceColor;
@@ -414,8 +414,8 @@ public class AquaColors {
 
     private static @NotNull BasicContextualColors createMenuColors() {
         AquaContextualColorImpl background = new AquaContextualColorImpl("MenuColors.background", "clear");
-        background.setSelectedName("selectedContentBackground");
-        background.setInactiveSelectedName("unemphasizedSelectedTextBackground");
+        background.setSelectedName("controlAccent");
+        background.setInactiveSelectedName("controlAccent_disabled");
 
         AquaContextualColorImpl foreground = new AquaContextualColorImpl("MenuColors.foreground", "controlText");
         foreground.setSelectedName("selectedMenuItemText");

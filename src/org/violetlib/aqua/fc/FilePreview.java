@@ -1,8 +1,6 @@
 /*
- * @(#)FilePreview.java
- *
  * Copyright (c) 2009-2010 Werner Randelshofer, Switzerland.
- * Copyright (c) 2014-2018 Alan Snyder.
+ * Copyright (c) 2014-2019 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the
@@ -13,16 +11,16 @@
 package org.violetlib.aqua.fc;
 
 import java.awt.*;
-import java.awt.event.*;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
 import java.io.File;
 import java.text.DateFormat;
 import java.text.MessageFormat;
 import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.List;
 import java.util.Locale;
-import java.util.concurrent.TimeUnit;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.filechooser.FileSystemView;
@@ -32,17 +30,15 @@ import javax.swing.tree.TreePath;
 
 import org.violetlib.aqua.AppearanceManager;
 import org.violetlib.aqua.AquaColors;
+import org.violetlib.aqua.AquaUtils;
 import org.violetlib.aqua.OSXSystemProperties;
 
 /**
  * The FilePreview is used to render the preview column in the file chooser browser view.
- *
- * @author  Werner Randelshofer
  */
 public class FilePreview extends JComponent implements BrowserPreviewRenderer {
 
     private JFileChooser fileChooser;
-    private JPanel emptyPreview;
     private FileInfo info;
     private NameView nameView;
     private JLabel typeSizeView;
@@ -51,14 +47,12 @@ public class FilePreview extends JComponent implements BrowserPreviewRenderer {
     private Font valueFont;
     private Font typeSizeFont;
     private String labelDelimiter;
-    private ScaledImageView previewImageView;
-    private JProgressBar imageLoadingIndicator;
-    private boolean imageIsLoading;
-    private Timer imageLoadingTimer;
     private TableColumn nameColumn;
     private TableColumn valueColumn;
     private SimpleTableCellRenderer nameRenderer;
     private SimpleTableCellRenderer valueRenderer;
+    private FilePreviewView view;
+    private JPanel viewHolder;
 
     public FilePreview(JFileChooser fileChooser) {
         this.fileChooser = fileChooser;
@@ -71,21 +65,12 @@ public class FilePreview extends JComponent implements BrowserPreviewRenderer {
         setMinimumSize(new Dimension(minWidth, minHeight));
         setPreferredSize(new Dimension(prefWidth, minHeight));
 
-        previewImageView = new ScaledImageView();
-        previewImageView.setMinimumSize(new Dimension(128, 128));
-        previewImageView.setPreferredSize(new Dimension(128, 128));
+        viewHolder = new JPanel();
+        viewHolder.setMinimumSize(new Dimension(128, 128));
+        viewHolder.setPreferredSize(new Dimension(128, 128));
 
-        imageLoadingIndicator = createImageLoadingIndicator();
-
-        imageLoadingTimer = new Timer(500, new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                if (imageIsLoading) {
-                    imageLoadingIndicator.setVisible(true);
-                }
-            }
-        });
-        imageLoadingTimer.setRepeats(false);
+        view = new FilePreviewView();
+        view.track(viewHolder);
 
         setBorder(BorderFactory.createEmptyBorder(3, 4, 4, 4));
         setLayout(new BorderLayout());
@@ -93,9 +78,6 @@ public class FilePreview extends JComponent implements BrowserPreviewRenderer {
         labelFont = UIManager.getFont("FileChooser.previewLabelFont");
         valueFont = UIManager.getFont("FileChooser.previewValueFont");
         typeSizeFont = UIManager.getFont("FileChooser.previewTypeSizeFont");
-
-        emptyPreview = new JPanel();
-        emptyPreview.setOpaque(false);
 
         labelDelimiter = UIManager.getString("FileChooser.previewLabelDelimiter");
         if (labelDelimiter == null) {
@@ -138,12 +120,7 @@ public class FilePreview extends JComponent implements BrowserPreviewRenderer {
 
         setOpaque(false);
 
-        OverlayContainer imageHolder = new OverlayContainer();
-        imageHolder.add(imageLoadingIndicator);
-        imageHolder.add(previewImageView);
-        imageHolder.setMinimumSize(new Dimension(128, 128));
-        imageHolder.setPreferredSize(new Dimension(128, 128));
-        add(imageHolder);
+        add(viewHolder);
 
         Box vb = new Box(BoxLayout.Y_AXIS);
         add(vb, BorderLayout.SOUTH);
@@ -197,6 +174,13 @@ public class FilePreview extends JComponent implements BrowserPreviewRenderer {
         }
     }
 
+    public void dispose() {
+        if (view != null) {
+            view.dispose();
+            view = null;
+        }
+    }
+
     @Override
     protected void paintComponent(Graphics g) {
 
@@ -246,7 +230,8 @@ public class FilePreview extends JComponent implements BrowserPreviewRenderer {
     public Component getPreviewRendererComponent(JBrowser browser, TreePath[] paths) {
 
         if (paths.length != 1) {
-            return emptyPreview;
+            setVisible(false);
+            return this;
         }
 
         Locale locale = Locale.getDefault();
@@ -255,14 +240,16 @@ public class FilePreview extends JComponent implements BrowserPreviewRenderer {
         info = (FileInfo) paths[0].getLastPathComponent();
 
         if (!info.isAcceptable()) {
-            return emptyPreview;
+            setVisible(false);
+            return this;
         }
+
+        setVisible(true);
 
         File file = info.getFile();
         String name = info.getUserName();
         String kind = OSXFile.getKindString(file);
         String size = getLengthString(info.getFileLength());
-        Date lastUsedDate = OSXFile.getLastUsedDate(file);
         String modified = getModifiedString(file);
 
         if (nameView != null) {
@@ -279,6 +266,7 @@ public class FilePreview extends JComponent implements BrowserPreviewRenderer {
             }
             m.add("modified", modified);
 
+            Date lastUsedDate = OSXFile.getLastUsedDate(file);
             if (lastUsedDate != null) {
                 m.add("lastUsed", getLastUsedString(lastUsedDate));
             }
@@ -293,8 +281,15 @@ public class FilePreview extends JComponent implements BrowserPreviewRenderer {
                 m.add("", s); // special font and text color for first row
             }
             m.add("modified", modified);
-            if (lastUsedDate != null) {
-                m.add("lastUsed", getLastUsedString(lastUsedDate));
+
+            // TBD: in 10.14, it can take a long time to determine that the last used date is not
+            // available to an untrusted program.
+
+            if (OSXSystemProperties.OSVersion < 1014) {
+                Date lastUsedDate = OSXFile.getLastUsedDate(file);
+                if (lastUsedDate != null) {
+                    m.add("lastUsed", getLastUsedString(lastUsedDate));
+                }
             }
         }
 
@@ -421,84 +416,13 @@ public class FilePreview extends JComponent implements BrowserPreviewRenderer {
     }
 
     private void updatePreviewImage() {
-        imageLoadingIndicator.setVisible(false);
-        previewImageView.setVisible(false);
-        previewImageView.setImage(null);
-        imageIsLoading = false;
-
-        if (info != null) {
-            // Retrieving the file icon requires some potentially lengthy I/O
-            // operations. Therefore we do this in a worker thread.
-            File file = info.lazyGetResolvedFile();
-            if (file != null) {
-                imageIsLoading = true;
-                boolean useQuickLook = UIManager.getBoolean("FileChooser.quickLookEnabled");
-                PreviewWorker w = new PreviewWorker(file, useQuickLook);
-                w.execute();
-                imageLoadingTimer.start();
-            }
-        }
-    }
-
-    protected class QuickLookPreviewWorker extends SwingWorker<Image,Image> {
-
-        private final File file;
-
-        public QuickLookPreviewWorker(File file) {
-            this.file = file;
-        }
-
-        @Override
-        protected Image doInBackground() throws Exception {
-            try {
-                return OSXFile.getIconImage(file, 1600, true);
-            } catch (UnsupportedOperationException ex) {
-                return null;
-            }
-        }
-    }
-
-    protected class PreviewWorker extends SwingWorker<Image,Image> {
-
-        private final File file;
-        private final boolean useQuickLook;
-
-        public PreviewWorker(File file, boolean useQuickLook) {
-            this.file = file;
-            this.useQuickLook = useQuickLook;
-        }
-
-        @Override
-        protected Image doInBackground() throws Exception {
-            if (useQuickLook) {
-                QuickLookPreviewWorker w = new QuickLookPreviewWorker(file);
-                w.execute();
-                Image im = w.get(10, TimeUnit.SECONDS);
-                w.cancel(true);
-                if (im != null) {
-                    publish(im);
-                    return im;
+        if (view != null) {
+            if (info != null) {
+                File file = info.lazyGetResolvedFile();
+                if (file != null) {
+                    view.configure(file);
                 }
             }
-
-            Image im = OSXFile.getIconImage(file, 512, false);
-            publish(im);
-            return im;
-        }
-
-        @Override
-        protected void process(List<Image> chunks) {
-            FilePreview.this.installPreviewImage(chunks.get(0));
-        }
-    }
-
-    protected void installPreviewImage(Image im) {
-        imageLoadingTimer.stop();
-        imageIsLoading = false;
-        imageLoadingIndicator.setVisible(false);
-        previewImageView.setImage(im);
-        if (im != null) {
-            previewImageView.setVisible(true);
         }
     }
 

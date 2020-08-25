@@ -2,7 +2,7 @@
  * @(#)AquaNativeSupport.m
  *
  * Copyright (c) 2004-2007 Werner Randelshofer, Switzerland.
- * Copyright (c) 2014-2018 Alan Snyder.
+ * Copyright (c) 2014-2019 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this software, except in
@@ -20,6 +20,7 @@ static int VERSION = 3;
 
 #include <stdio.h>
 #include <assert.h>
+#include <math.h>
 #include "jni.h"
 #include "org_violetlib_aqua_fc_OSXFile.h"
 #include "org_violetlib_aqua_OSXSystemProperties.h"
@@ -35,8 +36,13 @@ static int VERSION = 3;
 #import <CoreServices/CoreServices.h>
 #import <CoreFoundation/CoreFoundation.h>
 #import <CoreGraphics/CoreGraphics.h>
+#import <Quartz/Quartz.h>
 #import <JavaNativeFoundation.h>
 #import <Availability.h>
+
+#if __MAC_OS_X_VERSION_MAX_ALLOWED >= 101500
+#import <QuickLookThumbnailing/QuickLookThumbnailing.h>
+#endif
 
 #import "AquaSidebarBackground.h"
 #import "AquaWrappedAWTView.h"
@@ -206,6 +212,32 @@ void runOnMainThread(void (^block)())
     [JNFRunLoop performOnMainThreadWaiting:YES withBlock:block];
 }
 
+void runFromNativeThread(void (^block)(JNIEnv *))
+{
+    assert(vm);
+
+    jboolean attachedHere = NO;
+
+    JNIEnv *env = NULL;
+    int status = (*vm)->GetEnv(vm, (void **) &env, JNI_VERSION_1_6);
+    if (status == JNI_EDETACHED) {
+        status = (*vm)->AttachCurrentThread(vm, (void **) &env, 0);
+        if (status == JNI_OK) {
+            attachedHere = YES;
+        }
+    }
+
+    if (status == JNI_OK) {
+        block(env);
+    } else {
+        NSLog(@"Unable to attach thread %d", status);
+    }
+
+    if (attachedHere) {
+        (*vm)->DetachCurrentThread(vm);
+    }
+}
+
 void setupLayers(NSView *v)
 {
     NSView *vv = v;
@@ -264,20 +296,8 @@ NSView *getAWTView(NSWindow *w)
     NSUserDefaults* defaults = [NSUserDefaults standardUserDefaults];
     [defaults synchronize];
 
-    JNIEnv *env;
-    jboolean attached = NO;
-    int status = (*vm)->GetEnv(vm, (void **) &env, JNI_VERSION_1_6);
-    if (status == JNI_EDETACHED) {
-        status = (*vm)->AttachCurrentThread(vm, (void **) &env, 0);
-        if (status == JNI_OK) {
-            attached = YES;
-        } else {
-            NSLog(@"Unable to attach thread %d", status);
-        }
-    }
-
-    if (status == JNI_OK) {
-        if (synchronizeCallback != NULL) {
+    if (synchronizeCallback != NULL) {
+        runFromNativeThread(^(JNIEnv *env) {
             jclass cl = (*env)->GetObjectClass(env, synchronizeCallback);
             jmethodID m = (*env)->GetMethodID(env, cl, "run", "()V");
             if (m != NULL) {
@@ -285,13 +305,7 @@ NSView *getAWTView(NSWindow *w)
             } else {
                 NSLog(@"Unable to invoke callback -- run method not found");
             }
-        }
-    } else {
-        NSLog(@"Unable to invoke notification callback %d", status);
-    }
-
-    if (attached) {
-        (*vm)->DetachCurrentThread(vm);
+        });
     }
 }
 @end
@@ -650,18 +664,20 @@ JNIEXPORT jstring JNICALL Java_org_violetlib_aqua_fc_OSXFile_nativeGetKindString
 }
 
 // Render an image into a Java int array
-// w and h is the desired image size
+// w and h is the desired image size (in points)
 // scaleFactor is the scaleFactor of the display for which this rendering is intended
 // return NULL if scaleFactor is greater than 1 and the image has only one representation
 
-static jintArray renderImageIntoBufferForDisplay(JNIEnv *env, NSImage *image, jint w, jint h, jfloat scaleFactor)
+static jintArray renderImageIntoBufferForDisplay(JNIEnv *env, NSImage *image, jfloat w, jfloat h, jfloat scaleFactor)
 {
-    if (scaleFactor > 1 && [[image representations] count] < 2) {
-        return NULL;
-    }
+    //NSLog(@"Calling renderImageIntoBufferForDisplay %f %f %f on thread %@", w, h, scaleFactor, NSThread.currentThread);
 
-    int rw = (int) (w * scaleFactor);
-    int rh = (int) (h * scaleFactor);
+//     if (scaleFactor > 1 && [[image representations] count] < 2) {
+//         return NULL;
+//     }
+
+    int rw = (int) ceil(w * scaleFactor);
+    int rh = (int) ceil(h * scaleFactor);
 
     jboolean isCopy = JNI_FALSE;
     jintArray jdata = (*env)->NewIntArray(env, rw * rh);
@@ -708,7 +724,7 @@ static jintArray renderImageIntoBufferForDisplay(JNIEnv *env, NSImage *image, ji
 // Render an image into a Java array
 // rw and rh are the actual size of the raster
 
-static jboolean renderImageIntoBuffers(JNIEnv *env, NSImage *image, jobjectArray joutput, jint w, jint h)
+static jboolean renderImageIntoBuffers(JNIEnv *env, NSImage *image, jobjectArray joutput, jfloat w, jfloat h)
 {
     //NSLog(@"Render image into buffers: %@", image);
 
@@ -772,11 +788,11 @@ static NSImage *getFileImage(NSString *path, jboolean isQuickLook, jboolean isIc
 }
 
 /*
- * Class:     org_violetlib_aqua_fc_OSXFile
+ * Class:     org_violetlib_aqua_fc_AquaFileIcons
  * Method:    nativeRenderFileImage
  * Signature: (Ljava/lang/String;ZZ[[III)Z
  */
-JNIEXPORT jboolean JNICALL Java_org_violetlib_aqua_fc_OSXFile_nativeRenderFileImage
+JNIEXPORT jboolean JNICALL Java_org_violetlib_aqua_fc_AquaFileIcons_nativeRenderFileImage
     (JNIEnv *env, jclass cl, jstring jpath, jboolean isQuickLook, jboolean isIconMode, jobjectArray output, jint w, jint h)
 {
     jboolean result = NO;
@@ -785,14 +801,129 @@ JNIEXPORT jboolean JNICALL Java_org_violetlib_aqua_fc_OSXFile_nativeRenderFileIm
 
     NSString *path = JNFNormalizedNSStringForPath(env, jpath);
 
-        NSImage *image = getFileImage(path, isQuickLook, isIconMode, w, h);
-        if (image != nil) {
-                result = renderImageIntoBuffers(env, image, output, w, h);
-        }
+    NSImage *image = getFileImage(path, isQuickLook, isIconMode, w, h);
+    if (image != nil) {
+        result = renderImageIntoBuffers(env, image, output, w, h);
+    }
 
     JNF_COCOA_EXIT(env);
 
     return result;
+}
+
+static jobject thumbnailHandler;
+static jclass thumbnailHandlerClass;
+static jmethodID thumbnailHandlerMethodID;
+
+/*
+ * Class:     org_violetlib_aqua_fc_CatalinaFileIconServiceImpl
+ * Method:    nativeInstallThumbnailHandler
+ * Signature: (Lorg/violetlib/aqua/fc/CatalinaFileIconServiceImpl/MyHandler;)V
+ */
+JNIEXPORT void JNICALL Java_org_violetlib_aqua_fc_CatalinaFileIconServiceImpl_nativeInstallThumbnailHandler
+  (JNIEnv *env, jclass cl, jobject jhandler)
+{
+    thumbnailHandler = (*env)->NewGlobalRef(env, jhandler);
+    if (thumbnailHandler == NULL) {
+        NSLog(@"Unable to create global reference to thumbnail handler");
+    } else {
+        jclass c = (*env)->GetObjectClass(env, thumbnailHandler);
+        thumbnailHandlerClass = (*env)->NewGlobalRef(env, c);
+        if (thumbnailHandlerClass == NULL) {
+            NSLog(@"Unable to create global reference to thumbnail handler class");
+        } else {
+            thumbnailHandlerMethodID = (*env)->GetMethodID(env, thumbnailHandlerClass, "installImage", "(JII[IFI)V");
+            if (thumbnailHandlerMethodID == NULL) {
+                NSLog(@"Unable to find thumbnail handler method");
+            }
+        }
+    }
+}
+
+/*
+ * Class:     org_violetlib_aqua_fc_CatalinaFileIconServiceImpl
+ * Method:    isAvailable
+ * Signature: ()Z
+ */
+JNIEXPORT jboolean JNICALL Java_org_violetlib_aqua_fc_CatalinaFileIconServiceImpl_isAvailable
+  (JNIEnv *env, jclass cl)
+{
+    jboolean result = 0;
+
+#if __MAC_OS_X_VERSION_MAX_ALLOWED >= 101500
+    if (@available(macOS 10.15, *)) {
+        result = 1;
+    }
+#endif
+
+    return result;
+}
+
+/*
+ * Class:     org_violetlib_aqua_fc_CatalinaFileIconServiceImpl
+ * Method:    nativeInstallThumbnails
+ * Signature: (Ljava/lang/String;IFJ)V
+ */
+JNIEXPORT void JNICALL Java_org_violetlib_aqua_fc_CatalinaFileIconServiceImpl_nativeInstallThumbnails
+  (JNIEnv *env, jclass cl, jstring jpath, jint jsize, jfloat scale, jlong requestID)
+{
+    if (thumbnailHandlerMethodID == NULL) {
+      return;
+    }
+
+    JNF_COCOA_ENTER(env);
+
+#if __MAC_OS_X_VERSION_MAX_ALLOWED >= 101500
+    if (@available(macOS 10.15, *)) {
+        NSString *path = JNFNormalizedNSStringForPath(env, jpath);
+        NSURL *u = [NSURL fileURLWithPath:path];
+        if (u != nil) {
+            CGSize size = CGSizeMake(jsize, jsize);
+            QLThumbnailGenerator *generator = [QLThumbnailGenerator sharedGenerator];
+            QLThumbnailGenerationRequest *request
+              = [[QLThumbnailGenerationRequest alloc]
+                            initWithFileAtURL:u
+                                         size:size
+                                        scale:scale
+                          representationTypes:QLThumbnailGenerationRequestRepresentationTypeAll];
+
+            if (request) {
+                NSLog(@"Requesting thumbnails %@ %d %f", path, jsize, scale);
+                [generator generateRepresentationsForRequest:request updateHandler:
+                    ^(QLThumbnailRepresentation *thumbnail, QLThumbnailRepresentationType type, NSError *error) {
+                        if (thumbnail != nil) {
+                            NSImage *image = [thumbnail NSImage];
+                            NSLog(@"  Thumbnail %ld delivered: %@ (%f x %f)", (long) type, path, image.size.width, image.size.height);
+                            jint priority = 0;
+                            switch (type) {
+                              case QLThumbnailRepresentationTypeIcon: priority = 10; break;
+                              case QLThumbnailRepresentationTypeLowQualityThumbnail: priority = 20; break;
+                              case QLThumbnailRepresentationTypeThumbnail: priority = 30; break;
+                            }
+                            runFromNativeThread(^(JNIEnv *env) {
+                                // TBD: the following assumes we get what we asked for, may not be true
+                                int rasterWidth = (int) (image.size.width * scale);
+                                int rasterHeight = (int) (image.size.height * scale);
+                                jintArray data = renderImageIntoBufferForDisplay(env, image, image.size.width, image.size.height, scale);
+                                if (data != NULL) {
+                                    (*env)->CallVoidMethod(env, thumbnailHandler, thumbnailHandlerMethodID, requestID, rasterWidth, rasterHeight, data, scale, priority);
+                                } else {
+                                    NSLog(@"  Unable to get thumbnail: unable to render image contents");
+                                }
+                            });
+                        } else if (error != nil) {
+                            NSLog(@"  Unable to get thumbnail %ld for %@: %@", (long) type, path, error.localizedFailureReason);
+                        }
+                    }
+                ];
+            } else {
+                NSLog(@"  Unable to create request for thumbnails %@ %d %f", path, jsize, scale);
+            }
+        }
+    }
+#endif
+
+    JNF_COCOA_EXIT(env);
 }
 
 /*
@@ -940,6 +1071,27 @@ JNIEXPORT jstring JNICALL Java_org_violetlib_aqua_fc_OSXFile_nativeGetDisplayNam
 
     // Return the result
     return displayNameJ;
+}
+
+JNIEXPORT jstring JNICALL Java_org_violetlib_aqua_fc_OSXFile_nativeGetFileUTI
+    (JNIEnv *env, jclass javaClass, jstring jpath)
+{
+    jstring result = NULL;
+
+    JNF_COCOA_ENTER(env);
+
+    if (jpath != NULL) {
+        NSString *path = JNFNormalizedNSStringForPath(env, jpath);
+        NSURL *u = [NSURL fileURLWithPath:path];
+        NSString *type = nil;
+        if ([u getResourceValue:&type forKey:NSURLTypeIdentifierKey error:nil]) {
+            result = (*env)->NewStringUTF(env, [type UTF8String]);
+        }
+    }
+
+    JNF_COCOA_EXIT(env);
+
+    return result;
 }
 
 /*
@@ -1173,19 +1325,7 @@ static jboolean colorPanelBeingConfigured;
 {
     assert(vm);
 
-    JNIEnv *env;
-    jboolean attached = NO;
-    int status = (*vm)->GetEnv(vm, (void **) &env, JNI_VERSION_1_6);
-    if (status == JNI_EDETACHED) {
-        status = (*vm)->AttachCurrentThread(vm, (void **) &env, 0);
-        if (status == JNI_OK) {
-            attached = YES;
-        } else {
-            NSLog(@"Unable to attach thread %d", status);
-        }
-    }
-
-    if (status == JNI_OK) {
+    runFromNativeThread(^(JNIEnv *env) {
         // Using dynamic lookup because we do not know which class loader was used
         jclass cl = (*env)->GetObjectClass(env, colorPanelCallback);
         jmethodID m = (*env)->GetMethodID(env, cl, "disconnected", "()V");
@@ -1194,13 +1334,7 @@ static jboolean colorPanelBeingConfigured;
         } else {
             NSLog(@"Unable to invoke callback -- disconnected method not found");
         }
-    } else {
-        NSLog(@"Unable to invoke callback %d", status);
-    }
-
-    if (attached) {
-        (*vm)->DetachCurrentThread(vm);
-    }
+    });
 }
 
 - (void) colorChanged: (id) sender
@@ -1210,20 +1344,7 @@ static jboolean colorPanelBeingConfigured;
     }
 
     NSColor *color = [colorPanel color];
-
-    JNIEnv *env;
-    jboolean attached = NO;
-    int status = (*vm)->GetEnv(vm, (void **) &env, JNI_VERSION_1_6);
-    if (status == JNI_EDETACHED) {
-        status = (*vm)->AttachCurrentThread(vm, (void **) &env, 0);
-        if (status == JNI_OK) {
-            attached = YES;
-        } else {
-            NSLog(@"Unable to attach thread %d", status);
-        }
-    }
-
-    if (status == JNI_OK) {
+    runFromNativeThread(^(JNIEnv *env) {
         static JNF_CLASS_CACHE(jc_Color, "java/awt/Color");
         static JNF_MEMBER_CACHE(jm_createColor, jc_Color, "<init>", "(FFFF)V");
         CGFloat r, g, b, a;
@@ -1237,13 +1358,7 @@ static jboolean colorPanelBeingConfigured;
         } else {
             NSLog(@"Unable to invoke callback -- applyColor method not found");
         }
-    } else {
-        NSLog(@"Unable to invoke callback %d", status);
-    }
-
-    if (attached) {
-        (*vm)->DetachCurrentThread(vm);
-    }
+    });
 }
 
 @end
@@ -1365,27 +1480,9 @@ void deliverWindowChangedAppearance(NSWindow *window, NSAppearance *appearance)
 
     assert(vm);
 
-    JNIEnv *env;
-    jboolean attached = NO;
-    int status = (*vm)->GetEnv(vm, (void **) &env, JNI_VERSION_1_6);
-    if (status == JNI_EDETACHED) {
-        status = (*vm)->AttachCurrentThread(vm, (void **) &env, 0);
-        if (status == JNI_OK) {
-            attached = YES;
-        } else {
-            NSLog(@"Unable to attach thread %d", status);
-        }
-    }
-
-    if (status == JNI_OK) {
+    runFromNativeThread(^(JNIEnv *env) {
         internalDeliverWindowChangedAppearance(env, window, appearance);
-    } else {
-        NSLog(@"Unable to invoke callback %d", status);
-    }
-
-    if (attached) {
-        (*vm)->DetachCurrentThread(vm);
-    }
+    });
 }
 
 /*
@@ -1415,36 +1512,48 @@ static jobject getPlatformWindow(JNIEnv *env, jobject windowPeer)
     return windowPeer != NULL ? JNFCallObjectMethod(env, windowPeer, jm_getPlatformWindow) : NULL;
 }
 
-/*
- * Class:     org_violetlib_aqua_AquaUtils
- * Method:    nativeGetNativeWindow
- * Signature: (Ljava/awt/Window;[Ljava/lang/Object;)J
- */
-JNIEXPORT jlong JNICALL Java_org_violetlib_aqua_AquaUtils_nativeGetNativeWindow
-  (JNIEnv *env, jclass cl, jobject w, jobjectArray data)
+static NSWindow *getNativeWindowFromPlatformWindow(JNIEnv *env, jobject platformWindow, jobject *readLockOutput)
 {
+    static JNF_CLASS_CACHE(jc_CPlatformWindow, "sun/lwawt/macosx/CPlatformWindow");
     static JNF_CLASS_CACHE(jc_CFRetainedResource, "sun/lwawt/macosx/CFRetainedResource");
     static JNF_MEMBER_CACHE(jf_ptr, jc_CFRetainedResource, "ptr", "J");
     static JNF_MEMBER_CACHE(jf_readLock, jc_CFRetainedResource, "readLock", "Ljava/util/concurrent/locks/Lock;");
 
-    jlong result = 0;
-    jobject readLock = NULL;
+    *readLockOutput = NULL;
 
-    JNF_COCOA_ENTER(env);
+    // Check for the normal case (CPlatformWindow)
+    if (JNFIsInstanceOf(env, platformWindow, &jc_CPlatformWindow)) {
+        jlong ptr = JNFGetLongField(env, platformWindow, jf_ptr);
+        if (ptr != 0) {
+            *readLockOutput = JNFGetObjectField(env, platformWindow, jf_readLock);
+        }
+        return (NSWindow *) ptr;
+    }
 
+    NSLog(@"Unsupported platform window: %@", JNFObjectClassName(env, platformWindow));
+    return NULL;
+}
+
+static NSWindow *getNativeWindow(JNIEnv *env, jobject w, jobject *readLockOutput)
+{
+    static JNF_CLASS_CACHE(jc_CViewEmbeddedFrame, "sun/lwawt/macosx/CViewEmbeddedFrame");
+    static JNF_MEMBER_CACHE(jm_getEmbedderHandle, jc_CViewEmbeddedFrame, "getEmbedderHandle", "()J");
+
+    *readLockOutput = NULL;
+
+    // Check for an embedded frame (CViewEmbeddedFrame)
+    if (JNFIsInstanceOf(env, w, &jc_CViewEmbeddedFrame)) {
+        NSView *v = (NSView *) JNFCallLongMethod(env, w, jm_getEmbedderHandle);
+        return v != NULL ? v.window : NULL;
+    }
+
+    NSWindow *result = 0;
     jobject peer = getWindowPeer(env, w);
     if (peer != NULL) {
         jobject platformWindow = getPlatformWindow(env, peer);
         if (platformWindow != NULL) {
-            result = JNFGetLongField(env, platformWindow, jf_ptr);
-            if (result != 0) {
-                jclass c = (*env)->GetObjectClass(env, platformWindow);
-                jfieldID f_readLock = (*env)->GetFieldID(env, c, "readLock", "Ljava/util/concurrent/locks/Lock;");
-                if (f_readLock != NULL) {
-                    readLock = JNFGetObjectField(env, platformWindow, jf_readLock);
-                }
-                (*env)->ExceptionClear(env);
-            } else {
+            result = getNativeWindowFromPlatformWindow(env, platformWindow, readLockOutput);
+            if (result == NULL) {
                 NSLog(@"nativeGetNativeWindow: No pointer");
             }
         } else {
@@ -1453,6 +1562,23 @@ JNIEXPORT jlong JNICALL Java_org_violetlib_aqua_AquaUtils_nativeGetNativeWindow
     } else {
         NSLog(@"nativeGetNativeWindow: No window peer");
     }
+    return result;
+}
+
+/*
+ * Class:     org_violetlib_aqua_AquaUtils
+ * Method:    nativeGetNativeWindow
+ * Signature: (Ljava/awt/Window;[Ljava/lang/Object;)J
+ */
+JNIEXPORT jlong JNICALL Java_org_violetlib_aqua_AquaUtils_nativeGetNativeWindow
+  (JNIEnv *env, jclass cl, jobject w, jobjectArray data)
+{
+    jlong result = 0;
+    jobject readLock = NULL;
+
+    JNF_COCOA_ENTER(env);
+
+    result = (jlong) getNativeWindow(env, w, &readLock);
 
     (*env)->SetObjectArrayElement(env, data, 0, readLock);
 
@@ -1565,6 +1691,31 @@ JNIEXPORT void JNICALL Java_org_violetlib_aqua_AquaUtils_nativeSetWindowBackgrou
 
 /*
  * Class:     org_violetlib_aqua_AquaUtils
+ * Method:    nativeSetWindowRepresentedFilename
+ * Signature: (JLjava/lang/String;)I
+ */
+JNIEXPORT jint JNICALL Java_org_violetlib_aqua_AquaUtils_nativeSetWindowRepresentedFilename
+  (JNIEnv *env, jclass cl, jlong wptr, jstring jFilename)
+{
+    jint result = -1;
+
+    JNF_COCOA_ENTER(env);
+
+    NSWindow *w = (NSWindow *) wptr;
+    if (jFilename) {
+        NSString *filename = JNFJavaToNSString(env, jFilename);
+        runOnMainThread(^() {
+            w.representedFilename = filename;
+        });
+        result = 0;
+    }
+
+    JNF_COCOA_EXIT(env);
+    return result;
+}
+
+/*
+ * Class:     org_violetlib_aqua_AquaUtils
  * Method:    nativeIsFullScreenWindow
  * Signature: (J)Z
  */
@@ -1608,7 +1759,7 @@ JNIEXPORT jint JNICALL Java_org_violetlib_aqua_AquaUtils_nativeSetTitleBarStyle
 
     NSWindow *w = (NSWindow *) wptr;
     if ([w respondsToSelector: @selector(setTitlebarAppearsTransparent:)]) {
-        runOnMainThread(^(){
+        runOnMainThread(^() {
 
             NSProcessInfo *pi = [NSProcessInfo processInfo];
             NSOperatingSystemVersion osv = [pi operatingSystemVersion];
@@ -1746,13 +1897,13 @@ JNIEXPORT jint JNICALL Java_org_violetlib_aqua_AquaUtils_nativeSetTitleBarProper
     JNF_COCOA_ENTER(env);
 
     NSWindow *w = (NSWindow *) wptr;
-    runOnMainThread(^(){
+    runOnMainThread(^() {
 
         // Update the titled window style bit using the UNDECORATED style bit of CPlatformWindow.
 
         BOOL isWindowTitled = (w.styleMask & NSWindowStyleMaskTitled) != 0;
         if (isWindowTitled != hasTitleBar) {
-            jobject jPlatformWindow = getJavaPlatformWindow(env, wptr);
+            jobject jPlatformWindow = getJavaPlatformWindow(env, w);
             if (jPlatformWindow) {
                 int DECORATED = 1 << 1;
                 JNFCallVoidMethod(env, jPlatformWindow, jm_setStyleBits, DECORATED, hasTitleBar);
@@ -1807,7 +1958,7 @@ JNIEXPORT jint JNICALL Java_org_violetlib_aqua_AquaUtils_nativeAddToolbarToWindo
     JNF_COCOA_ENTER(env);
 
     NSWindow *w = (NSWindow *) wptr;
-    runOnMainThread(^(){
+    runOnMainThread(^() {
         NSToolbar *tb = [[NSToolbar alloc] initWithIdentifier: @"Foo"];
         [tb setShowsBaselineSeparator: NO];
         [w setToolbar: tb];
@@ -1837,7 +1988,7 @@ JNIEXPORT jint JNICALL Java_org_violetlib_aqua_AquaSheetSupport_nativeDisplayAsS
     NSWindow *w = (NSWindow *) wptr;
     NSWindow *no = (NSWindow *) owner_wptr;
 
-    runOnMainThread(^(){
+    runOnMainThread(^() {
         [no beginSheet:w completionHandler:nil];
     });
     result = 0;
@@ -1878,7 +2029,7 @@ JNIEXPORT jint JNICALL Java_org_violetlib_aqua_AquaUtils_nativeSetWindowCornerRa
     JNF_COCOA_ENTER(env);
 
     NSWindow *w = (NSWindow *) wptr;
-    runOnMainThread(^(){
+    runOnMainThread(^() {
         AquaWrappedAWTView *view = ensureWrapper(w);
         result = [view configureAsPopup:radius];
     });
@@ -1906,7 +2057,7 @@ JNIEXPORT jint JNICALL Java_org_violetlib_aqua_AquaVibrantSupport_setupVisualEff
         forceActive = YES;
     }
 
-    runOnMainThread(^(){
+    runOnMainThread(^() {
         // Insert a visual effect view as a sibling of the AWT view if there is not already one present.
         AquaWrappedAWTView *wrapper = ensureWrapper(w);
         AquaVisualEffectView *fxView = [wrapper addFullWindowVisualEffectView];
@@ -1936,7 +2087,7 @@ JNIEXPORT jint JNICALL Java_org_violetlib_aqua_AquaVibrantSupport_removeVisualEf
     JNF_COCOA_ENTER(env);
 
     NSWindow *w = (NSWindow *) wptr;
-    runOnMainThread(^(){
+    runOnMainThread(^() {
         AquaWrappedAWTView *wrapper = getWrapper(w);
         if (wrapper != nil) {
             [wrapper removeFullWindowVisualEffectView];
@@ -1962,7 +2113,7 @@ JNIEXPORT jlong JNICALL Java_org_violetlib_aqua_AquaVibrantSupport_nativeCreateV
     JNF_COCOA_ENTER(env);
 
     NSWindow *w = (NSWindow *) wptr;
-    runOnMainThread(^(){
+    runOnMainThread(^() {
         // Insert a view as a sibling of the AWT view.
         AquaWrappedAWTView *wrapper = ensureWrapper(w);
         AquaVisualEffectView *view;
@@ -1998,7 +2149,7 @@ JNIEXPORT jint JNICALL Java_org_violetlib_aqua_AquaVibrantSupport_setViewFrame
     JNF_COCOA_ENTER(env);
 
     NSView *view = (NSView *) ptr;
-    runOnMainThread(^(){
+    runOnMainThread(^() {
         NSWindow *window = [view window];
         if (window != nil) {
 
@@ -2040,14 +2191,14 @@ JNIEXPORT jint JNICALL Java_org_violetlib_aqua_AquaVibrantSupport_nativeUpdateSe
         if (jdata != NULL) {
             int *data = (*env)->GetIntArrayElements(env, jdata, NULL);
             if (data != NULL) {
-                runOnMainThread(^(){
+                runOnMainThread(^() {
                     [sbb updateSelectionViews: data];
                     result = 0;
                 });
                 (*env)->ReleaseIntArrayElements(env, jdata, data, JNI_ABORT);
             }
         } else {
-            runOnMainThread(^(){
+            runOnMainThread(^() {
                 [sbb updateSelectionViews: NULL];
                 result = 0;
             });
@@ -2072,7 +2223,7 @@ JNIEXPORT jint JNICALL Java_org_violetlib_aqua_AquaVibrantSupport_disposeVisualE
     JNF_COCOA_ENTER(env);
 
     NSView *view = (NSView *) ptr;
-    runOnMainThread(^(){
+    runOnMainThread(^() {
         NSWindow *window = [view window];
         if (window != nil) {
             AquaWrappedAWTView *wrapper = getWrapper(window);
@@ -2090,6 +2241,228 @@ JNIEXPORT jint JNICALL Java_org_violetlib_aqua_AquaVibrantSupport_disposeVisualE
     return result;
 }
 
+@interface ViewportView : NSView
+@end
+
+@implementation ViewportView
+@end
+
+// Create a view frame from a Java rectangle
+static NSRect createFrameInParentWithHeight(float parentHeight, float x, float y, float w, float h)
+{
+    return NSMakeRect(x, parentHeight - (y + h), w, h);
+}
+
+// Create a view frame from a Java rectangle
+static NSRect createFrame(NSView *parent, float x, float y, float w, float h)
+{
+    float parentHeight = parent.frame.size.height;
+    return createFrameInParentWithHeight(parentHeight, x, y, w, h);
+}
+
+static void internalHideNativeView(NSView *view)
+{
+    NSWindow *window = view.window;
+    if (window != nil) {
+        view.hidden = YES;
+    }
+}
+
+static void removeNativeView(NSView *view)
+{
+    NSView *parent = view.superview;
+    if (parent) {
+        [view removeFromSuperview];
+        if ([parent isKindOfClass:[ViewportView class]]) {
+            [parent removeFromSuperview];
+        }
+    }
+}
+
+static void internalShowNativeView(NSView *view, NSWindow *window, jint x, jint y, jint w, jint h)
+{
+    NSView *parent = getAWTView(window);
+    if (parent) {
+        NSView *currentParent = view.superview;
+        if (parent != currentParent) {
+            removeNativeView(view);
+            [parent addSubview: view];
+        }
+
+        view.hidden = NO;
+        view.frame = createFrame(view.superview, x, y, w, h);
+        view.needsDisplay = YES;
+    }
+}
+
+static void internalShowNativeViewClipped(NSView *view, NSWindow *window,
+        jint cx, jint cy, jint cw, jint ch, jint x, jint y, jint w, jint h)
+{
+    NSWindow *currentWindow = view.window;
+    NSView *currentParent = view.superview;
+
+    if (window != currentWindow || ![currentParent isKindOfClass:[ViewportView class]]) {
+        removeNativeView(view);
+    }
+
+    NSView *awtView = getAWTView(window);
+    if (awtView) {
+        view.frame = createFrameInParentWithHeight(h, cx, cy, cw, ch);
+
+        ViewportView *viewport;
+        if (view.superview == nil) {
+            viewport = [[ViewportView alloc] initWithFrame:createFrame(awtView, x, y, w, h)];
+            viewport.autoresizesSubviews = NO;
+            viewport.autoresizingMask = NSViewNotSizable;
+            [viewport addSubview:view];
+            [awtView addSubview:viewport];
+        } else {
+            viewport = (ViewportView *) view.superview;
+            viewport.frame = createFrame(awtView, x, y, w, h);
+        }
+
+        view.hidden = NO;
+        view.needsDisplay = YES;
+    }
+}
+
+/*
+ * Class:     org_violetlib_aqua_NativeOverlayView
+ * Method:    hideNativeView
+ * Signature: (J)V
+ */
+JNIEXPORT void JNICALL Java_org_violetlib_aqua_NativeOverlayView_hideNativeView
+  (JNIEnv *env, jclass cl, jlong vptr)
+{
+    NSView *view = (NSView *) vptr;
+
+    JNF_COCOA_ENTER(env);
+
+    runOnMainThread(^() {internalHideNativeView(view);});
+
+    JNF_COCOA_EXIT(env);
+}
+
+/*
+ * Class:     org_violetlib_aqua_NativeOverlayView
+ * Method:    showNativeView
+ * Signature: (JJIIII)V
+ */
+JNIEXPORT void JNICALL Java_org_violetlib_aqua_NativeOverlayView_showNativeView
+  (JNIEnv *env, jclass cl, jlong vptr, jlong wptr, jint x, jint y, jint w, jint h)
+{
+    NSView *view = (NSView *) vptr;
+    NSWindow *window = (NSWindow *) wptr;
+
+    JNF_COCOA_ENTER(env);
+
+    runOnMainThread(^() {internalShowNativeView(view, window, x, y, w, h);});
+
+    JNF_COCOA_EXIT(env);
+}
+
+/*
+ * Class:     org_violetlib_aqua_NativeOverlayView
+ * Method:    showNativeViewClipped
+ * Signature: (JJIIIIIIII)V
+ */
+JNIEXPORT void JNICALL Java_org_violetlib_aqua_NativeOverlayView_showNativeViewClipped
+  (JNIEnv *env, jclass cl, jlong vptr, jlong wptr, jint cx, jint cy, jint cw, jint ch, jint x, jint y, jint w, jint h)
+{
+    NSView *view = (NSView *) vptr;
+    NSWindow *window = (NSWindow *) wptr;
+
+    JNF_COCOA_ENTER(env);
+
+    runOnMainThread(^() {internalShowNativeViewClipped(view, window, cx, cy, cw, ch, x, y, w, h);});
+
+    JNF_COCOA_EXIT(env);
+}
+
+static NSView *internalCreatePreviewView()
+{
+    NSRect bounds = NSMakeRect(0, 0, 1, 1);
+    QLPreviewView *preview = [[QLPreviewView alloc] initWithFrame:bounds style:QLPreviewViewStyleCompact];
+    preview.shouldCloseWithWindow = NO;
+    return preview;
+}
+
+static void internalConfigurePreview(QLPreviewView *view, NSURL *u)
+{
+    if (u) {
+        BOOL oldHidden = view.hidden;
+        view.hidden = YES;
+        [view setPreviewItem:u];
+        view.hidden = oldHidden;
+    } else {
+        view.hidden = YES;
+    }
+}
+
+static void internalDisposePreviewView(NSView *view)
+{
+    [view release];
+}
+
+/*
+ * Class:     org_violetlib_aqua_fc_FilePreviewView
+ * Method:    nativeCreatePreviewView
+ * Signature: ()J
+ */
+JNIEXPORT jlong JNICALL Java_org_violetlib_aqua_fc_FilePreviewView_nativeCreatePreviewView
+  (JNIEnv *env, jclass cl)
+{
+    __block jlong result = 0;
+
+    JNF_COCOA_ENTER(env);
+
+    runOnMainThread(^() {result = (jlong) internalCreatePreviewView();});
+
+    JNF_COCOA_EXIT(env);
+
+    return result;
+}
+
+/*
+ * Class:     org_violetlib_aqua_fc_FilePreviewView
+ * Method:    nativeConfigurePreview
+ * Signature: (JLjava/lang/String;)V
+ */
+JNIEXPORT void JNICALL Java_org_violetlib_aqua_fc_FilePreviewView_nativeConfigurePreview
+  (JNIEnv *env, jclass cl, jlong vptr, jstring jpath)
+{
+    QLPreviewView *view = (QLPreviewView *) vptr;
+    NSURL *u = nil;
+
+    JNF_COCOA_ENTER(env);
+
+    if (jpath != NULL) {
+        NSString *path = JNFNormalizedNSStringForPath(env, jpath);
+        u = [NSURL fileURLWithPath:path];
+    }
+
+    runOnMainThread(^() {internalConfigurePreview(view, u);});
+
+    JNF_COCOA_EXIT(env);
+}
+
+/*
+ * Class:     org_violetlib_aqua_fc_FilePreviewView
+ * Method:    nativeDisposePreviewView
+ * Signature: (J)V
+ */
+JNIEXPORT void JNICALL Java_org_violetlib_aqua_fc_FilePreviewView_nativeDisposePreviewView
+  (JNIEnv *env, jclass cl, jlong vptr)
+{
+    NSView *view = (NSView *) vptr;
+
+    JNF_COCOA_ENTER(env);
+
+    runOnMainThread(^() {internalDisposePreviewView(view);});
+
+    JNF_COCOA_EXIT(env);
+}
+
 /*
  * Class:     org_violetlib_aqua_AquaUtils
  * Method:    nativeSetAWTViewVisibility
@@ -2101,7 +2474,7 @@ JNIEXPORT jint JNICALL Java_org_violetlib_aqua_AquaUtils_nativeSetAWTViewVisibil
     JNF_COCOA_ENTER(env);
 
     NSWindow *w = (NSWindow *) wptr;
-    runOnMainThread(^(){
+    runOnMainThread(^() {
         NSView *v = getAWTView(w);
         v.hidden = !isVisible;
     });
@@ -2122,7 +2495,7 @@ JNIEXPORT jint JNICALL Java_org_violetlib_aqua_AquaUtils_nativeSyncAWTView
     JNF_COCOA_ENTER(env);
 
     NSWindow *w = (NSWindow *) wptr;
-    runOnMainThread(^(){
+    runOnMainThread(^() {
         NSView *v = getAWTView(w);
         //NSLog(@"Forcing update of AWTView layer");
         [v.layer displayIfNeeded];
@@ -2287,7 +2660,7 @@ JNIEXPORT jint JNICALL Java_org_violetlib_aqua_AquaUtils_nativeSetWindowAppearan
         }
     }
 
-    runOnMainThread(^(){
+    runOnMainThread(^() {
         w.appearance = appearance;
     });
 
@@ -2310,7 +2683,7 @@ JNIEXPORT jstring JNICALL Java_org_violetlib_aqua_AquaUtils_nativeGetWindowEffec
     JNF_COCOA_ENTER(env);
 
     NSWindow *w = (NSWindow *) wptr;
-    runOnMainThread(^(){
+    runOnMainThread(^() {
         appearanceName = [w.effectiveAppearance name];
     });
 
@@ -2356,7 +2729,7 @@ JNIEXPORT int JNICALL Java_org_violetlib_aqua_AquaUtils_nativeDebugWindow
     JNF_COCOA_ENTER(env);
 
     NSWindow *w = (NSWindow *) wptr;
-    runOnMainThread(^(){
+    runOnMainThread(^() {
         windowDebug(w);
     });
 

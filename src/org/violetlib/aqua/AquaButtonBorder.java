@@ -1,5 +1,5 @@
 /*
- * Changes Copyright (c) 2015-2018 Alan Snyder.
+ * Changes Copyright (c) 2015-2019 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -41,7 +41,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.violetlib.aqua.AquaUtils.RecyclableSingleton;
 import org.violetlib.aqua.AquaUtils.RecyclableSingletonFromDefaultConstructor;
-import org.violetlib.aqua.fc.EmptyIcon;
 import org.violetlib.jnr.Insets2D;
 import org.violetlib.jnr.Insetter;
 import org.violetlib.jnr.LayoutInfo;
@@ -567,6 +566,12 @@ public abstract class AquaButtonBorder extends AquaBorder implements BackgroundP
         Font font = AquaUtilControlSize.isOKToInstallDefaultFont(b)
                 ? AquaButtonExtendedTypes.getFont(AquaButtonUI.getGenericDefaultFont(b), widget, size)
                 : b.getFont();
+
+        // If the font cannot be determined, a fixed height widget is not usable.
+        if (font == null) {
+            return false;
+        }
+
         Dimension contentSize = AquaButtonUI.getPreferredContentSize(b, font, b.getIconTextGap());
         Dimension requiredSize = insetter.expand(contentSize);
         return requiredSize.height <= fixedHeight;

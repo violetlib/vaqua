@@ -1,5 +1,5 @@
 /*
- * Changes copyright (c) 2015-2018 Alan Snyder.
+ * Changes copyright (c) 2015-2020 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -357,11 +357,10 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
         Color windowBackgroundColor = new ColorUIResource(237, 237, 237); // needed in macOS 10.13 and earlier
         Color panelBackgroundColor = windowBackgroundColor;
 
+        LazyValue controlLargeFont = t -> AquaFonts.getControlTextLargeFont();
         LazyValue controlFont = t -> AquaFonts.getControlTextFont();
         LazyValue controlSmallFont = t -> AquaFonts.getControlTextSmallFont();
         LazyValue controlMiniFont = t -> AquaFonts.getControlTextMiniFont();
-        LazyValue iconButtonFont = t -> AquaFonts.getIconButtonFont();
-        LazyValue iconButtonSmallFont = t -> AquaFonts.getIconButtonSmallFont();
         LazyValue alertHeaderFont = t -> AquaFonts.getAlertHeaderFont();
         LazyValue menuFont = t -> AquaFonts.getMenuFont();
         LazyValue viewFont = t -> AquaFonts.getViewFont();
@@ -462,7 +461,6 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
                 "FileChooser.autovalidate", true,
                 "FileChooser.quickLookEnabled", true,
                 "FileChooser.orderByType", false,
-                "FileChooser.speed", false,  // setting to true turns off the fancy file view
 
                 "FileChooser.browserCellTextIconGap", 6,
                 "FileChooser.browserCellTextArrowIconGap", 5,
@@ -491,9 +489,6 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
                 "FormattedTextField.caretBlinkRate", textCaretBlinkRate,
                 "FormattedTextField.border", textFieldBorder,
                 "FormattedTextField.margin", zeroInsets,
-
-                "IconButton.font", iconButtonFont,
-                "IconButton.smallFont", iconButtonSmallFont,
 
                 "InternalFrame.titleFont", controlFont,
                 "InternalFrame.background", windowBackgroundColor,
@@ -678,6 +673,7 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
                 "Table.font", viewFont, // [3577901] Aqua HIG says "default font of text in lists and tables" should be 12 point (vm).
                 "Table.focusCellHighlightBorder", cellBorder,
                 "Table.focusSelectedCellHighlightBorder", cellBorder,
+                "Table.focusCellBackground", AquaColors.CLEAR, // used when table is focused, cell is clicked but selection is disabled
                 "Table.cellFocusNoBorder", cellBorder,
                 "Table.scrollPaneBorder", scrollPaneBorder,
                 "Table.scrollPaneCornerComponent",
@@ -789,6 +785,12 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
                     "MenuBar.selectedBackgroundPainter", NOTHING_BORDER,
             };
             table.putDefaults(menuBarDefaults);
+            // In addition, the AquaLAF must be encouraged to load its native library
+            try {
+                Class.forName("com.apple.laf.AquaNativeResources");
+            } catch (Exception ex) {
+                System.err.println("Unable to load AquaNativeResources");
+            }
         }
 
         JavaSupport.installAATextInfo(table);

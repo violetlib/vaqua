@@ -263,7 +263,7 @@ public class AquaSheetSupport {
         int result;
         if ("true".equals(System.getProperty("VAqua.injectSheetDisplayFailure"))) {
             // inject failure for testing
-            System.err.println("Injected failure to display sheet");
+            AquaUtils.logDebug("Injected failure to display sheet");
             result = -1;
         } else {
             result = (int) execute(w, ptr -> displayAsSheet(ptr, owner));
