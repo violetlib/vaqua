@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2016 Alan Snyder.
+ * Copyright (c) 2015-2017 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -11,6 +11,8 @@ package org.violetlib.aqua;
 import java.awt.*;
 import java.beans.PropertyChangeEvent;
 import javax.swing.*;
+
+import static org.violetlib.aqua.AquaUtils.execute;
 
 /**
  * Support for vibrant backgrounds. A vibrant background is implemented by a special NSView that is installed as a
@@ -174,7 +176,7 @@ public class AquaVibrantSupport {
         // Otherwise, there is no point to enabling a vibrant style.
 
         boolean forceActive = w.getType() == Window.Type.POPUP || isUndecorated(w);
-        int rc = setupVisualEffectWindow(w, style, forceActive);
+        long rc = execute(w, ptr -> setupVisualEffectWindow(ptr, style, forceActive));
         if (rc != 0) {
             System.err.println("Unable to install visual effect view");
         } else {
@@ -182,7 +184,7 @@ public class AquaVibrantSupport {
             AquaUtils.setWindowBackgroundClear(w, true); // suppress Java window background
             if (rp != null) {
                 rp.putClientProperty(VIBRANT_WINDOW_KEY, Boolean.TRUE);
-                AquaUtils.paintImmediately(rp);
+                AquaUtils.paintImmediately(w, rp);
                 // The goal of the following is to transfer the new clear background to the AWTView layer immediately so
                 // that when a vibrant window is first made visible, it shows the vibrant background immediately instead
                 // of showing the default window background first and an instant later replacing it with the vibrant
@@ -209,7 +211,7 @@ public class AquaVibrantSupport {
      * @param w The window.
      */
     public static void removeFullWindowVibrantView(Window w) {
-        int rc = removeVisualEffectWindow(w);
+        long rc = execute(w, AquaVibrantSupport::removeVisualEffectWindow);
         if (rc != 0) {
             System.err.println("Unable to remove visual effect view");
         }
@@ -232,7 +234,7 @@ public class AquaVibrantSupport {
      *         displaying a vibrant selection background.
      */
     public static VisualEffectViewPeer createVisualEffectView(Window w, int style, boolean supportSelections) {
-        long ptr = nativeCreateVisualEffectView(w, style, supportSelections);
+        long ptr = execute(w, wptr -> nativeCreateVisualEffectView(wptr, style, supportSelections));
         if (ptr != 0) {
             AquaUtils.setWindowBackgroundClear(w, true); // suppress Java window background
             return new VisualEffectViewPeerImpl(w, ptr);
@@ -252,11 +254,13 @@ public class AquaVibrantSupport {
         @Override
         public void dispose() {
             if (nativeNSViewPointer != 0) {
-                int rc = disposeVisualEffectView(nativeNSViewPointer);
-                nativeNSViewPointer = 0;
-                if (rc != 0) {
-                    System.err.println("disposeVisualEffectView failed");
+                if (w.isDisplayable()) {
+                    int rc = disposeVisualEffectView(nativeNSViewPointer);
+                    if (rc != 0) {
+                        System.err.println("disposeVisualEffectView failed");
+                    }
                 }
+                nativeNSViewPointer = 0;
                 AquaUtils.setWindowBackgroundClear(w, false); // restore Java window background
             }
         }
@@ -283,9 +287,9 @@ public class AquaVibrantSupport {
         }
     }
 
-    private static native int setupVisualEffectWindow(Window w, int style, boolean forceActive);
-    private static native int removeVisualEffectWindow(Window w);
-    private static native long nativeCreateVisualEffectView(Window w, int style, boolean supportSelections);
+    private static native int setupVisualEffectWindow(long w, int style, boolean forceActive);
+    private static native int removeVisualEffectWindow(long w);
+    private static native long nativeCreateVisualEffectView(long w, int style, boolean supportSelections);
     private static native int setViewFrame(long viewPtr, int x, int y, int width, int height, int yflipped);
     private static native int nativeUpdateSelectionBackgrounds(long viewPtr, int[] data);
     private static native int disposeVisualEffectView(long viewPtr);

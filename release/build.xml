@@ -1,4 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
+
+<!-- This build file will not compile JDK 9 specific sources until a JDK 9 compiler is available -->
+
 <project basedir="." default="release" name="VAqua Look and Feel">
 
     <tstamp>
@@ -11,6 +14,14 @@
         <arg value="1.8"/>
     </exec>
 
+    <exec executable="/usr/libexec/java_home" outputproperty="jdk9">
+        <arg value="-F"/>
+        <arg value="-v"/>
+        <arg value="9"/>
+    </exec>
+
+    <property name="javac9" value="${jdk9}/bin/javac"/>
+
     <property name="bootclasspath" value="${jdk8}/jre/lib/rt.jar" />
 
     <property name="RELEASE" value="0.9"/>
@@ -18,6 +29,8 @@
 
     <property name="base" value=".."/>
     <property name="src" value="${base}/src"/>
+    <property name="src8" value="${base}/Java8Support/src"/>
+    <property name="src9" value="${base}/Java9Support/src"/>
     <property name="jnisrc" value="${base}/libvaqua"/>
     <property name="resources" value="${base}/resources"/>
     <property name="builddir" value="out"/>
@@ -28,7 +41,7 @@
 
     <property name="renderingLibraryJAR" value="${base}/lib/VAquaRendering.jar"/>
 
-    <property name="SDKversion" value="10.11"/>
+    <property name="SDKversion" value="10.12"/>
     <property name="SDKroot" value="/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX${SDKversion}.sdk" />
     <property name="libpath" value="${base}/lib/IdeaAnnotations.jar"/>
     <property name="cc" value="/usr/bin/cc"/>
@@ -60,68 +73,78 @@
       </copy>
     </target>
 
-    <target name="compile-VAqua-Java" depends="unjarRenderingLibrary, copyResources">
-        <mkdir dir="${classesdir}"/>
+    <condition property="javac9exists">
+      <resourceexists>
+        <file file="${javac9}"/>
+      </resourceexists>
+    </condition>
 
-        <javac source="1.8"
-            bootclasspath="${bootclasspath}"
-            classpath="${libpath}"
-            encoding="UTF-8"
-            srcdir="${src}"
-            destdir="${classesdir}"
-            debug="${debug}"
-            optimize="true"
-            includeantruntime="false"
-            >
-            <patternset>
-                <include name="org/violetlib/aqua/**/*.java"/>
-            </patternset>
-            </javac>
+    <target name="missing9" unless="javac9exists">
+      <echo message="Java 9 compiler not found at ${javac9}"/>
+    </target>
 
+    <target name="compile8" depends="unjarRenderingLibrary, copyResources">
+      <mkdir dir="${classesdir}"/>
+      <mkdir dir="${headersdir}"/>
+
+      <javac source="1.8" target="1.8"
+          bootclasspath="${bootclasspath}"
+          classpath="${libpath}"
+          encoding="UTF-8"
+          srcdir="${src}"
+          destdir="${classesdir}"
+          debug="${debug}"
+          optimize="true"
+          includeantruntime="false"
+          >
+          <compilerarg value="-h"/>
+          <compilerarg path="${headersdir}"/>
+          <patternset>
+            <include name="org/violetlib/aqua/**/*.java"/>
+          </patternset>
+      </javac>
+
+      <javac source="1.8" target="1.8"
+          bootclasspath="${bootclasspath}"
+          classpath="${libpath}"
+          encoding="UTF-8"
+          srcdir="${src8}"
+          destdir="${classesdir}"
+          debug="${debug}"
+          optimize="true"
+          includeantruntime="false"
+          >
+          <compilerarg value="-h"/>
+          <compilerarg path="${headersdir}"/>
+          <patternset>
+            <include name="org/violetlib/aqua/**/*.java"/>
+          </patternset>
+      </javac>
+    </target>
+
+    <target name="compile9" if="javac9exists">
+      <mkdir dir="${classesdir}"/>
+      <javac source="1.8" target="1.8"
+          classpath="${libpath}"
+          encoding="UTF-8"
+          srcdir="${src9}"
+          destdir="${classesdir}"
+          debug="${debug}"
+          optimize="true"
+          includeantruntime="false"
+          fork="true"
+          executable="${javac9}"
+          >
+          <patternset>
+            <include name="org/violetlib/aqua/**/*.java"/>
+          </patternset>
+        </javac>
+    </target>
+
+    <target name="compile-VAqua-Java" depends="compile8, compile9, missing9">
     </target>
     
-    <target name="compile-VAqua-JNI-headers" depends="compile-VAqua-Java">
-        <mkdir dir="${headersdir}"/>
-
-        <javah class="org.violetlib.aqua.fc.OSXFile"
-            classpath="${classesdir}"
-            destdir="${headersdir}"
-            />
-        <javah class="org.violetlib.aqua.OSXSystemProperties"
-            classpath="${classesdir}"
-            destdir="${headersdir}"
-            />
-        <javah class="org.violetlib.aqua.AquaNativeSupport"
-            classpath="${classesdir}"
-            destdir="${headersdir}"
-            />
-        <javah class="org.violetlib.aqua.AquaIcon"
-            classpath="${classesdir}"
-            destdir="${headersdir}"
-            />
-        <javah class="org.violetlib.aqua.AquaImageFactory"
-            classpath="${classesdir}"
-            destdir="${headersdir}"
-            />
-        <javah class="org.violetlib.aqua.AquaNativeColorChooser"
-            classpath="${classesdir}"
-            destdir="${headersdir}"
-            />
-        <javah class="org.violetlib.aqua.AquaUtils"
-            classpath="${classesdir}"
-            destdir="${headersdir}"
-            />
-        <javah class="org.violetlib.aqua.AquaSheetSupport"
-            classpath="${classesdir}"
-            destdir="${headersdir}"
-            />
-        <javah class="org.violetlib.aqua.AquaVibrantSupport"
-            classpath="${classesdir}"
-            destdir="${headersdir}"
-            />
-    </target>
-
-    <target name="compile-VAqua-JNI" depends="compile-VAqua-JNI-headers">
+    <target name="compile-VAqua-JNI" depends="compile8">
         <mkdir dir="${jnidir}"/>
 
         <exec executable="${cc}" failonerror="true" >
@@ -158,7 +181,7 @@
 
     </target>
 
-    <target name="VAqua" depends="compile-VAqua-JNI,saveIDs">
+    <target name="VAqua" depends="compile-VAqua-JNI,compile-VAqua-Java,saveIDs">
 
         <echo level="info" message="Building VAqua ${fullReleaseName}"/>
 

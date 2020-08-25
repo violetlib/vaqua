@@ -257,7 +257,7 @@ public class AquaMenuPainter {
             final int yAccel = acceleratorRect.y + fm.getAscent();
             if (modifiersString.equals("")) {
                 // just draw the keyString
-                AquaUtils.drawString(c, g, keyString, acceleratorRect.x, yAccel);
+                JavaSupport.drawString(c, (Graphics2D) g, keyString, acceleratorRect.x, yAccel);
             } else {
                 final int modifiers = accelerator.getModifiers();
                 int underlinedChar = 0;
@@ -270,13 +270,13 @@ public class AquaMenuPainter {
                     g.setFont(acceleratorFont);
                     drawString(g, c, modifiersString, underlinedChar, acceleratorRect.x, yAccel, isEnabled, isSelected);
                     g.setFont(f);
-                    AquaUtils.drawString(c, g, keyString, acceleratorRect.x + acceleratorRect.width - emWidth, yAccel);
+                    JavaSupport.drawString(c, (Graphics2D) g, keyString, acceleratorRect.x + acceleratorRect.width - emWidth, yAccel);
                 } else {
                     final int xAccel = acceleratorRect.x + emWidth;
                     g.setFont(acceleratorFont);
                     drawString(g, c, modifiersString, underlinedChar, xAccel, yAccel, isEnabled, isSelected);
                     g.setFont(f);
-                    AquaUtils.drawString(c, g, keyString, xAccel - fm.stringWidth(keyString), yAccel);
+                    JavaSupport.drawString(c, (Graphics2D) g, keyString, xAccel - fm.stringWidth(keyString), yAccel);
                 }
             }
         }
@@ -429,7 +429,7 @@ public class AquaMenuPainter {
             else index = (lci < uci) ? lci : uci;
         }
 
-        AquaUtils.drawStringUnderlineCharAt(c, g, text, index, x, y);
+        JavaSupport.drawStringUnderlineCharAt(c, (Graphics2D) g, text, index, x, y);
     }
 
     /*

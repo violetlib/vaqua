@@ -584,7 +584,7 @@ public class AquaTabbedPaneUI extends AquaTabbedPaneCopyFromBasicUI implements A
         }
 
         g2d.setFont(font);
-        AquaUtils.drawString(tabPane, g2d, title, textRect.x, textRect.y + metrics.getAscent());
+        JavaSupport.drawString(tabPane, g2d, title, textRect.x, textRect.y + metrics.getAscent());
     }
 
     protected Color getTabTextColor(int tabIndex, boolean frameActive) {

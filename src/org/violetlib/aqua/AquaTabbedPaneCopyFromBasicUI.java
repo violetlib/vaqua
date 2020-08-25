@@ -883,9 +883,9 @@ public class AquaTabbedPaneCopyFromBasicUI extends TabbedPaneUI implements Swing
                     tabScroller.croppedEdge.getTabIndex() == tabIndex && isHorizontalTabPlacement()) {
                 int availTextWidth = tabScroller.croppedEdge.getCropline() -
                         (textRect.x - tabRect.x) - tabScroller.croppedEdge.getCroppedSideWidth();
-                clippedTitle = AquaUtils.clipStringIfNecessary(null, metrics, title, availTextWidth);
+                clippedTitle = JavaSupport.getClippedString(null, metrics, title, availTextWidth);
             } else if (!scrollableTabLayoutEnabled() && isHorizontalTabPlacement()) {
-                clippedTitle = AquaUtils.clipStringIfNecessary(null, metrics, title, textRect.width);
+                clippedTitle = JavaSupport.getClippedString(null, metrics, title, textRect.width);
             }
 
             paintText(g, tabPlacement, font, metrics,
@@ -1087,17 +1087,17 @@ public class AquaTabbedPaneCopyFromBasicUI extends TabbedPaneUI implements Swing
                     }
                 }
                 g.setColor(fg);
-                AquaUtils.drawStringUnderlineCharAt(tabPane, g,
+                JavaSupport.drawStringUnderlineCharAt(tabPane, (Graphics2D) g,
                         title, mnemIndex,
                         textRect.x, textRect.y + metrics.getAscent());
 
             } else { // tab disabled
                 g.setColor(tabPane.getBackgroundAt(tabIndex).brighter());
-                AquaUtils.drawStringUnderlineCharAt(tabPane, g,
+                JavaSupport.drawStringUnderlineCharAt(tabPane, (Graphics2D) g,
                         title, mnemIndex,
                         textRect.x, textRect.y + metrics.getAscent());
                 g.setColor(tabPane.getBackgroundAt(tabIndex).darker());
-                AquaUtils.drawStringUnderlineCharAt(tabPane, g,
+                JavaSupport.drawStringUnderlineCharAt(tabPane, (Graphics2D) g,
                         title, mnemIndex,
                         textRect.x - 1, textRect.y + metrics.getAscent() - 1);
 
@@ -1770,7 +1770,7 @@ public class AquaTabbedPaneCopyFromBasicUI extends TabbedPaneUI implements Swing
             } else {
                 // plain text
                 String title = tabPane.getTitleAt(tabIndex);
-                width += AquaUtils.stringWidth(tabPane, metrics, title);
+                width += JavaSupport.getStringWidth(tabPane, metrics, title);
             }
         }
         return width;
@@ -2164,7 +2164,7 @@ public class AquaTabbedPaneCopyFromBasicUI extends TabbedPaneUI implements Swing
     // protected in the next release where
     // API changes are allowed
     boolean requestFocusForVisibleComponent() {
-        return AquaUtils.tabbedPaneChangeFocusTo(getVisibleComponent());
+        return tabbedPaneChangeFocusTo(getVisibleComponent());
     }
 
     private static class Actions extends UIAction {
@@ -3952,5 +3952,56 @@ public class AquaTabbedPaneCopyFromBasicUI extends TabbedPaneUI implements Swing
                 g2.translate(-cropx, -cropy);
             }
         }
+    }
+
+    // The following is copied from SwingUtilities2
+
+    /**
+     * Change focus to the visible component in {@code JTabbedPane}.
+     * This is not a general-purpose method and is here only to permit
+     * sharing code.
+     */
+    private static boolean tabbedPaneChangeFocusTo(Component comp) {
+        if (comp != null) {
+            if (comp.isFocusable()) {
+                compositeRequestFocus(comp);
+                return true;
+            } else if (comp instanceof JComponent
+                       && ((JComponent)comp).requestDefaultFocus()) {
+
+                 return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static Component compositeRequestFocus(Component component) {
+        if (component instanceof Container) {
+            Container container = (Container)component;
+            if (container.isFocusCycleRoot()) {
+                FocusTraversalPolicy policy = container.getFocusTraversalPolicy();
+                Component comp = policy.getDefaultComponent(container);
+                if (comp!=null) {
+                    comp.requestFocus();
+                    return comp;
+                }
+            }
+            Container rootAncestor = container.getFocusCycleRootAncestor();
+            if (rootAncestor!=null) {
+                FocusTraversalPolicy policy = rootAncestor.getFocusTraversalPolicy();
+                Component comp = policy.getComponentAfter(rootAncestor, container);
+
+                if (comp!=null && SwingUtilities.isDescendingFrom(comp, container)) {
+                    comp.requestFocus();
+                    return comp;
+                }
+            }
+        }
+        if (component.isFocusable()) {
+            component.requestFocus();
+            return component;
+        }
+        return null;
     }
 }

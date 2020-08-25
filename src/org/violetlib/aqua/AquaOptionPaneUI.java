@@ -33,8 +33,6 @@
 
 package org.violetlib.aqua;
 
-import sun.swing.DefaultLookup;
-
 import java.awt.*;
 
 import javax.swing.*;
@@ -353,13 +351,11 @@ public class AquaOptionPaneUI extends BasicOptionPaneUI {
      * used representing the message.
      */
     protected void configureMessageLabel(JComponent label) {
-        Color color = (Color) DefaultLookup.get(optionPane, this,
-          "OptionPane.messageForeground");
+        Color color = UIManager.getColor("OptionPane.messageForeground", optionPane.getLocale());
         if (color != null) {
             label.setForeground(color);
         }
-        Font messageFont = (Font)DefaultLookup.get(optionPane, this,
-                                                   "OptionPane.messageFont");
+        Font messageFont = UIManager.getFont("OptionPane.messageFont", optionPane.getLocale());
         if (messageFont != null) {
             label.setFont(messageFont);
         }

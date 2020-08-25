@@ -174,6 +174,15 @@ public class AquaFileChooserListMouseBehavior extends AquaListMouseBehavior {
         }
     }
 
+    @Override
+    protected boolean isMousePressedOperation(int op) {
+        if (op == OP_SELECT) {
+            return false;
+        } else {
+            return super.isMousePressedOperation(op);
+        }
+    }
+
     private JBrowser findBrowser(Component c) {
         while (c != null) {
             if (c instanceof JBrowser) {

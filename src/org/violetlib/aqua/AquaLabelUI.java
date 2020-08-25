@@ -58,7 +58,7 @@ public class AquaLabelUI extends BasicLabelUI {
         }
 
         g.setColor(l.getForeground());
-        AquaUtils.drawStringUnderlineCharAt(l, g, s, mnemIndex, textX, textY);
+        JavaSupport.drawStringUnderlineCharAt(l, (Graphics2D) g, s, mnemIndex, textX, textY);
     }
 
     /**
@@ -79,7 +79,7 @@ public class AquaLabelUI extends BasicLabelUI {
         // if our background is still something we set then we can use our happy background color.
         if (background instanceof UIResource) {
             g.setColor(getDisabledLabelColor(l));
-            AquaUtils.drawStringUnderlineCharAt(l, g, s, accChar, textX, textY);
+            JavaSupport.drawStringUnderlineCharAt(l, (Graphics2D) g, s, accChar, textX, textY);
         } else {
             super.paintDisabledText(l, g, s, textX, textY);
         }

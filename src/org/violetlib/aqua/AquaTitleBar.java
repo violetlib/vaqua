@@ -240,7 +240,7 @@ public class AquaTitleBar {
                 g.setColor(notSelectedTextColor);
             }
 
-            AquaUtils.drawString(frame, g, text, startXPosition + iconWidth, baseline);
+            JavaSupport.drawString(frame, (Graphics2D) g, text, startXPosition + iconWidth, baseline);
             g.setFont(f);
         }
 

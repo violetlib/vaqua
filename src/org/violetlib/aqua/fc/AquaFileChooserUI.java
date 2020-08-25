@@ -3667,10 +3667,9 @@ public class AquaFileChooserUI extends BasicFileChooserUI {
 
     @Override
     public void clearIconCache() {
-        try {
-            fileView.getClass().getMethod("clearIconCache", new Class[0]).invoke(fileView, new Object[0]);
-        } catch (Exception e) {
-            // empty
+        if (fileView instanceof BasicFileView) {
+            BasicFileView fv = (BasicFileView) fileView;
+            fv.clearIconCache();
         }
     }
 

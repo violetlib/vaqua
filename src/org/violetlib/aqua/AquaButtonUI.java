@@ -727,7 +727,7 @@ public class AquaButtonUI extends BasicButtonUI implements AquaUtilControlSize.S
 
         Color foreground = getForegroundColor(b);
         g.setColor(foreground);
-        AquaUtils.drawStringUnderlineCharAt(c, g, text, mnemonicIndex, localTextRect.x, localTextRect.y + fm.getAscent());
+        JavaSupport.drawStringUnderlineCharAt(c, (Graphics2D) g, text, mnemonicIndex, localTextRect.x, localTextRect.y + fm.getAscent());
     }
 
     protected void paintButtonPressed(final Graphics g, final AbstractButton b) {

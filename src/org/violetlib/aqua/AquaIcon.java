@@ -39,7 +39,6 @@ import javax.swing.*;
 import javax.swing.plaf.IconUIResource;
 import javax.swing.plaf.UIResource;
 
-import com.apple.eio.FileManager;
 import org.violetlib.aqua.AquaUtils.RecyclableSingleton;
 import org.violetlib.jnr.Painter;
 
@@ -240,7 +239,7 @@ public class AquaIcon {
 
         public IconImageCreator(String osTypeName, int size) {
             this.osTypeName = osTypeName;
-            this.osType = FileManager.OSTypeToInt(osTypeName);
+            this.osType = OSTypeToInt(osTypeName);
             this.size = size;
         }
 
@@ -262,6 +261,25 @@ public class AquaIcon {
             }
             return result;
         }
+    }
+
+    @SuppressWarnings("deprecation")
+    public static int OSTypeToInt(String type) {
+        int result = 0;
+
+        byte b[] = { (byte) 0, (byte) 0, (byte) 0, (byte) 0 };
+        int len = type.length();
+        if (len > 0) {
+            if (len > 4) len = 4;
+            type.getBytes(0, len, b, 4 - len);
+        }
+
+        for (int i = 0;  i < len;  i++)  {
+            if (i > 0) result <<= 8;
+            result |= (b[i] & 0xff);
+        }
+
+        return result;
     }
 
     /**

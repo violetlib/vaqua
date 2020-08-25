@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2016 Alan Snyder.
+ * Copyright (c) 2016 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -12,27 +12,26 @@ import java.awt.*;
 import java.awt.image.*;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.ArrayList;
 import java.util.List;
+import java.util.ArrayList;
 import java.util.function.Function;
 
-import sun.awt.image.MultiResolutionCachedImage;
-import sun.awt.image.MultiResolutionImage;
-
 /**
- * A multi-resolution image with a single representation. This class is designed for JDK 1.8.
+ * A multi-resolution image with a single representation. This class is designed for Java 9.
  */
-public class Aqua8MultiResolutionImage extends AquaMultiResolutionImage implements MultiResolutionImage {
-    public Aqua8MultiResolutionImage(BufferedImage im) {
+
+public class Aqua9MultiResolutionImage extends AquaMultiResolutionImage implements MultiResolutionImage {
+
+    public Aqua9MultiResolutionImage(BufferedImage im) {
         super(im);
     }
 
-    public Aqua8MultiResolutionImage(int width, int height, BufferedImage im) {
+    public Aqua9MultiResolutionImage(int width, int height, BufferedImage im) {
         super(im, width, height);
     }
 
     @Override
-    public Image getResolutionVariant(int width, int height) {
+    public Image getResolutionVariant(double width, double height) {
         return baseImage;
     }
 
@@ -45,12 +44,12 @@ public class Aqua8MultiResolutionImage extends AquaMultiResolutionImage implemen
 
     @Override
     public AquaMultiResolutionImage map(Mapper mapper) {
-        return new Aqua8MultiResolutionImage(mapper.map(baseImage, 1));
+        return new Aqua9MultiResolutionImage(mapper.map(baseImage, 1));
     }
 
     @Override
     public AquaMultiResolutionImage map(Function<Image, Image> mapper) {
-        return new Aqua8MultiResolutionImage(Images.toBufferedImage(mapper.apply(baseImage)));
+        return new Aqua9MultiResolutionImage(Images.toBufferedImage(mapper.apply(baseImage)));
     }
 
     /**
@@ -102,8 +101,8 @@ public class Aqua8MultiResolutionImage extends AquaMultiResolutionImage implemen
      * Create an image by applying a generic mapper. Supports multi-resolution images.
      */
     public static Image apply(Image source, Function<Image,Image> mapper) {
-        if (source instanceof MultiResolutionCachedImage) {
-            MultiResolutionCachedImage s = (MultiResolutionCachedImage) source;
+        if (source instanceof Aqua9MappedMultiResolutionImage) {
+            Aqua9MappedMultiResolutionImage s = (Aqua9MappedMultiResolutionImage) source;
             return s.map(mapper::apply);
         }
 
@@ -114,7 +113,7 @@ public class Aqua8MultiResolutionImage extends AquaMultiResolutionImage implemen
 
         if (source instanceof MultiResolutionImage) {
             MultiResolutionImage s = (MultiResolutionImage) source;
-            return new Aqua8MappedMultiResolutionImage(s, mapper);
+            return new Aqua9MappedMultiResolutionImage(s, mapper);
         }
 
         return mapper.apply(source);
@@ -124,8 +123,8 @@ public class Aqua8MultiResolutionImage extends AquaMultiResolutionImage implemen
      * Create an image by applying a specialized mapper. Supports multi-resolution images.
      */
     public static Image apply(Image source, AquaMultiResolutionImage.Mapper mapper) {
-        if (source instanceof MultiResolutionCachedImage) {
-            MultiResolutionCachedImage s = (MultiResolutionCachedImage) source;
+        if (source instanceof Aqua9MappedMultiResolutionImage) {
+            Aqua9MappedMultiResolutionImage s = (Aqua9MappedMultiResolutionImage) source;
             int width = s.getWidth(null);
             return s.map(rv -> mapper.map(rv, rv.getWidth(null) / width));
         }
@@ -155,12 +154,6 @@ public class Aqua8MultiResolutionImage extends AquaMultiResolutionImage implemen
                     System.err.println("Unable to map image: " + ex);
                 }
             }
-        }
-
-        if (source instanceof MultiResolutionImage) {
-            MultiResolutionImage s = (MultiResolutionImage) source;
-            int width = source.getWidth(null);
-            return new Aqua8MappedMultiResolutionImage(s, rv -> mapper.map(rv, rv.getWidth(null) / width));
         }
 
         return mapper.map(source, 1);

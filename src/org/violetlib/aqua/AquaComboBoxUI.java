@@ -475,8 +475,8 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements AquaUtilControlSi
             if (e.isTextured) {
                 boolean showInactive = false;
                 if (arrowButton != null) {
-                    ComboBoxConfiguration bg = (ComboBoxConfiguration) arrowButton.getConfiguration();
-                    showInactive = (bg.getState() == AquaUIPainter.State.INACTIVE);
+                    AquaUIPainter.State state = arrowButton.getState();
+                    showInactive = (state == AquaUIPainter.State.INACTIVE);
                 }
 
                 String prefix = "ComboBox.textured";
@@ -542,18 +542,14 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements AquaUtilControlSi
             }
 
             if (arrowButton != null) {
-                ComboBoxConfiguration bg = (ComboBoxConfiguration) arrowButton.getConfiguration();
-                if (bg.getState() == AquaUIPainter.State.INACTIVE) {
-                    AquaUIPainter.ComboBoxWidget w = bg.getWidget();
-                    if (w == AquaUIPainter.ComboBoxWidget.BUTTON_COMBO_BOX_TEXTURED || w == AquaUIPainter.ComboBoxWidget.BUTTON_COMBO_BOX_TEXTURED_TOOLBAR) {
-                        // Textured combo boxes change background color when inactive
-                        int width = editor.getWidth();
-                        int height = editor.getHeight();
-                        Color c = new Color(245, 245, 245);
-                        g.setColor(c);
-                        g.fillRect(0, 0, width, height);
-                        return;
-                    }
+                if (arrowButton.getState() == AquaUIPainter.State.INACTIVE && isTextured()) {
+                    // Textured combo boxes change background color when inactive
+                    int width = editor.getWidth();
+                    int height = editor.getHeight();
+                    Color c = new Color(245, 245, 245);
+                    g.setColor(c);
+                    g.fillRect(0, 0, width, height);
+                    return;
                 }
             }
 
@@ -563,9 +559,7 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements AquaUtilControlSi
         protected boolean isTextured() {
             if (arrowButton != null) {
                 arrowButton.configure(null);
-                ComboBoxConfiguration bg = (ComboBoxConfiguration) arrowButton.getConfiguration();
-                AquaUIPainter.ComboBoxWidget w = bg.getWidget();
-                return w == AquaUIPainter.ComboBoxWidget.BUTTON_COMBO_BOX_TEXTURED || w == AquaUIPainter.ComboBoxWidget.BUTTON_COMBO_BOX_TEXTURED_TOOLBAR;
+                return arrowButton.isTextured();
             }
             return false;
         }
