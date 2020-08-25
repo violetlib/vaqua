@@ -11,6 +11,8 @@ package org.violetlib.aqua.fc;
 import javax.swing.*;
 import javax.swing.tree.TreePath;
 import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * A file system model for the results of a saved search.
@@ -96,7 +98,36 @@ public class SavedSearchFileSystemTreeModel extends FileSystemTreeModel {
                 System.out.println(msg);
             }
 
+            JFileChooser fileChooser = getFileChooser();
+            int fileSelectionMode = fileChooser.getFileSelectionMode();
+            int dialogType = fileChooser.getDialogType();
+            if (fileSelectionMode == JFileChooser.FILES_ONLY && dialogType == JFileChooser.OPEN_DIALOG) {
+                files = removeDirectories(files);
+            } else if (fileSelectionMode == JFileChooser.DIRECTORIES_ONLY || dialogType == JFileChooser.SAVE_DIALOG) {
+                files = removeNonDirectories(files);
+            }
+
             return files;
         }
+    }
+
+    private File[] removeDirectories(File[] fs) {
+        List<File> result = new ArrayList<>();
+        for (File f : fs) {
+            if (!(f.isDirectory() && !OSXFile.isVirtualFile(f))) {
+                result.add(f);
+            }
+        }
+        return result.toArray(new File[0]);
+    }
+
+    private File[] removeNonDirectories(File[] fs) {
+        List<File> result = new ArrayList<>();
+        for (File f : fs) {
+            if (f.isDirectory() && !OSXFile.isVirtualFile(f)) {
+                result.add(f);
+            }
+        }
+        return result.toArray(new File[0]);
     }
 }

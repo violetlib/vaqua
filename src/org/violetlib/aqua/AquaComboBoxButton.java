@@ -107,7 +107,7 @@ class AquaComboBoxButton extends JButton {
     }
 
     public boolean isEnabled() {
-        return comboBox == null ? true : comboBox.isEnabled();
+        return comboBox == null || comboBox.isEnabled();
     }
 
     @SuppressWarnings("deprecation")
@@ -457,6 +457,22 @@ class AquaComboBoxButton extends JButton {
             ComboBoxLayoutConfiguration bg = (ComboBoxLayoutConfiguration) g;
             ComboBoxWidget w = bg.getWidget();
             return w == BUTTON_COMBO_BOX_TEXTURED || w == BUTTON_COMBO_BOX_TEXTURED_TOOLBAR;
+        } else {
+            return false;
+        }
+    }
+
+    public boolean isCell() {
+        LayoutConfiguration g = getLayoutConfiguration();
+        if (g instanceof PopupButtonLayoutConfiguration) {
+            PopupButtonLayoutConfiguration bg = (PopupButtonLayoutConfiguration) g;
+            PopupButtonWidget w = bg.getPopupButtonWidget();
+            return w == BUTTON_POP_DOWN_CELL || w == BUTTON_POP_UP_CELL;
+
+        } else if (g instanceof ComboBoxLayoutConfiguration) {
+            ComboBoxLayoutConfiguration bg = (ComboBoxLayoutConfiguration) g;
+            ComboBoxWidget w = bg.getWidget();
+            return w == BUTTON_COMBO_BOX_CELL;
         } else {
             return false;
         }

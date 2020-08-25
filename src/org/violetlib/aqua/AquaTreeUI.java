@@ -648,9 +648,6 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable {
                 return; // should not happen
             }
 
-            bounds.x += insets.left;
-            bounds.y += insets.top;
-
             Color bc = getSpecialBackgroundForRow(row);
             if (bc != null) {
                 g.setColor(bc);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015 Alan Snyder.
+ * Copyright (c) 2015-2018 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -189,7 +189,16 @@ public class AquaMarginView extends View {
             if (value <= margin) {
                 value = 0;
             }
-            vis.setRangeProperties(value, extent, vis.getMinimum(), max, false);
+
+            // I have experienced an repaint loop with the extent going back and forth between adjacent values.
+            // This is an attempt at a workaround.
+
+            int oldExtent = vis.getExtent();
+            int diff = extent - oldExtent;
+            if (diff < -1 || diff > 1) {
+                vis.setRangeProperties(value, extent, vis.getMinimum(), max, false);
+            }
+
             if (hspan >= bounds.width) {
                 // adjust the allocation to match the bounded range.
                 bounds.width = hspan;

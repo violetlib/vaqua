@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2016 Alan Snyder.
+ * Copyright (c) 2015-2018 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -83,6 +83,11 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements AquaUtilControlSi
     protected Dimension cachedPreferredSize = new Dimension( 0, 0 );
     protected AquaComboBoxButton arrowButton;
     protected HierarchyListener hierarchyListener;
+    protected JList currentValueListBox;
+
+    public AquaComboBoxUI() {
+        currentValueListBox = new JList();
+    }
 
     public void installUI(final JComponent c) {
         super.installUI(c);
@@ -291,12 +296,11 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements AquaUtilControlSi
         }
 
         // fake it out! not renderPressed
-        Component c = renderer.getListCellRendererComponent(listBox, displayedItem, -1, false, false);
+        currentValueListBox.setBackground(new Color(0, 0, 0, 0));
+        currentValueListBox.setForeground(comboBox.getForeground());
+        Component c = renderer.getListCellRendererComponent(currentValueListBox, displayedItem, -1, false, false);
         // System.err.println("Renderer: " + renderer);
         c.setFont(currentValuePane.getFont());
-
-        Color foreground = arrowButton.getForeground();
-        c.setForeground(foreground);
 
         // Sun Fix for 4238829: should lay out the JPanel.
         boolean shouldValidate = false;
@@ -558,7 +562,7 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements AquaUtilControlSi
 
         protected boolean isTextured() {
             if (arrowButton != null) {
-                arrowButton.configure(null);
+                //arrowButton.configure(null);
                 return arrowButton.isTextured();
             }
             return false;
@@ -699,12 +703,12 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements AquaUtilControlSi
 
         public void configure(AquaUIPainter.ComboBoxWidget widget) {
             if (widget == AquaUIPainter.ComboBoxWidget.BUTTON_COMBO_BOX_CELL) {
-                setBackground(Color.WHITE);
-                setOpaque(true);
+                setBackground(new ColorUIResource(Color.WHITE));
+                LookAndFeel.installProperty(this, "opaque", Boolean.TRUE);
             } else {
                 // On 10.11, a textured editable combo box has a gradient background. See TextEdit.
-                setBackground(new Color(0, 0, 0, 0));
-                setOpaque(false);
+                setBackground(new ColorUIResource(new Color(0, 0, 0, 0)));
+                LookAndFeel.installProperty(this, "opaque", Boolean.FALSE);
             }
         }
 

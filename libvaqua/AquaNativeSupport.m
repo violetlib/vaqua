@@ -2,7 +2,7 @@
  * @(#)AquaNativeSupport.m
  *
  * Copyright (c) 2004-2007 Werner Randelshofer, Switzerland.
- * Copyright (c) 2014-2017 Alan Snyder.
+ * Copyright (c) 2014-2018 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this software, except in
@@ -19,7 +19,7 @@
 static int VERSION = 3;
 
 #include <stdio.h>
-#include <jni.h>
+#include "jni.h"
 #include "org_violetlib_aqua_fc_OSXFile.h"
 #include "org_violetlib_aqua_OSXSystemProperties.h"
 #include "org_violetlib_aqua_AquaNativeSupport.h"
@@ -39,6 +39,17 @@ static int VERSION = 3;
 
 #import "AquaSidebarBackground.h"
 #import "AquaWrappedAWTView.h"
+
+@interface AWTWindow
+@end
+
+// Not sure if this works, but try to ensure that patched classes are loaded before the patch.
+
+@interface CMenuBar
+@end
+
+@interface CMenuItem
+@end
 
 static JavaVM *vm;
 static jint javaVersion;
@@ -125,6 +136,16 @@ void windowDebug(NSWindow *w)
     NSString *od = w.opaque ? @" Opaque" : @"";
     NSRect frame = w.frame;
     NSLog(@"Window: %@%@ %f %f %f %f", [w description], od, frame.origin.x, frame.origin.y, frame.size.width, frame.size.height);
+
+    NSAppearance *appearance = w.appearance;
+    if (appearance) {
+        NSLog(@"  Appearance: %@", [appearance name]);
+    }
+    appearance = w.effectiveAppearance;
+    if (appearance) {
+        NSLog(@"  Effective appearance: %@", [appearance name]);
+    }
+
     NSView *v = getTopView(w);
     if (v != nil) {
         viewDebug(v, @"", 2);
@@ -288,7 +309,6 @@ JNIEXPORT jboolean JNICALL Java_org_violetlib_aqua_OSXSystemProperties_nativeGet
 JNIEXPORT jboolean JNICALL Java_org_violetlib_aqua_OSXSystemProperties_nativeGetScrollToClick
     (JNIEnv *env, jclass cl)
 {
-
     jboolean result = NO;
 
     JNF_COCOA_ENTER(env);
@@ -730,7 +750,7 @@ JNIEXPORT jboolean JNICALL Java_org_violetlib_aqua_fc_OSXFile_nativeRenderFileIm
 
         NSImage *image = getFileImage(path, isQuickLook, isIconMode, w, h);
         if (image != nil) {
-            result = renderImageIntoBuffers(env, image, output, w, h);
+                result = renderImageIntoBuffers(env, image, output, w, h);
         }
 
     JNF_COCOA_EXIT(env);
@@ -1031,7 +1051,7 @@ JNIEXPORT jobjectArray JNICALL Java_org_violetlib_aqua_fc_OSXFile_nativeGetSideb
     (*env)->SetObjectArrayElement(env, result, j++, (*env)->NewObject(env, integerClass, newIntegerMethodID, seed));
 
     if (which >= 2) {    // testing
-        NSLog(@"%ld elements for %@", count, list);
+        //NSLog(@"%ld elements for %@", count, list);
     }
 
     if (count > 0) {
@@ -1106,6 +1126,7 @@ JNIEXPORT jobjectArray JNICALL Java_org_violetlib_aqua_fc_OSXFile_nativeGetSideb
 
 static NSColorPanel *colorPanel;
 static jobject colorPanelCallback;
+static jboolean colorPanelBeingConfigured;
 
 @interface MyColorPanelDelegate : NSObject <NSWindowDelegate> {}
 - (void) colorChanged: (id) sender;
@@ -1147,6 +1168,10 @@ static jobject colorPanelCallback;
 
 - (void) colorChanged: (id) sender
 {
+        if (colorPanelBeingConfigured) {
+            return;
+        }
+
     NSColor *color = [colorPanel color];
 
     JNIEnv *env;
@@ -1199,17 +1224,6 @@ static jboolean setupColorPanel()
     return YES;
 }
 
-static void setColorPanelVisible(jboolean isShow)
-{
-    if (colorPanel) {
-        if (isShow) {
-            [colorPanel makeKeyAndOrderFront: nil];
-        } else {
-            [colorPanel close];
-        }
-    }
-}
-
 /*
  * Class:     org_violetlib_aqua_AquaNativeColorChooser
  * Method:    display
@@ -1243,13 +1257,27 @@ JNIEXPORT jboolean JNICALL Java_org_violetlib_aqua_AquaNativeColorChooser_create
     return result;
 }
 
-static void showHideColorChooser(JNIEnv *env, jboolean isShow)
+/*
+ * Class:     org_violetlib_aqua_AquaNativeColorChooser
+ * Method:    show
+ * Signature: (FFFFZ)V
+ */
+JNIEXPORT void JNICALL Java_org_violetlib_aqua_AquaNativeColorChooser_show
+    (JNIEnv *env, jclass cl, jfloat red, jfloat green, jfloat blue, jfloat alpha, jboolean wantAlpha)
 {
-    if (colorPanel) {
+        if (colorPanel) {
         JNF_COCOA_ENTER(env);
 
         void (^block)() = ^(){
-            setColorPanelVisible(isShow);
+                colorPanelBeingConfigured = YES;
+                        NSColor *color = [NSColor colorWithSRGBRed:(CGFloat)red
+                                                 green:(CGFloat)green
+                                                  blue:(CGFloat)blue
+                                                 alpha:(CGFloat)alpha];
+            colorPanel.showsAlpha = wantAlpha;
+            colorPanel.color = color;
+            [colorPanel makeKeyAndOrderFront: nil];
+            colorPanelBeingConfigured = NO;
         };
 
         if ([NSThread isMainThread]) {
@@ -1264,24 +1292,27 @@ static void showHideColorChooser(JNIEnv *env, jboolean isShow)
 
 /*
  * Class:     org_violetlib_aqua_AquaNativeColorChooser
- * Method:    show
- * Signature: ()V
- */
-JNIEXPORT void JNICALL Java_org_violetlib_aqua_AquaNativeColorChooser_show
-    (JNIEnv *env, jclass cl)
-{
-    showHideColorChooser(env, YES);
-}
-
-/*
- * Class:     org_violetlib_aqua_AquaNativeColorChooser
  * Method:    hide
  * Signature: ()V
  */
 JNIEXPORT void JNICALL Java_org_violetlib_aqua_AquaNativeColorChooser_hide
     (JNIEnv *env, jclass cl)
 {
-    showHideColorChooser(env, NO);
+        if (colorPanel) {
+        JNF_COCOA_ENTER(env);
+
+        void (^block)() = ^(){
+            [colorPanel close];
+        };
+
+        if ([NSThread isMainThread]) {
+            block();
+        } else {
+            [JNFRunLoop performOnMainThreadWaiting:YES withBlock:block];
+        }
+
+        JNF_COCOA_EXIT(env);
+    }
 }
 
 static jobject getWindowPeer(JNIEnv *env, jobject w)
@@ -1316,17 +1347,25 @@ JNIEXPORT jlong JNICALL Java_org_violetlib_aqua_AquaUtils_nativeGetNativeWindow
     JNF_COCOA_ENTER(env);
 
     jobject peer = getWindowPeer(env, w);
-    jobject platformWindow = getPlatformWindow(env, peer);
-    if (platformWindow != NULL) {
-
-        result = JNFGetLongField(env, platformWindow, jf_ptr);
-
-        jclass c = (*env)->GetObjectClass(env, platformWindow);
-        jfieldID f_readLock = (*env)->GetFieldID(env, c, "readLock", "Ljava/util/concurrent/locks/Lock;");
-        if (f_readLock != NULL) {
-            readLock = JNFGetObjectField(env, platformWindow, jf_readLock);
+    if (peer != NULL) {
+        jobject platformWindow = getPlatformWindow(env, peer);
+        if (platformWindow != NULL) {
+            result = JNFGetLongField(env, platformWindow, jf_ptr);
+            if (result != 0) {
+                jclass c = (*env)->GetObjectClass(env, platformWindow);
+                jfieldID f_readLock = (*env)->GetFieldID(env, c, "readLock", "Ljava/util/concurrent/locks/Lock;");
+                if (f_readLock != NULL) {
+                    readLock = JNFGetObjectField(env, platformWindow, jf_readLock);
+                }
+                (*env)->ExceptionClear(env);
+            } else {
+                NSLog(@"nativeGetNativeWindow: No pointer");
+            }
+        } else {
+            NSLog(@"nativeGetNativeWindow: No platform window");
         }
-        (*env)->ExceptionClear(env);
+    } else {
+        NSLog(@"nativeGetNativeWindow: No window peer");
     }
 
     (*env)->SetObjectArrayElement(env, data, 0, readLock);
@@ -2058,7 +2097,23 @@ JNIEXPORT jboolean JNICALL Java_org_violetlib_aqua_AquaUtils_getScreenMenuBarPro
     static JNF_CLASS_CACHE(jc_AquaMenuBarUI, "com/apple/laf/AquaMenuBarUI");
     static JNF_STATIC_MEMBER_CACHE(jm_getScreenMenuBarProperty, jc_AquaMenuBarUI, "getScreenMenuBarProperty", "()Z");
 
-    return JNFCallStaticBooleanMethod(env, jm_getScreenMenuBarProperty);
+    static JNF_CLASS_CACHE(jc_LWCToolkit, "sun/lwawt/macosx/LWCToolkit");
+    static JNF_STATIC_MEMBER_CACHE(jm_isSystemMenuBarSupported, jc_LWCToolkit, "isSystemMenuBarSupported", "()Z");
+
+    jboolean result = 0;
+
+    @try {
+        result = JNFCallStaticBooleanMethod(env, jm_getScreenMenuBarProperty);
+    }
+    @catch (NSException *exception) {
+        @try {
+            result = JNFCallStaticBooleanMethod(env, jm_isSystemMenuBarSupported);
+        }
+        @catch (NSException *exception2) {
+        }
+    }
+
+    return result;
 }
 
 /*
@@ -2087,6 +2142,20 @@ JNIEXPORT void JNICALL Java_org_violetlib_aqua_AquaUtils_clearScreenMenuBar
     static JNF_MEMBER_CACHE(jm_clearScreenMenuBar, jc_AquaMenuBarUI, "clearScreenMenuBar", "(Ljavax/swing/JFrame;)V");
 
     JNFCallVoidMethod(env, menuBarUI, jm_clearScreenMenuBar, frame);
+}
+
+/*
+ * Class:     org_violetlib_aqua_AquaUtils
+ * Method:    nativeHasOpaqueBeenExplicitlySet
+ * Signature: (Ljavax/swing/JComponent;)Z
+ */
+JNIEXPORT jboolean JNICALL Java_org_violetlib_aqua_AquaUtils_nativeHasOpaqueBeenExplicitlySet
+  (JNIEnv *env, jclass cl, jobject c)
+{
+    static JNF_CLASS_CACHE(jc_JComponent, "javax/swing/JComponent");
+    static JNF_MEMBER_CACHE(jm_getFlag, jc_JComponent, "getFlag", "(I)Z");
+
+    return JNFCallBooleanMethod(env, c, jm_getFlag, 24);    // 24 is JComponent.OPAQUE_SET
 }
 
 /*

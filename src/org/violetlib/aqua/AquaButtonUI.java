@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2016 Alan Snyder.
+ * Copyright (c) 2015-2018 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -37,6 +37,7 @@ import java.awt.*;
 import java.awt.event.*;
 import java.awt.geom.RoundRectangle2D;
 import java.beans.PropertyChangeEvent;
+import java.time.temporal.ValueRange;
 import javax.swing.*;
 import javax.swing.border.Border;
 import javax.swing.event.AncestorEvent;
@@ -71,6 +72,7 @@ public class AquaButtonUI extends BasicButtonUI implements AquaUtilControlSize.S
     public static final String BUTTON_TYPE = "JButton.buttonType";
     public static final String SEGMENTED_BUTTON_POSITION = "JButton.segmentPosition";
     public static final String SELECTED_STATE_KEY = "JButton.selectedState";
+    public static final String ENABLE_TRANSLUCENT_COLORS_KEY = "JButton.enableTranslucentColors";
 
     public static final float OUTLINE_OFFSET = 0;
     public static final float OUTLINE_CORNER = 9;
@@ -157,6 +159,11 @@ public class AquaButtonUI extends BasicButtonUI implements AquaUtilControlSize.S
         }
 
         updateTemplateIconStatus(b);
+
+        AquaUIPainter.ButtonWidget widget = getButtonWidget(b);
+        if (widget != AquaUIPainter.ButtonWidget.BUTTON_COLOR_WELL) {
+            disconnectColorChooser(b);
+        }
 
         b.setRequestFocusEnabled(false);
 
@@ -355,6 +362,7 @@ public class AquaButtonUI extends BasicButtonUI implements AquaUtilControlSize.S
 
     // Uninstall PLAF
     public void uninstallUI(final JComponent c) {
+        disconnectColorChooser((AbstractButton)c);
         uninstallKeyboardActions((AbstractButton)c);
         uninstallListeners((AbstractButton)c);
         uninstallDefaults((AbstractButton)c);
@@ -437,23 +445,44 @@ public class AquaButtonUI extends BasicButtonUI implements AquaUtilControlSize.S
         Rectangle iconRect = new Rectangle();
         Rectangle textRect = new Rectangle();
 
-        // we are overdrawing here with translucent colors so we get
-        // a darkening effect. How can we avoid it. Try clear rect?
-        if (b.isOpaque()) {
-            g.setColor(c.getBackground());
-            g.fillRect(viewRect.x, viewRect.y, viewRect.width, viewRect.height);
-        }
+        AquaUIPainter.ButtonWidget widget = getButtonWidget(b);
+        boolean isColorWell = widget == AquaUIPainter.ButtonWidget.BUTTON_COLOR_WELL;
 
         AquaButtonBorder aquaBorder = null;
-        if (((AbstractButton)c).isBorderPainted()) {
-            final Border border = c.getBorder();
-
+        if (b.isBorderPainted()) {
+            Border border = c.getBorder();
             if (border instanceof AquaButtonBorder) {
-                // only do this if borders are on!
-                // this also takes care of focus painting.
-                aquaBorder = (AquaButtonBorder)border;
-                aquaBorder.paintBackground(c, g, viewRect.x, viewRect.y, viewRect.width, viewRect.height);
+                aquaBorder = (AquaButtonBorder) border;
             }
+        }
+
+        if (isColorWell && aquaBorder != null) {
+            // Special background for color well contains black and white areas to allow translucent colors to be
+            // recognized.
+            g.setColor(Color.BLACK);
+            g.fillRect(viewRect.x, viewRect.y, viewRect.width, viewRect.height);
+            g.setColor(Color.WHITE);
+            Insets margins = new Insets(6, 6, 6, 6);
+            int x1 = viewRect.x + margins.left;
+            int x2 = viewRect.x + viewRect.width - margins.right;
+            int y1 = viewRect.y + margins.top;
+            int y2 = viewRect.y + viewRect.height - margins.bottom;
+            int x[] = {x1, x2, x2};
+            int y[] = {y2, y1, y2};
+            g.fillPolygon(x, y, 3);
+        } else {
+            // we are overdrawing here with translucent colors so we get
+            // a darkening effect. How can we avoid it. Try clear rect?
+            if (b.isOpaque()) {
+                g.setColor(c.getBackground());
+                g.fillRect(viewRect.x, viewRect.y, viewRect.width, viewRect.height);
+            }
+        }
+
+        if (aquaBorder != null) {
+            // only do this if borders are on!
+            // this also takes care of focus painting.
+            aquaBorder.paintBackground(c, g, viewRect.x, viewRect.y, viewRect.width, viewRect.height);
         } else {
             if (b.isOpaque()) {
                 viewRect.x = i.left - 2;
@@ -549,25 +578,25 @@ public class AquaButtonUI extends BasicButtonUI implements AquaUtilControlSize.S
 
     /**
      * Paint the appropriate icon based on the button state.
-     * This method should not be called unless the button has an icon.
      */
     protected void paintIcon(Graphics g, AbstractButton b, Rectangle localIconRect) {
         Icon icon = getIcon(b);
+        if (icon != null) {
+            Graphics2D gg = null;
 
-        Graphics2D gg = null;
+            if (icon.getIconWidth() != localIconRect.width || icon.getIconHeight() != localIconRect.height) {
+                gg = (Graphics2D) g.create();
+                g = gg;
+                gg.translate(localIconRect.x, localIconRect.y);
+                gg.scale(localIconRect.getWidth() / icon.getIconWidth(), localIconRect.getHeight() / icon.getIconHeight());
+                gg.translate(-localIconRect.x, -localIconRect.y);
+            }
 
-        if (icon.getIconWidth() != localIconRect.width || icon.getIconHeight() != localIconRect.height) {
-            gg = (Graphics2D) g.create();
-            g = gg;
-            gg.translate(localIconRect.x, localIconRect.y);
-            gg.scale(localIconRect.getWidth() / icon.getIconWidth(), localIconRect.getHeight() / icon.getIconHeight());
-            gg.translate(-localIconRect.x, -localIconRect.y);
-        }
+            icon.paintIcon(b, g, localIconRect.x, localIconRect.y);
 
-        icon.paintIcon(b, g, localIconRect.x, localIconRect.y);
-
-        if (gg != null) {
-            gg.dispose();
+            if (gg != null) {
+                gg.dispose();
+            }
         }
     }
 
@@ -605,6 +634,15 @@ public class AquaButtonUI extends BasicButtonUI implements AquaUtilControlSize.S
         ROLLOVER_SELECTED,
         SELECTED,
         DEFAULT
+    }
+
+    public static AquaUIPainter.ButtonWidget getButtonWidget(AbstractButton b) {
+        Object o = b.getClientProperty(LAYOUT_CONFIGURATION_PROPERTY);
+        if (o instanceof ButtonLayoutConfiguration) {
+            ButtonLayoutConfiguration bg = (ButtonLayoutConfiguration) o;
+            return bg.getButtonWidget();
+        }
+        return null;
     }
 
     /**
@@ -831,16 +869,12 @@ public class AquaButtonUI extends BasicButtonUI implements AquaUtilControlSize.S
 
         @Override
         public void actionPerformed(ActionEvent e) {
-            // If the button is a color well and no other action listeners are defined, bring up a
-            // color chooser.
-            Object o = b.getClientProperty(LAYOUT_CONFIGURATION_PROPERTY);
-            if (o instanceof ButtonLayoutConfiguration) {
-                ButtonLayoutConfiguration bg = (ButtonLayoutConfiguration) o;
-                if (bg.getButtonWidget() == AquaUIPainter.ButtonWidget.BUTTON_COLOR_WELL) {
-                    ActionListener[] listeners = b.getActionListeners();
-                    if (listeners.length == 1) {
-                        toggleColorChooser(b);
-                    }
+            // If the button is a color well and no other action listeners are defined, bring up a color chooser.
+            AquaUIPainter.ButtonWidget widget = getButtonWidget(b);
+            if (widget == AquaUIPainter.ButtonWidget.BUTTON_COLOR_WELL) {
+                ActionListener[] listeners = b.getActionListeners();
+                if (listeners.length == 1) {
+                    toggleColorChooser(b);
                 }
             }
         }
@@ -900,6 +934,12 @@ public class AquaButtonUI extends BasicButtonUI implements AquaUtilControlSize.S
                     configure(b);
                 }
             }
+
+            if ("ancestor".equals(propertyName)) {
+                if (!b.isDisplayable()) {
+                    disconnectColorChooser(b);
+                }
+            }
         }
 
         public void ancestorMoved(final AncestorEvent e) {}
@@ -943,6 +983,16 @@ public class AquaButtonUI extends BasicButtonUI implements AquaUtilControlSize.S
     protected void didHandleButtonPress(AbstractButton b, Object data) {
     }
 
+    protected void disconnectColorChooser(AbstractButton b)
+    {
+        Object o = b.getClientProperty(COLOR_CHOOSER_OWNER_PROPERTY);
+        if (o instanceof SharedColorChooserOwner) {
+            SharedColorChooserOwner owner = (SharedColorChooserOwner) o;
+            AquaSharedColorChooser.disconnect(owner);
+            b.putClientProperty(COLOR_CHOOSER_OWNER_PROPERTY, null);
+        }
+    }
+
     protected void toggleColorChooser(AbstractButton b) {
 
         Object o = b.getClientProperty(COLOR_CHOOSER_OWNER_PROPERTY);
@@ -967,7 +1017,9 @@ public class AquaButtonUI extends BasicButtonUI implements AquaUtilControlSize.S
             }
         };
 
-        if (AquaSharedColorChooser.connect(owner)) {
+        Color c = b.getBackground();
+        boolean enableTranslucentColors = Boolean.TRUE.equals(b.getClientProperty(ENABLE_TRANSLUCENT_COLORS_KEY));
+        if (AquaSharedColorChooser.connect(owner, c, enableTranslucentColors)) {
             b.putClientProperty(COLOR_CHOOSER_OWNER_PROPERTY, owner);
             b.setSelected(true);
         }

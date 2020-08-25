@@ -1,5 +1,13 @@
 /*
- * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Changes copyright (c) 2018 Alan Snyder.
+ * All rights reserved.
+ *
+ * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
+ * accompanying license terms.
+ */
+
+/*
+ * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,28 +33,38 @@
 
 package org.violetlib.aqua;
 
-import java.awt.*;
-import java.awt.event.*;
-import java.beans.*;
-
+import java.awt.event.FocusEvent;
+import java.awt.event.MouseEvent;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import javax.swing.*;
 import javax.swing.plaf.UIResource;
-import javax.swing.text.*;
+import javax.swing.text.DefaultCaret;
+import javax.swing.text.Highlighter;
+import javax.swing.text.JTextComponent;
 
 @SuppressWarnings("serial") // Superclass is not serializable across versions
-public class AquaCaret extends DefaultCaret implements UIResource, PropertyChangeListener {
-    final boolean isMultiLineEditor;
-    final JTextComponent c;
+public class AquaCaret extends DefaultCaret
+        implements UIResource, PropertyChangeListener {
 
-    boolean mFocused = false;
+    private final static String SELECT_CONTENT_ON_FOCUS_GAINED_KEY = "JTextComponent.selectContentOnFocusGained";
 
-    public AquaCaret(final Window inParentWindow, final JTextComponent inComponent) {
-        super();
-        c = inComponent;
-        isMultiLineEditor = (c instanceof JTextArea || c instanceof JEditorPane);
-        inComponent.addPropertyChangeListener(this);
+    private boolean isMultiLineEditor;
+
+    @Override
+    public void install(JTextComponent c) {
+        super.install(c);
+        isMultiLineEditor = c instanceof JTextArea || c instanceof JEditorPane;
+        c.addPropertyChangeListener(this);
     }
 
+    @Override
+    public void deinstall(JTextComponent c) {
+        c.removePropertyChangeListener(this);
+        super.deinstall(c);
+    }
+
+    @Override
     protected Highlighter.HighlightPainter getSelectionPainter() {
         return AquaHighlighter.getInstance();
     }
@@ -54,26 +72,30 @@ public class AquaCaret extends DefaultCaret implements UIResource, PropertyChang
     /**
      * Only show the flashing caret if the selection range is zero
      */
+    @Override
     public void setVisible(boolean e) {
         if (e) e = getDot() == getMark();
         super.setVisible(e);
     }
 
+    @Override
     protected void fireStateChanged() {
-        // If we have focus the caret should only flash if the range length is zero
-        if (mFocused) setVisible(getComponent().isEditable());
+        // Changing caret position may change caret visibility.
+        JTextComponent c = getComponent();
+        setVisible(c.isEnabled() && c.isEditable() && c.isFocusOwner());
 
         super.fireStateChanged();
     }
 
-    public void propertyChange(final PropertyChangeEvent evt) {
+    @Override
+    public void propertyChange(PropertyChangeEvent evt) {
         final String propertyName = evt.getPropertyName();
 
         if (AquaFocusHandler.FRAME_ACTIVE_PROPERTY.equals(propertyName)) {
             final JTextComponent comp = ((JTextComponent)evt.getSource());
 
             if (evt.getNewValue() == Boolean.TRUE) {
-                setVisible(comp.hasFocus());
+                setVisible(comp.isFocusOwner());
             } else {
                 setVisible(false);
             }
@@ -84,60 +106,65 @@ public class AquaCaret extends DefaultCaret implements UIResource, PropertyChang
 
     // --- FocusListener methods --------------------------
 
-    private boolean shouldSelectAllOnFocus = true;
-    public void focusGained(final FocusEvent e) {
-        final JTextComponent component = getComponent();
-        if (!component.isEnabled() || !component.isEditable()) {
-            super.focusGained(e);
-            return;
-        }
+    private boolean temporaryInhibitSelectAllOnFocusGained = false;
 
-        mFocused = true;
-        if (!shouldSelectAllOnFocus) {
-            shouldSelectAllOnFocus = true;
-            super.focusGained(e);
-            return;
-        }
+    @Override
+    public void focusGained(FocusEvent e) {
 
-        if (isMultiLineEditor) {
-            super.focusGained(e);
-            return;
-        }
-
-        final int end = component.getDocument().getLength();
-        final int dot = getDot();
-        final int mark = getMark();
-        if (dot == mark) {
-            if (dot == 0) {
-                component.setCaretPosition(end);
-                component.moveCaretPosition(0);
-            } else if (dot == end) {
-                component.setCaretPosition(0);
-                component.moveCaretPosition(end);
+        if (shouldSelectAllOnFocusGained()) {
+            JTextComponent c = getComponent();
+            final int end = c.getDocument().getLength();
+            final int dot = getDot();
+            final int mark = getMark();
+            if (dot == mark) {
+                if (dot == 0) {
+                    c.setCaretPosition(end);
+                    c.moveCaretPosition(0);
+                } else if (dot == end) {
+                    c.setCaretPosition(0);
+                    c.moveCaretPosition(end);
+                }
             }
         }
 
         super.focusGained(e);
     }
 
-    public void focusLost(final FocusEvent e) {
-        mFocused = false;
-        shouldSelectAllOnFocus = true;
-        if (isMultiLineEditor) {
-            setVisible(false);
-            c.repaint();
-        } else {
-            super.focusLost(e);
+    private boolean shouldSelectAllOnFocusGained() {
+
+        if (temporaryInhibitSelectAllOnFocusGained) {
+            // inhibited by mouse pressed
+            temporaryInhibitSelectAllOnFocusGained = false;
+            return false;
         }
+
+        JTextComponent c = getComponent();
+        if (!c.isEnabled() || !c.isEditable()) {
+            return false;
+        }
+
+        Object o = c.getClientProperty(SELECT_CONTENT_ON_FOCUS_GAINED_KEY);
+        if (isMultiLineEditor) {
+            return Boolean.TRUE.equals(o);
+        } else {
+            return !Boolean.FALSE.equals(o);
+        }
+    }
+
+    @Override
+    public void focusLost(FocusEvent e) {
+        temporaryInhibitSelectAllOnFocusGained = false;
+        super.focusLost(e);
     }
 
     // This fixes the problem where when on the mac you have to ctrl left click to
     // get popup triggers the caret has code that only looks at button number.
     // see radar # 3125390
-    public void mousePressed(final MouseEvent e) {
+    @Override
+    public void mousePressed(MouseEvent e) {
         if (!e.isPopupTrigger()) {
             super.mousePressed(e);
-            shouldSelectAllOnFocus = false;
+            temporaryInhibitSelectAllOnFocusGained = true;
         }
     }
 

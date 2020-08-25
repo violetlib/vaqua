@@ -1,12 +1,22 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<!-- This build file will not compile JDK 9 specific sources until a JDK 9 compiler is available -->
-
 <project basedir="." default="release" name="VAqua Look and Feel">
 
     <tstamp>
         <format property="NOW" timezone="GMT" pattern="yyyy-MM-dd'T'HH:mm:ss'Z'"/>
     </tstamp>
+
+    <!-- A Java 9 or later compiler is required -->
+
+    <exec executable="/usr/libexec/java_home" outputproperty="jdk">
+        <arg value="-F"/>
+        <arg value="-v"/>
+        <arg value="9+"/>
+    </exec>
+
+    <property name="javac" location="${jdk}/bin/javac"/>
+
+    <!-- A Java 8 boot class path is required -->
 
     <exec executable="/usr/libexec/java_home" outputproperty="jdk8">
         <arg value="-F"/>
@@ -14,44 +24,41 @@
         <arg value="1.8"/>
     </exec>
 
-    <exec executable="/usr/libexec/java_home" outputproperty="jdk9">
-        <arg value="-F"/>
-        <arg value="-v"/>
-        <arg value="9"/>
-    </exec>
+    <property name="bootclasspath" location="${jdk8}/jre/lib/rt.jar" />
 
-    <property name="javac9" value="${jdk9}/bin/javac"/>
+    <!-- A JDK lib directory is required -->
 
-    <property name="bootclasspath" value="${jdk8}/jre/lib/rt.jar" />
+    <property name="jdklibdir" location="/Library/Java/JavaVirtualMachines/jdk-9.0.4.jdk/Contents/Home/lib"/>
 
     <property name="RELEASE" value="0.9"/>
     <property name="fullReleaseName" value="${RELEASE} ${NOW}"/>
 
-    <property name="base" value=".."/>
-    <property name="src" value="${base}/src"/>
-    <property name="src8" value="${base}/Java8Support/src"/>
-    <property name="src9" value="${base}/Java9Support/src"/>
-    <property name="jnisrc" value="${base}/libvaqua"/>
-    <property name="resources" value="${base}/resources"/>
-    <property name="builddir" value="out"/>
-    <property name="classesdir" value="${builddir}/classes"/>
-    <property name="headersdir" value="${builddir}/headers"/>
-    <property name="jnidir" value="${builddir}/jni"/>
-    <property name="distdir" value="dist"/>
+    <property name="base" location=".."/>
+    <property name="src" location="${base}/src"/>
+    <property name="src8" location="${base}/Java8Support/src"/>
+    <property name="src9" location="${base}/Java9Support/src"/>
+    <property name="jnisrc" location="${base}/libvaqua"/>
+    <property name="libkeywindowpatchsrc" location="${base}/libkeywindowpatch"/>
+    <property name="resources" location="${base}/resources"/>
+    <property name="builddir" location="out"/>
+    <property name="classesdir" location="${builddir}/classes"/>
+    <property name="headersdir" location="${builddir}/headers"/>
+    <property name="jnidir" location="${builddir}/jni"/>
+    <property name="distdir" location="dist"/>
 
-    <property name="renderingLibraryJAR" value="${base}/lib/VAquaRendering.jar"/>
+    <property name="renderingLibraryJAR" location="${base}/lib/VAquaRendering.jar"/>
 
-    <property name="SDKversion" value="10.12"/>
-    <property name="SDKroot" value="/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX${SDKversion}.sdk" />
-    <property name="libpath" value="${base}/lib/IdeaAnnotations.jar"/>
-    <property name="cc" value="/usr/bin/cc"/>
+    <property name="SDKversion" value="10.13"/>
+    <property name="SDKroot" location="/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX${SDKversion}.sdk" />
+    <property name="libpath" location="${base}/lib/IdeaAnnotations.jar"/>
+    <property name="cc" location="/usr/bin/cc"/>
 
     <property name="debug" value="false"/>
 
     <target name="init">
         <echo level="info" message="${fullReleaseName}"/>
     </target>
-        
+
     <target name="clean" description="Remove build directories">
         <delete includeEmptyDirs="true" failonerror="false"><fileset dir="${builddir}"/></delete>
     </target>
@@ -73,16 +80,6 @@
       </copy>
     </target>
 
-    <condition property="javac9exists">
-      <resourceexists>
-        <file file="${javac9}"/>
-      </resourceexists>
-    </condition>
-
-    <target name="missing9" unless="javac9exists">
-      <echo message="Java 9 compiler not found at ${javac9}"/>
-    </target>
-
     <target name="compile8" depends="unjarRenderingLibrary, copyResources">
       <mkdir dir="${classesdir}"/>
       <mkdir dir="${headersdir}"/>
@@ -96,6 +93,8 @@
           debug="${debug}"
           optimize="true"
           includeantruntime="false"
+          fork="true"
+          executable="${javac}"
           >
           <compilerarg value="-h"/>
           <compilerarg path="${headersdir}"/>
@@ -113,6 +112,8 @@
           debug="${debug}"
           optimize="true"
           includeantruntime="false"
+          fork="true"
+          executable="${javac}"
           >
           <compilerarg value="-h"/>
           <compilerarg path="${headersdir}"/>
@@ -122,9 +123,9 @@
       </javac>
     </target>
 
-    <target name="compile9" if="javac9exists">
+    <target name="compile9">
       <mkdir dir="${classesdir}"/>
-      <javac source="1.8" target="1.8"
+      <javac
           classpath="${libpath}"
           encoding="UTF-8"
           srcdir="${src9}"
@@ -133,17 +134,19 @@
           optimize="true"
           includeantruntime="false"
           fork="true"
-          executable="${javac9}"
+          executable="${javac}"
           >
+          <compilerarg value="--release"/>
+          <compilerarg value="9"/>
           <patternset>
             <include name="org/violetlib/aqua/**/*.java"/>
           </patternset>
         </javac>
     </target>
 
-    <target name="compile-VAqua-Java" depends="compile8, compile9, missing9">
+    <target name="compile-VAqua-Java" depends="compile8, compile9">
     </target>
-    
+
     <target name="compile-VAqua-JNI" depends="compile8">
         <mkdir dir="${jnidir}"/>
 
@@ -153,7 +156,7 @@
 
             <arg value="-isysroot"/>
             <arg value="${SDKroot}"/>
-            <env key="MACOSX_DEPLOYMENT_TARGET" value="${SDKversion}"/>
+            <env key="MACOSX_DEPLOYMENT_TARGET" value="10.7"/>
 
             <arg value="-o"/>
             <arg value="${jnidir}/libvaqua.dylib"/>
@@ -174,6 +177,10 @@
             <arg value="-framework"/>
             <arg value="JavaNativeFoundation"/>
 
+            <arg value="-L${jdklibdir}"/>
+            <arg value="-lawt_lwawt"/>
+            <arg value="-losxapp"/>
+
             <arg value="${jnisrc}/AquaNativeSupport.m"/>
             <arg value="${jnisrc}/AquaSidebarBackground.m"/>
             <arg value="${jnisrc}/AquaWrappedAWTView.m"/>
@@ -181,7 +188,49 @@
 
     </target>
 
-    <target name="VAqua" depends="compile-VAqua-JNI,compile-VAqua-Java,saveIDs">
+    <target name="compile-KeyWindowPatch" depends="compile8">
+        <mkdir dir="${jnidir}"/>
+
+        <exec executable="${cc}" failonerror="true" >
+            <arg value="-arch"/>
+            <arg value="x86_64"/>
+
+            <arg value="-isysroot"/>
+            <arg value="${SDKroot}"/>
+            <env key="MACOSX_DEPLOYMENT_TARGET" value="10.7"/>
+
+            <arg value="-o"/>
+            <arg value="${jnidir}/libkeywindowpatch.dylib"/>
+
+            <arg value="-I${SDKroot}/System/Library/Frameworks/JavaVM.framework/Headers"/>
+            <arg value="-I${SDKroot}/System/Library/Frameworks/JavaVM.framework/Frameworks/JavaNativeFoundation.framework/Headers"/>
+            <arg value="-I${headersdir}"/>
+
+            <arg value="-dynamiclib"/>
+            <arg value="-ObjC"/>
+
+            <arg value="-framework"/>
+            <arg value="JavaVM"/>
+            <arg value="-framework"/>
+            <arg value="Cocoa"/>
+
+            <arg value="-F/${SDKroot}/System/Library/Frameworks/JavaVM.framework/Versions/A/Frameworks"/>
+            <arg value="-framework"/>
+            <arg value="JavaNativeFoundation"/>
+
+            <arg value="-L${jdklibdir}"/>
+            <arg value="-lawt_lwawt"/>
+            <arg value="-losxapp"/>
+
+            <arg value="${libkeywindowpatchsrc}/KeyWindowPatch.m"/>
+            <arg value="${libkeywindowpatchsrc}/AquaWrappedWindowDelegate.m"/>
+            <arg value="${libkeywindowpatchsrc}/CMenuItemCategory.m"/>
+            <arg value="${libkeywindowpatchsrc}/CMenuBarCategory.m"/>
+        </exec>
+
+    </target>
+
+    <target name="VAqua" depends="compile-VAqua-JNI,compile-KeyWindowPatch,compile-VAqua-Java,saveIDs">
 
         <echo level="info" message="Building VAqua ${fullReleaseName}"/>
 
