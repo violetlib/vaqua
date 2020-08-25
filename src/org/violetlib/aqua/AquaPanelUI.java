@@ -43,8 +43,10 @@ import javax.swing.plaf.UIResource;
 import javax.swing.plaf.basic.BasicPanelUI;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.violetlib.aqua.AquaUtils.RecyclableSingleton;
 import org.violetlib.aqua.AquaUtils.RecyclableSingletonFromDefaultConstructor;
+import org.violetlib.jnr.aqua.AquaUIPainter;
 
 public class AquaPanelUI extends BasicPanelUI implements AquaComponentUI {
 
@@ -55,9 +57,14 @@ public class AquaPanelUI extends BasicPanelUI implements AquaComponentUI {
     static RecyclableSingleton<AquaPanelUI> instance = new RecyclableSingletonFromDefaultConstructor<AquaPanelUI>(AquaPanelUI.class);
 
     private PropertyChangeListener propertyChangeListener = AquaPanelUI.this::propertyChange;
+    protected @NotNull BasicContextualColors colors;
 
     public static ComponentUI createUI(JComponent c) {
         return instance.get();
+    }
+
+    public AquaPanelUI() {
+        colors = AquaColors.CONTROL_COLORS;
     }
 
     @Override
@@ -66,18 +73,15 @@ public class AquaPanelUI extends BasicPanelUI implements AquaComponentUI {
         AquaVibrantSupport.installVibrantStyle(c);
         c.addPropertyChangeListener(propertyChangeListener);
         updateStyle(c);
+        AppearanceManager.installListener(c);
+        configureAppearanceContext(c, null);
     }
 
     @Override
     public void uninstallUI(JComponent c) {
+        AppearanceManager.uninstallListener(c);
         c.removePropertyChangeListener(propertyChangeListener);
         AquaVibrantSupport.uninstallVibrantStyle(c);
-
-        Border b = c.getBorder();
-        if (b instanceof UIResource) {
-            c.setBorder(null);
-        }
-
         super.uninstallUI(c);
     }
 
@@ -85,19 +89,33 @@ public class AquaPanelUI extends BasicPanelUI implements AquaComponentUI {
     protected void installDefaults(JPanel p) {
         super.installDefaults(p);
         LookAndFeel.installProperty(p, "opaque", false);
+        configureAppearanceContext(p, null);
     }
 
     @Override
     public void appearanceChanged(@NotNull JComponent c, @NotNull AquaAppearance appearance) {
+        configureAppearanceContext(c, appearance);
     }
 
     @Override
     public void activeStateChanged(@NotNull JComponent c, boolean isActive) {
     }
 
+    protected void configureAppearanceContext(@NotNull JComponent c, @Nullable AquaAppearance appearance) {
+        if (appearance == null) {
+            appearance = AppearanceManager.ensureAppearance(c);
+        }
+
+        // Although a JPanel is not-opaque by default, it is still important to set appropriate foreground and
+        // background colors, as these colors may be inherited by components that use them.
+
+        AquaUIPainter.State state = AquaUIPainter.State.ACTIVE;
+        AppearanceContext appearanceContext = new AppearanceContext(appearance, state, false, false);
+        AquaColors.installColors(c, appearanceContext, colors);
+    }
+
     @Override
     public final void update(@NotNull Graphics g, @NotNull JComponent c) {
-        AppearanceManager.ensureAppearance(c);
         AquaAppearance appearance = AppearanceManager.registerCurrentAppearance(c);
         if (c.isOpaque() || AquaVibrantSupport.isVibrant(c)) {
             AquaUtils.fillRect(g, c, AquaUtils.ERASE_IF_TEXTURED | AquaUtils.ERASE_IF_VIBRANT);
@@ -119,6 +137,9 @@ public class AquaPanelUI extends BasicPanelUI implements AquaComponentUI {
         if (PANEL_STYLE_KEY.equals(prop) || GROUP_BOX_TITLE_KEY.equals(prop)) {
             JComponent c = (JComponent) evt.getSource();
             updateStyle(c);
+        } else if (AquaUtils.TOOLBAR_PANEL_PROPERTY.equals(prop)) {
+            JComponent c = (JComponent) evt.getSource();
+            AquaUtils.generateToolbarStatusEvents(c);
         }
     }
 

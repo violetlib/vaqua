@@ -15,6 +15,8 @@ import javax.swing.*;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
+import org.jetbrains.annotations.NotNull;
+
 /**
  * This object implements a workaround. To use overlay scroll bars, the component containing the scroll bars and the
  * viewport must disable optimized drawing. This component is normally the JScrollPane, but JScrollPane enables
@@ -27,7 +29,7 @@ public class OverlayScrollPaneHack {
 
     // see JDK-8139205
 
-    protected JScrollPane scrollPane;
+    protected final JScrollPane scrollPane;
 
     /** non-null if an intermediate component is used to paint the overlay scroll bars */
     protected AquaOverlayViewportHolder holder;
@@ -41,7 +43,7 @@ public class OverlayScrollPaneHack {
     /**
      * Install the intermediate container on a scroll pane.
      */
-    public OverlayScrollPaneHack(JScrollPane scrollPane) {
+    public OverlayScrollPaneHack(@NotNull JScrollPane scrollPane) {
         this.scrollPane = scrollPane;
         lastKnownViewport = scrollPane.getViewport();
         lastKnownView = lastKnownViewport != null ? SwingUtilities.getUnwrappedView(lastKnownViewport) : null;

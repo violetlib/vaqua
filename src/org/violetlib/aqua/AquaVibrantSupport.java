@@ -263,12 +263,14 @@ public class AquaVibrantSupport {
         JRootPane rp = AquaUtils.getRootPane(w);
         if (rp != null) {
             if (rp.getClientProperty(VIBRANT_WINDOW_KEY) != null) {
-                long rc = execute(w, AquaVibrantSupport::removeVisualEffectWindow);
-                if (rc != 0) {
-                    System.err.println("Unable to remove visual effect view");
-                } else {
-                    rp.putClientProperty(VIBRANT_WINDOW_KEY, null);
-                    rp.repaint();
+                rp.putClientProperty(VIBRANT_WINDOW_KEY, null);
+                if (w.isDisplayable()) {
+                    long rc = execute(w, AquaVibrantSupport::removeVisualEffectWindow);
+                    if (rc != 0) {
+                        System.err.println("Unable to remove visual effect view");
+                    } else {
+                        rp.repaint();
+                    }
                 }
             }
         }

@@ -40,8 +40,7 @@ import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.text.JTextComponent;
 
-import org.violetlib.aqua.AquaUtils.RecyclableSingleton;
-import org.violetlib.aqua.AquaUtils.RecyclableSingletonFromDefaultConstructor;
+import org.jetbrains.annotations.NotNull;
 import org.violetlib.jnr.Insetter;
 import org.violetlib.jnr.aqua.AquaUIPainter;
 import org.violetlib.jnr.aqua.AquaUIPainter.State;
@@ -57,20 +56,15 @@ public class AquaTextFieldSearch {
     private static final String CANCEL_ACTION_KEY = "JTextField.Search.CancelAction";
     private static final String PROMPT_KEY = "JTextField.Search.Prompt";
 
-    protected static boolean hasPopupMenu(JTextComponent c) {
+    protected static boolean hasPopupMenu(@NotNull JTextComponent c) {
         return (c.getClientProperty(FIND_POPUP_KEY) instanceof JPopupMenu);
     }
 
-    protected static final RecyclableSingleton<SearchFieldBorder> instance = new RecyclableSingletonFromDefaultConstructor<SearchFieldBorder>(SearchFieldBorder.class);
-    public static SearchFieldBorder getSearchTextFieldBorder() {
-        return instance.get();
-    }
-
-    protected static void installSearchField(JTextComponent c) {
+    protected static void installSearchField(@NotNull JTextComponent c) {
 
         uninstallSearchField(c);
 
-        SearchFieldBorder border = getSearchTextFieldBorder();
+        SearchFieldBorder border = new AquaTextFieldSearch.SearchFieldBorder(c);
         c.setBorder(border);
         c.setLayout(border.getCustomLayout());
         c.add(getFindButton(c), BorderLayout.WEST);
@@ -128,7 +122,7 @@ public class AquaTextFieldSearch {
 //                g.drawRect(0, 0, getWidth() - 1, getHeight() - 1);
 //            }
 //        }
-        ;
+                ;
 
         //Insets i = icon.sizeVariant.margins;
         //b.setBorder(BorderFactory.createEmptyBorder(i.top, i.left, i.bottom, i.right));
@@ -286,15 +280,12 @@ public class AquaTextFieldSearch {
     }
 
     // subclass of normal text border, because we still want all the normal text field behaviors
-    static class SearchFieldBorder extends AquaTextFieldBorder {
+    static class SearchFieldBorder extends AquaTextComponentBorder {
         protected boolean reallyPaintBorder;
 
         // called via reflection
-        public SearchFieldBorder() {
-        }
-
-        public SearchFieldBorder(SearchFieldBorder other) {
-            super(other);
+        public SearchFieldBorder(@NotNull JTextComponent tc) {
+            super(tc);
         }
 
         public void paint(JComponent c, Graphics g, int x, int y, int w, int h) {
@@ -314,7 +305,7 @@ public class AquaTextFieldSearch {
 //        }
 
         @Override
-        protected TextFieldWidget getWidget(JTextComponent tc) {
+        protected TextFieldWidget getWidget() {
             boolean hasFocus = AquaFocusHandler.hasFocus(tc);
             String text = tc.getText();
             boolean hasMenu = hasPopupMenu(tc) && (hasFocus || OSVersion >= 1014);
@@ -325,7 +316,7 @@ public class AquaTextFieldSearch {
                 hasCancelButton = hasFocus;
             }
 
-            boolean isToolbar = isOnToolbar(tc);
+            boolean isToolbar = AquaUtils.isOnToolbar(tc);
 
             return !hasCancelButton ?
                     hasMenu ?
@@ -339,7 +330,7 @@ public class AquaTextFieldSearch {
                             isToolbar ? TextFieldWidget.TEXT_FIELD_SEARCH_WITH_CANCEL_TOOLBAR : TextFieldWidget.TEXT_FIELD_SEARCH_WITH_CANCEL;
         }
 
-        public Insets getBorderInsets(Component c) {
+        public @NotNull Insets getBorderInsets(@NotNull Component c) {
             if (doingLayout) {
                 return new Insets(0, 0, 0, 0);
             }
@@ -348,7 +339,7 @@ public class AquaTextFieldSearch {
         }
 
         @Override
-        public int getTextMargin(JTextComponent tc) {
+        public int getTextMargin() {
             // No extra margin needed
             return 0;
         }
@@ -398,7 +389,7 @@ public class AquaTextFieldSearch {
             public void layoutContainer(Container parent) {
                 if (tc != null) {
                     Rectangle bounds = new Rectangle(0, 0, tc.getWidth(), tc.getHeight());
-                    TextFieldWidget widget = getWidget(tc);
+                    TextFieldWidget widget = getWidget();
                     AquaUIPainter.Size sz = AquaUtilControlSize.getUserSizeFrom(tc);
                     AquaUIPainter.UILayoutDirection ld = AquaUtils.getLayoutDirection(tc);
                     TextFieldLayoutConfiguration g = new TextFieldLayoutConfiguration(widget, sz, ld);

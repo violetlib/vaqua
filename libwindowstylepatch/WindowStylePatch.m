@@ -13,8 +13,9 @@
 #import <objc/runtime.h>
 
 /*
-    The purpose of this patch is to preserve certain window style mask bits set by VAqua from being reset by AWT.
-    Starting with JDK 11, AWT resets the style mask after showing a window, with no subsequent event generated.
+  The purpose of this patch is to preserve certain window style mask bits set by VAqua from being reset by AWT.
+  Starting with JDK 11, AWT resets the style mask after showing a window, with no subsequent event generated.
+  This patch does not work in JDK 12+, because the AWTWindow classes are hidden.
 */
 
 static char holderKey;

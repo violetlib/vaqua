@@ -66,7 +66,7 @@ import static org.violetlib.jnr.aqua.AquaUIPainter.PopupButtonWidget.*;
 
 // Inspired by MetalComboBoxUI, which also has a combined text-and-arrow button for noneditables
 public class AquaComboBoxUI extends BasicComboBoxUI
-        implements AquaUtilControlSize.Sizeable, FocusRingOutlineProvider, AquaComponentUI {
+        implements AquaUtilControlSize.Sizeable, FocusRingOutlineProvider, ToolbarSensitiveUI, AquaComponentUI {
 
     public static ComponentUI createUI(JComponent c) {
         return new AquaComboBoxUI();
@@ -101,9 +101,9 @@ public class AquaComboBoxUI extends BasicComboBoxUI
     protected String style;
     protected @Nullable AquaCellEditorPolicy.CellStatus cellStatus;
     protected boolean isTextured;
-    protected boolean isToolbar;
 
     // cached attributes
+    protected boolean isToolbar;
     protected AbstractComboBoxLayoutConfiguration layoutConfiguration;
 
     public AquaComboBoxUI() {
@@ -122,6 +122,7 @@ public class AquaComboBoxUI extends BasicComboBoxUI
         }
         comboBox.setRequestFocusEnabled(false);
         //comboBox.putClientProperty(DEFAULT_FONT_PROPERTY, comboBox.getFont());
+        isToolbar = AquaUtils.isOnToolbar(comboBox);
         configure(null);
     }
 
@@ -148,9 +149,11 @@ public class AquaComboBoxUI extends BasicComboBoxUI
         AquaComboBoxPopup popup = (AquaComboBoxPopup) getPopup();
         popup.addHierarchyListener(popupListener);
         AppearanceManager.installListener(comboBox);
+        AquaUtils.installToolbarSensitivity(comboBox);
     }
 
     protected void uninstallListeners() {
+        AquaUtils.uninstallToolbarSensitivity(comboBox);
         AppearanceManager.uninstallListener(comboBox);
         AquaComboBoxPopup popup = (AquaComboBoxPopup) getPopup();
         popup.removeHierarchyListener(popupListener);
@@ -363,13 +366,6 @@ public class AquaComboBoxUI extends BasicComboBoxUI
                 || w == BUTTON_POP_UP_TEXTURED
                 || w == BUTTON_COMBO_BOX_TEXTURED
                 || w == BUTTON_POP_DOWN_TEXTURED_TOOLBAR
-                || w == BUTTON_POP_UP_TEXTURED_TOOLBAR
-                || w == BUTTON_COMBO_BOX_TEXTURED_TOOLBAR;
-    }
-
-    private boolean determineIsToolbar() {
-        Object w = getWidget();
-        return w == BUTTON_POP_DOWN_TEXTURED_TOOLBAR
                 || w == BUTTON_POP_UP_TEXTURED_TOOLBAR
                 || w == BUTTON_COMBO_BOX_TEXTURED_TOOLBAR;
     }
@@ -1301,7 +1297,7 @@ public class AquaComboBoxUI extends BasicComboBoxUI
                 }
             }
 
-            if ("textured".equals(style) && isOnToolbar(comboBox)) {
+            if ("textured".equals(style) && isToolbar) {
                 style = "textured-onToolbar";
             }
 
@@ -1320,8 +1316,6 @@ public class AquaComboBoxUI extends BasicComboBoxUI
         AquaUIPainter.UILayoutDirection ld = AquaUtils.getLayoutDirection(comboBox);
 
         cellStatus = determineCellStatus();
-        isTextured = determineIsTextured();
-        isToolbar = determineIsToolbar();
 
         if (isEditable) {
             ComboBoxWidget widget = determineComboBoxWidget(cellStatus);
@@ -1341,6 +1335,7 @@ public class AquaComboBoxUI extends BasicComboBoxUI
             AquaUtilControlSize.installDefaultFont(comboBox, df);
         }
 
+        isTextured = determineIsTextured();
         configureAppearanceContext(null);
         comboBox.revalidate();
         comboBox.repaint();
@@ -1452,7 +1447,7 @@ public class AquaComboBoxUI extends BasicComboBoxUI
             }
         }
 
-        if (isOnToolbar(comboBox)) {
+        if (isToolbar) {
             return BUTTON_COMBO_BOX_TEXTURED_TOOLBAR;
         }
 
@@ -1491,15 +1486,20 @@ public class AquaComboBoxUI extends BasicComboBoxUI
             }
         }
 
-        if (isOnToolbar(comboBox)) {
+        if (isToolbar) {
             return isPopDown ? BUTTON_POP_DOWN_TEXTURED_TOOLBAR : BUTTON_POP_UP_TEXTURED_TOOLBAR;
         }
 
         return isPopDown ? BUTTON_POP_DOWN : BUTTON_POP_UP;
     }
 
-    public static boolean isOnToolbar(JComboBox b) {
-        return AquaUtils.isOnToolbar(b);
+    @Override
+    public void toolbarStatusChanged(@NotNull JComponent c) {
+        boolean b = AquaUtils.isOnToolbar(comboBox);
+        if (b != isToolbar) {
+            isToolbar = b;
+            configure(null);
+        }
     }
 
     /**

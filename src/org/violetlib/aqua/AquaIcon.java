@@ -66,6 +66,8 @@ public class AquaIcon {
     private static final RecyclableIconImageSingleton stopIcon = new RecyclableIconImageSingleton(alertStopImageCreator);
     private static final RecyclableIconImageSingleton openFolderIcon = new RecyclableIconImageSingleton(openFolderImageCreator);
 
+    private static final IconResourceLoader browserExpandArrowLoader = new IconResourceLoader("fc/ExpandArrowTemplate.png");
+
     /**
      * Create an image for an icon, if possible.
      * @param i The icon (may be null).
@@ -227,6 +229,29 @@ public class AquaIcon {
 
     public static ImageIconUIResource getOpenFolderIcon() {
         return new ImageIconUIResource(openFolderIcon.getInstance());
+    }
+
+    public static @NotNull ImageIcon getBrowserExpandArrowTemplate() {
+        return browserExpandArrowLoader.getIcon();
+    }
+
+    private static class IconResourceLoader {
+        private final @NotNull String resourceName;
+        private @Nullable ImageIcon result;
+
+        public IconResourceLoader(@NotNull String resourceName) {
+            this.resourceName = resourceName;
+        }
+
+        public @NotNull ImageIcon getIcon() {
+            if (result == null) {
+                result = AquaImageFactory.loadResource(resourceName);
+                if (result == null) {
+                    throw new UnsupportedOperationException("Missing icon resource: " + resourceName);
+                }
+            }
+            return result;
+        }
     }
 
     private static class IconImageCreator {

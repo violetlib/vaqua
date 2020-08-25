@@ -347,6 +347,7 @@ public class AquaOptionPaneUI extends BasicOptionPaneUI implements AquaComponent
             JTextArea textArea = new JTextArea();
             textArea.setEditable(false);
             textArea.setOpaque(false);
+            textArea.setFocusable(false);
             //textArea.setBackground(UIManager.getColor("Label.background"));
             textArea.setFont(UIManager.getFont("Label.font"));
             textArea.setWrapStyleWord(true);

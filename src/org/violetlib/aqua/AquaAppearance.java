@@ -16,6 +16,7 @@ import javax.swing.plaf.ColorUIResource;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.violetlib.jnr.aqua.AquaNativeRendering;
 import org.violetlib.vappearances.VAppearance;
 
 import static org.violetlib.aqua.OSXSystemProperties.OSVersion;
@@ -42,6 +43,9 @@ public class AquaAppearance implements VAppearance {
         Colors colors = new Colors();
         colors.add(defaultColors);
         colors.addAll(appearance.getColors());
+
+        Map<String,Color> myNativeColors = AquaNativeRendering.createPainter().getColors(appearance);
+        colors.addAll(myNativeColors);
 
         if (appearance.isDark()) {
             colors.add(darkColors);
@@ -174,6 +178,7 @@ public class AquaAppearance implements VAppearance {
 
         colors.add("text_inactive", "text");
         colors.add("selectedText_inactive", "unemphasizedSelectedText");
+        colors.add("textBackground_inactive", "textBackground");
 
         colors.add("cellBackground", "textBackground");
         colors.add("selectedCellBackground", "selectedTextBackground");
@@ -257,6 +262,22 @@ public class AquaAppearance implements VAppearance {
             colors.add("systemYellow_disabled", 255, 204, 0, 89);
         }
 
+        // file tag colors
+        colors.add("tagBlue", 52, 148, 255);
+        colors.add("tagGray", 164, 164, 168);
+        colors.add("tagGreen", 91, 215, 105);
+        colors.add("tagOrange", 255, 170, 71);
+        colors.add("tagPurple", 190, 118, 229);
+        colors.add("tagRed", 255, 99, 92);
+        colors.add("tagYellow", 254, 214, 75);
+        colors.add("tagBlue_disabled", 155, 203, 255);
+        colors.add("tagGray_disabled", 210, 210, 212);
+        colors.add("tagGreen_disabled", 175, 236, 181);
+        colors.add("tagOrange_disabled", 255, 213, 165);
+        colors.add("tagPurple_disabled", 223, 187, 243);
+        colors.add("tagRed_disabled", 255, 177, 175);
+        colors.add("tagYellow_disabled", 254, 235, 168);
+
         // support for the file chooser
         if (OSVersion == 1013) {
             colors.add("openOptionsArea", 205);
@@ -266,11 +287,13 @@ public class AquaAppearance implements VAppearance {
             colors.add("saveOptionsArea", 236);
         }
 
-        // support for painting the scroll pane corner when using legacy scroll bars
-        colors.add("scrollPaneTrack", 250);
-        colors.add("scrollPaneTrackBorder", 241);
-        colors.add("scrollPaneBorder", 197);
+        colors.add("selectedBrowserExpandArrow", 110);
+        colors.add("selectedBrowserExpandArrow_focused", 255);
+        colors.add("browserExpandArrow", 127);
         colors.add("scrollPaneGrabber", 163);
+
+        // support for scroll panes
+        colors.add("scrollPaneBorder", 197);
 
         // colors related to textured buttons and text fields used as textured combo box renderers
         colors.add("texturedText", 0, 170);
@@ -472,10 +495,27 @@ public class AquaAppearance implements VAppearance {
             colors.add("bottomTexturedWindowDivider_disabled", c, a);
         }
 
-        // support for painting the scroll pane corner when using legacy scroll bars
-        colors.add("scrollPaneBorder", 0, 128);
-        colors.add("scrollPaneTrackBorder", 218);
+        // file tag colors
+        colors.add("tagBlue", 68, 171, 229);
+        colors.add("tagGray", 164, 164, 167);
+        colors.add("tagGreen", 72, 188, 79);
+        colors.add("tagOrange", 234, 147, 66);
+        colors.add("tagPurple", 160, 106, 188);
+        colors.add("tagRed", 255, 99, 92);  // unchanged
+        colors.add("tagYellow", 248, 192, 73);
+        colors.add("tagBlue_disabled", 163, 214, 242);
+        colors.add("tagGray_disabled", 210, 210, 211);
+        colors.add("tagGreen_disabled", 166, 223, 168);
+        colors.add("tagOrange_disabled", 245, 202, 162);
+        colors.add("tagPurple_disabled", 208, 182, 222);
+        colors.add("tagRed_disabled", 255, 177, 175);  // unchanged
+        colors.add("tagYellow_disabled", 252, 224, 167);
+
+        // support for the file chooser
         colors.add("scrollPaneGrabber", 87);
+
+        // support for scroll panes
+        colors.add("scrollPaneBorder", 0, 128);
 
         return colors;
     }
@@ -522,6 +562,22 @@ public class AquaAppearance implements VAppearance {
         colors.add("texturedWindowBackground", 42);
         colors.add("texturedWindowBackground_disabled", 45);
 
+        // file tag colors (dark mode)
+        colors.add("tagBlue", 63, 157, 255);
+        colors.add("tagGray", 172, 172, 176);
+        colors.add("tagGreen", 97, 223, 113);
+        colors.add("tagOrange", 255, 178, 75);
+        colors.add("tagPurple", 204, 124, 245);
+        colors.add("tagRed", 255, 107, 99);
+        colors.add("tagYellow", 255, 222, 78);
+        colors.add("tagBlue_disabled", 47, 94, 142);
+        colors.add("tagGray_disabled", 100, 101, 103);
+        colors.add("tagGreen_disabled", 64, 126, 72);
+        colors.add("tagOrange_disabled", 142, 104, 53);
+        colors.add("tagPurple_disabled", 117, 77, 137);
+        colors.add("tagRed_disabled", 142, 68, 64);
+        colors.add("tagYellow_disabled", 142, 126, 55);
+
         colors.add("cellBackground", "clear");
         colors.add("selectedCellBackground_inactive", "selectedTextBackground_inactive");
 
@@ -535,11 +591,13 @@ public class AquaAppearance implements VAppearance {
         colors.add("openOptionsArea_disabled", 45);
         colors.remove("saveOptionsArea");
 
-        // support for painting the scroll pane corner when using legacy scroll bars (dark mode)
-        colors.add("scrollPaneTrack", 68, 217);
-        colors.add("scrollPaneTrackBorder", 160, 36);
+        colors.add("selectedBrowserExpandArrow", 172);
+        colors.add("selectedBrowserExpandArrow_focused", 255);
+        colors.add("browserExpandArrow", 154);
+        colors.add("scrollPaneGrabber", 255, 72);
+
+        // support for scroll panes (dark mode)
         colors.add("scrollPaneBorder", 155, 128);
-        colors.add("scrollPaneGrabber", 105);
 
         // colors related to textured buttons and text fields used as textured combo box renderers (dark mode)
         colors.add("texturedText", "controlText");
@@ -712,8 +770,26 @@ public class AquaAppearance implements VAppearance {
         colors.add("windowBackground", 50);
         colors.add("texturedWindowBackground", 53);
 
-        // support for painting the scroll pane corner when using legacy scroll bars (dark mode)
-        colors.add("scrollPaneGrabber", 200);
+        // file tag colors (dark mode)
+        colors.add("tagBlue", 103, 176, 255);
+        colors.add("tagGray", 172, 172, 176);
+        colors.add("tagGreen", 91, 215, 105);   // same as ordinary light mode? mistake?
+        colors.add("tagOrange", 255, 170, 71);
+        colors.add("tagPurple", 226, 165, 254);
+        colors.add("tagRed", 255, 135, 129);
+        colors.add("tagYellow", 254, 214, 75);    // same as ordinary light mode? mistake?
+        colors.add("tagBlue_disabled", 67, 104, 144);
+        colors.add("tagGray_disabled", 102, 102, 104);
+        colors.add("tagGreen_disabled", 62, 123, 69);
+        colors.add("tagOrange_disabled", 143, 101, 52);
+        colors.add("tagPurple_disabled", 128, 98, 143);
+        colors.add("tagRed_disabled", 143, 83, 80);
+        colors.add("tagYellow_disabled", 143, 123, 55);
+
+        // support for the file chooser (dark mode)
+        colors.add("scrollPaneGrabber", 255, 196);
+
+        // support for scroll panes (dark mode)
         colors.add("scrollPaneBorder", 153, 128);
 
         colors.addColorGradient("bottomTexturedWindowMarginBackground", 80, 48, 128);

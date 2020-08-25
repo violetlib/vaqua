@@ -185,7 +185,7 @@ public class AquaComboBoxRendererInternal<E> extends JLabel implements ListCellR
         this.fDrawCheckedItem = drawCheckedItem;
     }
 
-    // Paint this component, and a checkbox if it's the selected item and not in the button
+    // Paint this component, and a check mark if it's the selected item and not in the button
     protected void paintComponent(Graphics g) {
         if (fInList) {
             g.setColor(getBackground());

@@ -372,20 +372,20 @@ public class OSXFile {
     }
 
     /**
-     * Map a file tag ID to the corresponding system color name.
+     * Map a file tag ID to the corresponding color name.
      * @param tag The tag ID.
-     * @return the corresponding system color name, or null if none.
+     * @return the corresponding color name, or null if none.
      */
 
     public static @Nullable String getTagColorName(int tag) {
         switch (tag) {
-            case 1:     return "systemGray";
-            case 2:     return "systemGreen";
-            case 3:     return "systemPurple";
-            case 4:     return "systemBlue";
-            case 5:     return "systemYellow";
-            case 6:     return "systemRed";
-            case 7:     return "systemOrange";
+            case 1:     return "tagGray";
+            case 2:     return "tagGreen";
+            case 3:     return "tagPurple";
+            case 4:     return "tagBlue";
+            case 5:     return "tagYellow";
+            case 6:     return "tagRed";
+            case 7:     return "tagOrange";
         }
         return null;
     }

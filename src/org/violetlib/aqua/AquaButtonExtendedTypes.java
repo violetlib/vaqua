@@ -48,9 +48,9 @@ import org.violetlib.jnr.aqua.AquaUIPainter.Position;
 import org.violetlib.jnr.aqua.AquaUIPainter.SegmentedButtonWidget;
 
 import static org.violetlib.jnr.aqua.AquaUIPainter.ButtonWidget.*;
+import static org.violetlib.jnr.aqua.AquaUIPainter.ComboBoxWidget.*;
 import static org.violetlib.jnr.aqua.AquaUIPainter.PopupButtonWidget.*;
 import static org.violetlib.jnr.aqua.AquaUIPainter.SegmentedButtonWidget.*;
-import static org.violetlib.jnr.aqua.AquaUIPainter.ComboBoxWidget.*;
 
 /**
  * Map client properties to borders.
@@ -62,7 +62,7 @@ public class AquaButtonExtendedTypes {
      * @param b The button component.
      * @return the button type specifier, or null if a button type was not declared or the button type was not recognized.
      */
-    public static TypeSpecifier getTypeSpecifier(AbstractButton b) {
+    public static TypeSpecifier getTypeSpecifier(@NotNull AbstractButton b, boolean isToolbar) {
         Object buttonTypeProperty = b.getClientProperty(AquaButtonUI.BUTTON_TYPE);
         Object segmentPositionProperty = b.getClientProperty(AquaButtonUI.SEGMENTED_BUTTON_POSITION);
 
@@ -80,27 +80,27 @@ public class AquaButtonExtendedTypes {
             if (segmentPositionProperty instanceof String) {
                 String segmentPosition = (String) segmentPositionProperty;
                 if (buttonType.equals("segmented")) {
-                    if (AquaButtonUI.isOnToolbar(b)) {
+                    if (isToolbar) {
                         buttonType = "segmentedTextured";
                     }
                 } else if (buttonType.equals("segmentedSeparated")) {
-                    if (AquaButtonUI.isOnToolbar(b)) {
+                    if (isToolbar) {
                         buttonType = "segmentedTexturedSeparated";
                     }
                 }
 
                 String typeName = buttonType + "-" + getRealPositionForLogicalPosition(segmentPosition, b.getComponentOrientation().isLeftToRight());
-                TypeSpecifier specifier = getSpecifierByName(b, typeName);
+                TypeSpecifier specifier = getSpecifierByName(b, typeName, isToolbar);
                 if (specifier != null) {
                     return specifier;
                 }
             }
 
-            if (buttonType.equals("round") && AquaButtonUI.isOnToolbar(b)) {
+            if (buttonType.equals("round") && isToolbar) {
                 buttonType = "roundTextured";
             }
 
-            return getSpecifierByName(b, buttonType);
+            return getSpecifierByName(b, buttonType, isToolbar);
         }
 
         return null;
@@ -131,7 +131,7 @@ public class AquaButtonExtendedTypes {
     public static class FixedBorderTypeSpecifier extends TypeSpecifier {
         private final AquaButtonBorder border;
 
-        public FixedBorderTypeSpecifier(final String name, final AquaButtonBorder border) {
+        public FixedBorderTypeSpecifier(String name, AquaButtonBorder border) {
             super(name);
 
             this.border = border;
@@ -146,7 +146,7 @@ public class AquaButtonExtendedTypes {
         private final ButtonWidget widget;
         private final WidgetInfo info;
 
-        public BorderDefinedTypeSpecifier(final String name, final ButtonWidget widget) {
+        public BorderDefinedTypeSpecifier(String name, ButtonWidget widget) {
             super(name);
 
             this.widget = widget;
@@ -163,9 +163,7 @@ public class AquaButtonExtendedTypes {
         private final WidgetInfo info;
         private final Position position;
 
-        public SegmentedTypeSpecifier(String name,
-                                      SegmentedButtonWidget widget,
-                                      Position position) {
+        public SegmentedTypeSpecifier(String name, SegmentedButtonWidget widget, Position position) {
             super(name);
 
             this.widget = widget;
@@ -178,8 +176,8 @@ public class AquaButtonExtendedTypes {
         }
     }
 
-    public static TypeSpecifier getSpecifierByName(AbstractButton b, String name) {
-        if (AquaButtonUI.isOnToolbar(b)) {
+    private static TypeSpecifier getSpecifierByName(AbstractButton b, String name, boolean isToolbar) {
+        if (isToolbar) {
             String toolbarName = name + "-onToolbar";
             TypeSpecifier specifier = typeDefinitions.get().get(toolbarName);
             if (specifier != null) {

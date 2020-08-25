@@ -18,6 +18,7 @@ import javax.swing.JViewport;
 import javax.swing.SwingUtilities;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * This object manages a NSVisualEffectView or a collection of NSVisualEffectViews whose bounds tracks the bounds of a
@@ -73,24 +74,27 @@ public class VisualEffectView {
         }
     }
 
-    protected void windowChanged(Window newWindow) {
-        // The new window must be displayable to install a visual effect view.
-        if (newWindow != null && !newWindow.isDisplayable()) {
-            newWindow = null;
-        }
+    protected void windowChanged(@Nullable Window newWindow) {
 
-        if (newWindow != window) {
-            if (window != null && peer != null) {
+        Window oldWindow = window;
+        window = newWindow;
+
+        // If the visual effect view is installed in a window that no longer owns this component or is no longer
+        // displayable, then the old visual effect view is either gone or should be removed from the window.
+
+        if (peer != null) {
+            assert oldWindow != null;
+            if (oldWindow != window || !oldWindow.isDisplayable()) {
                 peer.dispose();
                 peer = null;
+                oldBounds = null;
             }
+        }
 
-            window = newWindow;
-            oldBounds = null;
-            if (window != null) {
-                peer = AquaVibrantSupport.createVisualEffectView(window, style, supportSelections);
-                visibleBoundsChanged();
-            }
+        // If there is no visual effect view and the (new) window is displayable, create a visual effect view.
+        if (peer == null && window != null && window.isDisplayable()) {
+            peer = AquaVibrantSupport.createVisualEffectView(window, style, supportSelections);
+            visibleBoundsChanged();
         }
     }
 
@@ -117,7 +121,7 @@ public class VisualEffectView {
 
     private class MyComponentTracker extends ComponentTracker {
         @Override
-        protected void attached(Window w) {
+        protected void attached(@Nullable Window w) {
             if (w != null) {
                 VisualEffectView.this.windowChanged(w);
                 VisualEffectView.this.visibleBoundsChanged();
@@ -125,19 +129,19 @@ public class VisualEffectView {
         }
 
         @Override
-        protected void detached(Window w) {
+        protected void detached(@Nullable Window w) {
             if (window != null) {
                 VisualEffectView.this.windowChanged(null);
             }
         }
 
         @Override
-        protected void windowChanged(Window oldWindow, Window newWindow) {
+        protected void windowChanged(@Nullable Window oldWindow, @Nullable Window newWindow) {
             VisualEffectView.this.windowChanged(newWindow);
         }
 
         @Override
-        protected void visibleBoundsChanged(Window window) {
+        protected void visibleBoundsChanged(@Nullable Window window) {
             if (window != null) {
                 VisualEffectView.this.visibleBoundsChanged();
             }

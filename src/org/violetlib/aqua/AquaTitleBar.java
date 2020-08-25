@@ -150,12 +150,24 @@ public class AquaTitleBar {
 
     protected TitleBarConfiguration getConfiguration() {
         AquaUIPainter.State state = frame.isSelected() && AquaFocusHandler.isActive(frame) ? AquaUIPainter.State.ACTIVE : AquaUIPainter.State.INACTIVE;
-        AquaUIPainter.State closeButtonState = getButtonState(AquaInternalFrameBorder.kCloseButton, frame.isClosable());
-        AquaUIPainter.State minimizeButtonState = getButtonState(AquaInternalFrameBorder.kIconButton, frame.isIconifiable());
-        AquaUIPainter.State resizeButtonState = getButtonState(AquaInternalFrameBorder.kGrowButton, frame.isMaximizable());
+        AquaUIPainter.State closeButtonState = getButtonState(AquaInternalFrameBorder.kCloseButton, isClosable());
+        AquaUIPainter.State iconifyButtonState = getButtonState(AquaInternalFrameBorder.kIconButton, isIconifiable());
+        AquaUIPainter.State resizeButtonState = getButtonState(AquaInternalFrameBorder.kGrowButton, isMaximizable());
         TitleBarConfiguration.ResizeAction resizeAction = getResizeAction(frame);
         boolean isDirty = isDirty();
-        return new TitleBarConfiguration(widget, state, closeButtonState, minimizeButtonState, resizeButtonState, resizeAction, isDirty);
+        return new TitleBarConfiguration(widget, state, closeButtonState, iconifyButtonState, resizeButtonState, resizeAction, isDirty);
+    }
+
+    protected boolean isClosable() {
+        return frame.isClosable();
+    }
+
+    protected boolean isIconifiable() {
+        return frame.isIconifiable() && !frame.isMaximum();
+    }
+
+    protected boolean isMaximizable() {
+        return frame.isMaximizable();
     }
 
     protected AquaUIPainter.State getButtonState(int buttonType, boolean isEnabled) {

@@ -1668,6 +1668,19 @@ JNIEXPORT jint JNICALL Java_org_violetlib_aqua_AquaUtils_nativeSetTitleBarStyle
 
             [w setTitlebarAppearsTransparent: isTransparent];
 
+            if (((originalStyleMask ^ styleMask) & NSWindowStyleMaskFullSizeContentView) != 0) {
+                // The full size content view option has changed.
+                // The content view must be resized first, otherwise the window will be resized to fit the existing
+                // content view.
+                NSRect frame = w.frame;
+                NSRect screenContentRect = [NSWindow contentRectForFrameRect:frame styleMask:styleMask];
+                NSRect contentFrame = NSMakeRect(screenContentRect.origin.x - frame.origin.x,
+                    screenContentRect.origin.y - frame.origin.y,
+                    screenContentRect.size.width,
+                    screenContentRect.size.height);
+                w.contentView.frame = contentFrame;
+            }
+
             if ([w respondsToSelector: @selector(setStyleMaskOverride:)]) {
                 [w setStyleMaskOverride: styleMask];
             } else {
@@ -1702,16 +1715,79 @@ JNIEXPORT jint JNICALL Java_org_violetlib_aqua_AquaUtils_nativeSetTitleBarStyle
                 // The full size content view option has changed.
                 // We need to get Java to recompute the window insets.
                 // This should do it...
-                if ([w respondsToSelector: @selector(windowDidResize:)]) {
+
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wnonnull"
-                    [((id)w) windowDidResize:nil];
+                [((id)w.delegate) windowDidResize:nil];
 #pragma GCC diagnostic pop
-                }
             }
         });
         result = 0;
     }
+
+    JNF_COCOA_EXIT(env);
+
+    return result;
+}
+
+/*
+ * Class:     org_violetlib_aqua_AquaUtils
+ * Method:    nativeSetTitleBarProperties
+ * Signature: (JZZZ)I
+ */
+JNIEXPORT jint JNICALL Java_org_violetlib_aqua_AquaUtils_nativeSetTitleBarProperties
+  (JNIEnv *env, jclass cl, jlong wptr, jboolean hasTitleBar, jboolean isMovable, jboolean isHidden, jboolean isFixNeeded)
+{
+    __block jint result = -1;
+
+    static JNF_CLASS_CACHE(jc_CPlatformWindow, "sun/lwawt/macosx/CPlatformWindow");
+    static JNF_MEMBER_CACHE(jm_setStyleBits, jc_CPlatformWindow, "setStyleBits", "(IZ)V");
+
+    JNF_COCOA_ENTER(env);
+
+    NSWindow *w = (NSWindow *) wptr;
+    runOnMainThread(^(){
+
+        // Update the titled window style bit using the UNDECORATED style bit of CPlatformWindow.
+
+        BOOL isWindowTitled = (w.styleMask & NSWindowStyleMaskTitled) != 0;
+        if (isWindowTitled != hasTitleBar) {
+            jobject jPlatformWindow = getJavaPlatformWindow(env, wptr);
+            if (jPlatformWindow) {
+                int DECORATED = 1 << 1;
+                JNFCallVoidMethod(env, jPlatformWindow, jm_setStyleBits, DECORATED, hasTitleBar);
+            }
+        }
+
+        [w setMovable:isMovable];
+
+        [[w standardWindowButton:NSWindowCloseButton] setHidden:isHidden];
+        [[w standardWindowButton:NSWindowMiniaturizeButton] setHidden:isHidden];
+        [[w standardWindowButton:NSWindowZoomButton] setHidden:isHidden];
+
+        if (isFixNeeded) {
+            // Workaround for a mysterious problem observed in some circumstances but not others.
+            // The corner radius is not set, so painting happens outside the rounded corners.
+            NSView *topView = getTopView(w);
+            if (topView != nil) {
+                CALayer *layer = [topView layer];
+                if (layer != nil) {
+                    CGFloat radius = [layer cornerRadius];
+                    if (radius == 0) {
+                        // debug
+                        // NSLog(@"Fixing corner radius of %@", layer);
+                        [layer setCornerRadius: 6];
+                    }
+                } else {
+                    NSLog(@"Unable to fix corner radius: no layer");
+                }
+            } else {
+                NSLog(@"Unable to fix corner radius: did not find top view");
+            }
+        }
+
+        result = 0;
+    });
 
     JNF_COCOA_EXIT(env);
 

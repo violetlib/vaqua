@@ -33,9 +33,6 @@
 
 package org.violetlib.aqua;
 
-import org.violetlib.aqua.fc.OSXFile;
-import org.violetlib.jnr.aqua.AquaNativeRendering;
-
 import java.awt.*;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
@@ -43,9 +40,10 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.util.*;
+import java.util.Enumeration;
+import java.util.Locale;
+import java.util.ResourceBundle;
 import java.util.function.Consumer;
-
 import javax.swing.*;
 import javax.swing.border.Border;
 import javax.swing.border.EmptyBorder;
@@ -53,6 +51,9 @@ import javax.swing.border.TitledBorder;
 import javax.swing.plaf.*;
 import javax.swing.plaf.basic.BasicBorders;
 import javax.swing.plaf.basic.BasicLookAndFeel;
+
+import org.violetlib.aqua.fc.OSXFile;
+import org.violetlib.jnr.aqua.AquaNativeRendering;
 
 import static javax.swing.UIDefaults.LazyValue;
 
@@ -66,6 +67,8 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
     private AquaPopupFactory popupFactory;
 
     public static boolean suppressCreationOfDisabledButtonIcons;
+
+    public static final Border NOTHING_BORDER = new EmptyBorder(0, 0, 0, 0);
 
     public String getName() {
         return "VAqua";
@@ -241,12 +244,6 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
         return audioActionMap;
     }
 
-    protected static Object makeIcon(String location) {
-        return new UIDefaults.ProxyLazyValue(
-                "org.violetlib.aqua.AquaIcon", "loadResource",
-                new Object[]{location});
-    }
-
     /**
      * We override getDefaults() so we can install our own debug defaults
      * if needed for testing
@@ -344,12 +341,9 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
         int zero = 0;
         Object editorMargin = zeroInsets; // this is not correct - look at TextEdit to determine the right margin
         int textCaretBlinkRate = 500;
-        LazyValue textFieldBorder = t ->
-                AquaTextFieldBorder.getTextFieldBorder();
-        Object textAreaBorder = marginBorder; // text areas have no real border - radar 311073
-
-        LazyValue aquaTitledBorder = t ->
-                AquaGroupBorder.getBorderForTitledBorder();
+        LazyValue textFieldBorder = null;  // created on demand
+        Object textAreaBorder = null;  // created on demand
+        LazyValue aquaTitledBorder = t -> AquaGroupBorder.getBorderForTitledBorder();
 
         Border listHeaderBorder = AquaTableHeaderBorder.getListHeaderBorder();
         Border zeroBorder = new BorderUIResource.EmptyBorderUIResource(0, 0, 0, 0);
@@ -411,14 +405,6 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
         Object[] defaults = {
                 // "control" is used by JFrame, cannot be transparent
                 "control", windowBackgroundColor, /* Default color for controls (buttons, sliders, etc) */
-
-                // JBrowser
-                "Browser.expandedIcon", makeIcon("fc/Unselected.png"),
-                "Browser.expandingIcon", makeIcon("fc/Unselected.png"),
-                "Browser.focusedSelectedExpandedIcon", makeIcon("fc/SelectedFocused.png"),
-                "Browser.focusedSelectedExpandingIcon", makeIcon("fc/SelectedFocused.png"),
-                "Browser.selectedExpandedIcon", makeIcon("fc/SelectedUnfocused.png"),
-                "Browser.selectedExpandingIcon", makeIcon("fc/SelectedUnfocused.png"),
 
                 // Buttons
                 "Button.border",(LazyValue) t -> AquaButtonBorder.getPushButtonBorder(),
@@ -670,7 +656,7 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
                 // *** SplitPane
                 "SplitPane.border", null,
                 "SplitPane.continuousLayout", true,
-                "SplitPane.dividerSize", 9, // will be replaced by AquaSplitPaneUI
+                "SplitPane.dividerSize", 1, // will be replaced by AquaSplitPaneUI
                 "SplitPaneDivider.border", null, // AquaSplitPaneDividerUI draws it
 
                 // *** TabbedPane
@@ -789,20 +775,18 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
             final Color menuDisabledBackgroundColor = menuBackgroundColor;
             final Color menuDisabledForegroundColor = new ColorUIResource(0.5f, 0.5f, 0.5f);
 
-            Border fakeBorder = new EmptyBorder(0, 0, 0, 0);
-
             Object[] menuBarDefaults = {
                     "MenuBar.font", menuFont,
                     "MenuBar.background", menuBackgroundColor, // not a menu item, not selected
                     "MenuBar.foreground", menuForegroundColor,
-                    "MenuBar.border", new com.apple.laf.AquaMenuBarBorder(), // sja make lazy!
+                    "MenuBar.border", new AquaMenuBarBorder(),
                     "MenuBar.margin", new InsetsUIResource(0, 8, 0, 8), // sja make lazy!
                     "MenuBar.selectionBackground", menuSelectedBackgroundColor, // not a menu item, is selected
                     "MenuBar.selectionForeground", menuSelectedForegroundColor,
                     "MenuBar.disabledBackground", menuDisabledBackgroundColor, //ThemeBrush.GetThemeBrushForMenu(false, false), // not a menu item, not selected
                     "MenuBar.disabledForeground", menuDisabledForegroundColor,
-                    "MenuBar.backgroundPainter", fakeBorder,
-                    "MenuBar.selectedBackgroundPainter", fakeBorder,
+                    "MenuBar.backgroundPainter", NOTHING_BORDER,
+                    "MenuBar.selectedBackgroundPainter", NOTHING_BORDER,
             };
             table.putDefaults(menuBarDefaults);
         }

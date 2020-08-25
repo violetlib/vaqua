@@ -26,7 +26,7 @@ public class AquaFocusRingPainter {
 
     protected static final float DEFAULT_CORNER = 6;
 
-    private JComponent currentDisplayedFocusOwner;
+    private JComponent currentFocusRingOwner;
     private FocusRingOutlineProvider currentFocusRingProvider;
     private float animationState;
 
@@ -45,7 +45,6 @@ public class AquaFocusRingPainter {
         myActiveChangeListener = new PropertyChangeListener() {
             public void propertyChange(PropertyChangeEvent ev) {
                 String name = ev.getPropertyName();
-
                 if (AquaFocusHandler.FRAME_ACTIVE_PROPERTY.equals(name)) {
                     painterComponent.repaint();
                 }
@@ -54,50 +53,47 @@ public class AquaFocusRingPainter {
     }
 
     public void setFocusOwner(JComponent c) {
-        if (c == null) {
-            clear();
-        } else {
-            FocusRingOutlineProvider provider = getFocusRingProvider(c);
-            if (provider == null) {
-                clear();
-            } else {
-                currentDisplayedFocusOwner = c;
-                currentDisplayedFocusOwner.addPropertyChangeListener(myActiveChangeListener);
-                currentFocusRingProvider = provider;
-                painterComponent.attach(c);
-                animationState = 0;
-                animationController.start();
+        clear();
+        if (c != null) {
+            currentFocusRingProvider = AquaUtils.getUI(c, FocusRingOutlineProvider.class);
+            if (currentFocusRingProvider != null) {
+                Shape s = currentFocusRingProvider.getFocusRingOutline(c);
+                if (s != null) {
+                    currentFocusRingOwner = c;
+                    // Check for the special case of a component that displays a focus ring made scrollable by being
+                    // contained in a scroll pane. In this case, the scroll pane displays the focus ring.
+                    JScrollPane sp = AquaUtils.getScrollPaneAncestor(c);
+                    if (sp != null) {
+                        currentFocusRingOwner = sp;
+                        currentFocusRingProvider = defaultFocusRingProvider;
+                    }
+                }
             }
+        }
+
+        if (currentFocusRingProvider != null) {
+            currentFocusRingOwner.addPropertyChangeListener(myActiveChangeListener);
+            painterComponent.attach(currentFocusRingOwner);
+            animationState = 0;
+            animationController.start();
         }
     }
 
     public void update() {
-        if (currentDisplayedFocusOwner != null) {
+        if (currentFocusRingOwner != null) {
             painterComponent.repaint();
         }
     }
 
     protected void clear() {
-        if (currentDisplayedFocusOwner != null) {
-            currentDisplayedFocusOwner.removePropertyChangeListener(myActiveChangeListener);
-            currentDisplayedFocusOwner = null;
+        if (currentFocusRingOwner != null) {
+            currentFocusRingOwner.removePropertyChangeListener(myActiveChangeListener);
+            currentFocusRingOwner = null;
             currentFocusRingProvider = null;
             animationState = 0;
             animationController.stop();
             painterComponent.attach(null);
         }
-    }
-
-    protected FocusRingOutlineProvider getFocusRingProvider(JComponent c) {
-        FocusRingOutlineProvider p = AquaUtils.getUI(c, FocusRingOutlineProvider.class);
-
-        if (false) { // testing
-            if (p == null) {
-                return new AquaDefaultFocusRingProvider();
-            }
-        }
-
-        return p;
     }
 
     protected class MyFocusRingPainterComponent extends OverlayPainterComponent {
@@ -107,10 +103,10 @@ public class AquaFocusRingPainter {
 
         @Override
         protected void internalPaint(Graphics2D g) {
-            if (currentDisplayedFocusOwner != null && AquaFocusHandler.isActive(currentDisplayedFocusOwner) && currentFocusRingProvider != null) {
-                Shape s = currentFocusRingProvider.getFocusRingOutline(currentDisplayedFocusOwner);
+            if (currentFocusRingOwner != null && AquaFocusHandler.isActive(currentFocusRingOwner) && currentFocusRingProvider != null) {
+                Shape s = currentFocusRingProvider.getFocusRingOutline(currentFocusRingOwner);
                 if (s != null) {
-                    Color focusColor = AquaColors.getSystemColor(currentDisplayedFocusOwner,"keyboardFocusIndicator");
+                    Color focusColor = AquaColors.getSystemColor(currentFocusRingOwner,"keyboardFocusIndicator");
                     FocusRingPainter p = getFocusRingPainter(s);
                     p.paint(g, focusColor);
                 }
@@ -124,7 +120,7 @@ public class AquaFocusRingPainter {
     // Not sure how best to do that, but one idea is to base it on the existence of an AquaBorder.
 
     protected FocusRingPainter getFocusRingPainter(Shape s) {
-        boolean useSmallRing = isCellEditor(currentDisplayedFocusOwner);
+        boolean useSmallRing = isCellEditor(currentFocusRingOwner);
         float outerOffset = useSmallRing ? 2 : 3f;
         float innerOffset = useSmallRing ? 0 : -0.5f;
 
