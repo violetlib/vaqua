@@ -22,7 +22,7 @@ import org.violetlib.vappearances.VAppearance;
 public class AquaAppearance extends BasicAquaAppearance {
 
     public AquaAppearance(@NotNull VAppearance appearance, int OSVersion, @NotNull Map<String,Color> nativeColors) {
-        super(appearance, OSVersion, nativeColors);
+        super(appearance, OSVersion, nativeColors, AquaUtils::logDebug);
     }
 
     /**
@@ -78,10 +78,5 @@ public class AquaAppearance extends BasicAquaAppearance {
         String extendedName = colorName + "_" + effectName;
         Color c = getColor(extendedName);
         return c != null ? c : getColor(colorName);
-    }
-
-    @Override
-    protected void debug(@NotNull String message) {
-        AquaUtils.logDebug(message);
     }
 }

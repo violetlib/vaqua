@@ -1387,8 +1387,8 @@ final public class AquaUtils {
         Graphics cg = g.create();
 
         try {
-            if (color instanceof AquaAppearance.GradientColor && cg instanceof Graphics2D) {
-                AquaAppearance.GradientColor gradientColor = (AquaAppearance.GradientColor) color;
+            if (color instanceof GradientColor && cg instanceof Graphics2D) {
+                GradientColor gradientColor = (GradientColor) color;
                 Graphics2D gg = (Graphics2D) cg;
                 if (gradientColor.useMagicEraser()) {
                     gg.setComposite(AlphaComposite.Src);
@@ -1400,8 +1400,8 @@ final public class AquaUtils {
                 GradientPaint gp = new GradientPaint(0, y, start, 0, y + h, finish);
                 gg.setPaint(gp);
                 gg.fillRect(x, y, w, h);
-            } else if (color instanceof AquaAppearance.TintedEraser && cg instanceof Graphics2D) {
-                AquaAppearance.TintedEraser tintedEraser = (AquaAppearance.TintedEraser) color;
+            } else if (color instanceof TintedEraser && cg instanceof Graphics2D) {
+                TintedEraser tintedEraser = (TintedEraser) color;
                 Graphics2D gg = (Graphics2D) cg;
                 gg.setComposite(AlphaComposite.Src);
                 gg.setColor(AquaColors.CLEAR);
