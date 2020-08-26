@@ -13,6 +13,7 @@ import org.jetbrains.annotations.NotNull;
 /**
  * An interface for debug logging
  */
+
 public interface Logger {
   void log(@NotNull String message);
 }

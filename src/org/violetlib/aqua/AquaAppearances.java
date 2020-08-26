@@ -43,18 +43,17 @@ public class AquaAppearances {
      * @return the appearance.
      * @throws UnsupportedOperationException if this appearance and the default appearance are not available.
      */
+
     public static @NotNull AquaAppearance get(@NotNull String appearanceName) {
         AquaAppearance appearance = appearances.get(appearanceName);
         if (appearance == null) {
             try {
                 VAppearance a = VAppearances.getAppearance(appearanceName);
-                Map<String, Color> nativeColors = AquaNativeRendering.createPainter().getColors(a);
-                appearance = new AquaAppearance(a, OSVersion, nativeColors);
+                appearance = getAquaAppearance(a);
             } catch (IOException ex) {
                 AquaUtils.syslog("Unable to get " + appearanceName + ": " + ex.getMessage());
                 appearance = getDefaultAppearance();
             }
-            appearances.put(appearanceName, appearance);
         }
         return appearance;
     }
@@ -70,14 +69,12 @@ public class AquaAppearances {
         if (appearance == null) {
             try {
                 VAppearance a = VAppearances.getAppearance(defaultAppearanceName);
-                Map<String, Color> nativeColors = AquaNativeRendering.createPainter().getColors(a);
-                appearance = new AquaAppearance(a, OSVersion, nativeColors);
+                appearance = getAquaAppearance(a);
             } catch (IOException ex) {
                 AquaUtils.syslog("Unable to get " + defaultAppearanceName + ": " + ex.getMessage());
                 ex.printStackTrace();
                 throw new UnsupportedOperationException("Default appearance " + defaultAppearanceName + " is not available");
             }
-            appearances.put(defaultAppearanceName, appearance);
         }
         return appearance;
     }
@@ -120,14 +117,20 @@ public class AquaAppearances {
             if (false) {
                 AquaUtils.logDebug("AquaAppearances: appearance " + name + " updated");
             }
-            Map<String, Color> nativeColors = AquaNativeRendering.createPainter().getColors(a);
-            AquaAppearance appearance = new AquaAppearance(a, OSVersion, nativeColors);
-            appearances.put(name, appearance);
+            AquaAppearance appearance = getAquaAppearance(a);
             for (ChangeListener listener : changeListeners) {
                 listener.stateChanged(ev);
             }
         } else {
             throw new RuntimeException("Unexpected change event: " + ev);
         }
+    }
+
+    private static @NotNull AquaAppearance getAquaAppearance(@NotNull VAppearance a) {
+        Map<String,Color> nativeColors = AquaNativeRendering.createPainter().getColors(a);
+        Colors colors = new AppearanceColorsBuilder(a, OSVersion, nativeColors, AquaUtils::logDebug).getResult();
+        AquaAppearance appearance = new AquaAppearance(a, colors, AquaUtils::logDebug);
+        appearances.put(a.getName(), appearance);
+        return appearance;
     }
 }

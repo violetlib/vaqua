@@ -11,14 +11,16 @@ package org.violetlib.aqua;
 import org.jetbrains.annotations.NotNull;
 
 /**
- *
+ * A set of color definitions that can be combined to form a complete set of colors for an appearance.
+ * Color names are defined in terms of specific colors or as synonyms.
  */
+
 public class SystemColors {
-    public final @NotNull Colors defaultColors;
-    public final @NotNull Colors lightColors;
-    public final @NotNull Colors darkColors;
-    public final @NotNull Colors highContrastLightColors;
-    public final @NotNull Colors highContrastDarkColors;
+    public final @NotNull BasicColors defaultColors;
+    public final @NotNull BasicColors lightColors;
+    public final @NotNull BasicColors darkColors;
+    public final @NotNull BasicColors highContrastLightColors;
+    public final @NotNull BasicColors highContrastDarkColors;
 
     private final @NotNull Logger log;
 
@@ -31,8 +33,8 @@ public class SystemColors {
         this.log = log;
     }
 
-    private @NotNull Colors createDefaultColors(int OSVersion) {
-        Colors colors = new Colors(log);
+    private @NotNull BasicColors createDefaultColors(int OSVersion) {
+        BasicColorsBuilder colors = new BasicColorsBuilder(log);
         colors.add("clear", 0, 0);
 
         // in 10.14, the text selection background is not displayed when the window is inactive
@@ -94,17 +96,17 @@ public class SystemColors {
         colors.addAll("pushPopText", "pushButtonText");
 
         // rounded rect push and toggle buttons do not change when inactive
-        colors.addAll("roundedRectText", "gradientText", Colors.NO_INACTIVE);
+        colors.addAll("roundedRectText", "gradientText", BasicColorsBuilder.NO_INACTIVE);
 
         // bevel push and toggle buttons do not change when inactive
-        colors.addAll("bevelText", "gradientText", Colors.NO_INACTIVE);
+        colors.addAll("bevelText", "gradientText", BasicColorsBuilder.NO_INACTIVE);
 
         // push buttons mostly do not change when inactive
         colors.defineNoInactive("pushButtonText");
 
         // default style segmented buttons mostly do not change when inactive
         // they do not have pressed behavior
-        colors.addAll("segmentedText", "pushButtonText", Colors.NO_INACTIVE);
+        colors.addAll("segmentedText", "pushButtonText", BasicColorsBuilder.NO_INACTIVE);
         colors.add("segmentedText_pressed", "segmentedText");
         colors.add("selectedSegmentedText_pressed", "selectedSegmentedText");
 
@@ -123,11 +125,11 @@ public class SystemColors {
 
         colors.add("selectedGradientText_disabled", "gradientText_disabled");
 
-        return colors;
+        return colors.get();
     }
 
-    private @NotNull Colors createLightColors(int OSVersion) {
-        Colors colors = new Colors(log);
+    private @NotNull BasicColors createLightColors(int OSVersion) {
+        BasicColorsBuilder colors = new BasicColorsBuilder(log);
         colors.add("texturedWindowBackground", 212);
         colors.add("texturedWindowBackground_disabled", 246);
         colors.add("capsLockIcon", 0, 100);
@@ -386,11 +388,11 @@ public class SystemColors {
         colors.add("bottomTexturedWindowDivider", 0, 56);
         colors.add("bottomTexturedWindowDivider_disabled", 0, 28);
 
-        return colors;
+        return colors.get();
     }
 
-    private @NotNull Colors createHighContrastLightColors(int OSVersion) {
-        Colors colors = new Colors(log);
+    private @NotNull BasicColors createHighContrastLightColors(int OSVersion) {
+        BasicColorsBuilder colors = new BasicColorsBuilder(log);
 
         if (OSVersion < 1014) {
             colors.add("windowBackground", 246);
@@ -448,17 +450,15 @@ public class SystemColors {
         // support for scroll panes
         colors.add("scrollPaneBorder", 0, 128);
 
-        return colors;
+        return colors.get();
     }
 
-    private @NotNull Colors createDarkColors(int OSVersion) {
-
-        // colors related to the unified title and toolbar window style (dark mode)
-
-        Colors colors = new Colors(log);
+    private @NotNull BasicColors createDarkColors(int OSVersion) {
+        BasicColorsBuilder colors = new BasicColorsBuilder(log);
 
         colors.add("capsLockIcon", 255, 96);
 
+        // colors related to the unified title and toolbar window style (dark mode)
         colors.add("windowBackground_disabled", 45);
         colors.add("texturedWindowBackground", 42);
         colors.add("texturedWindowBackground_disabled", 45);
@@ -680,7 +680,7 @@ public class SystemColors {
 
         // colors related to bevel buttons (dark mode)
 
-        colors.addAll("bevelText", "roundedRectText", Colors.NO_INACTIVE);
+        colors.addAll("bevelText", "roundedRectText", BasicColorsBuilder.NO_INACTIVE);
 
         // colors related to round buttons (dark mode)
         colors.add("roundText", "controlText");
@@ -754,11 +754,11 @@ public class SystemColors {
 
         colors.add("topWindowDivider_disabled", 55);    // flat divider over vibrant background
 
-        return colors;
+        return colors.get();
     }
 
-    private @NotNull Colors createHighContrastDarkColors(int OSVersion) {
-        Colors colors = new Colors(log);
+    private @NotNull BasicColors createHighContrastDarkColors(int OSVersion) {
+        BasicColorsBuilder colors = new BasicColorsBuilder(log);
 
         colors.add("windowBackground", 50);
         colors.add("texturedWindowBackground", 53);
@@ -803,6 +803,6 @@ public class SystemColors {
             colors.add("bottomTexturedWindowDivider_disabled", c, a);
         }
 
-        return colors;
+        return colors.get();
     }
 }

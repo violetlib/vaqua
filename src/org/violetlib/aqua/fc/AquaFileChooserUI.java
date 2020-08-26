@@ -590,7 +590,7 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
                     if (color != null) {
                         // Must not use a UI color, as this color should override a vibrant ancestor.
                         setOpaque(true);
-                        setBackground(AquaAppearance.getOrdinaryColor(color));
+                        setBackground(AquaColors.getOrdinaryColor(color));
                     }
                 }
             }

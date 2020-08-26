@@ -163,8 +163,8 @@ public class FileRenderer extends JLabel implements ListCellRenderer, GenericCel
 
         Color background = colors.getBackground(context);
         Color foreground = colors.getForeground(context);
-        setBackground(AquaAppearance.getOrdinaryColor(background));
-        setForeground(AquaAppearance.getOrdinaryColor(foreground));
+        setBackground(AquaColors.getOrdinaryColor(background));
+        setForeground(AquaColors.getOrdinaryColor(foreground));
 
         arrowColor = getArrowColor(info, cellHasFocus, appearance);
 

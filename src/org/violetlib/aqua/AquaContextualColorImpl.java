@@ -75,7 +75,7 @@ public class AquaContextualColorImpl implements ContextualColor {
         this.inactiveDisabledName = name + "_inactive_disabled";
         this.activeDefaultName = name + "_focused";
 
-        String selectedName = AquaAppearance.createSelectedColorName(basicName);
+        String selectedName = AquaColors.createSelectedColorName(basicName);
         setAllSelectedNames(selectedName);
     }
 

@@ -186,12 +186,12 @@ public class FilePreview extends JComponent implements BrowserPreviewRenderer {
         Color labelForeground = AquaColors.getSystemColor(this, "secondaryLabel");
         Color valueForeground = AquaColors.getSystemColor(this, "label");
 
-        nameRenderer.setColor(AquaAppearance.getOrdinaryColor(labelForeground));
-        valueRenderer.setColor(AquaAppearance.getOrdinaryColor(valueForeground));
+        nameRenderer.setColor(AquaColors.getOrdinaryColor(labelForeground));
+        valueRenderer.setColor(AquaColors.getOrdinaryColor(valueForeground));
         if (typeSizeView != null) {
-            typeSizeView.setForeground(AquaAppearance.getOrdinaryColor(labelForeground));
+            typeSizeView.setForeground(AquaColors.getOrdinaryColor(labelForeground));
         } else if (OSXSystemProperties.OSVersion >= 1010) {
-            valueRenderer.setRowZeroColor(AquaAppearance.getOrdinaryColor(labelForeground));
+            valueRenderer.setRowZeroColor(AquaColors.getOrdinaryColor(labelForeground));
         }
 
         // Avoid the magic eraser when displayed as a sheet

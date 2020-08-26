@@ -9,68 +9,27 @@
 package org.violetlib.aqua;
 
 import java.awt.*;
+import java.util.HashMap;
 import java.util.Map;
 
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.violetlib.vappearances.VAppearance;
 
 /**
- * An object representing a specific appearance, including the current accent and highlight colors.
+ * Build a set of color definitions for an appearance.
  */
 
-public class BasicAquaAppearance implements VAppearance {
+public class AppearanceColorsBuilder {
 
-    private final @NotNull VAppearance appearance;
-    private final @NotNull Colors colors;
-    private final @NotNull Logger log;
+    private final @NotNull Colors result;
 
-    public BasicAquaAppearance(@NotNull VAppearance appearance,
-                               @NotNull Colors colors,
-                               @NotNull Logger log) {
-        this.appearance = appearance;
-        this.colors = colors;
-        this.log = log;
-    }
+    public AppearanceColorsBuilder(
+            @NotNull VAppearance appearance,
+            int OSVersion,
+            @NotNull Map<String, Color> nativeColors,
+            @NotNull Logger log) {
 
-    @Override
-    public @NotNull String getName() {
-        return appearance.getName();
-    }
-
-    @Override
-    public boolean isDark() {
-        return appearance.isDark();
-    }
-
-    @Override
-    public boolean isHighContrast() {
-        return appearance.isHighContrast();
-    }
-
-    @Override
-    public @NotNull Map<String,Color> getColors() {
-        return appearance.getColors();
-    }
-
-    /**
-     * Return the color with the specified name.
-     * @param colorName The color name.
-     * @return the color, as a ColorUIResource, or null if the color name not defined in this appearance.
-     */
-
-    public @Nullable Color getColor(@NotNull String colorName) {
-        return colors.get(colorName);
-    }
-
-    public boolean isBasedOn(@NotNull VAppearance va) {
-        return va == appearance;
-    }
-
-    protected @NotNull Colors buildColors(int OSVersion,
-                                          @NotNull SystemColors systemColors,
-                                          @NotNull Map<String,Color> nativeColors)
-    {
+        SystemColors systemColors = getSystemColors(OSVersion, log);
         ColorsBuilder colors = new ColorsBuilder(log);
         colors.add(systemColors.defaultColors);
         colors.addAll(appearance.getColors());
@@ -89,7 +48,19 @@ public class BasicAquaAppearance implements VAppearance {
             }
         }
         installFixups(colors, appearance, OSVersion);
-        return colors.getColors();
+        result = colors.getColors();
+    }
+
+    public @NotNull Colors getResult() {
+        return result;
+    }
+
+    // This map supports testing, not needed in production!
+
+    private static final Map<Integer,SystemColors> systemColorsMap = new HashMap<>();
+
+    private @NotNull SystemColors getSystemColors(int OSVersion, @NotNull Logger log) {
+        return systemColorsMap.computeIfAbsent(OSVersion, (v) -> new SystemColors(v, log));
     }
 
     // Fixups are alterations that depend on existing definitions being present.
@@ -120,10 +91,5 @@ public class BasicAquaAppearance implements VAppearance {
                 }
             }
         }
-    }
-
-    @Override
-    public @NotNull String toString() {
-        return super.toString() + "[" + appearance.getName() + "]";
     }
 }

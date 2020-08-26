@@ -14,8 +14,9 @@ import javax.swing.plaf.ColorUIResource;
 import org.jetbrains.annotations.NotNull;
 
 /**
- *
+ * A synthetic color that paints a gradient.
  */
+
 public class GradientColor extends ColorUIResource {
     private final @NotNull Color finish;
     private final boolean useMagicEraser;

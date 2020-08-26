@@ -85,6 +85,17 @@ final public class AquaUtils {
 
     private static final HierarchyListener insetViewHierarchyListener = new InsetViewHierarchyListener();
 
+    public static @NotNull String capitalize(@NotNull String s)
+    {
+        if (!s.isEmpty()) {
+            char first = s.charAt(0);
+            if (!Character.isUpperCase(first)) {
+                return Character.toUpperCase(first) + s.substring(1);
+            }
+        }
+        return s;
+    }
+
     private interface WindowAppearanceChangedCallback {
         void windowAppearanceChanged(@NotNull Window w, @NotNull String appearanceName);
     }

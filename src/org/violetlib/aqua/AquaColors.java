@@ -653,4 +653,16 @@ public class AquaColors {
             c.setForeground(colors.getForeground(context));
         }
     }
+
+    public static @NotNull Color getOrdinaryColor(@NotNull Color c) {
+        if (c.getClass() == Color.class) {
+            return c;
+        }
+        return new Color(c.getRed(), c.getGreen(), c.getBlue(), c.getAlpha());
+    }
+
+    public static @NotNull String createSelectedColorName(@NotNull String name)
+    {
+        return "selected" + AquaUtils.capitalize(name);
+    }
 }

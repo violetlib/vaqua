@@ -285,7 +285,7 @@ public class ListViewImpl extends ListView {
             if (fg == null) {
                 fg = Color.BLACK;
             }
-            c.setForeground(AquaAppearance.getOrdinaryColor(fg));
+            c.setForeground(AquaColors.getOrdinaryColor(fg));
             return c;
         }
     }

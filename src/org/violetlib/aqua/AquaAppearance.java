@@ -21,8 +21,10 @@ import org.violetlib.vappearances.VAppearance;
 
 public class AquaAppearance extends BasicAquaAppearance {
 
-    public AquaAppearance(@NotNull VAppearance appearance, int OSVersion, @NotNull Map<String,Color> nativeColors) {
-        super(appearance, OSVersion, nativeColors, AquaUtils::logDebug);
+    public AquaAppearance(@NotNull VAppearance appearance,
+                          @NotNull Colors colors,
+                          @NotNull Logger log) {
+        super(appearance, colors, log);
     }
 
     /**
