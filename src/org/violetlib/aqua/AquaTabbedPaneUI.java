@@ -683,7 +683,11 @@ public class AquaTabbedPaneUI extends AquaTabbedPaneCopyFromBasicUI
                 return State.DISABLED;
             }
         } else {
-            return State.INACTIVE;
+            if (tabPane.isEnabled()) {
+                return State.INACTIVE;
+            } else {
+                return State.DISABLED_INACTIVE;
+            }
         }
     }
 
@@ -1034,12 +1038,12 @@ public class AquaTabbedPaneUI extends AquaTabbedPaneCopyFromBasicUI
             if ("componentOrientation".equals(prop)) {
                 comp.revalidate();
                 comp.repaint();
-                super.propertyChange(e);    // in case a future JDK does something
+                super.propertyChange(e);  // in case a future JDK does something
                 return;
             }
 
-            if (AquaFocusHandler.FRAME_ACTIVE_PROPERTY.equals(prop)) {
-                comp.repaint();
+            if ("enabled".equals(prop)) {
+                configureAppearanceContext(null, comp);
                 return;
             }
 

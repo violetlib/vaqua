@@ -647,12 +647,14 @@ public class SystemColors {
         //colors.add("selectedSegmentedText_disabled", 0, 64);
 
         if (OSVersion == 1014 || OSVersion == 1015) {
+            colors.add("selectedTabText_disabled", 0, 96);
+            colors.add("selectedTabText_inactive_disabled", 0, 96);
             colors.add("selectedSegmentedText_inactive", 0, 192);
         } else if (OSVersion >= 1016) {
             colors.add("selectedSegmentedText", 0, 192);
             colors.add("selectedSegmentedText_disabled", 0, 64);
             colors.add("selectedSegmentedText_inactive", "selectedSegmentedText");
-            colors.add("selectedSegmentedText_inactive_disabled", "selectedDegmentedText_disabled");
+            colors.add("selectedSegmentedText_inactive_disabled", "selectedSegmentedText_disabled");
         }
 
         colors.add("nonexclusiveText_disabled", "disabledControlText");
@@ -744,7 +746,7 @@ public class SystemColors {
         colors.add("tableHeaderSeparator", 70);
         colors.add("tableHeaderSeparator_disabled", 83);
 
-        colors.add("browserColumnSeparator", 60);   // my choice, 0 in current beta is invisible
+        colors.add("browserColumnSeparator", 60);  // my choice, 0 in current beta is invisible
 
         // colors related to window content borders (dark mode)
 
@@ -756,7 +758,7 @@ public class SystemColors {
         // using translucent colors will reveal a vibrant background, which is incorrect for the bottom margin
         colors.addColorGradient("bottomWindowMarginBackground", 50, 40, 255);
 
-        colors.add("topWindowDivider_disabled", 55);    // flat divider over vibrant background
+        colors.add("topWindowDivider_disabled", 55);  // flat divider over vibrant background
 
         return colors.get();
     }
@@ -770,11 +772,11 @@ public class SystemColors {
         // file tag colors (dark mode)
         colors.add("tagBlue", 103, 176, 255);
         colors.add("tagGray", 172, 172, 176);
-        colors.add("tagGreen", 91, 215, 105);   // same as ordinary light mode? mistake?
+        colors.add("tagGreen", 91, 215, 105);  // same as ordinary light mode? mistake?
         colors.add("tagOrange", 255, 170, 71);
         colors.add("tagPurple", 226, 165, 254);
         colors.add("tagRed", 255, 135, 129);
-        colors.add("tagYellow", 254, 214, 75);    // same as ordinary light mode? mistake?
+        colors.add("tagYellow", 254, 214, 75);  // same as ordinary light mode? mistake?
         colors.add("tagBlue_disabled", 67, 104, 144);
         colors.add("tagGray_disabled", 102, 102, 104);
         colors.add("tagGreen_disabled", 62, 123, 69);
