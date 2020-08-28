@@ -96,6 +96,7 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
 
     private final PropertyChangeListener propertyChangeListener = new AquaPropertyChangeListener();
     private final FocusListener editingComponentFocusListener = new EditingComponentFocusListener();
+    private final ComponentListener componentListener = new AquaTreeComponentListener();
     private Component editorFocusOwner;
 
     // mouse tracking state
@@ -172,10 +173,12 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
         super.installListeners();
         tree.addPropertyChangeListener(propertyChangeListener);
         AppearanceManager.installListener(tree);
+        tree.addComponentListener(componentListener);
     }
 
     @Override
     protected void uninstallListeners() {
+        tree.removeComponentListener(componentListener);
         AppearanceManager.uninstallListener(tree);
         tree.removePropertyChangeListener(propertyChangeListener);
         super.uninstallListeners();
@@ -1089,6 +1092,15 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
                 updateStriped();
             } else if (isViewStyleProperty(pn)) {
                 updateInset();
+            }
+        }
+    }
+
+    class AquaTreeComponentListener extends ComponentAdapter {
+        @Override
+        public void componentResized(ComponentEvent e) {
+            if (isCellFilled && treeState != null) {
+                treeState.invalidateSizes();
             }
         }
     }
