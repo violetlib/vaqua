@@ -13,6 +13,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.violetlib.jnr.aqua.AquaNativeRendering;
 import org.violetlib.vappearances.VAppearance;
 
 /**
@@ -21,34 +23,75 @@ import org.violetlib.vappearances.VAppearance;
 
 public class AppearanceColorsBuilder {
 
+    private final @Nullable ColorsInstrumentation instrumentation;
     private final @NotNull Colors result;
 
     public AppearanceColorsBuilder(
             @NotNull VAppearance appearance,
             int OSVersion,
-            @NotNull Map<String, Color> nativeColors,
-            @NotNull Logger log) {
+            @Nullable Map<String,Color> nativeColors,
+            @Nullable ColorsInstrumentation instrumentation,
+            @Nullable Logger log) {
 
+        this.instrumentation = instrumentation;
+
+        if (log == null) {
+            log = AquaUtils::logDebug;
+        }
+
+        if (nativeColors == null) {
+            nativeColors = AquaNativeRendering.createPainter().getColors(appearance);
+        }
+
+        String appearanceName = appearance.getName();
         SystemColors systemColors = getSystemColors(OSVersion, log);
-        ColorsBuilder colors = new ColorsBuilder(log);
-        colors.add(systemColors.defaultColors);
+        ColorsBuilder colors = new ColorsBuilder(appearanceName, instrumentation, log);
+        colors.add(systemColors.defaultColors, "Default");
         colors.addAll(appearance.getColors());
         colors.addAll(nativeColors);
         colors.add("controlText_disabled", "disabledControlText");
 
         if (appearance.isDark()) {
-            colors.add(systemColors.darkColors);
+            colors.add(systemColors.darkColors, "Dark");
             if (appearance.isHighContrast()) {
-                colors.add(systemColors.highContrastDarkColors);
+                colors.add(systemColors.highContrastDarkColors, "High Contrast Dark");
             }
         } else {
-            colors.add(systemColors.lightColors);
+            colors.add(systemColors.lightColors, "Light");
             if (appearance.isHighContrast()) {
-                colors.add(systemColors.highContrastLightColors);
+                colors.add(systemColors.highContrastLightColors, "High Contrast Light");
             }
         }
         installFixups(colors, appearance, OSVersion);
         result = colors.getColors();
+        if (instrumentation != null) {
+            instrumentation.colorsReady(new MyAccess(result));
+        }
+    }
+
+    private static class MyAccess
+      implements ColorsInstrumentation.Access
+    {
+        private final @NotNull Colors colors;
+
+        public MyAccess(@NotNull Colors colors) {
+            this.colors = colors;
+        }
+
+        @Override
+        public @NotNull String[] getColorNames() {
+            return colors.getColorNames().toArray(new String[0]);
+        }
+
+        @Override
+        public @Nullable Color getColor(@NotNull String name) {
+            return colors.get(name);
+        }
+
+        @Override
+        public @Nullable String getSynonym(@NotNull String name) {
+            return null;
+        }
     }
 
     public @NotNull Colors getResult() {
@@ -60,7 +103,7 @@ public class AppearanceColorsBuilder {
     private static final Map<Integer,SystemColors> systemColorsMap = new HashMap<>();
 
     private @NotNull SystemColors getSystemColors(int OSVersion, @NotNull Logger log) {
-        return systemColorsMap.computeIfAbsent(OSVersion, (v) -> new SystemColors(v, log));
+        return systemColorsMap.computeIfAbsent(OSVersion, (v) -> new SystemColors(v, instrumentation, log));
     }
 
     // Fixups are alterations that depend on existing definitions being present.

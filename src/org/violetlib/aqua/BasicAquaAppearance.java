@@ -67,61 +67,6 @@ public class BasicAquaAppearance implements VAppearance {
         return va == appearance;
     }
 
-    protected @NotNull Colors buildColors(int OSVersion,
-                                          @NotNull SystemColors systemColors,
-                                          @NotNull Map<String,Color> nativeColors)
-    {
-        ColorsBuilder colors = new ColorsBuilder(log);
-        colors.add(systemColors.defaultColors);
-        colors.addAll(appearance.getColors());
-        colors.addAll(nativeColors);
-        colors.add("controlText_disabled", "disabledControlText");
-
-        if (appearance.isDark()) {
-            colors.add(systemColors.darkColors);
-            if (appearance.isHighContrast()) {
-                colors.add(systemColors.highContrastDarkColors);
-            }
-        } else {
-            colors.add(systemColors.lightColors);
-            if (appearance.isHighContrast()) {
-                colors.add(systemColors.highContrastLightColors);
-            }
-        }
-        installFixups(colors, appearance, OSVersion);
-        return colors.getColors();
-    }
-
-    // Fixups are alterations that depend on existing definitions being present.
-
-    private void installFixups(@NotNull ColorsBuilder colors, @NotNull VAppearance appearance, int OSVersion) {
-
-        if (OSVersion < 1014) {
-            // Some appearance based colors prior to 10.14 are not represented as system colors.
-            // These colors are not used in 10.14 or later.
-            Color c = colors.get("controlAccent");
-            boolean isGraphite = c != null && (c.getBlue() - c.getRed()) < 30;
-            if (isGraphite) {
-                colors.add("menuSelectedBackground", 162, 162, 168);
-                colors.add("menuBackground", 240);
-            } else {
-                colors.add("menuSelectedBackground", 54, 148, 253);
-                colors.add("menuBackground", 0, 0);
-            }
-            colors.add("menuForeground", 61);
-        }
-
-        if (appearance.isDark()) {
-            // A workaround for an apparently bogus color:
-            {
-                Color c = colors.get("alternatingContentBackground_1_disabled");
-                if (c != null && c.getRed() == 255 && c.getAlpha() == 128) {
-                    colors.add("alternatingContentBackground_1_disabled", 128, 13);
-                }
-            }
-        }
-    }
-
     @Override
     public @NotNull String toString() {
         return super.toString() + "[" + appearance.getName() + "]";

@@ -9,6 +9,7 @@
 package org.violetlib.aqua;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * A set of color definitions that can be combined to form a complete set of colors for an appearance.
@@ -22,19 +23,22 @@ public class SystemColors {
     public final @NotNull BasicColors highContrastLightColors;
     public final @NotNull BasicColors highContrastDarkColors;
 
+    private final @Nullable ColorsInstrumentation instrumentation;
     private final @NotNull Logger log;
 
-    public SystemColors(int OSVersion, @NotNull Logger log) {
+    public SystemColors(int OSVersion, @Nullable ColorsInstrumentation instrumentation, @NotNull Logger log) {
+        this.instrumentation = instrumentation;
+        this.log = log;
+
         defaultColors = createDefaultColors(OSVersion);
         lightColors = createLightColors(OSVersion);
         darkColors = createDarkColors(OSVersion);
         highContrastLightColors = createHighContrastLightColors(OSVersion);
         highContrastDarkColors = createHighContrastDarkColors(OSVersion);
-        this.log = log;
     }
 
     private @NotNull BasicColors createDefaultColors(int OSVersion) {
-        BasicColorsBuilder colors = new BasicColorsBuilder(log);
+        BasicColorsBuilder colors = new BasicColorsBuilder("Basic", instrumentation, log);
         colors.add("clear", 0, 0);
 
         // in 10.14, the text selection background is not displayed when the window is inactive
@@ -129,7 +133,7 @@ public class SystemColors {
     }
 
     private @NotNull BasicColors createLightColors(int OSVersion) {
-        BasicColorsBuilder colors = new BasicColorsBuilder(log);
+        BasicColorsBuilder colors = new BasicColorsBuilder("Light", instrumentation, log);
         colors.add("texturedWindowBackground", 212);
         colors.add("texturedWindowBackground_disabled", 246);
         colors.add("capsLockIcon", 0, 100);
@@ -392,7 +396,7 @@ public class SystemColors {
     }
 
     private @NotNull BasicColors createHighContrastLightColors(int OSVersion) {
-        BasicColorsBuilder colors = new BasicColorsBuilder(log);
+        BasicColorsBuilder colors = new BasicColorsBuilder("High Contrast Light", instrumentation, log);
 
         if (OSVersion < 1014) {
             colors.add("windowBackground", 246);
@@ -454,7 +458,7 @@ public class SystemColors {
     }
 
     private @NotNull BasicColors createDarkColors(int OSVersion) {
-        BasicColorsBuilder colors = new BasicColorsBuilder(log);
+        BasicColorsBuilder colors = new BasicColorsBuilder("Dark", instrumentation, log);
 
         colors.add("capsLockIcon", 255, 96);
 
@@ -758,7 +762,7 @@ public class SystemColors {
     }
 
     private @NotNull BasicColors createHighContrastDarkColors(int OSVersion) {
-        BasicColorsBuilder colors = new BasicColorsBuilder(log);
+        BasicColorsBuilder colors = new BasicColorsBuilder("High Contrast Dark", instrumentation, log);
 
         colors.add("windowBackground", 50);
         colors.add("texturedWindowBackground", 53);

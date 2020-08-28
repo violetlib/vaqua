@@ -128,7 +128,7 @@ public class AquaAppearances {
 
     private static @NotNull AquaAppearance getAquaAppearance(@NotNull VAppearance a) {
         Map<String,Color> nativeColors = AquaNativeRendering.createPainter().getColors(a);
-        Colors colors = new AppearanceColorsBuilder(a, OSVersion, nativeColors, AquaUtils::logDebug).getResult();
+        Colors colors = new AppearanceColorsBuilder(a, OSVersion, nativeColors, null, AquaUtils::logDebug).getResult();
         AquaAppearance appearance = new AquaAppearance(a, colors, AquaUtils::logDebug);
         appearances.put(a.getName(), appearance);
         return appearance;

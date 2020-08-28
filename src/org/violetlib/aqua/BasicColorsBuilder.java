@@ -35,9 +35,18 @@ public class BasicColorsBuilder {
 
     public final @NotNull Map<String,Color> colors = new HashMap<>();
     public final @NotNull Map<String,String> synonyms = new HashMap<>();
+
+    protected final @NotNull String context;
+    protected final @Nullable ColorsInstrumentation instrumentation;
+    protected final @Nullable ColorsInstrumentation.Access access;
     protected final @NotNull Logger log;
 
-    public BasicColorsBuilder(@NotNull Logger log) {
+    public BasicColorsBuilder(@NotNull String context,
+                              @Nullable ColorsInstrumentation instrumentation,
+                              @NotNull Logger log) {
+        this.context = context;
+        this.instrumentation = instrumentation;
+        this.access = instrumentation != null ? new Access() : null;
         this.log = log;
     }
 
@@ -57,18 +66,27 @@ public class BasicColorsBuilder {
         return null;
     }
 
+    private class Access implements ColorsInstrumentation.Access {
+        @Override
+        public @NotNull String[] getColorNames() {
+            return colors.keySet().toArray(new String[0]);
+        }
+
+        @Override
+        public @Nullable Color getColor(@NotNull String name) {
+            return colors.get(name);
+        }
+
+        @Override
+        public @Nullable String getSynonym(@NotNull String name) {
+            return synonyms.get(name);
+        }
+    }
+
     public @NotNull BasicColors get() {
         Map<String,Color> cs = Collections.unmodifiableMap(new HashMap<>(colors));
         Map<String,String> ss = Collections.unmodifiableMap(new HashMap<>(synonyms));
         return new BasicColors(cs, ss);
-    }
-
-    protected void internalAdd(@NotNull String name, @NotNull Color color) {
-        synonyms.remove(name);
-        if (!(color instanceof ColorUIResource)) {
-            color = new ColorUIResource(color);
-        }
-        colors.put(name, color);
     }
 
     public void add(@NotNull String name, int color) {
@@ -188,12 +206,38 @@ public class BasicColorsBuilder {
         }
     }
 
+    protected void internalAdd(@NotNull String name, @NotNull Color color) {
+
+        if (instrumentation != null) {
+            assert access != null;
+            instrumentation.addingColor(context, name, color, access);
+        }
+
+        synonyms.remove(name);
+        if (!(color instanceof ColorUIResource)) {
+            color = new ColorUIResource(color);
+        }
+        colors.put(name, color);
+    }
+
     protected void internalAdd(@NotNull String name, @NotNull String synonym) {
+
+        if (instrumentation != null) {
+            assert access != null;
+            instrumentation.addingSynonym(context, name, synonym, access);
+        }
+
         colors.remove(name);
         synonyms.put(name, synonym);
     }
 
     public void remove(@NotNull String name) {
+
+        if (instrumentation != null) {
+            assert access != null;
+            instrumentation.removingColor(context, name, access);
+        }
+
         colors.remove(name);
     }
 }
