@@ -1877,7 +1877,11 @@ final public class AquaUtils {
     }
 
     public static void setWindowRepresentedFilename(@NotNull Window w, @NotNull String filename) {
-        execute(w, ptr -> nativeSetWindowRepresentedFilename(ptr, filename));
+        try {
+            execute(w, ptr -> nativeSetWindowRepresentedFilename(ptr, filename));
+        } catch (UnsupportedOperationException ex) {
+            // This operation fails on an embedded frame
+        }
     }
 
     // for debugging
