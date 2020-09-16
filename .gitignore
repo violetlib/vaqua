@@ -6,6 +6,7 @@
 /release/out
 /release/dist
 /resources/libvaqua.dylib
+/deploy
 /VAqua.iml
 /Java8Support.iml
 /Java9Support.iml
