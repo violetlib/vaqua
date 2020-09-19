@@ -1,6 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<project basedir="." default="release" name="VAqua Look and Feel">
+<project
+    basedir="."
+    default="release"
+    xmlns:resolver="antlib:org.apache.maven.resolver.ant"
+    xmlns:ivy="antlib:org.apache.ivy.ant"
+    name="VAqua Look and Feel">
 
     <tstamp>
         <format property="NOW" timezone="GMT" pattern="yyyy-MM-dd'T'HH:mm:ss'Z'"/>
@@ -39,16 +44,18 @@
     <property name="resources" location="${base}/resources"/>
     <property name="builddir" location="out"/>
     <property name="classesdir" location="${builddir}/classes"/>
+    <property name="uber-classesdir" location="${builddir}/uber-classes"/>
     <property name="headersdir" location="${builddir}/headers"/>
     <property name="jnidir" location="${builddir}/jni"/>
     <property name="distdir" location="dist"/>
     <property name="libdir" location="${base}/lib"/>
 
-    <property name="renderingLibraryJAR" location="${libdir}/VAquaRendering.jar"/>
-    <property name="activationJAR" location="${libdir}/javax.activation-1.2.0.jar"/>
+    <property name="annotationsVersion" value="20.1.0"/>
+    <property name="vappearancesVersion" value="2"/>
+    <property name="jnrVersion" value="9"/>
+    <property name="activationVersion" value="1.2.0"/>
 
     <property name="SDKroot" location="/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk" />
-    <property name="libpath" location="${libdir}/IdeaAnnotations.jar"/>
     <property name="cc" location="/usr/bin/cc"/>
 
     <property name="debug" value="false"/>
@@ -67,10 +74,39 @@
       <echo file="${classesdir}/org/violetlib/aqua/BUILD.txt" message="${NOW}"/>
     </target>
 
-    <target name="unjarLibraries">
-        <unjar overwrite="false" dest="${classesdir}" src="${renderingLibraryJAR}"/>
-        <unjar overwrite="false" dest="${classesdir}" src="${activationJAR}"/>
+    <!--
+      To use the Maven resolver, the Maven resolver ant tasks uber JAR must be installed in .ant/lib.
+      See https://maven.apache.org/resolver-ant-tasks/
+    -->
+
+    <target name="resolve-maven">
+        <resolver:resolve>
+          <dependencies>
+            <dependency coords="org.jetbrains:annotations:${annotationsVersion}"/>
+            <dependency coords="org.violetlib:vappearances:${vappearancesVersion}"/>
+            <dependency coords="org.violetlib:jnr:${jnrVersion}"/>
+            <dependency coords="com.sun.activation:javax.activation:${activationVersion}"/>
+          </dependencies>
+          <path refid="cp" classpath="compile"/>
+          <properties prefix="dep." scopes="compile"/>
+        </resolver:resolve>
     </target>
+
+    <!--
+      To use the Ivy resolver, the Ivy uber JAR must be downloaded and installed in .ant/lib.
+      See https://ant.apache.org/ivy/
+    -->
+
+    <target name="resolve-ivy">
+        <ivy:cachepath pathid="cp">
+            <dependency org="org.jetbrains" name="annotations" rev="${annotationsVersion}"/>
+            <dependency org="org.violetlib" name="vappearances" rev="${vappearancesVersion}"/>
+            <dependency org="org.violetlib" name="jnr" rev="${jnrVersion}"/>
+            <dependency org="com.sun.activation" name="javax.activation" rev="${activationVersion}"/>
+        </ivy:cachepath>
+    </target>
+
+    <target name="resolve" depends="resolve-maven"/>
 
     <target name="copyResources">
       <copy todir="${classesdir}">
@@ -80,13 +116,13 @@
       </copy>
     </target>
 
-    <target name="compile8" depends="unjarLibraries, copyResources">
+    <target name="compile8" depends="resolve">
       <mkdir dir="${classesdir}"/>
       <mkdir dir="${headersdir}"/>
 
       <javac source="1.8" target="1.8"
           bootclasspath="${bootclasspath}"
-          classpath="${libpath}"
+          classpathref="cp"
           encoding="UTF-8"
           srcdir="${src}"
           destdir="${classesdir}"
@@ -105,7 +141,7 @@
 
       <javac source="1.8" target="1.8"
           bootclasspath="${bootclasspath}"
-          classpath="${libpath}"
+          classpathref="cp"
           encoding="UTF-8"
           srcdir="${src8}"
           destdir="${classesdir}"
@@ -123,10 +159,10 @@
       </javac>
     </target>
 
-    <target name="compile9">
+    <target name="compile9" depends="resolve">
       <mkdir dir="${classesdir}"/>
       <javac
-          classpath="${libpath}"
+          classpathref="cp"
           encoding="UTF-8"
           srcdir="${src9}"
           destdir="${classesdir}"
@@ -265,17 +301,38 @@
 
     </target>
 
-    <target name="VAqua" depends="compile-VAqua-JNI,compile-KeyWindowPatch,compile-WindowStylePatch,compile-VAqua-Java,saveIDs">
+    <target name="createUberJAR" depends="resolve, VAqua">
+        <mkdir dir="${uber-classesdir}"/>
+        <delete includeemptydirs="true">
+            <fileset dir="${uber-classesdir}" includes="**/*"/>
+        </delete>
+        
+        <copy todir="${uber-classesdir}">
+            <fileset dir="${classesdir}"/>
+        </copy>
 
-        <echo level="info" message="Building VAqua ${fullReleaseName}"/>
+        <unjar overwrite="false" dest="${uber-classesdir}" src="${dep.org.violetlib:vappearances:jar}"/>
+        <unjar overwrite="false" dest="${uber-classesdir}" src="${dep.org.violetlib:jnr:jar}"/>
+        <unjar overwrite="false" dest="${uber-classesdir}" src="${dep.com.sun.activation:javax.activation:jar}"/>
+    </target>
 
+    <target name="uber-VAqua" depends="createUberJAR">
+        <echo level="info" message="Building VAqua ${fullReleaseName} uber-JAR"/>
         <mkdir dir="${distdir}"/>
-
-        <jar jarfile="${distdir}/VAqua.jar" basedir="${classesdir}">
+        <jar jarfile="${distdir}/VAqua.jar" basedir="${uber-classesdir}">
             <fileset dir="${jnidir}/"/>
         </jar>
     </target>
 
-    <target name="release" depends="clean,VAqua"/>
+
+    <target name="VAqua" depends="compile-VAqua-JNI,compile-KeyWindowPatch,compile-WindowStylePatch,compile-VAqua-Java,copyResources,saveIDs">
+        <echo level="info" message="Building VAqua ${fullReleaseName}"/>
+        <mkdir dir="${distdir}"/>
+        <jar jarfile="${distdir}/VAquaOnly.jar" basedir="${classesdir}">
+            <fileset dir="${jnidir}/"/>
+        </jar>
+    </target>
+
+    <target name="release" depends="clean,uber-VAqua"/>
 
 </project>
