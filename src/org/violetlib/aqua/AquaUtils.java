@@ -507,6 +507,10 @@ final public class AquaUtils {
         return result != 0;
     }
 
+    public static boolean isInsetViewSupported() {
+        return OSXSystemProperties.OSVersion >= 1016;
+    }
+
     // The following are copied from SwingUtilities, with modification.
 
     /**

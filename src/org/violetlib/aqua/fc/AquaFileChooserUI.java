@@ -574,7 +574,7 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
         public void reconfigure() {
             setOpaque(false);
             if (useGroupBox()) {
-                Border b = new AquaGroupBorder(new Insets(10, 10, 1, 10), new Insets(18, 22, 18, 22));
+                Border b = new AquaGroupBorder(new Insets(10, 10, 1, 10), new Insets(18, 22, 18, 22), false);
                 setBorder(b);
                 optionsSeparator.setVisible(false);
             } else {

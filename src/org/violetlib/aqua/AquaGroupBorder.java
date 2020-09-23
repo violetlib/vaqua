@@ -1,5 +1,5 @@
 /*
- * Changes Copyright (c) 2015-2018 Alan Snyder.
+ * Changes Copyright (c) 2015-2020 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -63,13 +63,15 @@ public class AquaGroupBorder extends AquaBorder {
 
     protected final @NotNull Insets boxInsets;
     protected final @NotNull Insets borderInsets;
+    protected final boolean isFrameOnly;
 
-    public AquaGroupBorder(@NotNull Insets boxInsets, @NotNull Insets borderInsets) {
+    public AquaGroupBorder(@NotNull Insets boxInsets, @NotNull Insets borderInsets, boolean isFrameOnly) {
         this.boxInsets = boxInsets;
         this.borderInsets = new Insets(boxInsets.top + borderInsets.top,
                 boxInsets.left + borderInsets.left,
                 boxInsets.bottom + borderInsets.bottom,
                 boxInsets.right + borderInsets.right);
+        this.isFrameOnly = isFrameOnly;
     }
 
     @Override
@@ -92,24 +94,24 @@ public class AquaGroupBorder extends AquaBorder {
     }
 
     protected Configuration getConfiguration() {
-        return new GroupBoxConfiguration(AquaUIPainter.State.ACTIVE, false);
+        return new GroupBoxConfiguration(AquaUIPainter.State.ACTIVE, isFrameOnly);
     }
 
     protected static class TabbedPane extends AquaGroupBorder {
         public TabbedPane() {
-            super(new Insets(5, 5, 5, 5), new Insets(3, 7, 3, 7));
+            super(new Insets(5, 5, 5, 5), new Insets(3, 7, 3, 7), false);
         }
     }
 
     protected static class Titled extends AquaGroupBorder {
         public Titled() {
-            super(new Insets(0, 5, 4, 5), new Insets(8, 10, 8, 10));
+            super(new Insets(0, 5, 4, 5), new Insets(8, 10, 8, 10), false);
         }
     }
 
     protected static class Titleless extends AquaGroupBorder {
         public Titleless() {
-            super(new Insets(3, 5, 1, 5), new Insets(5, 7, 7, 7));
+            super(new Insets(3, 5, 1, 5), new Insets(5, 7, 7, 7), false);
         }
     }
 }

@@ -72,6 +72,7 @@ public class AquaTableUI extends BasicTableUI
     public static final String TABLE_STYLE_KEY = "JTable.style";
     public static final String QUAQUA_TABLE_STYLE_KEY = "Quaqua.Table.style";
     public static final String TABLE_VIEW_STYLE_KEY = "JTable.viewStyle";
+    public static final String INSET_VIEW_MARGIN_KEY = "Aqua.insetViewMargin";
 
     protected final PropertyChangeListener propertyChangeListener;
     protected final ListSelectionListener selectionListener;
@@ -249,6 +250,10 @@ public class AquaTableUI extends BasicTableUI
             table.setDefaultEditor(Boolean.class, originalBooleanEditor);
         }
         painter = null;
+        if (extendedTable != null) {
+            extendedTable.installDefaultMargins(0, 0);
+        }
+        table.putClientProperty(INSET_VIEW_MARGIN_KEY, null);
         super.uninstallDefaults();
     }
 
@@ -388,8 +393,9 @@ public class AquaTableUI extends BasicTableUI
         boolean value = getInsetValue();
         if (value != isInset) {
             isInset = value;
+            int margin = isInset ? insetMargin : 0;
+            table.putClientProperty(INSET_VIEW_MARGIN_KEY, margin);
             if (extendedTable != null) {
-                int margin = isInset ? insetMargin : 0;
                 extendedTable.installDefaultMargins(margin, margin);
             }
             table.setRowMargin(isInset ? 0 : 1);
@@ -403,10 +409,13 @@ public class AquaTableUI extends BasicTableUI
         // the inset view style is installed, the row margin is set to zero, to allow joining of adjacent selected
         // rows.
 
-        String value = getViewStyleProperty();
-        return "inset".equals(value)
-                && table.getRowMargin() <= 1
-                && !table.getShowHorizontalLines();
+        if (AquaUtils.isInsetViewSupported()) {
+            String value = getViewStyleProperty();
+            return "inset".equals(value)
+                    && table.getRowMargin() <= 1
+                    && !table.getShowHorizontalLines();
+        }
+        return false;
     }
 
     public boolean isStriped() {

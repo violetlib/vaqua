@@ -36,6 +36,7 @@ package org.violetlib.aqua;
 import java.awt.*;
 import java.awt.event.*;
 import java.awt.geom.AffineTransform;
+import java.awt.geom.RoundRectangle2D;
 import java.awt.image.BufferedImage;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
@@ -812,12 +813,6 @@ public class AquaTabbedPaneUI extends AquaTabbedPaneCopyFromBasicUI
         Border border = AquaGroupBorder.getTabbedPaneGroupBorder();
         Shapes cutout = getContentBorderCutout();
         if (cutout != null) {
-
-            if (DEBUG_CUTOUT) {
-                g.setColor(new Color(255, 0, 0, 120));
-                g.fillRect(0, 0, width, height);
-            }
-
             // HiDPI apparently not needed
             Rectangle clipRect = g.getClipBounds();
             BufferedImage b = new BufferedImage(clipRect.width, clipRect.height, BufferedImage.TYPE_INT_ARGB);
@@ -825,7 +820,7 @@ public class AquaTabbedPaneUI extends AquaTabbedPaneCopyFromBasicUI
             bg.translate(-clipRect.x, -clipRect.y);
             border.paintBorder(tabPane, bg, x, y, w, h);
             bg.setComposite(AlphaComposite.Src);
-            bg.setColor(AquaColors.CLEAR);
+            bg.setColor(DEBUG_CUTOUT ? new Color(255, 0, 0, 120) : AquaColors.CLEAR);
             cutout.fill(bg);
             bg.dispose();
             g.drawImage(b, clipRect.x, clipRect.y, clipRect.width, clipRect.height, null);
@@ -837,12 +832,13 @@ public class AquaTabbedPaneUI extends AquaTabbedPaneCopyFromBasicUI
     /**
      * Identify a region of the content background that should not be painted. This feature is needed to support
      * tabbed panes that use translucent buttons (a feature originally used only in dark mode, but needed in light
-     * mode starting with macOS 11).
+     * mode starting with macOS 11). Without the cutout, the content group box shows through the tab buttons.
      */
     protected @Nullable Shapes getContentBorderCutout() {
         int tabCount = tabPane.getTabCount();
         if (tabCount > 0) {
             if (DEBUG_CUTOUT || isDark || OSXSystemProperties.OSVersion >= 1016) {
+
                 Shapes shapes = new Shapes();
 
                 if (visibleTabState.needsScrollTabs()) {
@@ -871,6 +867,14 @@ public class AquaTabbedPaneUI extends AquaTabbedPaneCopyFromBasicUI
                 }
 
                 if (!shapes.isEmpty()) {
+                    // The individual shapes leave gaps between the buttons that may cause problems.
+                    // This is not a general solution, but it works where needed.
+                    Rectangle bounds = shapes.getOuterBounds();
+                    assert bounds != null;
+                    RoundRectangle2D rr = new RoundRectangle2D.Double(bounds.getX(), bounds.getY(),
+                            bounds.getWidth(), bounds.getHeight(), 8, 8);
+                    shapes = new Shapes();
+                    shapes.add(rr);
                     return shapes;
                 }
             }
@@ -885,17 +889,28 @@ public class AquaTabbedPaneUI extends AquaTabbedPaneCopyFromBasicUI
 
     private static class Shapes {
 
-        private @NotNull List<Shape> shapes = new ArrayList<>();
+        private final @NotNull List<Shape> shapes = new ArrayList<>();
+        private @Nullable Rectangle outerBounds;
 
         public void add(@NotNull Shape s) {
             Rectangle bounds = s.getBounds();
             if (bounds.width > 0 && bounds.height > 0) {
                 shapes.add(s);
+                if (outerBounds == null) {
+                    outerBounds = bounds;
+                } else {
+                    outerBounds.add(bounds);
+                }
             }
         }
 
         public boolean isEmpty() {
             return shapes.isEmpty();
+        }
+
+        public @Nullable Rectangle getOuterBounds()
+        {
+            return outerBounds;
         }
 
         public void fill(@NotNull Graphics2D g) {

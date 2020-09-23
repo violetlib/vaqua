@@ -275,8 +275,11 @@ public class AquaListUI extends BasicListUI implements AquaComponentUI, AquaView
     }
 
     private boolean getInsetValue() {
-        String value = getViewStyleProperty();
-        return "inset".equals(value);
+        if (AquaUtils.isInsetViewSupported()) {
+            String value = getViewStyleProperty();
+            return "inset".equals(value);
+        }
+        return false;
     }
 
     private void updateOpaque() {
