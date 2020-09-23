@@ -53,16 +53,15 @@ public class AquaButtonToggleUI extends AquaButtonUI {
     }
 
     // The layout parameters and rendering of a toggle button may be impacted by whether or not the button is a member
-    // of a group. Unfortunately, there are no notifications when group membership changes. To reduce overhead, we
-    // limit group membership checking to those cases where it might make a difference.
+    // of a segmented control. The linkage was first used in macOS 11.0 for certain styles of segmented controls. To
+    // avoid unnecessary overhead, the associated segmented control model is created only where it might be needed.
 
     @Override
-    public boolean isPotentiallyGroupSensitive(@NotNull AbstractButton b) {
-        // Group membership sensitivity was introduced in macOS 11 for rounded segmented buttons.
+    public boolean isPotentialSegmentedControlMember(@NotNull AbstractButton b) {
         if (OSXSystemProperties.OSVersion < 1016) {
             return false;
         }
-        String buttonType = AquaButtonExtendedTypes.getBasicButtonType(b, false);
-        return "segmented".equals(buttonType);
+
+        return AquaButtonExtendedTypes.getValidSegmentPosition(b) != null;
     }
 }

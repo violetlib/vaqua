@@ -34,10 +34,7 @@
 package org.violetlib.aqua;
 
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.FocusEvent;
-import java.awt.event.MouseEvent;
+import java.awt.event.*;
 import java.awt.geom.RoundRectangle2D;
 import java.beans.PropertyChangeEvent;
 import javax.swing.*;
@@ -83,7 +80,6 @@ public class AquaButtonUI extends BasicButtonUI
     protected static final String COLOR_CHOOSER_OWNER_PROPERTY = "Aqua.Button.ColorChooserOwner";
     protected static final String SPECIAL_ICON_PROPERTY = "Aqua.Button.SpecialIcon";
     protected static final String CACHED_TOOLBAR_STATUS_PROPERTY = "Aqua.Button.IsToolbarButton";
-    protected static final String CACHED_GROUP_MEMBERSHIP_PROPERTY = "Aqua.Button.IsGroupMember";
 
     protected static final RecyclableSingleton<AquaButtonUI> buttonUI = new RecyclableSingletonFromDefaultConstructor<>(AquaButtonUI.class);
 
@@ -371,6 +367,7 @@ public class AquaButtonUI extends BasicButtonUI
             b.addPropertyChangeListener(listener);
             b.addChangeListener(listener);
             b.addActionListener(listener);
+            b.addItemListener(listener);
         }
         if (isToolbarSensitive(b)) {
             AquaUtils.installToolbarSensitivity(b);
@@ -403,6 +400,7 @@ public class AquaButtonUI extends BasicButtonUI
         AquaButtonListener listener = (AquaButtonListener)b.getClientProperty(this);
         b.putClientProperty(this, null);
         if (listener != null) {
+            b.removeItemListener(listener);
             b.removeMouseListener(listener);
             b.removeMouseMotionListener(listener);
             b.removeFocusListener(listener);
@@ -797,7 +795,7 @@ public class AquaButtonUI extends BasicButtonUI
     // Layout Methods
     public Dimension getMinimumSize(JComponent c) {
         AbstractButton b = (AbstractButton) c;
-        updateGroupMembership(b);
+        ensureValidSegmentedControlModel(b);
         Border border = b.getBorder();
         Dimension d;
         if (border instanceof AquaButtonBorder) {
@@ -816,7 +814,7 @@ public class AquaButtonUI extends BasicButtonUI
 
     public Dimension getPreferredSize(JComponent c) {
         AbstractButton b = (AbstractButton) c;
-        updateGroupMembership(b);
+        ensureValidSegmentedControlModel(b);
         Border border = b.getBorder();
         if (border instanceof AquaButtonBorder) {
             AquaButtonBorder bb = (AquaButtonBorder) border;
@@ -835,50 +833,59 @@ public class AquaButtonUI extends BasicButtonUI
         return d;
     }
 
-    // The layout parameters and rendering of a toggle button may be impacted by whether or not the button is a member
-    // of a group. Unfortunately, there are no notifications when group membership changes. To avoid overhead, we
-    // limit group membership checking to those cases where it might make a difference. Group membership affects only
-    // toggle buttons.
-
     /**
-     * Indicate whether a button is believed to be a group member and its layout and rendering are potentially
-     * sensitive to group membership. This method relies on cached information.
+     * Return the segmented control model for a button, if any. If a current segmented control model is found, it
+     * is checked to ensure that it is still valid. If not valid, it is discarded, and a new model will be created, if
+     * possible. If an old model is discarded or a new model created, the button is reconfigured.
+     *
+     * @param b The button.
+     *
+     * @return the valid segmented control model for this button, or null if none.
      */
-    public boolean isGroupMember(@NotNull AbstractButton b) {
-        return Boolean.TRUE.equals(b.getClientProperty(CACHED_GROUP_MEMBERSHIP_PROPERTY));
+    public @Nullable SegmentedControlModel getSegmentedControlModel(@NotNull AbstractButton b) {
+        if (isPotentialSegmentedControlMember(b)) {
+            return SegmentedControlModel.getSegmentedControlModel(b);
+        }
+        return null;
     }
 
     /**
-     * Examine the button to determine if it is a group member and its layout and rendering are potentially
-     * sensitive to group membership. Update the cached information and reconfigure if needed.
+     * Ensure that the button has a valid segmented control model, if one is needed and can be created. A segmented
+     * control model may be needed if the button layout and rendering are potentially sensitive to the segmented control
+     * model. Update the cached information and reconfigure if needed.
      */
-    protected void updateGroupMembership(@NotNull AbstractButton b) {
-        if (isPotentiallyGroupSensitive(b)) {
-            boolean isActualGroupMember = identifyGroupMembership(b);
-            boolean cachedValue = isGroupMember(b);
-            if (isActualGroupMember != cachedValue) {
-                b.putClientProperty(CACHED_GROUP_MEMBERSHIP_PROPERTY, isActualGroupMember);
-                groupMembershipChanged(b);
+    protected void ensureValidSegmentedControlModel(@NotNull AbstractButton b) {
+        SegmentedControlModel ignore = getSegmentedControlModel(b);
+    }
+
+    public boolean isPotentialSegmentedControlMember(@NotNull AbstractButton b) {
+        return false;
+    }
+
+    private void toggleButtonStateChanged(@NotNull AbstractButton b) {
+        if (isPotentialSegmentedControlMember(b) && b instanceof JToggleButton) {
+            // When a segmented control button selection state changes, it may be necessary to
+            // repaint the adjacent button on the left side.
+
+            SegmentedControlModel m = getSegmentedControlModel(b);
+            if (m != null) {
+                JToggleButton tb = (JToggleButton) b;
+                JToggleButton leftButton = m.getLeftAdjacentButton(tb);
+                if (leftButton != null) {
+                    leftButton.repaint();
+                }
             }
         }
     }
 
-    private boolean identifyGroupMembership(@NotNull AbstractButton b) {
-        ButtonModel m = b.getModel();
-        if (m instanceof DefaultButtonModel) {
-            DefaultButtonModel d = (DefaultButtonModel) m;
-            return d.getGroup() != null;
-
-        }
-        return false;
+    public @Nullable JToggleButton getRightAdjacentSegmentButton(@NotNull JToggleButton b) {
+        SegmentedControlModel m = getSegmentedControlModel(b);
+        return m != null ? m.getRightAdjacentButton(b) : null;
     }
 
-    public boolean isPotentiallyGroupSensitive(@NotNull AbstractButton b) {
-        return false;
-    }
-
-    protected void groupMembershipChanged(@NotNull AbstractButton b) {
-        configure(b);
+    public @Nullable JToggleButton getLeftAdjacentSegmentButton(@NotNull JToggleButton b) {
+        SegmentedControlModel m = getSegmentedControlModel(b);
+        return m != null ? m.getLeftAdjacentButton(b) : null;
     }
 
     public boolean isToolbar(@NotNull AbstractButton b) {
@@ -891,7 +898,7 @@ public class AquaButtonUI extends BasicButtonUI
                 || b instanceof JToggleButton && !(b instanceof JCheckBox) && !(b instanceof JRadioButton);
     }
 
-    class AquaButtonListener extends BasicButtonListener implements ActionListener {
+    class AquaButtonListener extends BasicButtonListener implements ActionListener, ItemListener {
         protected AbstractButton b;
 
         public AquaButtonListener(AbstractButton b) {
@@ -908,6 +915,11 @@ public class AquaButtonUI extends BasicButtonUI
                     toggleColorChooser(b);
                 }
             }
+        }
+
+        @Override
+        public void itemStateChanged(ItemEvent e) {
+            toggleButtonStateChanged(b);
         }
 
         public void focusGained(FocusEvent e) {

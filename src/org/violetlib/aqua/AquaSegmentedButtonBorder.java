@@ -37,12 +37,11 @@ import javax.swing.*;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.violetlib.jnr.aqua.*;
-import org.violetlib.jnr.aqua.AquaUIPainter.Position;
-import org.violetlib.jnr.aqua.AquaUIPainter.SegmentedButtonWidget;
-import org.violetlib.jnr.aqua.AquaUIPainter.Size;
-import org.violetlib.jnr.aqua.AquaUIPainter.State;
-import org.violetlib.jnr.aqua.AquaUIPainter.SwitchTracking;
+import org.violetlib.jnr.aqua.AquaUIPainter;
+import org.violetlib.jnr.aqua.AquaUIPainter.*;
+import org.violetlib.jnr.aqua.GenericButtonConfiguration;
+import org.violetlib.jnr.aqua.SegmentedButtonConfiguration;
+import org.violetlib.jnr.aqua.SegmentedButtonLayoutConfiguration;
 
 import static org.violetlib.jnr.aqua.SegmentedButtonConfiguration.DividerState;
 
@@ -71,8 +70,11 @@ public class AquaSegmentedButtonBorder extends AquaButtonBorder implements Focus
     @Override
     public @NotNull SegmentedButtonWidget getButtonWidget(@NotNull AbstractButton b) {
         AquaButtonUI ui = AquaUtils.getUI(b, AquaButtonUI.class);
-        if (ui != null && ui.isGroupMember(b)) {
-            return getWidgetForGroupMember(b);
+        if (ui != null) {
+            SegmentedControlModel m = ui.getSegmentedControlModel(b);
+            if (m != null && m.getGroup() != null) {
+                return getWidgetForGroupMember(b);
+            }
         }
         return widget;
     }
@@ -135,19 +137,43 @@ public class AquaSegmentedButtonBorder extends AquaButtonBorder implements Focus
             state = state.toActive();
         }
 
-        // Swing does not know about segmented buttons. They are just buttons that happen to be arranged in a row and
-        // (hopefully) configured properly. Therefore, we cannot determine anything about the button to the left or
-        // right.
-
         Size sz = g.getSize();
         AquaUIPainter.Direction d = AquaUIPainter.Direction.NONE;
         Position pos = g.getPosition();
-        DividerState leftState = AquaSegmentedButtonBorder.getDividerState(false, false);
-        DividerState rightState = AquaSegmentedButtonBorder.getDividerState(pos == Position.FIRST
-                || pos == Position.MIDDLE, false);
+        boolean leftDividerPainted = false;
+        boolean leftDividerSelected = false;
+        boolean rightDividerPainted = pos == Position.FIRST || pos == Position.MIDDLE;
+        boolean rightDividerSelected = false;
+
+        // The divider on the right side must be suppressed in certain cases.
+
+        if (rightDividerPainted && OSXSystemProperties.OSVersion >= 1016) {
+            AbstractButton rightButton = getRightAdjacentButton(b);
+            if (rightButton != null && rightButton.isSelected() && !b.isSelected()) {
+                SegmentedButtonWidget w = getButtonWidget(rightButton);
+                if (!w.isSeparated()) {
+                    rightDividerPainted = false;
+                }
+            }
+        }
+
+        DividerState leftState = AquaSegmentedButtonBorder.getDividerState(leftDividerPainted, leftDividerSelected);
+        DividerState rightState = AquaSegmentedButtonBorder.getDividerState(rightDividerPainted, rightDividerSelected);
         AquaUIPainter.SwitchTracking tracking = isInGroup ? SwitchTracking.SELECT_ONE : SwitchTracking.SELECT_ANY;
         return new SegmentedButtonConfiguration(widget, sz, state, isSelected, isFocused, d, pos,
                 leftState, rightState, tracking);
+    }
+
+    private @Nullable AbstractButton getRightAdjacentButton(@NotNull AbstractButton b)
+    {
+        if (b instanceof JToggleButton) {
+            JToggleButton tb = (JToggleButton) b;
+            SegmentedControlModel m = SegmentedControlModel.getSegmentedControlModel(tb);
+            if (m != null) {
+                return m.getRightAdjacentButton(tb);
+            }
+        }
+        return null;
     }
 
     private @Nullable SegmentedButtonWidget getSegmentedSliderWidget() {
