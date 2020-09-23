@@ -47,7 +47,10 @@ import javax.swing.plaf.ColorUIResource;
 import javax.swing.plaf.ComponentUI;
 import javax.swing.plaf.UIResource;
 import javax.swing.plaf.basic.BasicTableUI;
-import javax.swing.table.*;
+import javax.swing.table.TableCellEditor;
+import javax.swing.table.TableCellRenderer;
+import javax.swing.table.TableColumn;
+import javax.swing.table.TableColumnModel;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -86,7 +89,6 @@ public class AquaTableUI extends BasicTableUI
     private boolean isStriped = false;
     private boolean isInset = false;
     private int insetMargin = 15;
-    private @Nullable AquaTableMarginHack.ExtendedTable extendedTable;
     protected @NotNull ContainerContextualColors colors;
     protected @Nullable AppearanceContext appearanceContext;
     protected @Nullable Color actualTableBackground;
@@ -224,10 +226,6 @@ public class AquaTableUI extends BasicTableUI
         originalBooleanEditor = installEditorIfPossible(Boolean.class, AquaBooleanEditor.class);
         isStriped = getStripedValue();
         configureAppearanceContext(null);
-        extendedTable = AquaTableMarginHack.getExtendedTable(table);
-        if (extendedTable != null) {
-            extendedTable.installDefaultMargins(0, 0);
-        }
         updateInset();
     }
 
@@ -250,9 +248,6 @@ public class AquaTableUI extends BasicTableUI
             table.setDefaultEditor(Boolean.class, originalBooleanEditor);
         }
         painter = null;
-        if (extendedTable != null) {
-            extendedTable.installDefaultMargins(0, 0);
-        }
         table.putClientProperty(INSET_VIEW_MARGIN_KEY, null);
         super.uninstallDefaults();
     }
@@ -395,9 +390,6 @@ public class AquaTableUI extends BasicTableUI
             isInset = value;
             int margin = isInset ? insetMargin : 0;
             table.putClientProperty(INSET_VIEW_MARGIN_KEY, margin);
-            if (extendedTable != null) {
-                extendedTable.installDefaultMargins(margin, margin);
-            }
             table.setRowMargin(isInset ? 0 : 1);
             table.revalidate();
             table.repaint();

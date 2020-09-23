@@ -8,100 +8,82 @@
 
 package org.violetlib.treetable.ui;
 
-import java.awt.Point;
-import java.awt.Rectangle;
-import java.util.Objects;
+import java.awt.*;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import javax.swing.*;
-import javax.swing.plaf.UIResource;
 import javax.swing.table.JTableHeader;
 import javax.swing.table.TableColumn;
 import javax.swing.table.TableColumnModel;
 import javax.swing.table.TableModel;
 
-import org.jetbrains.annotations.*;
+import org.jetbrains.annotations.NotNull;
+
+import static org.violetlib.aqua.AquaTableUI.INSET_VIEW_MARGIN_KEY;
 
 // Support side margins in a subclass of JTable
 
 public class InternalTableWithMargins
-  extends JTable
+        extends JTable
 {
-    public static class SideMargins {
-        public final int leadingMargin;
-        public final int trailingMargin;
-
-        public SideMargins(int leadingMargin, int trailingMargin)
-        {
-            this.leadingMargin = leadingMargin;
-            this.trailingMargin = trailingMargin;
-        }
-
-        @Override
-        public boolean equals(Object o)
-        {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-            SideMargins that = (SideMargins) o;
-            return leadingMargin == that.leadingMargin && trailingMargin == that.trailingMargin;
-        }
-
-        @Override
-        public int hashCode()
-        {
-            return Objects.hash(leadingMargin, trailingMargin);
-        }
-    }
-
-    public static class SideMarginsUIResource extends SideMargins implements UIResource {
-        public SideMarginsUIResource(int leadingMargin, int trailingMargin)
-        {
-            super(leadingMargin, trailingMargin);
-        }
-    }
-
     private final TableLayoutManager layoutManager = new TableLayoutManager(this);
-    private SideMargins sideMargins;  // should be non-null, but initialization may be late because of subclassing
+    private final MyPropertyChangeListener propertyChangeListener = new MyPropertyChangeListener();
 
-    public InternalTableWithMargins(TableModel dm, TableColumnModel cm, ListSelectionModel sm) {
-        super(dm, cm, sm);
-    }
+    private int margin;
 
-    public @NotNull SideMargins getSideMargins()
+    public InternalTableWithMargins(TableModel dm, TableColumnModel cm, ListSelectionModel sm)
     {
-        // updateUI is called before our constructor, so sideMargins might be null
-        if (sideMargins == null) {
-            sideMargins = new SideMarginsUIResource(0, 0);
-        }
-
-        return sideMargins;
+        super(dm, cm, sm);
+        initialize();
     }
 
-    public void setSideMargins(@NotNull SideMargins margins) {
-        SideMargins old = getSideMargins();
-        if (!margins.equals(old)) {
-            sideMargins = margins;
-            firePropertyChange("sideMargins", old, sideMargins);
-            revalidate();
-            repaint();
-            JTableHeader header = getTableHeader();
+    private void initialize()
+    {
+        addPropertyChangeListener(propertyChangeListener);
+        updateMargins();
+    }
+
+    private void updateMargins()
+    {
+        Object o = getClientProperty(INSET_VIEW_MARGIN_KEY);
+        int margin = Math.max(0, o instanceof Integer ? (Integer) o : 0);
+        if (margin != this.margin) {
+            installMargin(margin);
+        }
+    }
+
+    private void installMargin(int m)
+    {
+        margin = m;
+        revalidate();
+        repaint();
+        JTableHeader header = getTableHeader();
+        if (header != null) {
             header.revalidate();
             header.repaint();
         }
+        marginChanged(margin);
+    }
+
+    protected void marginChanged(int margin)
+    {
     }
 
     @Override
-    public void doLayout() {
+    public void doLayout()
+    {
         layoutManager.doLayout();
     }
 
     @Override
-    public void sizeColumnsToFit(int resizingColumn) {
+    public void sizeColumnsToFit(int resizingColumn)
+    {
         layoutManager.sizeColumnsToFit(resizingColumn);
     }
 
     @Override
     public int columnAtPoint(@NotNull Point point)
     {
-        int margin = getComponentOrientation().isLeftToRight() ? sideMargins.leadingMargin : sideMargins.trailingMargin;
         if (margin > 0) {
             point = new Point(point.x - margin, point.y);
         }
@@ -109,14 +91,11 @@ public class InternalTableWithMargins
     }
 
     @Override
-    public @NotNull Rectangle getCellRect(int row, int column, boolean includeSpacing) {
+    public @NotNull Rectangle getCellRect(int row, int column, boolean includeSpacing)
+    {
         Rectangle r = super.getCellRect(row, column, includeSpacing);
-        if (sideMargins != null && columnModel.getColumnCount() > 0) {
-            if (getComponentOrientation().isLeftToRight()) {
-                r.x += sideMargins.leadingMargin;
-            } else {
-                r.x += sideMargins.trailingMargin;
-            }
+        if (margin > 0 && columnModel.getColumnCount() > 0) {
+            r.x += margin;
         }
         return r;
     }
@@ -127,10 +106,25 @@ public class InternalTableWithMargins
         return new TableHeaderWithMargins(columnModel);
     }
 
+    private class MyPropertyChangeListener
+            implements PropertyChangeListener
+    {
+        @Override
+        public void propertyChange(PropertyChangeEvent evt)
+        {
+            String name = evt.getPropertyName();
+            if (name == null || name.equals(INSET_VIEW_MARGIN_KEY)) {
+                updateMargins();
+            }
+        }
+    }
+
     /**
-     * The layout manager assigns column widths.
+     The layout manager assigns column widths.
      */
-    private static class TableLayoutManager {
+
+    private static class TableLayoutManager
+    {
         private InternalTableWithMargins table;
 
         public TableLayoutManager(InternalTableWithMargins table)
@@ -138,7 +132,8 @@ public class InternalTableWithMargins
             this.table = table;
         }
 
-        public void doLayout() {
+        public void doLayout()
+        {
             TableColumn resizingColumn = getResizingColumn();
             if (resizingColumn == null) {
                 setWidthsFromPreferredWidths(false);
@@ -171,23 +166,25 @@ public class InternalTableWithMargins
             }
         }
 
-        public int getAvailableWidth() {
-            SideMargins sideMargins = table.getSideMargins();
-            return table.getWidth() - sideMargins.leadingMargin - sideMargins.trailingMargin;
+        public int getAvailableWidth()
+        {
+            return table.getWidth() - 2 * table.margin;
         }
 
-        public int getPreferredAvailableWidth() {
-            SideMargins sideMargins = table.getSideMargins();
-            return table.getPreferredSize().width - sideMargins.leadingMargin - sideMargins.trailingMargin;
+        public int getPreferredAvailableWidth()
+        {
+            return table.getPreferredSize().width - 2 * table.margin;
         }
 
-        private TableColumn getResizingColumn() {
+        private TableColumn getResizingColumn()
+        {
             JTableHeader tableHeader = table.getTableHeader();
             return (tableHeader == null) ? null
-                     : tableHeader.getResizingColumn();
+                    : tableHeader.getResizingColumn();
         }
 
-        private void setWidthsFromPreferredWidths(final boolean inverse) {
+        private void setWidthsFromPreferredWidths(final boolean inverse)
+        {
             int totalWidth     = getAvailableWidth();
             int totalPreferred = getPreferredAvailableWidth();
             int target = !inverse ? totalWidth : totalPreferred;
@@ -219,7 +216,8 @@ public class InternalTableWithMargins
         }
 
         // Distribute delta over columns, as indicated by the autoresize mode.
-        private void accommodateDelta(int resizingColumnIndex, int delta) {
+        private void accommodateDelta(int resizingColumnIndex, int delta)
+        {
             int columnCount = table.getColumnCount();
             int from = resizingColumnIndex;
             int to;
@@ -263,19 +261,21 @@ public class InternalTableWithMargins
             adjustSizes(totalWidth + delta, r, false);
         }
 
-        private interface Resizable2 {
-            public int  getElementCount();
-            public int  getLowerBoundAt(int i);
-            public int  getUpperBoundAt(int i);
-            public void setSizeAt(int newSize, int i);
+        private interface Resizable2
+        {
+            int getElementCount();
+            int getLowerBoundAt(int i);
+            int getUpperBoundAt(int i);
+            void setSizeAt(int newSize, int i);
         }
 
         private interface Resizable3 extends Resizable2
         {
-            public int  getMidPointAt(int i);
+            int getMidPointAt(int i);
         }
 
-        private void adjustSizes(long target, final Resizable3 r, boolean inverse) {
+        private void adjustSizes(long target, final Resizable3 r, boolean inverse)
+        {
             int N = r.getElementCount();
             long totalPreferred = 0;
             for(int i = 0; i < N; i++) {
@@ -313,7 +313,8 @@ public class InternalTableWithMargins
             adjustSizes(target, s, !inverse);
         }
 
-        private void adjustSizes(long target, Resizable2 r, boolean limitToRange) {
+        private void adjustSizes(long target, Resizable2 r, boolean limitToRange)
+        {
             long totalLowerBound = 0;
             long totalUpperBound = 0;
             for(int i = 0; i < r.getElementCount(); i++) {
@@ -349,7 +350,8 @@ public class InternalTableWithMargins
             }
         }
 
-        private int viewIndexForColumn(TableColumn aColumn) {
+        private int viewIndexForColumn(TableColumn aColumn)
+        {
             TableColumnModel cm = table.getColumnModel();
             for (int column = 0; column < cm.getColumnCount(); column++) {
                 if (cm.getColumn(column) == aColumn) {
@@ -361,7 +363,7 @@ public class InternalTableWithMargins
     }
 
     public static class TableHeaderWithMargins
-      extends JTableHeader
+            extends JTableHeader
     {
         public TableHeaderWithMargins(TableColumnModel cm)
         {
@@ -393,8 +395,8 @@ public class InternalTableWithMargins
         private int getLeftMargin()
         {
             if (table instanceof InternalTableWithMargins) {
-                InternalTableWithMargins.SideMargins sideMargins = ((InternalTableWithMargins) table).getSideMargins();
-                return getComponentOrientation().isLeftToRight() ? sideMargins.leadingMargin : sideMargins.trailingMargin;
+                InternalTableWithMargins t = (InternalTableWithMargins) table;
+                return t.margin;
             }
             return 0;
         }
