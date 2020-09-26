@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<project name="VAquaRendering" default="build" basedir=".">
+
+    <property name="debug" value="true"/>
+    <property name="java9.version" value="11" />
+
+    <target name="build">
+        <ant dir="release"/>
+    </target>
+
+    <target name="clean">
+        <ant dir="release" target="clean"/>
+    </target>
+
+</project>

@@ -13,10 +13,11 @@
 
     <!-- A Java 9 or later compiler is required -->
 
+    <property name="java9.version" value="9" />
     <exec executable="/usr/libexec/java_home" outputproperty="jdk" failonerror="true">
         <arg value="-F"/>
         <arg value="-v"/>
-        <arg value="9+"/>
+        <arg value="${java9.version}"/>
     </exec>
 
     <property name="javac" location="${jdk}/bin/javac"/>
