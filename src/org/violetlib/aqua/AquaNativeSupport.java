@@ -78,7 +78,7 @@ public class AquaNativeSupport {
     private static void reportError(String msg) {
         String p = System.mapLibraryName(libraryName);
         String s = "AquaNativeSupport: Unable to load library " + p + ": " + msg;
-        AquaUtils.logError(s);
+        System.err.println(s);
     }
 
     public static String findNativeLibrary(Class<?> root, String name) throws IllegalArgumentException {
