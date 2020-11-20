@@ -763,7 +763,9 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
         table.putDefaults(defaults);
 
         int version = AquaUtils.getJavaVersion();
-        if (version < 900000) {
+
+		/* This is still needed in versions after 9 if you use a menu bar embedded in a window. */
+//         if (version < 900000) {
             // prior to Java 9, the platform UI is needed to support the screen menu bar
             // the following definitions allow the platform UI to paint a non-screen menu bar
             final Color menuBackgroundColor = new ColorUIResource(Color.white);
@@ -789,6 +791,8 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
                     "MenuBar.selectedBackgroundPainter", NOTHING_BORDER,
             };
             table.putDefaults(menuBarDefaults);
+
+		if (version < 900000) {
             // In addition, the AquaLAF must be encouraged to load its native library
             try {
                 Class.forName("com.apple.laf.AquaNativeResources");

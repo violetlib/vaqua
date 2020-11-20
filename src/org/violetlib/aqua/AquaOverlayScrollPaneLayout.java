@@ -59,7 +59,8 @@ public class AquaOverlayScrollPaneLayout extends ScrollPaneLayout implements UIR
 
     @Override
     public Dimension preferredLayoutSize(Container parent) {
-        sync(parent);
+    		//Calling sync here can cause a hang sometimes when using a JEditorPane
+        //sync(parent);
         return super.preferredLayoutSize(parent);
     }
 

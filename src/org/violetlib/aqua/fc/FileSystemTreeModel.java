@@ -142,14 +142,17 @@ public class FileSystemTreeModel implements TreeModel {
      * Removes all children from the root node.
      */
     private void clear() {
-        int[] removedIndices = new int[root.getChildCount()];
-        Object[] removedChildren = new Object[removedIndices.length];
-        for (int i = 0; i < removedIndices.length; i++) {
-            removedIndices[i] = i;
-            removedChildren[i] = root.getChildAt(0);
-            root.remove(0);
-        }
-        fireTreeNodesRemoved(FileSystemTreeModel.this, new Object[]{root}, removedIndices, removedChildren);
+    		int childCount = root.getChildCount();
+    		if (childCount > 0) {
+			int[] removedIndices = new int[childCount];
+			Object[] removedChildren = new Object[removedIndices.length];
+			for (int i = 0; i < removedIndices.length; i++) {
+				removedIndices[i] = i;
+				removedChildren[i] = root.getChildAt(0);
+				root.remove(0);
+			}
+			fireTreeNodesRemoved(FileSystemTreeModel.this, new Object[]{root}, removedIndices, removedChildren);
+		}
     }
 
     public void dispose() {

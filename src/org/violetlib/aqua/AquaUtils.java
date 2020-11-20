@@ -318,16 +318,18 @@ final public class AquaUtils {
      */
     public static @NotNull Rectangle getScreenBounds(@Nullable GraphicsConfiguration gc) {
         Rectangle bounds;
+		Insets insets;
         Toolkit toolkit = Toolkit.getDefaultToolkit();
         if (gc != null) {
             // If we have GraphicsConfiguration use it to get screen bounds
             bounds = gc.getBounds();
+            insets = toolkit.getScreenInsets(gc);
         } else {
             // If we don't have GraphicsConfiguration use primary screen
             bounds = new Rectangle(toolkit.getScreenSize());
+            insets = new Insets(0,0,0,0);
         }
 
-        Insets insets = toolkit.getScreenInsets(gc);
         int top = insets.top;
         int bottom = insets.bottom;
         int left = insets.left;
