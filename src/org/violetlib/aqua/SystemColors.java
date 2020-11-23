@@ -78,6 +78,7 @@ public class SystemColors {
         colors.add("text_inactive", "text");
         colors.add("selectedText_inactive", "unemphasizedSelectedText");
         colors.add("textBackground_inactive", "textBackground");
+        colors.add("searchFieldPrompt", "text_disabled");
 
         colors.add("cellBackground", "textBackground");
         colors.add("selectedCellBackground", "selectedTextBackground");
@@ -137,6 +138,7 @@ public class SystemColors {
         colors.add("texturedWindowBackground", 212);
         colors.add("texturedWindowBackground_disabled", 246);
         colors.add("capsLockIcon", 0, 100);
+        colors.add("searchFieldPrompt", 0, 63);
 
         if (OSVersion < 1014) {
             colors.add("text_disabled", 0, 89); // was 192
@@ -473,6 +475,7 @@ public class SystemColors {
         BasicColorsBuilder colors = new BasicColorsBuilder("Dark", instrumentation, log);
 
         colors.add("capsLockIcon", 255, 96);
+        colors.add("searchFieldPrompt", 255, 63);
 
         // colors related to the unified title and toolbar window style (dark mode)
         colors.add("windowBackground_disabled", 45);
@@ -602,6 +605,8 @@ public class SystemColors {
             colors.add("selectedTexturedSegmentedText_inactive", "texturedText_inactive");
             colors.add("selectedTexturedSegmentedText_inactive_disabled", "texturedText_inactive_disabled");
 
+            colors.add("texturedSegmentedText", "controlText");
+
             colors.add("texturedSegmentedToolbarText", "texturedText");
             colors.add("texturedSegmentedToolbarText_disabled", "texturedText_disabled");
             colors.add("texturedSegmentedToolbarText_inactive", "texturedText_inactive");
@@ -681,10 +686,10 @@ public class SystemColors {
             colors.add("selectedTabText_inactive_disabled", 0, 96);
             colors.add("selectedSegmentedText_inactive", 0, 192);
         } else if (OSVersion >= 1016) {
-            colors.add("selectedSegmentedText", 0, 192);
-            colors.add("selectedSegmentedText_disabled", 0, 64);
-            colors.add("selectedSegmentedText_inactive", "selectedSegmentedText");
-            colors.add("selectedSegmentedText_inactive_disabled", "selectedSegmentedText_disabled");
+//            colors.add("selectedSegmentedText", 0, 192);
+//            colors.add("selectedSegmentedText_disabled", 0, 64);
+//            colors.add("selectedSegmentedText_inactive", "selectedSegmentedText");
+//            colors.add("selectedSegmentedText_inactive_disabled", "selectedSegmentedText_disabled");
         }
 
         colors.add("nonexclusiveText_disabled", "disabledControlText");

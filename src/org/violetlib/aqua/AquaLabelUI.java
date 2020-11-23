@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Alan Snyder.
+ * Copyright (c) 2018-2020 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -34,6 +34,7 @@
 package org.violetlib.aqua;
 
 import java.awt.*;
+import java.util.Objects;
 import javax.swing.*;
 import javax.swing.plaf.ComponentUI;
 import javax.swing.plaf.basic.BasicHTML;
@@ -45,6 +46,9 @@ import org.jetbrains.annotations.Nullable;
 import org.violetlib.jnr.aqua.AquaUIPainter;
 
 public class AquaLabelUI extends BasicLabelUI implements AquaComponentUI {
+
+    public static final String AQUA_LABEL_ROLE_PROPERTY = "Aqua.Label.Role";
+    public static final String AQUA_SEARCH_FIELD_PROMPT_ROLE_VALUE = "searchFieldPrompt";
 
     public static ComponentUI createUI(JComponent c) {
         return new AquaLabelUI();
@@ -193,20 +197,27 @@ public class AquaLabelUI extends BasicLabelUI implements AquaComponentUI {
         if (AquaMnemonicHandler.isMnemonicHidden()) {
             mnemIndex = -1;
         }
-
-        Color foreground = l.getForeground();
-
-        // Special case for TitledBorder, where the label is not in the hierarchy and has no back link
-        if (l.getParent() == null) {
-            Color defaultColor = UIManager.getColor("TitledBorder.titleColor");
-            if (foreground == defaultColor) {
-                AquaAppearance appearance = AppearanceManager.getCurrentAppearance();
-                foreground = appearance.getColor("controlText");
-                //AquaUtils.logDebug("Using default color for titled border: " + AquaColors.toString(foreground));
-            }
-        }
-
+        Color foreground = getTextColor(l);
         g.setColor(foreground);
         JavaSupport.drawStringUnderlineCharAt(l, (Graphics2D) g, s, mnemIndex, textX, textY);
+    }
+
+    protected Color getTextColor(@NotNull JLabel l) {
+        if (isSearchFieldPrompt(l)) {
+            AquaAppearance appearance = AppearanceManager.ensureAppearance(l.getParent());
+            return appearance.getColor("searchFieldPrompt");
+        } else if (l.getParent() == null) {
+            // Special case for TitledBorder, where the label is not in the hierarchy and has no back link
+            Color defaultColor = UIManager.getColor("TitledBorder.titleColor");
+            if (l.getForeground() == defaultColor) {
+                AquaAppearance appearance = AppearanceManager.getCurrentAppearance();
+                return appearance.getColor("controlText");
+            }
+        }
+        return l.getForeground();
+    }
+
+    private static boolean isSearchFieldPrompt(@NotNull JLabel l) {
+        return l.getParent() != null && Objects.equals(l.getClientProperty(AQUA_LABEL_ROLE_PROPERTY), AQUA_SEARCH_FIELD_PROMPT_ROLE_VALUE);
     }
 }

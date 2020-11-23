@@ -47,6 +47,8 @@ import org.violetlib.jnr.aqua.AquaUIPainter.State;
 import org.violetlib.jnr.aqua.AquaUIPainter.TextFieldWidget;
 import org.violetlib.jnr.aqua.TextFieldLayoutConfiguration;
 
+import static org.violetlib.aqua.AquaLabelUI.AQUA_LABEL_ROLE_PROPERTY;
+import static org.violetlib.aqua.AquaLabelUI.AQUA_SEARCH_FIELD_PROMPT_ROLE_VALUE;
 import static org.violetlib.aqua.OSXSystemProperties.OSVersion;
 
 public class AquaTextFieldSearch {
@@ -194,8 +196,8 @@ public class AquaTextFieldSearch {
 
     private static Component getPromptLabel(JTextComponent c) {
         JLabel label = new JLabel();
-        label.setForeground(UIManager.getColor("TextField.inactiveForeground"));
-        label.setFont(null);    // use the same font as the text field
+        label.putClientProperty(AQUA_LABEL_ROLE_PROPERTY, AQUA_SEARCH_FIELD_PROMPT_ROLE_VALUE);
+        label.setFont(null);  // use the same font as the text field
 
         c.getDocument().addDocumentListener(new DocumentListener() {
             public void changedUpdate(DocumentEvent e) { updatePromptLabel(label, c); }
