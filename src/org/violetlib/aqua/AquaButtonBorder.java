@@ -45,11 +45,12 @@ import org.violetlib.jnr.Insets2D;
 import org.violetlib.jnr.Insetter;
 import org.violetlib.jnr.LayoutInfo;
 import org.violetlib.jnr.aqua.*;
+import org.violetlib.jnr.aqua.AquaUIPainter.GenericButtonWidget;
 import org.violetlib.jnr.aqua.AquaUIPainter.Size;
 import org.violetlib.jnr.aqua.AquaUIPainter.State;
-import org.violetlib.jnr.aqua.AquaUIPainter.GenericButtonWidget;
 
-import static org.violetlib.aqua.AquaButtonUI.*;
+import static org.violetlib.aqua.AquaButtonUI.getDefaultFontPropertyValue;
+import static org.violetlib.aqua.AquaButtonUI.isColorWell;
 import static org.violetlib.jnr.aqua.AquaUIPainter.ButtonState.OFF;
 import static org.violetlib.jnr.aqua.AquaUIPainter.ButtonState.ON;
 
@@ -183,7 +184,7 @@ public abstract class AquaButtonBorder extends AquaBorder implements FocusRingOu
             return State.PRESSED;
         }
 
-        if (model.isRollover()) {
+        if (b.isRolloverEnabled() && isRollover(b)) {
             return State.ROLLOVER;
         }
 
@@ -194,13 +195,19 @@ public abstract class AquaButtonBorder extends AquaBorder implements FocusRingOu
         return State.ACTIVE;
     }
 
+    protected boolean isRollover(@NotNull AbstractButton b)
+    {
+        ButtonModel model = b.getModel();
+        return model.isRollover();
+    }
+
     public boolean allowsContent() {
         return true;
     }
 
     public boolean isRolloverEnabled(AbstractButton b) {
         AquaButtonExtendedTypes.WidgetInfo info = getWidgetInfo(b);
-        return info != null && info.isRolloverEnabled();
+        return info.isRolloverEnabled();
     }
 
     /**

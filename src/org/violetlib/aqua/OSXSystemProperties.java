@@ -19,6 +19,8 @@ import java.util.List;
  */
 public class OSXSystemProperties {
 
+    public static int simulatedOSVersion = 0;  // must come before OSVersion
+
     public final static int OSVersion = getOSVersion();  // for example: 1014 = macOS 10.14
 
     private static boolean hasBeenSynchronized;
@@ -29,6 +31,12 @@ public class OSXSystemProperties {
     private static final List<ChangeListener> changeListeners = new ArrayList<>();
 
     private static int getOSVersion() {
+
+        if (simulatedOSVersion > 0) {
+            System.err.println("Using simulated OS Version: " + simulatedOSVersion);
+            return simulatedOSVersion;
+        }
+
         String s = System.getProperty("os.version");
         int p = s.indexOf('.');
         int major = Integer.parseInt(s.substring(0, p));

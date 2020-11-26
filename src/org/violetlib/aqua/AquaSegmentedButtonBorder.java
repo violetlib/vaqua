@@ -37,11 +37,8 @@ import javax.swing.*;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.violetlib.jnr.aqua.AquaUIPainter;
+import org.violetlib.jnr.aqua.*;
 import org.violetlib.jnr.aqua.AquaUIPainter.*;
-import org.violetlib.jnr.aqua.GenericButtonConfiguration;
-import org.violetlib.jnr.aqua.SegmentedButtonConfiguration;
-import org.violetlib.jnr.aqua.SegmentedButtonLayoutConfiguration;
 
 import static org.violetlib.jnr.aqua.SegmentedButtonConfiguration.DividerState;
 
@@ -69,24 +66,7 @@ public class AquaSegmentedButtonBorder extends AquaButtonBorder implements Focus
 
     @Override
     public @NotNull SegmentedButtonWidget getButtonWidget(@NotNull AbstractButton b) {
-        AquaButtonUI ui = AquaUtils.getUI(b, AquaButtonUI.class);
-        if (ui != null) {
-            SegmentedControlModel m = ui.getSegmentedControlModel(b);
-            if (m != null && m.getGroup() != null) {
-                return getWidgetForGroupMember(b);
-            }
-        }
-        return widget;
-    }
-
-    private @NotNull SegmentedButtonWidget getWidgetForGroupMember(@NotNull AbstractButton b) {
-        // Special case for exclusive rounded buttons starting in macOS 11
-        if (OSXSystemProperties.OSVersion >= 1016 && widget == SegmentedButtonWidget.BUTTON_SEGMENTED) {
-            SegmentedButtonWidget w = getSegmentedSliderWidget();
-            if (w != null) {
-                return w;
-            }
-        }
+        // For layout purposes, the standard widget is sufficient
         return widget;
     }
 
@@ -122,7 +102,7 @@ public class AquaSegmentedButtonBorder extends AquaButtonBorder implements Focus
             }
         }
 
-        SegmentedButtonWidget widget = getButtonWidget(b);
+        SegmentedButtonWidget widget = SegmentedControlModel.getWidget(b, g);
         boolean isInGroup = isButtonInGroup(b);
 
         // Special case for exclusive textured segmented buttons in light mode on 10.14: make them active-insensitive.
@@ -147,11 +127,11 @@ public class AquaSegmentedButtonBorder extends AquaButtonBorder implements Focus
 
         // The divider on the right side must be suppressed in certain cases.
 
-        if (rightDividerPainted && OSXSystemProperties.OSVersion >= 1016) {
-            AbstractButton rightButton = getRightAdjacentButton(b);
+        if (rightDividerPainted) {
+            AbstractButton rightButton = SegmentedControlModel.getRightAdjacentButton(b);
             if (rightButton != null && rightButton.isSelected() && !b.isSelected()) {
-                SegmentedButtonWidget w = getButtonWidget(rightButton);
-                if (!w.isSeparated()) {
+                SegmentedButtonWidget w = getButtonWidgetForPainting(rightButton);
+                if (w != null && w.isSlider()) {
                     rightDividerPainted = false;
                 }
             }
@@ -164,25 +144,14 @@ public class AquaSegmentedButtonBorder extends AquaButtonBorder implements Focus
                 leftState, rightState, tracking);
     }
 
-    private @Nullable AbstractButton getRightAdjacentButton(@NotNull AbstractButton b)
-    {
-        if (b instanceof JToggleButton) {
-            JToggleButton tb = (JToggleButton) b;
-            SegmentedControlModel m = SegmentedControlModel.getSegmentedControlModel(tb);
-            if (m != null) {
-                return m.getRightAdjacentButton(tb);
-            }
-        }
-        return null;
+    private @Nullable SegmentedButtonWidget getButtonWidgetForPainting(@NotNull AbstractButton b) {
+        LayoutConfiguration g = getLayoutConfiguration(b);
+        return g != null ? SegmentedControlModel.getWidget(b, g) : null;
     }
 
-    private @Nullable SegmentedButtonWidget getSegmentedSliderWidget() {
-        // This field was introduced in release 10 of VAquaRendering
-        try {
-            return SegmentedButtonWidget.BUTTON_SEGMENTED_SLIDER;
-        } catch (NoSuchFieldError e) {
-            return null;
-        }
+    @Override
+    protected boolean isRollover(@NotNull AbstractButton b) {
+        return SegmentedControlModel.isRollover(b);
     }
 
     @Override

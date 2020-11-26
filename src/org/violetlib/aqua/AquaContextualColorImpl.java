@@ -36,6 +36,7 @@ public class AquaContextualColorImpl implements ContextualColor {
 
     protected @Nullable String selectedName;
     protected @Nullable String pressedSelectedName;
+    protected @Nullable String rolloverSelectedName;
     protected @Nullable String inactiveSelectedName;
     protected @Nullable String disabledSelectedName;
     protected @Nullable String inactiveDisabledSelectedName;
@@ -82,6 +83,7 @@ public class AquaContextualColorImpl implements ContextualColor {
     public void setAllSelectedNames(@NotNull String selectedName) {
         this.selectedName = selectedName;
         this.pressedSelectedName = selectedName + "_pressed";
+        this.rolloverSelectedName = selectedName + "_rollover";
         this.inactiveSelectedName = selectedName + "_inactive";
         this.disabledSelectedName = selectedName + "_disabled";
         this.inactiveDisabledSelectedName = selectedName + "_inactive_disabled";
@@ -110,6 +112,14 @@ public class AquaContextualColorImpl implements ContextualColor {
 
     public void setPressedSelectedName(@Nullable String pressedSelectedName) {
         this.pressedSelectedName = pressedSelectedName;
+    }
+
+    public @Nullable String getRolloverSelectedName() {
+        return rolloverSelectedName;
+    }
+
+    public void setRolloverSelectedName(@Nullable String rolloverSelectedName) {
+        this.rolloverSelectedName = rolloverSelectedName;
     }
 
     public @Nullable String getPressedName() {
@@ -213,6 +223,12 @@ public class AquaContextualColorImpl implements ContextualColor {
         }
 
         if (state == ROLLOVER) {
+            if (isSelected && rolloverSelectedName != null) {
+                Color c = appearance.getColor(rolloverSelectedName);
+                if (c != null) {
+                    return c;
+                }
+            }
             if (rolloverName != null) {
                 Color c = appearance.getColor(rolloverName);
                 if (c != null) {

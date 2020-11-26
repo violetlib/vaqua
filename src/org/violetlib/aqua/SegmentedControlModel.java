@@ -17,6 +17,10 @@ import javax.swing.*;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.violetlib.jnr.aqua.AquaUIPainter;
+import org.violetlib.jnr.aqua.LayoutConfiguration;
+
+import static org.violetlib.jnr.aqua.AquaUIPainter.SegmentedButtonWidget;
 
 /**
  * A model of a segmented control. A segmented control model is created as needed when there are potential interactions
@@ -27,12 +31,34 @@ import org.jetbrains.annotations.Nullable;
 
 public class SegmentedControlModel {
 
+    // The rendering of a toggle button that is a member of a segmented control may be affected by the other buttons in
+    // the control:
+
+    // The rendering of a divider, although painted by the button on the left side, may be affected by the state of the
+    // button on the right side. Although this linkage has always existed, it is particularly noticeable in the slider
+    // style introduced in macOS 11.
+
+    // In macOS 11, textured segmented buttons on toolbars render differently depending upon whether or not any of the
+    // buttons include text labels: a segmented control that is all iconic does not paint an outline. This distinction
+    // is represented in VAqua using distinct segmented button widgets. Although the segmented control membership
+    // affects the choice of segmented button widget, it does not affect layout.
+
+    // In macOS 11, when the mouse moves over a textured segmented control on the toolbar. all of the buttons react.
+
+    // In macOS 11, a default segmented control uses a slider style if the control contains more than one button.
+
+    // To provide the necessary information, a model of a segmented control is created by reverse engineering the
+    // component tree. To avoid unnecessary overhead, the model is created only where it might be needed, and only in
+    // macOS 11 or later.
+
     protected static final Map<Container,SegmentedControlModel> parentCache = new HashMap<>();
 
     private final @NotNull Container parent;
     private final @NotNull JToggleButton @NotNull [] buttons;
     private final @Nullable ButtonGroup group;
+    private final boolean isAllIcon;
     private boolean isValid = true;
+    private boolean lastRolloverState;
 
     private final @NotNull ContainerListener myContainerListener;
     private final @NotNull ComponentListener myComponentListener;
@@ -40,10 +66,12 @@ public class SegmentedControlModel {
 
     private SegmentedControlModel(@NotNull Container parent,
                                   @NotNull JToggleButton @NotNull [] buttons,
-                                  @Nullable ButtonGroup group) {
+                                  @Nullable ButtonGroup group,
+                                  boolean isAllIcon) {
         this.parent = parent;
         this.buttons = buttons;
         this.group = group;
+        this.isAllIcon = isAllIcon;
 
         parentCache.put(parent, this);
 
@@ -89,6 +117,9 @@ public class SegmentedControlModel {
                         || name.equals(AquaButtonUI.BUTTON_TYPE)
                         || name.equals(AquaButtonUI.SEGMENTED_BUTTON_POSITION)) {
                     invalidate();
+                } else if (name.equals(AbstractButton.TEXT_CHANGED_PROPERTY)
+                        || name.equals(AbstractButton.ICON_CHANGED_PROPERTY)) {
+                    validateAllIconStatus();
                 }
             }
         };
@@ -114,6 +145,39 @@ public class SegmentedControlModel {
 
     public @Nullable ButtonGroup getGroup() {
         return group;
+    }
+
+    public boolean isExclusive() {
+        return group != null;
+    }
+
+    public boolean isAllIcon() {
+        return isAllIcon;
+    }
+
+    public boolean isRollover() {
+        JToggleButton first = buttons[0];
+        if (!first.isRolloverEnabled()) {
+            return false;
+        }
+        boolean isRollover = getRolloverState();
+        if (isRollover != lastRolloverState) {
+            for (JToggleButton b : buttons) {
+                b.repaint();
+            }
+        }
+        lastRolloverState = isRollover;
+        return isRollover;
+    }
+
+    private boolean getRolloverState() {
+        for (JToggleButton b : buttons) {
+            ButtonModel model = b.getModel();
+            if (model.isRollover()) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public @Nullable JToggleButton getLeftAdjacentButton(@NotNull JToggleButton button) {
@@ -168,6 +232,32 @@ public class SegmentedControlModel {
         }
     }
 
+    private void validateAllIconStatus() {
+        boolean b = computeIsAllIcon(buttons);
+        if (b != isAllIcon) {
+            invalidate();
+        }
+    }
+
+    /**
+     * Determine if all of the specified buttons have icons and no buttons have text labels. A segmented control that is
+     * all icons may be rendered differently. For example, on a macOS 11 toolbar, no outline is used.
+     */
+
+    private static boolean computeIsAllIcon(@NotNull JToggleButton @NotNull [] buttons) {
+        for (JToggleButton b : buttons) {
+            Icon ic = b.getIcon();
+            if (ic == null) {
+                return false;
+            }
+            String text = b.getText();
+            if (text != null && !text.isEmpty()) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     private boolean buttonGroupsHaveChanged() {
         for (JToggleButton b : buttons) {
             ButtonGroup g = getButtonGroup(b);
@@ -180,6 +270,108 @@ public class SegmentedControlModel {
 
     public void detach() {
         invalidate();
+    }
+
+    /**
+     * If the specified button is a member of a segmented control, return the button that is adjacent on the left
+     * side. This method is supported only where necessary to support proper rendering of segmented controls.
+     * @param b The button.
+     * @return the adjacent button, or null if none or not supported.
+     */
+    public static @Nullable JToggleButton getLeftAdjacentButton(@NotNull AbstractButton b) {
+        if (isPotentialSegmentedControlMember(b)) {
+            SegmentedControlModel m = getSegmentedControlModel(b);
+            if (m != null) {
+                JToggleButton tb = (JToggleButton) b;
+                return m.getLeftAdjacentButton(tb);
+            }
+        }
+        return null;
+    }
+
+    /**
+     * If the specified button is a member of a segmented control, return the button that is adjacent on the right
+     * side. This method is supported only where necessary to support proper rendering of segmented controls.
+     * @param b The button.
+     * @return the adjacent button, or null if none or not supported.
+     */
+    public static @Nullable JToggleButton getRightAdjacentButton(@NotNull AbstractButton b) {
+        if (isPotentialSegmentedControlMember(b)) {
+            SegmentedControlModel m = getSegmentedControlModel(b);
+            if (m != null) {
+                JToggleButton tb = (JToggleButton) b;
+                return m.getRightAdjacentButton(tb);
+            }
+        }
+        return null;
+    }
+
+    public static boolean isPotentialSegmentedControlMember(@NotNull AbstractButton b) {
+        if (OSXSystemProperties.OSVersion < 1016) {
+            return false;
+        }
+
+        return b instanceof JToggleButton && AquaButtonExtendedTypes.getValidSegmentPosition(b) != null;
+    }
+
+    /**
+     * Return the segmented button widget to use when painting a segmented control button. This method handles the cases
+     * where the choice of widget depends upon the containing segmented control.
+     * @param b The button.
+     * @param g The layout configuration for the button.
+     * @return the widget to use.
+     */
+    public static @NotNull SegmentedButtonWidget getWidget(@NotNull AbstractButton b, @NotNull LayoutConfiguration g)
+    {
+        SegmentedButtonWidget defaultWidget = (SegmentedButtonWidget) g.getWidget();
+        if (OSXSystemProperties.OSVersion >= 1016) {
+            SegmentedControlModel m = SegmentedControlModel.getSegmentedControlModel(b);
+            if (m != null) {
+                return getWidget(m, defaultWidget);
+            }
+        }
+        return defaultWidget;
+    }
+
+    private static @NotNull SegmentedButtonWidget getWidget(@NotNull SegmentedControlModel m,
+                                                            @NotNull SegmentedButtonWidget standardWidget) {
+        if (m.isExclusive()) {
+            if (standardWidget == SegmentedButtonWidget.BUTTON_SEGMENTED) {
+                // Special case for the default style of exclusive segmented controls starting in macOS 11
+                return VAquaRenderingAccess.SLIDER_WIDGET;
+            } else if (standardWidget == AquaUIPainter.SegmentedButtonWidget.BUTTON_SEGMENTED_TEXTURED_TOOLBAR) {
+                // Special case for exclusive textured segmented controls on the toolbar starting in macOS 11
+                if (m.isAllIcon()) {
+                    return VAquaRenderingAccess.SLIDER_TOOLBAR_ICONS_WIDGET;
+                } else {
+                    return VAquaRenderingAccess.SLIDER_TOOLBAR_WIDGET;
+                }
+            } else if (standardWidget == SegmentedButtonWidget.BUTTON_SEGMENTED_TEXTURED_SEPARATED_TOOLBAR) {
+                if (m.isAllIcon()) {
+                    return VAquaRenderingAccess.TEXTURED_SEPARATED_TOOLBAR_ICONS_WIDGET;
+                }
+            }
+        } else if (m.isAllIcon()) {
+            // Special case for non-exclusive textured segmented controls on the toolbar starting in macOS 11
+            if (standardWidget == SegmentedButtonWidget.BUTTON_SEGMENTED_TEXTURED_TOOLBAR) {
+                return VAquaRenderingAccess.TEXTURED_TOOLBAR_ICONS_WIDGET;
+            } else if (standardWidget == SegmentedButtonWidget.BUTTON_SEGMENTED_TEXTURED_SEPARATED_TOOLBAR) {
+                return VAquaRenderingAccess.TEXTURED_SEPARATED_TOOLBAR_ICONS_WIDGET;
+            }
+        }
+
+        return standardWidget;
+    }
+
+    public static boolean isRollover(@NotNull AbstractButton b) {
+        if (isPotentialSegmentedControlMember(b)) {
+            SegmentedControlModel m = getSegmentedControlModel(b);
+            if (m != null) {
+                return m.isRollover();
+            }
+        }
+        ButtonModel model = b.getModel();
+        return model.isRollover();
     }
 
     /**
@@ -254,7 +446,8 @@ public class SegmentedControlModel {
             if (buttonsAreAdjacent(buttons) && hasUniformStyle(buttons) && hasValidPositions(buttons)) {
                 JToggleButton[] buttonArray = buttons.toArray(new JToggleButton[0]);
                 ButtonGroup group = identifyButtonGroup(buttons);
-                return new SegmentedControlModel(parent, buttonArray, group);
+                boolean isAllIcon = computeIsAllIcon(buttonArray);
+                return new SegmentedControlModel(parent, buttonArray, group, isAllIcon);
             }
         }
         return null;

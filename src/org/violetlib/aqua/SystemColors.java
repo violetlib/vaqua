@@ -274,6 +274,7 @@ public class SystemColors {
             colors.add("selectedNonexclusiveTexturedText_disabled", 37, 125, 252, 120);
         } else {
             colors.add("selectedNonexclusiveTexturedText", "controlAccent");
+            colors.add("selectedNonexclusiveTexturedText_rollover", "controlAccent");
             colors.add("selectedNonexclusiveTexturedText_disabled", "controlAccent_disabled");
             colors.add("selectedNonexclusiveTexturedText_inactive", "segmentedText_disabled");
         }
@@ -286,6 +287,7 @@ public class SystemColors {
             colors.add("selectedTexturedSegmentedToolbarText", 0, 192);
             colors.add("texturedSegmentedToolbarText", 0, 178);
             colors.add("selectedNonexclusiveTexturedToolbarText_inactive", 0, 152);
+            colors.add("selectedNonexclusiveTexturedToolbarText_rollover", "controlAccent");
             colors.add("nonexclusiveTexturedToolbarText_inactive", 0, 86);
             colors.add("texturedSegmentedToolbarText_inactive", 0, 86);
             colors.add("nonexclusiveTexturedToolbarText_disabled", 0, 86);
@@ -569,6 +571,7 @@ public class SystemColors {
 
         colors.add("nonexclusiveTexturedText", 0, 224);
         colors.add("selectedNonexclusiveTexturedText", "controlAccent_rollover");
+        colors.add("selectedNonexclusiveTexturedText_rollover", "controlAccent_rollover");
         colors.add("selectedNonexclusiveTexturedText_disabled", "controlAccent_disabled");
         colors.add("selectedNonexclusiveTexturedText_inactive", 0, 96);
         colors.add("selectedNonexclusiveTexturedText_inactive_disabled", 0, 48);
@@ -634,6 +637,7 @@ public class SystemColors {
             colors.add("nonexclusiveTexturedToolbarText_inactive_disabled", 255, 32);
             colors.add("selectedTexturedSegmentedToolbarText_inactive_disabled", 255, 16);
             colors.add("texturedSegmentedToolbarText_inactive_disabled", 255, 32);
+            colors.add("selectedNonexclusiveTexturedToolbarText_rollover", "controlAccent_rollover");
         }
 
         // colors related to recessed buttons (dark mode)

@@ -158,8 +158,10 @@ public class AquaButtonExtendedTypes {
         return null;
     }
 
-    public static WidgetInfo getTabWidgetInfo(AquaUIPainter.Size sz, Position pos) {
-        return widgetDefinitions.get().get(BUTTON_TAB);
+    public static WidgetInfo getTabWidgetInfo(@NotNull SegmentedButtonWidget widget,
+                                              AquaUIPainter.Size sz,
+                                              Position pos) {
+        return getWidgetDefinitions().get(widget);
     }
 
     protected static @NotNull String getRealPositionForLogicalPosition(@NotNull String logicalPosition,
@@ -222,7 +224,7 @@ public class AquaButtonExtendedTypes {
 
         /**
          * Create a specifier for a segmented button. The widget may be superseded in some cases based on the group
-         * membership of the button at the time the widget is used.
+         * membership and the text/icon attributes of the button at the time the widget is used.
          */
         public SegmentedTypeSpecifier(@NotNull String name,
                                       @NotNull SegmentedButtonWidget widget,
@@ -297,7 +299,7 @@ public class AquaButtonExtendedTypes {
     protected final static WidgetInfo defaultSegmentedButtonWidgetInfo = new WidgetInfo(AquaColors.CLEAR_CONTROL_COLORS).withSegmented();
 
     public static @NotNull WidgetInfo getWidgetInfo(Object widget) {
-        WidgetInfo info = widgetDefinitions.get().get(widget);
+        WidgetInfo info = getWidgetDefinitions().get(widget);
         if (info != null) {
             return info;
         }
@@ -315,6 +317,13 @@ public class AquaButtonExtendedTypes {
             return getAllWidgets();
         }
     };
+
+    private static @NotNull Map<Object, WidgetInfo> getWidgetDefinitions()
+    {
+        Map<Object, WidgetInfo> defs = widgetDefinitions.get();
+        assert defs != null;
+        return defs;
+    }
 
     @FunctionalInterface
     protected interface FontFinder {
@@ -535,6 +544,10 @@ public class AquaButtonExtendedTypes {
                 .withNonexclusiveSelectionColors(AquaColors.TEXTURED_TOOLBAR_NONEXCLUSIVE_COLORS)
                 ;
 
+        if (OSXSystemProperties.OSVersion >= 1016) {
+            texturedToolbar = texturedToolbar.withRolloverEnabled();
+        }
+
         result.put(BUTTON_TEXTURED, textured);
         result.put(BUTTON_TEXTURED_TOOLBAR, texturedToolbar);
         result.put(BUTTON_ROUND_TEXTURED, textured);
@@ -548,6 +561,7 @@ public class AquaButtonExtendedTypes {
         result.put(BUTTON_SEGMENTED_TEXTURED, segmentedTextured);
         result.put(BUTTON_SEGMENTED_TEXTURED_SEPARATED, segmentedTextured);
         result.put(BUTTON_SEGMENTED_TEXTURED_TOOLBAR, segmentedTexturedToolbar);
+        result.put(BUTTON_SEGMENTED_TEXTURED_TOOLBAR_ICONS, segmentedTexturedToolbar);
         result.put(BUTTON_SEGMENTED_TEXTURED_SEPARATED_TOOLBAR, segmentedTexturedToolbar);
 
         WidgetInfo segmentedGradient = gradient.copy().withSegmented()

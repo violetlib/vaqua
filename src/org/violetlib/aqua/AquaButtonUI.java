@@ -522,12 +522,12 @@ public class AquaButtonUI extends BasicButtonUI
     }
 
     public static void paintIconAndText(@NotNull Graphics2D g,
-                                          @NotNull AbstractButton b,
-                                          @NotNull Insets insets,
-                                          @Nullable Icon icon,
-                                          @NotNull Color textColor,
-                                          @NotNull Rectangle viewRect,
-                                          @Nullable Dimension iconSize) {
+                                        @NotNull AbstractButton b,
+                                        @NotNull Insets insets,
+                                        @Nullable Icon icon,
+                                        @NotNull Color textColor,
+                                        @NotNull Rectangle viewRect,
+                                        @Nullable Dimension iconSize) {
         Rectangle iconRect = new Rectangle();
         Rectangle textRect = new Rectangle();
         String text = AquaButtonUI.layoutAndGetText(g, b, insets, viewRect, iconRect, textRect, iconSize);
@@ -795,7 +795,6 @@ public class AquaButtonUI extends BasicButtonUI
     // Layout Methods
     public Dimension getMinimumSize(JComponent c) {
         AbstractButton b = (AbstractButton) c;
-        ensureValidSegmentedControlModel(b);
         Border border = b.getBorder();
         Dimension d;
         if (border instanceof AquaButtonBorder) {
@@ -814,7 +813,6 @@ public class AquaButtonUI extends BasicButtonUI
 
     public Dimension getPreferredSize(JComponent c) {
         AbstractButton b = (AbstractButton) c;
-        ensureValidSegmentedControlModel(b);
         Border border = b.getBorder();
         if (border instanceof AquaButtonBorder) {
             AquaButtonBorder bb = (AquaButtonBorder) border;
@@ -833,59 +831,11 @@ public class AquaButtonUI extends BasicButtonUI
         return d;
     }
 
-    /**
-     * Return the segmented control model for a button, if any. If a current segmented control model is found, it
-     * is checked to ensure that it is still valid. If not valid, it is discarded, and a new model will be created, if
-     * possible. If an old model is discarded or a new model created, the button is reconfigured.
-     *
-     * @param b The button.
-     *
-     * @return the valid segmented control model for this button, or null if none.
-     */
-    public @Nullable SegmentedControlModel getSegmentedControlModel(@NotNull AbstractButton b) {
-        if (isPotentialSegmentedControlMember(b)) {
-            return SegmentedControlModel.getSegmentedControlModel(b);
-        }
-        return null;
-    }
-
-    /**
-     * Ensure that the button has a valid segmented control model, if one is needed and can be created. A segmented
-     * control model may be needed if the button layout and rendering are potentially sensitive to the segmented control
-     * model. Update the cached information and reconfigure if needed.
-     */
-    protected void ensureValidSegmentedControlModel(@NotNull AbstractButton b) {
-        SegmentedControlModel ignore = getSegmentedControlModel(b);
-    }
-
-    public boolean isPotentialSegmentedControlMember(@NotNull AbstractButton b) {
-        return false;
-    }
-
     private void toggleButtonStateChanged(@NotNull AbstractButton b) {
-        if (isPotentialSegmentedControlMember(b) && b instanceof JToggleButton) {
-            // When a segmented control button selection state changes, it may be necessary to
-            // repaint the adjacent button on the left side.
-
-            SegmentedControlModel m = getSegmentedControlModel(b);
-            if (m != null) {
-                JToggleButton tb = (JToggleButton) b;
-                JToggleButton leftButton = m.getLeftAdjacentButton(tb);
-                if (leftButton != null) {
-                    leftButton.repaint();
-                }
-            }
+        JToggleButton leftButton = SegmentedControlModel.getLeftAdjacentButton(b);
+        if (leftButton != null) {
+            leftButton.repaint();
         }
-    }
-
-    public @Nullable JToggleButton getRightAdjacentSegmentButton(@NotNull JToggleButton b) {
-        SegmentedControlModel m = getSegmentedControlModel(b);
-        return m != null ? m.getRightAdjacentButton(b) : null;
-    }
-
-    public @Nullable JToggleButton getLeftAdjacentSegmentButton(@NotNull JToggleButton b) {
-        SegmentedControlModel m = getSegmentedControlModel(b);
-        return m != null ? m.getLeftAdjacentButton(b) : null;
     }
 
     public boolean isToolbar(@NotNull AbstractButton b) {
