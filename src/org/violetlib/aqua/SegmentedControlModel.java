@@ -246,14 +246,22 @@ public class SegmentedControlModel {
 
     private static boolean computeIsAllIcon(@NotNull JToggleButton @NotNull [] buttons) {
         for (JToggleButton b : buttons) {
-            Icon ic = b.getIcon();
-            if (ic == null) {
+            if (!isIconOnly(b)) {
                 return false;
             }
-            String text = b.getText();
-            if (text != null && !text.isEmpty()) {
-                return false;
-            }
+        }
+        return true;
+    }
+
+    private static boolean isIconOnly(@NotNull AbstractButton b)
+    {
+        Icon ic = b.getIcon();
+        if (ic == null) {
+            return false;
+        }
+        String text = b.getText();
+        if (text != null && !text.isEmpty()) {
+            return false;
         }
         return true;
     }
@@ -316,25 +324,41 @@ public class SegmentedControlModel {
 
     /**
      * Return the segmented button widget to use when painting a segmented control button. This method handles the cases
-     * where the choice of widget depends upon the containing segmented control.
+     * where the choice of widget depends upon the segmented control that the button belongs to.
      * @param b The button.
      * @param g The layout configuration for the button.
      * @return the widget to use.
      */
     public static @NotNull SegmentedButtonWidget getWidget(@NotNull AbstractButton b, @NotNull LayoutConfiguration g)
     {
-        SegmentedButtonWidget defaultWidget = (SegmentedButtonWidget) g.getWidget();
+        SegmentedButtonWidget standardWidget = (SegmentedButtonWidget) g.getWidget();
         if (OSXSystemProperties.OSVersion >= 1016) {
-            SegmentedControlModel m = SegmentedControlModel.getSegmentedControlModel(b);
-            if (m != null) {
-                return getWidget(m, defaultWidget);
+            SegmentedButtonWidget special = getSpecialWidget(b, standardWidget);
+            if (special != null) {
+                return special;
             }
         }
-        return defaultWidget;
+        return standardWidget;
     }
 
-    private static @NotNull SegmentedButtonWidget getWidget(@NotNull SegmentedControlModel m,
-                                                            @NotNull SegmentedButtonWidget standardWidget) {
+    public static @Nullable SegmentedButtonWidget getSpecialWidget(@NotNull AbstractButton b,
+                                                                   @NotNull SegmentedButtonWidget standardWidget) {
+        SegmentedControlModel m = SegmentedControlModel.getSegmentedControlModel(b);
+        if (m != null) {
+            return getSpecialWidget(m, standardWidget);
+        } else if ("only".equals(AquaButtonExtendedTypes.getValidSegmentPosition(b)) && isIconOnly(b)) {
+            // A solo segmented button must be "select any"
+            if (standardWidget == SegmentedButtonWidget.BUTTON_SEGMENTED_TEXTURED_TOOLBAR) {
+                return VAquaRenderingAccess.TEXTURED_TOOLBAR_ICONS_WIDGET;
+            } else if (standardWidget == SegmentedButtonWidget.BUTTON_SEGMENTED_TEXTURED_SEPARATED_TOOLBAR) {
+                return VAquaRenderingAccess.TEXTURED_SEPARATED_TOOLBAR_ICONS_WIDGET;
+            }
+        }
+        return null;
+    }
+
+    private static @Nullable SegmentedButtonWidget getSpecialWidget(@NotNull SegmentedControlModel m,
+                                                                    @NotNull SegmentedButtonWidget standardWidget) {
         if (m.isExclusive()) {
             if (standardWidget == SegmentedButtonWidget.BUTTON_SEGMENTED) {
                 // Special case for the default style of exclusive segmented controls starting in macOS 11
@@ -360,7 +384,7 @@ public class SegmentedControlModel {
             }
         }
 
-        return standardWidget;
+        return null;
     }
 
     public static boolean isRollover(@NotNull AbstractButton b) {
