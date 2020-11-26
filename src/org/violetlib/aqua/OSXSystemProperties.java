@@ -47,10 +47,6 @@ public class OSXSystemProperties {
     }
 
     public static boolean useInsetViewStyle() {
-        if (true) {
-            // debug
-            return OSVersion >= 1014;
-        }
         return OSVersion >= 1016;
     }
 

@@ -50,7 +50,10 @@
 //        backgroundView.frame.size.width,
 //        backgroundView.frame.size.height);
 
-    BOOL useInset = YES;  // TBD: limit to 10.16+
+    BOOL useInset = NO;
+    if (@available(macOS 10.16, *)) {
+        useInset = YES;
+    }
 
     for (index = 0; index < count; index++) {
         int y = *p++;
@@ -70,7 +73,6 @@
             v.blendingMode = NSVisualEffectBlendingModeBehindWindow;
             v.material = selectionMaterial;
             if (useInset) {
-                // The following works on macOS 11, but does nothing on 10.14
                 v.layer.cornerRadius = 5;
                 v.layer.masksToBounds = YES;
             }
