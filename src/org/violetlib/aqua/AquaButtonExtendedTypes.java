@@ -551,7 +551,7 @@ public class AquaButtonExtendedTypes {
         result.put(BUTTON_TEXTURED, textured);
         result.put(BUTTON_TEXTURED_TOOLBAR, texturedToolbar);
         result.put(BUTTON_ROUND_TEXTURED, textured);
-        result.put(BUTTON_ROUND_TOOLBAR, texturedToolbar);
+        result.put(BUTTON_ROUND_TEXTURED_TOOLBAR, texturedToolbar);
 
         WidgetInfo segmentedTextured = textured.copy().withSegmented().withColors(AquaColors.TEXTURED_SEGMENTED_BUTTON_COLORS).withMargin(9);
         WidgetInfo segmentedTexturedToolbar = segmentedTextured.copy()
@@ -634,10 +634,10 @@ public class AquaButtonExtendedTypes {
             new BorderDefinedTypeSpecifier("toolbarItem", BUTTON_TOOLBAR_ITEM),
             new BorderDefinedTypeSpecifier("help", BUTTON_HELP),
             new BorderDefinedTypeSpecifier("round", BUTTON_ROUND),
-            new BorderDefinedTypeSpecifier("round-onToolbar", OSXSystemProperties.OSVersion >= 1011 ? BUTTON_ROUND_TOOLBAR : BUTTON_ROUND),
+            new BorderDefinedTypeSpecifier("round-onToolbar", OSXSystemProperties.OSVersion >= 1011 ? BUTTON_ROUND_TEXTURED_TOOLBAR : BUTTON_ROUND),
             new BorderDefinedTypeSpecifier("texturedRound", BUTTON_ROUND_INSET),  // TBD: this is not correct, but the button type is undocumented
             new BorderDefinedTypeSpecifier("roundTextured", BUTTON_ROUND_TEXTURED),
-            new BorderDefinedTypeSpecifier("roundTextured-onToolbar", OSXSystemProperties.OSVersion >= 1011 ? BUTTON_ROUND_TOOLBAR : BUTTON_ROUND_TEXTURED),
+            new BorderDefinedTypeSpecifier("roundTextured-onToolbar", OSXSystemProperties.OSVersion >= 1011 ? BUTTON_ROUND_TEXTURED_TOOLBAR : BUTTON_ROUND_TEXTURED),
             new BorderDefinedTypeSpecifier("roundInset", BUTTON_ROUND_INSET),
             new BorderDefinedTypeSpecifier("colorWell", BUTTON_COLOR_WELL),
 
