@@ -187,14 +187,20 @@ public class AquaTextComponentBorder extends AquaBorder implements FocusRingOutl
 
     protected @NotNull TextFieldLayoutConfiguration getLayoutConfiguration() {
         TextFieldWidget widget = getWidget();
-        Size size = AquaUtilControlSize.getUserSizeFrom(tc);
+        Size defaultSize = getSpecialDefaultSize();
+        Size size = AquaUtilControlSize.getUserSizeFrom(tc, defaultSize);
         AquaUIPainter.UILayoutDirection ld = AquaUtils.getLayoutDirection(tc);
         return new TextFieldLayoutConfiguration(widget, size, ld);
     }
 
+    protected @Nullable Size getSpecialDefaultSize() {
+        return null;
+    }
+
     protected @NotNull TextFieldConfiguration getConfiguration() {
         TextFieldWidget widget = getWidget();
-        Size size = AquaUtilControlSize.getUserSizeFrom(tc);
+        Size defaultSize = getSpecialDefaultSize();
+        Size size = AquaUtilControlSize.getUserSizeFrom(tc, defaultSize);
         State state = getState();
         boolean isFocused = State.ACTIVE == state && tc.hasFocus();
         AquaUIPainter.UILayoutDirection ld = AquaUtils.getLayoutDirection(tc);

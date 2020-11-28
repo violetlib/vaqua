@@ -41,6 +41,7 @@ import javax.swing.*;
 import javax.swing.plaf.UIResource;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.violetlib.aqua.AquaUtils.RecyclableSingleton;
 import org.violetlib.aqua.AquaUtils.RecyclableSingletonFromDefaultConstructor;
 import org.violetlib.jnr.aqua.AquaUIPainter.Size;
@@ -67,7 +68,7 @@ public class AquaUtilControlSize {
         c.removePropertyChangeListener(CLIENT_PROPERTY_KEY, getSizeListener());
     }
 
-    private static Size getSizeFromString(String name) {
+    private static @Nullable Size getSizeFromString(String name) {
         if ("regular".equalsIgnoreCase(name)) return Size.REGULAR;
         if ("small".equalsIgnoreCase(name)) return Size.SMALL;
         if ("mini".equalsIgnoreCase(name)) return Size.MINI;
@@ -75,7 +76,7 @@ public class AquaUtilControlSize {
         return null;
     }
 
-    public static String getStringFromSize(Size sz) {
+    public static @Nullable String getStringFromSize(Size sz) {
         if (sz == Size.REGULAR) return "regular";
         if (sz == Size.SMALL) return "small";
         if (sz == Size.MINI) return "mini";
@@ -83,19 +84,28 @@ public class AquaUtilControlSize {
         return null;
     }
 
-    private static Size getDefaultSize() {
+    private static @NotNull Size getDefaultSize() {
         String sizeProperty = java.security.AccessController.doPrivileged((PrivilegedAction<String>) () -> System.getProperty(SYSTEM_PROPERTY_KEY));
         Size size = getSizeFromString(sizeProperty);
         if (size != null) return size;
         return Size.REGULAR;
     }
 
-    protected final static Size defaultSize = getDefaultSize();
+    protected final static @NotNull Size defaultSize = getDefaultSize();
 
-    public static Size getUserSizeFrom(JComponent c) {
+    public static @NotNull Size getUserSizeFrom(JComponent c) {
         Object sizeProp = c.getClientProperty(CLIENT_PROPERTY_KEY);
         if (sizeProp == null) {
             return AquaUtilControlSize.defaultSize;
+        }
+        Size size = getSizeFromString(sizeProp.toString());
+        return size != null ? size : Size.REGULAR;
+    }
+
+    public static @NotNull Size getUserSizeFrom(JComponent c, @Nullable Size defaultSize) {
+        Object sizeProp = c.getClientProperty(CLIENT_PROPERTY_KEY);
+        if (sizeProp == null) {
+            return defaultSize != null ? defaultSize : AquaUtilControlSize.defaultSize;
         }
         Size size = getSizeFromString(sizeProp.toString());
         return size != null ? size : Size.REGULAR;

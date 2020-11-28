@@ -73,7 +73,9 @@ public class AquaTabbedPaneUI extends AquaTabbedPaneCopyFromBasicUI
     private static final double kNinetyDegrees = (Math.PI / 2.0); // used for rotation
 
     public static final SegmentedButtonWidget buttonWidget
-            = OSVersion >= 1016 ? SegmentedButtonWidget.BUTTON_SEGMENTED_SLIDER : SegmentedButtonWidget.BUTTON_TAB;
+            = OSVersion >= 1016 && VAquaRenderingAccess.SLIDER_WIDGET != null
+            ? VAquaRenderingAccess.SLIDER_WIDGET
+            : SegmentedButtonWidget.BUTTON_TAB;
 
     protected final Insets currentContentDrawingInsets = new Insets(0, 0, 0, 0);
     protected final Insets currentContentBorderInsets = new Insets(0, 0, 0, 0);

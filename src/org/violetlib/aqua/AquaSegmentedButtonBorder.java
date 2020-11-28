@@ -40,6 +40,7 @@ import org.jetbrains.annotations.Nullable;
 import org.violetlib.jnr.aqua.*;
 import org.violetlib.jnr.aqua.AquaUIPainter.*;
 
+import static org.violetlib.aqua.OSXSystemProperties.OSVersion;
 import static org.violetlib.jnr.aqua.SegmentedButtonConfiguration.DividerState;
 
 /**
@@ -150,15 +151,24 @@ public class AquaSegmentedButtonBorder extends AquaButtonBorder implements Focus
     }
 
     @Override
-    protected boolean isRollover(@NotNull AbstractButton b) {
-        return SegmentedControlModel.isRollover(b);
+    public @NotNull SegmentedButtonLayoutConfiguration determineLayoutConfiguration(@NotNull AbstractButton b) {
+        SegmentedButtonWidget widget = getButtonWidget(b);
+        Size defaultSize = getSpecialDefaultSize(b);
+        Size size = AquaUtilControlSize.getUserSizeFrom(b, defaultSize);
+        return new SegmentedButtonLayoutConfiguration(widget, size, position);
+    }
+
+    protected @Nullable Size getSpecialDefaultSize(@NotNull AbstractButton b) {
+        if (OSVersion >= 1016) {
+            boolean isToolbar = AquaUtils.isOnToolbar(b);
+            return isToolbar ? AquaUIPainter.Size.LARGE : null;
+        }
+        return null;
     }
 
     @Override
-    public @NotNull SegmentedButtonLayoutConfiguration determineLayoutConfiguration(@NotNull AbstractButton b) {
-        SegmentedButtonWidget widget = getButtonWidget(b);
-        Size size = AquaUtilControlSize.getUserSizeFrom(b);
-        return new SegmentedButtonLayoutConfiguration(widget, size, position);
+    protected boolean isRollover(@NotNull AbstractButton b) {
+        return SegmentedControlModel.isRollover(b);
     }
 
     public static SegmentedButtonConfiguration.DividerState getDividerState(boolean isPainted, boolean isSelected) {

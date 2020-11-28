@@ -41,6 +41,7 @@ import javax.swing.event.DocumentListener;
 import javax.swing.text.JTextComponent;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.violetlib.jnr.Insetter;
 import org.violetlib.jnr.aqua.AquaUIPainter;
 import org.violetlib.jnr.aqua.AquaUIPainter.State;
@@ -288,6 +289,15 @@ public class AquaTextFieldSearch {
         // called via reflection
         public SearchFieldBorder(@NotNull JTextComponent tc) {
             super(tc);
+        }
+
+        @Override
+        protected @Nullable AquaUIPainter.Size getSpecialDefaultSize() {
+            if (OSVersion >= 1016) {
+                boolean isToolbar = AquaUtils.isOnToolbar(tc);
+                return isToolbar ? AquaUIPainter.Size.LARGE : null;
+            }
+            return null;
         }
 
         public void paint(JComponent c, Graphics g, int x, int y, int w, int h) {

@@ -51,6 +51,7 @@ import org.violetlib.jnr.aqua.AquaUIPainter.State;
 
 import static org.violetlib.aqua.AquaButtonUI.getDefaultFontPropertyValue;
 import static org.violetlib.aqua.AquaButtonUI.isColorWell;
+import static org.violetlib.aqua.OSXSystemProperties.OSVersion;
 import static org.violetlib.jnr.aqua.AquaUIPainter.ButtonState.OFF;
 import static org.violetlib.jnr.aqua.AquaUIPainter.ButtonState.ON;
 
@@ -554,7 +555,8 @@ public abstract class AquaButtonBorder extends AquaBorder implements FocusRingOu
      */
     public @Nullable LayoutConfiguration determineLayoutConfiguration(@NotNull AbstractButton b) {
         GenericButtonWidget widget = getButtonWidget(b);
-        Size size = AquaUtilControlSize.getUserSizeFrom(b);
+        Size defaultSize = getSpecialDefaultSize(b);
+        Size size = AquaUtilControlSize.getUserSizeFrom(b, defaultSize);
         if (widget instanceof AquaUIPainter.ButtonWidget) {
             AquaUIPainter.ButtonWidget bw = (AquaUIPainter.ButtonWidget) widget;
             AquaUIPainter.UILayoutDirection ld = AquaUtils.getLayoutDirection(b);
@@ -568,6 +570,14 @@ public abstract class AquaButtonBorder extends AquaBorder implements FocusRingOu
     }
 
     public abstract @NotNull GenericButtonWidget getButtonWidget(@NotNull AbstractButton b);
+
+    protected @Nullable Size getSpecialDefaultSize(@NotNull AbstractButton b) {
+        if (OSVersion >= 1016) {
+            boolean isToolbar = AquaUtils.isOnToolbar(b);
+            return isToolbar ? AquaUIPainter.Size.LARGE : null;
+        }
+        return null;
+    }
 
     @Override
     public @Nullable Shape getFocusRingOutline(@NotNull JComponent c) {
