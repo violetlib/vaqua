@@ -20,7 +20,8 @@ public class VAquaRenderingAccess {
     public static final @Nullable AquaUIPainter.SegmentedButtonWidget SLIDER_WIDGET = getSegmentedSliderWidget();
     public static final @Nullable AquaUIPainter.SegmentedButtonWidget SLIDER_TOOLBAR_WIDGET = getSegmentedSliderToolbarWidget();
     public static final @Nullable AquaUIPainter.SegmentedButtonWidget SLIDER_TOOLBAR_ICONS_WIDGET = getSegmentedSliderToolbarIconsWidget();
-    public static final @Nullable AquaUIPainter.SegmentedButtonWidget TEXTURED_TOOLBAR_ICONS_WIDGET = getSegmentedTexturedToolbarIconsWidget();
+    public static final @Nullable AquaUIPainter.ButtonWidget BUTTON_TEXTURED_TOOLBAR_ICONS = getTexturedToolbarIconsWidget();
+    public static final @Nullable AquaUIPainter.SegmentedButtonWidget SEGMENTED_TEXTURED_TOOLBAR_ICONS_WIDGET = getSegmentedTexturedToolbarIconsWidget();
     public static final @Nullable AquaUIPainter.SegmentedButtonWidget TEXTURED_SEPARATED_TOOLBAR_ICONS_WIDGET = getSegmentedTexturedSeparatedToolbarIconsWidget();
 
     private static @Nullable AquaUIPainter.SegmentedButtonWidget getSegmentedSliderWidget() {
@@ -45,6 +46,15 @@ public class VAquaRenderingAccess {
         // This field was introduced in release 10 of VAquaRendering
         try {
             return AquaUIPainter.SegmentedButtonWidget.BUTTON_SEGMENTED_SLIDER_TOOLBAR_ICONS;
+        } catch (NoSuchFieldError e) {
+            return null;
+        }
+    }
+
+    private static @Nullable AquaUIPainter.ButtonWidget getTexturedToolbarIconsWidget() {
+        // This field was introduced in release 10 of VAquaRendering
+        try {
+            return AquaUIPainter.ButtonWidget.BUTTON_TEXTURED_TOOLBAR_ICONS;
         } catch (NoSuchFieldError e) {
             return null;
         }

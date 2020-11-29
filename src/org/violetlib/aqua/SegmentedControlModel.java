@@ -246,22 +246,9 @@ public class SegmentedControlModel {
 
     private static boolean computeIsAllIcon(@NotNull JToggleButton @NotNull [] buttons) {
         for (JToggleButton b : buttons) {
-            if (!isIconOnly(b)) {
+            if (!AquaButtonBorder.isIconOnly(b)) {
                 return false;
             }
-        }
-        return true;
-    }
-
-    private static boolean isIconOnly(@NotNull AbstractButton b)
-    {
-        Icon ic = b.getIcon();
-        if (ic == null) {
-            return false;
-        }
-        String text = b.getText();
-        if (text != null && !text.isEmpty()) {
-            return false;
         }
         return true;
     }
@@ -346,10 +333,10 @@ public class SegmentedControlModel {
         SegmentedControlModel m = SegmentedControlModel.getSegmentedControlModel(b);
         if (m != null) {
             return getSpecialWidget(m, standardWidget);
-        } else if ("only".equals(AquaButtonExtendedTypes.getValidSegmentPosition(b)) && isIconOnly(b)) {
+        } else if ("only".equals(AquaButtonExtendedTypes.getValidSegmentPosition(b)) && AquaButtonBorder.isIconOnly(b)) {
             // A solo segmented button must be "select any"
             if (standardWidget == SegmentedButtonWidget.BUTTON_SEGMENTED_TEXTURED_TOOLBAR) {
-                return VAquaRenderingAccess.TEXTURED_TOOLBAR_ICONS_WIDGET;
+                return VAquaRenderingAccess.SEGMENTED_TEXTURED_TOOLBAR_ICONS_WIDGET;
             } else if (standardWidget == SegmentedButtonWidget.BUTTON_SEGMENTED_TEXTURED_SEPARATED_TOOLBAR) {
                 return VAquaRenderingAccess.TEXTURED_SEPARATED_TOOLBAR_ICONS_WIDGET;
             }
@@ -378,7 +365,7 @@ public class SegmentedControlModel {
         } else if (m.isAllIcon()) {
             // Special case for non-exclusive textured segmented controls on the toolbar starting in macOS 11
             if (standardWidget == SegmentedButtonWidget.BUTTON_SEGMENTED_TEXTURED_TOOLBAR) {
-                return VAquaRenderingAccess.TEXTURED_TOOLBAR_ICONS_WIDGET;
+                return VAquaRenderingAccess.SEGMENTED_TEXTURED_TOOLBAR_ICONS_WIDGET;
             } else if (standardWidget == SegmentedButtonWidget.BUTTON_SEGMENTED_TEXTURED_SEPARATED_TOOLBAR) {
                 return VAquaRenderingAccess.TEXTURED_SEPARATED_TOOLBAR_ICONS_WIDGET;
             }

@@ -570,8 +570,8 @@ public class AquaButtonExtendedTypes {
         result.put(BUTTON_SEGMENTED_TEXTURED, segmentedTextured);
         result.put(BUTTON_SEGMENTED_TEXTURED_SEPARATED, segmentedTextured);
         result.put(BUTTON_SEGMENTED_TEXTURED_TOOLBAR, segmentedTexturedToolbar);
-        if (VAquaRenderingAccess.TEXTURED_TOOLBAR_ICONS_WIDGET != null) {
-            result.put(VAquaRenderingAccess.TEXTURED_TOOLBAR_ICONS_WIDGET, segmentedTexturedToolbar);
+        if (VAquaRenderingAccess.SEGMENTED_TEXTURED_TOOLBAR_ICONS_WIDGET != null) {
+            result.put(VAquaRenderingAccess.SEGMENTED_TEXTURED_TOOLBAR_ICONS_WIDGET, segmentedTexturedToolbar);
         }
         result.put(BUTTON_SEGMENTED_TEXTURED_SEPARATED_TOOLBAR, segmentedTexturedToolbar);
         if (VAquaRenderingAccess.TEXTURED_SEPARATED_TOOLBAR_ICONS_WIDGET != null) {

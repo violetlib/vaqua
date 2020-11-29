@@ -203,11 +203,13 @@ public class SystemColors {
         colors.add("texturedText_pressed", 34);
         colors.add("texturedText_inactive_disabled", 211);
 
-        colors.add("selectedTexturedText", 255);
-        colors.add("selectedTexturedText_disabled", 255, 155);
-        colors.add("selectedTexturedText_pressed", "selectedTexturedText");
-        colors.add("selectedTexturedText_inactive", 164);
-        colors.add("selectedTexturedText_inactive_disabled", 185);
+        if (OSVersion < 1016) {
+            colors.add("selectedTexturedText", 255);
+            colors.add("selectedTexturedText_disabled", 255, 155);
+            colors.add("selectedTexturedText_pressed", "selectedTexturedText");
+            colors.add("selectedTexturedText_inactive", 164);
+            colors.add("selectedTexturedText_inactive_disabled", 185);
+        }
 
         // colors related to recessed buttons
         colors.add("recessedText", 0, 160);
@@ -736,10 +738,6 @@ public class SystemColors {
         colors.add("selectedRoundText", 0, 224);
         colors.add("roundText_disabled", "disabledControlText");
         colors.add("selectedRoundText_disabled", 0, 64);
-
-        if (OSVersion >= 1016) {
-            colors.add("selectedRoundText_inactive", "selectedRoundText");
-        }
 
         // colors related to toolbar items (dark mode)
         colors.add("toolbarItemText", "controlText");

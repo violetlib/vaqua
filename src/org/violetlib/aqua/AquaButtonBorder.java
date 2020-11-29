@@ -497,7 +497,31 @@ public abstract class AquaButtonBorder extends AquaBorder implements FocusRingOu
         return AquaButtonExtendedTypes.getWidgetInfo(widget);
     }
 
-    /*
+    protected boolean shouldUseIconicWidget(@NotNull AbstractButton b) {
+        return OSVersion >= 1016 && isIconOnly(b);
+    }
+
+    public static boolean isIconOnly(@NotNull AbstractButton b)
+    {
+        Icon ic = b.getIcon();
+        if (ic == null) {
+            return false;
+        }
+        String text = b.getText();
+        if (text != null && !text.isEmpty()) {
+            return false;
+        }
+        return true;
+    }
+
+    protected @NotNull AquaUIPainter.ButtonWidget getIconicWidget(@NotNull AquaUIPainter.ButtonWidget bw) {
+        if (bw == AquaUIPainter.ButtonWidget.BUTTON_TEXTURED_TOOLBAR && VAquaRenderingAccess.BUTTON_TEXTURED_TOOLBAR_ICONS != null) {
+            return VAquaRenderingAccess.BUTTON_TEXTURED_TOOLBAR_ICONS;
+        }
+        return bw;
+    }
+
+    /**
      * Return the configuration for painting the button. The configuration is based on the current state of the button.
      */
     public @Nullable GenericButtonConfiguration getConfiguration(@NotNull AbstractButton b, int width, int height) {
@@ -560,6 +584,9 @@ public abstract class AquaButtonBorder extends AquaBorder implements FocusRingOu
         if (widget instanceof AquaUIPainter.ButtonWidget) {
             AquaUIPainter.ButtonWidget bw = (AquaUIPainter.ButtonWidget) widget;
             AquaUIPainter.UILayoutDirection ld = AquaUtils.getLayoutDirection(b);
+            if (shouldUseIconicWidget(b)) {
+                bw = getIconicWidget(bw);
+            }
             return new ButtonLayoutConfiguration(bw, size, ld);
         }
         if (widget instanceof AquaUIPainter.SegmentedButtonWidget) {
