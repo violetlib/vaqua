@@ -53,7 +53,7 @@ public class KeyWindowPatch
 
     private static Boolean computeIfNeeded() {
         int version = AquaUtils.getJavaVersion();
-        return version < 1100000;
+        return version < 1100000000;
     }
 
     private static void loadNativeSupport() {

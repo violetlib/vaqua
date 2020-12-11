@@ -140,9 +140,9 @@ final public class AquaUtils {
         return javaVersion;
     }
 
-    private static int obtainJavaVersion()
+    public int obtainJavaVersion(String s)
     {
-        String s = System.getProperty("java.version");
+
         if (s.startsWith("1.")) {
             s = s.substring(2);
         }
@@ -158,7 +158,7 @@ final public class AquaUtils {
                 }
                 int n = Integer.parseInt(token);
                 ++tokenCount;
-                int limit = tokenCount < 3 ? 100 : 1000;
+                int limit = tokenCount < 4 ? 100 : 1000;
                 if (n < 0 || n >= limit) {
                     return 0;
                 }
@@ -168,13 +168,13 @@ final public class AquaUtils {
             return 0;
         }
 
-        while (tokenCount < 3) {
+        while (tokenCount < 4) {
             ++tokenCount;
             int limit = tokenCount < 3 ? 100 : 1000;
             version = version * limit;
         }
 
-        if (tokenCount != 3) {
+        if (tokenCount != 4) {
             return 0;
         }
         return version;
