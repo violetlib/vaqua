@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2003-2013 Werner Randelshofer, Switzerland.
- * Copyright (c) 2018-2019 Alan Snyder
+ * Copyright (c) 2018-2020 Alan Snyder
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the
@@ -24,7 +24,7 @@ import javax.swing.tree.*;
 import org.jetbrains.annotations.NotNull;
 import org.violetlib.aqua.AquaUtils;
 
- /**
+/**
  * The FileSystemTreeModel provides the data model for the file system in a file chooser.
  * <p>
  * It is capable of resolving aliases to files, and it updates its content
@@ -53,9 +53,9 @@ public class FileSystemTreeModel implements TreeModel {
      */
     private final @NotNull JFileChooser fileChooser;
 
-     /**
-      * File attribute provider for this file chooser.
-      */
+    /**
+     * File attribute provider for this file chooser.
+     */
     private final @NotNull FileAttributes fileAttributes;
 
     /**
@@ -142,14 +142,17 @@ public class FileSystemTreeModel implements TreeModel {
      * Removes all children from the root node.
      */
     private void clear() {
-        int[] removedIndices = new int[root.getChildCount()];
-        Object[] removedChildren = new Object[removedIndices.length];
-        for (int i = 0; i < removedIndices.length; i++) {
-            removedIndices[i] = i;
-            removedChildren[i] = root.getChildAt(0);
-            root.remove(0);
+        int childCount = root.getChildCount();
+        if (childCount > 0) {
+            int[] removedIndices = new int[childCount];
+            Object[] removedChildren = new Object[childCount];
+            for (int i = 0; i < childCount; i++) {
+                removedIndices[i] = i;
+                removedChildren[i] = root.getChildAt(0);
+                root.remove(0);
+            }
+            fireTreeNodesRemoved(FileSystemTreeModel.this, new Object[]{root}, removedIndices, removedChildren);
         }
-        fireTreeNodesRemoved(FileSystemTreeModel.this, new Object[]{root}, removedIndices, removedChildren);
     }
 
     public void dispose() {
@@ -230,7 +233,7 @@ public class FileSystemTreeModel implements TreeModel {
      * the appropriate event.
      */
     private void insertNodeInto(FileSystemTreeModel.Node newChild,
-            FileSystemTreeModel.Node parent, int index) {
+                                FileSystemTreeModel.Node parent, int index) {
         parent.insert(newChild, index);
 
         int[] newIndices = new int[1];
@@ -622,8 +625,8 @@ public class FileSystemTreeModel implements TreeModel {
      * @see EventListenerList
      */
     protected void fireTreeNodesChanged(TreeModel source, Object[] path,
-            int[] childIndices,
-            Object[] children) {
+                                        int[] childIndices,
+                                        Object[] children) {
         // Guaranteed to return a non-null array
         Object[] listeners = listenerList.getListenerList();
         TreeModelEvent e = null;
@@ -654,8 +657,8 @@ public class FileSystemTreeModel implements TreeModel {
      * @see EventListenerList
      */
     protected void fireTreeNodesInserted(TreeModel source, Object[] path,
-            int[] childIndices,
-            Object[] children) {
+                                         int[] childIndices,
+                                         Object[] children) {
         // Guaranteed to return a non-null array
         Object[] listeners = listenerList.getListenerList();
         TreeModelEvent e = null;
@@ -686,8 +689,8 @@ public class FileSystemTreeModel implements TreeModel {
      * @see EventListenerList
      */
     protected void fireTreeNodesRemoved(TreeModel source, Object[] path,
-            int[] childIndices,
-            Object[] children) {
+                                        int[] childIndices,
+                                        Object[] children) {
         // Guaranteed to return a non-null array
         Object[] listeners = listenerList.getListenerList();
         TreeModelEvent e = null;
