@@ -163,6 +163,9 @@ final public class AquaUtils {
                     return 0;
                 }
                 version = version * limit + n;
+                if (tokenCount == 3) {
+                    return version;
+                }
             }
         } catch (NumberFormatException ex) {
             return 0;
@@ -172,10 +175,6 @@ final public class AquaUtils {
             ++tokenCount;
             int limit = tokenCount < 3 ? 100 : 1000;
             version = version * limit;
-        }
-
-        if (tokenCount != 3) {
-            return 0;
         }
         return version;
     }
