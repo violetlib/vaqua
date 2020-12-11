@@ -763,7 +763,7 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
         table.putDefaults(defaults);
 
         int version = AquaUtils.getJavaVersion();
-        if (version < 900000) {
+        if (version < 900000000) {
             // prior to Java 9, the platform UI is needed to support the screen menu bar
             // the following definitions allow the platform UI to paint a non-screen menu bar
             final Color menuBackgroundColor = new ColorUIResource(Color.white);
@@ -843,7 +843,7 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
                 "PopupMenuUI", PKG_PREFIX + "AquaPopupMenuUI",
                 "TextAreaUI", PKG_PREFIX + "AquaTextAreaUI",
                 // prior to Java 9, the platform UI is needed to support the screen menu bar
-                "MenuBarUI", version >= 900000 ? PKG_PREFIX + "AquaMenuBarUI" : "com.apple.laf.AquaMenuBarUI",
+                "MenuBarUI", version >= 900000000 ? PKG_PREFIX + "AquaMenuBarUI" : "com.apple.laf.AquaMenuBarUI",
                 "FileChooserUI", PKG_PREFIX + "fc.AquaFileChooserUI",
                 "PasswordFieldUI", PKG_PREFIX + "AquaTextPasswordFieldUI",
                 "TableHeaderUI", PKG_PREFIX + "AquaTableHeaderUI",

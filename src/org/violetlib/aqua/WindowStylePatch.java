@@ -35,7 +35,7 @@ public class WindowStylePatch
 
     private static Boolean computeIfNeeded() {
         int version = AquaUtils.getJavaVersion();
-        return version < 1200000;
+        return version < 1200000000;
     }
 
     private static void loadNativeSupport() {

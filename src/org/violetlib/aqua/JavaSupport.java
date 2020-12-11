@@ -140,7 +140,7 @@ public class JavaSupport {
     private static JavaSupportImpl findImpl() {
         int version = AquaUtils.getJavaVersion();
         String className;
-        if (version >= 900000) {
+        if (version >= 900000000) {
             className = "Java9Support";
         } else {
             className = "Java8Support";
