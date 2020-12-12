@@ -812,7 +812,7 @@ public class AquaImageFactory {
         boolean[] mutex = new boolean[] { false };
         ImageObserver observer = (Image img, int infoflags, int x, int y, int width, int height) -> {
             if ((width != -1 && height != -1 && (infoflags & ImageObserver.ALLBITS) != 0)
-                    || (infoflags & (ImageObserver.ABORT | ImageObserver.FRAMEBITS)) != 0) {
+                    || (infoflags & (ImageObserver.ERROR | ImageObserver.ABORT | ImageObserver.FRAMEBITS)) != 0) {
                 synchronized (mutex) {
                     mutex[0] = true;
                     mutex.notify();
