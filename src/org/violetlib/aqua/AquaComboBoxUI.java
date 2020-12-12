@@ -273,7 +273,7 @@ public class AquaComboBoxUI extends BasicComboBoxUI
         }
 
         if (isActive && arrowButton != null) {
-            if (comboBox.isPopupVisible()) {
+            if (isPopupReallyVisible(popup)) {
                 return State.PRESSED;
             }
 
@@ -300,6 +300,20 @@ public class AquaComboBoxUI extends BasicComboBoxUI
         }
 
         return State.ACTIVE;
+    }
+
+    private static boolean isPopupReallyVisible(@NotNull ComboPopup p)
+    {
+        // Workaround: popup.isVisible() can return true when isShowing() returns false, leading to a failure to
+        // restore the button state after the popup is dismissed.
+        if (!p.isVisible()) {
+            return false;
+        }
+        if (p instanceof Component) {
+            Component c = (Component) p;
+            return c.isShowing();
+        }
+        return true;
     }
 
     @Override
@@ -523,7 +537,7 @@ public class AquaComboBoxUI extends BasicComboBoxUI
     }
 
     @Override
-   protected ComboPopup createPopup() {
+    protected ComboPopup createPopup() {
         return new AquaComboBoxPopup(comboBox);
     }
 
@@ -544,9 +558,14 @@ public class AquaComboBoxUI extends BasicComboBoxUI
                 popupVisibilityChanged();
             }
         }
-     }
+    }
 
     protected void popupVisibilityChanged() {
+        // Workaround: when we are notified that the popup is no longer showing, the button remains in the rollover
+        // state indefinitely because it never receives a mouse exited event.
+        if (!isPopupReallyVisible(popup) && arrowButton != null) {
+            arrowButton.isRollover = false;
+        }
         configureAppearanceContext(null); // the arrow button may need to be repainted with a new state
     }
 
@@ -1563,9 +1582,9 @@ public class AquaComboBoxUI extends BasicComboBoxUI
     @SuppressWarnings("unchecked")
     static final RecyclableSingleton<ClientPropertyApplicator<JComboBox<?>, AquaComboBoxUI>> APPLICATOR = new
             RecyclableSingleton<ClientPropertyApplicator<JComboBox<?>, AquaComboBoxUI>>() {
-        @Override
-        protected ClientPropertyApplicator<JComboBox<?>, AquaComboBoxUI> getInstance() {
-            return new ClientPropertyApplicator<JComboBox<?>, AquaComboBoxUI>(
+                @Override
+                protected ClientPropertyApplicator<JComboBox<?>, AquaComboBoxUI> getInstance() {
+                    return new ClientPropertyApplicator<JComboBox<?>, AquaComboBoxUI>(
 //                new Property<AquaComboBoxUI>(AquaFocusHandler.FRAME_ACTIVE_PROPERTY) {
 //                    public void applyProperty(AquaComboBoxUI target, Object value) {
 //                        if (Boolean.FALSE.equals(value)) {
@@ -1577,60 +1596,60 @@ public class AquaComboBoxUI extends BasicComboBoxUI
 //                        }
 //                    }
 //                },
-                new Property<AquaComboBoxUI>("editable") {
-                    public void applyProperty(AquaComboBoxUI target, Object value) {
-                        target.configure(null);
-                    }
-                },
-                new Property<AquaComboBoxUI>("background") {
-                    public void applyProperty(AquaComboBoxUI target, Object value) {
-                        Color color = (Color)value;
-                        if (target.arrowButton != null) target.arrowButton.setBackground(color);
-                        //if (target.listBox != null) target.listBox.setBackground(color);
-                    }
-                },
-                new Property<AquaComboBoxUI>("foreground") {
-                    public void applyProperty(AquaComboBoxUI target, Object value) {
-                        Color color = (Color)value;
-                        if (target.arrowButton != null) target.arrowButton.setForeground(color);
-                        //if (target.listBox != null) target.listBox.setForeground(color);
-                    }
-                },
-                new Property<AquaComboBoxUI>(POPDOWN_CLIENT_PROPERTY_KEY) {
-                    public void applyProperty(AquaComboBoxUI target, Object value) {
-                        target.configure(null);
-                    }
-                },
-                new Property<AquaComboBoxUI>(ISSQUARE_CLIENT_PROPERTY_KEY) {
-                    public void applyProperty(AquaComboBoxUI target, Object value) {
-                        target.configure(null);
-                    }
-                },
-                new Property<AquaComboBoxUI>(STYLE_CLIENT_PROPERTY_KEY) {
-                    public void applyProperty(AquaComboBoxUI target, Object value) {
-                        target.configure(null);
-                    }
-                },
-                new Property<AquaComboBoxUI>(TITLE_CLIENT_PROPERTY_KEY) {
-                    public void applyProperty(AquaComboBoxUI target, Object value) {
-                        if (target.comboBox != null) {
-                            AquaComboBoxType type = getComboBoxType(target.comboBox);
-                            if (type == AquaComboBoxType.PULL_DOWN_MENU_BUTTON) {
-                                target.comboBox.setPrototypeDisplayValue(value);
-                                target.comboBox.repaint();
+                            new Property<AquaComboBoxUI>("editable") {
+                                public void applyProperty(AquaComboBoxUI target, Object value) {
+                                    target.configure(null);
+                                }
+                            },
+                            new Property<AquaComboBoxUI>("background") {
+                                public void applyProperty(AquaComboBoxUI target, Object value) {
+                                    Color color = (Color)value;
+                                    if (target.arrowButton != null) target.arrowButton.setBackground(color);
+                                    //if (target.listBox != null) target.listBox.setBackground(color);
+                                }
+                            },
+                            new Property<AquaComboBoxUI>("foreground") {
+                                public void applyProperty(AquaComboBoxUI target, Object value) {
+                                    Color color = (Color)value;
+                                    if (target.arrowButton != null) target.arrowButton.setForeground(color);
+                                    //if (target.listBox != null) target.listBox.setForeground(color);
+                                }
+                            },
+                            new Property<AquaComboBoxUI>(POPDOWN_CLIENT_PROPERTY_KEY) {
+                                public void applyProperty(AquaComboBoxUI target, Object value) {
+                                    target.configure(null);
+                                }
+                            },
+                            new Property<AquaComboBoxUI>(ISSQUARE_CLIENT_PROPERTY_KEY) {
+                                public void applyProperty(AquaComboBoxUI target, Object value) {
+                                    target.configure(null);
+                                }
+                            },
+                            new Property<AquaComboBoxUI>(STYLE_CLIENT_PROPERTY_KEY) {
+                                public void applyProperty(AquaComboBoxUI target, Object value) {
+                                    target.configure(null);
+                                }
+                            },
+                            new Property<AquaComboBoxUI>(TITLE_CLIENT_PROPERTY_KEY) {
+                                public void applyProperty(AquaComboBoxUI target, Object value) {
+                                    if (target.comboBox != null) {
+                                        AquaComboBoxType type = getComboBoxType(target.comboBox);
+                                        if (type == AquaComboBoxType.PULL_DOWN_MENU_BUTTON) {
+                                            target.comboBox.setPrototypeDisplayValue(value);
+                                            target.comboBox.repaint();
+                                        }
+                                    }
+                                }
                             }
+                    ) {
+                        public AquaComboBoxUI convertJComponentToTarget(JComboBox<?> combo) {
+                            ComboBoxUI comboUI = combo.getUI();
+                            if (comboUI instanceof AquaComboBoxUI) return (AquaComboBoxUI)comboUI;
+                            return null;
                         }
-                    }
-                }
-            ) {
-                public AquaComboBoxUI convertJComponentToTarget(JComboBox<?> combo) {
-                    ComboBoxUI comboUI = combo.getUI();
-                    if (comboUI instanceof AquaComboBoxUI) return (AquaComboBoxUI)comboUI;
-                    return null;
+                    };
                 }
             };
-        }
-    };
 
     static ClientPropertyApplicator<JComboBox<?>, AquaComboBoxUI> getApplicator() {
         return APPLICATOR.get();

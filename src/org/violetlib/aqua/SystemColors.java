@@ -219,14 +219,15 @@ public class SystemColors {
         colors.add("recessedText_rollover", 255);
         colors.add("recessedText_inactive_disabled", 0, 32);
 
-//            if (OSVersion >= 1016) {
-//                colors.add("selectedRecessedText", 0, 160);
-//                colors.add("selectedRecessedText_disabled", 0, 64);
-//                colors.add("selectedRecessedText_pressed", 255);
-//                colors.add("selectedRecessedText_rollover", 255);
-//                colors.add("selectedRecessedText_inactive", 0, 64);
-//                colors.add("selectedRecessedText_inactive_disabled", 0, 32);
-//            }
+        if (OSVersion >= 1016) {
+            colors.add("recessedText", 0, 140);
+            colors.add("selectedRecessedText", 0, 206);
+            colors.add("selectedRecessedText_disabled", 0, 64);
+            colors.add("selectedRecessedText_pressed", 0, 140);
+            colors.add("selectedRecessedText_rollover", 0, 140);
+            colors.add("selectedRecessedText_inactive", 0, 64);
+            colors.add("selectedRecessedText_inactive_disabled", 0, 32);
+        }
 
         // colors related to push buttons
         colors.add("pushButtonText", 34);
@@ -648,14 +649,15 @@ public class SystemColors {
             colors.add("recessedText", 255, 115);
         }
 
-        if (OSVersion < 1016) {
+        colors.add("selectedRecessedText_pressed", "controlText_pressed");
+        colors.add("selectedRecessedText_rollover", "controlText_rollover");
+        if (OSVersion >= 1016) {
+            colors.add("selectedRecessedText", 255, 192);
+            colors.add("selectedRecessedText_disabled", 255, 64);
+        } else {
             colors.add("selectedRecessedText", 0, 192);
             colors.add("selectedRecessedText_disabled", 0, 64);
-            colors.add("selectedRecessedText_pressed", "controlText_pressed");
-            colors.add("selectedRecessedText_rollover", "controlText_rollover");
             colors.add("selectedRecessedText_inactive", 0, 192);
-        } else {
-            colors.addAll("selectedRecessedText", "controlText");
         }
 
         // colors related to push buttons (dark mode)
