@@ -1308,8 +1308,12 @@ public class AquaComboBoxUI extends BasicComboBoxUI
         if (r == null)  {
             r = new DefaultListCellRenderer();
         }
-        Dimension d = getSizeForComponent(r.getListCellRendererComponent(listBox, " ", -1, false, false));
-        return new Dimension(d.width, d.height);
+        try {
+            Dimension d = getSizeForComponent(r.getListCellRendererComponent(listBox, " ", -1, false, false));
+            return new Dimension(d.width, d.height);
+        } catch (RuntimeException ex) {
+            return new Dimension(20, 20);
+        }
     }
 
     protected void respondToHierarchyChange() {
