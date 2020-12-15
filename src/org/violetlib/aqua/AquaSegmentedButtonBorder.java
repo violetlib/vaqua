@@ -104,7 +104,7 @@ public class AquaSegmentedButtonBorder extends AquaButtonBorder implements Focus
         }
 
         SegmentedButtonWidget widget = SegmentedControlModel.getWidget(b, g);
-        boolean isInGroup = isButtonInGroup(b);
+        boolean isExclusive = isButtonExclusive(b);
 
         // Special case for exclusive textured segmented buttons in light mode on 10.14: make them active-insensitive.
         // This is not what macOS 10.14 actually does, but it is much more readable, and it is similar to what macOS
@@ -114,7 +114,7 @@ public class AquaSegmentedButtonBorder extends AquaButtonBorder implements Focus
                 && state.isInactive()
                 && widget.isTextured()
                 && !AppearanceManager.getAppearance(b).isDark()
-                && isInGroup) {
+                && isExclusive) {
             state = state.toActive();
         }
 
@@ -140,7 +140,7 @@ public class AquaSegmentedButtonBorder extends AquaButtonBorder implements Focus
 
         DividerState leftState = AquaSegmentedButtonBorder.getDividerState(leftDividerPainted, leftDividerSelected);
         DividerState rightState = AquaSegmentedButtonBorder.getDividerState(rightDividerPainted, rightDividerSelected);
-        AquaUIPainter.SwitchTracking tracking = isInGroup ? SwitchTracking.SELECT_ONE : SwitchTracking.SELECT_ANY;
+        AquaUIPainter.SwitchTracking tracking = isExclusive ? SwitchTracking.SELECT_ONE : SwitchTracking.SELECT_ANY;
         return new SegmentedButtonConfiguration(widget, sz, state, isSelected, isFocused, d, pos,
                 leftState, rightState, tracking);
     }

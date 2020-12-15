@@ -61,6 +61,8 @@ import static org.violetlib.jnr.aqua.AquaUIPainter.ButtonState.ON;
  */
 public abstract class AquaButtonBorder extends AquaBorder implements FocusRingOutlineProvider {
 
+    public static final @NotNull String AQUA_EXCLUSIVE_BUTTON = "Aqua.Button.isExclusiveButton";
+
     public static final RecyclableSingleton<AquaPushButtonBorder> fPush = new RecyclableSingletonFromDefaultConstructor<>(AquaPushButtonBorder.class);
     static public AquaButtonBorder getPushButtonBorder() {
         return fPush.get();
@@ -258,14 +260,14 @@ public abstract class AquaButtonBorder extends AquaBorder implements FocusRingOu
 
         return info.usesNonexclusiveSelectionStyle()
                 && b.getModel().isSelected()
-                && !isButtonInGroup(b);
+                && !isButtonExclusive(b);
     }
 
-    protected boolean isButtonInGroup(@NotNull AbstractButton b) {
+    protected boolean isButtonExclusive(@NotNull AbstractButton b) {
         ButtonModel m = b.getModel();
         if (m instanceof DefaultButtonModel) {
             DefaultButtonModel dm = (DefaultButtonModel) m;
-            return dm.getGroup() != null;
+            return dm.getGroup() != null || Boolean.TRUE.equals(b.getClientProperty(AQUA_EXCLUSIVE_BUTTON));
         }
         return true;
     }
