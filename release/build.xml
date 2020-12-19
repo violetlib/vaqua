@@ -13,7 +13,7 @@
 
     <!-- A Java 9 or later compiler is required -->
 
-    <exec executable="/usr/libexec/java_home" outputproperty="jdk">
+    <exec executable="java_home" outputproperty="jdk">
         <arg value="-F"/>
         <arg value="-v"/>
         <arg value="9+"/>
@@ -23,7 +23,7 @@
 
     <!-- A Java 8 boot class path is required -->
 
-    <exec executable="/usr/libexec/java_home" outputproperty="jdk8">
+    <exec executable="java_home" outputproperty="jdk8">
         <arg value="-F"/>
         <arg value="-v"/>
         <arg value="1.8"/>
