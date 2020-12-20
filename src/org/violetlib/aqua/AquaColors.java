@@ -366,8 +366,8 @@ public class AquaColors {
 
     private static @NotNull BasicContextualColors createMenuColors() {
         AquaContextualColorImpl background = new AquaContextualColorImpl("MenuColors.background", "clear");
-        background.setSelectedName("controlAccent");
-        background.setInactiveSelectedName("controlAccent_disabled");
+        background.setSelectedName("selectedContentBackground");
+        background.setInactiveSelectedName("selectedContentBackground_disabled");
 
         AquaContextualColorImpl foreground = new AquaContextualColorImpl("MenuColors.foreground", "controlText");
         foreground.setSelectedName("selectedMenuItemText");
@@ -402,7 +402,7 @@ public class AquaColors {
 
     private static @NotNull ContainerContextualColors createContainerColors() {
         AquaContextualColorImpl background = new AquaContextualColorImpl("ContainerColors.background", "controlBackground");
-        background.setActiveDefaultSelectedName(OSVersion >= 1016 ? "controlAccent" : "selectedContentBackground");
+        background.setActiveDefaultSelectedName("selectedContentBackground");
         background.setSelectedName("unemphasizedSelectedTextBackground");
 
         AquaContextualColorImpl grid = new AquaContextualColorImpl("ContainerColors.grid", "grid");
@@ -412,7 +412,7 @@ public class AquaColors {
 
     private static @NotNull ContainerContextualColors createSidebarContainerColors() {
         AquaContextualColorImpl background = new AquaContextualColorImpl("SidebarContainerColors.background", "controlBackground");
-        background.setActiveDefaultSelectedName(OSVersion >= 1016 ? "controlAccent" : "selectedContentBackground");
+        background.setActiveDefaultSelectedName("selectedContentBackground");
         background.setSelectedName("unemphasizedSelectedTextBackground");
 
         AquaContextualColorImpl foreground = new AquaContextualColorImpl("SidebarContainerColors.foreground", "controlText");
@@ -425,15 +425,15 @@ public class AquaColors {
 
     private static @NotNull ContainerContextualColors createStripedContainerColors() {
         AquaContextualColorImpl background = new AquaContextualColorImpl("StripedContainerColors.background", "controlBackground");
-        background.setActiveDefaultSelectedName(OSVersion >= 1016 ? "controlAccent" : "selectedContentBackground");
+        background.setActiveDefaultSelectedName("selectedContentBackground");
         background.setSelectedName("unemphasizedSelectedTextBackground");
 
         AquaContextualColorImpl evenRowBackground = new AquaContextualColorImpl("StripedContainerColors.background 1", "alternatingContentBackground_1");
-        evenRowBackground.setActiveDefaultSelectedName(OSVersion >= 1016 ? "controlAccent" : "selectedContentBackground");
+        evenRowBackground.setActiveDefaultSelectedName("selectedContentBackground");
         evenRowBackground.setSelectedName("unemphasizedSelectedTextBackground");
 
         AquaContextualColorImpl oddRowBackground = new AquaContextualColorImpl("StripedContainerColors.background 0", "alternatingContentBackground_0");
-        oddRowBackground.setActiveDefaultSelectedName(OSVersion >= 1016 ? "controlAccent" : "selectedContentBackground");
+        oddRowBackground.setActiveDefaultSelectedName("selectedContentBackground");
         oddRowBackground.setSelectedName("unemphasizedSelectedTextBackground");
 
         AquaContextualColorImpl grid = new AquaContextualColorImpl("StripedContainerColors.grid", "grid");
