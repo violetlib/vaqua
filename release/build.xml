@@ -5,6 +5,7 @@
     default="release"
     xmlns:resolver="antlib:org.apache.maven.resolver.ant"
     xmlns:ivy="antlib:org.apache.ivy.ant"
+    xmlns:if="ant:if"
     name="VAqua Look and Feel">
 
     <tstamp>
@@ -108,7 +109,13 @@
 
     <target name="resolve" depends="resolve-maven"/>
 
-    <target name="copyResources">
+    <condition property="resourcesPresent">
+        <resourceexists>
+            <file file="${resources}"/>
+        </resourceexists>
+    </condition>
+
+    <target name="copyResources" if="${resourcesPresent}">
       <copy todir="${classesdir}">
         <fileset dir="${resources}">
           <include name="org/violetlib/**"/>
