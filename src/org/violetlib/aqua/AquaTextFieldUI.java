@@ -194,7 +194,7 @@ public class AquaTextFieldUI extends AquaTextComponentUIBase implements ToolbarS
         View base = createBasicView(elem);
         int textMargin = getTextMargin();
         if (textMargin > 0) {
-            if (base instanceof FieldView) {
+            if (base instanceof AquaFieldView) {
                 return new AquaMarginView(base, textMargin);
             }
             // TBD: support the complex layout cases: GlyphView and I18nFieldView
@@ -207,7 +207,7 @@ public class AquaTextFieldUI extends AquaTextComponentUIBase implements ToolbarS
         if (view != null) {
             Class c = view.getClass();
             if (c == FieldView.class) {
-                return new AquaFieldView(elem);
+                return new AquaFieldView(elem);  // essential that the basic view not mess with the scrolling model
             }
         }
         return view;
