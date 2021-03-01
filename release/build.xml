@@ -14,21 +14,23 @@
 
     <!-- A Java 9 or later compiler is required -->
 
-    <exec executable="java_home" outputproperty="jdk">
+    <!-- <exec executable="java_home" outputproperty="jdk">
         <arg value="-F"/>
         <arg value="-v"/>
         <arg value="9+"/>
-    </exec>
+    </exec> -->
+    <property name="jdk" value="/Library/Java/JavaVirtualMachines/adoptopenjdk-11.jdk/Contents/Home" />
 
     <property name="javac" location="${jdk}/bin/javac"/>
 
     <!-- A Java 8 boot class path is required -->
 
-    <exec executable="java_home" outputproperty="jdk8">
+    <!-- <exec executable="java_home" outputproperty="jdk8">
         <arg value="-F"/>
         <arg value="-v"/>
         <arg value="1.8"/>
-    </exec>
+    </exec> -->
+    <property name="jdk8" value="/Library/Java/JavaVirtualMachines/adoptopenjdk-8.jdk/Contents/Home" />
 
     <property name="bootclasspath" location="${jdk8}/jre/lib/rt.jar" />
 
@@ -53,7 +55,7 @@
 
     <property name="annotationsVersion" value="20.1.0"/>
     <property name="vappearancesVersion" value="2"/>
-    <property name="jnrVersion" value="9"/>
+    <property name="jnrVersion" value="11-SNAPSHOT"/>
     <property name="activationVersion" value="1.2.0"/>
 
     <property name="SDKroot" location="/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk" />
