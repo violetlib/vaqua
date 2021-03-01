@@ -81,7 +81,7 @@ public class Aqua8MultiResolutionImage extends AquaMultiResolutionImage implemen
         final boolean[] mutex = new boolean[] { false };
         ImageObserver observer = (Image img, int infoflags, int x, int y, int w, int h) -> {
             int required = ImageObserver.ALLBITS;
-            if ((infoflags & required) == required || (infoflags & (ImageObserver.ABORT)) != 0) {
+            if ((infoflags & required) == required || (infoflags & (ImageObserver.ERROR | ImageObserver.ABORT)) != 0) {
                 synchronized (mutex) {
                     mutex[0] = true;
                     mutex.notify();

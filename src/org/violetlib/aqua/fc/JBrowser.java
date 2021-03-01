@@ -2187,7 +2187,7 @@ public class JBrowser extends JComponent implements Scrollable {
                 int startIndex;
                 int end;
                 int offset = 0;
-                do {
+                while (start < indices.length) {
                     startIndex = indices[start];
                     for (end = start + 1; end < indices.length; end++) {
                         if (indices[end] != startIndex + end - start) {
@@ -2197,7 +2197,7 @@ public class JBrowser extends JComponent implements Scrollable {
                     fireIntervalRemoved(this, startIndex - offset, indices[end - 1] - offset);
                     offset += indices[end - 1] - startIndex + 1;
                     start = end;
-                } while (start < indices.length);
+                }
 
                 // RemovedChildren can't be selected.
                 if (selectionModel.getSelectionCount() > 0) {

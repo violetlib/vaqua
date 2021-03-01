@@ -158,8 +158,10 @@ public class AquaButtonExtendedTypes {
         return null;
     }
 
-    public static WidgetInfo getTabWidgetInfo(AquaUIPainter.Size sz, Position pos) {
-        return widgetDefinitions.get().get(BUTTON_TAB);
+    public static WidgetInfo getTabWidgetInfo(@NotNull SegmentedButtonWidget widget,
+                                              AquaUIPainter.Size sz,
+                                              Position pos) {
+        return getWidgetDefinitions().get(widget);
     }
 
     protected static @NotNull String getRealPositionForLogicalPosition(@NotNull String logicalPosition,
@@ -222,7 +224,7 @@ public class AquaButtonExtendedTypes {
 
         /**
          * Create a specifier for a segmented button. The widget may be superseded in some cases based on the group
-         * membership of the button at the time the widget is used.
+         * membership and the text/icon attributes of the button at the time the widget is used.
          */
         public SegmentedTypeSpecifier(@NotNull String name,
                                       @NotNull SegmentedButtonWidget widget,
@@ -297,7 +299,7 @@ public class AquaButtonExtendedTypes {
     protected final static WidgetInfo defaultSegmentedButtonWidgetInfo = new WidgetInfo(AquaColors.CLEAR_CONTROL_COLORS).withSegmented();
 
     public static @NotNull WidgetInfo getWidgetInfo(Object widget) {
-        WidgetInfo info = widgetDefinitions.get().get(widget);
+        WidgetInfo info = getWidgetDefinitions().get(widget);
         if (info != null) {
             return info;
         }
@@ -315,6 +317,13 @@ public class AquaButtonExtendedTypes {
             return getAllWidgets();
         }
     };
+
+    private static @NotNull Map<Object, WidgetInfo> getWidgetDefinitions()
+    {
+        Map<Object, WidgetInfo> defs = widgetDefinitions.get();
+        assert defs != null;
+        return defs;
+    }
 
     @FunctionalInterface
     protected interface FontFinder {
@@ -483,11 +492,20 @@ public class AquaButtonExtendedTypes {
                 ;
 
         WidgetInfo segmentedSeparated = segmentedRounded.copy()
-                        .withNonexclusiveSelectionColors(AquaColors.SEGMENTED_SEPARATED_NONEXCLUSIVE_BUTTON_COLORS)
-                        .withColors(AquaColors.SEGMENTED_SEPARATED_BUTTON_COLORS);
+                .withNonexclusiveSelectionColors(AquaColors.SEGMENTED_SEPARATED_NONEXCLUSIVE_BUTTON_COLORS)
+                .withColors(AquaColors.SEGMENTED_SEPARATED_BUTTON_COLORS);
 
         result.put(BUTTON_SEGMENTED, segmentedRounded);
         result.put(BUTTON_TAB, segmentedRounded);
+        if (VAquaRenderingAccess.SLIDER_WIDGET != null) {
+            result.put(VAquaRenderingAccess.SLIDER_WIDGET, segmentedRounded);
+        }
+        if (VAquaRenderingAccess.SLIDER_TOOLBAR_WIDGET != null) {
+            result.put(VAquaRenderingAccess.SLIDER_TOOLBAR_WIDGET , segmentedRounded);
+        }
+        if (VAquaRenderingAccess.TEXTURED_SEPARATED_TOOLBAR_ICONS_WIDGET != null) {
+            result.put(VAquaRenderingAccess.TEXTURED_SEPARATED_TOOLBAR_ICONS_WIDGET, segmentedRounded);
+        }
         result.put(BUTTON_SEGMENTED_SEPARATED, segmentedSeparated);
 
         WidgetInfo gradient = new WidgetInfo(AquaColors.GRADIENT_BUTTON_COLORS);
@@ -535,10 +553,14 @@ public class AquaButtonExtendedTypes {
                 .withNonexclusiveSelectionColors(AquaColors.TEXTURED_TOOLBAR_NONEXCLUSIVE_COLORS)
                 ;
 
+        if (OSXSystemProperties.OSVersion >= 1016) {
+            texturedToolbar = texturedToolbar.withRolloverEnabled();
+        }
+
         result.put(BUTTON_TEXTURED, textured);
         result.put(BUTTON_TEXTURED_TOOLBAR, texturedToolbar);
         result.put(BUTTON_ROUND_TEXTURED, textured);
-        result.put(BUTTON_ROUND_TOOLBAR, texturedToolbar);
+        result.put(BUTTON_ROUND_TEXTURED_TOOLBAR, texturedToolbar);
 
         WidgetInfo segmentedTextured = textured.copy().withSegmented().withColors(AquaColors.TEXTURED_SEGMENTED_BUTTON_COLORS).withMargin(9);
         WidgetInfo segmentedTexturedToolbar = segmentedTextured.copy()
@@ -548,7 +570,13 @@ public class AquaButtonExtendedTypes {
         result.put(BUTTON_SEGMENTED_TEXTURED, segmentedTextured);
         result.put(BUTTON_SEGMENTED_TEXTURED_SEPARATED, segmentedTextured);
         result.put(BUTTON_SEGMENTED_TEXTURED_TOOLBAR, segmentedTexturedToolbar);
+        if (VAquaRenderingAccess.SEGMENTED_TEXTURED_TOOLBAR_ICONS_WIDGET != null) {
+            result.put(VAquaRenderingAccess.SEGMENTED_TEXTURED_TOOLBAR_ICONS_WIDGET, segmentedTexturedToolbar);
+        }
         result.put(BUTTON_SEGMENTED_TEXTURED_SEPARATED_TOOLBAR, segmentedTexturedToolbar);
+        if (VAquaRenderingAccess.TEXTURED_SEPARATED_TOOLBAR_ICONS_WIDGET != null) {
+            result.put(VAquaRenderingAccess.TEXTURED_SEPARATED_TOOLBAR_ICONS_WIDGET, segmentedTexturedToolbar);
+        }
 
         WidgetInfo segmentedGradient = gradient.copy().withSegmented()
                 .withColors(AquaColors.GRADIENT_SEGMENTED_BUTTON_COLORS).withMargin(9);
@@ -597,85 +625,85 @@ public class AquaButtonExtendedTypes {
         Map<String, TypeSpecifier> specifiersByName = new HashMap<String, TypeSpecifier>();
 
         TypeSpecifier[] specifiers = {
-            new FixedBorderTypeSpecifier("toolbar", AquaButtonBorder.getToolBarToggleButtonBorder()),
-            new FixedBorderTypeSpecifier("icon", AquaButtonBorder.getIconToggleButtonBorder()),
-            new FixedBorderTypeSpecifier("text", (AquaButtonBorder) UIManager.getBorder("Button.border")),
-            new FixedBorderTypeSpecifier("toggle", AquaButtonBorder.getToggleButtonBorder()),
-            new FixedBorderTypeSpecifier("disclosureTriangle", AquaButtonBorder.getDisclosureTriangleButtonBorder()),
-            new FixedBorderTypeSpecifier("disclosure", AquaButtonBorder.getDisclosureButtonBorder()),
+                new FixedBorderTypeSpecifier("toolbar", AquaButtonBorder.getToolBarToggleButtonBorder()),
+                new FixedBorderTypeSpecifier("icon", AquaButtonBorder.getIconToggleButtonBorder()),
+                new FixedBorderTypeSpecifier("text", (AquaButtonBorder) UIManager.getBorder("Button.border")),
+                new FixedBorderTypeSpecifier("toggle", AquaButtonBorder.getToggleButtonBorder()),
+                new FixedBorderTypeSpecifier("disclosureTriangle", AquaButtonBorder.getDisclosureTriangleButtonBorder()),
+                new FixedBorderTypeSpecifier("disclosure", AquaButtonBorder.getDisclosureButtonBorder()),
 
-            new BorderDefinedTypeSpecifier("checkbox", BUTTON_CHECK_BOX),
-            new BorderDefinedTypeSpecifier("radio", BUTTON_RADIO),
+                new BorderDefinedTypeSpecifier("checkbox", BUTTON_CHECK_BOX),
+                new BorderDefinedTypeSpecifier("radio", BUTTON_RADIO),
 
-            new BorderDefinedTypeSpecifier("square", BUTTON_BEVEL),
-            new BorderDefinedTypeSpecifier("gradient", BUTTON_GRADIENT),
-            new BorderDefinedTypeSpecifier("bevel", BUTTON_BEVEL_ROUND),
+                new BorderDefinedTypeSpecifier("square", BUTTON_BEVEL),
+                new BorderDefinedTypeSpecifier("gradient", BUTTON_GRADIENT),
+                new BorderDefinedTypeSpecifier("bevel", BUTTON_BEVEL_ROUND),
 
-            new BorderDefinedTypeSpecifier("textured", BUTTON_TEXTURED),
-            new BorderDefinedTypeSpecifier("textured-onToolbar", BUTTON_TEXTURED_TOOLBAR),
-            new BorderDefinedTypeSpecifier("roundRect", BUTTON_ROUNDED_RECT),
-            new BorderDefinedTypeSpecifier("recessed", BUTTON_RECESSED),
-            new BorderDefinedTypeSpecifier("inline", BUTTON_INLINE),
-            new BorderDefinedTypeSpecifier("well", BUTTON_TOOLBAR_ITEM),  // old name from Aqua LAF
-            new BorderDefinedTypeSpecifier("toolbarItem", BUTTON_TOOLBAR_ITEM),
-            new BorderDefinedTypeSpecifier("help", BUTTON_HELP),
-            new BorderDefinedTypeSpecifier("round", BUTTON_ROUND),
-            new BorderDefinedTypeSpecifier("round-onToolbar", OSXSystemProperties.OSVersion >= 1011 ? BUTTON_ROUND_TOOLBAR : BUTTON_ROUND),
-            new BorderDefinedTypeSpecifier("texturedRound", BUTTON_ROUND_INSET),  // TBD: this is not correct, but the button type is undocumented
-            new BorderDefinedTypeSpecifier("roundTextured", BUTTON_ROUND_TEXTURED),
-            new BorderDefinedTypeSpecifier("roundTextured-onToolbar", OSXSystemProperties.OSVersion >= 1011 ? BUTTON_ROUND_TOOLBAR : BUTTON_ROUND_TEXTURED),
-            new BorderDefinedTypeSpecifier("roundInset", BUTTON_ROUND_INSET),
-            new BorderDefinedTypeSpecifier("colorWell", BUTTON_COLOR_WELL),
+                new BorderDefinedTypeSpecifier("textured", BUTTON_TEXTURED),
+                new BorderDefinedTypeSpecifier("textured-onToolbar", BUTTON_TEXTURED_TOOLBAR),
+                new BorderDefinedTypeSpecifier("roundRect", BUTTON_ROUNDED_RECT),
+                new BorderDefinedTypeSpecifier("recessed", BUTTON_RECESSED),
+                new BorderDefinedTypeSpecifier("inline", BUTTON_INLINE),
+                new BorderDefinedTypeSpecifier("well", BUTTON_TOOLBAR_ITEM),  // old name from Aqua LAF
+                new BorderDefinedTypeSpecifier("toolbarItem", BUTTON_TOOLBAR_ITEM),
+                new BorderDefinedTypeSpecifier("help", BUTTON_HELP),
+                new BorderDefinedTypeSpecifier("round", BUTTON_ROUND),
+                new BorderDefinedTypeSpecifier("round-onToolbar", OSXSystemProperties.OSVersion >= 1011 ? BUTTON_ROUND_TEXTURED_TOOLBAR : BUTTON_ROUND),
+                new BorderDefinedTypeSpecifier("texturedRound", BUTTON_ROUND_INSET),  // TBD: this is not correct, but the button type is undocumented
+                new BorderDefinedTypeSpecifier("roundTextured", BUTTON_ROUND_TEXTURED),
+                new BorderDefinedTypeSpecifier("roundTextured-onToolbar", OSXSystemProperties.OSVersion >= 1011 ? BUTTON_ROUND_TEXTURED_TOOLBAR : BUTTON_ROUND_TEXTURED),
+                new BorderDefinedTypeSpecifier("roundInset", BUTTON_ROUND_INSET),
+                new BorderDefinedTypeSpecifier("colorWell", BUTTON_COLOR_WELL),
 
-            new SegmentedTypeSpecifier("segmented-first", BUTTON_SEGMENTED, Position.FIRST),
-            new SegmentedTypeSpecifier("segmented-middle", BUTTON_SEGMENTED, Position.MIDDLE),
-            new SegmentedTypeSpecifier("segmented-last", BUTTON_SEGMENTED, Position.LAST),
-            new SegmentedTypeSpecifier("segmented-only", BUTTON_SEGMENTED, Position.ONLY),
+                new SegmentedTypeSpecifier("segmented-first", BUTTON_SEGMENTED, Position.FIRST),
+                new SegmentedTypeSpecifier("segmented-middle", BUTTON_SEGMENTED, Position.MIDDLE),
+                new SegmentedTypeSpecifier("segmented-last", BUTTON_SEGMENTED, Position.LAST),
+                new SegmentedTypeSpecifier("segmented-only", BUTTON_SEGMENTED, Position.ONLY),
 
-            new SegmentedTypeSpecifier("segmentedSeparated-first", BUTTON_SEGMENTED_SEPARATED, Position.FIRST),
-            new SegmentedTypeSpecifier("segmentedSeparated-middle", BUTTON_SEGMENTED_SEPARATED, Position.MIDDLE),
-            new SegmentedTypeSpecifier("segmentedSeparated-last", BUTTON_SEGMENTED_SEPARATED, Position.LAST),
-            new SegmentedTypeSpecifier("segmentedSeparated-only", BUTTON_SEGMENTED_SEPARATED, Position.ONLY),
+                new SegmentedTypeSpecifier("segmentedSeparated-first", BUTTON_SEGMENTED_SEPARATED, Position.FIRST),
+                new SegmentedTypeSpecifier("segmentedSeparated-middle", BUTTON_SEGMENTED_SEPARATED, Position.MIDDLE),
+                new SegmentedTypeSpecifier("segmentedSeparated-last", BUTTON_SEGMENTED_SEPARATED, Position.LAST),
+                new SegmentedTypeSpecifier("segmentedSeparated-only", BUTTON_SEGMENTED_SEPARATED, Position.ONLY),
 
-            new SegmentedTypeSpecifier("segmentedRoundRect-first", BUTTON_SEGMENTED_INSET, Position.FIRST),
-            new SegmentedTypeSpecifier("segmentedRoundRect-middle", BUTTON_SEGMENTED_INSET, Position.MIDDLE),
-            new SegmentedTypeSpecifier("segmentedRoundRect-last", BUTTON_SEGMENTED_INSET, Position.LAST),
-            new SegmentedTypeSpecifier("segmentedRoundRect-only", BUTTON_SEGMENTED_INSET, Position.ONLY),
+                new SegmentedTypeSpecifier("segmentedRoundRect-first", BUTTON_SEGMENTED_INSET, Position.FIRST),
+                new SegmentedTypeSpecifier("segmentedRoundRect-middle", BUTTON_SEGMENTED_INSET, Position.MIDDLE),
+                new SegmentedTypeSpecifier("segmentedRoundRect-last", BUTTON_SEGMENTED_INSET, Position.LAST),
+                new SegmentedTypeSpecifier("segmentedRoundRect-only", BUTTON_SEGMENTED_INSET, Position.ONLY),
 
-            new SegmentedTypeSpecifier("segmentedTexturedRounded-first", BUTTON_SEGMENTED_SCURVE, Position.FIRST),
-            new SegmentedTypeSpecifier("segmentedTexturedRounded-middle", BUTTON_SEGMENTED_SCURVE, Position.MIDDLE),
-            new SegmentedTypeSpecifier("segmentedTexturedRounded-last", BUTTON_SEGMENTED_SCURVE, Position.LAST),
-            new SegmentedTypeSpecifier("segmentedTexturedRounded-only", BUTTON_SEGMENTED_SCURVE, Position.ONLY),
+                new SegmentedTypeSpecifier("segmentedTexturedRounded-first", BUTTON_SEGMENTED_SCURVE, Position.FIRST),
+                new SegmentedTypeSpecifier("segmentedTexturedRounded-middle", BUTTON_SEGMENTED_SCURVE, Position.MIDDLE),
+                new SegmentedTypeSpecifier("segmentedTexturedRounded-last", BUTTON_SEGMENTED_SCURVE, Position.LAST),
+                new SegmentedTypeSpecifier("segmentedTexturedRounded-only", BUTTON_SEGMENTED_SCURVE, Position.ONLY),
 
-            new SegmentedTypeSpecifier("segmentedTextured-first", BUTTON_SEGMENTED_TEXTURED, Position.FIRST),
-            new SegmentedTypeSpecifier("segmentedTextured-middle", BUTTON_SEGMENTED_TEXTURED, Position.MIDDLE),
-            new SegmentedTypeSpecifier("segmentedTextured-last", BUTTON_SEGMENTED_TEXTURED, Position.LAST),
-            new SegmentedTypeSpecifier("segmentedTextured-only", BUTTON_SEGMENTED_TEXTURED, Position.ONLY),
+                new SegmentedTypeSpecifier("segmentedTextured-first", BUTTON_SEGMENTED_TEXTURED, Position.FIRST),
+                new SegmentedTypeSpecifier("segmentedTextured-middle", BUTTON_SEGMENTED_TEXTURED, Position.MIDDLE),
+                new SegmentedTypeSpecifier("segmentedTextured-last", BUTTON_SEGMENTED_TEXTURED, Position.LAST),
+                new SegmentedTypeSpecifier("segmentedTextured-only", BUTTON_SEGMENTED_TEXTURED, Position.ONLY),
 
-            new SegmentedTypeSpecifier("segmentedTextured-first-onToolbar", BUTTON_SEGMENTED_TEXTURED_TOOLBAR, Position.FIRST),
-            new SegmentedTypeSpecifier("segmentedTextured-middle-onToolbar", BUTTON_SEGMENTED_TEXTURED_TOOLBAR, Position.MIDDLE),
-            new SegmentedTypeSpecifier("segmentedTextured-last-onToolbar", BUTTON_SEGMENTED_TEXTURED_TOOLBAR, Position.LAST),
-            new SegmentedTypeSpecifier("segmentedTextured-only-onToolbar", BUTTON_SEGMENTED_TEXTURED_TOOLBAR, Position.ONLY),
+                new SegmentedTypeSpecifier("segmentedTextured-first-onToolbar", BUTTON_SEGMENTED_TEXTURED_TOOLBAR, Position.FIRST),
+                new SegmentedTypeSpecifier("segmentedTextured-middle-onToolbar", BUTTON_SEGMENTED_TEXTURED_TOOLBAR, Position.MIDDLE),
+                new SegmentedTypeSpecifier("segmentedTextured-last-onToolbar", BUTTON_SEGMENTED_TEXTURED_TOOLBAR, Position.LAST),
+                new SegmentedTypeSpecifier("segmentedTextured-only-onToolbar", BUTTON_SEGMENTED_TEXTURED_TOOLBAR, Position.ONLY),
 
-            new SegmentedTypeSpecifier("segmentedCapsule-first", BUTTON_SEGMENTED_TOOLBAR, Position.FIRST),
-            new SegmentedTypeSpecifier("segmentedCapsule-middle", BUTTON_SEGMENTED_TOOLBAR, Position.MIDDLE),
-            new SegmentedTypeSpecifier("segmentedCapsule-last", BUTTON_SEGMENTED_TOOLBAR, Position.LAST),
-            new SegmentedTypeSpecifier("segmentedCapsule-only", BUTTON_SEGMENTED_TOOLBAR, Position.ONLY),
+                new SegmentedTypeSpecifier("segmentedCapsule-first", BUTTON_SEGMENTED_TOOLBAR, Position.FIRST),
+                new SegmentedTypeSpecifier("segmentedCapsule-middle", BUTTON_SEGMENTED_TOOLBAR, Position.MIDDLE),
+                new SegmentedTypeSpecifier("segmentedCapsule-last", BUTTON_SEGMENTED_TOOLBAR, Position.LAST),
+                new SegmentedTypeSpecifier("segmentedCapsule-only", BUTTON_SEGMENTED_TOOLBAR, Position.ONLY),
 
-            new SegmentedTypeSpecifier("segmentedGradient-first", BUTTON_SEGMENTED_SMALL_SQUARE, Position.FIRST),
-            new SegmentedTypeSpecifier("segmentedGradient-middle", BUTTON_SEGMENTED_SMALL_SQUARE, Position.MIDDLE),
-            new SegmentedTypeSpecifier("segmentedGradient-last", BUTTON_SEGMENTED_SMALL_SQUARE, Position.LAST),
-            new SegmentedTypeSpecifier("segmentedGradient-only", BUTTON_SEGMENTED_SMALL_SQUARE, Position.ONLY),
+                new SegmentedTypeSpecifier("segmentedGradient-first", BUTTON_SEGMENTED_SMALL_SQUARE, Position.FIRST),
+                new SegmentedTypeSpecifier("segmentedGradient-middle", BUTTON_SEGMENTED_SMALL_SQUARE, Position.MIDDLE),
+                new SegmentedTypeSpecifier("segmentedGradient-last", BUTTON_SEGMENTED_SMALL_SQUARE, Position.LAST),
+                new SegmentedTypeSpecifier("segmentedGradient-only", BUTTON_SEGMENTED_SMALL_SQUARE, Position.ONLY),
 
-            new SegmentedTypeSpecifier("segmentedTexturedSeparated-first", BUTTON_SEGMENTED_TEXTURED_SEPARATED, Position.FIRST),
-            new SegmentedTypeSpecifier("segmentedTexturedSeparated-middle", BUTTON_SEGMENTED_TEXTURED_SEPARATED, Position.MIDDLE),
-            new SegmentedTypeSpecifier("segmentedTexturedSeparated-last", BUTTON_SEGMENTED_TEXTURED_SEPARATED, Position.LAST),
-            new SegmentedTypeSpecifier("segmentedTexturedSeparated-only", BUTTON_SEGMENTED_TEXTURED_SEPARATED, Position.ONLY),
+                new SegmentedTypeSpecifier("segmentedTexturedSeparated-first", BUTTON_SEGMENTED_TEXTURED_SEPARATED, Position.FIRST),
+                new SegmentedTypeSpecifier("segmentedTexturedSeparated-middle", BUTTON_SEGMENTED_TEXTURED_SEPARATED, Position.MIDDLE),
+                new SegmentedTypeSpecifier("segmentedTexturedSeparated-last", BUTTON_SEGMENTED_TEXTURED_SEPARATED, Position.LAST),
+                new SegmentedTypeSpecifier("segmentedTexturedSeparated-only", BUTTON_SEGMENTED_TEXTURED_SEPARATED, Position.ONLY),
 
-            new SegmentedTypeSpecifier("segmentedTexturedSeparated-first-onToolbar", BUTTON_SEGMENTED_TEXTURED_SEPARATED_TOOLBAR, Position.FIRST),
-            new SegmentedTypeSpecifier("segmentedTexturedSeparated-middle-onToolbar", BUTTON_SEGMENTED_TEXTURED_SEPARATED_TOOLBAR, Position.MIDDLE),
-            new SegmentedTypeSpecifier("segmentedTexturedSeparated-last-onToolbar", BUTTON_SEGMENTED_TEXTURED_SEPARATED_TOOLBAR, Position.LAST),
-            new SegmentedTypeSpecifier("segmentedTexturedSeparated-only-onToolbar", BUTTON_SEGMENTED_TEXTURED_SEPARATED_TOOLBAR, Position.ONLY),
+                new SegmentedTypeSpecifier("segmentedTexturedSeparated-first-onToolbar", BUTTON_SEGMENTED_TEXTURED_SEPARATED_TOOLBAR, Position.FIRST),
+                new SegmentedTypeSpecifier("segmentedTexturedSeparated-middle-onToolbar", BUTTON_SEGMENTED_TEXTURED_SEPARATED_TOOLBAR, Position.MIDDLE),
+                new SegmentedTypeSpecifier("segmentedTexturedSeparated-last-onToolbar", BUTTON_SEGMENTED_TEXTURED_SEPARATED_TOOLBAR, Position.LAST),
+                new SegmentedTypeSpecifier("segmentedTexturedSeparated-only-onToolbar", BUTTON_SEGMENTED_TEXTURED_SEPARATED_TOOLBAR, Position.ONLY),
         };
 
         for (TypeSpecifier specifier : specifiers) {

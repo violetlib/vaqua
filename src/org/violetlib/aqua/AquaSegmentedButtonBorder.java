@@ -38,12 +38,9 @@ import javax.swing.*;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.violetlib.jnr.aqua.*;
-import org.violetlib.jnr.aqua.AquaUIPainter.Position;
-import org.violetlib.jnr.aqua.AquaUIPainter.SegmentedButtonWidget;
-import org.violetlib.jnr.aqua.AquaUIPainter.Size;
-import org.violetlib.jnr.aqua.AquaUIPainter.State;
-import org.violetlib.jnr.aqua.AquaUIPainter.SwitchTracking;
+import org.violetlib.jnr.aqua.AquaUIPainter.*;
 
+import static org.violetlib.aqua.OSXSystemProperties.OSVersion;
 import static org.violetlib.jnr.aqua.SegmentedButtonConfiguration.DividerState;
 
 /**
@@ -70,21 +67,7 @@ public class AquaSegmentedButtonBorder extends AquaButtonBorder implements Focus
 
     @Override
     public @NotNull SegmentedButtonWidget getButtonWidget(@NotNull AbstractButton b) {
-        AquaButtonUI ui = AquaUtils.getUI(b, AquaButtonUI.class);
-        if (ui != null && ui.isGroupMember(b)) {
-            return getWidgetForGroupMember(b);
-        }
-        return widget;
-    }
-
-    private @NotNull SegmentedButtonWidget getWidgetForGroupMember(@NotNull AbstractButton b) {
-        // Special case for exclusive rounded buttons starting in macOS 11
-        if (OSXSystemProperties.OSVersion >= 1016 && widget == SegmentedButtonWidget.BUTTON_SEGMENTED) {
-            SegmentedButtonWidget w = getSegmentedSliderWidget();
-            if (w != null) {
-                return w;
-            }
-        }
+        // For layout purposes, the standard widget is sufficient
         return widget;
     }
 
@@ -120,8 +103,8 @@ public class AquaSegmentedButtonBorder extends AquaButtonBorder implements Focus
             }
         }
 
-        SegmentedButtonWidget widget = getButtonWidget(b);
-        boolean isInGroup = isButtonInGroup(b);
+        SegmentedButtonWidget widget = SegmentedControlModel.getWidget(b, g);
+        boolean isExclusive = isButtonExclusive(b);
 
         // Special case for exclusive textured segmented buttons in light mode on 10.14: make them active-insensitive.
         // This is not what macOS 10.14 actually does, but it is much more readable, and it is similar to what macOS
@@ -131,39 +114,61 @@ public class AquaSegmentedButtonBorder extends AquaButtonBorder implements Focus
                 && state.isInactive()
                 && widget.isTextured()
                 && !AppearanceManager.getAppearance(b).isDark()
-                && isInGroup) {
+                && isExclusive) {
             state = state.toActive();
         }
 
-        // Swing does not know about segmented buttons. They are just buttons that happen to be arranged in a row and
-        // (hopefully) configured properly. Therefore, we cannot determine anything about the button to the left or
-        // right.
-
         Size sz = g.getSize();
-        AquaUIPainter.Direction d = AquaUIPainter.Direction.NONE;
+        AquaUIPainter.Direction d = AquaUIPainter.Direction.UP;
         Position pos = g.getPosition();
-        DividerState leftState = AquaSegmentedButtonBorder.getDividerState(false, false);
-        DividerState rightState = AquaSegmentedButtonBorder.getDividerState(pos == Position.FIRST
-                || pos == Position.MIDDLE, false);
-        AquaUIPainter.SwitchTracking tracking = isInGroup ? SwitchTracking.SELECT_ONE : SwitchTracking.SELECT_ANY;
+        boolean leftDividerPainted = false;
+        boolean leftDividerSelected = false;
+        boolean rightDividerPainted = pos == Position.FIRST || pos == Position.MIDDLE;
+        boolean rightDividerSelected = false;
+
+        // The divider on the right side must be suppressed in certain cases.
+
+        if (rightDividerPainted) {
+            AbstractButton rightButton = SegmentedControlModel.getRightAdjacentButton(b);
+            if (rightButton != null && rightButton.isSelected() && !b.isSelected()) {
+                SegmentedButtonWidget w = getButtonWidgetForPainting(rightButton);
+                if (w != null && w.isSlider()) {
+                    rightDividerPainted = false;
+                }
+            }
+        }
+
+        DividerState leftState = AquaSegmentedButtonBorder.getDividerState(leftDividerPainted, leftDividerSelected);
+        DividerState rightState = AquaSegmentedButtonBorder.getDividerState(rightDividerPainted, rightDividerSelected);
+        AquaUIPainter.SwitchTracking tracking = isExclusive ? SwitchTracking.SELECT_ONE : SwitchTracking.SELECT_ANY;
         return new SegmentedButtonConfiguration(widget, sz, state, isSelected, isFocused, d, pos,
                 leftState, rightState, tracking);
     }
 
-    private @Nullable SegmentedButtonWidget getSegmentedSliderWidget() {
-        // This field was introduced in release 10 of VAquaRendering
-        try {
-            return SegmentedButtonWidget.BUTTON_SEGMENTED_SLIDER;
-        } catch (NoSuchFieldError e) {
-            return null;
-        }
+    private @Nullable SegmentedButtonWidget getButtonWidgetForPainting(@NotNull AbstractButton b) {
+        LayoutConfiguration g = getLayoutConfiguration(b);
+        return g != null ? SegmentedControlModel.getWidget(b, g) : null;
     }
 
     @Override
     public @NotNull SegmentedButtonLayoutConfiguration determineLayoutConfiguration(@NotNull AbstractButton b) {
         SegmentedButtonWidget widget = getButtonWidget(b);
-        Size size = AquaUtilControlSize.getUserSizeFrom(b);
+        Size defaultSize = getSpecialDefaultSize(b);
+        Size size = AquaUtilControlSize.getUserSizeFrom(b, defaultSize);
         return new SegmentedButtonLayoutConfiguration(widget, size, position);
+    }
+
+    protected @Nullable Size getSpecialDefaultSize(@NotNull AbstractButton b) {
+        if (OSVersion >= 1016) {
+            boolean isToolbar = AquaUtils.isOnToolbar(b);
+            return isToolbar ? AquaUIPainter.Size.LARGE : null;
+        }
+        return null;
+    }
+
+    @Override
+    protected boolean isRollover(@NotNull AbstractButton b) {
+        return SegmentedControlModel.isRollover(b);
     }
 
     public static SegmentedButtonConfiguration.DividerState getDividerState(boolean isPainted, boolean isSelected) {

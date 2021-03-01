@@ -5,6 +5,7 @@
     default="release"
     xmlns:resolver="antlib:org.apache.maven.resolver.ant"
     xmlns:ivy="antlib:org.apache.ivy.ant"
+    xmlns:if="ant:if"
     name="VAqua Look and Feel">
 
     <tstamp>
@@ -13,18 +14,17 @@
 
     <!-- A Java 9 or later compiler is required -->
 
-    <property name="java9.version" value="9" />
-    <exec executable="/usr/libexec/java_home" outputproperty="jdk" failonerror="true">
+    <exec executable="java_home" outputproperty="jdk">
         <arg value="-F"/>
         <arg value="-v"/>
-        <arg value="${java9.version}"/>
+        <arg value="9+"/>
     </exec>
 
     <property name="javac" location="${jdk}/bin/javac"/>
 
     <!-- A Java 8 boot class path is required -->
 
-    <exec executable="/usr/libexec/java_home" outputproperty="jdk8" failonerror="true">
+    <exec executable="java_home" outputproperty="jdk8">
         <arg value="-F"/>
         <arg value="-v"/>
         <arg value="1.8"/>
@@ -109,7 +109,13 @@
 
     <target name="resolve" depends="resolve-maven"/>
 
-    <target name="copyResources">
+    <condition property="resourcesPresent">
+        <resourceexists>
+            <file file="${resources}"/>
+        </resourceexists>
+    </condition>
+
+    <target name="copyResources" if="${resourcesPresent}">
       <copy todir="${classesdir}">
         <fileset dir="${resources}">
           <include name="org/violetlib/**"/>

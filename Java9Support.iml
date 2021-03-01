@@ -8,6 +8,6 @@
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="module" module-name="VAqua" />
-    <orderEntry type="library" name="IdeaAnnotations" level="application" />
+    <orderEntry type="library" name="org.jetbrains:annotations:20.1.0" level="application" />
   </component>
 </module>

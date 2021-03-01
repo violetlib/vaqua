@@ -85,7 +85,7 @@ public class AquaCustomStyledWindow {
     public static final int STYLE_COMBINED = 5;         // AKA combined title and tool bar
     public static final int STYLE_UNDECORATED = 6;      // Internal use
 
-    protected final int TITLE_BAR_HEIGHT = 22;
+    protected final int TITLE_BAR_HEIGHT = OSXSystemProperties.OSVersion >= 1016 ? 27: 22;
     protected final int TITLE_BAR_BUTTONS_WIDTH = 78;
 
     protected @Nullable Window w;

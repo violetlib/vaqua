@@ -163,6 +163,9 @@ final public class AquaUtils {
                     return 0;
                 }
                 version = version * limit + n;
+                if (tokenCount == 3) {
+                    return version;
+                }
             }
         } catch (NumberFormatException ex) {
             return 0;
@@ -172,10 +175,6 @@ final public class AquaUtils {
             ++tokenCount;
             int limit = tokenCount < 3 ? 100 : 1000;
             version = version * limit;
-        }
-
-        if (tokenCount != 3) {
-            return 0;
         }
         return version;
     }
@@ -318,16 +317,18 @@ final public class AquaUtils {
      */
     public static @NotNull Rectangle getScreenBounds(@Nullable GraphicsConfiguration gc) {
         Rectangle bounds;
+        Insets insets;
         Toolkit toolkit = Toolkit.getDefaultToolkit();
         if (gc != null) {
             // If we have GraphicsConfiguration use it to get screen bounds
             bounds = gc.getBounds();
+            insets = toolkit.getScreenInsets(gc);
         } else {
             // If we don't have GraphicsConfiguration use primary screen
             bounds = new Rectangle(toolkit.getScreenSize());
+            insets = new Insets(0, 0, 0, 0);
         }
 
-        Insets insets = toolkit.getScreenInsets(gc);
         int top = insets.top;
         int bottom = insets.bottom;
         int left = insets.left;
@@ -505,6 +506,10 @@ final public class AquaUtils {
         // It seems that windows made full screen using a title bar button do not get registered as such with Java...
         long result = execute(w, nw -> nativeIsFullScreenWindow(nw) ? 1 : 0);
         return result != 0;
+    }
+
+    public static boolean isInsetViewSupported() {
+        return OSXSystemProperties.OSVersion >= 1016;
     }
 
     // The following are copied from SwingUtilities, with modification.

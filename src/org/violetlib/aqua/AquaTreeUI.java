@@ -368,8 +368,11 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
     }
 
     private boolean getInsetValue() {
-        String value = getViewStyleProperty();
-        return "inset".equals(value);
+        if (AquaUtils.isInsetViewSupported()) {
+            String value = getViewStyleProperty();
+            return "inset".equals(value);
+        }
+        return false;
     }
 
     public boolean isStriped() {

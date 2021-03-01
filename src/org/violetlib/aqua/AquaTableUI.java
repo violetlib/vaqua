@@ -47,7 +47,10 @@ import javax.swing.plaf.ColorUIResource;
 import javax.swing.plaf.ComponentUI;
 import javax.swing.plaf.UIResource;
 import javax.swing.plaf.basic.BasicTableUI;
-import javax.swing.table.*;
+import javax.swing.table.TableCellEditor;
+import javax.swing.table.TableCellRenderer;
+import javax.swing.table.TableColumn;
+import javax.swing.table.TableColumnModel;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -72,6 +75,7 @@ public class AquaTableUI extends BasicTableUI
     public static final String TABLE_STYLE_KEY = "JTable.style";
     public static final String QUAQUA_TABLE_STYLE_KEY = "Quaqua.Table.style";
     public static final String TABLE_VIEW_STYLE_KEY = "JTable.viewStyle";
+    public static final String INSET_VIEW_MARGIN_KEY = "Aqua.insetViewMargin";
 
     protected final PropertyChangeListener propertyChangeListener;
     protected final ListSelectionListener selectionListener;
@@ -85,7 +89,6 @@ public class AquaTableUI extends BasicTableUI
     private boolean isStriped = false;
     private boolean isInset = false;
     private int insetMargin = 15;
-    private @Nullable AquaTableMarginHack.ExtendedTable extendedTable;
     protected @NotNull ContainerContextualColors colors;
     protected @Nullable AppearanceContext appearanceContext;
     protected @Nullable Color actualTableBackground;
@@ -223,10 +226,6 @@ public class AquaTableUI extends BasicTableUI
         originalBooleanEditor = installEditorIfPossible(Boolean.class, AquaBooleanEditor.class);
         isStriped = getStripedValue();
         configureAppearanceContext(null);
-        extendedTable = AquaTableMarginHack.getExtendedTable(table);
-        if (extendedTable != null) {
-            extendedTable.installDefaultMargins(0, 0);
-        }
         updateInset();
     }
 
@@ -249,6 +248,7 @@ public class AquaTableUI extends BasicTableUI
             table.setDefaultEditor(Boolean.class, originalBooleanEditor);
         }
         painter = null;
+        table.putClientProperty(INSET_VIEW_MARGIN_KEY, null);
         super.uninstallDefaults();
     }
 
@@ -388,10 +388,8 @@ public class AquaTableUI extends BasicTableUI
         boolean value = getInsetValue();
         if (value != isInset) {
             isInset = value;
-            if (extendedTable != null) {
-                int margin = isInset ? insetMargin : 0;
-                extendedTable.installDefaultMargins(margin, margin);
-            }
+            int margin = isInset ? insetMargin : 0;
+            table.putClientProperty(INSET_VIEW_MARGIN_KEY, margin);
             table.setRowMargin(isInset ? 0 : 1);
             table.revalidate();
             table.repaint();
@@ -403,10 +401,13 @@ public class AquaTableUI extends BasicTableUI
         // the inset view style is installed, the row margin is set to zero, to allow joining of adjacent selected
         // rows.
 
-        String value = getViewStyleProperty();
-        return "inset".equals(value)
-                && table.getRowMargin() <= 1
-                && !table.getShowHorizontalLines();
+        if (AquaUtils.isInsetViewSupported()) {
+            String value = getViewStyleProperty();
+            return "inset".equals(value)
+                    && table.getRowMargin() <= 1
+                    && !table.getShowHorizontalLines();
+        }
+        return false;
     }
 
     public boolean isStriped() {

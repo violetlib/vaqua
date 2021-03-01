@@ -41,12 +41,15 @@ import javax.swing.event.DocumentListener;
 import javax.swing.text.JTextComponent;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.violetlib.jnr.Insetter;
 import org.violetlib.jnr.aqua.AquaUIPainter;
 import org.violetlib.jnr.aqua.AquaUIPainter.State;
 import org.violetlib.jnr.aqua.AquaUIPainter.TextFieldWidget;
 import org.violetlib.jnr.aqua.TextFieldLayoutConfiguration;
 
+import static org.violetlib.aqua.AquaLabelUI.AQUA_LABEL_ROLE_PROPERTY;
+import static org.violetlib.aqua.AquaLabelUI.AQUA_SEARCH_FIELD_PROMPT_ROLE_VALUE;
 import static org.violetlib.aqua.OSXSystemProperties.OSVersion;
 
 public class AquaTextFieldSearch {
@@ -194,8 +197,8 @@ public class AquaTextFieldSearch {
 
     private static Component getPromptLabel(JTextComponent c) {
         JLabel label = new JLabel();
-        label.setForeground(UIManager.getColor("TextField.inactiveForeground"));
-        label.setFont(null);    // use the same font as the text field
+        label.putClientProperty(AQUA_LABEL_ROLE_PROPERTY, AQUA_SEARCH_FIELD_PROMPT_ROLE_VALUE);
+        label.setFont(null);  // use the same font as the text field
 
         c.getDocument().addDocumentListener(new DocumentListener() {
             public void changedUpdate(DocumentEvent e) { updatePromptLabel(label, c); }
@@ -286,6 +289,15 @@ public class AquaTextFieldSearch {
         // called via reflection
         public SearchFieldBorder(@NotNull JTextComponent tc) {
             super(tc);
+        }
+
+        @Override
+        protected @Nullable AquaUIPainter.Size getSpecialDefaultSize() {
+            if (OSVersion >= 1016) {
+                boolean isToolbar = AquaUtils.isOnToolbar(tc);
+                return isToolbar ? AquaUIPainter.Size.LARGE : null;
+            }
+            return null;
         }
 
         public void paint(JComponent c, Graphics g, int x, int y, int w, int h) {
