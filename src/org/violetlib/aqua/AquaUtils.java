@@ -52,6 +52,8 @@ import java.util.Map;
 import java.util.StringTokenizer;
 import java.util.concurrent.locks.Lock;
 import java.util.function.Supplier;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.swing.*;
 import javax.swing.border.Border;
 import javax.swing.plaf.MenuBarUI;
@@ -75,6 +77,8 @@ final public class AquaUtils {
     private static final String ANIMATIONS_PROPERTY = "swing.enableAnimations";
 
     private static final int javaVersion = obtainJavaVersion();
+
+    private static final Logger LOG = Logger.getLogger(AquaUtils.class.getName());
 
     private static final HierarchyListener toolbarStatusListener = new HierarchyListener() {
         @Override
@@ -125,15 +129,15 @@ final public class AquaUtils {
     };
 
     public static void logError(@NotNull String message) {
-        System.err.println(message);
+        LOG.log(Level.SEVERE, message);
     }
 
     public static void logError(@NotNull String message, @NotNull Throwable th) {
-        System.err.println(message + ": " + th);
+        LOG.log(Level.SEVERE, message, th);
     }
 
     public static void logDebug(@NotNull String message) {
-        System.err.println(message);
+        LOG.fine(message);
     }
 
     public static int getJavaVersion() {
