@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2020 Alan Snyder.
+ * Copyright (c) 2018-2021 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -9,6 +9,7 @@
 // Support for mapping a native window to a Java window.
 
 #import "JavaWindowAccess.h"
+#import "AquaNativeSupport.h"
 
 static JNF_CLASS_CACHE(jc_CPlatformWindow, "sun/lwawt/macosx/CPlatformWindow");
 static JNF_MEMBER_CACHE(jf_target, jc_CPlatformWindow, "target", "Ljava/awt/Window;");
@@ -19,12 +20,18 @@ jobject getJavaWindow(JNIEnv *env, NSWindow *w)
     NSObject *delegate = [w delegate];
 
     if ([delegate respondsToSelector: @selector(javaPlatformWindow)]) {
-        JNFWeakJObjectWrapper *jPlatformWindowWrapper = [delegate javaPlatformWindow];
-        if (jPlatformWindowWrapper) {
-            jobject jPlatformWindow = [jPlatformWindowWrapper jObjectWithEnv:env];
-            if (jPlatformWindow) {
-                return JNFGetObjectField(env, jPlatformWindow, jf_target);
+        jobject jPlatformWindow;
+        long javaVersion = getJavaVersion();
+        if (javaVersion >= 1700000) {
+            jPlatformWindow = (*env)->NewLocalRef(env, [delegate javaPlatformWindow]);
+        } else {
+            JNFWeakJObjectWrapper *jPlatformWindowWrapper = [delegate javaPlatformWindow];
+            if (jPlatformWindowWrapper) {
+                jPlatformWindow = [jPlatformWindowWrapper jObjectWithEnv:env];
             }
+        }
+        if (jPlatformWindow) {
+            return JNFGetObjectField(env, jPlatformWindow, jf_target);
         }
     }
 
@@ -37,9 +44,14 @@ jobject getJavaPlatformWindow(JNIEnv *env, NSWindow *w)
     NSObject *delegate = [w delegate];
 
     if ([delegate respondsToSelector: @selector(javaPlatformWindow)]) {
-        JNFWeakJObjectWrapper *jPlatformWindowWrapper = [delegate javaPlatformWindow];
-        if (jPlatformWindowWrapper) {
-            return [jPlatformWindowWrapper jObjectWithEnv:env];
+        long javaVersion = getJavaVersion();
+        if (javaVersion >= 1700000) {
+            return (*env)->NewLocalRef(env, [delegate javaPlatformWindow]);
+        } else {
+            JNFWeakJObjectWrapper *jPlatformWindowWrapper = [delegate javaPlatformWindow];
+            if (jPlatformWindowWrapper) {
+                return [jPlatformWindowWrapper jObjectWithEnv:env];
+            }
         }
     }
 

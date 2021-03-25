@@ -2,7 +2,7 @@
  * @(#)AquaNativeSupport.m
  *
  * Copyright (c) 2004-2007 Werner Randelshofer, Switzerland.
- * Copyright (c) 2014-2019 Alan Snyder.
+ * Copyright (c) 2014-2021 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this software, except in
@@ -61,6 +61,11 @@ static JavaVM *vm;
 static jint javaVersion;
 static jobject synchronizeCallback;
 static jobject windowChangedAppearanceCallback;
+
+long getJavaVersion()
+{
+    return javaVersion;
+}
 
 NSString *createIndentation(int indent)
 {
