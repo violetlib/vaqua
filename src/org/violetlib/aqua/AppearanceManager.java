@@ -311,7 +311,7 @@ public class AppearanceManager {
             long flags = e.getChangeFlags();
             if ((flags & HierarchyEvent.PARENT_CHANGED) != 0) {
                 Component c = e.getChanged();
-                if (c instanceof JComponent) {
+                if (c == e.getSource() && c instanceof JComponent) {
                     JComponent jc = (JComponent) c;
                     parentChanged(jc);
                 }
