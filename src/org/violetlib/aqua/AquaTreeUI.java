@@ -364,6 +364,7 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
             isInset = value;
             tree.revalidate();
             tree.repaint();
+            updateSize();
         }
     }
 
