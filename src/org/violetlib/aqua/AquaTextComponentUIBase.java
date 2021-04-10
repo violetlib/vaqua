@@ -60,6 +60,12 @@ public class AquaTextComponentUIBase extends AquaTextComponentDelegatedUIBase im
     }
 
     @Override
+    public void installUI(@NotNull JComponent c) {
+        super.installUI(c);
+        configureAppearanceContext(null);
+    }
+
+    @Override
     protected void installListeners() {
         super.installListeners();
         handler = createFocusHandler();
@@ -114,7 +120,7 @@ public class AquaTextComponentUIBase extends AquaTextComponentDelegatedUIBase im
     protected void propertyChange(@NotNull PropertyChangeEvent evt) {
         super.propertyChange(evt);
         String prop = evt.getPropertyName();
-        if ("enabled".equals(prop)) {
+        if ("enabled".equals(prop) || "editable".equals(prop)) {
             configureAppearanceContext(null);
         }
     }
