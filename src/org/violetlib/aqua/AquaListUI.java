@@ -270,7 +270,9 @@ public class AquaListUI extends BasicListUI implements AquaComponentUI, AquaView
             isInset = value;
             configureAppearanceContext(null);
             // If the default cell renderer is being used, its insets will be different.
-            updateLayoutState();
+            updateLayoutStateNeeded |= cellRendererChanged;
+            list.revalidate();
+            list.repaint();
         }
     }
 
