@@ -1,5 +1,5 @@
 /*
- * Changes Copyright (c) 2015-2020 Alan Snyder.
+ * Changes Copyright (c) 2015-2021 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -41,6 +41,7 @@ import java.beans.PropertyChangeListener;
 import java.util.Enumeration;
 import java.util.TooManyListenersException;
 import javax.swing.*;
+import javax.swing.border.Border;
 import javax.swing.event.MouseInputAdapter;
 import javax.swing.plaf.ColorUIResource;
 import javax.swing.plaf.ComponentUI;
@@ -165,7 +166,7 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
 
     @Override
     protected void uninstallDefaults() {
-       super.uninstallDefaults();
+        super.uninstallDefaults();
     }
 
     @Override
@@ -646,7 +647,7 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
                 boolean isSelected = true;
 
                 aComponent = currentCellRenderer.getTreeCellRendererComponent(tree, value, isSelected,
-                     expanded, treeModel.isLeaf(value), row, false);
+                        expanded, treeModel.isLeaf(value), row, false);
 
                 boolean isCategory = depth == 1;
                 configureCellRenderer(true, aComponent, isCategory, row, isSelected);
@@ -927,7 +928,10 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
         // and paint a border around each item
         if (component instanceof DefaultTreeCellRenderer) {
             DefaultTreeCellRenderer treeCellRenderer = (DefaultTreeCellRenderer) component;
-            treeCellRenderer.setBorder(AquaLookAndFeel.NOTHING_BORDER);
+            Border existing = treeCellRenderer.getBorder();
+            if (existing instanceof UIResource && existing != AquaLookAndFeel.NOTHING_BORDER) {
+                treeCellRenderer.setBorder(AquaLookAndFeel.NOTHING_BORDER);
+            }
             if (!isLayout) {
                 assert appearanceContext != null;
                 treeCellRenderer.setBackgroundNonSelectionColor(AquaColors.CLEAR);
@@ -1205,8 +1209,8 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
 
     private int findCenteredX(int x, int iconWidth) {
         return tree.getComponentOrientation().isLeftToRight()
-               ? x - (int)Math.ceil(iconWidth / 2.0)
-               : x - (int)Math.floor(iconWidth / 2.0);
+                ? x - (int)Math.ceil(iconWidth / 2.0)
+                : x - (int)Math.floor(iconWidth / 2.0);
     }
 
     @Override
@@ -1384,8 +1388,8 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
 
         public void mouseDragged(MouseEvent e) {
             fIsInBounds = fPathBounds.contains(e.getX(), e.getY());
-                paintOneControl();
-            }
+            paintOneControl();
+        }
 
         @Override
         public void mouseExited(MouseEvent e) {
@@ -1421,9 +1425,9 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
         }
 
         protected void paintAnimation(boolean expanding) {
-                paintAnimationFrame(0);
-                paintAnimationFrame(0.5f);
-                paintAnimationFrame(1);
+            paintAnimationFrame(0);
+            paintAnimationFrame(0.5f);
+            paintAnimationFrame(1);
             fAnimationTransition = -1;
         }
 
@@ -1472,8 +1476,8 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
         protected void removeFromSource() {
             tree.removeMouseListener(this);
             tree.removeMouseMotionListener(this);
-            }
         }
+    }
 
     protected int getRowForPath(TreePath path) {
         return treeState.getRowForPath(path);
