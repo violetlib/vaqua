@@ -340,7 +340,7 @@ public class AquaTextFieldUI extends AquaTextComponentUIBase implements ToolbarS
 
         Border b = editor.getBorder();
 
-        if (!(b instanceof AquaTextComponentBorder)) {
+        if (!(b instanceof AquaTextComponentBorder) && !(b instanceof AquaCellBorder)) {
             // developer must have set a custom border
 
             // The effect of this code is to make isOpaque=true the default when a custom border is used.
@@ -360,8 +360,10 @@ public class AquaTextFieldUI extends AquaTextComponentUIBase implements ToolbarS
             return;
         }
 
-        // using our own border
-        AquaTextComponentBorder tb = (AquaTextComponentBorder) b;
-        tb.paintBackground(editor, g, background);
+        if (b instanceof AquaTextComponentBorder) {
+            // using our own border
+            AquaTextComponentBorder tb = (AquaTextComponentBorder) b;
+            tb.paintBackground(editor, g, background);
+        }
     }
 }
