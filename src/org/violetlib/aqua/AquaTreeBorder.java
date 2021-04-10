@@ -27,6 +27,14 @@ public class AquaTreeBorder extends AbstractBorder implements UIResource {
         int side = isInset ? 10 : 1;
         insets.top = insets.bottom = top;
         insets.left = insets.right = side;
+        if (isInset) {
+            boolean isLTR = c.getComponentOrientation().isLeftToRight();
+            if (isLTR) {
+                insets.right += 10;
+            } else {
+                insets.left += 10;
+            }
+        }
         return insets;
     }
 
