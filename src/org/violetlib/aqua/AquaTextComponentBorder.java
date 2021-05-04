@@ -55,6 +55,8 @@ import org.violetlib.jnr.aqua.TextFieldLayoutConfiguration;
  */
 public class AquaTextComponentBorder extends AquaBorder implements FocusRingOutlineProvider, Border2D {
 
+    public static final @NotNull String INHIBIT_BORDER_PROPERTY = "Aqua.inhibitTextComponentBorder";
+
     // This border is really a background. It paints as background, not as a border.
     // It needs to be a Border as a signal to the UI that the user has not installed a custom border.
     // It also provides the insets to the component UI.
@@ -74,6 +76,13 @@ public class AquaTextComponentBorder extends AquaBorder implements FocusRingOutl
     }
 
     public void paintBackground(@NotNull Component c, Graphics g, @Nullable Color background) {
+        if (c instanceof JComponent) {
+            JComponent jc = (JComponent) c;
+            Object o = jc.getClientProperty(INHIBIT_BORDER_PROPERTY);
+            if (Boolean.TRUE.equals(o)) {
+                return;
+            }
+        }
         if (c.isOpaque()) {
             if (background != null) {
                 g.setColor(background);
