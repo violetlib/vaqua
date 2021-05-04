@@ -112,7 +112,8 @@ public class AquaTextPaneUIBase extends AquaTextComponentUIBase {
                 }
             }
         }
-        clearScrollPaneBorder();
+        clearWatchedParent();
+        clearOwningScrollPane();
     }
 
     protected void clearScrollPaneBorder() {
