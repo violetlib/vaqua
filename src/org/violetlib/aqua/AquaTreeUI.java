@@ -81,6 +81,8 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
     public static final String QUAQUA_TREE_STYLE_KEY = "Quaqua.Tree.style";
     public static final String TREE_VIEW_STYLE_KEY = "JTree.viewStyle";
 
+    public static final String SELECTION_FOREGROUND_KEY = "JTree.selectionForeground";
+
     // Begin Line Stuff from Metal
 
     private static final String LINE_STYLE = "JTree.lineStyle";
@@ -120,7 +122,6 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
     // state variables for painting, needed because we share painting implementation with the superclass
     protected boolean shouldPaintSelection;
     protected boolean isActive;     // for communication between paint() and paintRow()
-    protected boolean isFocused;    // ditto
 
     // state variables needed for cell renderer configuration
     private Font oldCellRendererFont;
@@ -236,8 +237,12 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
 
     protected AquaUIPainter.State getState() {
         return tree.isEnabled()
-                ? (isFocused ? AquaUIPainter.State.ACTIVE_DEFAULT : AquaUIPainter.State.ACTIVE)
+                ? (shouldDisplayAsFocused() ? AquaUIPainter.State.ACTIVE_DEFAULT : AquaUIPainter.State.ACTIVE)
                 : AquaUIPainter.State.DISABLED;
+    }
+
+    protected boolean shouldDisplayAsFocused() {
+        return AquaFocusHandler.isActive(tree) && (AquaFocusHandler.hasFocus(tree) || tree.isEditing());
     }
 
     protected void updateProperties() {
@@ -338,10 +343,6 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
         }
     }
 
-    protected boolean shouldDisplayAsFocused() {
-        return AquaFocusHandler.hasFocus(tree) || tree.isEditing() && AquaFocusHandler.isActive(tree);
-    }
-
     private void updateStriped() {
         boolean value = getStripedValue();
         if (value != isStriped) {
@@ -388,7 +389,7 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
 
     private boolean isBackgroundClear() {
         Color c = tree.getBackground();
-        return c.getAlpha() == 0 || c instanceof ColorUIResource;
+        return c == null || c.getAlpha() == 0 || c instanceof ColorUIResource;
     }
 
     protected boolean isCellFilledProperty(String prop) {
@@ -717,7 +718,6 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
         // Set the variables used by paintRow
 
         isActive = AquaFocusHandler.isActive(c);
-        isFocused = shouldDisplayAsFocused();
         shouldPaintSelection = !Boolean.FALSE.equals(tree.getClientProperty("JTree.paintSelectionBackground"));
 
         Color background = getCurrentBackground();
@@ -1096,6 +1096,8 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
                 decodeLineStyle(e.getNewValue());
             } else if (pn.equals("enabled")) {
                 configureAppearanceContext(null);
+            } else if (AquaFocusHandler.DISPLAY_AS_FOCUSED_KEY.equals(pn)) {
+                configureAppearanceContext(null);
             } else if (isStyleProperty(pn)) {
                 updateStriped();
             } else if (isViewStyleProperty(pn)) {
@@ -1279,7 +1281,6 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
         }
 
         private void focusChanged() {
-            isFocused = shouldDisplayAsFocused();
             configureAppearanceContext(null);
         }
     }

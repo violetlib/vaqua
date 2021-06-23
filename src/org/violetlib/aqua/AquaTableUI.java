@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014-2020 Alan Snyder.
+ * Copyright (c) 2014-2021 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -188,6 +188,8 @@ public class AquaTableUI extends BasicTableUI
             if (pn != null) {
                 if (pn.equals("enabled")) {
                     configureAppearanceContext(null);
+                } else if (AquaFocusHandler.DISPLAY_AS_FOCUSED_KEY.equals(pn)) {
+                    configureAppearanceContext(null);
                 } else if (pn.equals("selectionModel")) {
                     ListSelectionModel old = (ListSelectionModel) ev.getOldValue();
                     updateSelectionListener(old);
@@ -364,7 +366,7 @@ public class AquaTableUI extends BasicTableUI
     }
 
     protected boolean shouldDisplayAsFocused() {
-        return AquaFocusHandler.hasFocus(table) || table.isEditing() && AquaFocusHandler.isActive(table);
+        return AquaFocusHandler.isActive(table) && (AquaFocusHandler.hasFocus(table) || table.isEditing());
     }
 
     private void updateStriped() {

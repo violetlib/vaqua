@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2020 Alan Snyder.
+ * Copyright (c) 2015-2021 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -71,6 +71,7 @@ import static javax.swing.SwingConstants.*;
 final public class AquaUtils {
 
     public static final String TOOLBAR_PANEL_PROPERTY = "Aqua.isToolBarPanel";
+    public static final String IS_CELL_COMPONENT_KEY = "JComponent.isCellComponent";
 
     private static final String ANIMATIONS_PROPERTY = "swing.enableAnimations";
 
@@ -510,6 +511,15 @@ final public class AquaUtils {
 
     public static boolean isInsetViewSupported() {
         return OSXSystemProperties.OSVersion >= 1016;
+    }
+
+    public static boolean isCellComponent(@NotNull Component c)
+    {
+        if (c instanceof JComponent) {
+            JComponent jc = (JComponent) c;
+            return Boolean.TRUE.equals(jc.getClientProperty(IS_CELL_COMPONENT_KEY));
+        }
+        return false;
     }
 
     // The following are copied from SwingUtilities, with modification.

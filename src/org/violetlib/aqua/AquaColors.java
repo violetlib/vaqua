@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2020 Alan Snyder.
+ * Copyright (c) 2018-2021 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -652,6 +652,18 @@ public class AquaColors {
         if (!AquaColors.isPriority(c.getForeground())) {
             c.setForeground(colors.getForeground(context));
         }
+
+        Color existingSelectionForeground = getColorProperty(c, AquaTreeUI.SELECTION_FOREGROUND_KEY);
+        if (!AquaColors.isPriority(existingSelectionForeground)) {
+            AppearanceContext selectedContext = context.withSelected(true);
+            c.putClientProperty(AquaTreeUI.SELECTION_FOREGROUND_KEY, colors.getForeground(selectedContext));
+        }
+    }
+
+    private static @Nullable Color getColorProperty(@NotNull JComponent c, @NotNull String property)
+    {
+        Object o = c.getClientProperty(property);
+        return o instanceof Color ? (Color) o : null;
     }
 
     public static @NotNull Color getOrdinaryColor(@NotNull Color c) {

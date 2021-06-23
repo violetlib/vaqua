@@ -1,5 +1,5 @@
 /*
- * Changes Copyright (c) 2015-2020 Alan Snyder.
+ * Changes Copyright (c) 2015-2021 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -64,7 +64,6 @@ public class AquaListUI extends BasicListUI implements AquaComponentUI, AquaView
 
     private boolean isStriped = false;
     private boolean isInset = false;
-    private boolean isFocused = false;
     private boolean isMenu = false;
     protected @NotNull ContainerContextualColors colors;
     protected @Nullable AppearanceContext appearanceContext;
@@ -171,7 +170,6 @@ public class AquaListUI extends BasicListUI implements AquaComponentUI, AquaView
         }
 
         private void focusChanged() {
-            isFocused = AquaFocusHandler.hasFocus(list);
             configureAppearanceContext(null);
         }
     }
@@ -184,6 +182,8 @@ public class AquaListUI extends BasicListUI implements AquaComponentUI, AquaView
         public void propertyChange(PropertyChangeEvent e) {
             String prop = e.getPropertyName();
             if ("enabled".equals(prop)) {
+                configureAppearanceContext(null);
+            } else if (AquaFocusHandler.DISPLAY_AS_FOCUSED_KEY.equals(prop)) {
                 configureAppearanceContext(null);
             } else {
                 if (isStyleProperty(prop)) {
@@ -238,9 +238,13 @@ public class AquaListUI extends BasicListUI implements AquaComponentUI, AquaView
 
     protected AquaUIPainter.State getState() {
         return list.isEnabled()
-          ? (isFocused ? AquaUIPainter.State.ACTIVE_DEFAULT : AquaUIPainter.State.ACTIVE)
+          ? (shouldDisplayAsFocused() ? AquaUIPainter.State.ACTIVE_DEFAULT : AquaUIPainter.State.ACTIVE)
           : AquaUIPainter.State.DISABLED;
     }
+
+    protected boolean shouldDisplayAsFocused() {
+        return AquaFocusHandler.hasFocus(list);
+   }
 
     private void updateStriped() {
         boolean value = getStripedValue();
@@ -291,7 +295,7 @@ public class AquaListUI extends BasicListUI implements AquaComponentUI, AquaView
 
     private boolean isBackgroundClear() {
         Color c = list.getBackground();
-        return c.getAlpha() == 0 || c instanceof ColorUIResource;
+        return c == null || c.getAlpha() == 0 || c instanceof ColorUIResource;
     }
 
     public boolean isStriped() {
@@ -399,8 +403,7 @@ public class AquaListUI extends BasicListUI implements AquaComponentUI, AquaView
 
         assert appearanceContext != null;
         boolean isSelected = selModel.isSelectedIndex(row);
-        boolean isEnabled = list.isEnabled();
-        boolean isFocused = isEnabled && AquaFocusHandler.hasFocus(list);
+        boolean isFocused = shouldDisplayAsFocused();
         boolean cellHasFocus = isFocused && (row == leadIndex);
         boolean isWrapped = list.getLayoutOrientation() != JList.VERTICAL;
 

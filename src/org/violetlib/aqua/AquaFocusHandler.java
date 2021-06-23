@@ -1,5 +1,5 @@
 /*
- * Changes Copyright (c) 2015-2018 Alan Snyder.
+ * Changes Copyright (c) 2015-2021 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -34,15 +34,18 @@
 package org.violetlib.aqua;
 
 import java.awt.*;
-import java.awt.event.*;
-import java.beans.*;
-
+import java.awt.event.FocusEvent;
+import java.awt.event.FocusListener;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import javax.swing.*;
-import javax.swing.plaf.UIResource;
+
+import org.jetbrains.annotations.NotNull;
 
 /**
- * This class is used by the text components, AquaEditorPaneUI, AquaTextAreaUI, AquaTextFieldUI and AquaTextPaneUI to control painting of the
- * component's border.  NOTE: It is assumed that this handler is added to components that extend JComponent.
+ * This class is used by the text components, AquaEditorPaneUI, AquaTextAreaUI, AquaTextFieldUI and AquaTextPaneUI to
+ * control painting of the component's border. NOTE: It is assumed that this handler is added to components that extend
+ * JComponent.
  */
 public class AquaFocusHandler implements FocusListener, PropertyChangeListener {
     // Flag to help focusGained() determine whether the origin focus loss was due to a temporary focus loss or not.
@@ -54,6 +57,7 @@ public class AquaFocusHandler implements FocusListener, PropertyChangeListener {
     public static final String FRAME_ACTIVE_PROPERTY = "Frame.active";
     public static final String HAS_FOCUS_DELEGATE_KEY = "Component.hasFocusDelegate";
     public static final String QUAQUA_HAS_FOCUS_DELEGATE_KEY = "Quaqua.Component.cellRendererFor";
+    public static final String DISPLAY_AS_FOCUSED_KEY = "Aqua.displayAsFocused";
 
     public void focusGained(FocusEvent ev) {
         // If we gained focus and it wasn't due to a previous temporary focus loss
@@ -93,9 +97,10 @@ public class AquaFocusHandler implements FocusListener, PropertyChangeListener {
      * Determine if a component should display as focused. This method handles cases where a component is used for
      * rendering and its focused appearance is controlled by a different component.
      * @param c The component.
-     * @return true if the component has the keyboard focus or its delegate has the keyboard focus.
+     * @return true if the component has the keyboard focus or its delegate has the keyboard focus or it has been
+     * configured to display as focused.
      */
-    public static boolean hasFocus(Component c) {
+    public static boolean hasFocus(@NotNull Component c) {
         if (!c.isEnabled()) {
             return false;
         }
@@ -114,6 +119,10 @@ public class AquaFocusHandler implements FocusListener, PropertyChangeListener {
         }
 
         if (jc != null) {
+            Object d = jc.getClientProperty(DISPLAY_AS_FOCUSED_KEY);
+            if (Boolean.TRUE.equals(d)) {
+                return true;
+            }
             Object o = jc.getClientProperty(HAS_FOCUS_DELEGATE_KEY);
             if (o == null) {
                 o = jc.getClientProperty(QUAQUA_HAS_FOCUS_DELEGATE_KEY);

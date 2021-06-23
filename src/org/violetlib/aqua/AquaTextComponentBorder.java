@@ -1,5 +1,5 @@
 /*
- * Changes Copyright (c) 2015-2020 Alan Snyder.
+ * Changes Copyright (c) 2015-2021 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -36,6 +36,7 @@ package org.violetlib.aqua;
 import java.awt.*;
 import javax.swing.*;
 import javax.swing.plaf.InsetsUIResource;
+import javax.swing.plaf.UIResource;
 import javax.swing.text.JTextComponent;
 
 import org.jetbrains.annotations.NotNull;
@@ -54,8 +55,6 @@ import org.violetlib.jnr.aqua.TextFieldLayoutConfiguration;
  * displays the text component.
  */
 public class AquaTextComponentBorder extends AquaBorder implements FocusRingOutlineProvider, Border2D {
-
-    public static final @NotNull String INHIBIT_BORDER_PROPERTY = "Aqua.inhibitTextComponentBorder";
 
     // This border is really a background. It paints as background, not as a border.
     // It needs to be a Border as a signal to the UI that the user has not installed a custom border.
@@ -76,21 +75,18 @@ public class AquaTextComponentBorder extends AquaBorder implements FocusRingOutl
     }
 
     public void paintBackground(@NotNull Component c, Graphics g, @Nullable Color background) {
-        if (c instanceof JComponent) {
-            JComponent jc = (JComponent) c;
-            Object o = jc.getClientProperty(INHIBIT_BORDER_PROPERTY);
-            if (Boolean.TRUE.equals(o)) {
-                return;
-            }
-        }
+
+        boolean isCellComponent = AquaUtils.isCellComponent(c);
+
         if (c.isOpaque()) {
-            if (background != null) {
+            if (background != null
+                    && (!isCellComponent || !(background instanceof UIResource) || AquaFocusHandler.hasFocus(c))) {
                 g.setColor(background);
                 int width = c.getWidth();
                 int height = c.getHeight();
                 g.fillRect(0, 0, width, height);
             }
-        } else {
+        } else if (!isCellComponent) {
             Painter p = getConfiguredPainter(c);
             p.paint(g, 0, 0);
         }

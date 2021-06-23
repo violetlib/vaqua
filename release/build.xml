@@ -53,7 +53,7 @@
 
     <property name="annotationsVersion" value="20.1.0"/>
     <property name="vappearancesVersion" value="2"/>
-    <property name="jnrVersion" value="9"/>
+    <property name="jnrVersion" value="10"/>
     <property name="activationVersion" value="1.2.0"/>
 
     <property name="SDKroot" location="/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk" />
