@@ -174,14 +174,14 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
     protected void installListeners() {
         super.installListeners();
         tree.addPropertyChangeListener(propertyChangeListener);
-        AppearanceManager.installListener(tree);
+        AppearanceManager.installListeners(tree);
         tree.addComponentListener(componentListener);
     }
 
     @Override
     protected void uninstallListeners() {
         tree.removeComponentListener(componentListener);
-        AppearanceManager.uninstallListener(tree);
+        AppearanceManager.uninstallListeners(tree);
         tree.removePropertyChangeListener(propertyChangeListener);
         super.uninstallListeners();
     }
@@ -692,9 +692,8 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
 
     @Override
     public void update(Graphics g, JComponent c) {
-        AquaAppearance appearance = AppearanceManager.registerCurrentAppearance(c);
+        AppearanceManager.registerCurrentAppearance(c);
         paint(g, c);
-        AppearanceManager.restoreCurrentAppearance(appearance);
     }
 
     @Override

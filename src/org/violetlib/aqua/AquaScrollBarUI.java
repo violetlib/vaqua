@@ -1,5 +1,5 @@
 /*
- * Changes Copyright (c) 2015-2018 Alan Snyder.
+ * Changes Copyright (c) 2015-2021 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -125,7 +125,7 @@ public class AquaScrollBarUI extends ScrollBarUI implements AquaComponentUI {
         fScrollBar.addMouseMotionListener(fTrackListener);
         fScrollBar.getModel().addChangeListener(fModelListener);
         fScrollBar.addPropertyChangeListener(fPropertyChangeListener);
-        AppearanceManager.installListener(fScrollBar);
+        AppearanceManager.installListeners(fScrollBar);
         fScrollListener = createScrollListener();
         fScrollTimer = new Timer(kNormalDelay, fScrollListener);
         fScrollTimer.setInitialDelay(kInitialDelay); // default InitialDelay?
@@ -134,7 +134,7 @@ public class AquaScrollBarUI extends ScrollBarUI implements AquaComponentUI {
     protected void uninstallListeners() {
         fScrollTimer.stop();
         fScrollTimer = null;
-        AppearanceManager.uninstallListener(fScrollBar);
+        AppearanceManager.uninstallListeners(fScrollBar);
         fScrollBar.getModel().removeChangeListener(fModelListener);
         fScrollBar.removeMouseListener(fTrackListener);
         fScrollBar.removeMouseMotionListener(fTrackListener);
@@ -163,10 +163,8 @@ public class AquaScrollBarUI extends ScrollBarUI implements AquaComponentUI {
 
     @Override
     public void update(Graphics g, JComponent c) {
-        AppearanceManager.ensureAppearance(c);
-        AquaAppearance appearance = AppearanceManager.registerCurrentAppearance(c);
+        AppearanceManager.registerCurrentAppearance(c);
         super.update(g, c);
-        AppearanceManager.restoreCurrentAppearance(appearance);
     }
 
     @Override

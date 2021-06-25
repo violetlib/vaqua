@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2020 Alan Snyder.
+ * Copyright (c) 2018-2021 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -18,6 +18,7 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.violetlib.jnr.aqua.AquaNativeRendering;
 import org.violetlib.vappearances.VAppearance;
 import org.violetlib.vappearances.VAppearances;
@@ -40,19 +41,29 @@ public class AquaAppearances {
     /**
      * Return the current appearance with the specified name.
      * @param appearanceName The appearance name.
-     * @return the appearance.
+     * @return the appearance, or the default appearance if an appearance with this name is not available.
      * @throws UnsupportedOperationException if this appearance and the default appearance are not available.
      */
 
-    public static @NotNull AquaAppearance get(@NotNull String appearanceName) {
+    public static @NotNull AquaAppearance get(@NotNull String appearanceName) throws UnsupportedOperationException {
+        AquaAppearance appearance = getOptional(appearanceName);
+        return appearance != null ? appearance : getDefaultAppearance();
+    }
+
+    /**
+     * Return the current appearance with the specified name, if available.
+     * @param appearanceName The appearance name.
+     * @return the appearance, or null if an appearance with this name is not available.
+     */
+
+    public static @Nullable AquaAppearance getOptional(@NotNull String appearanceName) {
         AquaAppearance appearance = appearances.get(appearanceName);
         if (appearance == null) {
             try {
                 VAppearance a = VAppearances.getAppearance(appearanceName);
-                appearance = getAquaAppearance(a);
+                return getAquaAppearance(a);
             } catch (IOException ex) {
                 AquaUtils.syslog("Unable to get " + appearanceName + ": " + ex.getMessage());
-                appearance = getDefaultAppearance();
             }
         }
         return appearance;
@@ -64,7 +75,7 @@ public class AquaAppearances {
      * @throws UnsupportedOperationException if the default appearance is not available.
      */
 
-    public static @NotNull AquaAppearance getDefaultAppearance() {
+    public static @NotNull AquaAppearance getDefaultAppearance() throws UnsupportedOperationException {
         AquaAppearance appearance = appearances.get(defaultAppearanceName);
         if (appearance == null) {
             try {

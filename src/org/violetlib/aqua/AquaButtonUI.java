@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2020 Alan Snyder.
+ * Copyright (c) 2015-2021 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -108,10 +108,13 @@ public class AquaButtonUI extends BasicButtonUI
 
     @Override
     public void appearanceChanged(@NotNull JComponent c, @NotNull AquaAppearance appearance) {
+        // Not needed: all requests for colors ensure the component appearance is up-to-date
     }
 
     @Override
     public void activeStateChanged(@NotNull JComponent c, boolean isActive) {
+        // Repaint the button, since its border needs to handle the new state.
+        c.repaint();
     }
 
     /**
@@ -374,6 +377,7 @@ public class AquaButtonUI extends BasicButtonUI
         }
         AquaUtilControlSize.addSizePropertyListener(b);
         AquaFullKeyboardFocusableHandler.addListener(b);
+        AppearanceManager.installListeners(b);
     }
 
     protected void installKeyboardActions(AbstractButton b) {
@@ -397,6 +401,7 @@ public class AquaButtonUI extends BasicButtonUI
     }
 
     protected void uninstallListeners(AbstractButton b) {
+        AppearanceManager.uninstallListeners(b);
         AquaButtonListener listener = (AquaButtonListener)b.getClientProperty(this);
         b.putClientProperty(this, null);
         if (listener != null) {
@@ -455,10 +460,8 @@ public class AquaButtonUI extends BasicButtonUI
     // Paint Methods
     @Override
     public void update(Graphics g, JComponent c) {
-        AppearanceManager.ensureAppearance(c);
-        AquaAppearance appearance = AppearanceManager.registerCurrentAppearance(c);
+        AppearanceManager.registerCurrentAppearance(c);
         super.update(g, c);
-        AppearanceManager.restoreCurrentAppearance(appearance);
     }
 
     public final void paint(Graphics g, JComponent c) {
@@ -888,12 +891,6 @@ public class AquaButtonUI extends BasicButtonUI
             super.propertyChange(e);
 
             String propertyName = e.getPropertyName();
-
-            // Repaint the button, since its border needs to handle the new state.
-            if (AquaFocusHandler.FRAME_ACTIVE_PROPERTY.equals(propertyName)) {
-                b.repaint();
-                return;
-            }
 
             if ("icon".equals(propertyName) || "text".equals(propertyName)) {
                 configure(b);

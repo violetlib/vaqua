@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Alan Snyder.
+ * Copyright (c) 2018-2021 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -105,12 +105,12 @@ public class AquaTableHeaderUI extends BasicTableHeaderUI implements AquaCompone
         super.installListeners();
         propertyChangeListener = new AquaPropertyChangeListener();
         header.addPropertyChangeListener(propertyChangeListener);
-        AppearanceManager.installListener(header);
+        AppearanceManager.installListeners(header);
     }
 
     @Override
     protected void uninstallListeners() {
-        AppearanceManager.uninstallListener(header);
+        AppearanceManager.uninstallListeners(header);
         header.removePropertyChangeListener(propertyChangeListener);
         propertyChangeListener = null;
         super.uninstallListeners();
@@ -160,9 +160,8 @@ public class AquaTableHeaderUI extends BasicTableHeaderUI implements AquaCompone
 
     @Override
     public void update(Graphics g, JComponent c) {
-        AquaAppearance appearance = AppearanceManager.registerCurrentAppearance(c);
+        AppearanceManager.registerCurrentAppearance(c);
         paint(g, c);
-        AppearanceManager.restoreCurrentAppearance(appearance);
     }
 
     @Override

@@ -115,14 +115,14 @@ public class AquaListUI extends BasicListUI implements AquaComponentUI, AquaView
     @Override
     protected void installListeners() {
         super.installListeners();
-        AppearanceManager.installListener(list);
+        AppearanceManager.installListeners(list);
         AquaUtils.installInsetViewListener(list);
     }
 
     @Override
     protected void uninstallListeners() {
         AquaUtils.uninstallInsetViewListener(list);
-        AppearanceManager.uninstallListener(list);
+        AppearanceManager.uninstallListeners(list);
         super.uninstallListeners();
     }
 
@@ -325,14 +325,13 @@ public class AquaListUI extends BasicListUI implements AquaComponentUI, AquaView
 
     @Override
     public void update(Graphics g, JComponent c) {
-        AquaAppearance appearance = AppearanceManager.registerCurrentAppearance(c);
+        AppearanceManager.registerCurrentAppearance(c);
         Color background = getBackgroundColor();
         if (background != null) {
             g.setColor(background);
             g.fillRect(0, 0, c.getWidth(),c.getHeight());
         }
         paint(g, c);
-        AppearanceManager.restoreCurrentAppearance(appearance);
     }
 
     private @Nullable Color getBackgroundColor() {

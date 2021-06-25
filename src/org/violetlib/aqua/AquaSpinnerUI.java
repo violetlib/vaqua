@@ -1,5 +1,5 @@
 /*
- * Changes Copyright (c) 2015-2020 Alan Snyder.
+ * Changes Copyright (c) 2015-2021 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -170,9 +170,8 @@ public class AquaSpinnerUI extends SpinnerUI implements AquaComponentUI {
 
     @Override
     public void update(Graphics g, JComponent c) {
-        AquaAppearance appearance = AppearanceManager.registerCurrentAppearance(c);
+        AppearanceManager.registerCurrentAppearance(c);
         super.update(g, c);
-        AppearanceManager.restoreCurrentAppearance(appearance);
     }
 
     protected TransparentButton createPreviousButton() {

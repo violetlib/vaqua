@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Alan Snyder.
+ * Copyright (c) 2018-2021 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -72,12 +72,12 @@ public class AquaTextComponentUIBase extends AquaTextComponentDelegatedUIBase im
         editor.addFocusListener(handler);
         editor.addPropertyChangeListener(handler);
         AquaUtilControlSize.addSizePropertyListener(editor);
-        AppearanceManager.installListener(editor);
+        AppearanceManager.installListeners(editor);
     }
 
     @Override
     protected void uninstallListeners() {
-        AppearanceManager.uninstallListener(editor);
+        AppearanceManager.uninstallListeners(editor);
         AquaUtilControlSize.removeSizePropertyListener(editor);
         editor.removeFocusListener(handler);
         editor.removePropertyChangeListener(handler);
@@ -159,9 +159,8 @@ public class AquaTextComponentUIBase extends AquaTextComponentDelegatedUIBase im
 
     @Override
     public void update(@NotNull Graphics g, @NotNull JComponent c) {
-        AquaAppearance appearance = AppearanceManager.registerCurrentAppearance(c);
+        AppearanceManager.registerCurrentAppearance(c);
         super.update(g, c);
-        AppearanceManager.restoreCurrentAppearance(appearance);
     }
 
     protected void paintSafely(@NotNull Graphics g) {

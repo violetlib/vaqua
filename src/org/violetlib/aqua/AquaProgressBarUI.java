@@ -1,5 +1,5 @@
 /*
- * Changes Copyright (c) 2015-2020 Alan Snyder.
+ * Changes Copyright (c) 2015-2021 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -117,11 +117,11 @@ public class AquaProgressBarUI
         progressBar.addPropertyChangeListener(this); // Listen for changes between determinate and indeterminate state
         progressBar.addAncestorListener(this);
         AquaUtilControlSize.addSizePropertyListener(progressBar);
-        AppearanceManager.installListener(progressBar);
+        AppearanceManager.installListeners(progressBar);
     }
 
     protected void uninstallListeners() {
-        AppearanceManager.uninstallListener(progressBar);
+        AppearanceManager.uninstallListeners(progressBar);
         AquaUtilControlSize.removeSizePropertyListener(progressBar);
         progressBar.removeAncestorListener(this);
         progressBar.removePropertyChangeListener(this);
@@ -209,6 +209,12 @@ public class AquaProgressBarUI
             return State.INACTIVE;
         }
         return State.ACTIVE;
+    }
+
+    @Override
+    public void update(Graphics g, JComponent c) {
+        AppearanceManager.registerCurrentAppearance(c);
+        super.update(g, c);
     }
 
     @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014-2018 Alan Snyder.
+ * Copyright (c) 2014-2021 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -57,11 +57,11 @@ public class AquaSeparatorUI extends SeparatorUI implements AquaComponentUI {
     }
 
     protected void installListeners(JSeparator s) {
-        AppearanceManager.installListener(s);
+        AppearanceManager.installListeners(s);
     }
 
     protected void uninstallListeners(JSeparator s) {
-        AppearanceManager.uninstallListener(s);
+        AppearanceManager.uninstallListeners(s);
     }
 
     @Override
@@ -86,9 +86,8 @@ public class AquaSeparatorUI extends SeparatorUI implements AquaComponentUI {
 
     @Override
     public void update(Graphics g, JComponent c) {
-        AquaAppearance appearance = AppearanceManager.registerCurrentAppearance(c);
+        AppearanceManager.registerCurrentAppearance(c);
         super.update(g, c);
-        AppearanceManager.restoreCurrentAppearance(appearance);
     }
 
     public void paint(Graphics g, JComponent c) {

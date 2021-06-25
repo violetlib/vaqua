@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2018 Alan Snyder.
+ * Copyright (c) 2015-2021 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -39,13 +39,13 @@ public class AquaViewportUI extends ViewportUI implements AquaComponentUI {
         super.installUI(c);
         viewport = (JViewport) c;
         AquaVibrantSupport.installVibrantStyle(c);
-        AppearanceManager.installListener(c);
+        AppearanceManager.installListeners(c);
         configureAppearanceContext(null);
     }
 
     @Override
     public void uninstallUI(JComponent c) {
-        AppearanceManager.uninstallListener(c);
+        AppearanceManager.uninstallListeners(c);
         AquaVibrantSupport.uninstallVibrantStyle(c);
         viewport = null;
         super.uninstallUI(c);
@@ -78,14 +78,10 @@ public class AquaViewportUI extends ViewportUI implements AquaComponentUI {
 
     @Override
     public final void update(@NotNull Graphics g, @NotNull JComponent c) {
-
-        AquaAppearance appearance = AppearanceManager.registerCurrentAppearance(c);
-
+        AppearanceManager.registerCurrentAppearance(c);
         if (c.isOpaque() || AquaVibrantSupport.isVibrant(c)) {
             AquaUtils.fillRect(g, c, AquaUtils.ERASE_IF_VIBRANT);
         }
-
         paint(g, c);
-        AppearanceManager.restoreCurrentAppearance(appearance);
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Changes Copyright (c) 2015-2018 Alan Snyder.
+ * Changes Copyright (c) 2015-2021 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -73,13 +73,13 @@ public class AquaPanelUI extends BasicPanelUI implements AquaComponentUI {
         AquaVibrantSupport.installVibrantStyle(c);
         c.addPropertyChangeListener(propertyChangeListener);
         updateStyle(c);
-        AppearanceManager.installListener(c);
+        AppearanceManager.installListeners(c);
         configureAppearanceContext(c, null);
     }
 
     @Override
     public void uninstallUI(JComponent c) {
-        AppearanceManager.uninstallListener(c);
+        AppearanceManager.uninstallListeners(c);
         c.removePropertyChangeListener(propertyChangeListener);
         AquaVibrantSupport.uninstallVibrantStyle(c);
         super.uninstallUI(c);
@@ -116,12 +116,11 @@ public class AquaPanelUI extends BasicPanelUI implements AquaComponentUI {
 
     @Override
     public final void update(@NotNull Graphics g, @NotNull JComponent c) {
-        AquaAppearance appearance = AppearanceManager.registerCurrentAppearance(c);
+        AppearanceManager.registerCurrentAppearance(c);
         if (c.isOpaque() || AquaVibrantSupport.isVibrant(c)) {
             AquaUtils.fillRect(g, c, AquaUtils.ERASE_IF_TEXTURED | AquaUtils.ERASE_IF_VIBRANT);
         }
         paint(g, c);
-        AppearanceManager.restoreCurrentAppearance(appearance);
     }
 
     @Override

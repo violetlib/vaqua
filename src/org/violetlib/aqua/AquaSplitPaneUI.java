@@ -1,5 +1,5 @@
 /*
- * Changes Copyright (c) 2015-2018 Alan Snyder.
+ * Changes Copyright (c) 2015-2021 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -102,11 +102,11 @@ public class AquaSplitPaneUI extends BasicSplitPaneUI
         splitPane.addPropertyChangeListener(SPLIT_PANE_STYLE_KEY, this);
         splitPane.addPropertyChangeListener(QUAQUA_SPLIT_PANE_STYLE_KEY, this);
         splitPane.addContainerListener(this);
-        AppearanceManager.installListener(splitPane);
+        AppearanceManager.installListeners(splitPane);
     }
 
     protected void uninstallListeners() {
-        AppearanceManager.uninstallListener(splitPane);
+        AppearanceManager.uninstallListeners(splitPane);
         splitPane.removeContainerListener(this);
         splitPane.removePropertyChangeListener(DIVIDER_PAINTER_KEY, this);
         splitPane.removePropertyChangeListener(SPLIT_PANE_STYLE_KEY, this);
@@ -411,12 +411,11 @@ public class AquaSplitPaneUI extends BasicSplitPaneUI
 
     @Override
     public void update(Graphics g, JComponent c) {
-        AquaAppearance appearance = AppearanceManager.registerCurrentAppearance(c);
+        AppearanceManager.registerCurrentAppearance(c);
         if (c.isOpaque()) {
             AquaUtils.fillRect(g, c, AquaUtils.ERASE_IF_VIBRANT);
         }
         paint(g, c);
-        AppearanceManager.restoreCurrentAppearance(appearance);
     }
 
     @Override

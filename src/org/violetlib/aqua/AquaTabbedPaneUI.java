@@ -1,5 +1,5 @@
 /*
- * Changes Copyright (c) 2015-2020 Alan Snyder.
+ * Changes Copyright (c) 2015-2021 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -145,7 +145,7 @@ public class AquaTabbedPaneUI extends AquaTabbedPaneCopyFromBasicUI
 
         AquaUtilControlSize.addSizePropertyListener(tabPane);
         AquaFullKeyboardFocusableHandler.addListener(tabPane);
-        AppearanceManager.installListener(tabPane);
+        AppearanceManager.installListeners(tabPane);
     }
 
     @Override
@@ -155,7 +155,7 @@ public class AquaTabbedPaneUI extends AquaTabbedPaneCopyFromBasicUI
             tabPane.removeMouseMotionListener((MouseMotionListener) mouseListener);
         }
 
-        AppearanceManager.uninstallListener(tabPane);
+        AppearanceManager.uninstallListeners(tabPane);
         AquaUtilControlSize.removeSizePropertyListener(tabPane);
         AquaFullKeyboardFocusableHandler.removeListener(tabPane);
 
@@ -262,12 +262,11 @@ public class AquaTabbedPaneUI extends AquaTabbedPaneCopyFromBasicUI
 
     @Override
     public void update(@NotNull Graphics g, @NotNull JComponent c) {
-        AquaAppearance appearance = AppearanceManager.registerCurrentAppearance(c);
+        AppearanceManager.registerCurrentAppearance(c);
         if (c.isOpaque()) {
             AquaUtils.fillRect(g, c, AquaUtils.ERASE_IF_VIBRANT);
         }
         paint(g, c);
-        AppearanceManager.restoreCurrentAppearance(appearance);
     }
 
     public void paint(@NotNull Graphics g, @NotNull JComponent c) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Alan Snyder.
+ * Copyright (c) 2018-2021 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -66,15 +66,10 @@ public class AquaToolTipUI extends BasicToolTipUI implements AquaComponentUI {
 
     @Override
     public void update(Graphics g, JComponent c) {
-        AppearanceManager.ensureAppearance(c);
         AquaAppearance appearance = AppearanceManager.registerCurrentAppearance(c);
-        assert appearance != null;
         AquaUIPainter.State state = AquaUIPainter.State.ACTIVE;
         AppearanceContext context = new AppearanceContext(appearance, state, false, false);
         AquaColors.installColors(c, context, colors);
-
         super.update(g, c);
-
-        AppearanceManager.restoreCurrentAppearance(appearance);
     }
 }

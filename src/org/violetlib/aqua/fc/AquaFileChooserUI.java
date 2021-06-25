@@ -1198,13 +1198,13 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
             fc.addHierarchyListener(hierarchyListener);
         }
         fc.addPropertyChangeListener(filterComboBoxModel);
-        AppearanceManager.installListener(fc);
+        AppearanceManager.installListeners(fc);
     }
 
     @Override
     protected void uninstallListeners(JFileChooser fc) {
         super.uninstallListeners(fc);
-        AppearanceManager.uninstallListener(fc);
+        AppearanceManager.uninstallListeners(fc);
         if (hierarchyListener != null) {
             fc.removeHierarchyListener(hierarchyListener);
         }

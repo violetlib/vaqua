@@ -1,5 +1,5 @@
 /*
- * Changes Copyright (c) 2015-2018 Alan Snyder.
+ * Changes Copyright (c) 2015-2021 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -37,7 +37,6 @@ import java.awt.*;
 import java.awt.event.*;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
-import java.util.prefs.PreferenceChangeListener;
 import javax.swing.*;
 import javax.swing.border.Border;
 import javax.swing.event.ChangeEvent;
@@ -141,7 +140,7 @@ public class AquaScrollPaneUI extends BasicScrollPaneUI implements AquaUtilContr
         preferenceChangeListener = new PreferenceChangeListener();
         OSXSystemProperties.addChangeListener(preferenceChangeListener);
         AquaUtilControlSize.addSizePropertyListener(c);
-        AppearanceManager.installListener(c);
+        AppearanceManager.installListeners(c);
     }
 
     @Override
@@ -154,7 +153,7 @@ public class AquaScrollPaneUI extends BasicScrollPaneUI implements AquaUtilContr
             overlayScrollPaneHack.dispose();
             overlayScrollPaneHack = null;
         }
-        AppearanceManager.uninstallListener(c);
+        AppearanceManager.uninstallListeners(c);
         AquaUtilControlSize.removeSizePropertyListener(c);
         OSXSystemProperties.removeChangeListener(preferenceChangeListener);
         preferenceChangeListener = null;
@@ -177,7 +176,7 @@ public class AquaScrollPaneUI extends BasicScrollPaneUI implements AquaUtilContr
 
     @Override
     public void appearanceChanged(@NotNull JComponent c, @NotNull AquaAppearance appearance) {
-        configureAppearanceContext(null);
+        configureAppearanceContext(appearance);
     }
 
     @Override
@@ -200,13 +199,12 @@ public class AquaScrollPaneUI extends BasicScrollPaneUI implements AquaUtilContr
 
     @Override
     public void update(Graphics g, JComponent c) {
-        AquaAppearance appearance = AppearanceManager.registerCurrentAppearance(c);
+        AppearanceManager.registerCurrentAppearance(c);
         if (c.isOpaque()) {
             Color background = AquaColors.getBackground(c, "controlBackground");
             AquaUtils.fillRect(g, c, background, AquaUtils.ERASE_IF_VIBRANT);
         }
         paint(g, c);
-        AppearanceManager.restoreCurrentAppearance(appearance);
     }
 
     @Override

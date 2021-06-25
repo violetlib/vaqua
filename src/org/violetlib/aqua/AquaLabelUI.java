@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2020 Alan Snyder.
+ * Copyright (c) 2018-2021 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -76,12 +76,12 @@ public class AquaLabelUI extends BasicLabelUI implements AquaComponentUI {
     protected void installListeners(JLabel c) {
         super.installListeners(c);
         AquaUtilControlSize.addSizePropertyListener(c);
-        AppearanceManager.installListener(c);
+        AppearanceManager.installListeners(c);
     }
 
     @Override
     protected void uninstallListeners(JLabel c) {
-        AppearanceManager.uninstallListener(c);
+        AppearanceManager.uninstallListeners(c);
         AquaUtilControlSize.removeSizePropertyListener(c);
         super.uninstallListeners(c);
     }
@@ -115,9 +115,8 @@ public class AquaLabelUI extends BasicLabelUI implements AquaComponentUI {
         // If a label is used for the title of a titled border, it has no parent and its appearance property may be
         // stale.
         if (c.getParent() != null) {
-            AquaAppearance appearance = AppearanceManager.registerCurrentAppearance(c);
+            AppearanceManager.registerCurrentAppearance(c);
             super.update(g, c);
-            AppearanceManager.restoreCurrentAppearance(appearance);
         } else {
             super.update(g, c);
         }
@@ -207,7 +206,7 @@ public class AquaLabelUI extends BasicLabelUI implements AquaComponentUI {
             AquaAppearance appearance = AppearanceManager.ensureAppearance(l.getParent());
             return appearance.getColor("searchFieldPrompt");
         } else if (l.getParent() == null) {
-            // Special case for TitledBorder, where the label is not in the hierarchy and has no back link
+            // Special case for TitledBorder, where the label is not in the hierarchy and has no back link.
             Color defaultColor = UIManager.getColor("TitledBorder.titleColor");
             if (l.getForeground() == defaultColor) {
                 AquaAppearance appearance = AppearanceManager.getCurrentAppearance();

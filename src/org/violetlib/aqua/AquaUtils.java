@@ -1478,6 +1478,15 @@ final public class AquaUtils {
         return null;
     }
 
+    public static @NotNull String show(@NotNull Component c)
+    {
+        String name = c.getClass().getSimpleName();
+        if (name.equals("UIResource")) {
+            return c.getClass().getName();
+        }
+        return name;
+    }
+
     public static @Nullable String toString(@Nullable Object o) {
         if (o instanceof String) {
             return (String) o;
@@ -1686,10 +1695,8 @@ final public class AquaUtils {
     }
 
     public static void configure(@NotNull AquaUIPainter painter, @NotNull Component c, int width, int height) {
-        AquaAppearance appearance = AppearanceManager.getRegisteredAppearance(c);
-        if (appearance != null) {
-            painter.configureAppearance(appearance);
-        }
+        AquaAppearance appearance = AppearanceManager.getAppearance(c);
+        painter.configureAppearance(appearance);
         painter.configure(width, height);
     }
 

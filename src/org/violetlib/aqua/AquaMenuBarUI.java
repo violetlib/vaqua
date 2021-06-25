@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Alan Snyder.
+ * Copyright (c) 2018-2021 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -41,12 +41,12 @@ public class AquaMenuBarUI extends BasicMenuBarUI implements AquaComponentUI {
     @Override
     protected void installListeners() {
         super.installListeners();
-        AppearanceManager.installListener(menuBar);
+        AppearanceManager.installListeners(menuBar);
     }
 
     @Override
     protected void uninstallListeners() {
-        AppearanceManager.uninstallListener(menuBar);
+        AppearanceManager.uninstallListeners(menuBar);
         super.uninstallListeners();
     }
 
@@ -72,9 +72,8 @@ public class AquaMenuBarUI extends BasicMenuBarUI implements AquaComponentUI {
 
     @Override
     public void update(Graphics g, JComponent c) {
-        AquaAppearance appearance = AppearanceManager.registerCurrentAppearance(c);
+        AppearanceManager.registerCurrentAppearance(c);
         super.update(g, c);
-        AppearanceManager.restoreCurrentAppearance(appearance);
     }
 
     @Override

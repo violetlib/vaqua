@@ -1,5 +1,5 @@
 /*
- * Changes copyright (c) 2016-2018 Alan Snyder.
+ * Changes copyright (c) 2016-2021 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -115,12 +115,12 @@ public class AquaToolBarUI extends BasicToolBarUI implements SwingConstants, Aqu
     @Override
     protected void installListeners(){
         super.installListeners();
-        AppearanceManager.installListener(toolBar);
+        AppearanceManager.installListeners(toolBar);
     }
 
     @Override
     protected void uninstallListeners(){
-        AppearanceManager.uninstallListener(toolBar);
+        AppearanceManager.uninstallListeners(toolBar);
         super.uninstallListeners();
     }
 
@@ -292,13 +292,12 @@ public class AquaToolBarUI extends BasicToolBarUI implements SwingConstants, Aqu
 
     @Override
     public void update(Graphics g, JComponent c) {
-        AquaAppearance appearance = AppearanceManager.registerCurrentAppearance(c);
+        AppearanceManager.registerCurrentAppearance(c);
         if (!isRendering && c.isOpaque()) {
             Color bc = c.getBackground();
             AquaUtils.fillRect(g, c, bc, AquaUtils.ERASE_IF_TEXTURED|AquaUtils.ERASE_IF_VIBRANT);
         }
         paint(g, c);
-        AppearanceManager.restoreCurrentAppearance(appearance);
     }
 
     @Override
