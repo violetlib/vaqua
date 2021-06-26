@@ -416,7 +416,9 @@ public class AquaColors {
         background.setSelectedName("unemphasizedSelectedTextBackground");
 
         AquaContextualColorImpl foreground = new AquaContextualColorImpl("SidebarContainerColors.foreground", "controlText");
-        foreground.setInactiveName("controlText");
+        if (OSVersion < 1014) {
+            foreground.setInactiveName("controlText");
+        }
 
         AquaContextualColorImpl grid = new AquaContextualColorImpl("SidebarContainerColors.grid", "grid");
 

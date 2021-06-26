@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Alan Snyder.
+ * Copyright (c) 2018-2021 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -56,6 +56,16 @@ public abstract class ProcessedImageCache {
     public boolean isTemplateImage(@NotNull Image image) {
         ImageInfo info = getImageInfo(image);
         return info.isTemplate;
+    }
+
+    /**
+     * Determine if the specified icon is a template image.
+     * @param icon The icon.
+     * @return true if and only if the icon is a template image.
+     */
+    public boolean isTemplateIcon(@NotNull Icon icon) {
+        ImageInfo info = getIconImageInfo(icon);
+        return info != null && info.isTemplate;
     }
 
     private @Nullable ImageInfo getIconImageInfo(@NotNull Icon icon) {

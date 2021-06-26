@@ -50,6 +50,7 @@ import javax.swing.plaf.UIResource;
 import javax.swing.plaf.basic.BasicTreeUI;
 import javax.swing.tree.AbstractLayoutCache;
 import javax.swing.tree.DefaultTreeCellRenderer;
+import javax.swing.tree.FixedHeightLayoutCache;
 import javax.swing.tree.TreePath;
 
 import org.jetbrains.annotations.NotNull;
@@ -60,6 +61,8 @@ import org.violetlib.jnr.aqua.AquaUIPainter.ButtonState;
 import org.violetlib.jnr.aqua.AquaUIPainter.ButtonWidget;
 import org.violetlib.jnr.aqua.AquaUIPainter.State;
 import org.violetlib.jnr.aqua.AquaUIPainter.UILayoutDirection;
+
+import static org.violetlib.aqua.AquaImageFactory.LIGHTEN_FOR_DISABLED;
 
 /**
  * A tree UI based on AquaTreeUI for Yosemite. It supports filled cells. It supports the striped and sidebar styles.
@@ -236,6 +239,9 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
     }
 
     protected AquaUIPainter.State getState() {
+        if (!AquaFocusHandler.isActive(tree)) {
+            return State.INACTIVE;
+        }
         return tree.isEnabled()
                 ? (shouldDisplayAsFocused() ? AquaUIPainter.State.ACTIVE_DEFAULT : AquaUIPainter.State.ACTIVE)
                 : AquaUIPainter.State.DISABLED;
@@ -263,12 +269,25 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
         }
     }
 
+    protected void updateRowHeight() {
+        // sidebar trees have two row heights, one for ordinary items and one for category headers
+        int height = isSideBar() ? 0 : 19;
+        LookAndFeel.installProperty(tree, "rowHeight", height);
+    }
+
     // Called on a change to isSideBar or the ancestry of the tree
     protected void updateSidebar() {
         if (isSideBar() && tree.isDisplayable()) {
             ensureSidebarVibrantEffects();
         } else {
             disposeSidebarVibrantEffects();
+        }
+        // On macOS 11+, the sidebar style implies the inset view style.
+        if (AquaUtils.isInsetViewSupported()) {
+            updateRowHeight();
+            tree.revalidate();
+            tree.repaint();
+            updateSize();
         }
     }
 
@@ -620,24 +639,12 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
                                                 int depth, boolean expanded,
                                                 Rectangle size) {
             // Return size of editing component, if editing and asking for editing row.
-            if(editingComponent != null && editingRow == row) {
+            if (editingComponent != null && editingRow == row) {
                 Dimension prefSize = editingComponent.getPreferredSize();
-                int rh = getRowHeight();
-
-                if(rh > 0 && rh != prefSize.height)
-                    prefSize.height = rh;
-                if(size != null) {
-                    size.x = getRowX(row, depth);
-                    size.width = prefSize.width;
-                    size.height = prefSize.height;
-                }
-                else {
-                    size = new Rectangle(getRowX(row, depth), 0, prefSize.width, prefSize.height);
-                }
-                return size;
+                return computeRowBounds(row, depth, prefSize, size);
             }
             // Not editing, use renderer.
-            if(currentCellRenderer != null) {
+            if (currentCellRenderer != null) {
                 Component aComponent;
 
                 /*
@@ -653,27 +660,42 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
                 boolean isCategory = depth == 1;
                 configureCellRenderer(true, aComponent, isCategory, row, isSelected);
 
-                if(tree != null) {
+                if (tree != null) {
                     // Only ever removed when UI changes, this is OK!
                     rendererPane.add(aComponent);
                     aComponent.validate();
                 }
                 Dimension prefSize = aComponent.getPreferredSize();
-
                 unconfigureCellRenderer(aComponent);
-
-                if(size != null) {
-                    size.x = getRowX(row, depth);
-                    size.width = prefSize.width;
-                    size.height = prefSize.height;
-                }
-                else {
-                    size = new Rectangle(getRowX(row, depth), 0, prefSize.width, prefSize.height);
-                }
-                return size;
+                return computeRowBounds(row, depth, prefSize, size);
             }
             return null;
         }
+    }
+
+    /**
+     * Compute the basic bounds of a row based on the preferred size of its renderer/editor component.
+     */
+    private @NotNull Rectangle computeRowBounds(int row, int depth, @NotNull Dimension ps, @Nullable Rectangle size) {
+        int width = ps.width;
+        int height = ps.height;
+        int rowHeight = getRowHeight();
+        if (rowHeight > 0) {
+            height = rowHeight;
+        } else {
+            int styleHeight = getStyleRowHeight(depth);
+            if (styleHeight > height) {
+                height = styleHeight;
+            }
+        }
+        int x = getRowX(row, depth);
+        if (size != null) {
+            size.x = x;
+            size.width = width;
+            size.height = height;
+            return size;
+        }
+        return new Rectangle(x, 0, width, height);
     }
 
     /**
@@ -954,13 +976,14 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
 
             Color fc = appearanceContext != null ? colors.getForeground(appearanceContext) : null;
             Font f = null;
+            Icon icon = label.getIcon();
+            Object operator = null;
+            AquaAppearance appearance = appearanceContext != null ? appearanceContext.getAppearance() : null;
 
             if (isSideBar()) {
+                fc = getSideBarForeground(isCategory, isSelected);
                 Color iconColor = null;
-
-                if (appearanceContext != null) {
-                    fc = getSideBarForeground(isCategory, isSelected);
-                    AquaAppearance appearance = appearanceContext.getAppearance();
+                if (appearance != null) {
                     iconColor = appearance.getColor("sidebarIcon");
                 }
 
@@ -974,31 +997,36 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
                 if (isCategory) {
                     label.setIcon(null);
                     label.setDisabledIcon(null);
-                } else if (iconColor != null) {
-                    Icon icon = label.getIcon();
-                    if (icon != null) {
-                        Image image = AquaImageFactory.getProcessedImage(icon, iconColor);
-                        if (image != null) {
-                            icon = new ImageIcon(image);
-                            label.setIcon(icon);
+                    icon = null;
+                } else if (icon != null) {
+                    if (AquaImageFactory.isTemplateIcon(icon)) {
+                        if (OSXSystemProperties.OSVersion >= 1016 && appearance != null) {
+                            if (AquaFocusHandler.isActive(tree)) {
+                                if (appearance.isDark()) {
+                                    iconColor = appearance.getColor("controlAccent");
+                                } else {
+                                    iconColor = appearance.getColor("controlAccent_pressed");
+                                }
+                            } else {
+                                iconColor = appearance.getColor("controlAccent_disabled");
+                            }
                         }
+                        operator = iconColor;
+                    } else {
+                        operator = AquaFocusHandler.isActive(tree) ? null : LIGHTEN_FOR_DISABLED;
                     }
                 }
             } else {
-                Icon icon = label.getIcon();
-                if (icon != null) {
-                    Image image = AquaIcon.getImageForIcon(icon);
-                    if (image != null && AquaImageFactory.isTemplateImage(image)) {
-                        AquaAppearance appearance = appearanceContext.getAppearance();
-                        Color iconColor = appearance.getColor("treeIcon");
-                        if (iconColor != null) {
-                            Image processedImage = AquaImageFactory.getProcessedImage(icon, iconColor);
-                            if (processedImage != null) {
-                                icon = new ImageIcon(processedImage);
-                                label.setIcon(icon);
-                            }
-                        }
-                    }
+                if (appearance != null) {
+                    operator = appearance.getColor("treeIcon");
+                }
+            }
+
+            if (icon != null) {
+                Image image = AquaImageFactory.getProcessedImage(icon, operator);
+                if (image != null) {
+                    icon = new ImageIcon(image);
+                    label.setIcon(icon);
                 }
             }
 
@@ -1252,6 +1280,47 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
 
     protected AbstractLayoutCache.NodeDimensions createNodeDimensions() {
         return new TreeNodeDimensions();
+    }
+
+    protected AbstractLayoutCache createLayoutCache() {
+        if(isLargeModel() && getRowHeight() > 0) {
+            return new FixedHeightLayoutCache();
+        }
+        return new MyVariableHeightLayoutCache();
+    }
+
+    protected class MyVariableHeightLayoutCache
+            extends ExtendedVariableHeightLayoutCache
+    {
+        @Override
+        protected int getRowSpacingAbove(int row) {
+            return getStyleRowSpacingAbove(row);
+        }
+    }
+
+    private int getStyleRowSpacingAbove(int row) {
+        if (isSideBar()) {
+            TreePath path = getPathForRow(tree, row);
+            if (path != null && path.getPathCount() == 2) {
+                if (OSXSystemProperties.OSVersion >= 1016) {
+                    return 14;
+                }
+                return 9;
+            }
+        }
+        return 0;
+    }
+
+    private int getStyleRowHeight(int depth) {
+        if (isSideBar()) {
+            boolean isCategory = depth == 1;
+            if (isInset()) {
+                return isCategory ? 18 : 28;
+            } else {
+                return isCategory ? 22 : 24;
+            }
+        }
+        return 0;
     }
 
     protected void updateDropTargetListener() {

@@ -1,5 +1,5 @@
 /*
- * Changes copyright (c) 2015-2020 Alan Snyder.
+ * Changes copyright (c) 2015-2021 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -68,7 +68,7 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
 
     public static boolean suppressCreationOfDisabledButtonIcons;
 
-    public static final Border NOTHING_BORDER = new EmptyBorder(0, 0, 0, 0);
+    public static final Border NOTHING_BORDER = new BorderUIResource.EmptyBorderUIResource(0, 0, 0, 0);
 
     public String getName() {
         return "VAqua";
@@ -740,7 +740,7 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
                 "Tree.editorBorder", zeroBorder,
                 "Tree.leftChildIndent", 8,
                 "Tree.rightChildIndent", 12,
-                "Tree.rowHeight", 19,   // iconHeight + 3, to match finder - a zero would have the renderer decide, except that leaves the icons touching
+                "Tree.rowHeight", 0,   // The default row height depends upon style
                 "Tree.scrollsOnExpand", false,
                 "Tree.openIcon",(LazyValue) t -> AquaImageFactory.getTreeOpenFolderIcon(), // Open folder icon
                 "Tree.closedIcon",(LazyValue) t -> AquaImageFactory.getTreeFolderIcon(), // Closed folder icon

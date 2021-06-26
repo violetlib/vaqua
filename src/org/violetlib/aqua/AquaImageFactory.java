@@ -1,5 +1,5 @@
 /*
- * Changes copyright (c) 2015-2018 Alan Snyder.
+ * Changes copyright (c) 2015-2021 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -667,8 +667,16 @@ public class AquaImageFactory {
      * Determine whether an image is a template image. A template image is an image that contains only clear or
      * (possibly translucent) black pixels.
      */
-    public static boolean isTemplateImage(Image image) {
+    public static boolean isTemplateImage(@NotNull Image image) {
         return imageCache.isTemplateImage(image);
+    }
+
+    /**
+     * Determine whether an icon is a template image. A template image is an image that contains only clear or
+     * (possibly translucent) black pixels.
+     */
+    public static boolean isTemplateIcon(@NotNull Icon icon) {
+        return imageCache.isTemplateIcon(icon);
     }
 
     private static boolean determineTemplateImageStatus(@NotNull Image image) {
