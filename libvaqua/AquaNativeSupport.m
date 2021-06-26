@@ -2500,12 +2500,12 @@ JNIEXPORT jint JNICALL Java_org_violetlib_aqua_AquaUtils_nativeSyncAWTView
     JNF_COCOA_ENTER(env);
 
     NSWindow *w = (NSWindow *) wptr;
-    runOnMainThread(^() {
-        NSView *v = getAWTView(w);
-        //NSLog(@"Forcing update of AWTView layer");
-        [v.layer displayIfNeeded];
-        //NSLog(@"Completed forced update of AWTView layer");
-    });
+    // Not waiting because of a possible deadlock observed creating a native file dialog with a Java accessory
+    [JNFRunLoop performOnMainThreadWaiting:NO withBlock:^()
+    {
+         NSView *v = getAWTView(w);
+         [v.layer displayIfNeeded];
+    }];
 
     JNF_COCOA_EXIT(env);
     return 0;
