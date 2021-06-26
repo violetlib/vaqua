@@ -436,7 +436,7 @@ public class AquaListUI extends BasicListUI implements AquaComponentUI, AquaView
 
         if (isInset && rendererComponent.isOpaque() && rendererComponent instanceof JComponent) {
             JComponent jc = (JComponent) rendererComponent;
-            jc.setOpaque(false);
+            AquaUtils.setOpaqueCarefully(jc, false);
         }
 
         rendererPane.paintComponent(g, rendererComponent, list, cx, cy, cw, ch, true);

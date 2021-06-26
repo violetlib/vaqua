@@ -1892,6 +1892,13 @@ final public class AquaUtils {
         return null;
     }
 
+    public static void setOpaqueCarefully(@NotNull JComponent c, boolean b) {
+        try {
+            c.setOpaque(b);
+        } catch (UnsupportedOperationException ignore) {
+        }
+    }
+
     public static void setBackgroundCarefully(@NotNull Component c, @NotNull Color color) {
 
         JComponent contentPane = null;
@@ -1927,7 +1934,7 @@ final public class AquaUtils {
         c.setBackground(color);
 
         if (contentPane != null && !contentPaneWasOpaque) {
-            contentPane.setOpaque(false);
+            setOpaqueCarefully(contentPane, false);
         }
         if (layeredPane != null && !layeredPaneWasOpaque) {
             layeredPane.setOpaque(false);
