@@ -259,12 +259,9 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
             updateStriped();
             if (newIsSidebar != isSideBar) {
                 isSideBar = newIsSidebar;
-                boolean oldInset = isInset();
                 updateSidebar();
-                if (oldInset != isInset()) {
-                    tree.revalidate();
-                    tree.repaint();
-                }
+                tree.revalidate();
+                tree.repaint();
             }
         }
     }
