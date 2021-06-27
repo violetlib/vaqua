@@ -5,7 +5,7 @@
     default="release"
     xmlns:resolver="antlib:org.apache.maven.resolver.ant"
     xmlns:ivy="antlib:org.apache.ivy.ant"
-    xmlns:if="ant:if"
+    xmlns:antcontrib="antlib:net.sf.antcontrib"
     name="VAqua Look and Feel">
 
     <tstamp>
@@ -58,6 +58,7 @@
 
     <property name="SDKroot" location="/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk" />
     <property name="cc" location="/usr/bin/cc"/>
+    <property name="lipo" location="/usr/bin/lipo"/>
 
     <property name="debug" value="false"/>
     <property name="debugoption" value=""/>
@@ -192,17 +193,19 @@
 
     <target name="compile-VAqua-JNI" depends="compile8">
         <mkdir dir="${jnidir}"/>
+        <delete includeEmptyDirs="true" failonerror="false"><fileset dir="${jnidir}/libvaqua.dylib.dSYM"/></delete>
+        <delete includeEmptyDirs="true" failonerror="false"><fileset dir="${jnidir}/libvaqua-x86.dylib.dSYM"/></delete>
+        <delete includeEmptyDirs="true" failonerror="false"><fileset dir="${jnidir}/libvaqua-arm.dylib.dSYM"/></delete>
 
         <exec executable="${cc}" failonerror="true" >
-            <arg value="-arch"/>
-            <arg value="x86_64"/>
+            <arg value="-target"/>
+            <arg value="x86_64-apple-macos10.7"/>
 
             <arg value="-isysroot"/>
             <arg value="${SDKroot}"/>
-            <env key="MACOSX_DEPLOYMENT_TARGET" value="10.7"/>
 
             <arg value="-o"/>
-            <arg value="${jnidir}/libvaqua.dylib"/>
+            <arg value="${jnidir}/libvaqua-x86.dylib"/>
 
             <arg value="-I${jdk}/include"/>
             <arg value="-I${jdk}/include/darwin"/>
@@ -237,21 +240,93 @@
             <arg value="${jnisrc}/JavaWindowAccess.m"/>
         </exec>
 
+        <exec executable="${cc}" failonerror="true" >
+            <arg value="-target"/>
+            <arg value="arm64-apple-macos11"/>
+
+            <arg value="-isysroot"/>
+            <arg value="${SDKroot}"/>
+
+            <arg value="-o"/>
+            <arg value="${jnidir}/libvaqua-arm.dylib"/>
+
+            <arg value="-I${jdk}/include"/>
+            <arg value="-I${jdk}/include/darwin"/>
+            <arg value="-I${headersdir}"/>
+            <arg value="-I${libdir}"/>
+
+            <arg value="-dynamiclib"/>
+            <arg value="-ObjC"/>
+
+            <arg value="-framework"/>
+            <arg value="Cocoa"/>
+            <arg value="-framework"/>
+            <arg value="QuickLookThumbnailing"/>
+            <arg value="-framework"/>
+            <arg value="Quartz"/>
+
+            <arg value="-F/${SDKroot}/System/Library/Frameworks/JavaVM.framework/Versions/A/Frameworks"/>
+            <arg value="-framework"/>
+            <arg value="JavaNativeFoundation"/>
+
+            <arg value="-U"/>
+            <arg value="_VAppearances_updateAppearance"/>
+            <arg value="-undefined"/>
+            <arg value="dynamic_lookup"/>
+
+            <arg value="${debugoption}"/>
+
+            <arg value="${jnisrc}/AquaNativeSupport.m"/>
+            <arg value="${jnisrc}/AquaSidebarBackground.m"/>
+            <arg value="${jnisrc}/AquaWrappedAWTView.m"/>
+            <arg value="${jnisrc}/AquaVisualEffectView.m"/>
+            <arg value="${jnisrc}/JavaWindowAccess.m"/>
+        </exec>
+
+        <exec executable="${lipo}" failonerror="true">
+            <arg value="${jnidir}/libvaqua-x86.dylib"/>
+            <arg value="${jnidir}/libvaqua-arm.dylib"/>
+            <arg value="-create"/>
+            <arg value="-output"/>
+            <arg value="${jnidir}/libvaqua.dylib"/>
+        </exec>
+
+        <delete file="${jnidir}/libvaqua-x86.dylib"/>
+        <delete file="${jnidir}/libvaqua-arm.dylib"/>
+
+        <antcontrib:if>
+          <available file="${jnidir}/libvaqua-x86.dylib.dSYM" type="dir"/>
+          <then>
+              <copy todir="${jnidir}/libvaqua.dylib.dSYM">
+                <fileset dir="${jnidir}/libvaqua-x86.dylib.dSYM"/>
+              </copy>
+              <delete file="${jnidir}/libvaqua.dylib.dSYM/Contents/Resources/DWARF/libvaqua-x86.dylib"/>
+              <exec executable="${lipo}" failonerror="true">
+                  <arg value="${jnidir}/libvaqua-x86.dylib.dSYM/Contents/Resources/DWARF/libvaqua-x86.dylib"/>
+                  <arg value="${jnidir}/libvaqua-arm.dylib.dSYM/Contents/Resources/DWARF/libvaqua-arm.dylib"/>
+                  <arg value="-create"/>
+                  <arg value="-output"/>
+                  <arg value="${jnidir}/libvaqua.dylib.dSYM/Contents/Resources/DWARF/libvaqua.dylib"/>
+              </exec>
+              <delete includeEmptyDirs="true" failonerror="false"><fileset dir="${jnidir}/libvaqua-x86.dylib.dSYM"/></delete>
+              <delete includeEmptyDirs="true" failonerror="false"><fileset dir="${jnidir}/libvaqua-arm.dylib.dSYM"/></delete>
+          </then>
+        </antcontrib:if>
+
     </target>
 
     <target name="compile-KeyWindowPatch" depends="compile8">
         <mkdir dir="${jnidir}"/>
 
         <exec executable="${cc}" failonerror="true" >
-            <arg value="-arch"/>
-            <arg value="x86_64"/>
+            <arg value="-target"/>
+            <arg value="x86_64-apple-macos10.7"/>
 
             <arg value="-isysroot"/>
             <arg value="${SDKroot}"/>
-            <env key="MACOSX_DEPLOYMENT_TARGET" value="10.7"/>
 
             <arg value="-o"/>
-            <arg value="${jnidir}/libkeywindowpatch.dylib"/>
+            <arg value="${jnidir}/libkeywindowpatch-x86.dylib"/>
 
             <arg value="-I${jdk}/include"/>
             <arg value="-I${jdk}/include/darwin"/>
@@ -276,21 +351,63 @@
             <arg value="${libkeywindowpatchsrc}/CMenuBarCategory.m"/>
         </exec>
 
+        <exec executable="${cc}" failonerror="true" >
+            <arg value="-target"/>
+            <arg value="arm64-apple-macos11"/>
+
+            <arg value="-isysroot"/>
+            <arg value="${SDKroot}"/>
+
+            <arg value="-o"/>
+            <arg value="${jnidir}/libkeywindowpatch-arm.dylib"/>
+
+            <arg value="-I${jdk}/include"/>
+            <arg value="-I${jdk}/include/darwin"/>
+            <arg value="-I${headersdir}"/>
+
+            <arg value="-dynamiclib"/>
+            <arg value="-ObjC"/>
+
+            <arg value="-framework"/>
+            <arg value="Cocoa"/>
+
+            <arg value="-F/${SDKroot}/System/Library/Frameworks/JavaVM.framework/Versions/A/Frameworks"/>
+            <arg value="-framework"/>
+            <arg value="JavaNativeFoundation"/>
+
+            <arg value="-undefined"/>
+            <arg value="dynamic_lookup"/>
+
+            <arg value="${libkeywindowpatchsrc}/KeyWindowPatch.m"/>
+            <arg value="${libkeywindowpatchsrc}/AquaWrappedWindowDelegate.m"/>
+            <arg value="${libkeywindowpatchsrc}/CMenuItemCategory.m"/>
+            <arg value="${libkeywindowpatchsrc}/CMenuBarCategory.m"/>
+        </exec>
+
+        <exec executable="${lipo}" failonerror="true">
+            <arg value="${jnidir}/libkeywindowpatch-x86.dylib"/>
+            <arg value="${jnidir}/libkeywindowpatch-arm.dylib"/>
+            <arg value="-create"/>
+            <arg value="-output"/>
+            <arg value="${jnidir}/libkeywindowpatch.dylib"/>
+        </exec>
+
+        <delete file="${jnidir}/libkeywindowpatch-x86.dylib"/>
+        <delete file="${jnidir}/libkeywindowpatch-arm.dylib"/>
     </target>
 
     <target name="compile-WindowStylePatch" depends="compile8">
         <mkdir dir="${jnidir}"/>
 
-        <exec executable="${cc}" failonerror="true" >
-            <arg value="-arch"/>
-            <arg value="x86_64"/>
+        <exec executable="${cc}" failonerror="true">
+            <arg value="-target"/>
+            <arg value="x86_64-apple-macos10.7"/>
 
             <arg value="-isysroot"/>
             <arg value="${SDKroot}"/>
-            <env key="MACOSX_DEPLOYMENT_TARGET" value="10.7"/>
 
             <arg value="-o"/>
-            <arg value="${jnidir}/libwindowstylepatch.dylib"/>
+            <arg value="${jnidir}/libwindowstylepatch-x86.dylib"/>
 
             <arg value="-I${headersdir}"/>
 
@@ -306,6 +423,40 @@
             <arg value="${libwindowstylepatchsrc}/WindowStylePatch.m"/>
         </exec>
 
+        <exec executable="${cc}" failonerror="true">
+            <arg value="-target"/>
+            <arg value="arm64-apple-macos11"/>
+
+            <arg value="-isysroot"/>
+            <arg value="${SDKroot}"/>
+
+            <arg value="-o"/>
+            <arg value="${jnidir}/libwindowstylepatch-arm.dylib"/>
+
+            <arg value="-I${headersdir}"/>
+
+            <arg value="-dynamiclib"/>
+            <arg value="-ObjC"/>
+
+            <arg value="-framework"/>
+            <arg value="Cocoa"/>
+
+            <arg value="-undefined"/>
+            <arg value="dynamic_lookup"/>
+
+            <arg value="${libwindowstylepatchsrc}/WindowStylePatch.m"/>
+        </exec>
+
+        <exec executable="${lipo}" failonerror="true">
+            <arg value="${jnidir}/libwindowstylepatch-x86.dylib"/>
+            <arg value="${jnidir}/libwindowstylepatch-arm.dylib"/>
+            <arg value="-create"/>
+            <arg value="-output"/>
+            <arg value="${jnidir}/libwindowstylepatch.dylib"/>
+        </exec>
+
+        <delete file="${jnidir}/libwindowstylepatch-x86.dylib"/>
+        <delete file="${jnidir}/libwindowstylepatch-arm.dylib"/>
     </target>
 
     <target name="createUberJAR" depends="resolve, VAqua">
@@ -313,7 +464,7 @@
         <delete includeemptydirs="true">
             <fileset dir="${uber-classesdir}" includes="**/*"/>
         </delete>
-        
+
         <copy todir="${uber-classesdir}">
             <fileset dir="${classesdir}"/>
         </copy>
