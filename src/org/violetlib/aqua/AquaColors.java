@@ -15,6 +15,7 @@ import javax.swing.text.JTextComponent;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.violetlib.jnr.aqua.AquaUIPainter;
 
 import static org.violetlib.aqua.OSXSystemProperties.OSVersion;
 
@@ -530,6 +531,7 @@ public class AquaColors {
                                           @NotNull BasicContextualColors colors) {
 
         AppearanceContext selectedContext = context.withSelected(true);
+        AppearanceContext disabledContext = context.withState(AquaUIPainter.State.DISABLED);
 
         Color bg = editor.getBackground();
         if (!isPriority(bg)) {
@@ -558,7 +560,7 @@ public class AquaColors {
 
         Color dfg = editor.getDisabledTextColor();
         if (!isPriority(dfg)) {
-            editor.setDisabledTextColor(colors.getForeground(context));
+            editor.setDisabledTextColor(colors.getForeground(disabledContext));
         }
     }
 
