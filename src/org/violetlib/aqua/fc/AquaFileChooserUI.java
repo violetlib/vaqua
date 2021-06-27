@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2011-2013 Werner Randelshofer, Switzerland.
- * Copyright (c) 2014-2020 Alan Snyder.
+ * Copyright (c) 2014-2021 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the
@@ -238,6 +238,15 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
         }
     }
 
+    private class ToggleHiddenFilesAction extends AbstractAction {
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            boolean isHiding = fc.isFileHidingEnabled();
+            // Here we want to respond to a change event
+            fc.setFileHidingEnabled(!isHiding);
+        }
+    }
+
     /**
      * A key listener that implements keyboard shortcuts that use text characters. By handling the key typed event, we
      * (hopefully) avoid a race condition observed in Java 1.6 when the shortcut was implemented using an input map. The
@@ -444,6 +453,7 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
     }
 
     private AbstractAction keyListenerAction = new KeyListenerAction();
+    private AbstractAction toggleHiddenFilesAction = new ToggleHiddenFilesAction();
 
     protected TopPanel topPanel;
     protected   SavePanel savePanel;
@@ -1084,7 +1094,12 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
             if ((ks.getModifiers() & KeyEvent.META_MASK) != 0) {
                 globalInputMap.put(ks, ks);
             }
-            am.put(ks, keyListenerAction);
+            if (ks.getKeyCode() == KeyEvent.VK_PERIOD) {
+                // Shift-PERIOD may map to a text character depending upon keyboard layout
+                am.put(ks, toggleHiddenFilesAction);
+            } else {
+                am.put(ks, keyListenerAction);
+            }
         }
 
         // Enforce layout, so that the selected file is visible when the
