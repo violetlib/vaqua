@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2020 Alan Snyder.
+ * Copyright (c) 2015-2021 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -512,9 +512,10 @@ public class AquaButtonExtendedTypes {
         result.put(BUTTON_GRADIENT, gradient.copy().withMargin(2));
         result.put(BUTTON_BEVEL, gradient.copy().withMargin(4));  // this is the "Square" style in IB
 
-        result.put(BUTTON_ROUNDED_RECT, new WidgetInfo(AquaColors.ROUNDED_RECT_BUTTON_COLORS)
+        WidgetInfo roundedRect = new WidgetInfo(AquaColors.ROUNDED_RECT_BUTTON_COLORS)
                 .withMargin(4)
-                .withFontFinder((sz) -> UIManager.getFont("Button.font").deriveFont(fontSize(sz, 12, 12, 11, 9))));
+                .withFontFinder((sz) -> UIManager.getFont("Button.font").deriveFont(fontSize(sz, 12, 12, 11, 9)));
+        result.put(BUTTON_ROUNDED_RECT, roundedRect);
 
         result.put(BUTTON_BEVEL_ROUND, new WidgetInfo(AquaColors.BEVEL_BUTTON_COLORS)
                 .withMargin(6));
@@ -580,9 +581,12 @@ public class AquaButtonExtendedTypes {
 
         WidgetInfo segmentedGradient = gradient.copy().withSegmented()
                 .withColors(AquaColors.GRADIENT_SEGMENTED_BUTTON_COLORS).withMargin(9);
-        result.put(BUTTON_SEGMENTED_INSET, segmentedGradient);  // segmented rounded rect
         result.put(BUTTON_SEGMENTED_SCURVE, segmentedGradient);
         result.put(BUTTON_SEGMENTED_SMALL_SQUARE, segmentedGradient);
+
+        WidgetInfo segmentedRoundedRect = roundedRect.copy().withSegmented()
+                .withColors(AquaColors.GRADIENT_SEGMENTED_BUTTON_COLORS).withMargin(9);
+        result.put(BUTTON_SEGMENTED_INSET, segmentedRoundedRect);
 
         WidgetInfo pushPopUp = new WidgetInfo(AquaColors.POP_UP_DOWN_BUTTON_COLORS)
                 .withMargin(5)
