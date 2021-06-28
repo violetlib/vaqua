@@ -231,6 +231,9 @@
             <arg value="-framework"/>
             <arg value="JavaNativeFoundation"/>
 
+            <arg value="-install_name"/>
+            <arg value="libvaqua.dylib"/>
+
             <arg value="-U"/>
             <arg value="_VAppearances_updateAppearance"/>
             <arg value="-undefined"/>
@@ -273,6 +276,9 @@
             <arg value="-F${JNFdir}"/>
             <arg value="-framework"/>
             <arg value="JavaNativeFoundation"/>
+
+            <arg value="-install_name"/>
+            <arg value="libvaqua.dylib"/>
 
             <arg value="-U"/>
             <arg value="_VAppearances_updateAppearance"/>
@@ -347,6 +353,9 @@
             <arg value="-framework"/>
             <arg value="JavaNativeFoundation"/>
 
+            <arg value="-install_name"/>
+            <arg value="libkeywindowpatch.dylib"/>
+
             <arg value="-undefined"/>
             <arg value="dynamic_lookup"/>
 
@@ -379,6 +388,9 @@
             <arg value="-F${JNFdir}"/>
             <arg value="-framework"/>
             <arg value="JavaNativeFoundation"/>
+
+            <arg value="-install_name"/>
+            <arg value="libkeywindowpatch.dylib"/>
 
             <arg value="-undefined"/>
             <arg value="dynamic_lookup"/>
@@ -422,6 +434,9 @@
             <arg value="-framework"/>
             <arg value="Cocoa"/>
 
+            <arg value="-install_name"/>
+            <arg value="libwindowstylepatch.dylib"/>
+
             <arg value="-undefined"/>
             <arg value="dynamic_lookup"/>
 
@@ -445,6 +460,9 @@
 
             <arg value="-framework"/>
             <arg value="Cocoa"/>
+
+            <arg value="-install_name"/>
+            <arg value="libwindowstylepatch.dylib"/>
 
             <arg value="-undefined"/>
             <arg value="dynamic_lookup"/>
