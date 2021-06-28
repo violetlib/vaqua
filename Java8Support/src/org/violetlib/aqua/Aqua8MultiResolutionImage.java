@@ -157,9 +157,9 @@ public class Aqua8MultiResolutionImage extends AquaMultiResolutionImage implemen
             } catch (Exception ex) {
                 if (ex instanceof InvocationTargetException) {
                     Throwable th = ((InvocationTargetException) ex).getTargetException();
-                    AquaUtils.logError("Unable to map image", th);
+                    Utils.logError("Unable to map image", th);
                 } else {
-                    AquaUtils.logError("Unable to map image", ex);
+                    Utils.logError("Unable to map image", ex);
                 }
             }
         }

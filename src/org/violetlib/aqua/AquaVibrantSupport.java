@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2018 Alan Snyder.
+ * Copyright (c) 2015-2021 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -239,7 +239,7 @@ public class AquaVibrantSupport {
         boolean forceActive = w.getType() == Window.Type.POPUP || !AquaUtils.isDecorated(w);
         long rc = execute(w, ptr -> setupVisualEffectWindow(ptr, style, forceActive));
         if (rc != 0) {
-            AquaUtils.logError("Unable to install visual effect view");
+            Utils.logError("Unable to install visual effect view");
         } else {
             JRootPane rp = AquaUtils.getRootPane(w);
             if (rp != null) {
@@ -267,7 +267,7 @@ public class AquaVibrantSupport {
                 if (w.isDisplayable()) {
                     long rc = execute(w, AquaVibrantSupport::removeVisualEffectWindow);
                     if (rc != 0) {
-                        AquaUtils.logError("Unable to remove visual effect view");
+                        Utils.logError("Unable to remove visual effect view");
                     } else {
                         rp.repaint();
                     }
@@ -316,7 +316,7 @@ public class AquaVibrantSupport {
                 if (w.isDisplayable()) {
                     int rc = disposeVisualEffectView(nativeNSViewPointer);
                     if (rc != 0) {
-                        AquaUtils.logError("disposeVisualEffectView failed");
+                        Utils.logError("disposeVisualEffectView failed");
                     }
                 }
                 nativeNSViewPointer = 0;
@@ -334,14 +334,14 @@ public class AquaVibrantSupport {
             int yflipped = w.getHeight() - (y + height);
             int rc = setViewFrame(nativeNSViewPointer, x, y, width, height, yflipped);
             if (rc != 0) {
-                AquaUtils.logError("setViewFrame failed");
+                Utils.logError("setViewFrame failed");
             }
         }
 
         public void updateSelectionBackgrounds(SelectionBoundsDescription sd) {
             int rc = nativeUpdateSelectionBackgrounds(nativeNSViewPointer, sd != null ? sd.getData() : null);
             if (rc != 0) {
-                AquaUtils.logError("updateSelectionBackgrounds failed");
+                Utils.logError("updateSelectionBackgrounds failed");
             }
         }
     }

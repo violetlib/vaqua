@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2020 Alan Snyder.
+ * Copyright (c) 2018-2021 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -9,7 +9,6 @@
 package org.violetlib.aqua;
 
 import java.awt.*;
-import java.util.Map;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -36,7 +35,7 @@ public class AquaAppearance extends BasicAquaAppearance {
     public @Nullable Color getColor(@NotNull String colorName) {
         Color color = super.getColor(colorName);
         if (AquaColors.isDebugging()) {
-            AquaUtils.logDebug("  Color " + colorName + ": " + AquaColors.toString(color));
+            Utils.logDebug("  Color " + colorName + ": " + AquaColors.toString(color));
         }
         return color;
     }

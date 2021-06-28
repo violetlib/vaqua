@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2018 Alan Snyder.
+ * Copyright (c) 2015-2021 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -78,7 +78,7 @@ public class AquaNativeSupport {
     private static void reportError(String msg) {
         String p = System.mapLibraryName(libraryName);
         String s = "AquaNativeSupport: Unable to load library " + p + ": " + msg;
-        AquaUtils.logError(s);
+        Utils.logError(s);
     }
 
     public static String findNativeLibrary(Class<?> root, String name) throws IllegalArgumentException {
@@ -117,7 +117,7 @@ public class AquaNativeSupport {
                 return f.getPath();
 
             } catch (IOException ex) {
-                AquaUtils.logError("Unable to extract native library resource", ex);
+                Utils.logError("Unable to extract native library resource", ex);
                 return null;
 
             }
@@ -169,7 +169,7 @@ public class AquaNativeSupport {
     }
 
     private static void setup() {
-        int javaVersion = AquaUtils.getJavaVersion();
+        int javaVersion = Utils.getJavaVersion();
         setup(javaVersion);
     }
 

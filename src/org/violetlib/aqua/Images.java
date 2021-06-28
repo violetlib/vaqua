@@ -70,12 +70,12 @@ public class Images {
                     try {
                         p.load(in);
                     } catch (IOException e) {
-                        AquaUtils.logError("Failed to load graphiteable.properties", e);
+                        Utils.logError("Failed to load graphiteable.properties", e);
                     } finally {
                         try {
                             in.close();
                         } catch (IOException ex) {
-                            AquaUtils.logError("Failed to load graphiteable.properties", ex);
+                            Utils.logError("Failed to load graphiteable.properties", ex);
                         }
                     }
                     canGraphite = p;

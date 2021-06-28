@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Alan Snyder.
+ * Copyright (c) 2019-2021 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -20,10 +20,7 @@ import java.util.concurrent.TimeUnit;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.violetlib.aqua.AquaImageFactory;
-import org.violetlib.aqua.AquaMultiResolutionImage;
-import org.violetlib.aqua.AquaUtils;
-import org.violetlib.aqua.JavaSupport;
+import org.violetlib.aqua.*;
 
 /**
  * An implementation of the file icon service that uses the Quick Look Thumbnailing framework, introduced in macOS
@@ -37,7 +34,7 @@ public class CatalinaFileIconServiceImpl
 
     public CatalinaFileIconServiceImpl() {
         if (debugFlag) {
-            AquaUtils.logDebug("File Icon Service: Using Quick Look Thumbnailing");
+            Utils.logDebug("File Icon Service: Using Quick Look Thumbnailing");
         }
     }
 
@@ -63,7 +60,7 @@ public class CatalinaFileIconServiceImpl
         if (OSXFile.isImageFile(f)) {
             long upcallID = upcallRegistry.registerRequest(request);
             if (debugFlag) {
-                AquaUtils.logDebug("Thumbnail request #" + upcallID + ": " + f.getAbsolutePath());
+                Utils.logDebug("Thumbnail request #" + upcallID + ": " + f.getAbsolutePath());
             }
             installQuickLookFileIcon(f, size, scale, upcallID);
         } else {
@@ -83,12 +80,12 @@ public class CatalinaFileIconServiceImpl
         if (!AquaFileIcons.nativeRenderFileImage(path, false, true, buffers, size, size)) {
             if (AquaImageFactory.debugNativeRendering) {
                 String type = "Launch Services";
-                AquaUtils.logDebug("Failed to render " + type + " image for " + path);
+                Utils.logDebug("Failed to render " + type + " image for " + path);
             }
         } else {
             if (AquaImageFactory.debugNativeRendering) {
                 String type = "Launch Services";
-                AquaUtils.logDebug("Rendered " + type + " image for " + path);
+                Utils.logDebug("Rendered " + type + " image for " + path);
             }
             Image image = AquaMultiResolutionImage.createImage(size, size, buffers[0], buffers[1]);
             request.installImage(image, priority);
@@ -115,13 +112,13 @@ public class CatalinaFileIconServiceImpl
             RequestImpl request = upcallRegistry.getRequest(upcallID);
             if (request != null) {
                 if (debugFlag) {
-                    AquaUtils.logDebug("Received image " + priority + " for request #" + upcallID
+                    Utils.logDebug("Received image " + priority + " for request #" + upcallID
                             + width + "x" + height + " " + data.length + " " + scale);
                 }
                 AquaMultiResolutionImage image = JavaSupport.createImage(width, height, data, scale);
                 request.installImage(image, priority);
             } else {
-                AquaUtils.logDebug("Image delivered to obsolete request #" + upcallID);
+                Utils.logDebug("Image delivered to obsolete request #" + upcallID);
             }
         }
     }
@@ -161,7 +158,7 @@ public class CatalinaFileIconServiceImpl
             assert requestsToRemove != null;
 
             if (debugFlag) {
-                AquaUtils.logDebug("Removing " + requestsToRemove.size() + " thumbnail requests");
+                Utils.logDebug("Removing " + requestsToRemove.size() + " thumbnail requests");
             }
 
             for (Long id : requestsToRemove) {

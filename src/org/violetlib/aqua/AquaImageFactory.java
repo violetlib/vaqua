@@ -209,13 +209,13 @@ public class AquaImageFactory {
                 int[][] buffers = new int[2][];
                 if (!nativeRenderImageFile(path, buffers, width, height)) {
                     if (debugNativeRendering) {
-                        AquaUtils.logDebug("Failed to render image file " + path);
+                        Utils.logDebug("Failed to render image file " + path);
                     }
                     throw new UnsupportedOperationException();
                 }
 
                 if (debugNativeRendering) {
-                    AquaUtils.logDebug("Rendered image file " + path);
+                    Utils.logDebug("Rendered image file " + path);
                 }
                 result = AquaMultiResolutionImage.createImage(width, height, buffers[0], buffers[1]);
             }

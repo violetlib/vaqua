@@ -521,7 +521,7 @@ public class AquaRootPaneUI extends BasicRootPaneUI implements AquaComponentUI
                             message += oldAppearanceName + " -> " + appearanceName;
                         }
                     }
-                    AquaUtils.logDebug(message);
+                    Utils.logDebug(message);
                 }
                 rootPane.repaint();
                 AppearanceManager.setRootPaneRegisteredAppearance(rootPane, appearance);  // a callback will be invoked
@@ -689,13 +689,13 @@ public class AquaRootPaneUI extends BasicRootPaneUI implements AquaComponentUI
         Window w = getWindow();
         if (w != null) {
             if (false) {
-                AquaUtils.logDebug("Updating visual effect view: " + vibrantStyle);
+                Utils.logDebug("Updating visual effect view: " + vibrantStyle);
             }
             if (vibrantStyle >= 0) {
                 try {
                     AquaVibrantSupport.addFullWindowVibrantView(w, vibrantStyle);
                 } catch (IllegalArgumentException ex) {
-                    AquaUtils.logError("Unable to install visual effect view", ex);
+                    Utils.logError("Unable to install visual effect view", ex);
                 }
             } else {
                 AquaVibrantSupport.removeFullWindowVibrantView(w);

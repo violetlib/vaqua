@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Alan Snyder.
+ * Copyright (c) 2019-2021 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -14,7 +14,7 @@ import java.io.File;
 import org.jetbrains.annotations.NotNull;
 import org.violetlib.aqua.AquaImageFactory;
 import org.violetlib.aqua.AquaMultiResolutionImage;
-import org.violetlib.aqua.AquaUtils;
+import org.violetlib.aqua.Utils;
 
 /**
  * An implementation of the file icon service that uses Launch Services and Quick Look.
@@ -26,7 +26,7 @@ public class HybridFileIconServiceImpl
 
     public HybridFileIconServiceImpl() {
         if (debugFlag) {
-            AquaUtils.logDebug("File Icon Service: Using Launch Services and Quick Look");
+            Utils.logDebug("File Icon Service: Using Launch Services and Quick Look");
         }
     }
 
@@ -66,12 +66,12 @@ public class HybridFileIconServiceImpl
             if (!AquaFileIcons.nativeRenderFileImage(path, useQuickLook, true, buffers, size, size)) {
                 if (AquaImageFactory.debugNativeRendering) {
                     String type = useQuickLook ? "Quick Look" : "Launch Services";
-                    AquaUtils.logDebug("Failed to render " + type + " image for " + path);
+                    Utils.logDebug("Failed to render " + type + " image for " + path);
                 }
             } else {
                 if (AquaImageFactory.debugNativeRendering) {
                     String type = useQuickLook ? "Quick Look" : "Launch Services";
-                    AquaUtils.logDebug("Rendered " + type + " image for " + path);
+                    Utils.logDebug("Rendered " + type + " image for " + path);
                 }
                 Image image = AquaMultiResolutionImage.createImage(size, size, buffers[0], buffers[1]);
                 int priority = useQuickLook ? FileIconService.ICON_GENERIC : FileIconService.ICON_CUSTOM;

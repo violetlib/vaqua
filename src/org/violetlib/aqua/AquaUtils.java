@@ -49,7 +49,6 @@ import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.StringTokenizer;
 import java.util.concurrent.locks.Lock;
 import java.util.function.Supplier;
 import javax.swing.*;
@@ -74,8 +73,6 @@ final public class AquaUtils {
     public static final String IS_CELL_COMPONENT_KEY = "JComponent.isCellComponent";
 
     private static final String ANIMATIONS_PROPERTY = "swing.enableAnimations";
-
-    private static final int javaVersion = obtainJavaVersion();
 
     private static final HierarchyListener toolbarStatusListener = new HierarchyListener() {
         @Override
@@ -124,61 +121,6 @@ final public class AquaUtils {
             }
         });
     };
-
-    public static void logError(@NotNull String message) {
-        System.err.println(message);
-    }
-
-    public static void logError(@NotNull String message, @NotNull Throwable th) {
-        System.err.println(message + ": " + th);
-    }
-
-    public static void logDebug(@NotNull String message) {
-        System.err.println(message);
-    }
-
-    public static int getJavaVersion() {
-        return javaVersion;
-    }
-
-    private static int obtainJavaVersion()
-    {
-        String s = System.getProperty("java.version");
-        if (s.startsWith("1.")) {
-            s = s.substring(2);
-        }
-        int version = 0;
-        int tokenCount = 0;
-        StringTokenizer st = new StringTokenizer(s, "._");
-        try {
-            while (st.hasMoreTokens()) {
-                String token = st.nextToken();
-                int pos = token.indexOf("-");
-                if (pos > 0) {
-                    token = token.substring(0, pos);
-                }
-                int n = Integer.parseInt(token);
-                ++tokenCount;
-                int limit = tokenCount < 3 ? 100 : 1000;
-                if (n < 0 || n >= limit) {
-                    return 0;
-                }
-                version = version * limit + n;
-                if (tokenCount == 3) {
-                    return version;
-                }
-            }
-        } catch (NumberFormatException ex) {
-            return 0;
-        }
-
-        while (tokenCount < 3) {
-            ++tokenCount;
-            int limit = tokenCount < 3 ? 100 : 1000;
-            version = version * limit;
-        }
-        return version;
-    }
 
     /**
      * Return the UI of a component if it satisfies the specified class or interface.
@@ -1223,7 +1165,7 @@ final public class AquaUtils {
         Color bc = appearance.getColor(colorName);
         if (bc == null) {
             // should not happen
-            logError("Undefined window margin background color: " + colorName);
+            Utils.logError("Undefined window margin background color: " + colorName);
             return AquaColors.CLEAR;
         } else {
             return bc;
@@ -1239,7 +1181,7 @@ final public class AquaUtils {
         Color color = appearance.getColor(colorName);
         if (color == null) {
             // should not happen
-            logError("Undefined window divider color: " + colorName);
+            Utils.logError("Undefined window divider color: " + colorName);
             return AquaColors.CLEAR;
         } else {
             return color;
@@ -1871,7 +1813,7 @@ final public class AquaUtils {
             w.invalidate();
             w.validate();
         } catch (Exception ex) {
-            logError("Unable to restore titled window style", ex);
+            Utils.logError("Unable to restore titled window style", ex);
         }
     }
 
@@ -1951,7 +1893,7 @@ final public class AquaUtils {
         try {
             nativeSetWindowTextured(w, isTextured);
         } catch (Throwable ex) {
-            logError("Unable to set textured", ex);
+            Utils.logError("Unable to set textured", ex);
         }
     }
 
@@ -2023,7 +1965,7 @@ final public class AquaUtils {
             try {
                 nativeSetWindowBackground(w, c);
             } catch (Throwable th) {
-                logError("Unable to set window background", th);
+                Utils.logError("Unable to set window background", th);
             }
         } finally {
             JavaSupport.unlockRenderQueue();

@@ -1219,7 +1219,7 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
                 if (!isComplete) {
                     new ImageIcon(im);
                     if (!g.drawImage(im, x, y, c)) {
-                        AquaUtils.logError("Button icon not drawn!");
+                        Utils.logError("Button icon not drawn!");
                     }
                 }
                 return;

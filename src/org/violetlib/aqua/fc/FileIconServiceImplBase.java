@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Alan Snyder.
+ * Copyright (c) 2019-2021 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -14,7 +14,7 @@ import javax.swing.*;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.violetlib.aqua.AquaUtils;
+import org.violetlib.aqua.Utils;
 
 import static org.violetlib.aqua.fc.FileIconService.debugFlag;
 
@@ -89,7 +89,7 @@ public class FileIconServiceImplBase {
 
         private void debug(@NotNull Icon icon, int priority) {
             if (debugFlag) {
-                AquaUtils.logDebug("Updating icon for " + f + " with priority " + priority
+                Utils.logDebug("Updating icon for " + f + " with priority " + priority
                   + " and size " + icon.getIconWidth() + "x" + icon.getIconHeight());
 
 //                if (f.getName().equals("Users")) {

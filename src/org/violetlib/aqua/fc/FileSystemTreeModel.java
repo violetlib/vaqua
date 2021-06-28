@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2003-2013 Werner Randelshofer, Switzerland.
- * Copyright (c) 2018-2020 Alan Snyder
+ * Copyright (c) 2018-2021 Alan Snyder
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the
@@ -23,6 +23,7 @@ import javax.swing.tree.*;
 
 import org.jetbrains.annotations.NotNull;
 import org.violetlib.aqua.AquaUtils;
+import org.violetlib.aqua.Utils;
 
 /**
  * The FileSystemTreeModel provides the data model for the file system in a file chooser.
@@ -532,7 +533,7 @@ public class FileSystemTreeModel implements TreeModel {
      */
     public void lazyInvalidatePath(TreePath path) {
         if (DEBUG) {
-            AquaUtils.logDebug("lazyInvalidatePath auto=" + isAutoValidate + " " + path);
+            Utils.logDebug("lazyInvalidatePath auto=" + isAutoValidate + " " + path);
         }
         if (path != null) {
             if (isAutoValidate) {
@@ -557,7 +558,7 @@ public class FileSystemTreeModel implements TreeModel {
      */
     public void validatePath(TreePath path) {
         if (DEBUG) {
-            AquaUtils.logDebug("FileSystemTreeModel.validatePath " + path);
+            Utils.logDebug("FileSystemTreeModel.validatePath " + path);
         }
         for (int i = 0; i < path.getPathCount(); i++) {
             Node node = (Node) path.getPathComponent(i);
@@ -932,7 +933,7 @@ public class FileSystemTreeModel implements TreeModel {
         public void invalidateInfo() {
             if (infoState == VALID) {
                 if (isMonitoringInfoValidation(file)) {
-                    AquaUtils.logDebug("Invaliding info for " + file);
+                    Utils.logDebug("Invaliding info for " + file);
                 }
                 userName = null;
                 collationKey = null;
@@ -990,14 +991,14 @@ public class FileSystemTreeModel implements TreeModel {
             if (getRoot() == FileSystemTreeModel.this.getRoot()) {
 
                 if (isMonitoringInfoValidation(file)) {
-                    AquaUtils.logDebug("Change event generated for " + file);
+                    Utils.logDebug("Change event generated for " + file);
                 }
 
                 fireTreeNodeChanged(Node.this);
             } else {
 
                 if (isMonitoringInfoValidation(file)) {
-                    AquaUtils.logDebug("No change event generated for " + file);
+                    Utils.logDebug("No change event generated for " + file);
                 }
             }
         }
@@ -1488,7 +1489,7 @@ public class FileSystemTreeModel implements TreeModel {
                         }*/
 
                         if (DEBUG) {
-                            AquaUtils.logDebug("FileSystemTreeModel validated " + (endTime - startTime) + " " + file);
+                            Utils.logDebug("FileSystemTreeModel validated " + (endTime - startTime) + " " + file);
                         }
 
                         childrenState = VALID;
@@ -1551,7 +1552,7 @@ public class FileSystemTreeModel implements TreeModel {
         @Override
         public void invalidateChildren() {
             if (DEBUG) {
-                AquaUtils.logDebug("FileSystemTreeModel.invalidateChildren " + lazyGetResolvedFile());
+                Utils.logDebug("FileSystemTreeModel.invalidateChildren " + lazyGetResolvedFile());
             }
             childrenState = INVALID;
             validator = null;
@@ -1565,12 +1566,12 @@ public class FileSystemTreeModel implements TreeModel {
         public void lazyInvalidateChildren() {
             if (validator == null && bestBeforeTimeMillis < System.currentTimeMillis()) {
                 if (DEBUG) {
-                    AquaUtils.logDebug("FileSystemTreeModel.lazyInvalidateChildren YES  validator=" + validator + " good for " + (bestBeforeTimeMillis - System.currentTimeMillis()) + " millis " + lazyGetResolvedFile());
+                    Utils.logDebug("FileSystemTreeModel.lazyInvalidateChildren YES  validator=" + validator + " good for " + (bestBeforeTimeMillis - System.currentTimeMillis()) + " millis " + lazyGetResolvedFile());
                 }
                 childrenState = INVALID;
             } else {
                 if (DEBUG) {
-                    AquaUtils.logDebug("FileSystemTreeModel.lazyInvalidateChildren NO  validator=" + validator + " good for " + (bestBeforeTimeMillis - System.currentTimeMillis()) + " millis " + lazyGetResolvedFile());
+                    Utils.logDebug("FileSystemTreeModel.lazyInvalidateChildren NO  validator=" + validator + " good for " + (bestBeforeTimeMillis - System.currentTimeMillis()) + " millis " + lazyGetResolvedFile());
                 }
             }
         }
@@ -1765,13 +1766,13 @@ public class FileSystemTreeModel implements TreeModel {
 
         protected File[] getFiles() {
             if (DEBUG) {
-                AquaUtils.logDebug("FileSystemTreeModel getFiles " + lazyGetResolvedFile());
+                Utils.logDebug("FileSystemTreeModel getFiles " + lazyGetResolvedFile());
             }
             File[] files = getFileSystemView().getFiles(
                     lazyGetResolvedFile(),
                     fileChooser.isFileHidingEnabled());
             if (DEBUG) {
-                AquaUtils.logDebug("FileSystemTreeModel getFiles " + lazyGetResolvedFile() + " returns " + files.length);
+                Utils.logDebug("FileSystemTreeModel getFiles " + lazyGetResolvedFile() + " returns " + files.length);
             }
             return files;
         }
@@ -1813,7 +1814,7 @@ public class FileSystemTreeModel implements TreeModel {
             File[] files = getFileSystemView().getRoots();
             for (int i = 0; i < files.length; i++) {
                 if (DEBUG) {
-                    AquaUtils.logDebug("FileSystemTreeModel root:" + files[i]);
+                    Utils.logDebug("FileSystemTreeModel root:" + files[i]);
                 }
                 //if (accept(files[i])) {
                 list.add(files[i]);
@@ -1825,7 +1826,7 @@ public class FileSystemTreeModel implements TreeModel {
         @Override
         public void validateChildren() {
             if (DEBUG) {
-                AquaUtils.logDebug("FileSystemTreeModel.validateChildren of ROOT " + (childrenState == INVALID) + " " + lazyGetResolvedFile());
+                Utils.logDebug("FileSystemTreeModel.validateChildren of ROOT " + (childrenState == INVALID) + " " + lazyGetResolvedFile());
             }
             super.validateChildren();
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2018 Alan Snyder.
+ * Copyright (c) 2015-2021 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -263,7 +263,7 @@ public class AquaSheetSupport {
         int result;
         if ("true".equals(System.getProperty("VAqua.injectSheetDisplayFailure"))) {
             // inject failure for testing
-            AquaUtils.logDebug("Injected failure to display sheet");
+            Utils.logDebug("Injected failure to display sheet");
             result = -1;
         } else {
             result = (int) execute(w, ptr -> displayAsSheet(ptr, owner));

@@ -6,6 +6,7 @@
     xmlns:resolver="antlib:org.apache.maven.resolver.ant"
     xmlns:ivy="antlib:org.apache.ivy.ant"
     xmlns:antcontrib="antlib:net.sf.antcontrib"
+    xmlns:if="ant:if"
     name="VAqua Look and Feel">
 
     <tstamp>
@@ -59,6 +60,10 @@
     <property name="SDKroot" location="/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk" />
     <property name="cc" location="/usr/bin/cc"/>
     <property name="lipo" location="/usr/bin/lipo"/>
+
+    <!-- Note: open source JavaNativeFoundation is required to build for arm, see https://github.com/apple/openjdk -->
+
+    <property name="JNFdir" location="${SDKroot}/System/Library/Frameworks/JavaVM.framework/Versions/A/Frameworks"/>
 
     <property name="debug" value="false"/>
     <property name="debugoption" value=""/>
@@ -222,7 +227,7 @@
             <arg value="-framework"/>
             <arg value="Quartz"/>
 
-            <arg value="-F/${SDKroot}/System/Library/Frameworks/JavaVM.framework/Versions/A/Frameworks"/>
+            <arg value="-F${JNFdir}"/>
             <arg value="-framework"/>
             <arg value="JavaNativeFoundation"/>
 
@@ -265,7 +270,7 @@
             <arg value="-framework"/>
             <arg value="Quartz"/>
 
-            <arg value="-F/${SDKroot}/System/Library/Frameworks/JavaVM.framework/Versions/A/Frameworks"/>
+            <arg value="-F${JNFdir}"/>
             <arg value="-framework"/>
             <arg value="JavaNativeFoundation"/>
 
@@ -338,7 +343,7 @@
             <arg value="-framework"/>
             <arg value="Cocoa"/>
 
-            <arg value="-F/${SDKroot}/System/Library/Frameworks/JavaVM.framework/Versions/A/Frameworks"/>
+            <arg value="-F${JNFdir}"/>
             <arg value="-framework"/>
             <arg value="JavaNativeFoundation"/>
 
@@ -371,7 +376,7 @@
             <arg value="-framework"/>
             <arg value="Cocoa"/>
 
-            <arg value="-F/${SDKroot}/System/Library/Frameworks/JavaVM.framework/Versions/A/Frameworks"/>
+            <arg value="-F${JNFdir}"/>
             <arg value="-framework"/>
             <arg value="JavaNativeFoundation"/>
 

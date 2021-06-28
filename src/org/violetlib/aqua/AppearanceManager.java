@@ -135,7 +135,7 @@ public class AppearanceManager {
                 }
                 appearanceHasChanged(jc, appearance);
             } catch (Throwable th) {
-                AquaUtils.logError("Unable to set appearance property on " + AquaUtils.show(jc)
+                Utils.logError("Unable to set appearance property on " + AquaUtils.show(jc)
                         + ". Check for failure in a property change listener", th);
                 th.printStackTrace();
             }
@@ -160,7 +160,7 @@ public class AppearanceManager {
                 }
             }
         } catch (Throwable th) {
-            AquaUtils.logError("Unable to uninstall appearance property on " + AquaUtils.show(jc)
+            Utils.logError("Unable to uninstall appearance property on " + AquaUtils.show(jc)
                     + ". Check for failure in a property change listener", th);
             th.printStackTrace();
         }
@@ -714,9 +714,9 @@ public class AppearanceManager {
         Window w = SwingUtilities.getWindowAncestor(c);
         String name = w != null ? w.getName() : "";
         if (name != null && !name.isEmpty()) {
-            AquaUtils.logDebug("[" + name + "] " + s);
+            Utils.logDebug("[" + name + "] " + s);
         } else {
-            AquaUtils.logDebug(s);
+            Utils.logDebug(s);
         }
     }
 }

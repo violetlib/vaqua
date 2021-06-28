@@ -46,7 +46,6 @@ import java.util.ResourceBundle;
 import java.util.function.Consumer;
 import javax.swing.*;
 import javax.swing.border.Border;
-import javax.swing.border.EmptyBorder;
 import javax.swing.border.TitledBorder;
 import javax.swing.plaf.*;
 import javax.swing.plaf.basic.BasicBorders;
@@ -787,7 +786,7 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
         };
         table.putDefaults(menuBarDefaults);
 
-        int version = AquaUtils.getJavaVersion();
+        int version = Utils.getJavaVersion();
         if (version < 900000) {
             // prior to Java 9, the platform UI is needed to support the screen menu bar
             // In addition, the AquaLAF must be encouraged to load its native library
@@ -808,7 +807,7 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
     protected void initClassDefaults(UIDefaults table) {
         String basicPackageName = "javax.swing.plaf.basic.";
 
-        int version = AquaUtils.getJavaVersion();
+        int version = Utils.getJavaVersion();
 
         Object[] uiDefaults = {
                 "ButtonUI", PKG_PREFIX + "AquaButtonUI",

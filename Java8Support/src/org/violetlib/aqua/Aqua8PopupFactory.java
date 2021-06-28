@@ -27,7 +27,7 @@ public class Aqua8PopupFactory extends AquaPopupFactory {
             m.setAccessible(true);
             m.invoke(this, 2);
         } catch (Throwable e) {
-            AquaUtils.logError("Unable to setPopupType", e);
+            Utils.logError("Unable to setPopupType", e);
             return new AquaPopup(owner, contents, x, y);
         }
 
@@ -42,7 +42,7 @@ public class Aqua8PopupFactory extends AquaPopupFactory {
             m.setAccessible(true);
             m.invoke(p, false);
         } catch (Exception ex) {
-            AquaUtils.logError("Unable to prevent popup from being reused", ex);
+            Utils.logError("Unable to prevent popup from being reused", ex);
         }
 
         return p;

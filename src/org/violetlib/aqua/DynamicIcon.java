@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Alan Snyder.
+ * Copyright (c) 2019-2021 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -52,13 +52,13 @@ public class DynamicIcon implements Icon, ChangeListener {
                     image = im;
                     isChanged = true;
                 } else {
-                    AquaUtils.logError("No image for icon: " + icon);
+                    Utils.logError("No image for icon: " + icon);
                 }
             }
         }
         if (isChanged) {
             if (debugFlag) {
-                AquaUtils.logDebug("Icon updated");
+                Utils.logDebug("Icon updated");
             }
             iconChanged();
         }
@@ -77,7 +77,7 @@ public class DynamicIcon implements Icon, ChangeListener {
         // The replacement image has been updated
         if (replacement != null) {
             if (debugFlag) {
-                AquaUtils.logDebug("Replacement icon updated");
+                Utils.logDebug("Replacement icon updated");
             }
             image = replacement.getCurrentImage();
             iconChanged();

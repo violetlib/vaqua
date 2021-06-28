@@ -217,7 +217,7 @@ public class Java8Support implements JavaSupport.JavaSupportImpl {
                     };
                     m.invoke(image, observer);
                 } catch (Exception ex) {
-                    AquaUtils.logError("Unable to preload image", ex);
+                    Utils.logError("Unable to preload image", ex);
                 }
             }
         }

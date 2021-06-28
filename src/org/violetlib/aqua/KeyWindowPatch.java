@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Alan Snyder.
+ * Copyright (c) 2018-2021 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -52,7 +52,7 @@ public class KeyWindowPatch
     }
 
     private static Boolean computeIfNeeded() {
-        int version = AquaUtils.getJavaVersion();
+        int version = Utils.getJavaVersion();
         return version < 1100000;
     }
 
@@ -67,7 +67,7 @@ public class KeyWindowPatch
 
             System.load(fn);
             isInstalled = true;
-            AquaUtils.logDebug("VAqua: installed patch for main/key window support");
+            Utils.logDebug("VAqua: installed patch for main/key window support");
         } catch (UnsatisfiedLinkError e) {
             reportError(e.getMessage());
         } catch (AccessControlException e) {
@@ -80,7 +80,7 @@ public class KeyWindowPatch
 
     private static void reportError(String msg) {
         String s = "KeyWindowPatch: Unable to load library: " + msg;
-        AquaUtils.logError(s);
+        Utils.logError(s);
     }
 
     private static long ensureWindowDelegateInstalled(Window w, long wptr)

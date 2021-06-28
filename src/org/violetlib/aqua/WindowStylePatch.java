@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Alan Snyder.
+ * Copyright (c) 2018-2021 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -34,7 +34,7 @@ public class WindowStylePatch
     }
 
     private static Boolean computeIfNeeded() {
-        int version = AquaUtils.getJavaVersion();
+        int version = Utils.getJavaVersion();
         return version < 1200000;
     }
 
@@ -49,7 +49,7 @@ public class WindowStylePatch
 
             System.load(fn);
             isInstalled = true;
-            AquaUtils.logDebug("VAqua: installed patch for preserving window style bits");
+            Utils.logDebug("VAqua: installed patch for preserving window style bits");
         } catch (UnsatisfiedLinkError e) {
             reportError(e.getMessage());
         } catch (AccessControlException e) {
@@ -62,6 +62,6 @@ public class WindowStylePatch
 
     private static void reportError(String msg) {
         String s = "WindowStylePatch: Unable to load library: " + msg;
-        AquaUtils.logError(s);
+        Utils.logError(s);
     }
 }

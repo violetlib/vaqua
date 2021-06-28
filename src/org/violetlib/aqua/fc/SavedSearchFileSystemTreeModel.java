@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014-2015 Alan Snyder.
+ * Copyright (c) 2014-2021 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the
@@ -15,7 +15,7 @@ import javax.swing.*;
 import javax.swing.tree.TreePath;
 
 import org.jetbrains.annotations.NotNull;
-import org.violetlib.aqua.AquaUtils;
+import org.violetlib.aqua.Utils;
 
 /**
  * A file system model for the results of a saved search.
@@ -97,7 +97,7 @@ public class SavedSearchFileSystemTreeModel extends FileSystemTreeModel {
                 } else {
                     msg += " failed";
                 }
-                AquaUtils.logDebug(msg);
+                Utils.logDebug(msg);
             }
 
             JFileChooser fileChooser = getFileChooser();

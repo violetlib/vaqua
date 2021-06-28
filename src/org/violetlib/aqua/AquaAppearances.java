@@ -126,7 +126,7 @@ public class AquaAppearances {
             VAppearance a = ace.getAppearance();
             String name = a.getName();
             if (false) {
-                AquaUtils.logDebug("AquaAppearances: appearance " + name + " updated");
+                Utils.logDebug("AquaAppearances: appearance " + name + " updated");
             }
             AquaAppearance appearance = getAquaAppearance(a);
             for (ChangeListener listener : changeListeners) {
@@ -139,8 +139,8 @@ public class AquaAppearances {
 
     private static @NotNull AquaAppearance getAquaAppearance(@NotNull VAppearance a) {
         Map<String,Color> nativeColors = AquaNativeRendering.createPainter().getColors(a);
-        Colors colors = new AppearanceColorsBuilder(a, OSVersion, nativeColors, null, AquaUtils::logDebug).getResult();
-        AquaAppearance appearance = new AquaAppearance(a, colors, AquaUtils::logDebug);
+        Colors colors = new AppearanceColorsBuilder(a, OSVersion, nativeColors, null, Utils::logDebug).getResult();
+        AquaAppearance appearance = new AquaAppearance(a, colors, Utils::logDebug);
         appearances.put(a.getName(), appearance);
         return appearance;
     }

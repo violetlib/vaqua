@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2009-2013 Werner Randelshofer, Switzerland.
- * Copyright (c) 2014-2019 Alan Snyder.
+ * Copyright (c) 2014-2021 Alan Snyder.
  * You may not use, copy or modify this file, except in compliance with the accompanying license terms.
  */
 
@@ -791,7 +791,7 @@ public class OSXFile {
                         SystemItemInfo info = new SystemItemInfo(name, path, sequence++, isVisible, id, icon);
                         result.add(info);
                     } else {
-                        AquaUtils.logDebug("Skipping " + name);
+                        Utils.logDebug("Skipping " + name);
                     }
                 }
             }
