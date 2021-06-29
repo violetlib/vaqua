@@ -202,97 +202,60 @@
         <delete includeEmptyDirs="true" failonerror="false"><fileset dir="${jnidir}/libvaqua-x86.dylib.dSYM"/></delete>
         <delete includeEmptyDirs="true" failonerror="false"><fileset dir="${jnidir}/libvaqua-arm.dylib.dSYM"/></delete>
 
-        <exec executable="${cc}" failonerror="true" >
-            <arg value="-target"/>
-            <arg value="x86_64-apple-macos10.7"/>
+        <macrodef name="build-for-target">
+            <attribute name="target"/>
+            <attribute name="name"/>
+            <sequential>
+                <exec executable="${cc}" failonerror="true" >
+                    <arg value="-target"/>
+                    <arg value="@{target}"/>
 
-            <arg value="-isysroot"/>
-            <arg value="${SDKroot}"/>
+                    <arg value="-isysroot"/>
+                    <arg value="${SDKroot}"/>
 
-            <arg value="-o"/>
-            <arg value="${jnidir}/libvaqua-x86.dylib"/>
+                    <arg value="-o"/>
+                    <arg value="${jnidir}/libvaqua-@{name}.dylib"/>
 
-            <arg value="-I${jdk}/include"/>
-            <arg value="-I${jdk}/include/darwin"/>
-            <arg value="-I${headersdir}"/>
-            <arg value="-I${libdir}"/>
+                    <arg value="-I${jdk}/include"/>
+                    <arg value="-I${jdk}/include/darwin"/>
+                    <arg value="-I${headersdir}"/>
+                    <arg value="-I${libdir}"/>
 
-            <arg value="-dynamiclib"/>
-            <arg value="-ObjC"/>
+                    <arg value="-dynamiclib"/>
+                    <arg value="-ObjC"/>
 
-            <arg value="-framework"/>
-            <arg value="Cocoa"/>
-            <arg value="-framework"/>
-            <arg value="QuickLookThumbnailing"/>
-            <arg value="-framework"/>
-            <arg value="Quartz"/>
+                    <arg value="-framework"/>
+                    <arg value="Cocoa"/>
+                    <arg value="-framework"/>
+                    <arg value="QuickLookThumbnailing"/>
+                    <arg value="-framework"/>
+                    <arg value="Quartz"/>
 
-            <arg value="-F${JNFdir}"/>
-            <arg value="-framework"/>
-            <arg value="JavaNativeFoundation"/>
+                    <arg value="-F${JNFdir}"/>
+                    <arg value="-framework"/>
+                    <arg value="JavaNativeFoundation"/>
 
-            <arg value="-install_name"/>
-            <arg value="libvaqua.dylib"/>
+                    <arg value="-install_name"/>
+                    <arg value="libvaqua.dylib"/>
 
-            <arg value="-U"/>
-            <arg value="_VAppearances_updateAppearance"/>
-            <arg value="-undefined"/>
-            <arg value="dynamic_lookup"/>
+                    <arg value="-U"/>
+                    <arg value="_VAppearances_updateAppearance"/>
+                    <arg value="-undefined"/>
+                    <arg value="dynamic_lookup"/>
 
-            <arg value="${debugoption}"/>
+                    <arg value="${debugoption}"/>
 
-            <arg value="${jnisrc}/AquaNativeSupport.m"/>
-            <arg value="${jnisrc}/AquaSidebarBackground.m"/>
-            <arg value="${jnisrc}/AquaWrappedAWTView.m"/>
-            <arg value="${jnisrc}/AquaVisualEffectView.m"/>
-            <arg value="${jnisrc}/JavaWindowAccess.m"/>
-        </exec>
+                    <arg value="${jnisrc}/AquaNativeSupport.m"/>
+                    <arg value="${jnisrc}/AquaSidebarBackground.m"/>
+                    <arg value="${jnisrc}/AquaWrappedAWTView.m"/>
+                    <arg value="${jnisrc}/AquaVisualEffectView.m"/>
+                    <arg value="${jnisrc}/JavaWindowAccess.m"/>
+                </exec>
+            </sequential>
+        </macrodef>
 
-        <exec executable="${cc}" failonerror="true" >
-            <arg value="-target"/>
-            <arg value="arm64-apple-macos11"/>
-
-            <arg value="-isysroot"/>
-            <arg value="${SDKroot}"/>
-
-            <arg value="-o"/>
-            <arg value="${jnidir}/libvaqua-arm.dylib"/>
-
-            <arg value="-I${jdk}/include"/>
-            <arg value="-I${jdk}/include/darwin"/>
-            <arg value="-I${headersdir}"/>
-            <arg value="-I${libdir}"/>
-
-            <arg value="-dynamiclib"/>
-            <arg value="-ObjC"/>
-
-            <arg value="-framework"/>
-            <arg value="Cocoa"/>
-            <arg value="-framework"/>
-            <arg value="QuickLookThumbnailing"/>
-            <arg value="-framework"/>
-            <arg value="Quartz"/>
-
-            <arg value="-F${JNFdir}"/>
-            <arg value="-framework"/>
-            <arg value="JavaNativeFoundation"/>
-
-            <arg value="-install_name"/>
-            <arg value="libvaqua.dylib"/>
-
-            <arg value="-U"/>
-            <arg value="_VAppearances_updateAppearance"/>
-            <arg value="-undefined"/>
-            <arg value="dynamic_lookup"/>
-
-            <arg value="${debugoption}"/>
-
-            <arg value="${jnisrc}/AquaNativeSupport.m"/>
-            <arg value="${jnisrc}/AquaSidebarBackground.m"/>
-            <arg value="${jnisrc}/AquaWrappedAWTView.m"/>
-            <arg value="${jnisrc}/AquaVisualEffectView.m"/>
-            <arg value="${jnisrc}/JavaWindowAccess.m"/>
-        </exec>
+        <build-for-target target="x86_64-apple-macos10.7" name="x86"/>
+        <build-for-target target="arm64-apple-macos11" name="arm"/>
 
         <exec executable="${lipo}" failonerror="true">
             <arg value="${jnidir}/libvaqua-x86.dylib"/>
@@ -329,77 +292,50 @@
     <target name="compile-KeyWindowPatch" depends="compile8">
         <mkdir dir="${jnidir}"/>
 
-        <exec executable="${cc}" failonerror="true" >
-            <arg value="-target"/>
-            <arg value="x86_64-apple-macos10.7"/>
+        <macrodef name="build-for-target">
+            <attribute name="target"/>
+            <attribute name="name"/>
+            <sequential>
+                <exec executable="${cc}" failonerror="true" >
+                    <arg value="-target"/>
+                    <arg value="@{target}"/>
 
-            <arg value="-isysroot"/>
-            <arg value="${SDKroot}"/>
+                    <arg value="-isysroot"/>
+                    <arg value="${SDKroot}"/>
 
-            <arg value="-o"/>
-            <arg value="${jnidir}/libkeywindowpatch-x86.dylib"/>
+                    <arg value="-o"/>
+                    <arg value="${jnidir}/libkeywindowpatch-@{name}.dylib"/>
 
-            <arg value="-I${jdk}/include"/>
-            <arg value="-I${jdk}/include/darwin"/>
-            <arg value="-I${headersdir}"/>
+                    <arg value="-I${jdk}/include"/>
+                    <arg value="-I${jdk}/include/darwin"/>
+                    <arg value="-I${headersdir}"/>
 
-            <arg value="-dynamiclib"/>
-            <arg value="-ObjC"/>
+                    <arg value="-dynamiclib"/>
+                    <arg value="-ObjC"/>
 
-            <arg value="-framework"/>
-            <arg value="Cocoa"/>
+                    <arg value="-framework"/>
+                    <arg value="Cocoa"/>
 
-            <arg value="-F${JNFdir}"/>
-            <arg value="-framework"/>
-            <arg value="JavaNativeFoundation"/>
+                    <arg value="-F${JNFdir}"/>
+                    <arg value="-framework"/>
+                    <arg value="JavaNativeFoundation"/>
 
-            <arg value="-install_name"/>
-            <arg value="libkeywindowpatch.dylib"/>
+                    <arg value="-install_name"/>
+                    <arg value="libkeywindowpatch.dylib"/>
 
-            <arg value="-undefined"/>
-            <arg value="dynamic_lookup"/>
+                    <arg value="-undefined"/>
+                    <arg value="dynamic_lookup"/>
 
-            <arg value="${libkeywindowpatchsrc}/KeyWindowPatch.m"/>
-            <arg value="${libkeywindowpatchsrc}/AquaWrappedWindowDelegate.m"/>
-            <arg value="${libkeywindowpatchsrc}/CMenuItemCategory.m"/>
-            <arg value="${libkeywindowpatchsrc}/CMenuBarCategory.m"/>
-        </exec>
+                    <arg value="${libkeywindowpatchsrc}/KeyWindowPatch.m"/>
+                    <arg value="${libkeywindowpatchsrc}/AquaWrappedWindowDelegate.m"/>
+                    <arg value="${libkeywindowpatchsrc}/CMenuItemCategory.m"/>
+                    <arg value="${libkeywindowpatchsrc}/CMenuBarCategory.m"/>
+                </exec>
+            </sequential>
+        </macrodef>
 
-        <exec executable="${cc}" failonerror="true" >
-            <arg value="-target"/>
-            <arg value="arm64-apple-macos11"/>
-
-            <arg value="-isysroot"/>
-            <arg value="${SDKroot}"/>
-
-            <arg value="-o"/>
-            <arg value="${jnidir}/libkeywindowpatch-arm.dylib"/>
-
-            <arg value="-I${jdk}/include"/>
-            <arg value="-I${jdk}/include/darwin"/>
-            <arg value="-I${headersdir}"/>
-
-            <arg value="-dynamiclib"/>
-            <arg value="-ObjC"/>
-
-            <arg value="-framework"/>
-            <arg value="Cocoa"/>
-
-            <arg value="-F${JNFdir}"/>
-            <arg value="-framework"/>
-            <arg value="JavaNativeFoundation"/>
-
-            <arg value="-install_name"/>
-            <arg value="libkeywindowpatch.dylib"/>
-
-            <arg value="-undefined"/>
-            <arg value="dynamic_lookup"/>
-
-            <arg value="${libkeywindowpatchsrc}/KeyWindowPatch.m"/>
-            <arg value="${libkeywindowpatchsrc}/AquaWrappedWindowDelegate.m"/>
-            <arg value="${libkeywindowpatchsrc}/CMenuItemCategory.m"/>
-            <arg value="${libkeywindowpatchsrc}/CMenuBarCategory.m"/>
-        </exec>
+        <build-for-target target="x86_64-apple-macos10.7" name="x86"/>
+        <build-for-target target="arm64-apple-macos11" name="arm"/>
 
         <exec executable="${lipo}" failonerror="true">
             <arg value="${jnidir}/libkeywindowpatch-x86.dylib"/>
@@ -416,59 +352,41 @@
     <target name="compile-WindowStylePatch" depends="compile8">
         <mkdir dir="${jnidir}"/>
 
-        <exec executable="${cc}" failonerror="true">
-            <arg value="-target"/>
-            <arg value="x86_64-apple-macos10.7"/>
+        <macrodef name="build-for-target">
+            <attribute name="target"/>
+            <attribute name="name"/>
+            <sequential>
+                <exec executable="${cc}" failonerror="true">
+                    <arg value="-target"/>
+                    <arg value="@{target}"/>
 
-            <arg value="-isysroot"/>
-            <arg value="${SDKroot}"/>
+                    <arg value="-isysroot"/>
+                    <arg value="${SDKroot}"/>
 
-            <arg value="-o"/>
-            <arg value="${jnidir}/libwindowstylepatch-x86.dylib"/>
+                    <arg value="-o"/>
+                    <arg value="${jnidir}/libwindowstylepatch-@{name}.dylib"/>
 
-            <arg value="-I${headersdir}"/>
+                    <arg value="-I${headersdir}"/>
 
-            <arg value="-dynamiclib"/>
-            <arg value="-ObjC"/>
+                    <arg value="-dynamiclib"/>
+                    <arg value="-ObjC"/>
 
-            <arg value="-framework"/>
-            <arg value="Cocoa"/>
+                    <arg value="-framework"/>
+                    <arg value="Cocoa"/>
 
-            <arg value="-install_name"/>
-            <arg value="libwindowstylepatch.dylib"/>
+                    <arg value="-install_name"/>
+                    <arg value="libwindowstylepatch.dylib"/>
 
-            <arg value="-undefined"/>
-            <arg value="dynamic_lookup"/>
+                    <arg value="-undefined"/>
+                    <arg value="dynamic_lookup"/>
 
-            <arg value="${libwindowstylepatchsrc}/WindowStylePatch.m"/>
-        </exec>
+                    <arg value="${libwindowstylepatchsrc}/WindowStylePatch.m"/>
+                </exec>
+            </sequential>
+        </macrodef>
 
-        <exec executable="${cc}" failonerror="true">
-            <arg value="-target"/>
-            <arg value="arm64-apple-macos11"/>
-
-            <arg value="-isysroot"/>
-            <arg value="${SDKroot}"/>
-
-            <arg value="-o"/>
-            <arg value="${jnidir}/libwindowstylepatch-arm.dylib"/>
-
-            <arg value="-I${headersdir}"/>
-
-            <arg value="-dynamiclib"/>
-            <arg value="-ObjC"/>
-
-            <arg value="-framework"/>
-            <arg value="Cocoa"/>
-
-            <arg value="-install_name"/>
-            <arg value="libwindowstylepatch.dylib"/>
-
-            <arg value="-undefined"/>
-            <arg value="dynamic_lookup"/>
-
-            <arg value="${libwindowstylepatchsrc}/WindowStylePatch.m"/>
-        </exec>
+        <build-for-target target="x86_64-apple-macos10.7" name="x86"/>
+        <build-for-target target="arm64-apple-macos11" name="arm"/>
 
         <exec executable="${lipo}" failonerror="true">
             <arg value="${jnidir}/libwindowstylepatch-x86.dylib"/>
