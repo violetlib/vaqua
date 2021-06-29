@@ -1,5 +1,5 @@
 /*
- * Changes Copyright (c) 2015-2018 Alan Snyder.
+ * Changes Copyright (c) 2015-2021 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -51,12 +51,12 @@ public class AquaComboBoxRendererInternal<E> extends JLabel implements ListCellR
     protected boolean fDrawCheckedItem = true;
     protected boolean fIsDark;
 
-    protected static int checkMarkLeftInset = 5;
+    protected int checkMarkLeftInset = OSXSystemProperties.OSVersion >= 1015 ? 7 : 5;
     protected static int checkMarkTopInset = 3;
 
     protected static int menuLabelLeftInset = 21;
-    protected static int editableMenuLabelLeftInset = 5;
-    protected static int menuLabelRightInset = 5;
+    protected int editableMenuLabelLeftInset = OSXSystemProperties.OSVersion >= 1015 ? 16 : 5;
+    protected int menuLabelRightInset = OSXSystemProperties.OSVersion >= 1015 ? 16 : 5;
     protected static int menuLabelTopInset = 0;
     protected static int menuLabelBottomInset = 1;
     protected static int miniMenuLabelTopInset = 1;
@@ -92,7 +92,6 @@ public class AquaComboBoxRendererInternal<E> extends JLabel implements ListCellR
 
     // Don't paint the border here, it gets painted by the UI
     protected void paintBorder(Graphics g) {
-
     }
 
     public int getBaseline(int width, int height) {
