@@ -1,5 +1,5 @@
 /*
- * Changes copyright (c) 2016-2018 Alan Snyder.
+ * Changes copyright (c) 2016-2021 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -9,6 +9,7 @@
 package org.violetlib.aqua;
 
 import java.awt.*;
+import java.awt.event.FocusEvent;
 import java.awt.image.*;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -22,6 +23,8 @@ import org.jetbrains.annotations.NotNull;
 import sun.awt.image.MultiResolutionImage;
 import sun.java2d.opengl.OGLRenderQueue;
 import sun.swing.SwingUtilities2;
+
+import static org.violetlib.aqua.JavaSupport.FocusEventCause.*;
 
 /**
  * Support for Java 8
@@ -90,19 +93,19 @@ public class Java8Support implements JavaSupport.JavaSupportImpl {
         @Override
         protected Method getInstance() {
             return AccessController.doPrivileged(
-              new PrivilegedAction<Method>() {
-                  @Override
-                  public Method run() {
-                      try {
-                          Method method = JComponent.class.getDeclaredMethod(
-                            "getFlag", new Class<?>[]{int.class});
-                          method.setAccessible(true);
-                          return method;
-                      } catch (Throwable ignored) {
-                          return null;
-                      }
-                  }
-              }
+                    new PrivilegedAction<Method>() {
+                        @Override
+                        public Method run() {
+                            try {
+                                Method method = JComponent.class.getDeclaredMethod(
+                                        "getFlag", new Class<?>[]{int.class});
+                                method.setAccessible(true);
+                                return method;
+                            } catch (Throwable ignored) {
+                                return null;
+                            }
+                        }
+                    }
             );
         }
     };
@@ -238,5 +241,44 @@ public class Java8Support implements JavaSupport.JavaSupportImpl {
     @Override
     public AquaPopupFactory createPopupFactory() {
         return new Aqua8PopupFactory();
+    }
+
+    @Override
+    public int getFocusEventCause(@NotNull FocusEvent e) {
+        if (e instanceof sun.awt.CausedFocusEvent) {
+            sun.awt.CausedFocusEvent ev = (sun.awt.CausedFocusEvent) e;
+            sun.awt.CausedFocusEvent.Cause cause = ev.getCause();
+            switch (cause) {
+                case UNKNOWN:
+                    return UNKNOWN;
+                case MOUSE_EVENT:
+                    return MOUSE_EVENT;
+                case TRAVERSAL:
+                    return TRAVERSAL;
+                case TRAVERSAL_UP:
+                    return TRAVERSAL_UP;
+                case TRAVERSAL_DOWN:
+                    return TRAVERSAL_DOWN;
+                case TRAVERSAL_FORWARD:
+                    return TRAVERSAL_FORWARD;
+                case TRAVERSAL_BACKWARD:
+                    return TRAVERSAL_BACKWARD;
+                case ROLLBACK:
+                    return ROLLBACK;
+                case MANUAL_REQUEST:
+                    return UNKNOWN;
+                case AUTOMATIC_TRAVERSE:
+                    return UNKNOWN;
+                case NATIVE_SYSTEM:
+                    return UNEXPECTED;
+                case ACTIVATION:
+                    return ACTIVATION;
+                case CLEAR_GLOBAL_FOCUS_OWNER:
+                    return CLEAR_GLOBAL_FOCUS_OWNER;
+                case RETARGETED:
+                    return UNKNOWN;
+            }
+        }
+        return UNKNOWN;
     }
 }

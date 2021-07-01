@@ -34,10 +34,7 @@
 package org.violetlib.aqua;
 
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.HierarchyEvent;
-import java.awt.event.HierarchyListener;
+import java.awt.event.*;
 import java.awt.geom.Rectangle2D;
 import java.awt.geom.RoundRectangle2D;
 import java.awt.image.BufferedImage;
@@ -66,6 +63,7 @@ import org.violetlib.jnr.Insetter;
 import org.violetlib.jnr.aqua.AquaUIPainter;
 
 import static javax.swing.SwingConstants.*;
+import static org.violetlib.aqua.JavaSupport.FocusEventCause.*;
 
 final public class AquaUtils {
 
@@ -460,6 +458,20 @@ final public class AquaUtils {
         if (c instanceof JComponent) {
             JComponent jc = (JComponent) c;
             return Boolean.TRUE.equals(jc.getClientProperty(IS_CELL_COMPONENT_KEY));
+        }
+        return false;
+    }
+
+    public static boolean isAutoSelectOnFocusAppropriate(@NotNull FocusEvent e) {
+        int cause = JavaSupport.getFocusEventCause(e);
+        switch (cause) {
+            case TRAVERSAL:
+            case TRAVERSAL_UP:
+            case TRAVERSAL_DOWN:
+            case TRAVERSAL_BACKWARD:
+            case TRAVERSAL_FORWARD:
+            case UNKNOWN:  // hopefully, a programmatic request for focus
+                return true;
         }
         return false;
     }

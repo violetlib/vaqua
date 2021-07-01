@@ -9,6 +9,7 @@
 package org.violetlib.aqua;
 
 import java.awt.*;
+import java.awt.event.FocusEvent;
 import java.awt.image.BufferedImage;
 import java.awt.image.ImageFilter;
 import java.util.function.Function;
@@ -21,6 +22,21 @@ import org.jetbrains.annotations.NotNull;
  */
 
 public class JavaSupport {
+
+    public interface FocusEventCause
+    {
+        int UNKNOWN = 0;
+        int MOUSE_EVENT = 1;
+        int TRAVERSAL = 2;
+        int TRAVERSAL_UP = 3;
+        int TRAVERSAL_DOWN = 4;
+        int TRAVERSAL_FORWARD = 5;
+        int TRAVERSAL_BACKWARD = 6;
+        int ROLLBACK = 7;
+        int UNEXPECTED = 8;
+        int ACTIVATION = 9;
+        int CLEAR_GLOBAL_FOCUS_OWNER = 10;
+    }
 
     public interface JavaSupportImpl {
         int getScaleFactor(Graphics g);
@@ -44,6 +60,7 @@ public class JavaSupport {
         void lockRenderQueue();
         void unlockRenderQueue();
         AquaPopupFactory createPopupFactory();
+        int getFocusEventCause(@NotNull FocusEvent e);
     }
 
     private final static JavaSupportImpl impl = findImpl();
@@ -135,6 +152,10 @@ public class JavaSupport {
 
     public static AquaPopupFactory createPopupFactory() {
         return impl.createPopupFactory();
+    }
+
+    public static int getFocusEventCause(@NotNull FocusEvent e) {
+        return impl.getFocusEventCause(e);
     }
 
     private static JavaSupportImpl findImpl() {

@@ -1,5 +1,5 @@
 /*
- * Changes copyright (c) 2016-2018 Alan Snyder.
+ * Changes copyright (c) 2016-2021 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -10,6 +10,7 @@ package org.violetlib.aqua;
 
 import java.awt.*;
 import java.awt.color.ColorSpace;
+import java.awt.event.FocusEvent;
 import java.awt.geom.AffineTransform;
 import java.awt.image.*;
 import java.util.function.Function;
@@ -17,6 +18,8 @@ import javax.swing.*;
 import javax.swing.plaf.basic.BasicGraphicsUtils;
 
 import org.jetbrains.annotations.NotNull;
+
+import static org.violetlib.aqua.JavaSupport.FocusEventCause.*;
 
 /**
  * Support for Java 9 and later
@@ -162,5 +165,34 @@ public class Java9Support implements JavaSupport.JavaSupportImpl {
     @Override
     public AquaPopupFactory createPopupFactory() {
         return new Aqua9PopupFactory();
+    }
+
+    @Override
+    public int getFocusEventCause(@NotNull FocusEvent e) {
+        FocusEvent.Cause cause = e.getCause();
+        switch (cause) {
+            case UNKNOWN:
+                return UNKNOWN;
+            case MOUSE_EVENT:
+                return MOUSE_EVENT;
+            case TRAVERSAL:
+                return TRAVERSAL;
+            case TRAVERSAL_UP:
+                return TRAVERSAL_UP;
+            case TRAVERSAL_DOWN:
+                return TRAVERSAL_DOWN;
+            case TRAVERSAL_FORWARD:
+                return TRAVERSAL_FORWARD;
+            case TRAVERSAL_BACKWARD:
+                return TRAVERSAL_BACKWARD;
+            case ROLLBACK:
+                return ROLLBACK;
+            case ACTIVATION:
+                return ACTIVATION;
+            case CLEAR_GLOBAL_FOCUS_OWNER:
+                return CLEAR_GLOBAL_FOCUS_OWNER;
+            default:
+                return UNKNOWN;
+        }
     }
 }

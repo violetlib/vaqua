@@ -1,5 +1,5 @@
 /*
- * Changes copyright (c) 2018-2019 Alan Snyder.
+ * Changes copyright (c) 2018-2021 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -43,6 +43,8 @@ import javax.swing.plaf.basic.BasicTextUI;
 import javax.swing.text.DefaultCaret;
 import javax.swing.text.Highlighter;
 import javax.swing.text.JTextComponent;
+
+import org.jetbrains.annotations.NotNull;
 
 @SuppressWarnings("serial") // Superclass is not serializable across versions
 public class AquaCaret extends DefaultCaret
@@ -111,9 +113,9 @@ public class AquaCaret extends DefaultCaret
     private boolean temporaryInhibitMouseReleaseBehavior = false; // fix for JDK-8229856
 
     @Override
-    public void focusGained(FocusEvent e) {
+    public void focusGained(@NotNull FocusEvent e) {
 
-        if (shouldSelectAllOnFocusGained()) {
+        if (shouldSelectAllOnFocusGained(e)) {
             JTextComponent c = getComponent();
             int end = c.getDocument().getLength();
             int dot = getDot();
@@ -132,7 +134,11 @@ public class AquaCaret extends DefaultCaret
         super.focusGained(e);
     }
 
-    private boolean shouldSelectAllOnFocusGained() {
+    private boolean shouldSelectAllOnFocusGained(@NotNull FocusEvent e) {
+
+        if (!AquaUtils.isAutoSelectOnFocusAppropriate(e)) {
+            return false;
+        }
 
         if (temporaryInhibitSelectAllOnFocusGained) {
             // inhibited by mouse pressed
