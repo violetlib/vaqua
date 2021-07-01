@@ -56,6 +56,9 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.violetlib.jnr.aqua.AquaUIPainter;
 
+import static org.violetlib.jnr.aqua.AquaUIPainter.State.ACTIVE;
+import static org.violetlib.jnr.aqua.AquaUIPainter.State.ACTIVE_DEFAULT;
+
 /**
  * A table UI based on AquaTableUI for Yosemite. It implements the striped style. It paints the selection background
  * behind the entire selected row, to avoid gaps between cells. It disables the grid by default. It displays using an
@@ -361,7 +364,7 @@ public class AquaTableUI extends BasicTableUI
 
     protected AquaUIPainter.State getState() {
         return table.isEnabled()
-                ? (shouldDisplayAsFocused() ? AquaUIPainter.State.ACTIVE_DEFAULT : AquaUIPainter.State.ACTIVE)
+                ? (shouldDisplayAsFocused() ? AquaUIPainter.State.ACTIVE_DEFAULT : ACTIVE)
                 : AquaUIPainter.State.DISABLED;
     }
 
@@ -656,31 +659,21 @@ public class AquaTableUI extends BasicTableUI
                         AquaUtils.paintInsetStripedRow(gg, 0, cellRect.y, tableWidth, cellRect.height);
                     }
                 } else {
-                    if (false && isSelected && isEditing && editingRow == row && editingColumn >= cMin && editingColumn <= cMax) {
-
-                        // If this row contains the active cell editor, do not paint the selection background under it.
-                        // Paint the striped background instead, if appropriate.
-
-                        // This special case produces odd results in dark mode, especially when nothing is painted
-                        // under the cell, which can happen in dark mode because the striped color is translucent
-                        // or transparent. Therefore, disabled. In light mode, it is unlikely to have any effect, as
-                        // component backgrounds are generally opaque. Native components are inconsistent.
-
-                        Rectangle editorCellRect = table.getCellRect(row, editingColumn, true);
-                        int x1 = editorCellRect.x;
-                        int x2 = x1 + editorCellRect.width;
-                        g.fillRect(clip.x, cellRect.y, x1 - clip.x, cellRect.height);
-                        g.fillRect(x2, cellRect.y, clip.x + clip.width - x2, cellRect.height);
-                        if (isStriped) {
-                            colors.configureForRow(row, false);
-                            Color cellBackground = colors.getBackground(appearanceContext);
-                            g.setColor(cellBackground);
-                            g.fillRect(x1, cellRect.y, x2 - x1, cellRect.height);
-                        }
-                    } else {
-                        g.fillRect(clip.x, cellRect.y, clip.width, cellRect.height);
-                    }
+                    g.fillRect(clip.x, cellRect.y, clip.width, cellRect.height);
                 }
+
+                // Sometimes it is useful to paint a special background color under the cell being edited to improve
+                // contrast with the selection background.
+
+                if (isSelected && isEditing && editingRow == row && editingColumn >= cMin && editingColumn <= cMax
+                        && shouldPaintSpecialEditedCellBackground()) {
+                    Rectangle editorCellRect = table.getCellRect(row, editingColumn, true);
+                    int x1 = editorCellRect.x;
+                    int x2 = x1 + editorCellRect.width;
+                    g.setColor(new Color(0, 0, 0, 150));
+                    g.fillRect(x1, cellRect.y, x2 - x1, cellRect.height);
+                }
+
                 nextRowY = cellRect.y + cellRect.height;
             }
 
@@ -707,6 +700,13 @@ public class AquaTableUI extends BasicTableUI
             }
 
             // TBD: should selected column be painted here or is it OK for just the cells to paint the selection background?
+        }
+
+        protected boolean shouldPaintSpecialEditedCellBackground()
+        {
+            assert appearanceContext != null;
+            AquaUIPainter.State state = appearanceContext.getState();
+            return state == ACTIVE_DEFAULT && appearanceContext.getAppearance().isDark();
         }
 
         protected void paintGrid(Graphics g, int rMin, int rMax, int cMin, int cMax, boolean xVertical, boolean xHorizontal) {
