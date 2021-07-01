@@ -645,30 +645,41 @@ public class AquaTableUI extends BasicTableUI
                 }
                 g.setColor(rowBackground);
 
-                if (isSelected && isInset) {
-                    int y = cellRect.y;
-                    int h = cellRect.height;
-                    boolean isSelectedAbove = row > 0 && table.isRowSelected(row-1);
-                    boolean isSelectedBelow = row < table.getRowCount()-1 && table.isRowSelected(row+1);
-                    AquaUtils.paintInsetCellSelection(gg, isSelectedAbove, isSelectedBelow, 0, y, tableWidth, h);
-                } else if (isSelected && isEditing && editingRow == row && editingColumn >= cMin && editingColumn <= cMax) {
-                    // If this row contains the active cell editor, do not paint the selection background under it.
-                    // Paint the striped background instead, if appropriate.
-                    Rectangle editorCellRect = table.getCellRect(row, editingColumn, true);
-                    int x1 = editorCellRect.x;
-                    int x2 = x1 + editorCellRect.width;
-                    g.fillRect(clip.x, cellRect.y, x1 - clip.x, cellRect.height);
-                    g.fillRect(x2, cellRect.y, clip.x + clip.width - x2, cellRect.height);
-                    if (isStriped) {
-                        colors.configureForRow(row, false);
-                        Color cellBackground = colors.getBackground(appearanceContext);
-                        g.setColor(cellBackground);
-                        g.fillRect(x1, cellRect.y, x2 - x1, cellRect.height);
+                if (isInset) {
+                    if (isSelected) {
+                        int y = cellRect.y;
+                        int h = cellRect.height;
+                        boolean isSelectedAbove = row > 0 && table.isRowSelected(row-1);
+                        boolean isSelectedBelow = row < table.getRowCount()-1 && table.isRowSelected(row+1);
+                        AquaUtils.paintInsetCellSelection(gg, isSelectedAbove, isSelectedBelow, 0, y, tableWidth, h);
+                    } else {
+                        AquaUtils.paintInsetStripedRow(gg, 0, cellRect.y, tableWidth, cellRect.height);
                     }
-                } else if (isInset) {
-                    AquaUtils.paintInsetStripedRow(gg, 0, cellRect.y, tableWidth, cellRect.height);
                 } else {
-                    g.fillRect(clip.x, cellRect.y, clip.width, cellRect.height);
+                    if (false && isSelected && isEditing && editingRow == row && editingColumn >= cMin && editingColumn <= cMax) {
+
+                        // If this row contains the active cell editor, do not paint the selection background under it.
+                        // Paint the striped background instead, if appropriate.
+
+                        // This special case produces odd results in dark mode, especially when nothing is painted
+                        // under the cell, which can happen in dark mode because the striped color is translucent
+                        // or transparent. Therefore, disabled. In light mode, it is unlikely to have any effect, as
+                        // component backgrounds are generally opaque. Native components are inconsistent.
+
+                        Rectangle editorCellRect = table.getCellRect(row, editingColumn, true);
+                        int x1 = editorCellRect.x;
+                        int x2 = x1 + editorCellRect.width;
+                        g.fillRect(clip.x, cellRect.y, x1 - clip.x, cellRect.height);
+                        g.fillRect(x2, cellRect.y, clip.x + clip.width - x2, cellRect.height);
+                        if (isStriped) {
+                            colors.configureForRow(row, false);
+                            Color cellBackground = colors.getBackground(appearanceContext);
+                            g.setColor(cellBackground);
+                            g.fillRect(x1, cellRect.y, x2 - x1, cellRect.height);
+                        }
+                    } else {
+                        g.fillRect(clip.x, cellRect.y, clip.width, cellRect.height);
+                    }
                 }
                 nextRowY = cellRect.y + cellRect.height;
             }
