@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014-2018 Alan Snyder.
+ * Copyright (c) 2014-2021 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -64,7 +64,7 @@ public class AquaTreeMouseBehavior extends MouseInputAdapter implements AquaDrag
 
             mouseDragSelects = false;
             mouseReleaseDeselects = false;
-            isMouseReleaseStartsEditing = true;
+            isMouseReleaseStartsEditing = e.getClickCount() == 1;
             isDragRecognitionOngoing = false;
             if (index != -1) {
                 boolean isRowAtIndexSelected = tree.isRowSelected(index);
@@ -203,6 +203,7 @@ public class AquaTreeMouseBehavior extends MouseInputAdapter implements AquaDrag
         //this.releaseEvent = releaseEvent;
         try {
             if (isMouseReleaseStartsEditing) {
+                isMouseReleaseStartsEditing = false;
                 return ui.startEditing(path, event);
             } else {
                 return false;
