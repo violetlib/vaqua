@@ -736,7 +736,7 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
                 // *** Tree
                 "Tree.border", treeBorder,
                 "Tree.font", viewFont, // [3577901] Aqua HIG says "default font of text in lists and tables" should be 12 point (vm).
-                "Tree.editorBorder", zeroBorder,
+                "Tree.editorBorder", (LazyValue) t -> new AquaTreeEditorBorder(),
                 "Tree.leftChildIndent", 8,
                 "Tree.rightChildIndent", 12,
                 "Tree.rowHeight", 0,   // The default row height depends upon style

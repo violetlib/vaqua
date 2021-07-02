@@ -199,8 +199,8 @@ public class AquaTextComponentUIBase extends AquaTextComponentDelegatedUIBase im
 
     protected void paintBackgroundSafely(@NotNull Graphics g, @Nullable Color background) {
         Border b = editor.getBorder();
-        if (b instanceof AquaTextComponentBorder) {
-            AquaTextComponentBorder tb = (AquaTextComponentBorder) b;
+        if (b instanceof AquaBackgroundBorder) {
+            AquaBackgroundBorder tb = (AquaBackgroundBorder) b;
             tb.paintBackground(editor, g, background);
         } else if (background != null && editor.isOpaque() && background.getAlpha() > 0) {
             int width = editor.getWidth();

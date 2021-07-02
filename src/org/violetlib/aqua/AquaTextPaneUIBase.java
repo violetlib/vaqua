@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Alan Snyder.
+ * Copyright (c) 2018-2021 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -131,7 +131,7 @@ public class AquaTextPaneUIBase extends AquaTextComponentUIBase {
                     // If the application set the opaque attribute, do not install our border
                     editor.setBorder(null);
                 } else {
-                    if (!(textComponentBorder instanceof AquaTextComponentBorder)) {
+                    if (!(textComponentBorder instanceof AquaBackgroundBorder)) {
                         Border b = new AquaTextComponentBorder(editor);
                         editor.setBorder(b);
                     }

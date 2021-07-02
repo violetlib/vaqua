@@ -1,5 +1,5 @@
 /*
- * Changes Copyright (c) 2015-2018 Alan Snyder.
+ * Changes Copyright (c) 2015-2021 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -97,7 +97,7 @@ public class AquaTextFieldUI extends AquaTextComponentUIBase implements ToolbarS
 
     protected void installBorder() {
         Border b = editor.getBorder();
-        if ((b == null) || (b instanceof UIResource)) {
+        if (((b == null) || (b instanceof UIResource)) && !(b instanceof AquaTreeEditorBorder)) {
             editor.setBorder(new AquaTextComponentBorder(editor));
         }
     }
@@ -340,7 +340,7 @@ public class AquaTextFieldUI extends AquaTextComponentUIBase implements ToolbarS
 
         Border b = editor.getBorder();
 
-        if (!(b instanceof AquaTextComponentBorder) && !(b instanceof AquaCellBorder)) {
+        if (!(b instanceof AquaBackgroundBorder) && !(b instanceof AquaCellBorder)) {
             // developer must have set a custom border
 
             // The effect of this code is to make isOpaque=true the default when a custom border is used.
@@ -360,9 +360,9 @@ public class AquaTextFieldUI extends AquaTextComponentUIBase implements ToolbarS
             return;
         }
 
-        if (b instanceof AquaTextComponentBorder) {
+        if (b instanceof AquaBackgroundBorder) {
             // using our own border
-            AquaTextComponentBorder tb = (AquaTextComponentBorder) b;
+            AquaBackgroundBorder tb = (AquaBackgroundBorder) b;
             tb.paintBackground(editor, g, background);
         }
     }

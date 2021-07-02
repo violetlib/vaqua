@@ -54,7 +54,7 @@ import org.violetlib.jnr.aqua.TextFieldLayoutConfiguration;
  * A border that is associated with a text component but can be attached to a text component or the scroll pane that
  * displays the text component.
  */
-public class AquaTextComponentBorder extends AquaBorder implements FocusRingOutlineProvider, Border2D {
+public class AquaTextComponentBorder extends AquaBorder implements AquaBackgroundBorder, FocusRingOutlineProvider, Border2D {
 
     // This border is really a background. It paints as background, not as a border.
     // It needs to be a Border as a signal to the UI that the user has not installed a custom border.
@@ -74,6 +74,7 @@ public class AquaTextComponentBorder extends AquaBorder implements FocusRingOutl
         // The border is a background. It is not painted as a border.
     }
 
+    @Override
     public void paintBackground(@NotNull Component c, Graphics g, @Nullable Color background) {
 
         boolean isCellComponent = AquaUtils.isCellComponent(c);
