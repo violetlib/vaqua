@@ -494,7 +494,9 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
 
         @Override
         public void focusLost(FocusEvent e) {
-            AquaTreeUI.this.stopEditing(tree);
+            if (!e.isTemporary()) {
+                AquaTreeUI.this.stopEditing(tree);
+            }
         }
     }
 
