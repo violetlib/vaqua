@@ -43,7 +43,6 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import javax.swing.plaf.ComponentUI;
 import javax.swing.plaf.UIResource;
-import javax.swing.plaf.basic.BasicScrollBarUI;
 import javax.swing.plaf.basic.BasicScrollPaneUI;
 
 import org.jetbrains.annotations.NotNull;
@@ -58,6 +57,7 @@ public class AquaScrollPaneUI extends BasicScrollPaneUI implements AquaUtilContr
 
     public static final String SCROLL_PANE_STYLE_KEY = "JScrollPane.style";
     public static final String SCROLL_PANE_THUMB_STYLE_KEY = "JScrollPane.thumbStyle";
+    public static final String SCROLL_PANE_SMOOTH_SCROLLING = "JScrollPane.useSmoothScrolling";
 
     /**
      * A Boolean valued property managed by this UI for clients that need to react to the use of overlay scroll bars
@@ -96,6 +96,11 @@ public class AquaScrollPaneUI extends BasicScrollPaneUI implements AquaUtilContr
     protected boolean isOverlayScrollBars;
 
     /**
+     * true when smooth scrolling is enabled
+     */
+    protected boolean isSmoothScrolling;
+
+    /**
      * manages overlay scroll bars, installed as needed
      */
     protected AquaOverlayScrollPaneController overlayController;
@@ -115,6 +120,7 @@ public class AquaScrollPaneUI extends BasicScrollPaneUI implements AquaUtilContr
      */
     protected LayoutManager legacyLayoutManager;
 
+    protected int defaultSmoothScrollingUnitIncrement = 16;
     protected @Nullable AppearanceContext appearanceContext;
 
     protected PropertyChangeListener propertyChangeListener;
@@ -135,6 +141,7 @@ public class AquaScrollPaneUI extends BasicScrollPaneUI implements AquaUtilContr
         setScrollBarStyle(shouldUseOverlayScrollBars());
         scrollpane.putClientProperty(SCROLL_PANE_AQUA_OVERLAY_SCROLL_BARS_KEY, isOverlayScrollBars);
         configureAppearanceContext(null);
+        isSmoothScrolling = computeSmoothScrolling();
     }
 
     @Override
@@ -166,10 +173,10 @@ public class AquaScrollPaneUI extends BasicScrollPaneUI implements AquaUtilContr
         originalHorizontalScrollBar = scrollpane.getHorizontalScrollBar();
         originalVerticalScrollBar = scrollpane.getVerticalScrollBar();
         if (originalVerticalScrollBar instanceof UIResource) {
-            scrollpane.setHorizontalScrollBar(new AquaScrollBar(JScrollBar.HORIZONTAL));
+            scrollpane.setHorizontalScrollBar(new AquaScrollBar(JScrollBar.HORIZONTAL, defaultSmoothScrollingUnitIncrement));
         }
         if (originalVerticalScrollBar instanceof UIResource) {
-            scrollpane.setVerticalScrollBar(new AquaScrollBar(JScrollBar.VERTICAL));
+            scrollpane.setVerticalScrollBar(new AquaScrollBar(JScrollBar.VERTICAL, defaultSmoothScrollingUnitIncrement));
         }
     }
 
@@ -348,6 +355,15 @@ public class AquaScrollPaneUI extends BasicScrollPaneUI implements AquaUtilContr
         return isOverlayScrollBars;
     }
 
+    public boolean isSmoothScrolling() {
+        return isSmoothScrolling;
+    }
+
+    protected boolean computeSmoothScrolling() {
+        Object p = scrollpane.getClientProperty(SCROLL_PANE_SMOOTH_SCROLLING);
+        return !Boolean.FALSE.equals(p);
+    }
+
     protected class PreferenceChangeListener implements ChangeListener {
         @Override
         public void stateChanged(ChangeEvent e) {
@@ -368,6 +384,8 @@ public class AquaScrollPaneUI extends BasicScrollPaneUI implements AquaUtilContr
                     updateVerticalScrollBar();
                 } else if (name.equals("horizontalScrollBar")) {
                     updateHorizontalScrollBar();
+                } else if (name.equals(SCROLL_PANE_SMOOTH_SCROLLING)) {
+                    isSmoothScrolling = computeSmoothScrolling();
                 }
             }
         }
@@ -581,21 +599,18 @@ public class AquaScrollPaneUI extends BasicScrollPaneUI implements AquaUtilContr
             boolean isHorizontalScroll = e.isShiftDown();
 
             // Ignore motions along an axis that is not scrollable
-
             if (!isAxisScrollable(isHorizontalScroll)) {
                 contraryScrollCount = 0;
                 return;
             }
 
             if (overlayController != null) {
-
                 // Ignore small motions that would flip to the other scroll bar.
-
                 int axis = overlayController.getActiveAxis();
                 if (axis == SwingConstants.HORIZONTAL && !isHorizontalScroll
                         || axis == SwingConstants.VERTICAL && isHorizontalScroll) {
 
-                    contraryScrollCount += e.getUnitsToScroll();
+                    contraryScrollCount += getUnitsToScroll(e, isSmoothScrolling);
                     if (Math.abs(contraryScrollCount) < WHEEL_CHANGE_DIRECTION_MINIMUM) {
                         return;
                     }
@@ -643,17 +658,15 @@ public class AquaScrollPaneUI extends BasicScrollPaneUI implements AquaUtilContr
             e.consume();
         }
 
-        // Copied from basic, changing unit scroll behavior
-        private void basicMouseWheelMoved(MouseWheelEvent e) {
-            if (scrollpane.isWheelScrollingEnabled() &&
-                    e.getWheelRotation() != 0) {
+        // Copied from basic, changing unit scroll behavior to implement smooth scrolling
+        private void basicMouseWheelMoved(@NotNull MouseWheelEvent e) {
+            if (scrollpane.isWheelScrollingEnabled() && e.getWheelRotation() != 0) {
                 JScrollBar toScroll = scrollpane.getVerticalScrollBar();
                 int direction = e.getWheelRotation() < 0 ? -1 : 1;
                 int orientation = SwingConstants.VERTICAL;
 
                 // find which scrollbar to scroll, or return if none
-                if (toScroll == null || !toScroll.isVisible()
-                        || e.isShiftDown()) {
+                if (toScroll == null || !toScroll.isVisible() || e.isShiftDown()) {
                     toScroll = scrollpane.getHorizontalScrollBar();
                     if (toScroll == null || !toScroll.isVisible()) {
                         return;
@@ -669,130 +682,22 @@ public class AquaScrollPaneUI extends BasicScrollPaneUI implements AquaUtilContr
                         return;
                     }
                     Component comp = vp.getView();
-                    int units = Math.abs(e.getUnitsToScroll());
+                    double units = Math.abs(getUnitsToScroll(e, isSmoothScrolling));
 
-                    // When the scrolling speed is set to maximum, it's possible
-                    // for a single wheel click to scroll by more units than
-                    // will fit in the visible area.  This makes it
-                    // hard/impossible to get to certain parts of the scrolling
-                    // Component with the wheel.  To make for more accurate
-                    // low-speed scrolling, we limit scrolling to the block
-                    // increment if the wheel was only rotated one click.
-                    boolean limitScroll = Math.abs(e.getWheelRotation()) == 1;
+                    // When the scrolling speed is set to maximum, it's possible for a single wheel click to scroll by
+                    // more units than will fit in the visible area. This makes it hard/impossible to get to certain
+                    // parts of the scrolling Component with the wheel. To make for more accurate low-speed scrolling,
+                    // we limit scrolling to the block increment if the wheel was only rotated one click.
+                    boolean limitScroll = Math.abs(e.getWheelRotation()) <= 1;
 
                     // Check if we should use the visibleRect trick
-                    Object fastWheelScroll = toScroll.getClientProperty(
-                            "JScrollBar.fastWheelScrolling");
-                    if (Boolean.TRUE == fastWheelScroll &&
-                            comp instanceof Scrollable) {
-                        // 5078454: Under maximum acceleration, we may scroll
-                        // by many 100s of units in ~1 second.
-                        //
-                        // BasicScrollBarUI.scrollByUnits() can bog down the EDT
-                        // with repaints in this situation.  However, the
-                        // Scrollable interface allows us to pass in an
-                        // arbitrary visibleRect.  This allows us to accurately
-                        // calculate the total scroll amount, and then update
-                        // the GUI once.  This technique provides much faster
-                        // accelerated wheel scrolling.
-                        Scrollable scrollComp = (Scrollable) comp;
-                        Rectangle viewRect = vp.getViewRect();
-                        int startingX = viewRect.x;
-                        boolean leftToRight =
-                                comp.getComponentOrientation().isLeftToRight();
-                        int scrollMin = toScroll.getMinimum();
-                        int scrollMax = toScroll.getMaximum() -
-                                toScroll.getModel().getExtent();
-
-                        if (limitScroll) {
-                            int blockIncr =
-                                    scrollComp.getScrollableBlockIncrement(viewRect,
-                                            orientation,
-                                            direction);
-                            if (direction < 0) {
-                                scrollMin = Math.max(scrollMin,
-                                        toScroll.getValue() - blockIncr);
-                            } else {
-                                scrollMax = Math.min(scrollMax,
-                                        toScroll.getValue() + blockIncr);
-                            }
-                        }
-
-                        for (int i = 0; i < units; i++) {
-                            int unitIncr = 1;
-//                                scrollComp.getScrollableUnitIncrement(viewRect,
-//                                                        orientation, direction);
-                            // Modify the visible rect for the next unit, and
-                            // check to see if we're at the end already.
-                            if (orientation == SwingConstants.VERTICAL) {
-                                if (direction < 0) {
-                                    viewRect.y -= unitIncr;
-                                    if (viewRect.y <= scrollMin) {
-                                        viewRect.y = scrollMin;
-                                        break;
-                                    }
-                                } else { // (direction > 0
-                                    viewRect.y += unitIncr;
-                                    if (viewRect.y >= scrollMax) {
-                                        viewRect.y = scrollMax;
-                                        break;
-                                    }
-                                }
-                            } else {
-                                // Scroll left
-                                if ((leftToRight && direction < 0) ||
-                                        (!leftToRight && direction > 0)) {
-                                    viewRect.x -= unitIncr;
-                                    if (leftToRight) {
-                                        if (viewRect.x < scrollMin) {
-                                            viewRect.x = scrollMin;
-                                            break;
-                                        }
-                                    }
-                                }
-                                // Scroll right
-                                else if ((leftToRight && direction > 0) ||
-                                        (!leftToRight && direction < 0)) {
-                                    viewRect.x += unitIncr;
-                                    if (leftToRight) {
-                                        if (viewRect.x > scrollMax) {
-                                            viewRect.x = scrollMax;
-                                            break;
-                                        }
-                                    }
-                                } else {
-                                    assert false : "Non-sensical ComponentOrientation / scroll direction";
-                                }
-                            }
-                        }
-                        // Set the final view position on the ScrollBar
-                        if (orientation == SwingConstants.VERTICAL) {
-                            toScroll.setValue(viewRect.y);
-                        } else {
-                            if (leftToRight) {
-                                toScroll.setValue(viewRect.x);
-                            } else {
-                                // rightToLeft scrollbars are oriented with
-                                // minValue on the right and maxValue on the
-                                // left.
-                                int newPos = toScroll.getValue() -
-                                        (viewRect.x - startingX);
-                                if (newPos < scrollMin) {
-                                    newPos = scrollMin;
-                                } else if (newPos > scrollMax) {
-                                    newPos = scrollMax;
-                                }
-                                toScroll.setValue(newPos);
-                            }
-                        }
+                    Object fastWheelScroll = toScroll.getClientProperty( "JScrollBar.fastWheelScrolling");
+                    if (Boolean.TRUE.equals(fastWheelScroll) && comp instanceof Scrollable && !isSmoothScrolling) {
+                        scrollByUnitsFast(toScroll, orientation, direction, units, limitScroll);
                     } else {
-                        // Viewport's view is not a Scrollable, or fast wheel
-                        // scrolling is not enabled.
-                        scrollByUnits(toScroll, direction,
-                                units, limitScroll);
+                        scrollByUnits(toScroll, direction, units, limitScroll);
                     }
-                } else if (e.getScrollType() ==
-                        MouseWheelEvent.WHEEL_BLOCK_SCROLL) {
+                } else if (e.getScrollType() == MouseWheelEvent.WHEEL_BLOCK_SCROLL) {
                     scrollByBlock(toScroll, direction);
                 }
             }
@@ -809,28 +714,121 @@ public class AquaScrollPaneUI extends BasicScrollPaneUI implements AquaUtilContr
         }
     }
 
-    static void scrollByUnits(JScrollBar scrollbar, int direction,
-                              int units, boolean limitToBlock) {
-        // This method is called from BasicScrollPaneUI to implement wheel
-        // scrolling, as well as from scrollByUnit().
-        int delta;
+    private void scrollByUnitsFast(@NotNull JScrollBar toScroll,
+                                   int orientation,
+                                   int direction,
+                                   double units,
+                                   boolean limitToBlock)
+    {
+        // Used for non-smooth wheel scrolling when applicable.
+
+        // 5078454: Under maximum acceleration, we may scroll by many 100s of units in ~1 second.
+
+        // BasicScrollBarUI.scrollByUnits() can bog down the EDT with repaints in this situation. However, the
+        // Scrollable interface allows us to pass in an arbitrary visibleRect. This allows us to accurately calculate
+        // the total scroll amount, and then update the GUI once. This technique provides much faster accelerated wheel
+        // scrolling.
+
+        JViewport vp = scrollpane.getViewport();
+        assert vp != null;
+        Component comp = vp.getView();
+        Scrollable scrollComp = (Scrollable) comp;
+        Rectangle viewRect = vp.getViewRect();
+        int startingX = viewRect.x;
+        boolean leftToRight = ((Component) scrollComp).getComponentOrientation().isLeftToRight();
+        int scrollMin = toScroll.getMinimum();
+        int scrollMax = toScroll.getMaximum() - toScroll.getModel().getExtent();
+
+        if (limitToBlock) {
+            int blockIncr = scrollComp.getScrollableBlockIncrement(viewRect, orientation, direction);
+            if (direction < 0) {
+                scrollMin = Math.max(scrollMin, toScroll.getValue() - blockIncr);
+            } else {
+                scrollMax = Math.min(scrollMax, toScroll.getValue() + blockIncr);
+            }
+        }
+
+        while (units > 0) {
+            double thisUnits = Math.min(units, 1);
+            int unitIncr = (int)(thisUnits * scrollComp.getScrollableUnitIncrement(viewRect, orientation, direction));
+            // Modify the visible rect for the next unit, and check to see if we're at the end already.
+            if (orientation == SwingConstants.VERTICAL) {
+                if (direction < 0) {
+                    viewRect.y -= unitIncr;
+                    if (viewRect.y <= scrollMin) {
+                        viewRect.y = scrollMin;
+                        break;
+                    }
+                } else {
+                    viewRect.y += unitIncr;
+                    if (viewRect.y >= scrollMax) {
+                        viewRect.y = scrollMax;
+                        break;
+                    }
+                }
+            } else {
+                // Scroll left
+                if ((leftToRight && direction < 0) || (!leftToRight && direction > 0)) {
+                    viewRect.x -= unitIncr;
+                    if (leftToRight) {
+                        if (viewRect.x < scrollMin) {
+                            viewRect.x = scrollMin;
+                            break;
+                        }
+                    }
+                }
+                // Scroll right
+                else if ((leftToRight && direction > 0) || (!leftToRight && direction < 0)) {
+                    viewRect.x += unitIncr;
+                    if (leftToRight) {
+                        if (viewRect.x > scrollMax) {
+                            viewRect.x = scrollMax;
+                            break;
+                        }
+                    }
+                } else {
+                    assert false : "Nonsensical component orientation / scroll direction";
+                }
+            }
+            units = units - thisUnits;
+        }
+        // Set the final view position on the scrollbar
+        if (orientation == SwingConstants.VERTICAL) {
+            toScroll.setValue(viewRect.y);
+        } else {
+            if (leftToRight) {
+                toScroll.setValue(viewRect.x);
+            } else {
+                // rightToLeft scrollbars are oriented with minValue on the right and maxValue on the left.
+                int newPos = toScroll.getValue() - (viewRect.x - startingX);
+                if (newPos < scrollMin) {
+                    newPos = scrollMin;
+                } else if (newPos > scrollMax) {
+                    newPos = scrollMax;
+                }
+                toScroll.setValue(newPos);
+            }
+        }
+    }
+
+    private void scrollByUnits(JScrollBar scrollbar, int direction, double units, boolean limitToBlock) {
+        // Used for wheel scrolling (the general case)
         int limit = -1;
 
         if (limitToBlock) {
             if (direction < 0) {
-                limit = scrollbar.getValue() -
-                        scrollbar.getBlockIncrement(direction);
+                limit = scrollbar.getValue() - scrollbar.getBlockIncrement(direction);
             } else {
-                limit = scrollbar.getValue() +
-                        scrollbar.getBlockIncrement(direction);
+                limit = scrollbar.getValue() + scrollbar.getBlockIncrement(direction);
             }
         }
 
-        for (int i = 0; i < units; i++) {
-            if (direction > 0) {
-                delta = scrollbar.getUnitIncrement(direction);
-            } else {
-                delta = -scrollbar.getUnitIncrement(direction);
+        boolean isFirst = true;
+        while (units > 0) {
+            double thisUnits = isSmoothScrolling ? units : Math.min(units, 1);
+            int delta = (int) (thisUnits * getWheelScrollUnitIncrement(scrollbar, direction));
+            if (direction < 0) {
+                delta = -delta;
             }
 
             int oldValue = scrollbar.getValue();
@@ -846,14 +844,15 @@ public class AquaScrollPaneUI extends BasicScrollPaneUI implements AquaUtilContr
                 break;
             }
 
-            if (limitToBlock && i > 0) {
+            if (limitToBlock && !isFirst) {
                 assert limit != -1;
-                if ((direction < 0 && newValue < limit) ||
-                        (direction > 0 && newValue > limit)) {
+                if ((direction < 0 && newValue < limit) || (direction > 0 && newValue > limit)) {
                     break;
                 }
             }
             scrollbar.setValue(newValue);
+            units = units - thisUnits;
+            isFirst = false;
         }
     }
 
@@ -874,5 +873,46 @@ public class AquaScrollPaneUI extends BasicScrollPaneUI implements AquaUtilContr
 
         scrollbar.setValue(newValue);
     }
-}
 
+    protected int getWheelUnitScrollIncrement(@NotNull Scrollable s,
+                                              @NotNull Rectangle viewRect,
+                                              int orientation,
+                                              int direction) {
+        if (isSmoothScrolling) {
+            return getSmoothScrollingIncrement((Component) s, direction);
+        }
+        return s.getScrollableUnitIncrement(viewRect, orientation, direction);
+    }
+
+    protected int getWheelScrollUnitIncrement(@NotNull JScrollBar b, int direction) {
+        if (isSmoothScrolling) {
+            return defaultSmoothScrollingUnitIncrement;
+        }
+        return b.getUnitIncrement(direction);
+    }
+
+    protected int getSmoothScrollingIncrement(@NotNull Component c, int orientation) {
+        if (orientation == JScrollBar.VERTICAL) {
+            if (c instanceof JList) {
+                JList list = (JList) c;
+                int rowHeight = list.getFixedCellHeight();
+                return rowHeight > 0 ? rowHeight : defaultSmoothScrollingUnitIncrement;
+            }
+            if (c instanceof JTree) {
+                JTree tree = (JTree) c;
+                int rowHeight = tree.getRowHeight();
+                return rowHeight > 0 ? rowHeight : defaultSmoothScrollingUnitIncrement;
+            }
+            if (c instanceof JTable) {
+                JTable table = (JTable) c;
+                int rowHeight = table.getRowHeight();
+                return rowHeight > 0 ? rowHeight : defaultSmoothScrollingUnitIncrement;
+            }
+        }
+        return defaultSmoothScrollingUnitIncrement;
+    }
+
+    public static double getUnitsToScroll(@NotNull MouseWheelEvent e, boolean isSmooth) {
+        return isSmooth ? e.getUnitsToScroll() * e.getPreciseWheelRotation() : e.getUnitsToScroll();
+    }
+}

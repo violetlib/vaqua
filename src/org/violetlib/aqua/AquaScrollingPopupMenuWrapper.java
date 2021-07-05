@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015 Alan Snyder.
+ * Copyright (c) 2015-2021 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -41,6 +41,7 @@ public class AquaScrollingPopupMenuWrapper extends JPanel {
 
     protected int topArrowHeight;
     protected int bottomArrowHeight;
+    protected int unitScroll = 12;
 
     protected Timer fScrollTimer;
     protected ActionListener fScrollListener;
@@ -232,8 +233,10 @@ public class AquaScrollingPopupMenuWrapper extends JPanel {
     }
 
     protected void mouseWheelScroll(MouseWheelEvent e) {
-        int units = e.getUnitsToScroll();
-        scrollIfPossible(e, units);
+        int direction = e.getWheelRotation() < 0 ? -1 : 1;
+        double units = AquaScrollPaneUI.getUnitsToScroll(e, true);
+        int delta = (int) (units * unitScroll * direction);
+        scrollIfPossible(e, delta);
     }
 
     protected void startTimer() {
@@ -350,8 +353,7 @@ public class AquaScrollingPopupMenuWrapper extends JPanel {
             if (!isActive) {
                 stopTimer();
             } else {
-                int unit = 12;
-                int delta = isTop ? -unit : unit;
+                int delta = isTop ? -unitScroll : unitScroll;
                 if (!scrollIfPossible(null, delta)) {
                     isActive = false;
                     stopTimer();

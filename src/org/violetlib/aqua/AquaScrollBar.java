@@ -46,12 +46,14 @@ import org.jetbrains.annotations.Nullable;
  */
 
 public class AquaScrollBar extends JScrollBar implements UIResource {
+    private int defaultUnitIncrement;
     private boolean unitIncrementSet;
     private boolean blockIncrementSet;
 
-    public AquaScrollBar(int orientation) {
+    public AquaScrollBar(int orientation, int defaultUnitIncrement) {
         super(orientation);
         this.putClientProperty("JScrollBar.fastWheelScrolling", Boolean.TRUE);
+        this.defaultUnitIncrement = defaultUnitIncrement;
     }
 
     public void setUnitIncrement(int unitIncrement) {
@@ -64,7 +66,7 @@ public class AquaScrollBar extends JScrollBar implements UIResource {
         if (unitIncrementSet) {
             return super.getUnitIncrement(direction);
         }
-        return 1;
+        return defaultUnitIncrement;
     }
 
     public void setBlockIncrement(int blockIncrement) {
