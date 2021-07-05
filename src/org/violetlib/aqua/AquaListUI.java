@@ -40,9 +40,12 @@ import java.awt.event.FocusListener;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import javax.swing.*;
+import javax.swing.border.Border;
 import javax.swing.event.MouseInputListener;
+import javax.swing.plaf.BorderUIResource;
 import javax.swing.plaf.ColorUIResource;
 import javax.swing.plaf.ComponentUI;
+import javax.swing.plaf.UIResource;
 import javax.swing.plaf.basic.BasicListUI;
 import javax.swing.text.JTextComponent;
 
@@ -67,6 +70,7 @@ public class AquaListUI extends BasicListUI implements AquaComponentUI, AquaView
     private boolean isMenu = false;
     protected @NotNull ContainerContextualColors colors;
     protected @Nullable AppearanceContext appearanceContext;
+    private static final Border insetBorder = new BorderUIResource.EmptyBorderUIResource(5, 0, 5, 0);
 
     public AquaListUI() {
         colors = AquaColors.CONTAINER_COLORS;
@@ -103,12 +107,14 @@ public class AquaListUI extends BasicListUI implements AquaComponentUI, AquaView
         list.putClientProperty(AquaCellEditorPolicy.IS_CELL_CONTAINER_PROPERTY, true);
         isStriped = getStripedValue();
         isInset = getInsetValue();
+        updateBorderForInset();
         updateOpaque();
         configureAppearanceContext(null);
     }
 
     @Override
     protected void uninstallDefaults() {
+        removeInsetBorder();
         super.uninstallDefaults();
     }
 
@@ -272,11 +278,23 @@ public class AquaListUI extends BasicListUI implements AquaComponentUI, AquaView
         boolean value = getInsetValue();
         if (value != isInset) {
             isInset = value;
+            updateBorderForInset();
             configureAppearanceContext(null);
             // If the default cell renderer is being used, its insets will be different.
             updateLayoutStateNeeded |= cellRendererChanged;
             list.revalidate();
             list.repaint();
+        }
+    }
+
+    private void updateBorderForInset() {
+        updateBorder(isInset ? insetBorder : null);
+    }
+
+    private void removeInsetBorder() {
+        Border b = list.getBorder();
+        if (b == insetBorder) {
+            list.setBorder(null);
         }
     }
 
@@ -286,6 +304,13 @@ public class AquaListUI extends BasicListUI implements AquaComponentUI, AquaView
             return "inset".equals(value);
         }
         return false;
+    }
+
+    private void updateBorder(@Nullable Border b) {
+        Border existing = list.getBorder();
+        if (existing != b && existing == null || existing instanceof UIResource) {
+            list.setBorder(b);
+        }
     }
 
     private void updateOpaque() {
