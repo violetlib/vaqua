@@ -359,6 +359,7 @@ public class AquaListUI extends BasicListUI implements AquaComponentUI, AquaView
             assert appearanceContext != null;
 
             Dimension vs = list.getSize();
+            Insets s = list.getInsets();
             int rh = list.getFixedCellHeight();
             int n = list.getModel().getSize();
             if (rh <= 0) {
@@ -366,7 +367,7 @@ public class AquaListUI extends BasicListUI implements AquaComponentUI, AquaView
             }
             int visibleRowCount = (int) Math.ceil(Math.abs(vs.getHeight() / rh));
             int row = 0;
-            int y = 0;
+            int y = s.top;
             ListSelectionModel selectionModel = list.getSelectionModel();
 
             while (row < visibleRowCount) {
