@@ -195,7 +195,7 @@ public class AquaTextPaneUIBase extends AquaTextComponentUIBase {
         @Override
         public void hierarchyChanged(@NotNull HierarchyEvent e) {
             if ((e.getChangeFlags() & HierarchyEvent.PARENT_CHANGED) != 0) {
-                if (editor != null && editor.isDisplayable()) {
+                if (editor != null && editor.getParent() != null) {
                     updateBorderOwner();
                 }
             }
