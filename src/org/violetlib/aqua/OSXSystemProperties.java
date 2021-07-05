@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2020 Alan Snyder.
+ * Copyright (c) 2015-2021 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -8,11 +8,15 @@
 
 package org.violetlib.aqua;
 
+import java.io.InputStreamReader;
+import java.util.ArrayList;
+import java.util.List;
 import javax.swing.*;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
-import java.util.ArrayList;
-import java.util.List;
+
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Access to potentially dynamic user preferences.
@@ -33,17 +37,79 @@ public class OSXSystemProperties {
     private static int getOSVersion() {
 
         if (simulatedOSVersion > 0) {
-            System.err.println("Using simulated OS Version: " + simulatedOSVersion);
+            Utils.logDebug("Using simulated OS Version: " + simulatedOSVersion);
             return simulatedOSVersion;
         }
 
-        String s = System.getProperty("os.version");
-        int p = s.indexOf('.');
-        int major = Integer.parseInt(s.substring(0, p));
-        s = s.substring(p+1);
-        p = s.indexOf('.');
-        int minor = Integer.parseInt(p >= 0 ? s.substring(0, p) : s);
-        return major * 100 + minor;
+        String versionString = System.getProperty("os.version");
+        int version = parseSystemVersion(versionString);
+        if (version == 0) {
+            Utils.logError("Unable to parse macOS version: " + versionString);
+        } else if (version == 1016) {
+            // Liar, there is no macOS 10.16!
+            String s = readSystemVersion();
+            if (s != null) {
+                int v = parseSystemVersion(s);
+                if (v > 0) {
+                    version = v;
+                    Utils.logDebug("Substituting macOS version: " + version);
+                } else {
+                    Utils.logError("Unable to parse macOS version: " + s);
+                }
+            }
+        }
+        return version;
+    }
+
+    private static @Nullable String readSystemVersion()
+    {
+        String[] cmd = { "/usr/bin/sw_vers", "-productVersion" };
+        String[] env = { "SYSTEM_VERSION_COMPAT=0" };
+        String s = command("sw_vers", cmd, env);
+        if (s != null) {
+            return s;
+        }
+        return null;
+    }
+
+    private static @Nullable String command(@NotNull String name, String @NotNull [] command, String @Nullable [] env)
+    {
+        try {
+            Process p = Runtime.getRuntime().exec(command, env);
+            InputStreamReader stdout = new InputStreamReader(p.getInputStream());
+            StringBuffer sb = new StringBuffer();
+            while (true) {
+                int n = stdout.read();
+                if (n == -1 || n == 10) {
+                    break;
+                }
+                sb.append((char) n);
+            }
+            return sb.toString();
+        } catch (Throwable th) {
+            Utils.logError("Unable to run " + name, th);
+            return null;
+        }
+    }
+
+    private static int parseSystemVersion(@NotNull String version)
+    {
+        try {
+            int p = version.indexOf('.');
+            if (p > 0) {
+                int major = Integer.parseInt(version.substring(0, p));
+                if (major > 0) {
+                    String s = version.substring(p + 1);
+                    p = s.indexOf('.');
+                    int minor = Integer.parseInt(p >= 0 ? s.substring(0, p) : s);
+                    if (minor >= 0 && minor < 100) {
+                        return major * 100 + minor;
+                    }
+                }
+            }
+        } catch (Exception ignore) {
+        }
+        return 0;
     }
 
     public static boolean useInsetViewStyle() {
