@@ -1270,6 +1270,10 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
         fMouseHandler = new TreeArrowMouseInputHandler(path);
     }
 
+    public void handleExpandControlClick(@NotNull TreePath path) {
+        fMouseHandler = new TreeArrowMouseInputHandler(path);
+    }
+
     /**
      * Returning true signifies a mouse event on the node should toggle the selection of only the row under mouse.
      */

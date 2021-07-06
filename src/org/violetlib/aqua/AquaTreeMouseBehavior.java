@@ -8,13 +8,13 @@
 
 package org.violetlib.aqua;
 
+import java.awt.*;
+import java.awt.event.MouseEvent;
+import java.util.EventObject;
 import javax.swing.*;
 import javax.swing.event.MouseInputAdapter;
 import javax.swing.tree.TreePath;
 import javax.swing.tree.TreeSelectionModel;
-import java.awt.*;
-import java.awt.event.MouseEvent;
-import java.util.EventObject;
 
 /**
  * Implements Aqua mouse behavior for a JTree. Based loosely on the mouse listener in BasicTreeUI.
@@ -57,6 +57,12 @@ public class AquaTreeMouseBehavior extends MouseInputAdapter implements AquaDrag
             // Check for clicks in expand control
             if (ui.isLocationInExpandControl(path, e.getX(), e.getY())) {
                 ui.checkForClickInExpandControl(path, e.getX(), e.getY());
+                return;
+            }
+
+            // Clicking on a sidebar category is like clicking on its expand control
+            if (ui.isSideBar() && path != null && path.getPathCount() == 2) {
+                ui.handleExpandControlClick(path);
                 return;
             }
 
