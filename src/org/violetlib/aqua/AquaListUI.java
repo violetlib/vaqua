@@ -288,7 +288,7 @@ public class AquaListUI extends BasicListUI implements AquaComponentUI, AquaView
     }
 
     private void updateBorderForInset() {
-        updateBorder(isInset ? insetBorder : null);
+        updateBorder(isInset && !isMenu ? insetBorder : null);
     }
 
     private void removeInsetBorder() {
