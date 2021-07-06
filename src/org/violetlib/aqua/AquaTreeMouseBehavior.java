@@ -16,6 +16,9 @@ import javax.swing.event.MouseInputAdapter;
 import javax.swing.tree.TreePath;
 import javax.swing.tree.TreeSelectionModel;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
 /**
  * Implements Aqua mouse behavior for a JTree. Based loosely on the mouse listener in BasicTreeUI.
  */
@@ -23,20 +26,39 @@ public class AquaTreeMouseBehavior extends MouseInputAdapter implements AquaDrag
     protected JTree tree;
     protected AquaTreeUI ui;
 
+    public static boolean isDebug = false;
+
     private boolean mouseReleaseDeselects;
     private boolean mouseDragSelects;
     private boolean isMouseReleaseStartsEditing;
     private boolean isDragRecognitionOngoing;
+    private boolean isDragging;
 
-    public AquaTreeMouseBehavior(JTree tree) {
+    public AquaTreeMouseBehavior(@NotNull JTree tree) {
         this.tree = tree;
         this.ui = (AquaTreeUI) tree.getUI();
     }
 
-    public void dragStarting(MouseEvent me) {
+    public void dragStarting(@NotNull MouseEvent e) {
+        if (isDebug) {
+            Utils.logDebug("Drag gesture recognized");
+        }
+
+        // this is a dirty trick to reset the timer of the cell editor.
+        if (tree.getCellEditor() != null) {
+            tree.getCellEditor().isCellEditable(new EventObject(this));
+        }
+
+        mouseReleaseDeselects = false;
+        isMouseReleaseStartsEditing = false;
+        isDragging = true;
     }
 
-    public void mousePressed(MouseEvent e) {
+    public void mousePressed(@NotNull MouseEvent e) {
+        if (isDebug) {
+            Utils.logDebug("JTree mouse pressed " + e.getClickCount());
+        }
+
         if (tree.isEnabled() && SwingUtilities.isLeftMouseButton(e) && !e.isConsumed()) {
             // if we can't stop any ongoing editing, do nothing
             if (ui.isEditing(tree) && tree.getInvokesStopCellEditing() && !ui.stopEditing(tree)) {
@@ -53,6 +75,9 @@ public class AquaTreeMouseBehavior extends MouseInputAdapter implements AquaDrag
             }
 
             TreePath path = getMouseClickedClosestPathForLocation(tree, e.getX(), e.getY());
+            if (isDebug) {
+                Utils.logDebug("  Path: " + path);
+            }
 
             // Check for clicks in expand control
             if (ui.isLocationInExpandControl(path, e.getX(), e.getY())) {
@@ -89,7 +114,7 @@ public class AquaTreeMouseBehavior extends MouseInputAdapter implements AquaDrag
                             isMouseReleaseStartsEditing = false;
                         }
                     } else if ((e.getModifiersEx() & (MouseEvent.SHIFT_DOWN_MASK | MouseEvent.BUTTON2_DOWN_MASK | MouseEvent.BUTTON3_DOWN_MASK)) == MouseEvent.SHIFT_DOWN_MASK
-                            && anchorIndex != -1) {
+                                 && anchorIndex != -1) {
                         tree.setSelectionInterval(anchorIndex, index);
                         ui.setLeadSelectionPath(path);
                         mouseDragSelects = true;
@@ -105,7 +130,7 @@ public class AquaTreeMouseBehavior extends MouseInputAdapter implements AquaDrag
                         } else {
                             tree.setSelectionInterval(index, index);
                             if (tree.getDragEnabled()
-                                    && ui.getPathBounds(tree, path).contains(e.getPoint())) {
+                                  && ui.getPathBounds(tree, path).contains(e.getPoint())) {
                                 isDragRecognitionOngoing = AquaDragRecognitionSupport.mousePressed(e);
                                 mouseDragSelects = mouseReleaseDeselects = false;
                                 isMouseReleaseStartsEditing = false;
@@ -119,107 +144,132 @@ public class AquaTreeMouseBehavior extends MouseInputAdapter implements AquaDrag
                     }
                 }
             }
+
+            if (isDebug) {
+                Utils.logDebug("  mouseDragSelects: " + mouseDragSelects);
+                Utils.logDebug("  mouseReleaseStartsEditing: " + isMouseReleaseStartsEditing);
+                Utils.logDebug("  mouseReleaseDeselects: " + mouseReleaseDeselects);
+                Utils.logDebug("  dragRecognitionOngoing: " + isDragRecognitionOngoing);
+            }
         }
     }
 
-    public void mouseDragged(MouseEvent e) {
+    public void mouseDragged(@NotNull MouseEvent e) {
+        if (isDebug) {
+            Utils.logDebug("JTree mouse dragged");
+        }
+
         if (tree.isEnabled() && SwingUtilities.isLeftMouseButton(e) && !e.isConsumed()) {
             if (tree.getDragEnabled() && isDragRecognitionOngoing) {
-                AquaDragRecognitionSupport.mouseDragged(e, this);
+                isDragRecognitionOngoing = AquaDragRecognitionSupport.mouseDragged(e, this);
+                if (!isDragRecognitionOngoing && isDragRecognitionOngoing) {
+                    Utils.logDebug("  Drag recognition stopped");
+                }
             }
 
-            // Do nothing if we can't stop editing.
-            if (ui.isEditing(tree) && tree.getInvokesStopCellEditing() && !ui.stopEditing(tree)) {
-                return;
+            // The following should have been done on mouse pressed.
+            if (false) {
+                // Do nothing if we can't stop editing.
+                if (ui.isEditing(tree) && tree.getInvokesStopCellEditing() && !ui.stopEditing(tree)) {
+                    return;
+                }
             }
+        }
 
+        if (mouseDragSelects && isDragging) {
             TreePath leadPath = ui.getClosestPathForLocation(tree, e.getX(), e.getY());
-
-            // this is a dirty trick to reset the timer of the cell editor.
-            if (tree.getCellEditor() != null) {
-                tree.getCellEditor().isCellEditable(new EventObject(this));
-            }
-
-            mouseReleaseDeselects = false;
-            isMouseReleaseStartsEditing = false;
-            if (mouseDragSelects) {
-                int index = tree.getRowForPath(leadPath);
-                if (index != -1) {
-                    Rectangle cellBounds = tree.getRowBounds(index);
-                    tree.scrollRectToVisible(cellBounds);
-                    TreePath anchorPath = tree.getAnchorSelectionPath();
-                    int anchorIndex = tree.getRowForPath(anchorPath);
-                    if (tree.getSelectionModel().getSelectionMode() == TreeSelectionModel.SINGLE_TREE_SELECTION) {
-                        tree.setSelectionInterval(index, index);
+            int index = tree.getRowForPath(leadPath);
+            if (index != -1) {
+                Rectangle cellBounds = tree.getRowBounds(index);
+                tree.scrollRectToVisible(cellBounds);
+                TreePath anchorPath = tree.getAnchorSelectionPath();
+                int anchorIndex = tree.getRowForPath(anchorPath);
+                if (tree.getSelectionModel().getSelectionMode() == TreeSelectionModel.SINGLE_TREE_SELECTION) {
+                    tree.setSelectionInterval(index, index);
+                } else {
+                    if (anchorIndex < index) {
+                        tree.setSelectionInterval(anchorIndex, index);
                     } else {
-                        if (anchorIndex < index) {
-                            tree.setSelectionInterval(anchorIndex, index);
-                        } else {
-                            tree.setSelectionInterval(index, anchorIndex);
-                        }
-                        ui.setAnchorSelectionPath(anchorPath);
-                        ui.setLeadSelectionPath(leadPath);
+                        tree.setSelectionInterval(index, anchorIndex);
                     }
+                    ui.setAnchorSelectionPath(anchorPath);
+                    ui.setLeadSelectionPath(leadPath);
                 }
             }
         }
     }
 
     /**
-     * Invoked when the mouse button has been moved on a component
-     * (with no buttons down).
+     * Invoked when the mouse button has been moved on a component (with no buttons down).
      */
-    public void mouseMoved(MouseEvent e) {
-        isMouseReleaseStartsEditing = false;
-        // this is a dirty trick to reset the timer of the cell editor.
-        if (tree.getCellEditor() != null) {
-            tree.getCellEditor().isCellEditable(new EventObject(this));
+    public void mouseMoved(@NotNull MouseEvent e) {
+        if (false) {
+            // The following should be irrelevant:
+            isMouseReleaseStartsEditing = false;
+            // The following could allow a miniscule mouse movement to abort a click that would otherwise start editing.
+            // this is a dirty trick to reset the timer of the cell editor.
+            if (tree.getCellEditor() != null) {
+                tree.getCellEditor().isCellEditable(new EventObject(this));
+            }
         }
     }
 
-    public void mouseReleased(MouseEvent e) {
-        if (tree.isEnabled()&& SwingUtilities.isLeftMouseButton(e) && !e.isConsumed()) {
+    public void mouseReleased(@NotNull MouseEvent e) {
+        if (isDebug) {
+            Utils.logDebug("JTree mouse released " + e.getClickCount());
+        }
+
+        isDragging = false;
+
+        if (tree.isEnabled() && SwingUtilities.isLeftMouseButton(e) && !e.isConsumed()) {
             if (ui.isEditing(tree) && tree.getInvokesStopCellEditing() && !ui.stopEditing(tree)) {
                 return;
             }
             TreePath path = getMouseClickedClosestPathForLocation(tree, e.getX(), e.getY());
-            if (startEditingOnRelease(path, e, e)) {
-                return;
-            }
+            if (path != null) {
+                if (isDebug) {
+                    Utils.logDebug("  path: " + path);
+                    Utils.logDebug("  shouldStartEditing: " + isMouseReleaseStartsEditing);
+                }
 
-            mouseDragSelects = false;
-            if (mouseReleaseDeselects) {
-                int index = tree.getRowForPath(path);
-                tree.setSelectionInterval(index, index);
+                boolean shouldEdit = isMouseReleaseStartsEditing;
+                isMouseReleaseStartsEditing = false;
+
+                if (shouldEdit && ui.startEditing(path, e)) {
+                    if (isDebug) {
+                        Utils.logDebug("  Editing started");
+                    }
+                    return;
+                }
+                if (shouldEdit && isDebug) {
+                    Utils.logDebug("  UI declined to start editing");
+                }
+
+                mouseDragSelects = false;
+                if (mouseReleaseDeselects) {
+                    int index = tree.getRowForPath(path);
+                    tree.setSelectionInterval(index, index);
+                }
+                //tree.getSelectionModel().setValueIsAdjusting(false);
             }
-            //tree.getSelectionModel().setValueIsAdjusting(false);
         }
         if (tree.isRequestFocusEnabled()) {
             tree.requestFocus();
         }
     }
 
-    public void mouseExited(MouseEvent e) {
+    public void mouseExited(@NotNull MouseEvent e) {
+        if (isDebug) {
+            Utils.logDebug("  Mouse exited");
+            if (isMouseReleaseStartsEditing) {
+                Utils.logDebug("  Clearing mouseReleaseStartsEditing");
+            }
+        }
+
         isMouseReleaseStartsEditing = false;
     }
 
-    // cover method for startEditing that allows us to pass extra
-    // information into that method via a class variable
-    private boolean startEditingOnRelease(TreePath path, MouseEvent event, MouseEvent releaseEvent) {
-        //this.releaseEvent = releaseEvent;
-        try {
-            if (isMouseReleaseStartsEditing) {
-                isMouseReleaseStartsEditing = false;
-                return ui.startEditing(path, event);
-            } else {
-                return false;
-            }
-        } finally {
-            //this.releaseEvent = null;
-        }
-    }
-
-    private TreePath getMouseClickedClosestPathForLocation(JTree tree, int x, int y) {
+    private @Nullable TreePath getMouseClickedClosestPathForLocation(@NotNull JTree tree, int x, int y) {
         TreePath path = ui.getClosestPathForLocation(tree, x, y);
         if (path == null) {
             return null;

@@ -486,6 +486,14 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
         super.checkForClickInExpandControl(path, mouseX, mouseY);
     }
 
+    @Override
+    public void startEditingAtPath(JTree tree, TreePath path) {
+        if (AquaTreeMouseBehavior.isDebug) {
+            Utils.logDebug("JTree editing cell " + path);
+        }
+        super.startEditingAtPath(tree, path);
+    }
+
     protected class EditingComponentFocusListener implements FocusListener {
         @Override
         public void focusGained(FocusEvent e) {
