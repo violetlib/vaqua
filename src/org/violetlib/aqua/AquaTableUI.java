@@ -667,11 +667,14 @@ public class AquaTableUI extends BasicTableUI
 
                 if (isSelected && isEditing && editingRow == row && editingColumn >= cMin && editingColumn <= cMax
                         && shouldPaintSpecialEditedCellBackground()) {
-                    Rectangle editorCellRect = table.getCellRect(row, editingColumn, true);
-                    int x1 = editorCellRect.x;
-                    int x2 = x1 + editorCellRect.width;
-                    g.setColor(new Color(0, 0, 0, 150));
-                    g.fillRect(x1, cellRect.y, x2 - x1, cellRect.height);
+                    Color b = AquaColors.getCellEditorBackground(table);
+                    if (b != null) {
+                        Rectangle editorCellRect = table.getCellRect(row, editingColumn, true);
+                        int x1 = editorCellRect.x;
+                        int x2 = x1 + editorCellRect.width;
+                        g.setColor(b);
+                        g.fillRect(x1, cellRect.y, x2 - x1, cellRect.height);
+                    }
                 }
 
                 nextRowY = cellRect.y + cellRect.height;
@@ -702,8 +705,7 @@ public class AquaTableUI extends BasicTableUI
             // TBD: should selected column be painted here or is it OK for just the cells to paint the selection background?
         }
 
-        protected boolean shouldPaintSpecialEditedCellBackground()
-        {
+        protected boolean shouldPaintSpecialEditedCellBackground() {
             assert appearanceContext != null;
             AquaUIPainter.State state = appearanceContext.getState();
             return state == ACTIVE_DEFAULT && appearanceContext.getAppearance().isDark();

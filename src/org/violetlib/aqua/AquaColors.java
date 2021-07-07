@@ -677,8 +677,11 @@ public class AquaColors {
         return new Color(c.getRed(), c.getGreen(), c.getBlue(), c.getAlpha());
     }
 
-    public static @NotNull String createSelectedColorName(@NotNull String name)
-    {
+    public static @Nullable Color getCellEditorBackground(@NotNull JComponent c) {
+        return new Color(0, 0, 0, 150);
+    }
+
+    public static @NotNull String createSelectedColorName(@NotNull String name) {
         return "selected" + AquaUtils.capitalize(name);
     }
 }

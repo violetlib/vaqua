@@ -41,7 +41,10 @@ public class AquaTreeEditorBorder implements AquaBackgroundBorder, UIResource {
             if (ui != null) {
                 AquaAppearance a = AppearanceManager.getAppearance(tree);
                 if (a.isDark()) {
-                    return new Color(0, 0, 0, 150);
+                    Color b = AquaColors.getCellEditorBackground(tree);
+                    if (b != null) {
+                        return b;
+                    }
                 }
             }
         }
