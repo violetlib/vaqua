@@ -889,7 +889,7 @@ public class ExtendedVariableHeightLayoutCache extends AbstractLayoutCache {
                 aNode = (TreeStateNode)visibleNodes.
                     elementAt(counter);
                 aNode.setYOrigin(newYOrigin);
-                newYOrigin += aNode.getPreferredHeight();
+                newYOrigin += aNode.getPreferredHeight() + getRowSpacingAbove(counter + 1);
             }
         }
     }
