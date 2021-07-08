@@ -589,6 +589,10 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
         return treeState.getPathClosestTo(x - i.left, y - i.top);
     }
 
+    public boolean isCategory(@NotNull TreePath path) {
+        return isSideBar() && path.getPathCount() == 2;
+    }
+
     public void repaintSelection() {
         if (tree == null) {
             return;
@@ -1282,6 +1286,26 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
         fMouseHandler = new TreeArrowMouseInputHandler(path);
     }
 
+    @Override
+    protected void toggleExpandState(TreePath path) {
+        // In a sidebar tree, collapsing a category header should not transfer the selection to the category
+        // header, which would normally happen if a descendant of the category header is selected.
+        // The workaround is to first remove any descendants from the selection.
+
+        if (tree.isExpanded(path) && isCategory(path)) {
+            TreePath[] paths = tree.getSelectionPaths();
+            if (paths != null) {
+                for (TreePath selectedPath : paths) {
+                    if (path.isDescendant(selectedPath)) {
+                        tree.removeSelectionPath(selectedPath);
+                    }
+                }
+            }
+        }
+
+        super.toggleExpandState(path);
+    }
+
     /**
      * Returning true signifies a mouse event on the node should toggle the selection of only the row under mouse.
      */
@@ -1624,7 +1648,9 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
             if (tree == null || 0 > getRowCount(tree)) return;
 
             TreePath[] selectionPaths = tree.getSelectionPaths();
-            if (selectionPaths == null) return;
+            if (selectionPaths == null) {
+                return;
+            }
 
             for (int i = selectionPaths.length - 1; i >= 0; i--) {
                 TreePath path = selectionPaths[i];
@@ -1644,7 +1670,9 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
                     TreePath parentPath = path.getParentPath();
                     if (parentPath != null && (!(parentPath.getParentPath() == null) || tree.isRootVisible())) {
                         tree.scrollPathToVisible(parentPath);
-                        tree.setSelectionPath(parentPath);
+                        if (!isCategory(parentPath)) {
+                            tree.setSelectionPath(parentPath);
+                        }
                     }
                     continue;
                 }
@@ -1671,20 +1699,21 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
     private void expandAllNodes(TreePath parent, int initialRow) {
         for (int i = initialRow; true; i++) {
             TreePath path = getPathForRow(tree, i);
-            if (!parent.isDescendant(path)) return;
-
+            if (!parent.isDescendant(path)) {
+                return;
+            }
             tree.expandPath(path);
         }
     }
 
     private void collapseNode(int row, boolean recursive) {
         TreePath path = getPathForRow(tree, row);
-        if (path == null) return;
-
+        if (path == null) {
+            return;
+        }
         if (recursive) {
             collapseAllNodes(path, row + 1);
         }
-
         tree.collapsePath(path);
     }
 

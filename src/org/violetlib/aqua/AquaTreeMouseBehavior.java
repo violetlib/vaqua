@@ -86,7 +86,7 @@ public class AquaTreeMouseBehavior extends MouseInputAdapter implements AquaDrag
             }
 
             // Clicking on a sidebar category is like clicking on its expand control
-            if (ui.isSideBar() && path != null && path.getPathCount() == 2) {
+            if (path != null && ui.isCategory(path)) {
                 ui.handleExpandControlClick(path);
                 return;
             }
