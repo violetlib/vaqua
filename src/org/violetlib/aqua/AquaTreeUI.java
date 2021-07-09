@@ -162,6 +162,9 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
         // LookAndFeel.installProperty(tree, JTree.ROOT_VISIBLE_PROPERTY, false);
         tree.putClientProperty(AquaCellEditorPolicy.IS_CELL_CONTAINER_PROPERTY, true);
 
+        // The following ensures that transferring focus away from a cell editor will save the changes
+        tree.setInvokesStopCellEditing(true);
+
         isStriped = getStripedValue();  // avoid an unnecessary recalculation
         updateProperties();
         configureAppearanceContext(null);
