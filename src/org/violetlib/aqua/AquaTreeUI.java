@@ -48,10 +48,7 @@ import javax.swing.plaf.ComponentUI;
 import javax.swing.plaf.FontUIResource;
 import javax.swing.plaf.UIResource;
 import javax.swing.plaf.basic.BasicTreeUI;
-import javax.swing.tree.AbstractLayoutCache;
-import javax.swing.tree.DefaultTreeCellRenderer;
-import javax.swing.tree.FixedHeightLayoutCache;
-import javax.swing.tree.TreePath;
+import javax.swing.tree.*;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -104,6 +101,7 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
     private final FocusListener editingComponentFocusListener = new EditingComponentFocusListener();
     private final ComponentListener componentListener = new AquaTreeComponentListener();
     private Component editorFocusOwner;
+    private @Nullable TreeCellEditor originalTreeCellEditor;
 
     // mouse tracking state
     protected TreePath fTrackingPath;
@@ -165,14 +163,50 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
         // The following ensures that transferring focus away from a cell editor will save the changes
         tree.setInvokesStopCellEditing(true);
 
+        originalTreeCellEditor = null;
+        cellEditorChanged();
+
         isStriped = getStripedValue();  // avoid an unnecessary recalculation
         updateProperties();
         configureAppearanceContext(null);
         updateInset();
     }
 
+    protected void cellEditorChanged() {
+        if (originalTreeCellEditor == null) {
+            TreeCellEditor editor = tree.getCellEditor();
+            if (editor == null || editor.getClass() == DefaultCellEditor.class) {
+                // If not defined or not subclassed, substitute a custom cell editor for painting the icon.
+                installSpecialCellEditorIfAppropriate();
+            }
+        }
+    }
+
+    protected void cellRendererChanged() {
+        installSpecialCellEditorIfAppropriate();
+    }
+
+    protected void installSpecialCellEditorIfAppropriate() {
+        // Install a special cell editor for painting the icon obtained from the cell renderer.
+        // The icon is available only if the cell renderer is a DefaultTreeCellRenderer.
+        TreeCellRenderer renderer = tree.getCellRenderer();
+        if (renderer instanceof DefaultTreeCellRenderer) {
+            DefaultTreeCellRenderer r = (DefaultTreeCellRenderer) renderer;
+            if (originalTreeCellEditor == null) {
+                originalTreeCellEditor = tree.getCellEditor();
+            }
+            tree.setCellEditor(new AquaTreeCellEditor(tree, r));
+        }
+    }
+
     @Override
     protected void uninstallDefaults() {
+        TreeCellEditor editor = tree.getCellEditor();
+        if (editor instanceof AquaTreeCellEditor) {
+            tree.setCellEditor(originalTreeCellEditor);
+        }
+        originalTreeCellEditor = null;
+
         super.uninstallDefaults();
     }
 
@@ -308,8 +342,7 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
         }
     }
 
-    protected @NotNull JComponent getComponentForVisualEffectView()
-    {
+    protected @NotNull JComponent getComponentForVisualEffectView() {
         Container parent = tree.getParent();
         if (parent instanceof JViewport) {
             return (JViewport) parent;
@@ -500,7 +533,6 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
     protected class EditingComponentFocusListener implements FocusListener {
         @Override
         public void focusGained(FocusEvent e) {
-
         }
 
         @Override
@@ -980,9 +1012,8 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
         if (component instanceof JLabel) {
             JLabel label = (JLabel) component;
 
-            // Ideally, we configure the same set of attributes each time. However, we cannot configure the
-            // icon except in the case where we want to set it to null. Thus, we save and restore the icon in
-            // every case.
+            // Ideally, we configure the same set of attributes each time. However, we cannot configure the icon except
+            // in the case where we want to set it to null. Thus, we save and restore the icon in every case.
 
             oldCellRendererFont = label.getFont();
             oldCellRendererIcon = label.getIcon();
@@ -990,62 +1021,32 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
 
             Color fc = appearanceContext != null ? colors.getForeground(appearanceContext) : null;
             Font f = null;
-            Icon icon = label.getIcon();
-            Object operator = null;
-            AquaAppearance appearance = appearanceContext != null ? appearanceContext.getAppearance() : null;
+            Icon icon = oldCellRendererIcon;
 
             if (isSideBar()) {
-                fc = getSideBarForeground(isCategory, isSelected);
-                Color iconColor = null;
-                if (appearance != null) {
-                    iconColor = appearance.getColor("sidebarIcon");
-                }
-
-                Font sf = getSideBarFont(isCategory, isSelected);
-                if (sf != null) {
-                    // Trick the renderer into accepting the font
-                    // It ignores instances of FontUIResource
-                    f = fixFont(sf);
-                }
-
                 if (isCategory) {
                     label.setIcon(null);
                     label.setDisabledIcon(null);
                     icon = null;
-                } else if (icon != null) {
-                    if (AquaImageFactory.isTemplateIcon(icon)) {
-                        if (OSXSystemProperties.OSVersion >= 1016 && appearance != null) {
-                            if (AquaFocusHandler.isActive(tree)) {
-                                if (appearance.isDark()) {
-                                    iconColor = appearance.getColor("controlAccent");
-                                } else {
-                                    iconColor = appearance.getColor("controlAccent_pressed");
-                                }
-                            } else {
-                                iconColor = appearance.getColor("controlAccent_disabled");
-                            }
-                        }
-                        operator = iconColor;
-                    } else {
-                        operator = AquaFocusHandler.isActive(tree) ? null : LIGHTEN_FOR_DISABLED;
-                    }
                 }
-            } else {
-                if (appearance != null) {
-                    operator = appearance.getColor("treeIcon");
+                fc = getSideBarForeground(isCategory, isSelected);
+                Font sf = getSideBarFont(isCategory, isSelected);
+                if (sf != null) {
+                    // Trick the renderer into accepting the font. It ignores instances of FontUIResource.
+                    f = fixFont(sf);
                 }
             }
 
-            if (icon != null) {
-                Image image = AquaImageFactory.getProcessedImage(icon, operator);
-                if (image != null) {
-                    icon = new ImageIcon(image);
+            if (!isLayout) {
+                if (icon != null) {
+                    icon = convertIcon(isCategory, isSelected, icon);
+                }
+                if (icon != oldCellRendererIcon) {
                     label.setIcon(icon);
                 }
-            }
-
-            if (!isLayout && fc != null) {
-                label.setForeground(fc);
+                if (fc != null) {
+                    label.setForeground(fc);
+                }
             }
 
             if (f != null) {
@@ -1060,6 +1061,70 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
             label.setFont(oldCellRendererFont);
             label.setIcon(oldCellRendererIcon);
             label.setDisabledIcon(oldCellRendererDisabledIcon);
+        }
+    }
+
+    public void paintEditorIcon(@NotNull Graphics g, @NotNull TreePath path, @NotNull Icon icon, int x, int y) {
+        // If the icon is a template icon, paint it using an appropriate color.
+        // No icon is painted for a category header in a sidebar tree.
+        boolean isCategory = isCategory(path);
+        boolean isSelected = tree.isPathSelected(path);
+        icon = convertIcon(isCategory, isSelected, icon);
+        if (icon != null) {
+            icon.paintIcon(tree, g, x, y);
+        }
+    }
+
+    protected @Nullable Icon convertIcon(boolean isCategory, boolean isSelected, @NotNull Icon icon) {
+        // If the icon is a template icon, convert it to an image icon using an appropriate color.
+        // No icon should be painted for a category header in a sidebar tree.
+
+        if (isCategory && isSideBar()) {
+            return null;
+        }
+
+        if (AquaImageFactory.isTemplateIcon(icon)) {
+            Object operator = getOperatorForTemplateIcon(isSelected);
+            if (operator != null) {
+                Image image = AquaImageFactory.getProcessedImage(icon, operator);
+                if (image != null) {
+                    return new ImageIcon(image);
+                }
+            }
+        }
+        return icon;
+    }
+
+    protected @Nullable Object getOperatorForTemplateIcon(boolean isSelected) {
+        AquaAppearance appearance = appearanceContext != null ? appearanceContext.getAppearance() : null;
+        if (isSideBar()) {
+            if (OSXSystemProperties.OSVersion >= 1016 && appearance != null) {
+                if (AquaFocusHandler.isActive(tree)) {
+                    if (appearance.isDark()) {
+                        return appearance.getColor("controlAccent");
+                    } else {
+                        return appearance.getColor("controlAccent_pressed");
+                    }
+                } else {
+                    return appearance.getColor("controlAccent_disabled");
+                }
+            } else {
+                Color iconColor = null;
+                if (appearance != null) {
+                    iconColor = appearance.getColor("sidebarIcon");
+                }
+                if (iconColor != null) {
+                    return iconColor;
+                }
+                return AquaFocusHandler.isActive(tree) ? null : LIGHTEN_FOR_DISABLED;
+            }
+        } else {
+            // For best results over a selection background, use the corresponding text color
+            if (isSelected && appearanceContext != null && AquaFocusHandler.isActive(tree)) {
+                AppearanceContext ac = appearanceContext.withSelected(true);
+                return colors.getForeground(ac);
+            }
+            return appearance != null ? appearance.getColor("treeIcon") : null;
         }
     }
 
@@ -1143,6 +1208,10 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
                 updateStriped();
             } else if (isViewStyleProperty(pn)) {
                 updateInset();
+            } else if (pn.equals(JTree.CELL_EDITOR_PROPERTY)) {
+                cellEditorChanged();
+            } else if (pn.equals(JTree.CELL_RENDERER_PROPERTY)) {
+                cellRendererChanged();
             }
         }
     }
@@ -1447,7 +1516,7 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
      */
     // The Adapters take care of defining all the empties
     class TreeArrowMouseInputHandler extends MouseInputAdapter {
-        protected Rectangle fPathBounds = new Rectangle();
+        protected Rectangle fPathBounds;
 
         // Values needed for paintOneControl
         protected boolean fIsLeaf, fIsExpanded, fHasBeenExpanded;
