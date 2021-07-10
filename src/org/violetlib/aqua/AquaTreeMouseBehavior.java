@@ -203,6 +203,8 @@ public class AquaTreeMouseBehavior extends MouseInputAdapter implements AquaDrag
      * Invoked when the mouse button has been moved on a component (with no buttons down).
      */
     public void mouseMoved(@NotNull MouseEvent e) {
+        ui.mouseMoved(e);
+
         if (false) {
             // The following should be irrelevant:
             isMouseReleaseStartsEditing = false;
@@ -258,6 +260,12 @@ public class AquaTreeMouseBehavior extends MouseInputAdapter implements AquaDrag
         }
     }
 
+    @Override
+    public void mouseEntered(@NotNull MouseEvent e) {
+        ui.mouseMoved(e);
+    }
+
+    @Override
     public void mouseExited(@NotNull MouseEvent e) {
         if (isDebug) {
             Utils.logDebug("  Mouse exited");
@@ -267,6 +275,7 @@ public class AquaTreeMouseBehavior extends MouseInputAdapter implements AquaDrag
         }
 
         isMouseReleaseStartsEditing = false;
+        ui.mouseMoved(null);
     }
 
     private @Nullable TreePath getMouseClickedClosestPathForLocation(@NotNull JTree tree, int x, int y) {

@@ -39,6 +39,7 @@ import java.awt.event.*;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.util.Enumeration;
+import java.util.Objects;
 import java.util.TooManyListenersException;
 import javax.swing.*;
 import javax.swing.border.Border;
@@ -131,6 +132,8 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
 
     // support for sidebar presentation
     private SidebarVibrantEffects sidebarVibrantEffects;
+
+    private @Nullable TreePath pathWithVisibleExpandControl;
 
     private static DropTargetListener defaultDropTargetListener = null;
 
@@ -543,13 +546,71 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
     // This method made public so that AquaTreeMouseBehavior can access it.
     @Override
     public boolean isLocationInExpandControl(TreePath path, int mouseX, int mouseY) {
-        return super.isLocationInExpandControl(path, mouseX, mouseY);
+        boolean isLTR = AquaUtils.isLeftToRight(tree);
+        if (path != null && !treeModel.isLeaf(path.getLastPathComponent())) {
+            int boxWidth = getExpandedIcon() != null ? getExpandedIcon().getIconWidth() : 8;
+            Insets s = tree.getInsets();
+            int indentation = getRowX(tree.getRowForPath(path), path.getPathCount() - 1);
+            int boxCenterX;
+            if (isLTR) {
+                if (useTrailingExpandControl(path)) {
+                    boxCenterX = tree.getWidth() - (s.right + getLeftChildIndent()) - 1;
+                } else {
+                    boxCenterX = indentation + s.left - getRightChildIndent() + 1;
+                }
+            } else {
+                if (useTrailingExpandControl(path)) {
+                    boxCenterX = s.left + getLeftChildIndent() + 1;
+                } else {
+                    boxCenterX = tree.getWidth() - (indentation + s.right) + getRightChildIndent() - 1;
+                }
+            }
+
+            int boxLeftX = findCenteredX(boxCenterX, boxWidth);
+            return (mouseX >= boxLeftX && mouseX < (boxLeftX + boxWidth));
+        }
+        return false;
     }
 
     // This method made public so that AquaTreeMouseBehavior can access it.
     @Override
     public void checkForClickInExpandControl(TreePath path, int mouseX, int mouseY) {
         super.checkForClickInExpandControl(path, mouseX, mouseY);
+    }
+
+    public void mouseMoved(@Nullable MouseEvent e) {
+        if (isSideBar()) {
+            if (e != null) {
+                TreePath path = getClosestPathForLocation(tree, e.getX(), e.getY());
+                if (path != null) {
+                    if (isCategory(path)) {
+                        updateCategoryExpandControlVisibility(path);
+                        return;
+                    }
+                }
+            }
+            updateCategoryExpandControlVisibility(null);
+        }
+    }
+
+    protected void updateCategoryExpandControlVisibility(@Nullable TreePath path) {
+        if (!Objects.equals(path, pathWithVisibleExpandControl)) {
+            pathWithVisibleExpandControl = path;
+            tree.repaint();
+        }
+    }
+
+
+    protected boolean useTrailingExpandControl(@NotNull TreePath path) {
+        return isCategory(path);
+    }
+
+    protected boolean useTrailingExpandControl(int row) {
+        if (isSideBar()) {
+            TreePath path = getPathForRow(tree, row);
+            return path != null && isCategory(path);
+        }
+        return false;
     }
 
     @Override
@@ -704,6 +765,12 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
             if (isCellFilled && r != null && (editingComponent == null || editingRow != row) && tree.getWidth() > 0) {
                 Insets s = tree.getInsets();
                 int width = tree.getWidth() - s.right - r.x;
+                if (isInset()) {
+                    width = width - 19;
+                }
+                if (useTrailingExpandControl(row)) {
+                    width = width - totalChildIndent;
+                }
                 r.width = width;
             }
 
@@ -775,11 +842,18 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
     }
 
     /**
-     * Customize the X offset for the sidebar, to take into account that category rows have no icons.
+     * This method returns the leading indentation for a cell.
+     * Customize the indentation for the sidebar, to take into account that category rows have no icons.
+     * Also take into account the use of a trailing expand control, which further reduces the indentation.
      */
     @Override
     protected int getRowX(int row, int depth) {
         if (isSideBar()) {
+            if (depth > 1) {
+                depth--;
+            }
+        }
+        if (useTrailingExpandControl(row)) {
             if (depth > 1) {
                 depth--;
             }
@@ -1256,50 +1330,75 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
      * Paints the expand (toggle) part of a row. The receiver should NOT modify <code>clipBounds</code>, or
      * <code>insets</code>.
      */
-    protected void paintExpandControl(Graphics g, Rectangle clipBounds, Insets insets, Rectangle bounds, TreePath path, int row, boolean isExpanded, boolean hasBeenExpanded, boolean isLeaf) {
+    protected void paintExpandControl(@NotNull Graphics g,
+                                      @NotNull Rectangle clipBounds,
+                                      @NotNull Insets insets, Rectangle bounds,
+                                      @NotNull TreePath path,
+                                      int row,
+                                      boolean isExpanded,
+                                      boolean hasBeenExpanded,
+                                      boolean isLeaf) {
         Object value = path.getLastPathComponent();
 
-        // Draw icons if not a leaf and either hasn't been loaded,
-        // or the model child count is > 0.
-        if (isLeaf || (hasBeenExpanded && treeModel.getChildCount(value) <= 0)) return;
-
-        // Both icons are the same size
-        Icon icon = isExpanded ? getExpandedIcon() : getCollapsedIcon();
-        if (icon != null && !(icon instanceof UIResource)) {
-            super.paintExpandControl(g, clipBounds, insets, bounds, path, row, isExpanded, hasBeenExpanded, isLeaf);
+        // Draw icons if not a leaf and either hasn't been loaded, or the model child count is > 0.
+        if (isLeaf || (hasBeenExpanded && treeModel.getChildCount(value) <= 0)) {
             return;
         }
 
+        if (isCategory(path) && !path.equals(pathWithVisibleExpandControl)) {
+            return;
+        }
+
+        Insets s = tree.getInsets();
         int middleXOfKnob;
         boolean isLeftToRight = AquaUtils.isLeftToRight(tree); // Basic knows, but keeps it private
         if (isLeftToRight) {
-            middleXOfKnob = bounds.x - getRightChildIndent() + 1;
+            if (useTrailingExpandControl(path)) {
+                middleXOfKnob = tree.getWidth() - (s.right + getLeftChildIndent()) - 1;
+            } else {
+                middleXOfKnob = bounds.x - getRightChildIndent() + 1;
+            }
         } else {
-            middleXOfKnob = bounds.x + bounds.width + getRightChildIndent() - 1;
+            if (useTrailingExpandControl(path)) {
+                middleXOfKnob = s.left + getLeftChildIndent() + 1;
+            } else {
+                middleXOfKnob = bounds.x + bounds.width + getRightChildIndent() - 1;
+            }
         }
         int middleYOfKnob = bounds.y + (bounds.height / 2);
+        drawExpandControl(g, path, isExpanded, middleXOfKnob, middleYOfKnob, isLeftToRight);
+    }
 
-        State state = getState(path);
-        if (!fIsInBounds && state == State.PRESSED) {
-            state = State.ACTIVE;
+    protected void drawExpandControl(@NotNull Graphics g,
+                                     @NotNull TreePath path,
+                                     boolean isExpanded, int middleXOfKnob, int middleYOfKnob, boolean isLeftToRight) {
+        // Both icons are the same size
+        Icon icon = isExpanded ? getExpandedIcon() : getCollapsedIcon();
+        if (icon != null && !(icon instanceof UIResource)) {
+            drawCentered(tree, g, icon, middleXOfKnob, middleYOfKnob);
+        } else {
+            State state = getState(path);
+            if (!fIsInBounds && state == State.PRESSED) {
+                state = State.ACTIVE;
+            }
+
+            Configuration tg = getDisclosureTriangleConfiguration(state, isExpanded, isLeftToRight);
+            LayoutInfo layoutInfo = painter.getLayoutInfo().getLayoutInfo((LayoutConfiguration) tg);
+            int width = (int) Math.ceil(layoutInfo.getFixedVisualWidth());
+            int height = (int) Math.ceil(layoutInfo.getFixedVisualHeight());
+
+            if (width == 0) {
+                width = 20;
+            }
+            if (height == 0) {
+                height = width;
+            }
+
+            int x = middleXOfKnob - width / 2;
+            int y = middleYOfKnob - height / 2;
+            AquaUtils.configure(painter, tree, width, height);
+            painter.getPainter(tg).paint(g, x, y);
         }
-
-        Configuration tg = getDisclosureTriangleConfiguration(state, isExpanded, isLeftToRight);
-        LayoutInfo layoutInfo = painter.getLayoutInfo().getLayoutInfo((LayoutConfiguration) tg);
-        int width = (int) Math.ceil(layoutInfo.getFixedVisualWidth());
-        int height = (int) Math.ceil(layoutInfo.getFixedVisualHeight());
-
-        if (width == 0) {
-            width = 20;
-        }
-        if (height == 0) {
-            height = width;
-        }
-
-        int x = middleXOfKnob - width / 2;
-        int y = middleYOfKnob - height / 2;
-        AquaUtils.configure(painter, tree, width, height);
-        painter.getPainter(tg).paint(g, x, y);
     }
 
     protected Configuration getDisclosureTriangleConfiguration(State state, boolean isExpanded, boolean isLeftToRight) {
