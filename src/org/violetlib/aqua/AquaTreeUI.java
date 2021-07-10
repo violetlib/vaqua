@@ -915,6 +915,7 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
     }
 
     protected @Nullable Color getSpecialBackgroundForRow(int row, boolean isRowSelected) {
+        assert appearanceContext != null;
         AppearanceContext ac = appearanceContext;
         if (isRowSelected) {
             if (sidebarVibrantEffects != null) {
