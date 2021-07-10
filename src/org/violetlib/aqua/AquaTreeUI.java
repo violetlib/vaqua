@@ -715,6 +715,10 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
         return treeState.getPathClosestTo(x - i.left, y - i.top);
     }
 
+    public boolean isCategory(int depth) {
+        return isSideBar() && depth == 1;
+    }
+
     public boolean isCategory(@NotNull TreePath path) {
         return isSideBar() && path.getPathCount() == 2;
     }
@@ -800,7 +804,7 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
                 aComponent = currentCellRenderer.getTreeCellRendererComponent(tree, value, isSelected,
                         expanded, treeModel.isLeaf(value), row, false);
 
-                boolean isCategory = depth == 1;
+                boolean isCategory = isCategory(depth);
                 configureCellRenderer(true, aComponent, isCategory, row, isSelected);
 
                 if (tree != null) {
@@ -1546,7 +1550,7 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
 
     private int getStyleRowHeight(int depth) {
         if (isSideBar()) {
-            boolean isCategory = depth == 1;
+            boolean isCategory = isCategory(depth);
             if (isInset()) {
                 return isCategory ? 18 : 28;
             } else {
