@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2021 Alan Snyder.
+ * Copyright (c) 2021 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -12,22 +12,21 @@ import java.awt.*;
 import java.util.Objects;
 import java.util.function.Consumer;
 import javax.swing.*;
-import javax.swing.tree.TreeSelectionModel;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * Update the bounds of the selected rows of a JTree. The update() method must be called after potential changes to the
- * tree layout.
+ * Update the bounds of the selected rows of a JList. The update() method must be called after potential changes to the
+ * list layout.
  */
-public abstract class TreeSelectionBoundsTracker implements SelectionBoundsTracker {
-    protected @Nullable JTree tree;
+public abstract class ListSelectionBoundsTracker implements SelectionBoundsTracker {
+    protected @Nullable JList<?> list;
     protected @Nullable Consumer<SelectionBoundsDescription> consumer;
     private @Nullable SelectionBoundsDescription currentSelectionDescription;
 
-    public TreeSelectionBoundsTracker(@NotNull JTree tree, @Nullable Consumer<SelectionBoundsDescription> consumer) {
-        this.tree = tree;
+    public ListSelectionBoundsTracker(@NotNull JList<?> list, @Nullable Consumer<SelectionBoundsDescription> consumer) {
+        this.list = list;
         this.consumer = consumer;
 
         update();
@@ -39,7 +38,7 @@ public abstract class TreeSelectionBoundsTracker implements SelectionBoundsTrack
 
     @Override
     public void dispose() {
-        tree = null;
+        list = null;
         consumer = null;
     }
 
@@ -64,16 +63,12 @@ public abstract class TreeSelectionBoundsTracker implements SelectionBoundsTrack
     }
 
     /**
-     * Call this method when the tree layout (row bounds) may have changed.
+     * Call this method when the list layout (row bounds) may have changed.
      */
     @Override
     public void update() {
-        if (tree != null) {
-            TreeSelectionModel sm = tree.getSelectionModel();
-            int[] selectedRows = sm != null ? sm.getSelectionRows() : null;
-            if (selectedRows != null && selectedRows.length == 0) {
-                selectedRows = null;
-            }
+        if (list != null) {
+            int[] selectedRows = getSelectedIndices(list);
             try {
                 updateFromSelectedRows(selectedRows);
             } catch (IllegalComponentStateException ex) {
@@ -82,7 +77,26 @@ public abstract class TreeSelectionBoundsTracker implements SelectionBoundsTrack
         }
     }
 
-    protected void updateFromSelectedRows(int @Nullable [] rows) {
+    private int @NotNull [] getSelectedIndices(@NotNull JList<?> list) {
+        int min = list.getMinSelectionIndex();
+        int max = list.getMaxSelectionIndex();
+        if ((min < 0) || (max < 0)) {
+            return new int[0];
+        }
+
+        int[] temp = new int[max - min + 1];
+        int n = 0;
+        for (int i = min; i <= max; i++) {
+            if (list.isSelectedIndex(i)) {
+                temp[n++] = i;
+            }
+        }
+        int[] result = new int[n];
+        System.arraycopy(temp, 0, result, 0, n);
+        return result;
+    }
+
+    protected void updateFromSelectedRows(int @NotNull [] rows) {
         SelectionBoundsDescription newSelectionDescription = createSelectionDescription(rows);
         if (!Objects.equals(newSelectionDescription, currentSelectionDescription)) {
             currentSelectionDescription = newSelectionDescription;
@@ -93,12 +107,12 @@ public abstract class TreeSelectionBoundsTracker implements SelectionBoundsTrack
     }
 
     private @Nullable SelectionBoundsDescription createSelectionDescription(int @Nullable [] rows) {
-        if (tree == null || rows == null) {
+        if (list == null || rows == null) {
             return null;
         }
         SelectionBoundsDescription sd = new SelectionBoundsDescription(rows.length);
         for (int row : rows) {
-            Rectangle bounds = tree.getRowBounds(row);
+            Rectangle bounds = list.getCellBounds(row, row);
             int y = convertRowYCoordinateToSelectionDescription(bounds.y);
             sd.addRegion(y, bounds.height);
         }
@@ -106,7 +120,7 @@ public abstract class TreeSelectionBoundsTracker implements SelectionBoundsTrack
     }
 
     /**
-     * Map the Y location of a row in the tree coordinate system to the Y location to be stored in the selection
+     * Map the Y location of a row in the list coordinate system to the Y location to be stored in the selection
      * description.
      */
     protected int convertRowYCoordinateToSelectionDescription(int y) {

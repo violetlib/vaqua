@@ -141,10 +141,6 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
         this.colors = AquaColors.CONTAINER_COLORS;
     }
 
-    public boolean isSideBar() {
-        return isSideBar;
-    }
-
     @Override
     protected void installDefaults() {
         super.installDefaults();
@@ -166,10 +162,19 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
         originalTreeCellEditor = null;
         cellEditorChanged();
 
-        isStriped = getStripedValue();  // avoid an unnecessary recalculation
-        updateProperties();
-        configureAppearanceContext(null);
+        isStriped = getStripedValue();
+        isInset = getInsetValue();
+        isSideBar = getSideBarValue();
+        isCellFilled = getCellFilledValue();
+
+        tree.repaint();
+        if (treeState != null) {
+            treeState.invalidateSizes();
+        }
+        colors = determineColors();
         updateInset();
+        updateSideBarConfiguration();
+        configureAppearanceContext(null);
     }
 
     protected void cellEditorChanged() {
@@ -242,7 +247,6 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
         }
         AquaUIPainter.State state = getState();
         appearanceContext = new AppearanceContext(appearance, state, false, false);
-        colors = determineColors();
         colors.configureForContainer();
         AquaColors.installColors(tree, appearanceContext, colors);
         LookAndFeel.installProperty(tree, "opaque", !isStriped);
@@ -288,21 +292,6 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
         return AquaFocusHandler.isActive(tree) && (AquaFocusHandler.hasFocus(tree) || tree.isEditing());
     }
 
-    protected void updateProperties() {
-        if (tree != null) {
-            isCellFilled = Boolean.TRUE.equals(AquaUtils.getBooleanProperty(tree, IS_CELL_FILLED_KEY, QUAQUA_IS_CELL_FILLED_KEY));
-            String style = getStyleProperty();
-            boolean newIsSidebar = style != null && (style.equals("sideBar") || style.equals("sourceList"));
-            updateStriped();
-            if (newIsSidebar != isSideBar) {
-                isSideBar = newIsSidebar;
-                updateSidebar();
-                tree.revalidate();
-                tree.repaint();
-            }
-        }
-    }
-
     protected void updateRowHeight() {
         // sidebar trees have two row heights, one for ordinary items and one for category headers
         int height = isSideBar() ? 0 : 19;
@@ -310,7 +299,7 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
     }
 
     // Called on a change to isSideBar or the ancestry of the tree
-    protected void updateSidebar() {
+    protected void updateSideBarConfiguration() {
         if (isSideBar() && tree.isDisplayable()) {
             ensureSidebarVibrantEffects();
         } else {
@@ -395,17 +384,54 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
         }
     }
 
-    private void updateStriped() {
-        boolean value = getStripedValue();
-        if (value != isStriped) {
-            isStriped = value;
+    private void updateCellFilled() {
+        boolean cellFilledValue = getCellFilledValue();
+        if (cellFilledValue != isCellFilled) {
+            isCellFilled = cellFilledValue;
+            if (tree != null) {
+                tree.repaint();
+                if (treeState != null) {
+                    treeState.invalidateSizes();
+                }
+            }
+        }
+    }
+
+    private boolean getCellFilledValue() {
+        return tree != null
+                && Boolean.TRUE.equals(AquaUtils.getBooleanProperty(tree, IS_CELL_FILLED_KEY, QUAQUA_IS_CELL_FILLED_KEY));
+    }
+
+    private void updateStyleProperties() {
+        boolean isStripedChanged = false;
+        boolean stripedValue = getStripedValue();
+        if (stripedValue != isStriped) {
+            isStriped = stripedValue;
+            isStripedChanged = true;
+        }
+        boolean isSideBarChanged = false;
+        boolean sideBarValue = getSideBarValue();
+        if (sideBarValue != isSideBar) {
+            isSideBar = sideBarValue;
+            isSideBarChanged = true;
+        }
+        if (isStripedChanged || isSideBarChanged) {
+            colors = determineColors();
             configureAppearanceContext(null);
+        }
+        if (isSideBarChanged) {
+            updateSideBarConfiguration();
         }
     }
 
     private boolean getStripedValue() {
         String value = getStyleProperty();
         return "striped".equals(value) && isBackgroundClear();
+    }
+
+    private boolean getSideBarValue() {
+        String style = getStyleProperty();
+        return style != null && (style.equals("sideBar") || style.equals("sourceList"));
     }
 
     @Override
@@ -432,6 +458,10 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
 
     public boolean isStriped() {
         return isStriped;
+    }
+
+    public boolean isSideBar() {
+        return isSideBar;
     }
 
     @Override
@@ -816,11 +846,7 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
     }
 
     public @Nullable Color getCurrentBackground() {
-        if (isSideBar()) {
-            return null;
-        } else {
-            return tree.getBackground();
-        }
+        return isSideBar() ? null : tree.getBackground();
     }
 
     /**
@@ -1205,7 +1231,7 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
             } else if (AquaFocusHandler.DISPLAY_AS_FOCUSED_KEY.equals(pn)) {
                 configureAppearanceContext(null);
             } else if (isStyleProperty(pn)) {
-                updateStriped();
+                updateStyleProperties();
             } else if (isViewStyleProperty(pn)) {
                 updateInset();
             } else if (pn.equals(JTree.CELL_EDITOR_PROPERTY)) {
@@ -1485,22 +1511,18 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
                 }
 
                 if (isCellFilledProperty(name)) {
-                    updateProperties();
-                    tree.repaint();
-                    if (treeState != null) {
-                        treeState.invalidateSizes();
-                    }
+                    updateCellFilled();
                     return;
                 }
 
                 if (isStyleProperty(name)) {
-                    updateProperties();
+                    updateStyleProperties();
                     tree.repaint();
                     return;
                 }
 
                 if (name.equals("ancestor")) {
-                    updateSidebar();
+                    updateSideBarConfiguration();
                 }
 
                 super.propertyChange(evt);
