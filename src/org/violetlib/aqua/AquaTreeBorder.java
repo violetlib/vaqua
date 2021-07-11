@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Alan Snyder.
+ * Copyright (c) 2020-2021 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -22,27 +22,14 @@ import org.jetbrains.annotations.NotNull;
 public class AquaTreeBorder extends AbstractBorder implements UIResource {
 
     public Insets getBorderInsets(@NotNull Component c, @NotNull Insets insets) {
-        boolean isInset = computeIsInset((JComponent)c);
-        int top = 0;
-        int side = isInset ? 10 : 1;
-        insets.top = insets.bottom = top;
-        insets.left = insets.right = side;
-        if (isInset) {
-            boolean isLTR = c.getComponentOrientation().isLeftToRight();
-            if (isLTR) {
-                insets.right += 10;
-            } else {
-                insets.left += 10;
-            }
-        }
-        return insets;
-    }
-
-    private boolean computeIsInset(@NotNull JComponent c) {
-        AquaTreeUI ui = AquaUtils.getUI(c, AquaTreeUI.class);
+        AquaTreeUI ui = AquaUtils.getUI((JComponent) c, AquaTreeUI.class);
         if (ui != null) {
-            return ui.isInset();
+            return ui.getInsets();
         }
-        return false;
+        insets.top = 0;
+        insets.bottom = 0;
+        insets.left = 1;
+        insets.right = 1;
+        return insets;
     }
 }
