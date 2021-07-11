@@ -632,7 +632,9 @@ public class AquaComboBoxUI extends BasicComboBoxUI
             String asString = element.toString();
             if (asString == null || !asString.equals(text)) continue;
 
-            popup.getList().setSelectedIndex(i);
+            JList<?> list = popup.getList();
+            list.setSelectedIndex(i);
+            list.ensureIndexIsVisible(i);
             return;
         }
 
