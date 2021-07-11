@@ -86,20 +86,6 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
 
     public static final String SELECTION_FOREGROUND_KEY = "JTree.selectionForeground";
 
-    // Begin Line Stuff from Metal
-
-    private static final String LINE_STYLE = "JTree.lineStyle";
-
-    private static final String LEG_LINE_STYLE_STRING = "Angled";
-    private static final String HORIZ_STYLE_STRING = "Horizontal";
-    private static final String NO_STYLE_STRING = "None";
-
-    private static final int LEG_LINE_STYLE = 2;
-    private static final int HORIZ_LINE_STYLE = 1;
-    private static final int NO_LINE_STYLE = 0;
-
-    private int lineStyle = NO_LINE_STYLE;
-
     private static final int DEFAULT_INDENTATION = 16;
     private static final int SIDEBAR_INDENTATION = 13;
 
@@ -156,8 +142,6 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
         super.installDefaults();
 
         LookAndFeel.installBorder(tree, "Tree.border");
-        Object lineStyleFlag = tree.getClientProperty(LINE_STYLE);
-        decodeLineStyle(lineStyleFlag);
 
         // Unfortunately, there is no reliable way to undo this change because we will not know if the application
         // later tries to set it to false. Fortunately, swapping LAFs is unusual and displaying a root node is dumb.
@@ -713,23 +697,6 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
         return true;
     }
 
-    /**
-     * this function converts between the string passed into the client property and the internal representation
-     * (currently an int)
-     */
-    protected void decodeLineStyle(Object lineStyleFlag) {
-        if (lineStyleFlag == null || NO_STYLE_STRING.equals(lineStyleFlag)) {
-            lineStyle = NO_LINE_STYLE; // default case
-            return;
-        }
-
-        if (LEG_LINE_STYLE_STRING.equals(lineStyleFlag)) {
-            lineStyle = LEG_LINE_STYLE;
-        } else if (HORIZ_STYLE_STRING.equals(lineStyleFlag)) {
-            lineStyle = HORIZ_LINE_STYLE;
-        }
-    }
-
     @Override
     public TreePath getClosestPathForLocation(@Nullable JTree treeLocal, int x, int y) {
         if (treeLocal == null || treeState == null) {
@@ -933,11 +900,6 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
         paintBackground(g, background);
 
         super.paint(g, c);
-
-        // Paint the lines
-        if (lineStyle == HORIZ_LINE_STYLE && !largeModel) {
-            paintHorizontalSeparators(g, c);
-        }
     }
 
     protected void paintBackground(@NotNull Graphics g, @Nullable Color background) {
@@ -1322,16 +1284,14 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
         }
     }
 
+    @Override
     protected void paintVerticalPartOfLeg(Graphics g, Rectangle clipBounds, Insets insets, TreePath path) {
-        if (lineStyle == LEG_LINE_STYLE) {
-            super.paintVerticalPartOfLeg(g, clipBounds, insets, path);
-        }
     }
 
-    protected void paintHorizontalPartOfLeg(Graphics g, Rectangle clipBounds, Insets insets, Rectangle bounds, TreePath path, int row, boolean isExpanded, boolean hasBeenExpanded, boolean isLeaf) {
-        if (lineStyle == LEG_LINE_STYLE) {
-            super.paintHorizontalPartOfLeg(g, clipBounds, insets, bounds, path, row, isExpanded, hasBeenExpanded, isLeaf);
-        }
+    @Override
+    protected void paintHorizontalPartOfLeg(Graphics g, Rectangle clipBounds, Insets insets, Rectangle bounds,
+                                            TreePath path, int row, boolean isExpanded, boolean hasBeenExpanded,
+                                            boolean isLeaf) {
     }
 
     private void treeModelChanged(@Nullable Object oldModel, @Nullable Object newModel) {
@@ -1717,9 +1677,7 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
                 return;
             }
 
-            if (pn.equals(LINE_STYLE)) {
-                decodeLineStyle(e.getNewValue());
-            } else if (pn.equals("enabled")) {
+            if (pn.equals("enabled")) {
                 configureAppearanceContext(null);
             } else if (AquaFocusHandler.DISPLAY_AS_FOCUSED_KEY.equals(pn)) {
                 configureAppearanceContext(null);
