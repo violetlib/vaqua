@@ -137,22 +137,25 @@ public class AquaTableUI extends BasicTableUI
      */
     protected class CellEditorFocusManager implements FocusListener {
         private @Nullable Component managedCellEditorComponent;
+        private @Nullable Component registeredFocusOwner;
 
         public void cellEditorChanged(@Nullable TableCellEditor oldEditor, @Nullable TableCellEditor currentEditor) {
             detach();
             if (currentEditor != null) {
                 // In some cases, such as direct calls to editCellAt, the cell editor does not request focus
                 managedCellEditorComponent = table.getEditorComponent();
-                managedCellEditorComponent.requestFocus();
-                managedCellEditorComponent.addFocusListener(this);
+                registeredFocusOwner = managedCellEditorComponent;
+                registeredFocusOwner.requestFocus();
+                registeredFocusOwner.addFocusListener(this);
             }
         }
 
         public void detach() {
-            if (managedCellEditorComponent != null) {
-                managedCellEditorComponent.removeFocusListener(this);
-                managedCellEditorComponent = null;
+            if (registeredFocusOwner != null) {
+                registeredFocusOwner.removeFocusListener(this);
+                registeredFocusOwner = null;
             }
+            managedCellEditorComponent = null;
         }
 
         @Override
@@ -165,11 +168,23 @@ public class AquaTableUI extends BasicTableUI
                 TableCellEditor editor = table.getCellEditor();
                 if (editor != null) {
                     Component opposite = e.getOppositeComponent();
-                    if (opposite == null || !isPartOfEditor(table.getEditorComponent(), opposite)) {
-                        if (!editor.stopCellEditing()) {
-                            editor.cancelCellEditing();
-                        }
+                    if (opposite != null && isPartOfEditor(table.getEditorComponent(), opposite)) {
+                        // The focus transfer is to a component within the cell editor.
+                        // Transfer this focus listener to that component.
+                        assert registeredFocusOwner != null;
+                        registeredFocusOwner.removeFocusListener(this);
+                        registeredFocusOwner = opposite;
+                        registeredFocusOwner.addFocusListener(this);
+                        return;
                     }
+                    // The cell editor is losing focus, which should stop editing.
+                    if (!editor.stopCellEditing()) {
+                        editor.cancelCellEditing();
+                    }
+                } else {
+                    assert registeredFocusOwner != null;
+                    registeredFocusOwner.removeFocusListener(this);
+                    managedCellEditorComponent = null;
                 }
             }
         }
