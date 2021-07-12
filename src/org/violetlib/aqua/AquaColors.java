@@ -406,7 +406,7 @@ public class AquaColors {
         background.setActiveDefaultSelectedName("selectedContentBackground");
         background.setSelectedName("unemphasizedSelectedTextBackground");
 
-        AquaContextualColorImpl grid = new AquaContextualColorImpl("ContainerColors.grid", "grid");
+        AquaContextualColorImpl grid = new AquaContextualColorImpl("ContainerColors.grid", "separator");
 
         return new UniformContainerContextualColors(background, CELL_FOREGROUND_COLORS, grid);
     }
@@ -421,7 +421,7 @@ public class AquaColors {
             foreground.setInactiveName("controlText");
         }
 
-        AquaContextualColorImpl grid = new AquaContextualColorImpl("SidebarContainerColors.grid", "grid");
+        AquaContextualColorImpl grid = new AquaContextualColorImpl("SidebarContainerColors.grid", "separator");
 
         return new UniformContainerContextualColors(background, foreground, grid);
     }
@@ -439,7 +439,7 @@ public class AquaColors {
         oddRowBackground.setActiveDefaultSelectedName("selectedContentBackground");
         oddRowBackground.setSelectedName("unemphasizedSelectedTextBackground");
 
-        AquaContextualColorImpl grid = new AquaContextualColorImpl("StripedContainerColors.grid", "grid");
+        AquaContextualColorImpl grid = new AquaContextualColorImpl("StripedContainerColors.grid", "separator");
 
         return new StripedContainerContextualColors(background, evenRowBackground, oddRowBackground, CELL_FOREGROUND_COLORS, grid);
     }
