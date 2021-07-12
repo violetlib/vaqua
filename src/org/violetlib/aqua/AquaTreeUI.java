@@ -854,9 +854,12 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
      */
     @Override
     protected int getRowX(int row, int depth) {
+        int fudge = 0;
         if (isSideBar()) {
             depth--;
-            if (isShallowSideBar()) {
+            if (OSXSystemProperties.OSVersion < 1016) {
+                fudge = -3;
+            } else if (isShallowSideBar()) {
                 depth--;
             }
         }
@@ -864,7 +867,7 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
             depth--;
         }
         depth = Math.max(0, depth);
-        return indentationPerLevel * (depth + depthOffset);
+        return indentationPerLevel * (depth + depthOffset) + fudge;
     }
 
     @Override
@@ -1503,7 +1506,7 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
         boolean isSideBar = isSideBar();
         int top = 0;
         int bottom = 0;
-        int leading = isInset ? (isSideBar ? 18 : 10) : 1;
+        int leading = isInset ? (isSideBar ? 18 : 10) : (isSideBar ? 9 : 1);
         int trailing = isInset ? 20 : 1;
         boolean isLTR = AquaUtils.isLeftToRight(tree);
         if (isLTR) {
