@@ -1105,8 +1105,11 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
                 treeCellRenderer.setBackgroundNonSelectionColor(AquaColors.CLEAR);
                 treeCellRenderer.setBackgroundSelectionColor(AquaColors.CLEAR);
                 treeCellRenderer.setBorderSelectionColor(AquaColors.CLEAR);
-                treeCellRenderer.setTextNonSelectionColor(colors.getForeground(appearanceContext.withSelected(false)));
-                treeCellRenderer.setTextSelectionColor(colors.getForeground(appearanceContext.withSelected(true)));
+                if (false) {
+                    // Not needed, these colors are used when the component obtained
+                    treeCellRenderer.setTextNonSelectionColor(colors.getForeground(appearanceContext.withSelected(false)));
+                    treeCellRenderer.setTextSelectionColor(colors.getForeground(appearanceContext.withSelected(true)));
+                }
             }
         }
 
@@ -1146,7 +1149,10 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
                     label.setIcon(icon);
                 }
                 if (fc != null) {
-                    label.setForeground(fc);
+                    Color existingForeground = label.getForeground();
+                    if (existingForeground == null || existingForeground instanceof UIResource) {
+                        label.setForeground(fc);
+                    }
                 }
             }
 
