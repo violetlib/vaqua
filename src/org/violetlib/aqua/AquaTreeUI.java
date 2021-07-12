@@ -43,7 +43,6 @@ import java.util.Objects;
 import java.util.TooManyListenersException;
 import javax.swing.*;
 import javax.swing.border.Border;
-import javax.swing.event.MouseInputAdapter;
 import javax.swing.event.TreeModelEvent;
 import javax.swing.event.TreeModelListener;
 import javax.swing.plaf.ColorUIResource;
@@ -68,8 +67,6 @@ import static org.violetlib.aqua.AquaImageFactory.LIGHTEN_FOR_DISABLED;
  * A tree UI based on AquaTreeUI for Yosemite. It supports filled cells. It supports the striped and sidebar styles.
  * It supports a more compatible mouse behavior. It displays using an inactive style based on focus ownership. It
  * configures cell renderers, as possible, to conform to the tree style.
- * AquaTreeUI supports the client property "value-add" system of customization See MetalTreeUI
- * This is heavily based on the 1.3.1 AquaTreeUI implementation.
  */
 public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, AquaComponentUI, AquaViewStyleContainerUI {
 
@@ -100,7 +97,6 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
     protected boolean fIsPressed = false;
     protected boolean fIsInBounds = false;
     protected float fAnimationTransition = -1;
-    protected TreeArrowMouseInputHandler fMouseHandler;
 
     // Duplicates a private instance variable of BasicTreeUI
     private boolean ignoreLAChange;
@@ -113,6 +109,9 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
     protected boolean isInset;
     protected @Nullable Boolean _isShallowSideBar;
     protected int indentationPerLevel = DEFAULT_INDENTATION;
+    protected int expandControlWidth = 16;
+    protected int trailingExpandControlInset = 13;
+    protected int leadingExpandControlSeparation = 6;
 
     // state variables for painting, needed because we share painting implementation with the superclass
     protected boolean shouldPaintSelection;
@@ -166,6 +165,7 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
             treeState.invalidateSizes();
         }
         colors = determineColors();
+        updateExpandControlSize();
         updateInset();
         updateSideBarConfiguration();
         configureAppearanceContext(null);
@@ -580,12 +580,6 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
         configureAppearanceContext(null);
     }
 
-    // This method made public so that AquaTreeMouseBehavior can access it.
-    @Override
-    public void checkForClickInExpandControl(TreePath path, int mouseX, int mouseY) {
-        super.checkForClickInExpandControl(path, mouseX, mouseY);
-    }
-
     public void mouseMoved(@Nullable MouseEvent e) {
         if (isSideBar()) {
             if (e != null) {
@@ -612,12 +606,8 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
         return isCategory(path);
     }
 
-    protected boolean useTrailingExpandControl(int row) {
-        if (isSideBar()) {
-            TreePath path = getPathForRow(tree, row);
-            return path != null && isCategory(path);
-        }
-        return false;
+    protected boolean useTrailingExpandControl(int depth) {
+        return isCategory(depth);
     }
 
     @Override
@@ -765,6 +755,13 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
     protected class TreeNodeDimensions extends NodeDimensionsHandler {
         @Override
         public Rectangle getNodeDimensions(Object value, int row, int depth, boolean expanded, Rectangle size) {
+
+            // Note that the row may be unreliable if called for layout purposes in response to a node expansion.
+
+            if (AquaTreeMouseBehavior.isDebug) {
+                Utils.logDebug("Requesting node dimensions for " + value + " with depth " + depth);
+            }
+
             Rectangle r = getBasicNodeDimensions(value, row, depth, expanded, size);
 
             /*
@@ -790,7 +787,7 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
             // Return size of editing component, if editing and asking for editing row.
             if (editingComponent != null && editingRow == row) {
                 Dimension prefSize = editingComponent.getPreferredSize();
-                return computeRowBounds(row, depth, prefSize, size);
+                return computeRowBounds(depth, prefSize, size);
             }
             // Not editing, use renderer.
             if (currentCellRenderer != null) {
@@ -807,7 +804,7 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
                         expanded, treeModel.isLeaf(value), row, false);
 
                 boolean isCategory = isCategory(depth);
-                configureCellRenderer(true, aComponent, isCategory, row, isSelected);
+                configureCellRenderer(true, aComponent, isCategory, isSelected);
 
                 if (tree != null) {
                     // Only ever removed when UI changes, this is OK!
@@ -816,7 +813,7 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
                 }
                 Dimension prefSize = aComponent.getPreferredSize();
                 unconfigureCellRenderer(aComponent);
-                return computeRowBounds(row, depth, prefSize, size);
+                return computeRowBounds(depth, prefSize, size);
             }
             return null;
         }
@@ -825,7 +822,7 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
     /**
      * Compute the basic bounds of a row based on the preferred size of its renderer/editor component.
      */
-    private @NotNull Rectangle computeRowBounds(int row, int depth, @NotNull Dimension ps, @Nullable Rectangle size) {
+    private @NotNull Rectangle computeRowBounds(int depth, @NotNull Dimension ps, @Nullable Rectangle size) {
         int width = ps.width;
         int height = ps.height;
         int rowHeight = getRowHeight();
@@ -837,7 +834,7 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
                 height = styleHeight;
             }
         }
-        int x = getRowX(row, depth);
+        int x = getIndentation(depth);
         if (size != null) {
             size.x = x;
             size.width = width;
@@ -847,27 +844,36 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
         return new Rectangle(x, 0, width, height);
     }
 
-    /**
-     * This method returns the leading indentation for a cell.
-     * Customize the indentation for the sidebar, to take into account that category rows have no icons.
-     * Also take into account the use of a trailing expand control, which further reduces the indentation.
-     */
     @Override
     protected int getRowX(int row, int depth) {
+        // This method may be unreliable if it depends upon the row, which may be inaccurate.
+        // It should never be called.
+        // The replacement is getIndentation(depth)
+        throw new AssertionError("Unexpected call to AquaTreeUI.getRowX");
+    }
+
+    protected int getIndentation(int depth) {
+        int effectiveDepth = depth;
         int fudge = 0;
         if (isSideBar()) {
-            depth--;
+            effectiveDepth--;
             if (OSXSystemProperties.OSVersion < 1016) {
-                fudge = -3;
+                if (!isCategory(depth)) {
+                    fudge = 3;
+                }
             } else if (isShallowSideBar()) {
-                depth--;
+                effectiveDepth--;
             }
         }
-        if (useTrailingExpandControl(row)) {
-            depth--;
+        if (useTrailingExpandControl(depth)) {
+            effectiveDepth--;
         }
-        depth = Math.max(0, depth);
-        return indentationPerLevel * (depth + depthOffset) + fudge;
+        effectiveDepth = Math.max(0, effectiveDepth);
+        int indentation = indentationPerLevel * (effectiveDepth + depthOffset) + fudge;
+        if (AquaTreeMouseBehavior.isDebug) {
+            Utils.logDebug("Indentation: " + indentation + " for depth " + depth + " -> " + effectiveDepth);
+        }
+        return indentation;
     }
 
     @Override
@@ -1075,7 +1081,7 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
                         (leadIndex == row));
 
         boolean isCategory = path.getPathCount() == 2;
-        configureCellRenderer(false, component, isCategory, row, isRowSelected);
+        configureCellRenderer(false, component, isCategory, isRowSelected);
         rendererPane.paintComponent(g, component, tree, bounds.x, bounds.y, bounds.width, bounds.height, true);
         unconfigureCellRenderer(component);
     }
@@ -1086,13 +1092,11 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
      * @param isLayout True if the renderer will be used for layout, false if for painting.
      * @param component The cell renderer component.
      * @param isCategory True if the row is a category row.
-     * @param row The row index.
      * @param isSelected True if the row is selected.
      */
     protected void configureCellRenderer(boolean isLayout,
                                          Component component,
                                          boolean isCategory,
-                                         int row,
                                          boolean isSelected) {
 
         // We need to do some (very ugly) modifications because DefaultTreeCellRenderers have their own paint method
@@ -1350,9 +1354,8 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
         }
     }
 
-    // This method made public so that AquaTreeMouseBehavior can access it.
     @Override
-    public boolean isLocationInExpandControl(TreePath path, int mouseX, int mouseY) {
+    protected boolean isLocationInExpandControl(@Nullable TreePath path, int mouseX, int mouseY) {
         if (path != null && !treeModel.isLeaf(path.getLastPathComponent())) {
             Point center = getExpandControlCenter(path);
             if (center != null) {
@@ -1430,20 +1433,20 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
             return null;
         }
         int y = bounds.y + (bounds.height / 2);
-
-        int indentation = getRowX(tree.getRowForPath(path), path.getPathCount() - 1);
+        int indentation = getIndentation(path.getPathCount() - 1);
+        int o = expandControlWidth/2;
         int x;
         if (isLTR) {
             if (useTrailingExpandControl(path)) {
-                x = tree.getWidth() - s.right + getLeftChildIndent() - 1;
+                x = tree.getWidth() - o/2 - trailingExpandControlInset;
             } else {
-                x = indentation + s.left - getRightChildIndent() + 1;
+                x = s.left + indentation - (o/2 + leadingExpandControlSeparation);
             }
         } else {
             if (useTrailingExpandControl(path)) {
-                x = s.left - getLeftChildIndent() + 1;
+                x = o + trailingExpandControlInset;
             } else {
-                x = tree.getWidth() - (indentation + s.right) + getRightChildIndent() - 1;
+                x = tree.getWidth() - (indentation + s.right) + (leadingExpandControlSeparation + o/2);
             }
         }
 
@@ -1455,10 +1458,44 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
         if (center != null) {
             Rectangle bounds = getPathBounds(path, tree.getInsets(), null);
             if (bounds != null) {
-                return new Rectangle(center.x - 8, bounds.y, 16, bounds.height);
+                return new Rectangle(center.x - expandControlWidth/2, bounds.y, expandControlWidth, bounds.height);
             }
         }
         return null;
+    }
+
+    @Override
+    public void setExpandedIcon(@Nullable Icon icon) {
+        super.setExpandedIcon(icon);
+        updateExpandControlSize();
+    }
+
+    @Override
+    public void setCollapsedIcon(Icon newG) {
+        super.setCollapsedIcon(newG);
+        updateExpandControlSize();
+    }
+
+    protected void updateExpandControlSize() {
+        int width = 0;
+        Icon icon = getExpandedIcon();
+        if (icon != null) {
+            width = Math.max(width, icon.getIconWidth());
+        }
+        icon = getCollapsedIcon();
+        if (icon != null) {
+            width = Math.max(width, icon.getIconWidth());
+        }
+        if (width == 0) {
+            // Assuming the width is not dependent on context
+            Configuration g = getDisclosureTriangleConfiguration(State.ACTIVE, true, true);
+            LayoutInfo layoutInfo = painter.getLayoutInfo().getLayoutInfo((LayoutConfiguration) g);
+            width = (int) Math.ceil(layoutInfo.getFixedVisualWidth());
+            if (width == 0) {
+                width = 20;
+            }
+        }
+        expandControlWidth = width;
     }
 
     protected Configuration getDisclosureTriangleConfiguration(State state, boolean isExpanded, boolean isLeftToRight) {
@@ -1546,17 +1583,25 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
         return State.ACTIVE;
     }
 
-    /**
-     * Misnamed - this is called on mousePressed Macs shouldn't react till mouseReleased
-     * We install a motion handler that gets removed after.
-     * See super.MouseInputHandler & super.startEditing for why
-     */
-    protected void handleExpandControlClick(TreePath path, int mouseX, int mouseY) {
-        fMouseHandler = new TreeArrowMouseInputHandler(path);
+    @Override
+    protected void checkForClickInExpandControl(TreePath path, int mouseX, int mouseY) {
+        throw new AssertionError("Method checkForClickInExpandControl should not be called");
     }
 
-    public void handleExpandControlClick(@NotNull TreePath path) {
-        fMouseHandler = new TreeArrowMouseInputHandler(path);
+    /**
+     * Determine if a mouse pressed event should cause the targeted node to be expanded or collapsed.
+     * @param path The tree path of the node.
+     * @param x The mouse X position.
+     * @param y The mouse Y position.
+     * @return true if and only if the targeted node should be expanded or collapsed.
+     */
+
+    public boolean isExpandOperation(@NotNull TreePath path, int x, int y) {
+        return isLocationInExpandControl(path, x, y) || isCategory(path);
+    }
+
+    protected void handleExpandControlClick(TreePath path, int mouseX, int mouseY) {
+        throw new AssertionError("Method handleExpandControlClick should not be called");
     }
 
     @Override
@@ -1714,151 +1759,6 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
             }
 
             super.propertyChange(e);
-        }
-    }
-
-    /**
-     * TreeArrowMouseInputHandler handles passing all mouse events the way a Mac should - hilite/dehilite on enter/exit,
-     * only perform the action if released in arrow.
-     *
-     * Just like super.MouseInputHandler, this is removed once it's not needed, so they won't clash with each other
-     */
-    // The Adapters take care of defining all the empties
-    class TreeArrowMouseInputHandler extends MouseInputAdapter {
-        protected Rectangle fPathBounds;
-
-        // Values needed for paintOneControl
-        protected boolean fIsLeaf, fIsExpanded, fHasBeenExpanded;
-        protected Rectangle fBounds, fVisibleRect;
-        int fTrackingRow;
-        Insets fInsets;
-        //Color fBackground;
-
-        TreeArrowMouseInputHandler(TreePath path) {
-            fTrackingPath = path;
-            fTrackingRow = getRowForPath(fTrackingPath);
-            fIsPressed = true;
-            fIsInBounds = true;
-            this.fPathBounds = getExpandControlBounds(path);
-            tree.addMouseListener(this);
-            tree.addMouseMotionListener(this);
-
-            // the background should be the background for the row
-//            fBackground = fTrackingRow >= 0 ? getSpecialBackgroundForRow(fTrackingRow) : null;
-//            if (fBackground == null) {
-//                fBackground = tree.getBackground();
-//                if (!tree.isOpaque()) {
-//                    Component p = tree.getParent();
-//                    if (p != null) fBackground = p.getBackground();
-//                }
-//            }
-
-            // Set up values needed to paint the triangle - see
-            // BasicTreeUI.paint
-            fVisibleRect = tree.getVisibleRect();
-            fInsets = tree.getInsets();
-            fIsLeaf = treeModel.isLeaf(path.getLastPathComponent());
-            if (fIsLeaf) fIsExpanded = fHasBeenExpanded = false;
-            else {
-                fIsExpanded = treeState.getExpandedState(path);
-                fHasBeenExpanded = tree.hasBeenExpanded(path);
-            }
-            Rectangle boundsBuffer = new Rectangle();
-            fBounds = getPathBounds(fTrackingPath, fInsets, boundsBuffer);
-
-            paintOneControl();
-        }
-
-        public void mouseDragged(MouseEvent e) {
-            fIsInBounds = fPathBounds != null && fPathBounds.contains(e.getX(), e.getY());
-            paintOneControl();
-        }
-
-        @Override
-        public void mouseExited(MouseEvent e) {
-            fIsInBounds = fPathBounds != null && fPathBounds.contains(e.getX(), e.getY());
-            paintOneControl();
-        }
-
-        public void mouseReleased(MouseEvent e) {
-            if (tree == null) return;
-
-            if (fIsPressed) {
-                boolean wasInBounds = fIsInBounds;
-
-                fIsPressed = false;
-                fIsInBounds = false;
-
-                if (wasInBounds) {
-                    fIsExpanded = !fIsExpanded;
-                    paintAnimation(fIsExpanded);
-                    if (e.isAltDown()) {
-                        if (fIsExpanded) {
-                            expandNode(fTrackingRow, true);
-                        } else {
-                            collapseNode(fTrackingRow, true);
-                        }
-                    } else {
-                        toggleExpandState(fTrackingPath);
-                    }
-                }
-            }
-            fTrackingPath = null;
-            removeFromSource();
-        }
-
-        protected void paintAnimation(boolean expanding) {
-            paintAnimationFrame(0);
-            paintAnimationFrame(0.5f);
-            paintAnimationFrame(1);
-            fAnimationTransition = -1;
-        }
-
-        protected void paintAnimationFrame(float transition) {
-            fAnimationTransition = transition;
-            paintOneControl();
-            try { Thread.sleep(20); } catch (InterruptedException e) { }
-        }
-
-        // Utility to paint just one widget while it's being tracked
-        // Just doing "repaint" runs into problems if someone does "translate" on the graphics
-        // (ie, Sun's JTreeTable example, which is used by Moneydance - see Radar 2697837)
-        void paintOneControl() {
-            if (tree == null) return;
-            Graphics g = tree.getGraphics();
-            if (g == null) {
-                // i.e. source is not displayable
-                return;
-            }
-
-            try {
-                g.setClip(fVisibleRect);
-                // If we ever wanted a callback for drawing the arrow between
-                // transition stages
-                // the code between here and paintExpandControl would be it
-                //g.setColor(fBackground);
-                //g.fillRect(fPathBounds.x, fPathBounds.y, fPathBounds.width, fPathBounds.height);
-
-                // if there is no tracking path, we don't need to paint anything
-                if (fTrackingPath == null) return;
-
-                // draw the vertical line to the parent
-//                TreePath parentPath = fTrackingPath.getParentPath();
-//                if (parentPath != null) {
-//                    paintVerticalPartOfLeg(g, fPathBounds, fInsets, parentPath);
-//                    paintHorizontalPartOfLeg(g, fPathBounds, fInsets, fBounds, fTrackingPath, fTrackingRow, fIsExpanded, fHasBeenExpanded, fIsLeaf);
-//                } else if (isRootVisible() && fTrackingRow == 0) {
-//                    paintHorizontalPartOfLeg(g, fPathBounds, fInsets, fBounds, fTrackingPath, fTrackingRow, fIsExpanded, fHasBeenExpanded, fIsLeaf);
-//                }
-                paintExpandControl(g, fPathBounds, fInsets, fBounds, fTrackingPath, fTrackingRow, fIsExpanded, fHasBeenExpanded, fIsLeaf);
-            } finally {
-                g.dispose();
-            }
-        }
-
-        protected void removeFromSource() {
-            tree.removeMouseListener(this);
-            tree.removeMouseMotionListener(this);
         }
     }
 

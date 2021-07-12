@@ -19,6 +19,8 @@ import javax.swing.tree.TreeSelectionModel;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import static java.awt.event.MouseEvent.*;
+
 /**
  * Implements Aqua mouse behavior for a JTree. Based loosely on the mouse listener in BasicTreeUI.
  */
@@ -31,8 +33,10 @@ public class AquaTreeMouseBehavior extends MouseInputAdapter implements AquaDrag
     private boolean mouseReleaseDeselects;
     private boolean mouseDragSelects;
     private boolean isMouseReleaseStartsEditing;
+    private boolean isMouseReleaseToggleExpansion;
     private boolean isDragRecognitionOngoing;
     private boolean isDragging;
+    private @Nullable TreePath pathToToggle;
 
     public AquaTreeMouseBehavior(@NotNull JTree tree) {
         this.tree = tree;
@@ -67,59 +71,54 @@ public class AquaTreeMouseBehavior extends MouseInputAdapter implements AquaDrag
 
             ui.completeEditing();
 
-            // Note: Some applications depend on selection changes only occurring
-            // on focused components. Maybe we must not do any changes to the
-            // selection changes at all, when the component is not focused?
+            // Note: Some applications depend on selection changes only occurring on focused components. Maybe we must
+            // not do any changes to the selection changes at all, when the component is not focused?
             if (tree.isRequestFocusEnabled()) {
                 tree.requestFocusInWindow();
             }
 
             TreePath path = getMouseClickedClosestPathForLocation(tree, e.getX(), e.getY());
+            boolean isExpandOperation = path != null && ui.isExpandOperation(path, e.getX(), e.getY());
+            int row = tree.getRowForPath(path);
+
             if (isDebug) {
                 Utils.logDebug("  Path: " + path);
+                if (path != null) {
+                    Utils.logDebug("  Is expand operation: " + isExpandOperation);
+                    Utils.logDebug("  Row: " + row);
+                }
             }
-
-            // Check for clicks in expand control
-            if (ui.isLocationInExpandControl(path, e.getX(), e.getY())) {
-                ui.checkForClickInExpandControl(path, e.getX(), e.getY());
-                return;
-            }
-
-            // Clicking on a sidebar category is like clicking on its expand control
-            if (path != null && ui.isCategory(path)) {
-                ui.handleExpandControlClick(path);
-                return;
-            }
-
-            int index = tree.getRowForPath(path);
 
             mouseDragSelects = false;
             mouseReleaseDeselects = false;
-            isMouseReleaseStartsEditing = e.getClickCount() == 1;
+            isMouseReleaseToggleExpansion = isExpandOperation;
+            isMouseReleaseStartsEditing = !isExpandOperation && e.getClickCount() == 1;
             isDragRecognitionOngoing = false;
-            if (index != -1) {
-                boolean isRowAtIndexSelected = tree.isRowSelected(index);
+            pathToToggle = isMouseReleaseToggleExpansion ? path : null;
+
+            if (row >= 0 && !isMouseReleaseToggleExpansion) {
+                boolean isRowAtIndexSelected = tree.isRowSelected(row);
                 if (isRowAtIndexSelected && e.isPopupTrigger()) {
-                    // Do not change the selection, if the item is already
-                    // selected, and the user triggers the popup menu.
+                    // Do not change the selection, if the item is already selected, and the user triggers the popup
+                    // menu.
                 } else {
                     int anchorIndex = tree.getRowForPath(tree.getAnchorSelectionPath());
 
-                    if ((e.getModifiersEx() & (MouseEvent.META_DOWN_MASK | MouseEvent.BUTTON2_DOWN_MASK | MouseEvent.BUTTON3_DOWN_MASK)) == MouseEvent.META_DOWN_MASK) {
+                    if ((e.getModifiersEx() & (META_DOWN_MASK | BUTTON2_DOWN_MASK | BUTTON3_DOWN_MASK)) == META_DOWN_MASK) {
                         if (isRowAtIndexSelected) {
-                            tree.removeSelectionInterval(index, index);
+                            tree.removeSelectionInterval(row, row);
                         } else {
-                            tree.addSelectionInterval(index, index);
+                            tree.addSelectionInterval(row, row);
                             mouseDragSelects = true;
                             isMouseReleaseStartsEditing = false;
                         }
-                    } else if ((e.getModifiersEx() & (MouseEvent.SHIFT_DOWN_MASK | MouseEvent.BUTTON2_DOWN_MASK | MouseEvent.BUTTON3_DOWN_MASK)) == MouseEvent.SHIFT_DOWN_MASK
+                    } else if ((e.getModifiersEx() & (SHIFT_DOWN_MASK | BUTTON2_DOWN_MASK | BUTTON3_DOWN_MASK)) == SHIFT_DOWN_MASK
                                  && anchorIndex != -1) {
-                        tree.setSelectionInterval(anchorIndex, index);
+                        tree.setSelectionInterval(anchorIndex, row);
                         ui.setLeadSelectionPath(path);
                         mouseDragSelects = true;
                         isMouseReleaseStartsEditing = false;
-                    } else if ((e.getModifiersEx() & (MouseEvent.SHIFT_DOWN_MASK | MouseEvent.META_DOWN_MASK)) == 0) {
+                    } else if ((e.getModifiersEx() & (SHIFT_DOWN_MASK | META_DOWN_MASK)) == 0) {
                         if (isRowAtIndexSelected) {
                             if (tree.getDragEnabled()) {
                                 isDragRecognitionOngoing = AquaDragRecognitionSupport.mousePressed(e);
@@ -128,7 +127,7 @@ public class AquaTreeMouseBehavior extends MouseInputAdapter implements AquaDrag
                                 mouseReleaseDeselects = tree.isFocusOwner();
                             }
                         } else {
-                            tree.setSelectionInterval(index, index);
+                            tree.setSelectionInterval(row, row);
                             if (tree.getDragEnabled()
                                   && ui.getPathBounds(tree, path).contains(e.getPoint())) {
                                 isDragRecognitionOngoing = AquaDragRecognitionSupport.mousePressed(e);
@@ -148,6 +147,7 @@ public class AquaTreeMouseBehavior extends MouseInputAdapter implements AquaDrag
             if (isDebug) {
                 Utils.logDebug("  mouseDragSelects: " + mouseDragSelects);
                 Utils.logDebug("  mouseReleaseStartsEditing: " + isMouseReleaseStartsEditing);
+                Utils.logDebug("  mouseReleaseTogglesExpansion: " + isMouseReleaseToggleExpansion);
                 Utils.logDebug("  mouseReleaseDeselects: " + mouseReleaseDeselects);
                 Utils.logDebug("  dragRecognitionOngoing: " + isDragRecognitionOngoing);
             }
@@ -159,7 +159,7 @@ public class AquaTreeMouseBehavior extends MouseInputAdapter implements AquaDrag
             Utils.logDebug("JTree mouse dragged");
         }
 
-        if (tree.isEnabled() && SwingUtilities.isLeftMouseButton(e) && !e.isConsumed()) {
+        if (tree.isEnabled() && SwingUtilities.isLeftMouseButton(e) && !e.isConsumed() && !isMouseReleaseToggleExpansion) {
             if (tree.getDragEnabled() && isDragRecognitionOngoing) {
                 isDragRecognitionOngoing = AquaDragRecognitionSupport.mouseDragged(e, this);
                 if (!isDragRecognitionOngoing && isDragRecognitionOngoing) {
@@ -227,32 +227,39 @@ public class AquaTreeMouseBehavior extends MouseInputAdapter implements AquaDrag
             if (ui.isEditing(tree) && tree.getInvokesStopCellEditing() && !ui.stopEditing(tree)) {
                 return;
             }
-            TreePath path = getMouseClickedClosestPathForLocation(tree, e.getX(), e.getY());
-            if (path != null) {
-                if (isDebug) {
-                    Utils.logDebug("  path: " + path);
-                    Utils.logDebug("  shouldStartEditing: " + isMouseReleaseStartsEditing);
-                }
 
-                boolean shouldEdit = isMouseReleaseStartsEditing;
-                isMouseReleaseStartsEditing = false;
-
-                if (shouldEdit && ui.startEditing(path, e)) {
+            if (isMouseReleaseToggleExpansion && pathToToggle != null) {
+                ui.toggleExpandState(pathToToggle);
+                isMouseReleaseToggleExpansion = false;
+                pathToToggle = null;
+            } else {
+                TreePath path = getMouseClickedClosestPathForLocation(tree, e.getX(), e.getY());
+                if (path != null) {
                     if (isDebug) {
-                        Utils.logDebug("  Editing started");
+                        Utils.logDebug("  path: " + path);
+                        Utils.logDebug("  shouldStartEditing: " + isMouseReleaseStartsEditing);
                     }
-                    return;
-                }
-                if (shouldEdit && isDebug) {
-                    Utils.logDebug("  UI declined to start editing");
-                }
 
-                mouseDragSelects = false;
-                if (mouseReleaseDeselects) {
-                    int index = tree.getRowForPath(path);
-                    tree.setSelectionInterval(index, index);
+                    boolean shouldEdit = isMouseReleaseStartsEditing;
+                    isMouseReleaseStartsEditing = false;
+
+                    if (shouldEdit && ui.startEditing(path, e)) {
+                        if (isDebug) {
+                            Utils.logDebug("  Editing started");
+                        }
+                        return;
+                    }
+                    if (shouldEdit && isDebug) {
+                        Utils.logDebug("  UI declined to start editing");
+                    }
+
+                    mouseDragSelects = false;
+                    if (mouseReleaseDeselects) {
+                        int index = tree.getRowForPath(path);
+                        tree.setSelectionInterval(index, index);
+                    }
+                    //tree.getSelectionModel().setValueIsAdjusting(false);
                 }
-                //tree.getSelectionModel().setValueIsAdjusting(false);
             }
         }
         if (tree.isRequestFocusEnabled()) {
