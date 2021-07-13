@@ -251,6 +251,8 @@ public class AquaVibrantSupport {
             if (rp != null) {
                 AquaUtils.enableTranslucency(w);
                 rp.putClientProperty(VIBRANT_WINDOW_KEY, Boolean.TRUE);
+                debug("Painting the window");
+                w.validate();
                 AquaUtils.paintImmediately(w, rp);
                 // The goal of the following is to transfer the new clear background to the AWTView layer immediately so
                 // that when a vibrant window is first made visible, it shows the vibrant background immediately instead

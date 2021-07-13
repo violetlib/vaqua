@@ -1796,8 +1796,7 @@ final public class AquaUtils {
      */
     public static int unsetTitledWindowStyle(Window w) throws UnsupportedOperationException {
         Rectangle oldBounds = w.getBounds();
-        Insets oldInsets = w.getInsets();
-        int top = oldInsets.top;
+        int top = w.getInsets().top;
 
         if (top == 0) {
             AquaUtils.syslog("Window insets appear to be unavailable");
@@ -1806,15 +1805,50 @@ final public class AquaUtils {
 
         try {
             int newHeight = oldBounds.height - top;
-            int oldWidth = oldBounds.width;
             nativeSetTitledWindowStyle(w, false, new Insets(0, 0, 0, 0));
-            w.setSize(oldWidth, newHeight);
-            w.invalidate();
+
+            // This code is problematic. Upcalls will eventually arrive to notify AWT of the new insets and bounds.
+            // Doing the layout before that happens can produce a visible glitch.
+
+            try {
+                boolean isOK = false;
+                for (int i = 0; i < 10; i++) {
+                    Rectangle bounds = w.getBounds();
+                    Insets insets = w.getInsets();
+                    if (bounds.height != newHeight || insets.top != 0) {
+                        Thread.sleep(10);
+                    } else {
+                        isOK = true;
+                        break;
+                    }
+                }
+                if (!isOK) {
+                    syslog("Window bounds/insets not updated after waiting");
+                }
+            } catch (InterruptedException ex) {
+            }
+
+            //w.setSize(oldWidth, newHeight);
+            invalidateTree(w);
             w.validate();
             return top;
         } catch (Exception ex) {
             String errorMessage = ex.toString();
             throw new UnsupportedOperationException(errorMessage);
+        }
+    }
+
+    public static void invalidateTree(@NotNull Component c) {
+        if (c instanceof Container) {
+            Container parent = (Container) c;
+            int count = parent.getComponentCount();
+            for (int i = 0; i < count; i++) {
+                Component child = parent.getComponent(i);
+                invalidateTree(child);
+            }
+        }
+        if (c.isValid()) {
+            c.invalidate();
         }
     }
 
