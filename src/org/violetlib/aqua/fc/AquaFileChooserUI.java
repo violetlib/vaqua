@@ -2675,11 +2675,11 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
     static class DirectoryComboBoxRenderer extends AquaComboBoxRendererInternal {
 
         IndentIcon ii = new IndentIcon();
-        private JSeparator separator = new JSeparator();
+        private final @NotNull JComponent empty = new EmptyComponent();
 
         public DirectoryComboBoxRenderer(JComboBox cb) {
             super(cb);
-            separator.setPreferredSize(new Dimension(9, 9));
+            empty.setPreferredSize(new Dimension(9, 9));
         }
 
         @Override
@@ -2712,7 +2712,7 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
             }
             FileSystemTreeModel.Node node = (FileSystemTreeModel.Node) value;
             if (node == null) {
-                return separator;
+                return empty;
                 /*
                 File root = new File("/");
                 setText(fc.getName(root));
@@ -2726,6 +2726,11 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
             setIcon(ii);
             return this;
         }
+    }
+
+    private static final class EmptyComponent
+      extends JComponent
+    {
     }
 
     /**
