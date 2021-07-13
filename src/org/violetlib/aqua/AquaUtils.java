@@ -1800,7 +1800,7 @@ final public class AquaUtils {
         int top = oldInsets.top;
 
         if (top == 0) {
-            // Most likely, the window does not yet know its insets.
+            AquaUtils.syslog("Window insets appear to be unavailable");
             top = 22;
         }
 

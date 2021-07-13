@@ -17,6 +17,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import static org.violetlib.aqua.AquaUtils.execute;
+import static org.violetlib.aqua.AquaUtils.syslog;
 
 /**
  * Support for vibrant backgrounds. A vibrant background is implemented by a special NSView that is installed as a
@@ -24,6 +25,8 @@ import static org.violetlib.aqua.AquaUtils.execute;
  * (see AquaUtils) to knock out any Java background where we want the vibrant background to show through.
  */
 public class AquaVibrantSupport {
+
+    public static boolean isDebug = false;
 
     public static final int NO_VIBRANT_STYLE = -1;
 
@@ -207,6 +210,7 @@ public class AquaVibrantSupport {
             c.putClientProperty(AquaVibrantSupport.VIBRANT_EFFECTS_KEY, null);
         }
 
+        debug("Installing visual effect view: style " + style);
         VisualEffectView v = new ComponentVibrantEffects(c, style, bt);
         c.putClientProperty(AquaVibrantSupport.VIBRANT_EFFECTS_KEY, v);
     }
@@ -220,6 +224,7 @@ public class AquaVibrantSupport {
         if (o != null) {
             if (o instanceof VisualEffectView) {
                 VisualEffectView effects = (VisualEffectView) o;
+                debug("Uninstalling visual effect view: style " + effects.getStyle());
                 effects.dispose();
             }
             c.putClientProperty(AquaVibrantSupport.VIBRANT_EFFECTS_KEY, null);
@@ -237,6 +242,7 @@ public class AquaVibrantSupport {
         // Otherwise, there is no point to enabling a vibrant style.
 
         boolean forceActive = w.getType() == Window.Type.POPUP || !AquaUtils.isDecorated(w);
+        debug("Installing full window visual effect view: style " + style + " forceActive: " + forceActive);
         long rc = execute(w, ptr -> setupVisualEffectWindow(ptr, style, forceActive));
         if (rc != 0) {
             Utils.logError("Unable to install visual effect view");
@@ -265,6 +271,7 @@ public class AquaVibrantSupport {
             if (rp.getClientProperty(VIBRANT_WINDOW_KEY) != null) {
                 rp.putClientProperty(VIBRANT_WINDOW_KEY, null);
                 if (w.isDisplayable()) {
+                    debug("Removing full window visual effect view");
                     long rc = execute(w, AquaVibrantSupport::removeVisualEffectWindow);
                     if (rc != 0) {
                         Utils.logError("Unable to remove visual effect view");
@@ -343,6 +350,12 @@ public class AquaVibrantSupport {
             if (rc != 0) {
                 Utils.logError("updateSelectionBackgrounds failed");
             }
+        }
+    }
+
+    private static void debug(@NotNull String message) {
+        if (isDebug) {
+            syslog(message);
         }
     }
 

@@ -23,11 +23,14 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import static org.violetlib.aqua.AquaUtils.execute;
+import static org.violetlib.aqua.AquaUtils.syslog;
 
 /**
  * Support for displaying windows as sheets.
  */
 public class AquaSheetSupport {
+
+    public static boolean isDebug = false;
 
     /**
      * Display an option pane in a document modal dialog as a sheet.
@@ -197,7 +200,6 @@ public class AquaSheetSupport {
         Dimension originalSize = w.getSize();
 
         if (rp != null) {
-            //syslog("About to set vibrant style");
             oldBackgroundStyle = rp.getClientProperty(AquaVibrantSupport.BACKGROUND_STYLE_KEY);
         }
 
@@ -219,7 +221,7 @@ public class AquaSheetSupport {
         }
 
         int oldTop = 0;
-        AquaCustomStyledWindow sw = null;
+        AquaCustomStyledWindow sw;
         String windowStyle = null;
 
         if (needToUndecorate) {
@@ -228,13 +230,14 @@ public class AquaSheetSupport {
                 // remove the decorated style
                 assert rp != null;
                 windowStyle = AquaRootPaneUI.getWindowStyleKey(rp);
+                debug("Setting window style client property to undecorated");
                 rp.putClientProperty(AquaRootPaneUI.AQUA_WINDOW_STYLE_KEY, null);
             }
         }
 
         if (needToUndecorate) {
-            //syslog("About to reset window title style");
             try {
+                debug("Setting native window style to undecorated");
                 oldTop = AquaUtils.unsetTitledWindowStyle(w);
             } catch (UnsupportedOperationException ex) {
                 throw new UnsupportedOperationException("Unable to display as sheet: " + ex.getMessage());
@@ -243,15 +246,17 @@ public class AquaSheetSupport {
 
         if (rp != null) {
 
+            debug("Setting background style client property to vibrantSheet");
             rp.putClientProperty(AquaVibrantSupport.BACKGROUND_STYLE_KEY, "vibrantSheet");
 
             if (windowStyle != null) {
                 // replace the decorated style with the undecorated style
+                debug("Setting window style client property to undecorated");
                 rp.putClientProperty(AquaRootPaneUI.AQUA_WINDOW_STYLE_KEY, "undecorated");
             }
 
             w.validate();
-            //syslog("About to paint sheet");
+            debug("Painting the sheet");
             AquaUtils.paintImmediately(w, rp);
         }
 
@@ -405,6 +410,12 @@ public class AquaSheetSupport {
                     rp.putClientProperty(AquaRootPaneUI.AQUA_WINDOW_STYLE_KEY, windowStyle);
                 }
             }
+        }
+    }
+
+    private static void debug(@NotNull String message) {
+        if (isDebug) {
+            syslog(message);
         }
     }
 
