@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2020 Alan Snyder.
+ * Copyright (c) 2015-2021 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -51,7 +51,7 @@ public class AquaUtilControlSize {
     protected final static String SYSTEM_PROPERTY_KEY = "swing.component.sizevariant";
 
     interface Sizeable {
-        void applySizeFor(JComponent c, Size size, boolean isDefaultSize);
+        void applySizeFor(@NotNull JComponent c, Size size, boolean isDefaultSize);
     }
 
     protected static final RecyclableSingleton<PropertySizeListener> sizeListener = new RecyclableSingletonFromDefaultConstructor<PropertySizeListener>(PropertySizeListener.class);
@@ -121,7 +121,7 @@ public class AquaUtilControlSize {
      * @param isDefaultSize True if the size was obtained as a default, false if it was specified using a client property.
      * @return true if the UI was invoked, false otherwise.
      */
-    private static boolean applyUISizing(JComponent c, Size size, boolean isDefaultSize) {
+    private static boolean applyUISizing(JComponent c, @NotNull Size size, boolean isDefaultSize) {
         Sizeable sizeable = AquaUtils.getUI(c, Sizeable.class);
         if (sizeable != null) {
             sizeable.applySizeFor(c, size, isDefaultSize);
