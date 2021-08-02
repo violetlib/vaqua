@@ -1284,12 +1284,14 @@ public class AquaComboBoxUI extends BasicComboBoxUI
             }
         }
 
-        if (size.height > minimumHeight) {
-            minimumHeight = size.height;
-        }
+        if (fixedRenderingHeight == 0) {
+            if (size.height > minimumHeight) {
+                minimumHeight = size.height;
+            }
 
-        if (size.height > preferredHeight) {
-            preferredHeight = size.height;
+            if (size.height > preferredHeight) {
+                preferredHeight = size.height;
+            }
         }
 
         cachedMinimumSize.setSize(size.width, minimumHeight);
