@@ -566,7 +566,8 @@ public class AquaButtonExtendedTypes {
         WidgetInfo segmentedTextured = textured.copy().withSegmented().withColors(AquaColors.TEXTURED_SEGMENTED_BUTTON_COLORS).withMargin(9);
         WidgetInfo segmentedTexturedToolbar = segmentedTextured.copy()
                 .withColors(AquaColors.TEXTURED_SEGMENTED_TOOLBAR_BUTTON_COLORS)
-                .withNonexclusiveSelectionColors(AquaColors.TEXTURED_TOOLBAR_NONEXCLUSIVE_COLORS);
+                .withNonexclusiveSelectionColors(AquaColors.TEXTURED_TOOLBAR_NONEXCLUSIVE_COLORS)
+                .withRolloverEnabled();
 
         result.put(BUTTON_SEGMENTED_TEXTURED, segmentedTextured);
         result.put(BUTTON_SEGMENTED_TEXTURED_SEPARATED, segmentedTextured);
