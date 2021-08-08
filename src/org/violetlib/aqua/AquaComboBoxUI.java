@@ -349,7 +349,7 @@ public class AquaComboBoxUI extends BasicComboBoxUI
         }
 
         if (!comboBox.isEditable()) {
-            paintValue(g);
+            paintButtonValue(g);
         }
     }
 
@@ -449,7 +449,7 @@ public class AquaComboBoxUI extends BasicComboBoxUI
         }
     }
 
-    public void paintValue(@NotNull Graphics g) {
+    private void paintButtonValue(@NotNull Graphics g) {
         ListCellRenderer<Object> renderer = comboBox.getRenderer();
 
         Object displayedItem = null;
