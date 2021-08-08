@@ -64,7 +64,7 @@
     <property name="libdir" location="${base}/lib"/>
 
     <property name="annotationsVersion" value="20.1.0"/>
-    <property name="vappearancesVersion" value="2"/>
+    <property name="vappearancesVersion" value="3"/>
     <property name="jnrVersion" value="11"/>
     <property name="activationVersion" value="1.2.0"/>
 
