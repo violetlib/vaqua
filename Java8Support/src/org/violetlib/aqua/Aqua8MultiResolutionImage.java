@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2020 Alan Snyder.
+ * Copyright (c) 2015-2021 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -10,8 +10,6 @@ package org.violetlib.aqua;
 
 import java.awt.*;
 import java.awt.image.*;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
@@ -140,28 +138,6 @@ public class Aqua8MultiResolutionImage extends AquaMultiResolutionImage implemen
         if (source instanceof AquaMultiResolutionImage) {
             AquaMultiResolutionImage s = (AquaMultiResolutionImage) source;
             return s.map(mapper);
-        }
-
-        // The following allows optimized implementations.
-        if (source instanceof MultiResolutionImage) {
-            MultiResolutionImage im = (MultiResolutionImage) source;
-            try {
-                Method m = im.getClass().getMethod("map", Function.class);
-                m.setAccessible(true);
-                Object o = m.invoke(im, mapper);
-                if (o instanceof Image) {
-                    return (Image) o;
-                }
-            } catch (NoSuchMethodException ex) {
-                // ignore
-            } catch (Exception ex) {
-                if (ex instanceof InvocationTargetException) {
-                    Throwable th = ((InvocationTargetException) ex).getTargetException();
-                    Utils.logError("Unable to map image", th);
-                } else {
-                    Utils.logError("Unable to map image", ex);
-                }
-            }
         }
 
         if (source instanceof MultiResolutionImage) {
