@@ -42,6 +42,7 @@ import java.io.File;
 import java.net.URL;
 import java.security.PrivilegedAction;
 import java.util.Objects;
+import java.util.function.Function;
 import javax.swing.*;
 import javax.swing.plaf.IconUIResource;
 
@@ -726,17 +727,45 @@ public class AquaImageFactory {
      * @return the new image, or null if the source image is not a template image.
      */
     private static Image createImageFromTemplate(Image image, Color replacementColor) {
-        int width = image.getWidth(null);
-        int height = image.getHeight(null);
-        BufferedImage result = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB_PRE);
-        Graphics2D g = result.createGraphics();
-        g.setComposite(AlphaComposite.Src);
-        g.drawImage(image, 0, 0, null);
-        g.setComposite(AlphaComposite.SrcIn);
-        g.setColor(replacementColor);
-        g.fillRect(0, 0, width, height);
-        g.dispose();
-        return result;
+        return JavaSupport.applyMapper(image, (Function) new TemplateApplicator(replacementColor));
+    }
+
+    private static class TemplateApplicator implements AquaMultiResolutionImage.Mapper, Function<Image,Image> {
+        private final @NotNull Color replacementColor;
+
+        public TemplateApplicator(@NotNull Color replacementColor) {
+            this.replacementColor = replacementColor;
+        }
+
+        @Override
+        public @NotNull Image apply(@NotNull Image template) {
+            int width = template.getWidth(null);
+            int height = template.getHeight(null);
+            BufferedImage result = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB_PRE);
+            Graphics2D g = result.createGraphics();
+            g.setComposite(AlphaComposite.Src);
+            g.drawImage(template, 0, 0, null);
+            g.setComposite(AlphaComposite.SrcIn);
+            g.setColor(replacementColor);
+            g.fillRect(0, 0, width, height);
+            g.dispose();
+            return result;
+        }
+
+        @Override
+        public @NotNull BufferedImage map(@NotNull Image template, int scaleFactor) {
+            int width = template.getWidth(null) * scaleFactor;
+            int height = template.getHeight(null) * scaleFactor;
+            BufferedImage result = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB_PRE);
+            Graphics2D g = result.createGraphics();
+            g.setComposite(AlphaComposite.Src);
+            g.drawImage(template, 0, 0, null);
+            g.setComposite(AlphaComposite.SrcIn);
+            g.setColor(replacementColor);
+            g.fillRect(0, 0, width, height);
+            g.dispose();
+            return result;
+        }
     }
 
     public static Image applyFilter(Image image, ImageFilter filter) {
