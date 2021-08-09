@@ -28,6 +28,7 @@ import javax.swing.filechooser.FileView;
 import javax.swing.plaf.ComponentUI;
 import javax.swing.plaf.DimensionUIResource;
 import javax.swing.plaf.TreeUI;
+import javax.swing.plaf.basic.BasicComboBoxRenderer;
 import javax.swing.plaf.basic.BasicFileChooserUI;
 import javax.swing.tree.DefaultTreeCellRenderer;
 import javax.swing.tree.DefaultTreeSelectionModel;
@@ -2672,25 +2673,25 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
     /**
      * Renderer for DirectoryComboBox
      */
-    static class DirectoryComboBoxRenderer extends AquaComboBoxRendererInternal {
+    static class DirectoryComboBoxRenderer extends BasicComboBoxRenderer {
 
         IndentIcon ii = new IndentIcon();
         private final @NotNull JComponent empty = new EmptyComponent();
 
         public DirectoryComboBoxRenderer(JComboBox cb) {
-            super(cb);
+            //super(cb);
             empty.setPreferredSize(new Dimension(9, 9));
         }
 
-        @Override
-        public Insets getInsets(Insets insets) {
-            Insets s = super.getInsets(insets);
-            if (fInList) {
-                s.top++;
-                s.bottom++;
-            }
-            return s;
-        }
+//        @Override
+//        public Insets getInsets(Insets insets) {
+//            Insets s = super.getInsets(insets);
+//            if (fInList) {
+//                s.top++;
+//                s.bottom++;
+//            }
+//            return s;
+//        }
 
         @Override
         public Component getListCellRendererComponent(JList list, Object value,
@@ -2824,7 +2825,7 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
         }
     }
 
-    //
+//
 // DataModel for DirectoryComboxbox
 //
     protected DirectoryComboBoxModel createDirectoryComboBoxModel(JFileChooser fc) {
@@ -2902,7 +2903,7 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
         }
     }
 
-    //
+//
 // Renderer for Types ComboBox
 //
     protected FilterComboBoxRenderer createFilterComboBoxRenderer(JComboBox cb) {
@@ -2912,10 +2913,10 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
     /**
      * Render different type sizes and styles.
      */
-    protected static class FilterComboBoxRenderer extends AquaComboBoxRendererInternal {
+    protected static class FilterComboBoxRenderer extends BasicComboBoxRenderer {
 
         public FilterComboBoxRenderer(JComboBox cb) {
-            super(cb);
+            //super(cb);
         }
 
         @Override
@@ -2933,7 +2934,7 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
         }
     }
 
-    //
+//
 // DataModel for Types ComboBox
 //
     protected FilterComboBoxModel createFilterComboBoxModel() {
@@ -3351,7 +3352,7 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
         return files;
     }
 
-    // *****************************
+// *****************************
 // ***** Directory Actions *****
 // *****************************
     @Override

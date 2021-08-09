@@ -620,29 +620,29 @@ public class AquaListUI extends BasicListUI implements AquaComponentUI, AquaView
     }
 
     // this is used for blinking combobox popup selections when they are selected
-    protected void repaintCell(Object value, int selectedIndex, boolean selected) {
-        Rectangle rowBounds = getCellBounds(list, selectedIndex, selectedIndex);
-        if (rowBounds == null) {
-            return;
-        }
-
-        ListCellRenderer<Object> renderer = list.getCellRenderer();
-        if (renderer == null) {
-            return;
-        }
-
-        Component rendererComponent = renderer.getListCellRendererComponent(list, value, selectedIndex, selected, true);
-        if (rendererComponent == null) {
-            return;
-        }
-
-        AquaComboBoxRenderer aquaRenderer = renderer instanceof AquaComboBoxRenderer ? (AquaComboBoxRenderer)renderer : null;
-        if (aquaRenderer != null) {
-            aquaRenderer.setDrawCheckedItem(false);
-        }
-        rendererPane.paintComponent(list.getGraphics().create(), rendererComponent, list, rowBounds.x, rowBounds.y, rowBounds.width, rowBounds.height, true);
-        if (aquaRenderer != null) {
-            aquaRenderer.setDrawCheckedItem(true);
-        }
-    }
+//    protected void repaintCell(Object value, int selectedIndex, boolean selected) {
+//        Rectangle rowBounds = getCellBounds(list, selectedIndex, selectedIndex);
+//        if (rowBounds == null) {
+//            return;
+//        }
+//
+//        ListCellRenderer<Object> renderer = list.getCellRenderer();
+//        if (renderer == null) {
+//            return;
+//        }
+//
+//        Component rendererComponent = renderer.getListCellRendererComponent(list, value, selectedIndex, selected, true);
+//        if (rendererComponent == null) {
+//            return;
+//        }
+//
+//        AquaComboBoxRenderer aquaRenderer = renderer instanceof AquaComboBoxRenderer ? (AquaComboBoxRenderer)renderer : null;
+//        if (aquaRenderer != null) {
+//            aquaRenderer.setDrawCheckedItem(false);
+//        }
+//        rendererPane.paintComponent(list.getGraphics().create(), rendererComponent, list, rowBounds.x, rowBounds.y, rowBounds.width, rowBounds.height, true);
+//        if (aquaRenderer != null) {
+//            aquaRenderer.setDrawCheckedItem(true);
+//        }
+//    }
 }

@@ -1,5 +1,5 @@
 /*
- * Changes Copyright (c) 2015-2018 Alan Snyder.
+ * Changes Copyright (c) 2015-2021 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -41,6 +41,7 @@ import javax.swing.event.ListDataListener;
 import javax.swing.plaf.basic.BasicComboPopup;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 @SuppressWarnings("serial") // Superclass is not serializable across versions
 class AquaComboBoxPopup extends BasicComboPopup implements AquaExtendedPopup, ListDataListener {
@@ -197,7 +198,7 @@ class AquaComboBoxPopup extends BasicComboPopup implements AquaExtendedPopup, Li
             popupSize.width = Math.max(prefSize.width, popupSize.width);
         }
 
-        popupSize.width += 10;
+        //popupSize.width += 10;
 
         return popupSize;
     }
@@ -246,14 +247,31 @@ class AquaComboBoxPopup extends BasicComboPopup implements AquaExtendedPopup, Li
     @Override
     @SuppressWarnings("serial") // local class
     protected JList<Object> createList() {
-        return new AquaPopupMenuList(comboBox.getModel());
+        ListCellRenderer<Object> renderer = null;
+        AquaComboBoxUI ui = AquaUtils.getUI(comboBox, AquaComboBoxUI.class);
+        if (ui != null) {
+            renderer = ui.getListCellRenderer();
+        }
+        return new AquaPopupMenuList(comboBox.getModel(), renderer);
     }
 
-    protected class AquaPopupMenuList extends JList<Object> {
-        public AquaPopupMenuList(ListModel<Object> dataModel) {
-            super(dataModel);
+    protected static class AquaPopupMenuList extends JList<Object> {
+        private boolean isRendererConfigured;
 
+        public AquaPopupMenuList(ListModel<Object> dataModel, @Nullable ListCellRenderer<Object> renderer) {
+            super(dataModel);
             setOpaque(false);
+            isRendererConfigured = renderer != null;
+            if (renderer != null) {
+                super.setCellRenderer(renderer);
+            }
+        }
+
+        @Override
+        public void setCellRenderer(ListCellRenderer<? super Object> cellRenderer) {
+            if (!isRendererConfigured) {
+                super.setCellRenderer(cellRenderer);
+            }
         }
 
         @Override

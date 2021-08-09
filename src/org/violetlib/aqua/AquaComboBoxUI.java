@@ -42,7 +42,10 @@ import javax.swing.*;
 import javax.swing.border.Border;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
-import javax.swing.plaf.*;
+import javax.swing.plaf.ActionMapUIResource;
+import javax.swing.plaf.ComboBoxUI;
+import javax.swing.plaf.ComponentUI;
+import javax.swing.plaf.UIResource;
 import javax.swing.plaf.basic.BasicComboBoxEditor;
 import javax.swing.plaf.basic.BasicComboBoxUI;
 import javax.swing.plaf.basic.ComboPopup;
@@ -90,10 +93,13 @@ public class AquaComboBoxUI extends BasicComboBoxUI
     protected HierarchyListener hierarchyListener;
     protected @NotNull BasicContextualColors colors;
     protected @Nullable AppearanceContext appearanceContext;
-    protected @NotNull JList<Object> currentValueListBox;
+    protected @NotNull JList<Object> buttonList;
     private final PropertyChangeListener propertyChangeListener = new AquaPropertyChangeListener();
     private final DocumentListener documentListener = new MyDocumentListener();
     private final HierarchyListener popupListener = new MyPopupListener();
+    private @Nullable AquaComboBoxRenderer buttonRenderer;
+    private @Nullable AquaComboBoxRenderer listRenderer;
+
 
     // derived configuration attributes
     protected Size sizeVariant;
@@ -109,11 +115,20 @@ public class AquaComboBoxUI extends BasicComboBoxUI
 
     public AquaComboBoxUI() {
         colors = AquaColors.CLEAR_CONTROL_COLORS;
-        currentValueListBox = new JList<>();
+        buttonList = new JList<>();
     }
 
     public void installUI(@NotNull JComponent c) {
         super.installUI(c);
+
+        sizeVariant = AquaUtilControlSize.getUserSizeFrom(comboBox);
+        if (buttonRenderer == null) {
+            buttonRenderer = new AquaComboBoxRenderer(comboBox, false, sizeVariant);
+        }
+        if (listRenderer == null) {
+            listRenderer = new AquaComboBoxRenderer(comboBox, true, sizeVariant);
+        }
+        buttonList.setCellRenderer(buttonRenderer);
 
         LookAndFeel.installProperty(c, "opaque", false);
         oldMaximumRowCount = comboBox.getMaximumRowCount();
@@ -124,7 +139,8 @@ public class AquaComboBoxUI extends BasicComboBoxUI
         comboBox.setRequestFocusEnabled(false);
         //comboBox.putClientProperty(DEFAULT_FONT_PROPERTY, comboBox.getFont());
         isToolbar = AquaUtils.isOnToolbar(comboBox);
-        configure(null);
+        updateFromRenderer();
+        configure(sizeVariant);
     }
 
     public void uninstallUI(@NotNull JComponent c) {
@@ -201,39 +217,49 @@ public class AquaComboBoxUI extends BasicComboBoxUI
         }
     }
 
-    protected @NotNull ItemListener createItemListener() {
-        return new ItemListener() {
-            long lastBlink = 0L;
-            public void itemStateChanged(ItemEvent e) {
-                if (e.getStateChange() != ItemEvent.SELECTED) return;
-                if (!popup.isVisible()) return;
-
-                // sometimes, multiple selection changes can occur while the popup is up,
-                // and blinking more than "once" (in a second) is not desirable
-                long now = System.currentTimeMillis();
-                if (now - 1000 < lastBlink) return;
-                lastBlink = now;
-
-                JList<Object> itemList = popup.getList();
-                ListUI listUI = itemList.getUI();
-                if (!(listUI instanceof AquaListUI)) return;
-                AquaListUI aquaListUI = (AquaListUI)listUI;
-
-                int selectedIndex = comboBox.getSelectedIndex();
-                ListModel<Object> dataModel = itemList.getModel();
-                if (dataModel == null) return;
-
-                Object value = dataModel.getElementAt(selectedIndex);
-                AquaUtils.blinkMenu(selected -> aquaListUI.repaintCell(value, selectedIndex, selected));
-            }
-        };
-    }
+//    protected @NotNull ItemListener createItemListener() {
+//        return new ItemListener() {
+//            long lastBlink = 0L;
+//            public void itemStateChanged(ItemEvent e) {
+//                if (e.getStateChange() != ItemEvent.SELECTED) {
+//                    return;
+//                }
+//                if (!popup.isVisible()) {
+//                    return;
+//                }
+//
+//                // sometimes, multiple selection changes can occur while the popup is up,
+//                // and blinking more than "once" (in a second) is not desirable
+//                long now = System.currentTimeMillis();
+//                if (now - 1000 < lastBlink) return;
+//                lastBlink = now;
+//
+//                JList<Object> itemList = popup.getList();
+//                ListUI listUI = itemList.getUI();
+//                if (!(listUI instanceof AquaListUI)) {
+//                    return;
+//                }
+//                AquaListUI aquaListUI = (AquaListUI)listUI;
+//
+//                int selectedIndex = comboBox.getSelectedIndex();
+//                ListModel<Object> dataModel = itemList.getModel();
+//                if (dataModel == null) {
+//                    return;
+//                }
+//
+//                Object value = dataModel.getElementAt(selectedIndex);
+//                AquaUtils.blinkMenu(selected -> aquaListUI.repaintCell(value, selectedIndex, selected));
+//            }
+//        };
+//    }
 
     class AquaPropertyChangeListener implements PropertyChangeListener {
         public void propertyChange(PropertyChangeEvent e) {
             String name = e.getPropertyName();
             if (name.equals("enabled")) {
                 configureAppearanceContext(null);
+            } else if (name.equals("renderer")) {
+                updateFromRenderer();
             }
         }
     }
@@ -260,6 +286,25 @@ public class AquaComboBoxUI extends BasicComboBoxUI
             AquaColors.installColors(comboBox, appearanceContext, colors);
         }
         comboBox.repaint();
+    }
+
+    protected void updateFromRenderer() {
+        ListCellRenderer customRenderer = getCustomRenderer();
+        if (buttonRenderer != null) {
+            buttonRenderer.setCustomRenderer(customRenderer);
+        }
+        if (listRenderer != null) {
+            listRenderer.setCustomRenderer(customRenderer);
+        }
+    }
+
+    protected @Nullable ListCellRenderer<?> getCustomRenderer()
+    {
+        ListCellRenderer<?> r = comboBox.getRenderer();
+        if (r == null || r instanceof UIResource) {
+            return null;
+        }
+        return r;
     }
 
     protected @NotNull AquaUIPainter.State getState() {
@@ -491,9 +536,9 @@ public class AquaComboBoxUI extends BasicComboBoxUI
         }
 
         // fake it out! not renderPressed
-        currentValueListBox.setBackground(AquaColors.CLEAR);
-        currentValueListBox.setForeground(comboBox.getForeground());
-        Component c = renderer.getListCellRendererComponent(currentValueListBox, displayedItem, -1, false, false);
+        buttonList.setBackground(AquaColors.CLEAR);
+        buttonList.setForeground(comboBox.getForeground());
+        Component c = renderer.getListCellRendererComponent(buttonList, displayedItem, -1, false, false);
         // AquaUtils.logDebug("Renderer: " + renderer);
         c.setFont(currentValuePane.getFont());
         updateRendererStyle(c);
@@ -530,7 +575,10 @@ public class AquaComboBoxUI extends BasicComboBoxUI
 
     @Override
     protected @NotNull ListCellRenderer<Object> createRenderer() {
-        return new AquaComboBoxRenderer(comboBox);
+        if (buttonRenderer == null) {
+            buttonRenderer = new AquaComboBoxRenderer(comboBox, false, AquaUtilControlSize.getUserSizeFrom(comboBox));
+        }
+        return buttonRenderer;
     }
 
     @Override
@@ -546,6 +594,13 @@ public class AquaComboBoxUI extends BasicComboBoxUI
     @Override
     protected @NotNull ComboBoxEditor createEditor() {
         return new AquaComboBoxEditor();
+    }
+
+    public @NotNull ListCellRenderer<Object> getListCellRenderer() {
+        if (listRenderer == null) {
+            listRenderer = new AquaComboBoxRenderer(comboBox, true, AquaUtilControlSize.getUserSizeFrom(comboBox));
+        }
+        return listRenderer;
     }
 
     private class MyPopupListener implements HierarchyListener {
@@ -1334,6 +1389,18 @@ public class AquaComboBoxUI extends BasicComboBoxUI
             return;
         }
 
+        if (size == null) {
+            size = AquaUtilControlSize.getUserSizeFrom(comboBox);
+        }
+        sizeVariant = size;
+
+        if (buttonRenderer != null) {
+            buttonRenderer.setSize(size);
+        }
+        if (listRenderer != null) {
+            listRenderer.setSize(size);
+        }
+
         {
             Object o = comboBox.getClientProperty(AquaComboBoxUI.POPDOWN_CLIENT_PROPERTY_KEY);
             isPopDown = Boolean.TRUE.equals(o);
@@ -1358,14 +1425,6 @@ public class AquaComboBoxUI extends BasicComboBoxUI
             }
 
             this.style = style;
-        }
-
-        if (size != null) {
-            sizeVariant = size;
-        }
-
-        if (sizeVariant == null) {
-            sizeVariant = Size.REGULAR;
         }
 
         boolean isEditable = comboBox.isEditable();
