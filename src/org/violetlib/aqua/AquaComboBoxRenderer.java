@@ -31,7 +31,7 @@ import static org.violetlib.aqua.OSXSystemProperties.*;
 @SuppressWarnings("serial") // Superclass is not serializable across versions
 public class AquaComboBoxRenderer implements ListCellRenderer<Object>, UIResource {
 
-    protected static int menuLabelLeftInset = 25;
+    protected static int menuLabelLeftInset = OSVersion >= 1016 ? 25 : 21;
     protected static int editableMenuLabelLeftInset = OSVersion >= 1015 ? 16 : 5;
     protected static int menuLabelRightInset = OSVersion >= 1015 ? 19 : 5;
     protected static int menuLabelTopInset = 2;
@@ -40,6 +40,7 @@ public class AquaComboBoxRenderer implements ListCellRenderer<Object>, UIResourc
     protected static int miniMenuLabelBottomInset = 0;
     protected static int checkMarkLeftInset = OSVersion >= 1016 ? 10 : OSVersion >= 1015 ? 7 : 5;
     protected static int checkMarkTopInset = 3;
+    protected static int pullDownMenuLabelLeftInset = menuLabelRightInset;
 
     protected final @NotNull JComboBox<?> comboBox;
     protected final boolean isList;  // true to render a list cell, false to render the button content
@@ -104,7 +105,9 @@ public class AquaComboBoxRenderer implements ListCellRenderer<Object>, UIResourc
         if (isList) {
             top = size == Size.MINI ? miniMenuLabelTopInset : menuLabelTopInset;
             bottom = size == Size.MINI ? miniMenuLabelBottomInset : menuLabelBottomInset;
-            left = comboBox.isEditable() ? editableMenuLabelLeftInset : menuLabelLeftInset;
+            left = comboBox.isEditable()
+                    ? editableMenuLabelLeftInset
+                    : isPullDown() ? pullDownMenuLabelLeftInset : menuLabelLeftInset;
             right = menuLabelRightInset;
         }
         c.setBorder(new EmptyBorder(top, left, bottom, right));
