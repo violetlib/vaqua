@@ -156,8 +156,8 @@ public class Java8Support implements JavaSupport.JavaSupportImpl {
     @Override
     public @NotNull AquaMultiResolutionImage createImage(int rasterWidth, int rasterHeight, int[] data, float scale) {
         BufferedImage basicImage = createImage(rasterWidth, rasterHeight, data);
-        int width = (int) (rasterWidth / scale);
-        int height = (int) (rasterHeight /scale);
+        int width = (int) ((rasterWidth + scale - 1) / scale);
+        int height = (int) ((rasterHeight + scale - 1) / scale);
         return new Aqua8MultiResolutionImage(width, height, basicImage);
     }
 
