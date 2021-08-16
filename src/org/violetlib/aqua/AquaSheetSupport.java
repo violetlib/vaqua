@@ -264,7 +264,7 @@ public class AquaSheetSupport {
         // sheets. However, existing dialogs all dismiss themselves by calling setVisible(false) and we have no way to
         // alter what that does.
 
-        SheetCloser closer = new SheetCloser(w, closeHandler, oldBackgroundStyle, windowStyle, oldTop, originalSize);
+        SheetCloser closer = new SheetCloser(w, owner, closeHandler, oldBackgroundStyle, windowStyle, oldTop, originalSize);
         int result;
         if ("true".equals(System.getProperty("VAqua.injectSheetDisplayFailure"))) {
             // inject failure for testing
@@ -351,6 +351,7 @@ public class AquaSheetSupport {
      */
     private static class SheetCloser extends WindowAdapter implements HierarchyListener {
         private final @NotNull Window w;
+        private final @NotNull Window owner;
         private final @Nullable Runnable closeHandler;
         private final @Nullable Object oldBackgroundStyle;
         private final @Nullable String windowStyle;
@@ -359,12 +360,14 @@ public class AquaSheetSupport {
         private boolean hasClosed = false;
 
         public SheetCloser(@NotNull Window w,
+                           @NotNull Window owner,
                            @Nullable Runnable closeHandler,
                            @Nullable Object oldBackgroundStyle,
                            @Nullable String windowStyle,
                            int oldTop,
                            @NotNull Dimension originalSize) {
             this.w = w;
+            this.owner = owner;
             this.closeHandler = closeHandler;
             this.oldBackgroundStyle = oldBackgroundStyle;
             this.windowStyle = windowStyle;
@@ -390,10 +393,19 @@ public class AquaSheetSupport {
             if (!hasClosed) {
                 hasClosed = true;
                 dispose();
+                endSession();
                 if (closeHandler != null) {
                     closeHandler.run();
                 }
             }
+        }
+
+        private long endSession() {
+            return execute(w, ptr -> endSession(ptr, owner));
+        }
+
+        private long endSession(long wptr, @NotNull Window owner) {
+            return execute(owner, optr -> nativeEndSheetSession(wptr, optr));
         }
 
         public void dispose() {
@@ -420,4 +432,5 @@ public class AquaSheetSupport {
     }
 
     private static native int nativeDisplayAsSheet(long wptr, long owner_wptr);
+    private static native int nativeEndSheetSession(long wptr, long owner_wptr);
 }

@@ -1983,9 +1983,6 @@ JNIEXPORT jint JNICALL Java_org_violetlib_aqua_AquaUtils_nativeAddToolbarToWindo
 JNIEXPORT jint JNICALL Java_org_violetlib_aqua_AquaSheetSupport_nativeDisplayAsSheet
     (JNIEnv *env, jclass cl, jlong wptr, jlong owner_wptr)
 {
-    static JNF_CLASS_CACHE(jc_Window, "java/awt/Window");
-    static JNF_MEMBER_CACHE(jm_getOwner, jc_Window, "getOwner", "()Ljava/awt/Window;");
-
     jint result = -1;
 
     JNF_COCOA_ENTER(env);
@@ -1994,7 +1991,32 @@ JNIEXPORT jint JNICALL Java_org_violetlib_aqua_AquaSheetSupport_nativeDisplayAsS
     NSWindow *no = (NSWindow *) owner_wptr;
 
     runOnMainThread(^() {
-        [no beginSheet:w completionHandler:nil];
+        [no beginSheet:w completionHandler:^(NSModalResponse r){NSLog(@"Modal sheet session terminated");}];
+    });
+    result = 0;
+
+    JNF_COCOA_EXIT(env);
+
+    return result;
+}
+
+/*
+ * Class:     org_violetlib_aqua_AquaSheetSupport
+ * Method:    nativeEndSheetSession
+ * Signature: (JJ)I
+ */
+JNIEXPORT jint JNICALL Java_org_violetlib_aqua_AquaSheetSupport_nativeEndSheetSession
+    (JNIEnv *env, jclass cl, jlong wptr, jlong owner_wptr)
+{
+    jint result = -1;
+
+    JNF_COCOA_ENTER(env);
+
+    NSWindow *w = (NSWindow *) wptr;
+    NSWindow *no = (NSWindow *) owner_wptr;
+
+    runOnMainThread(^() {
+        [no endSheet:w];
     });
     result = 0;
 
