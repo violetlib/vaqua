@@ -108,7 +108,7 @@ public class AquaFocusRingPainter {
             if (currentFocusRingOwner != null && AquaFocusHandler.isActive(currentFocusRingOwner) && currentFocusRingProvider != null) {
                 Shape s = currentFocusRingProvider.getFocusRingOutline(currentFocusRingOwner);
                 if (s != null) {
-                    Color focusColor = AquaColors.getSystemColor(currentFocusRingOwner,"keyboardFocusIndicator");
+                    Color focusColor = AquaColors.getSystemColor(currentFocusRingOwner, "keyboardFocusIndicator");
                     FocusRingPainter p = getFocusRingPainter(s);
                     p.paint(g, focusColor);
                 }
