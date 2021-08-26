@@ -2096,6 +2096,8 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
                 accessoryPanel.add(wrapper, BorderLayout.CENTER);
             }
             accessoryPanel.setVisible(c != null);
+            accessoryPanel.revalidate();
+            accessoryPanel.repaint();
             updateOptionsPanelVisibility();
         }
     }
