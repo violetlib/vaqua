@@ -117,7 +117,7 @@ public class AppearanceColorsBuilder {
             boolean isGraphite = c != null && (c.getBlue() - c.getRed()) < 30;
             if (isGraphite) {
                 colors.add("menuSelectedBackground", 162, 162, 168);
-                colors.add("menuBackground", 240);
+                colors.add("menuBackground", OSVersion < 1011 ? 246 : 240);
             } else {
                 colors.add("menuSelectedBackground", 54, 148, 253);
                 colors.add("menuBackground", 0, 0);
