@@ -62,8 +62,8 @@ public class AquaTreeTableUI extends BasicTreeTableUI implements AquaComponentUI
     public void appearanceChanged(@NotNull JComponent c, @NotNull AquaAppearance appearance) {
         JTable table = getTable();
         JTree tree = getTree();
-        AppearanceManager.updateAppearancesInTree(table);
-        AppearanceManager.updateAppearancesInTree(tree);
+        AppearanceManager.updateAppearancesInTree(table, appearance);
+        AppearanceManager.updateAppearancesInTree(tree, appearance);
         configureAppearanceContext(appearance);
     }
 

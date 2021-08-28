@@ -128,6 +128,11 @@ public class AquaAppearances {
             if (false) {
                 Utils.logDebug("AquaAppearances: appearance " + name + " updated");
             }
+            try {
+                AquaNativeRendering.invalidateAppearances();
+            } catch (Throwable ex) {
+                // Must be an older release
+            }
             AquaAppearance appearance = getAquaAppearance(a);
             for (ChangeListener listener : changeListeners) {
                 listener.stateChanged(ev);
