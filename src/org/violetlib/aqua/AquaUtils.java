@@ -1935,7 +1935,6 @@ final public class AquaUtils {
      * @param isTextured The new value of the textured attribute.
      */
     public static void setWindowTextured(Window w, boolean isTextured) {
-
         try {
             nativeSetWindowTextured(w, isTextured);
         } catch (Throwable ex) {

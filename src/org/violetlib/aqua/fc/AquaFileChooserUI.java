@@ -3687,41 +3687,40 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
     }
 
     /**
-     * Determine and install the minimum size for the enclosing window, if the minimum window size has not been specified
-     * by the application. If the new minimum size is larger than the current window size, resize the window to conform
-     * to the new minimum size.
+     * If the window size has not been specified by the application, install the minimum size and relocate the window if
+     * needed.
      */
     public void configureDialogSize() {
+        fc.revalidate();
+        fc.repaint();
         Window w = SwingUtilities.getWindowAncestor(fc);
         if (w != null && isDefaultWindowSize(w)) {
-            w.setMinimumSize(null);
             Dimension minimumSize = w.getMinimumSize();
-            installMinimumSize(w, minimumSize.width, minimumSize.height);
-            Dimension size = w.getSize();
-            if (size.width < minimumSize.width || size.height < minimumSize.height) {
-                size = new Dimension(Math.max(minimumSize.width, size.width), Math.max(minimumSize.height, size.height));
-                w.setSize(size);
-                try {
-                    Point location = w.getLocationOnScreen();
-                    int x = location.x;
-                    int y = location.y;
-                    Rectangle screenBounds = getScreenBounds(w);
-                    if (x + size.width > screenBounds.x + screenBounds.width) {
-                        x = Math.max(screenBounds.x, screenBounds.x + screenBounds.width - size.width);
-                    }
-                    if (y + size.height > screenBounds.y + screenBounds.height) {
-                        y = Math.max(screenBounds.y, screenBounds.y + screenBounds.height - size.height);
-                    }
-                    w.setLocation(x, y);
-                } catch (IllegalComponentStateException ex) {
-                }
-            }
-        }
-    }
 
-    protected void installMinimumSize(@NotNull Window w, int width, int height) {
-        Dimension size = new DimensionUIResource(width, height);
-        w.setMinimumSize(size);
+            // Increasing the minimum size may cause the window size to be increased.
+            // To avoid bug JDK-8273132, set the dialog location before changing its minimum size.
+            Dimension currentSize = w.getSize();
+            int predictedWidth = Math.max(minimumSize.width, currentSize.width);
+            int predictedHeight = Math.max(minimumSize.height, currentSize.height);
+            try {
+                Point location = w.getLocationOnScreen();
+                int x = location.x;
+                int y = location.y;
+                Rectangle screenBounds = getScreenBounds(w);
+                if (x + predictedWidth > screenBounds.x + screenBounds.width) {
+                    x = Math.max(screenBounds.x, screenBounds.x + screenBounds.width - predictedWidth);
+                }
+                if (y + predictedHeight > screenBounds.y + screenBounds.height) {
+                    y = Math.max(screenBounds.y, screenBounds.y + screenBounds.height - predictedHeight);
+                }
+                if (x != w.getX() || y != w.getY()) {
+                    w.setLocation(x, y);
+                }
+            } catch (IllegalComponentStateException ex) {
+            }
+
+            w.setMinimumSize(new DimensionUIResource(minimumSize.width, minimumSize.height));
+        }
     }
 
     protected boolean isDefaultWindowSize(@NotNull Window w) {
