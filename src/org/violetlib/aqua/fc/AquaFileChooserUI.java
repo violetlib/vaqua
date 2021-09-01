@@ -1150,7 +1150,11 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
     private class DirectoryComboBox extends JComboBox {
 
         public DirectoryComboBox() {
-            putClientProperty("JComboBox.style", "textured");
+            if (OSXSystemProperties.OSVersion < 1016) {
+                putClientProperty("JComboBox.style", "textured");
+            } else {
+                putClientProperty("JComboBox.style", null);
+            }
             setAlignmentY(0.5f);
             putClientProperty("Quaqua.Component.visualMargin", new Insets(1, 1, 1, 1));
         }
@@ -3527,12 +3531,13 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
     }
 
     /**
-     * Determine if this file chooser is contained in a dialog created by JFileChooser.
+     * Determine if this file chooser is contained in a dialog created by JFileChooser or a simulated dialog created
+     * by AquaSheetSupport.
      */
-    protected JDialog getStandardDialog() {
+    protected @Nullable RootPaneContainer getStandardDialog() {
         Window w = SwingUtilities.getWindowAncestor(fc);
-        if (w instanceof JDialog) {
-            JDialog d = (JDialog) w;
+        if (w instanceof RootPaneContainer) {
+            RootPaneContainer d = (RootPaneContainer) w;
 
             // Note: It would be nice to use the window decoration style, but there are issues. JFileChooser sets the
             // style after installing the file chooser in the dialog, so a parent change event cannot be used as our
@@ -3625,7 +3630,7 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
     }
 
     private void updateWindowStyleParameters() {
-        JDialog d = getStandardDialog();
+        RootPaneContainer d = getStandardDialog();
         if (d != null) {
             JRootPane rp = d.getRootPane();
             if (windowStyle != null) {
@@ -3649,24 +3654,17 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
         useToolBar = false;
         windowStyle = null;
 
-        JDialog d = getStandardDialog();
+        RootPaneContainer d = getStandardDialog();
         if (d != null) {
             isStandardDialog = true;
+            useToolBar = OSXSystemProperties.OSVersion < 1016;
+
             JRootPane rp = d.getRootPane();
 
             // Choose a window style for the dialog.
-            // However, if the dialog is being displayed as a sheet, do not change the style.
-
-            if (fc.getDialogType() == JFileChooser.OPEN_DIALOG) {
-                windowStyle = "texturedToolBar";
-            } else {
-                windowStyle = "overlayTitleBar";
-            }
-
-            useToolBar = true;
-
+            windowStyle = getWindowStyleForDialog(rp);
             String existingStyle = AquaRootPaneUI.getWindowStyleKey(rp);
-            if (!"undecorated".equals(existingStyle)) {
+            if (!windowStyle.equals(existingStyle)) {
                 rp.putClientProperty(AQUA_WINDOW_STYLE_KEY, windowStyle);
                 rp.revalidate();
                 rp.repaint();
@@ -3684,6 +3682,17 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
         }
 
         configureDialogSize();
+    }
+
+    protected @NotNull String getWindowStyleForDialog(@NotNull JRootPane rp) {
+        if (AquaSheetSupport.isFileChooserSheet(rp)) {
+            return "undecorated";
+        }
+        if (fc.getDialogType() == JFileChooser.OPEN_DIALOG) {
+            return "texturedToolBar";
+        } else {
+            return "overlayTitleBar";
+        }
     }
 
     /**

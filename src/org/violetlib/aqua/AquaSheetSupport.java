@@ -32,6 +32,8 @@ public class AquaSheetSupport {
 
     public static boolean isDebug = false;
 
+    public static final @NotNull String FILE_CHOOSER_SHEET_KEY = "Aqua.fileChooserIsSheet";
+
     /**
      * Display an option pane in a document modal dialog as a sheet.
      * @param d The dialog.
@@ -78,6 +80,10 @@ public class AquaSheetSupport {
         return JOptionPane.CLOSED_OPTION;
     }
 
+    public static boolean isFileChooserSheet(@NotNull JRootPane rp) {
+        return Boolean.TRUE.equals(rp.getClientProperty(FILE_CHOOSER_SHEET_KEY));
+    }
+
     /**
      * Display a file chooser as a document modal sheet.
      * @param owner The owner of the dialog.
@@ -97,6 +103,9 @@ public class AquaSheetSupport {
 
         JWindow dialog = new JWindow(owner);
         dialog.setComponentOrientation(fc.getComponentOrientation());
+        JRootPane rp = dialog.getRootPane();
+        rp.setWindowDecorationStyle(JRootPane.FILE_CHOOSER_DIALOG);
+        rp.putClientProperty(FILE_CHOOSER_SHEET_KEY, true);
 
         Container contentPane = dialog.getContentPane();
         contentPane.setLayout(new BorderLayout());

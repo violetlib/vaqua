@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014-2018 Alan Snyder.
+ * Copyright (c) 2014-2021 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the
@@ -95,7 +95,7 @@ public class ViewModeControlImpl extends ViewModeControl {
 
     protected JToggleButton createButton(ImageIcon ic, String position, int viewMode) {
         JToggleButton b = new JToggleButton(ic);
-        b.putClientProperty(BUTTON_TYPE, "segmentedTextured");
+        b.putClientProperty(BUTTON_TYPE, OSXSystemProperties.OSVersion < 1016 ? "segmentedTextured" : "segmented");
         b.putClientProperty(SEGMENTED_BUTTON_POSITION, position);
 
         if (OSXSystemProperties.OSVersion >= 1011) {
