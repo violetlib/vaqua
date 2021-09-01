@@ -1666,6 +1666,27 @@ JNIEXPORT void JNICALL Java_org_violetlib_aqua_AquaUtils_nativeSetWindowTextured
 
 /*
  * Class:     org_violetlib_aqua_AquaUtils
+ * Method:    nativeSetWindowResizable
+ * Signature: (Ljava/awt/Window;Z)V
+ */
+JNIEXPORT void JNICALL Java_org_violetlib_aqua_AquaUtils_nativeSetWindowResizable
+  (JNIEnv *env, jclass cl, jobject w, jboolean isResizable)
+{
+    static JNF_CLASS_CACHE(jc_LWWindowPeer, "sun/lwawt/LWWindowPeer");
+    static JNF_MEMBER_CACHE(jm_setResizable, jc_LWWindowPeer, "setResizable", "(Z)V");
+
+    JNF_COCOA_ENTER(env);
+
+    jobject peer = getWindowPeer(env, w);
+    if (peer != nil) {
+        JNFCallVoidMethod(env, peer, jm_setResizable, isResizable);
+    }
+
+    JNF_COCOA_EXIT(env);
+}
+
+/*
+ * Class:     org_violetlib_aqua_AquaUtils
  * Method:    nativeSetWindowBackground
  * Signature: (Ljava/awt/Window;Ljava/awt/Color;)V
  */

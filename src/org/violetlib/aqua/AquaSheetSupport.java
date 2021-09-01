@@ -238,6 +238,10 @@ public class AquaSheetSupport {
             }
         }
 
+        // Making the window undecorated should not be necessary, but it is needed to prevent a visible layout change
+        // while the sheet is displayed. This is probably a consequence of the initial painting performed by
+        // AquaVibrantSupport. The unfortunate consequence is that the sheet will not be resizable by the user.
+
         if (needToUndecorate) {
             try {
                 debug("Setting native window style to undecorated");

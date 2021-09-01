@@ -1943,6 +1943,20 @@ final public class AquaUtils {
     }
 
     /**
+     * Set the resizable attribute of the window peer. This method also enables zoomable and full screenable, if
+     * appropriate.
+     * @param w The window.
+     * @param isResizable The new value of the resizable attribute.
+     */
+    public static void setWindowResizable(Window w, boolean isResizable) {
+        try {
+            nativeSetWindowResizable(w, isResizable);
+        } catch (Throwable ex) {
+            Utils.logError("Unable to set window resizable", ex);
+        }
+    }
+
+    /**
      * Ensure that the specified window has a frame buffer that supports an alpha channel. An alpha channel is needed to
      * use the magic eraser.
      */
@@ -2170,6 +2184,7 @@ final public class AquaUtils {
     private static native long nativeGetNativeWindow(Window w, Object[] data);
 
     private static native void nativeSetTitledWindowStyle(Window w, boolean isDecorated, Insets insets);
+    private static native void nativeSetWindowResizable(Window w, boolean isResizable);
     private static native void nativeSetWindowTextured(Window w, boolean isTextured);
     private static native void nativeSetWindowBackground(Window w, Color color);
     private static native boolean nativeIsFullScreenWindow(long w);
