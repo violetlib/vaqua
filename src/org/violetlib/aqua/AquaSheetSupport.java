@@ -95,12 +95,7 @@ public class AquaSheetSupport {
         String title = ui.getDialogTitle(fc);
         fc.putClientProperty(AccessibleContext.ACCESSIBLE_DESCRIPTION_PROPERTY, title);
 
-        JDialog dialog;
-        if (owner instanceof Frame) {
-            dialog = new JDialog((Frame)owner, title, Dialog.ModalityType.MODELESS);
-        } else {
-            dialog = new JDialog((Dialog)owner, title, Dialog.ModalityType.MODELESS);
-        }
+        JWindow dialog = new JWindow(owner);
         dialog.setComponentOrientation(fc.getComponentOrientation());
 
         Container contentPane = dialog.getContentPane();
@@ -108,7 +103,6 @@ public class AquaSheetSupport {
         contentPane.add(fc, BorderLayout.CENTER);
 
         dialog.pack();
-        dialog.setLocationRelativeTo(owner);
 
         FileChooserActionListener listener = new FileChooserActionListener(dialog);
         fc.addActionListener(listener);
@@ -143,9 +137,9 @@ public class AquaSheetSupport {
     }
 
     private static class FileChooserActionListener implements ActionListener {
-        private JDialog d;
+        private Window d;
 
-        public FileChooserActionListener(JDialog d) {
+        public FileChooserActionListener(@NotNull Window d) {
             this.d = d;
         }
 
