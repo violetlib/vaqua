@@ -251,14 +251,16 @@ public class AquaVibrantSupport {
             if (rp != null) {
                 AquaUtils.enableTranslucency(w);
                 rp.putClientProperty(VIBRANT_WINDOW_KEY, Boolean.TRUE);
-                debug("Painting the window");
-                w.validate();
-                AquaUtils.paintImmediately(w, rp);
-                // The goal of the following is to transfer the new clear background to the AWTView layer immediately so
-                // that when a vibrant window is first made visible, it shows the vibrant background immediately instead
-                // of showing the default window background first and an instant later replacing it with the vibrant
-                // background.
-                AquaUtils.syncAWTView(w);
+                if (!Boolean.TRUE.equals(rp.getClientProperty(AquaSheetSupport.IS_SHEET_KEY))) {
+                    debug("Painting the window");
+                    w.validate();
+                    AquaUtils.paintImmediately(w, rp);
+                    // The goal of the following is to transfer the new clear background to the AWTView layer
+                    // immediately so that when a vibrant window is first made visible, it shows the vibrant background
+                    // immediately instead of showing the default window background first and an instant later
+                    // replacing it with the vibrant background.
+                    AquaUtils.syncAWTView(w);
+                }
             }
         }
     }
@@ -357,7 +359,7 @@ public class AquaVibrantSupport {
 
     private static void debug(@NotNull String message) {
         if (isDebug) {
-            syslog(message);
+            syslog("AquaVibrantSupport: " + message);
         }
     }
 

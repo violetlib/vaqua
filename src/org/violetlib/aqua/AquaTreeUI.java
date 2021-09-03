@@ -89,6 +89,7 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
     private final FocusListener editingComponentFocusListener = new EditingComponentFocusListener();
     private final ComponentListener componentListener = new AquaTreeComponentListener();
     private final TreeModelListener treeModelListener = new AquaTreeModelListener();
+    private final HierarchyListener hierarchyListener = new AquaTreeHierarchyListener();
     private Component editorFocusOwner;
     private @Nullable TreeCellEditor originalTreeCellEditor;
 
@@ -214,6 +215,7 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
         super.installListeners();
         AppearanceManager.installListeners(tree);
         tree.addComponentListener(componentListener);
+        tree.addHierarchyListener(hierarchyListener);
         TreeModel model = tree.getModel();
         if (model != null) {
             model.addTreeModelListener(treeModelListener);
@@ -226,6 +228,7 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
         if (model != null) {
             model.removeTreeModelListener(treeModelListener);
         }
+        tree.removeHierarchyListener(hierarchyListener);
         tree.removeComponentListener(componentListener);
         AppearanceManager.uninstallListeners(tree);
         super.uninstallListeners();
@@ -1324,6 +1327,15 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
         public void componentResized(ComponentEvent e) {
             if (isCellFilled && treeState != null) {
                 treeState.invalidateSizes();
+            }
+        }
+    }
+
+    class AquaTreeHierarchyListener implements HierarchyListener {
+        @Override
+        public void hierarchyChanged(HierarchyEvent e) {
+            if ((e.getChangeFlags() & HierarchyEvent.DISPLAYABILITY_CHANGED) != 0) {
+                updateSideBarConfiguration();
             }
         }
     }

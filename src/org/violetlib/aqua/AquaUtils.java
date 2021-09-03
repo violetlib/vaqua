@@ -1693,12 +1693,25 @@ final public class AquaUtils {
         execute(w, ptr -> setTitleBarStyle(w, ptr, style));
     }
 
+    /**
+     * Preconfigure the title bar style for a window. This method is used when the native window has not yet been
+     * created with the goal of ensuring that the window insets stay zero for styles that do not allocate space for a
+     * title bar.
+     *
+     * @param w The window.
+     * @param style The title bar style.
+     */
+
+    public static void preconfigureTitleBarStyle(@NotNull Window w, int style) {
+        setTitleBarStyle(w, 0, style);
+    }
+
     private static long setTitleBarStyle(@NotNull Window w, long wptr, int style) {
 
         JRootPane rp = getRootPane(w);
         assert rp != null;
 
-        int result;
+        int result = 0;
 
         if (!WindowStylePatch.isNeeded()) {
             boolean hasTitleBar = true;
@@ -1742,10 +1755,14 @@ final public class AquaUtils {
             rp.putClientProperty("apple.awt.fullWindowContent", isFullWindowContent);
             rp.putClientProperty("apple.awt.transparentTitleBar", isTransparentTitleBar);
             rp.putClientProperty("apple.awt.draggableWindowBackground", isMovableByBackground);
-            result = nativeSetTitleBarProperties(wptr, hasTitleBar, isMovable, isHidden, isFixNeeded);
+            if (wptr != 0) {
+                result = nativeSetTitleBarProperties(wptr, hasTitleBar, isMovable, isHidden, isFixNeeded);
+            }
 
         } else {
-            result = nativeSetTitleBarStyle(wptr, style);
+            if (wptr != 0) {
+                result = nativeSetTitleBarStyle(wptr, style);
+            }
         }
 
         if (result != 0) {
@@ -1954,6 +1971,22 @@ final public class AquaUtils {
         } catch (Throwable ex) {
             Utils.logError("Unable to set window resizable", ex);
         }
+    }
+
+    /**
+     * Set Java's idea of the insets of a window.
+     * @param w The window.
+     * @param s The insets.
+     * @return true if and only if successful.
+     */
+
+    public static boolean setWindowInsets(@NotNull Window w, @NotNull Insets s) {
+        int rc = nativeUpdateWindowInsets(w, s);
+        if (rc != 0) {
+            Utils.logError("Unable to update window insets");
+            return false;
+        }
+        return true;
     }
 
     /**
@@ -2192,6 +2225,7 @@ final public class AquaUtils {
     private static native int nativeSetTitleBarProperties(long w, boolean hasTitleBar, boolean isMovable, boolean isHidden, boolean isFixNeeded);
     private static native int nativeAddToolbarToWindow(long w);
     private static native int nativeSetWindowCornerRadius(long w, float radius);
+    private static native int nativeUpdateWindowInsets(Window w, Insets s);
     private static native int nativeSetWindowRepresentedFilename(long w, String name);
     private static native int nativeSetAWTViewVisibility(long w, boolean isVisible);
     private static native int nativeSyncAWTView(long w);

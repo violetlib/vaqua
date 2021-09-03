@@ -2088,6 +2088,27 @@ JNIEXPORT jint JNICALL Java_org_violetlib_aqua_AquaUtils_nativeSetWindowCornerRa
 }
 
 /*
+ * Class:     org_violetlib_aqua_AquaUtils
+ * Method:    nativeUpdateWindowInsets
+ * Signature: (Ljava/awt/Window;Ljava/awt/Insets)I
+ */
+JNIEXPORT jint JNICALL Java_org_violetlib_aqua_AquaUtils_nativeUpdateWindowInsets
+    (JNIEnv *env, jclass cl, jobject w, jobject s)
+{
+    static JNF_CLASS_CACHE(jc_LWWindowPeer, "sun/lwawt/LWWindowPeer");
+    static JNF_MEMBER_CACHE(jf_updateInsets, jc_LWWindowPeer, "updateInsets", "(Ljava/awt/Insets;)Z");
+
+    jint result = 1;
+    jobject peer = getWindowPeer(env, w);
+    if (peer != nil) {
+        if (JNFCallBooleanMethod(env, peer, jf_updateInsets, s)) {
+            result = 0;
+        }
+    }
+    return result;
+}
+
+/*
  * Class:     org_violetlib_aqua_AquaVibrantSupport
  * Method:    setupVisualEffectWindow
  * Signature: (JIZ)I

@@ -33,6 +33,7 @@ public class AquaSheetSupport {
     public static boolean isDebug = false;
 
     public static final @NotNull String FILE_CHOOSER_SHEET_KEY = "Aqua.fileChooserIsSheet";
+    public static final @NotNull String IS_SHEET_KEY = "Aqua.isSheet";
 
     /**
      * Display an option pane in a document modal dialog as a sheet.
@@ -45,7 +46,7 @@ public class AquaSheetSupport {
      * @throws UnsupportedOperationException if it is not possible to display as a sheet.
      */
     public static void showOptionPaneAsSheet(JDialog d, JOptionPane pane, Consumer<Integer> resultConsumer)
-            throws UnsupportedOperationException {
+      throws UnsupportedOperationException {
         Runnable closeHandler = null;
         if (resultConsumer != null) {
             closeHandler = new Runnable() {
@@ -94,24 +95,26 @@ public class AquaSheetSupport {
      * @throws UnsupportedOperationException if it is not possible to display as a sheet.
      */
     public static void showFileChooserAsSheet(Window owner, JFileChooser fc, Consumer<Integer> resultConsumer)
-            throws UnsupportedOperationException {
+      throws UnsupportedOperationException {
         // We try to duplicate what JFileChooser does when showing a dialog
         // Cannot test for a dialog in progress the way that JFileChooser does...
         FileChooserUI ui = fc.getUI();
         String title = ui.getDialogTitle(fc);
         fc.putClientProperty(AccessibleContext.ACCESSIBLE_DESCRIPTION_PROPERTY, title);
 
-        JWindow dialog = new JWindow(owner);
+        JDialog dialog = new JDialog(owner, "");
         dialog.setComponentOrientation(fc.getComponentOrientation());
         JRootPane rp = dialog.getRootPane();
         rp.setWindowDecorationStyle(JRootPane.FILE_CHOOSER_DIALOG);
         rp.putClientProperty(FILE_CHOOSER_SHEET_KEY, true);
+        rp.putClientProperty(IS_SHEET_KEY, true);
 
         Container contentPane = dialog.getContentPane();
         contentPane.setLayout(new BorderLayout());
         contentPane.add(fc, BorderLayout.CENTER);
 
-        dialog.pack();
+        Dimension size = dialog.getPreferredSize();
+        dialog.setSize(size);
 
         FileChooserActionListener listener = new FileChooserActionListener(dialog);
         fc.addActionListener(listener);
@@ -196,82 +199,48 @@ public class AquaSheetSupport {
             d.setModalityType(Dialog.ModalityType.MODELESS);
         }
 
-        AquaUtils.ensureWindowPeer(w);
-
-        JRootPane rp = AquaUtils.getRootPane(w);
         Object oldBackgroundStyle = null;
         Dimension originalSize = w.getSize();
+        String windowStyleToRestore = null;
+        int oldTop = w.getInsets().top;
 
+        JRootPane rp = AquaUtils.getRootPane(w);
         if (rp != null) {
+            rp.putClientProperty(IS_SHEET_KEY, true);
             oldBackgroundStyle = rp.getClientProperty(AquaVibrantSupport.BACKGROUND_STYLE_KEY);
-        }
-
-        // The window should not be decorated. If it is decorated, the initial painting will go in the wrong place.
-        // Unfortunately, Java is very picky about when setUndecorated() can be called. So we just munge the style bits
-        // directly.
-
-        boolean needToUndecorate = false;
-        if (w instanceof Dialog) {
-            Dialog d = (Dialog) w;
-            if (!d.isUndecorated()) {
-                needToUndecorate = true;
-            }
-        } else if (w instanceof Frame) {
-            Frame fr = (Frame) w;
-            if (!fr.isUndecorated()) {
-                needToUndecorate = true;
-            }
-        }
-
-        int oldTop = 0;
-        AquaCustomStyledWindow sw;
-        String windowStyle = null;
-
-        if (needToUndecorate) {
-            sw = AquaUtils.getCustomStyledWindow(w);
-            if (sw != null && sw.getStyle() != AquaCustomStyledWindow.STYLE_UNDECORATED) {
-                // remove the decorated style
-                assert rp != null;
-                windowStyle = AquaRootPaneUI.getWindowStyleKey(rp);
-                debug("Setting window style client property to undecorated");
-                rp.putClientProperty(AquaRootPaneUI.AQUA_WINDOW_STYLE_KEY, null);
-            }
-        }
-
-        // Making the window undecorated should not be necessary, but it is needed to prevent a visible layout change
-        // while the sheet is displayed. This is probably a consequence of the initial painting performed by
-        // AquaVibrantSupport. The unfortunate consequence is that the sheet will not be resizable by the user.
-
-        if (needToUndecorate) {
-            try {
-                debug("Setting native window style to undecorated");
-                oldTop = AquaUtils.unsetTitledWindowStyle(w);
-            } catch (UnsupportedOperationException ex) {
-                throw new UnsupportedOperationException("Unable to display as sheet: " + ex.getMessage());
-            }
-        }
-
-        if (rp != null) {
-
             debug("Setting background style client property to vibrantSheet");
             rp.putClientProperty(AquaVibrantSupport.BACKGROUND_STYLE_KEY, "vibrantSheet");
-
-            if (windowStyle != null) {
-                // replace the decorated style with the undecorated style
-                debug("Setting window style client property to undecorated");
-                rp.putClientProperty(AquaRootPaneUI.AQUA_WINDOW_STYLE_KEY, "undecorated");
+            String windowStyle = AquaRootPaneUI.getWindowStyleKey(rp);
+            if (!"undecorated".equals(windowStyle)) {
+                if (!"noTitleBar".equals(windowStyle)) {
+                    windowStyleToRestore = windowStyle;
+                    debug("Installing the noTitleBar window style");
+                    rp.putClientProperty(AquaRootPaneUI.AQUA_WINDOW_STYLE_KEY, "noTitleBar");
+                }
+                AquaUtils.ensureWindowPeer(w);
+                w.validate();
+                rp.setLocation(0, 0);
+                w.setSize(w.getWidth(), w.getHeight() - oldTop);
             }
+        }
 
-            w.validate();
-            debug("Painting the sheet");
-            AquaUtils.paintImmediately(w, rp);
+        AquaUtils.ensureWindowPeer(w);
+
+        if (rp != null) {
+            Insets s = w.getInsets();
+            // The sheet should not be painted until the window top inset is zero. Otherwise, there may be a visible
+            // shift in the display.
+            if (s.top == 0) {
+                prepaintSheet(w, rp);
+            }
         }
 
         // It would be better to dismiss a sheet by calling endSheet. Using endSheet supports deferred and critical
         // sheets. However, existing dialogs all dismiss themselves by calling setVisible(false) and we have no way to
         // alter what that does.
 
-        SheetCloser closer = new SheetCloser(w, owner, closeHandler, oldBackgroundStyle, windowStyle, oldTop, originalSize);
+        SheetCloser closer
+          = new SheetCloser(w, owner, closeHandler, oldBackgroundStyle, windowStyleToRestore, oldTop, originalSize);
         int result;
         if ("true".equals(System.getProperty("VAqua.injectSheetDisplayFailure"))) {
             // inject failure for testing
@@ -287,6 +256,17 @@ public class AquaSheetSupport {
         }
 
         w.setVisible(true); // cause the lightweight components to be painted -- this method blocks on a modal dialog
+    }
+
+    private static void prepaintSheet(@NotNull Window w, @NotNull JRootPane rp) {
+        w.validate();
+        debug("Painting the sheet");
+        AquaUtils.paintImmediately(w, rp);
+        // The goal of the following is to transfer the new clear background to the AWTView layer immediately
+        // so that when a vibrant window is first made visible, it shows the vibrant background immediately
+        // instead of showing the default window background first and an instant later replacing it with the
+        // vibrant background.
+        AquaUtils.syncAWTView(w);
     }
 
     private static long displayAsSheet(long wptr, Window owner) {
@@ -425,8 +405,10 @@ public class AquaSheetSupport {
                     AquaUtils.restoreTitledWindowStyle(w, oldTop, originalSize);
                     AquaUtils.syncAWTView(w);
                 }
-                if (windowStyle != null) {
+                if (windowStyle != null && !windowStyle.equals("noTitleBar")) {
                     rp.putClientProperty(AquaRootPaneUI.AQUA_WINDOW_STYLE_KEY, windowStyle);
+                    w.setSize(w.getWidth(), w.getHeight() + oldTop);
+                    rp.setLocation(0, oldTop);
                 }
             }
         }
@@ -434,7 +416,7 @@ public class AquaSheetSupport {
 
     private static void debug(@NotNull String message) {
         if (isDebug) {
-            syslog(message);
+            syslog("AquaSheetSupport: " + message);
         }
     }
 
