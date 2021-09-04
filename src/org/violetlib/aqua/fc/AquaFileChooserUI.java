@@ -3664,7 +3664,7 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
             // Choose a window style for the dialog.
             windowStyle = getWindowStyleForDialog(rp);
             String existingStyle = AquaRootPaneUI.getWindowStyleKey(rp);
-            if (!windowStyle.equals(existingStyle)) {
+            if (!Objects.equals(windowStyle, existingStyle)) {
                 rp.putClientProperty(AQUA_WINDOW_STYLE_KEY, windowStyle);
                 rp.revalidate();
                 rp.repaint();
@@ -3684,9 +3684,9 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
         configureDialogSize();
     }
 
-    protected @NotNull String getWindowStyleForDialog(@NotNull JRootPane rp) {
+    protected @Nullable String getWindowStyleForDialog(@NotNull JRootPane rp) {
         if (AquaSheetSupport.isFileChooserSheet(rp)) {
-            return "undecorated";
+            return null;
         }
         if (fc.getDialogType() == JFileChooser.OPEN_DIALOG) {
             return "texturedToolBar";

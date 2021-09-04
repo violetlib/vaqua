@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2018 Alan Snyder.
+ * Copyright (c) 2015-2021 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -7,8 +7,6 @@
  */
 
 package org.violetlib.aqua;
-
-// Full content view support belongs in AWT.
 
 import java.awt.*;
 import java.awt.event.HierarchyEvent;
@@ -184,39 +182,8 @@ public class AquaCustomStyledWindow {
         }
 
         windowToolBar = getWindowToolbar();
-
-        switch (style) {
-            case STYLE_OVERLAY:
-                titleBarStyle = TITLE_BAR_OVERLAY;
-                isTextured = false;
-                break;
-            case STYLE_TRANSPARENT:
-                titleBarStyle = TITLE_BAR_TRANSPARENT;
-                isTextured = false;
-                break;
-            case STYLE_HIDDEN:
-                titleBarStyle = TITLE_BAR_HIDDEN;
-                isTextured = false;
-                break;
-            case STYLE_UNIFIED:
-                titleBarStyle = TITLE_BAR_TRANSPARENT;
-                isTextured = true;
-                break;
-            case STYLE_TEXTURED_HIDDEN:
-                titleBarStyle = TITLE_BAR_HIDDEN;
-                isTextured = true;
-                break;
-            case STYLE_COMBINED:
-                titleBarStyle = TITLE_BAR_TRANSPARENT;
-                isTextured = true;
-                break;
-            case STYLE_UNDECORATED:
-                titleBarStyle = TITLE_BAR_NONE;
-                isTextured = false;
-                break;
-            default:
-                throw new IllegalArgumentException("Invalid style");
-        }
+        titleBarStyle = getTitleBarStyleForWindowStyle(style);
+        isTextured = getTexturedStyleForWindowStyle(style);
 
         if (isTextured) {
             if (windowToolBar == null) {
@@ -235,6 +202,45 @@ public class AquaCustomStyledWindow {
         }
 
         AquaUtils.setTitleBarStyle(w, titleBarStyle);
+    }
+
+    public static void preconfigureWindowStyle(@NotNull Window w, int style) {
+        int titleBarStyle = getTitleBarStyleForWindowStyle(style);
+        AquaUtils.preconfigureTitleBarStyle(w, titleBarStyle);
+    }
+
+    public static int getTitleBarStyleForWindowStyle(int style) {
+        switch (style) {
+            case STYLE_OVERLAY:
+                return TITLE_BAR_OVERLAY;
+            case STYLE_TRANSPARENT:
+            case STYLE_UNIFIED:
+            case STYLE_COMBINED:
+                return TITLE_BAR_TRANSPARENT;
+            case STYLE_HIDDEN:
+            case STYLE_TEXTURED_HIDDEN:
+                return TITLE_BAR_HIDDEN;
+            case STYLE_UNDECORATED:
+                return TITLE_BAR_NONE;
+            default:
+                throw new IllegalArgumentException("Invalid style");
+        }
+    }
+
+    public boolean getTexturedStyleForWindowStyle(int style) {
+        switch (style) {
+            case STYLE_OVERLAY:
+            case STYLE_TRANSPARENT:
+            case STYLE_HIDDEN:
+            case STYLE_UNDECORATED:
+                return false;
+            case STYLE_UNIFIED:
+            case STYLE_TEXTURED_HIDDEN:
+            case STYLE_COMBINED:
+                return true;
+            default:
+                throw new IllegalArgumentException("Invalid style");
+        }
     }
 
     /**

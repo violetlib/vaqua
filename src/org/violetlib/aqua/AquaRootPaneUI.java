@@ -421,6 +421,8 @@ public class AquaRootPaneUI extends BasicRootPaneUI implements AquaComponentUI
             reconfigureCustomWindowStyle();
             updateVisualEffectView();
             configureRepresentedFilename();
+        } else {
+            reconfigureCustomWindowStyle();
         }
     }
 
@@ -713,39 +715,31 @@ public class AquaRootPaneUI extends BasicRootPaneUI implements AquaComponentUI
 
     protected void reconfigureCustomWindowStyle() {
         Window w = getWindow();
-        if (w == null || w.isDisplayable()) {
-            int style = getCustomWindowStyle();
-            if (style < 0 || w == null) {
-                uninstallCustomWindowStyle();
-            } else {
-                int topMarginHeight = getTopMarginHeight();
-                int bottomMarginHeight = getBottomMarginHeight();
-                if (customStyledWindow != null && !customStyledWindow.isValid(style, topMarginHeight, bottomMarginHeight)) {
-                    customStyledWindow = customStyledWindow.reconfigure(style, topMarginHeight, bottomMarginHeight);
-                    configureWindow(w);
-                } else if (customStyledWindow == null) {
-                    try {
-                        customStyledWindow = new AquaCustomStyledWindow(w, style, topMarginHeight, bottomMarginHeight);
-                        configureWindow(w);
-                    } catch (AquaCustomStyledWindow.RequiredToolBarNotFoundException ex) {
-                        // This exception would be thrown if the window style is set before adding the tool bar to the
-                        // content pane, which would not be an error.
-                    } catch (IllegalArgumentException ex) {
-                        AquaUtils.syslog("Unable to install custom window style: " + ex.getMessage());
-                    }
-                }
-            }
-        }
-    }
-
-    protected void uninstallCustomWindowStyle() {
-        if (customStyledWindow != null) {
-            customStyledWindow.dispose();
-            customStyledWindow = null;
-            Window w = getWindow();
+        int style = getCustomWindowStyle();
+        if (style < 0 || w == null) {
+            disposeCustomWindowStyle();
             if (w != null) {
                 configureWindow(w);
             }
+        } else if (w.isDisplayable()) {
+            int topMarginHeight = getTopMarginHeight();
+            int bottomMarginHeight = getBottomMarginHeight();
+            if (customStyledWindow != null && !customStyledWindow.isValid(style, topMarginHeight, bottomMarginHeight)) {
+                customStyledWindow = customStyledWindow.reconfigure(style, topMarginHeight, bottomMarginHeight);
+                configureWindow(w);
+            } else if (customStyledWindow == null) {
+                try {
+                    customStyledWindow = new AquaCustomStyledWindow(w, style, topMarginHeight, bottomMarginHeight);
+                    configureWindow(w);
+                } catch (AquaCustomStyledWindow.RequiredToolBarNotFoundException ex) {
+                    // This exception would be thrown if the window style is set before adding the tool bar to the
+                    // content pane, which would not be an error.
+                } catch (IllegalArgumentException ex) {
+                    AquaUtils.syslog("Unable to install custom window style: " + ex.getMessage());
+                }
+            }
+        } else {
+            AquaCustomStyledWindow.preconfigureWindowStyle(w, style);
         }
     }
 
