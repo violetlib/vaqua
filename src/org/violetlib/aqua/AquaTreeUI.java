@@ -252,7 +252,12 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
         appearanceContext = new AppearanceContext(appearance, state, false, false);
         colors.configureForContainer();
         AquaColors.installColors(tree, appearanceContext, colors);
-        LookAndFeel.installProperty(tree, "opaque", !isStriped);
+        // Workaround for JDK-8253266
+        if (Utils.getJavaVersion() < 1700000) {
+            tree.setOpaque(!isStriped);
+        } else {
+            LookAndFeel.installProperty(tree, "opaque", !isStriped);
+        }
         tree.repaint();
         repaintScrollPane();
     }
