@@ -3689,7 +3689,7 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
             return null;
         }
         if (fc.getDialogType() == JFileChooser.OPEN_DIALOG) {
-            return "texturedToolBar";
+            return OSXSystemProperties.OSVersion < 1016 ? "texturedToolBar" : "noTitleBar";
         } else {
             return "overlayTitleBar";
         }

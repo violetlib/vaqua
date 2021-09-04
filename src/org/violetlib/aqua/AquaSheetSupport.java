@@ -113,8 +113,12 @@ public class AquaSheetSupport {
         contentPane.setLayout(new BorderLayout());
         contentPane.add(fc, BorderLayout.CENTER);
 
-        Dimension size = dialog.getPreferredSize();
-        dialog.setSize(size);
+        if (OSXSystemProperties.OSVersion >= 1013) {
+            Dimension size = dialog.getPreferredSize();
+            dialog.setSize(size);
+        } else {
+            dialog.pack();
+        }
 
         FileChooserActionListener listener = new FileChooserActionListener(dialog);
         fc.addActionListener(listener);
@@ -204,23 +208,27 @@ public class AquaSheetSupport {
         String windowStyleToRestore = null;
         int oldTop = w.getInsets().top;
 
+        String sheetWindowStyle = "noTitleBar";
+
         JRootPane rp = AquaUtils.getRootPane(w);
         if (rp != null) {
             rp.putClientProperty(IS_SHEET_KEY, true);
             oldBackgroundStyle = rp.getClientProperty(AquaVibrantSupport.BACKGROUND_STYLE_KEY);
             debug("Setting background style client property to vibrantSheet");
             rp.putClientProperty(AquaVibrantSupport.BACKGROUND_STYLE_KEY, "vibrantSheet");
-            String windowStyle = AquaRootPaneUI.getWindowStyleKey(rp);
-            if (!"undecorated".equals(windowStyle)) {
-                if (!"noTitleBar".equals(windowStyle)) {
-                    windowStyleToRestore = windowStyle;
-                    debug("Installing the noTitleBar window style");
-                    rp.putClientProperty(AquaRootPaneUI.AQUA_WINDOW_STYLE_KEY, "noTitleBar");
+            if (OSXSystemProperties.OSVersion >= 1013) {
+                String windowStyle = AquaRootPaneUI.getWindowStyleKey(rp);
+                if (!"undecorated".equals(windowStyle)) {
+                    if (!sheetWindowStyle.equals(windowStyle)) {
+                        windowStyleToRestore = windowStyle;
+                        debug("Installing the window style for a sheet: " + sheetWindowStyle);
+                        rp.putClientProperty(AquaRootPaneUI.AQUA_WINDOW_STYLE_KEY, sheetWindowStyle);
+                    }
+                    AquaUtils.ensureWindowPeer(w);
+                    w.validate();
+                    rp.setLocation(0, 0);
+                    w.setSize(w.getWidth(), w.getHeight() - oldTop);
                 }
-                AquaUtils.ensureWindowPeer(w);
-                w.validate();
-                rp.setLocation(0, 0);
-                w.setSize(w.getWidth(), w.getHeight() - oldTop);
             }
         }
 
