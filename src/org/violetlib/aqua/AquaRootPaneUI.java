@@ -33,26 +33,11 @@
 
 package org.violetlib.aqua;
 
-import java.awt.Color;
-import java.awt.Component;
-import java.awt.Container;
-import java.awt.Graphics;
-import java.awt.Window;
-import java.awt.event.ContainerEvent;
-import java.awt.event.ContainerListener;
-import java.awt.event.HierarchyEvent;
-import java.awt.event.HierarchyListener;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
-import java.awt.event.WindowListener;
+import java.awt.*;
+import java.awt.event.*;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
-import javax.swing.JComponent;
-import javax.swing.JFrame;
-import javax.swing.JLayeredPane;
-import javax.swing.JMenuBar;
-import javax.swing.JRootPane;
-import javax.swing.SwingUtilities;
+import javax.swing.*;
 import javax.swing.event.AncestorEvent;
 import javax.swing.event.AncestorListener;
 import javax.swing.event.ChangeEvent;
@@ -63,9 +48,11 @@ import javax.swing.plaf.MenuBarUI;
 import javax.swing.plaf.UIResource;
 import javax.swing.plaf.basic.BasicRootPaneUI;
 
-import org.jetbrains.annotations.*;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-import static org.violetlib.aqua.AquaVibrantSupport.*;
+import static org.violetlib.aqua.AquaVibrantSupport.NO_VIBRANT_STYLE;
+import static org.violetlib.aqua.AquaVibrantSupport.WINDOW_BACKGROUND_STYLE;
 
 public class AquaRootPaneUI extends BasicRootPaneUI implements AquaComponentUI
 {
@@ -100,9 +87,9 @@ public class AquaRootPaneUI extends BasicRootPaneUI implements AquaComponentUI
     protected boolean vibrantStyleIsExplicitlySet;
 
     /**
-      Set the debugging option to force all windows to display as active. Used to compare a Java window with a native
-      active window.
-    */
+     Set the debugging option to force all windows to display as active. Used to compare a Java window with a native
+     active window.
+     */
     public static void setForceActiveWindowDisplay(boolean b)
     {
         if (b != forceActiveWindowDisplay) {
@@ -202,14 +189,14 @@ public class AquaRootPaneUI extends BasicRootPaneUI implements AquaComponentUI
     }
 
     private class MyContainerListener
-      implements ContainerListener
+            implements ContainerListener
     {
 
         /**
-          If the screen menu bar is active we need to listen to the layered pane of the root pane
-          because it holds the JMenuBar.  So, if a new layered pane was added, listen to it.
-          If a new JMenuBar was added, tell the menu bar UI, because it will need to update the menu bar.
-        */
+         If the screen menu bar is active we need to listen to the layered pane of the root pane
+         because it holds the JMenuBar.  So, if a new layered pane was added, listen to it.
+         If a new JMenuBar was added, tell the menu bar UI, because it will need to update the menu bar.
+         */
         public void componentAdded(ContainerEvent e)
         {
             if (e.getContainer() instanceof JRootPane) {
@@ -236,9 +223,9 @@ public class AquaRootPaneUI extends BasicRootPaneUI implements AquaComponentUI
         }
 
         /**
-          Likewise, when the layered pane is removed from the root pane, stop listening to it.
-          If the JMenuBar is removed, tell the menu bar UI to clear the menu bar.
-        */
+         Likewise, when the layered pane is removed from the root pane, stop listening to it.
+         If the JMenuBar is removed, tell the menu bar UI to clear the menu bar.
+         */
         public void componentRemoved(ContainerEvent e)
         {
             if (e.getContainer() instanceof JRootPane) {
@@ -266,8 +253,8 @@ public class AquaRootPaneUI extends BasicRootPaneUI implements AquaComponentUI
     }
 
     /**
-      Invoked when a property changes on the root pane.
-    */
+     Invoked when a property changes on the root pane.
+     */
     public void propertyChange(PropertyChangeEvent e)
     {
         super.propertyChange(e);
@@ -292,15 +279,15 @@ public class AquaRootPaneUI extends BasicRootPaneUI implements AquaComponentUI
     }
 
     protected class MyAncestorListener
-      implements AncestorListener
+            implements AncestorListener
     {
         /**
-          This is sort of like viewDidMoveToWindow:.  When the root pane is put into a window
-          this method gets called for the notification.
-          We need to set up the listener relationship so we can pick up activation events.
-          And, if a JMenuBar was added before the root pane was added to the window, we now need
-          to notify the menu bar UI.
-        */
+         This is sort of like viewDidMoveToWindow:.  When the root pane is put into a window
+         this method gets called for the notification.
+         We need to set up the listener relationship so we can pick up activation events.
+         And, if a JMenuBar was added before the root pane was added to the window, we now need
+         to notify the menu bar UI.
+         */
         public void ancestorAdded(AncestorEvent event)
         {
             // this is so we can handle window activated and deactivated events so
@@ -316,10 +303,10 @@ public class AquaRootPaneUI extends BasicRootPaneUI implements AquaComponentUI
         }
 
         /**
-          If the JRootPane was removed from the window we should clear the screen menu bar.
-          That's a non-trivial problem, because you need to know which window the JRootPane was in
-          before it was removed.  By the time ancestorRemoved was called, the JRootPane has already been removed
-        */
+         If the JRootPane was removed from the window we should clear the screen menu bar.
+         That's a non-trivial problem, because you need to know which window the JRootPane was in
+         before it was removed.  By the time ancestorRemoved was called, the JRootPane has already been removed
+         */
 
         public void ancestorRemoved(AncestorEvent event)
         {
@@ -331,7 +318,7 @@ public class AquaRootPaneUI extends BasicRootPaneUI implements AquaComponentUI
     }
 
     private class MyWindowListener
-      extends WindowAdapter
+            extends WindowAdapter
     {
 
         public void windowActivated(WindowEvent e)
@@ -380,7 +367,7 @@ public class AquaRootPaneUI extends BasicRootPaneUI implements AquaComponentUI
     }
 
     protected class WindowHierarchyListener
-      implements HierarchyListener
+            implements HierarchyListener
     {
         @Override
         public void hierarchyChanged(HierarchyEvent e)
@@ -398,7 +385,7 @@ public class AquaRootPaneUI extends BasicRootPaneUI implements AquaComponentUI
     }
 
     protected class AppearanceChangeListener
-      implements ChangeListener
+            implements ChangeListener
     {
         @Override
         public void stateChanged(ChangeEvent e)
@@ -408,9 +395,9 @@ public class AquaRootPaneUI extends BasicRootPaneUI implements AquaComponentUI
     }
 
     /**
-      Configure or reconfigure the window based on root pane client properties and popup client properties, if
-      appropriate. This method has no effect if the root pane parent is not displayable.
-    */
+     Configure or reconfigure the window based on root pane client properties and popup client properties, if
+     appropriate. This method has no effect if the root pane parent is not displayable.
+     */
     public void configure()
     {
         if (rootPane.getParent() != null && rootPane.getParent().isDisplayable()) {
@@ -427,13 +414,13 @@ public class AquaRootPaneUI extends BasicRootPaneUI implements AquaComponentUI
     }
 
     /**
-      Configure or reconfigure the window based on root pane client properties and popup client properties, if
-      appropriate. This method has no effect if the root pane has no parent.
-      This method forces the root pane parent to become displayable.
+     Configure or reconfigure the window based on root pane client properties and popup client properties, if
+     appropriate. This method has no effect if the root pane has no parent.
+     This method forces the root pane parent to become displayable.
 
-      @param appearanceName If not null, this appearance is installed on the window, overriding the appearance
-      inherited from the application.
-    */
+     @param appearanceName If not null, this appearance is installed on the window, overriding the appearance
+     inherited from the application.
+     */
     public void configure(@Nullable String appearanceName)
     {
         Container parent = rootPane.getParent();
@@ -476,19 +463,19 @@ public class AquaRootPaneUI extends BasicRootPaneUI implements AquaComponentUI
     }
 
     /**
-      This method is called when the native window discovers that it has been assigned a different appearance,
-      meaning an appearance with a different appearance name.
+     This method is called when the native window discovers that it has been assigned a different appearance,
+     meaning an appearance with a different appearance name.
 
-      @param appearanceName The new appearance name.
-    */
+     @param appearanceName The new appearance name.
+     */
     public void windowAppearanceChanged(@NotNull String appearanceName)
     {
         updateAppearances(appearanceName, false);
     }
 
     /**
-      Update the appearances in the component tree based on the most current information.
-    */
+     Update the appearances in the component tree based on the most current information.
+     */
 
     protected void updateAppearances(@Nullable String appearanceName, boolean forceInitialization)
     {
@@ -689,14 +676,14 @@ public class AquaRootPaneUI extends BasicRootPaneUI implements AquaComponentUI
 
     protected void updateVisualEffectView() {
         Window w = getWindow();
-        if (w != null) {
+        if (w != null && !isEmbeddedView(w)) {
             if (false) {
                 Utils.logDebug("Updating visual effect view: " + vibrantStyle);
             }
             if (vibrantStyle >= 0) {
                 try {
                     AquaVibrantSupport.addFullWindowVibrantView(w, vibrantStyle);
-                } catch (IllegalArgumentException ex) {
+                } catch (IllegalArgumentException | UnsupportedOperationException ex) {
                     Utils.logError("Unable to install visual effect view", ex);
                 }
             } else {
@@ -704,6 +691,11 @@ public class AquaRootPaneUI extends BasicRootPaneUI implements AquaComponentUI
                 // TBD: cannot really undo this
             }
         }
+    }
+
+    protected boolean isEmbeddedView(@NotNull Window w) {
+        String name = w.getClass().getSimpleName();
+        return name.contains("CViewEmbeddedFrame");
     }
 
     protected void removeVisualEffectView() {

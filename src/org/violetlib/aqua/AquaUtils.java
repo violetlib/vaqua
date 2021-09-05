@@ -2121,7 +2121,7 @@ final public class AquaUtils {
             try {
                 return executeForObject(w, AquaUtils::nativeGetWindowEffectiveAppearanceName);
             } catch (UnsupportedOperationException ex) {
-                // native window may no longer exist
+                // native window may no longer exist, or it could be an embedded view
             }
         }
         return null;
@@ -2143,14 +2143,8 @@ final public class AquaUtils {
         Object[] data = new Object[1];
         long ptr = nativeGetNativeWindow(w, data);
         if (ptr == 0) {
-            String name = w.getName();
-            if (w instanceof Frame) {
-                Frame fr = (Frame) w;
-                name = fr.getTitle() + " " + name;
-            }
-            UnsupportedOperationException ex = new UnsupportedOperationException("Unable to get NSWindow for window " + name);
-            //ex.printStackTrace();
-            throw ex;
+            String name = getWindowNameForMessage(w);
+            throw new UnsupportedOperationException("Unable to get NSWindow for window " + name);
         } else {
             Lock lock = (Lock) data[0];
             if (lock != null) {
@@ -2182,11 +2176,7 @@ final public class AquaUtils {
         Object[] data = new Object[1];
         long ptr = nativeGetNativeWindow(w, data);
         if (ptr == 0) {
-            String name = w.getName();
-            if (w instanceof Frame) {
-                Frame fr = (Frame) w;
-                name = fr.getTitle() + " " + name;
-            }
+            String name = getWindowNameForMessage(w);
             throw new UnsupportedOperationException("Unable to get NSWindow for window " + name);
         } else {
             Lock lock = (Lock) data[0];
@@ -2201,6 +2191,18 @@ final public class AquaUtils {
                 return action.run(ptr);
             }
         }
+    }
+
+    private static @NotNull String getWindowNameForMessage(@NotNull Window w) {
+        String name = w.getName();
+        if (w instanceof Frame) {
+            Frame fr = (Frame) w;
+            String title = fr.getTitle();
+            if (title != null && !title.isEmpty()) {
+                return title + " " + name;
+            }
+        }
+        return name;
     }
 
     public static void debugWindow(Window w) {
