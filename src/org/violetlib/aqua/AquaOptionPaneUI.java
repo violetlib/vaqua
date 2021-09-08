@@ -343,7 +343,7 @@ public class AquaOptionPaneUI extends BasicOptionPaneUI implements AquaComponent
         if (text.length() < maxll) {
             return new JLabel(text, JLabel.LEADING);
         } else {
-            JTextArea textArea = new JTextArea();
+            AquaOptionPaneTextArea textArea = new AquaOptionPaneTextArea();
             textArea.setEditable(false);
             textArea.setOpaque(false);
             textArea.setFocusable(false);
@@ -356,8 +356,29 @@ public class AquaOptionPaneUI extends BasicOptionPaneUI implements AquaComponent
             // preferred size. It is better than nothing. Do not set columns, it just increases the
             // preferred width.
             int columnWidth = textArea.getFontMetrics(textArea.getFont()).charWidth('n');
-            textArea.setSize(maxll * columnWidth, 10000);
+            textArea.setPreferredWidth(maxll * columnWidth);
             return textArea;
+        }
+    }
+
+    private static class AquaOptionPaneTextArea
+      extends JTextArea
+    {
+        private int preferredWidth;
+
+        public AquaOptionPaneTextArea() {
+        }
+
+        public void setPreferredWidth(int pw) {
+            this.preferredWidth = pw;
+        }
+
+        @Override
+        public @NotNull Dimension getPreferredSize() {
+            if (preferredWidth > 0) {
+                setSize(preferredWidth, 10000);
+            }
+            return super.getPreferredSize();
         }
     }
 
