@@ -1485,8 +1485,11 @@ void deliverWindowChangedAppearance(NSWindow *window, NSAppearance *appearance)
 
     assert(vm);
 
+    appearance = [appearance retain];
+
     runFromNativeThread(^(JNIEnv *env) {
         internalDeliverWindowChangedAppearance(env, window, appearance);
+        [appearance release];
     });
 }
 
