@@ -137,16 +137,6 @@ public class AquaMenuItemUI extends BasicMenuItemUI implements AquaComponentUI {
         return AquaMenuSupport.instance().getPreferredMenuItemSize(c, localCheckIcon, localArrowIcon, localDefaultTextIconGap, acceleratorFont);
     }
 
-    public void paintBackground(Graphics g, JComponent c, int menuWidth, int menuHeight) {
-        assert appearanceContext != null;
-        ButtonModel model = ((JMenuItem)c).getModel();
-        if (model.isArmed() || model.isSelected()) {
-            Color color = colors.getBackground(appearanceContext.withSelected(true));
-            g.setColor(color);
-            g.fillRect(0, 0, menuWidth, menuHeight);
-        }
-    }
-
     protected void doClick(MenuSelectionManager msm) {
         Dimension size = menuItem.getSize();
         AquaUtils.blinkMenu(new AquaUtils.Selectable() {
