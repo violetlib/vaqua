@@ -664,11 +664,7 @@ public class AquaComboBoxUI extends BasicComboBoxUI
     public boolean updateListSelectionFromEditor() {
         if (editor instanceof JTextComponent) {
             JTextComponent tf = (JTextComponent) editor;
-            if (!isTextured) {
-                updateListSelectionFromEditor(tf);
-            } else {
-                popup.getList().clearSelection();
-            }
+            updateListSelectionFromEditor(tf);
             return true;
         }
         return false;
