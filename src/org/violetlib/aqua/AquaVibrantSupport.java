@@ -51,6 +51,8 @@ public class AquaVibrantSupport {
     public static final int UNDER_WINDOW_BACKGROUND_STYLE = 16;
     public static final int UNDER_PAGE_BACKGROUND_STYLE = 17;
 
+    public static final int EMPHASIZED_MATERIAL_MASK = 0x1000;
+
     /** This client property allows the client to request a vibrant background style on certain components. */
     public static final String BACKGROUND_STYLE_KEY = "Aqua.backgroundStyle";
 
@@ -68,61 +70,70 @@ public class AquaVibrantSupport {
 
     private static final PropertyChangeListener vibrantStylePropertyChangeListener = new VibrantStylePropertyChangeListener();
 
-    public static int parseVibrantStyle(Object s, boolean allowSidebar) {
-        if (s instanceof String) {
+    public static int parseVibrantStyle(Object o, boolean allowSidebar) {
+        if (o instanceof String) {
+            String s = (String) o;
+
+            int mask = 0;
+
+            if (s.endsWith("-emphasized")) {
+                s = s.substring(0, s.length() - 11);
+                mask = EMPHASIZED_MATERIAL_MASK;
+            }
+
             if (s.equals("vibrantLight")) {
-                return LIGHT_STYLE;
+                return LIGHT_STYLE | mask;
             }
             if (s.equals("vibrantDark")) {
-                return DARK_STYLE;
+                return DARK_STYLE | mask;
             }
             if (s.equals("vibrantSidebar")) {
-                return allowSidebar ? SIDEBAR_STYLE : LIGHT_STYLE;
+                return (allowSidebar ? SIDEBAR_STYLE : LIGHT_STYLE) | mask;
             }
             if (s.equals("vibrantTitleBar")) {
-                return TITLE_BAR_STYLE;
+                return TITLE_BAR_STYLE | mask;
             }
             if (s.equals("vibrantMenu")) {
-                return MENU_STYLE;
+                return MENU_STYLE | mask;
             }
             if (s.equals("vibrantPopover")) {
-                return POPOVER_STYLE;
+                return POPOVER_STYLE | mask;
             }
             if (s.equals("vibrantMediumLight")) {
-                return MEDIUM_LIGHT_STYLE;
+                return MEDIUM_LIGHT_STYLE | mask;
             }
             if (s.equals("vibrantUltraDark")) {
-                return ULTRA_DARK_STYLE;
+                return ULTRA_DARK_STYLE | mask;
             }
             if (s.equals("vibrantSheet")) {
-                return SHEET_STYLE;
+                return SHEET_STYLE | mask;
             }
             if (s.equals("vibrantSelection")) {
-                return SELECTION_STYLE;
+                return SELECTION_STYLE | mask;
             }
             if (s.equals("vibrantHeader")) {
-                return HEADER_STYLE;
+                return HEADER_STYLE | mask;
             }
             if (s.equals("vibrantWindowBackground")) {
-                return WINDOW_BACKGROUND_STYLE;
+                return WINDOW_BACKGROUND_STYLE | mask;
             }
             if (s.equals("vibrantHUDWindow")) {
-                return HUD_WINDOW_STYLE;
+                return HUD_WINDOW_STYLE | mask;
             }
             if (s.equals("vibrantFullScreenUI")) {
-                return FULL_SCREEN_MODAL_STYLE;
+                return FULL_SCREEN_MODAL_STYLE | mask;
             }
             if (s.equals("vibrantToolTip")) {
-                return TOOL_TIP_STYLE;
+                return TOOL_TIP_STYLE | mask;
             }
             if (s.equals("vibrantContentBackground")) {
-                return CONTENT_BACKGROUND_STYLE;
+                return CONTENT_BACKGROUND_STYLE | mask;
             }
             if (s.equals("vibrantUnderWindowBackground")) {
-                return UNDER_WINDOW_BACKGROUND_STYLE;
+                return UNDER_WINDOW_BACKGROUND_STYLE | mask;
             }
             if (s.equals("vibrantUnderPageBackground")) {
-                return UNDER_PAGE_BACKGROUND_STYLE;
+                return UNDER_PAGE_BACKGROUND_STYLE | mask;
             }
         }
         return NO_VIBRANT_STYLE;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Alan Snyder.
+ * Copyright (c) 2018-2021 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -42,5 +42,7 @@
 #define CONTENT_BACKGROUND_STYLE 15
 #define UNDER_WINDOW_BACKGROUND_STYLE 16
 #define UNDER_PAGE_BACKGROUND_STYLE 17
+
+#define EMPHASIZED_MATERIAL_MASK 0x1000
 
 #endif /* __VISUAL_EFFECT_VIEW__ */

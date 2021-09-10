@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Alan Snyder.
+ * Copyright (c) 2018-2021 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -28,6 +28,8 @@ static void updateAppearanceMissing(NSAppearance *appearance)
 static NSAppearance *getVibrantAppearance(NSAppearance *context, UInt16 style)
 {
     NSString *name = nil;
+
+    style = style & ~EMPHASIZED_MATERIAL_MASK;
 
     switch (style) {
 
@@ -60,6 +62,8 @@ static NSAppearance *getVibrantAppearance(NSAppearance *context, UInt16 style)
 static NSVisualEffectMaterial getVibrantMaterial(UInt16 style)
 {
     BOOL isYosemite = floor(NSAppKitVersionNumber) <= NSAppKitVersionNumber10_10_Max;
+
+    style = style & ~EMPHASIZED_MATERIAL_MASK;
 
     switch (style) {
 
@@ -156,6 +160,7 @@ static NSVisualEffectMaterial getVibrantMaterial(UInt16 style)
 {
     self.appearance = getVibrantAppearance(appearance, self.style);
     self.material = getVibrantMaterial(self.style);
+    self.emphasized = (self.style & EMPHASIZED_MATERIAL_MASK) != 0;
 }
 
 - (void) viewDidChangeEffectiveAppearance
