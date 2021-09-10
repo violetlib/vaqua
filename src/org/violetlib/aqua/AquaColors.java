@@ -123,6 +123,7 @@ public class AquaColors {
     public static final BasicContextualColors TOOL_TIP_COLORS = createToolTipColors();
     private static final BasicContextualColors MENU_COLORS = createMenuColors();
     private static final BasicContextualColors LEGACY_MENU_COLORS = createLegacyMenuColors();
+    private static final BasicContextualColors LEGACY_COMBO_BOX_MENU_COLORS = createLegacyComboBoxMenuColors();
     public static final BasicContextualColors SEPARATOR_COLORS = createSeparatorColors();
     public static final BasicContextualColors TABLE_HEADER_COLORS = createTableHeaderColors();
     public static final ContainerContextualColors CONTAINER_COLORS = createContainerColors();
@@ -167,6 +168,10 @@ public class AquaColors {
 
     public static @NotNull BasicContextualColors getMenuColors() {
         return OSVersion < 1014 ? LEGACY_MENU_COLORS : MENU_COLORS;
+    }
+
+    public static @NotNull BasicContextualColors getComboBoxMenuColors() {
+        return OSVersion < 1014 ? LEGACY_COMBO_BOX_MENU_COLORS : MENU_COLORS;
     }
 
     public static @NotNull Color getForeground(@NotNull JComponent c, @NotNull String colorName) {
@@ -382,6 +387,18 @@ public class AquaColors {
         background.setInactiveSelectedName("unemphasizedSelectedTextBackground");
 
         AquaContextualColorImpl foreground = new AquaContextualColorImpl("LegacyMenuColors.foreground", "menuForeground");
+        foreground.setSelectedName("selectedMenuItemText");
+        foreground.setInactiveSelectedName("unemphasizedSelectedControlText");
+
+        return new BasicContextualColorsImpl(background, foreground);
+    }
+
+    private static @NotNull BasicContextualColors createLegacyComboBoxMenuColors() {
+        AquaContextualColorImpl background = new AquaContextualColorImpl("LegacyComboBoxMenuColors.background", "comboBoxMenuBackground");
+        background.setSelectedName("menuSelectedBackground");
+        background.setInactiveSelectedName("unemphasizedSelectedTextBackground");
+
+        AquaContextualColorImpl foreground = new AquaContextualColorImpl("LegacyComboBoxMenuColors.foreground", "menuForeground");
         foreground.setSelectedName("selectedMenuItemText");
         foreground.setInactiveSelectedName("unemphasizedSelectedControlText");
 

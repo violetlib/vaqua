@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2020 Alan Snyder.
+ * Copyright (c) 2015-2021 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -27,6 +27,9 @@ public class AquaComboBoxPopupMenuUI extends AquaPopupMenuUI {
 
     protected @Nullable ContainerContextualColors colorsForList;
 
+    public AquaComboBoxPopupMenuUI() {
+    }
+
     @Override
     public void installUI(JComponent c) {
         super.installUI(c);
@@ -35,6 +38,17 @@ public class AquaComboBoxPopupMenuUI extends AquaPopupMenuUI {
             AquaComboBoxPopup p = (AquaComboBoxPopup) c;
             p.updateContents(false);
         }
+    }
+
+    @Override
+    protected @NotNull BasicContextualColors getMenuColors(Component c) {
+        if (c instanceof JComboBox) {
+            JComboBox cb = (JComboBox) c;
+            if (cb.isEditable()) {
+                return AquaColors.getComboBoxMenuColors();
+            }
+        }
+        return super.getMenuColors(c);
     }
 
     @Override
@@ -48,9 +62,9 @@ public class AquaComboBoxPopupMenuUI extends AquaPopupMenuUI {
         return super.getContextualMenuStyle(c);
     }
 
-    public void configure(@NotNull JList list) {
+    public void configure(@NotNull JComboBox<?> cb, @NotNull JList<?> list) {
         if (colorsForList == null) {
-            colorsForList = new DelegatedContainerContextualColors(colors);
+            colorsForList = new DelegatedContainerContextualColors(getMenuColors(cb));
         }
         AquaListUI ui = AquaUtils.getUI(list, AquaListUI.class);
         if (ui != null) {

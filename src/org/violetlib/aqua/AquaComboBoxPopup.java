@@ -174,7 +174,7 @@ class AquaComboBoxPopup extends BasicComboPopup implements AquaExtendedPopup, Li
             if (remove) {
                 AquaComboBoxPopupMenuUI ui = AquaUtils.getUI(this, AquaComboBoxPopupMenuUI.class);
                 if (ui != null) {
-                    ui.configure(list);
+                    ui.configure(comboBox, list);
                 }
             }
         }

@@ -120,6 +120,7 @@ public class AppearanceColorsBuilder {
             } else {
                 colors.add("menuSelectedBackground", 54, 148, 253);
             }
+            colors.add("comboBoxMenuBackground", 255);
             colors.add("menuBackground", 0, 0);
             colors.add("menuForeground", 61);
         }
