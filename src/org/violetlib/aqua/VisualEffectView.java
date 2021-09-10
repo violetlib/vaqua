@@ -62,7 +62,7 @@ public class VisualEffectView {
      * Update the set of regions to display a selection background.
      * @param sd A description of the regions, or null if there are no regions.
      */
-    public void updateSelectionBackgrounds(SelectionBoundsDescription sd) {
+    public void updateSelectionBackgrounds(@Nullable SelectionBoundsDescription sd) {
         if (peer != null && supportSelections) {
             peer.updateSelectionBackgrounds(sd);
         }

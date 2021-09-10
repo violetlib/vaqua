@@ -65,13 +65,15 @@ public class AquaListUI extends BasicListUI implements AquaComponentUI, AquaView
     public static final String QUAQUA_LIST_STYLE_KEY = "Quaqua.List.style";
     public static final String LIST_VIEW_STYLE_KEY = "JList.viewStyle";
 
+    private static boolean USE_VIBRANT_MENU = false;
+
     private boolean isSideBar;
     private boolean isStriped;
     private boolean isInset;
     private boolean isMenu;
 
-    // support for sidebar presentation
-    private SidebarVibrantEffects sidebarVibrantEffects;
+    // Vibrant effects for sidebar lists and optionally for menus
+    private ListVibrantEffects vibrantEffects;
 
     protected @NotNull ContainerContextualColors colors;
     protected @Nullable AppearanceContext appearanceContext;
@@ -83,6 +85,7 @@ public class AquaListUI extends BasicListUI implements AquaComponentUI, AquaView
 
     public void setMenu(boolean b) {
         isMenu = b;
+        updateVibrantEffects();
     }
 
     public void setColors(@NotNull ContainerContextualColors colors) {
@@ -119,11 +122,13 @@ public class AquaListUI extends BasicListUI implements AquaComponentUI, AquaView
         updateBorderForInset();
         updateOpaque();
         updateSideBarConfiguration();
+        updateVibrantEffects();
         configureAppearanceContext(null);
     }
 
     @Override
     protected void uninstallDefaults() {
+        disposeVibrantEffects();
         removeInsetBorder();
         super.uninstallDefaults();
     }
@@ -280,31 +285,41 @@ public class AquaListUI extends BasicListUI implements AquaComponentUI, AquaView
         if (isSideBar()) {
             list.setLayoutOrientation(JList.VERTICAL);
         }
-        if (isSideBar() && list.isDisplayable()) {
-            ensureSidebarVibrantEffects();
-        } else {
-            disposeSidebarVibrantEffects();
-        }
+        updateVibrantEffects();
         // On macOS 11+, the sidebar style implies the inset view style.
         if (AquaUtils.isInsetViewSupported()) {
             updateInsetConfiguration();
         }
     }
 
-    protected void ensureSidebarVibrantEffects() {
-        JComponent top = getComponentForVisualEffectView();
-        if (sidebarVibrantEffects != null && sidebarVibrantEffects.getComponent() != top) {
-            disposeSidebarVibrantEffects();
+    protected void updateVibrantEffects() {
+        if (list.isDisplayable()) {
+            if (isSideBar()) {
+                ensureVibrantEffects(AquaVibrantSupport.SIDEBAR_STYLE);
+                return;
+            }
+            if (isMenu && USE_VIBRANT_MENU) {
+                ensureVibrantEffects(AquaVibrantSupport.MENU_STYLE);
+                return;
+            }
         }
-        if (sidebarVibrantEffects == null) {
-            sidebarVibrantEffects = new SidebarVibrantEffects(top);
+        disposeVibrantEffects();
+    }
+
+    protected void ensureVibrantEffects(int style) {
+        JComponent top = getComponentForVisualEffectView();
+        if (vibrantEffects != null && (vibrantEffects.getComponent() != top || vibrantEffects.style != style)) {
+            disposeVibrantEffects();
+        }
+        if (vibrantEffects == null) {
+            vibrantEffects = new ListVibrantEffects(top, style);
         }
     }
 
-    protected void disposeSidebarVibrantEffects() {
-        if (sidebarVibrantEffects != null) {
-            sidebarVibrantEffects.dispose();
-            sidebarVibrantEffects = null;
+    protected void disposeVibrantEffects() {
+        if (vibrantEffects != null) {
+            vibrantEffects.dispose();
+            vibrantEffects = null;
         }
     }
 
@@ -317,14 +332,17 @@ public class AquaListUI extends BasicListUI implements AquaComponentUI, AquaView
     }
 
     /**
-     * Support for sidebar vibrant effects. An NSVisualEffectView is created for the sidebar background and for each
-     * selected row background region.
+     * Support for vibrant effects. An NSVisualEffectView is created for the list background and for each selected row
+     * background region.
      */
-    protected class SidebarVibrantEffects extends VisualEffectView {
-        protected ListSelectionBoundsTracker bt;
+    protected class ListVibrantEffects extends VisualEffectView {
+        protected @Nullable ListSelectionBoundsTracker bt;
+        protected final int style;
 
-        public SidebarVibrantEffects(JComponent top) {
-            super(top, AquaVibrantSupport.SIDEBAR_STYLE, true);
+        public ListVibrantEffects(@NotNull JComponent top, int style) {
+            super(top, style, true);
+
+            this.style = style;
             bt = new ListSelectionBoundsTracker(list, this::updateSelectionBackgrounds) {
                 @Override
                 protected int convertRowYCoordinateToSelectionDescription(int y) {
@@ -455,7 +473,7 @@ public class AquaListUI extends BasicListUI implements AquaComponentUI, AquaView
     private void updateOpaque() {
         // JList forces opaque to be true, so LookAndFeel.installProperty cannot be used
         Color background = list.getBackground();
-        list.setOpaque(!isStriped && (isSideBar() || background == null || background.getAlpha() == 255));
+        list.setOpaque(!isStriped && (isVibrant() || background == null || background.getAlpha() == 255));
     }
 
     private boolean isBackgroundClear() {
@@ -471,9 +489,13 @@ public class AquaListUI extends BasicListUI implements AquaComponentUI, AquaView
         return isSideBar;
     }
 
+    public boolean isVibrant() {
+        return isSideBar || (USE_VIBRANT_MENU && isMenu);
+    }
+
     @Override
     public boolean isInset() {
-        return isInset || (isSideBar() && OSXSystemProperties.useInsetViewStyle());
+        return isInset || (isVibrant() && OSXSystemProperties.useInsetViewStyle());
     }
 
     protected boolean isStyleProperty(String prop) {
@@ -505,14 +527,14 @@ public class AquaListUI extends BasicListUI implements AquaComponentUI, AquaView
     }
 
     private @Nullable Color getBackgroundColor() {
-        return isSideBar() ? null : list.getBackground();
+        return isVibrant() ? null : list.getBackground();
     }
 
     @Override
     public void paint(Graphics g, JComponent c) {
         if (appearanceContext != null) {
-            if (sidebarVibrantEffects != null) {
-                sidebarVibrantEffects.update();
+            if (vibrantEffects != null) {
+                vibrantEffects.update();
             } else {
                 paintStripes(g);
             }
@@ -580,7 +602,7 @@ public class AquaListUI extends BasicListUI implements AquaComponentUI, AquaView
         boolean isWrapped = list.getLayoutOrientation() != JList.VERTICAL;
 
         colors.configureForRow(row, isSelected);
-        if (isSelected && !isSideBar()) {
+        if (isSelected && !isVibrant()) {
             Color background = colors.getBackground(appearanceContext);
             g.setColor(background);
             if (isInset()) {
@@ -607,7 +629,7 @@ public class AquaListUI extends BasicListUI implements AquaComponentUI, AquaView
             ((JTextComponent) rendererComponent).putClientProperty(AquaColors.COMPONENT_COLORS_KEY, AquaColors.CELL_TEXT_COLORS);
         }
 
-        if ((isInset() || isSideBar()) && rendererComponent.isOpaque() && rendererComponent instanceof JComponent) {
+        if (isInset() && rendererComponent.isOpaque() && rendererComponent instanceof JComponent) {
             JComponent jc = (JComponent) rendererComponent;
             AquaUtils.setOpaqueCarefully(jc, false);
         }

@@ -2189,8 +2189,8 @@ JNIEXPORT jlong JNICALL Java_org_violetlib_aqua_AquaVibrantSupport_nativeCreateV
         // Insert a view as a sibling of the AWT view.
         AquaWrappedAWTView *wrapper = ensureWrapper(w);
         AquaVisualEffectView *view;
-        if (supportSelections && style == SIDEBAR_STYLE) {
-            view = [[AquaSidebarBackground alloc] initWithFrame: NSMakeRect(0, 0, 0, 0)];
+        if (supportSelections) {
+            view = [[AquaSidebarBackground alloc] initWithFrame: NSMakeRect(0, 0, 0, 0) style:style];
         } else {
             AquaVisualEffectView *fxView = [[AquaVisualEffectView alloc] initWithFrame: NSMakeRect(0, 0, 0, 0)];
             fxView.style = style;

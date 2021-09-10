@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2020 Alan Snyder.
+ * Copyright (c) 2015-2021 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -7,23 +7,28 @@
  */
 
 #import "AquaSidebarBackground.h"
+#import "org_violetlib_aqua_AquaVibrantSupport.h"
 #import <Availability.h>
+
+// This background is used for sidebars and optionally for menus
 
 @implementation AquaSidebarBackground {
     NSMutableArray<NSVisualEffectView*> *selectionViews;
     NSVisualEffectMaterial selectionMaterial;
 }
 
-- (AquaSidebarBackground *) initWithFrame: (NSRect) frameRect {
+- (AquaSidebarBackground *) initWithFrame: (NSRect) frameRect style: (UInt16) style {
     self = [super initWithFrame: frameRect];
 
     if (self) {
         if (floor(NSAppKitVersionNumber) <= NSAppKitVersionNumber10_10_Max) {
             self.material = NSVisualEffectMaterialAppearanceBased;
-        } else {
+        } else if (style == SIDEBAR_STYLE) {
             self.material = NSVisualEffectMaterialSidebar;
+        } else {
+            self.material = NSVisualEffectMaterialMenu;
         }
-        self.style = SIDEBAR_STYLE;
+        self.style = style;
         selectionMaterial = NSVisualEffectMaterialSelection;
 
         self.wantsLayer = YES;
@@ -71,6 +76,7 @@
             v.wantsLayer = YES;
             v.autoresizingMask = NSViewWidthSizable;
             v.blendingMode = NSVisualEffectBlendingModeBehindWindow;
+            v.emphasized = self.style != SIDEBAR_STYLE;
             v.material = selectionMaterial;
             if (useInset) {
                 v.layer.cornerRadius = 5;
