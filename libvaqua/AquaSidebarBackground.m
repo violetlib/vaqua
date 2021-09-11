@@ -69,8 +69,8 @@
         int h = *p++;
         NSRect frame = NSMakeRect(0, y, width, h);
         if (useInset) {
-            int inset = 10;
-            frame = NSMakeRect(inset, y, width - 2*inset, h);
+            int inset = 5;
+            frame = NSMakeRect(inset, y, width - 2 * inset, h);
         }
         NSVisualEffectView *v = index < currentCount ? [selectionViews objectAtIndex:index] : nil;
         if (v) {
@@ -83,7 +83,7 @@
             v.emphasized = self.style != SIDEBAR_STYLE;
             v.material = selectionMaterial;
             if (useInset) {
-                v.layer.cornerRadius = 5;
+                v.layer.cornerRadius = 4;
                 v.layer.masksToBounds = YES;
             }
             if (forceActive) {
