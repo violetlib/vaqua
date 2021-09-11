@@ -69,6 +69,7 @@ public class AquaListUI extends BasicListUI implements AquaComponentUI, AquaView
     private boolean isStriped;
     private boolean isInset;
     private boolean isMenu;
+    private boolean isVibrantMenu;
 
     // Vibrant effects for sidebar lists and optionally for menus
     private ListVibrantEffects vibrantEffects;
@@ -81,8 +82,9 @@ public class AquaListUI extends BasicListUI implements AquaComponentUI, AquaView
         colors = AquaColors.CONTAINER_COLORS;
     }
 
-    public void setMenu(boolean b) {
-        isMenu = b;
+    public void configureAsMenu(boolean isVibrant) {
+        isMenu = true;
+        isVibrantMenu = isVibrant;
         updateVibrantEffects();
     }
 
@@ -296,7 +298,7 @@ public class AquaListUI extends BasicListUI implements AquaComponentUI, AquaView
                 ensureVibrantEffects(AquaVibrantSupport.SIDEBAR_STYLE);
                 return;
             }
-            if (isMenu && AquaLookAndFeel.USE_VIBRANT_MENU) {
+            if (isVibrantMenu && AquaLookAndFeel.USE_VIBRANT_MENU) {
                 ensureVibrantEffects(AquaVibrantSupport.MENU_STYLE);
                 return;
             }
@@ -488,7 +490,7 @@ public class AquaListUI extends BasicListUI implements AquaComponentUI, AquaView
     }
 
     public boolean isVibrant() {
-        return isSideBar || (AquaLookAndFeel.USE_VIBRANT_MENU && isMenu);
+        return isSideBar || (AquaLookAndFeel.USE_VIBRANT_MENU && isVibrantMenu);
     }
 
     @Override
@@ -603,7 +605,7 @@ public class AquaListUI extends BasicListUI implements AquaComponentUI, AquaView
         if (isSelected && !isVibrant()) {
             Color background = colors.getBackground(appearanceContext);
             g.setColor(background);
-            if (isInset()) {
+            if (isInset() && !isVibrantMenu) {
                 Graphics2D gg = (Graphics2D) g;
                 if (isMenu) {
                     AquaUtils.paintInsetMenuItemSelection(gg, cx, cy, cw, ch);

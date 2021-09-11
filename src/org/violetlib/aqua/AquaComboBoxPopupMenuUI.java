@@ -73,7 +73,7 @@ public class AquaComboBoxPopupMenuUI extends AquaPopupMenuUI {
         }
         AquaListUI ui = AquaUtils.getUI(list, AquaListUI.class);
         if (ui != null) {
-            ui.setMenu(true);
+            ui.configureAsMenu(!cb.isEditable());
             ui.setColors(colorsForList);
             list.putClientProperty(AquaListUI.LIST_VIEW_STYLE_KEY, "inset");
         }
