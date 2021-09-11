@@ -15,9 +15,10 @@
 @implementation AquaSidebarBackground {
     NSMutableArray<NSVisualEffectView*> *selectionViews;
     NSVisualEffectMaterial selectionMaterial;
+    BOOL forceActive;
 }
 
-- (AquaSidebarBackground *) initWithFrame: (NSRect) frameRect style: (UInt16) style {
+- (AquaSidebarBackground *) initWithFrame: (NSRect) frameRect style: (UInt16) style forceActive: (BOOL) shouldForceActive {
     self = [super initWithFrame: frameRect];
 
     if (self) {
@@ -30,11 +31,14 @@
         }
         self.style = style;
         selectionMaterial = NSVisualEffectMaterialSelection;
-
+        forceActive = shouldForceActive;
         self.wantsLayer = YES;
         self.autoresizesSubviews = YES;
         selectionViews = [[NSMutableArray alloc] init];
         self.blendingMode = NSVisualEffectBlendingModeBehindWindow;
+        if (shouldForceActive) {
+            self.state = NSVisualEffectStateActive;
+        }
     }
 
     return self;
@@ -81,6 +85,9 @@
             if (useInset) {
                 v.layer.cornerRadius = 5;
                 v.layer.masksToBounds = YES;
+            }
+            if (forceActive) {
+                v.state = NSVisualEffectStateActive;
             }
             [selectionViews addObject: v];
             [self addSubview: v];

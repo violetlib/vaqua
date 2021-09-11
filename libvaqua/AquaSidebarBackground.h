@@ -10,6 +10,6 @@
 #import "AquaVisualEffectView.h"
 
 @interface AquaSidebarBackground : AquaVisualEffectView
-- (AquaSidebarBackground *) initWithFrame: (NSRect) frameRect style: (UInt16) style;
+- (AquaSidebarBackground *) initWithFrame: (NSRect) frameRect style: (UInt16) style forceActive: (BOOL) forceActive;
 - (void) updateSelectionViews: (int*) data;
 @end

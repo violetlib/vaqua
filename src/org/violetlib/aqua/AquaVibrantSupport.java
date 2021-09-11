@@ -308,7 +308,8 @@ public class AquaVibrantSupport {
      *         displaying a vibrant selection background.
      */
     public static VisualEffectViewPeer createVisualEffectView(@NotNull Window w, int style, boolean supportSelections) {
-        long ptr = execute(w, wptr -> nativeCreateVisualEffectView(wptr, style, supportSelections));
+        boolean forceActive = w.getType() == Window.Type.POPUP || !AquaUtils.isDecorated(w);
+        long ptr = execute(w, wptr -> nativeCreateVisualEffectView(wptr, style, supportSelections, forceActive));
         if (ptr != 0) {
             AquaUtils.enableTranslucency(w);
             return new VisualEffectViewPeerImpl(w, ptr);
@@ -376,7 +377,7 @@ public class AquaVibrantSupport {
 
     private static native int setupVisualEffectWindow(long w, int style, boolean forceActive);
     private static native int removeVisualEffectWindow(long w);
-    private static native long nativeCreateVisualEffectView(long w, int style, boolean supportSelections);
+    private static native long nativeCreateVisualEffectView(long w, int style, boolean supportSelections, boolean forceActive);
     private static native int setViewFrame(long viewPtr, int x, int y, int width, int height, int yflipped);
     private static native int nativeUpdateSelectionBackgrounds(long viewPtr, int[] data);
     private static native int disposeVisualEffectView(long viewPtr);

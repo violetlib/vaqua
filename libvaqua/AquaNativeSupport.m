@@ -2175,10 +2175,10 @@ JNIEXPORT jint JNICALL Java_org_violetlib_aqua_AquaVibrantSupport_removeVisualEf
 /*
  * Class:     org_violetlib_aqua_AquaVibrantSupport
  * Method:    createVisualEffectView
- * Signature: (JIZ)J
+ * Signature: (JIZZ)J
  */
 JNIEXPORT jlong JNICALL Java_org_violetlib_aqua_AquaVibrantSupport_nativeCreateVisualEffectView
-    (JNIEnv *env, jclass cl, jlong wptr, jint style, jboolean supportSelections)
+    (JNIEnv *env, jclass cl, jlong wptr, jint style, jboolean supportSelections, jboolean forceActive)
 {
     __block jlong result = 0;
 
@@ -2190,11 +2190,14 @@ JNIEXPORT jlong JNICALL Java_org_violetlib_aqua_AquaVibrantSupport_nativeCreateV
         AquaWrappedAWTView *wrapper = ensureWrapper(w);
         AquaVisualEffectView *view;
         if (supportSelections) {
-            view = [[AquaSidebarBackground alloc] initWithFrame: NSMakeRect(0, 0, 0, 0) style:style];
+            view = [[AquaSidebarBackground alloc] initWithFrame: NSMakeRect(0, 0, 0, 0) style:style forceActive:forceActive];
         } else {
             AquaVisualEffectView *fxView = [[AquaVisualEffectView alloc] initWithFrame: NSMakeRect(0, 0, 0, 0)];
             fxView.style = style;
             fxView.blendingMode = NSVisualEffectBlendingModeBehindWindow;
+            if (forceActive) {
+                fxView.state = NSVisualEffectStateActive;
+            }
             view = fxView;
         }
         [view configureWithAppearance:w.effectiveAppearance];

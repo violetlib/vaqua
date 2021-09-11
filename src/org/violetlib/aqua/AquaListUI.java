@@ -65,7 +65,7 @@ public class AquaListUI extends BasicListUI implements AquaComponentUI, AquaView
     public static final String QUAQUA_LIST_STYLE_KEY = "Quaqua.List.style";
     public static final String LIST_VIEW_STYLE_KEY = "JList.viewStyle";
 
-    private static boolean USE_VIBRANT_MENU = false;
+    private static boolean USE_VIBRANT_MENU = true;
 
     private boolean isSideBar;
     private boolean isStriped;
