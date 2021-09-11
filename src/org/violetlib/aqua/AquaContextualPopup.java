@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015 Alan Snyder.
+ * Copyright (c) 2015-2021 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -15,6 +15,8 @@ import javax.swing.border.Border;
 import javax.swing.border.EmptyBorder;
 import javax.swing.plaf.UIResource;
 
+import org.jetbrains.annotations.Nullable;
+
 /**
  * A contextual style popup that (if necessary) scrolls without using a scroll bar and scrolls by growing taller when
  * possible.
@@ -23,11 +25,13 @@ public class AquaContextualPopup {
 
     private JComponent wrapper;
     private Popup p;
+    private @Nullable MenuVibrantEffects effects;
 
     /**
      * Create a contextual style popup.
      * @param content The content to be displayed in the popup.
      * @param owner The owner of the popup. Needed for proper mouse grabbing if this popup is heavyweight.
+     * @param installVibrantSelection If true, install support for highlighting the selection using a vibrant style.
      * @param selectedRegion An optional region of the content that should be initially visible. The view may be
      *                       scrolled to make the region visible.
      * @param selectedRegionLocation An optional preferred screen location for the selected region. The view may be
@@ -40,6 +44,7 @@ public class AquaContextualPopup {
      */
     public AquaContextualPopup(JComponent content,
                                Component owner,
+                               boolean installVibrantSelection,
                                Rectangle selectedRegion,
                                Point selectedRegionLocation,
                                int x, int y, int width, int height) {
@@ -105,6 +110,11 @@ public class AquaContextualPopup {
 
         wrapper.putClientProperty(AquaVibrantSupport.POPUP_BACKGROUND_STYLE_KEY, "vibrantMenu");
         wrapper.putClientProperty(AquaVibrantSupport.POPUP_CORNER_RADIUS_KEY, 6);
+
+        if (installVibrantSelection && content instanceof JPopupMenu) {
+            JPopupMenu menu = (JPopupMenu) content;
+            effects = new MenuVibrantEffects(wrapper, menu, AquaVibrantSupport.MENU_STYLE);
+        }
 
         PopupFactory f = PopupFactory.getSharedInstance();
         p = f.getPopup(owner, wrapper, x, y);

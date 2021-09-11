@@ -61,6 +61,8 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
     // for lazy initializers. Following the pattern from metal.
     private static final String PKG_PREFIX = "org.violetlib.aqua.";
 
+    public static boolean USE_VIBRANT_MENU = true;
+
     private AquaFocusRingManager focusRingManager;
     private PropertyChangeListener uiChangeListener;
     private AquaPopupFactory popupFactory;

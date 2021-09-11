@@ -8,16 +8,10 @@
 
 package org.violetlib.aqua;
 
-import java.awt.Component;
-import java.awt.Window;
-import java.awt.event.ComponentEvent;
-import java.awt.event.ComponentListener;
-import java.awt.event.HierarchyBoundsListener;
-import java.awt.event.HierarchyEvent;
-import java.awt.event.HierarchyListener;
+import java.awt.*;
+import java.awt.event.*;
 import java.util.Objects;
-import javax.swing.JComponent;
-import javax.swing.SwingUtilities;
+import javax.swing.*;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -161,7 +155,6 @@ public abstract class ComponentTracker
      */
     protected void windowChanged(@Nullable Window oldWindow, @Nullable Window newWindow) {
     }
-
 
     /**
      * Called when the component is moved within a window hierarchy.

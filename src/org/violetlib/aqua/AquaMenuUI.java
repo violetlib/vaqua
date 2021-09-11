@@ -114,12 +114,24 @@ public class AquaMenuUI extends BasicMenuUI implements AquaComponentUI {
     @Override
     public void paint(Graphics g, JComponent c) {
         appearanceContext = AquaMenuSupport.instance().getAppearanceContext(menuItem, null);
-        Color background = colors.getBackground(appearanceContext);
-        g.setColor(background);
-        if (OSXSystemProperties.useInsetViewStyle()) {
-            AquaUtils.paintInsetMenuItemSelection((Graphics2D) g, 0, 0, c.getWidth(), c.getHeight());
+        if (AquaLookAndFeel.USE_VIBRANT_MENU) {
+            Component parent = c.getParent();
+            if (parent instanceof JPopupMenu) {
+                JPopupMenu menu = (JPopupMenu) parent;
+                Object o = menu.getClientProperty(AquaPopupMenuUI.POP_UP_TRACKER);
+                if (o instanceof MenuSelectionBoundsTracker) {
+                    MenuSelectionBoundsTracker tracker = (MenuSelectionBoundsTracker) o;
+                    tracker.paintingItem((JMenuItem) c, appearanceContext);
+                }
+            }
         } else {
-            g.fillRect(0, 0, c.getWidth(), c.getHeight());
+            Color background = colors.getBackground(appearanceContext);
+            g.setColor(background);
+            if (OSXSystemProperties.useInsetViewStyle()) {
+                AquaUtils.paintInsetMenuItemSelection((Graphics2D) g, 0, 0, c.getWidth(), c.getHeight());
+            } else {
+                g.fillRect(0, 0, c.getWidth(), c.getHeight());
+            }
         }
         AquaMenuSupport.instance().paintMenuItem((Graphics2D) g, menuItem, checkIcon, arrowIcon,
                 appearanceContext, colors, defaultTextIconGap, acceleratorFont);

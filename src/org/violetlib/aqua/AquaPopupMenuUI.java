@@ -54,6 +54,7 @@ public class AquaPopupMenuUI extends BasicPopupMenuUI implements AquaComponentUI
     public static final String POP_UP_SCREEN_BOUNDS = "Aqua.PopupMenu.ScreenBounds";
     public static final String POP_UP_SELECTED_REGION = "Aqua.PopupMenu.SelectedRegion";
     public static final String POP_UP_SELECTED_REGION_LOCATION = "Aqua.PopupMenu.SelectedRegionLocation";
+    public static final String POP_UP_TRACKER = "Aqua.PopupMenu.Tracker";
 
     public static final int ORDINARY_CONTEXTUAL_MENU_STYLE = 0;
     public static final int SIMPLE_CONTEXTUAL_MENU_STYLE = 1;   // used in macOS 10.14+ for editable combo boxes
@@ -167,7 +168,10 @@ public class AquaPopupMenuUI extends BasicPopupMenuUI implements AquaComponentUI
                 }
             }
 
-            cp = new AquaContextualPopup(popup, owner, selectedRegion, selectedRegionLocation, x, y, width, height);
+            boolean installVibrantSelection = AquaLookAndFeel.USE_VIBRANT_MENU && isVibrantSelectionSupportNeeded(owner);
+
+            cp = new AquaContextualPopup(popup, owner, installVibrantSelection,
+              selectedRegion, selectedRegionLocation, x, y, width, height);
             return cp.getPopup();
 
         } else if (menuStyle == SIMPLE_CONTEXTUAL_MENU_STYLE) {
@@ -192,7 +196,11 @@ public class AquaPopupMenuUI extends BasicPopupMenuUI implements AquaComponentUI
         return AquaColors.getMenuColors();
     }
 
-    protected int getContextualMenuStyle(Component c) {
+    protected boolean isVibrantSelectionSupportNeeded(Component owner) {
+        return owner instanceof JComponent;
+    }
+
+    protected int getContextualMenuStyle(Component owner) {
         return FANCY_CONTEXTUAL_MENU_STYLE;
     }
 

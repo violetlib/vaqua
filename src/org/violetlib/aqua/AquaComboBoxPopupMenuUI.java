@@ -52,14 +52,19 @@ public class AquaComboBoxPopupMenuUI extends AquaPopupMenuUI {
     }
 
     @Override
-    protected int getContextualMenuStyle(Component c) {
-        if (c instanceof JComboBox) {
-            JComboBox cb = (JComboBox) c;
+    protected boolean isVibrantSelectionSupportNeeded(Component owner) {
+        return false;
+    }
+
+    @Override
+    protected int getContextualMenuStyle(Component owner) {
+        if (owner instanceof JComboBox) {
+            JComboBox cb = (JComboBox) owner;
             if (cb.isEditable()) {
                 return OSXSystemProperties.OSVersion >= 1014 ? SIMPLE_CONTEXTUAL_MENU_STYLE : ORDINARY_CONTEXTUAL_MENU_STYLE;
             }
         }
-        return super.getContextualMenuStyle(c);
+        return super.getContextualMenuStyle(owner);
     }
 
     public void configure(@NotNull JComboBox<?> cb, @NotNull JList<?> list) {

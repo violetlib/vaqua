@@ -120,7 +120,18 @@ public class AquaMenuItemUI extends BasicMenuItemUI implements AquaComponentUI {
     @Override
     public void paint(Graphics g, JComponent c) {
         appearanceContext = AquaMenuSupport.instance().getAppearanceContext(menuItem, null);
-        if (c.isOpaque()) {
+        if (AquaLookAndFeel.USE_VIBRANT_MENU) {
+            Component parent = c.getParent();
+            if (parent instanceof JPopupMenu) {
+                JPopupMenu menu = (JPopupMenu) parent;
+                Object o = menu.getClientProperty(AquaPopupMenuUI.POP_UP_TRACKER);
+                if (o instanceof MenuSelectionBoundsTracker) {
+                    MenuSelectionBoundsTracker tracker = (MenuSelectionBoundsTracker) o;
+                    tracker.paintingItem((JMenuItem) c, appearanceContext);
+                }
+            }
+
+        } else if (c.isOpaque()) {
             Color background = colors.getBackground(appearanceContext);
             g.setColor(background);
             if (OSXSystemProperties.useInsetViewStyle()) {

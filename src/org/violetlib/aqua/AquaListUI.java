@@ -65,8 +65,6 @@ public class AquaListUI extends BasicListUI implements AquaComponentUI, AquaView
     public static final String QUAQUA_LIST_STYLE_KEY = "Quaqua.List.style";
     public static final String LIST_VIEW_STYLE_KEY = "JList.viewStyle";
 
-    private static boolean USE_VIBRANT_MENU = true;
-
     private boolean isSideBar;
     private boolean isStriped;
     private boolean isInset;
@@ -298,7 +296,7 @@ public class AquaListUI extends BasicListUI implements AquaComponentUI, AquaView
                 ensureVibrantEffects(AquaVibrantSupport.SIDEBAR_STYLE);
                 return;
             }
-            if (isMenu && USE_VIBRANT_MENU) {
+            if (isMenu && AquaLookAndFeel.USE_VIBRANT_MENU) {
                 ensureVibrantEffects(AquaVibrantSupport.MENU_STYLE);
                 return;
             }
@@ -490,7 +488,7 @@ public class AquaListUI extends BasicListUI implements AquaComponentUI, AquaView
     }
 
     public boolean isVibrant() {
-        return isSideBar || (USE_VIBRANT_MENU && isMenu);
+        return isSideBar || (AquaLookAndFeel.USE_VIBRANT_MENU && isMenu);
     }
 
     @Override
