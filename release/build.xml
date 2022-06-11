@@ -1,13 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<project
+<project name="VAqua Look and Feel"
     basedir="."
     default="release"
+    xmlns:if="ant:if"
+    xmlns:unless="ant:unless"
     xmlns:resolver="antlib:org.apache.maven.resolver.ant"
     xmlns:ivy="antlib:org.apache.ivy.ant"
     xmlns:antcontrib="antlib:net.sf.antcontrib"
-    xmlns:if="ant:if"
-    name="VAqua Look and Feel">
+    >
 
     <tstamp>
         <format property="NOW" timezone="GMT" pattern="yyyy-MM-dd'T'HH:mm:ss'Z'"/>
@@ -72,7 +73,7 @@
         <echo level="info" message="${fullReleaseName}"/>
     </target>
 
-    <target name="clean" description="Remove build directories">
+    <target name="clean">
         <delete includeEmptyDirs="true" failonerror="false"><fileset dir="${builddir}"/></delete>
     </target>
 
@@ -177,6 +178,7 @@
       <javac
           classpathref="cp"
           encoding="UTF-8"
+          release="9"
           srcdir="${src9}"
           destdir="${classesdir}"
           debug="${debug}"
@@ -185,8 +187,6 @@
           fork="true"
           executable="${javac}"
           >
-          <compilerarg value="--release"/>
-          <compilerarg value="9"/>
           <patternset>
             <include name="org/violetlib/aqua/**/*.java"/>
           </patternset>
