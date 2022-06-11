@@ -140,8 +140,6 @@ public class AquaFocusRingPainter {
 
         if (s instanceof Rectangle2D) {
             createRoundRectOuter = !useSmallRing;
-        } else if (s instanceof GeneralRoundRectangle) {
-            createRoundRectOuter = true;
         }
 
         if (createRoundRectOuter) {
