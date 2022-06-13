@@ -44,7 +44,7 @@ import javax.swing.text.DefaultCaret;
 import javax.swing.text.Highlighter;
 import javax.swing.text.JTextComponent;
 
-import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.*;
 
 @SuppressWarnings("serial") // Superclass is not serializable across versions
 public class AquaCaret extends DefaultCaret
@@ -113,9 +113,9 @@ public class AquaCaret extends DefaultCaret
     private boolean temporaryInhibitMouseReleaseBehavior = false; // fix for JDK-8229856
 
     @Override
-    public void focusGained(@NotNull FocusEvent e) {
+    public void focusGained(@Nullable FocusEvent e) {
 
-        if (shouldSelectAllOnFocusGained(e)) {
+        if (e != null && shouldSelectAllOnFocusGained(e)) {
             JTextComponent c = getComponent();
             int end = c.getDocument().getLength();
             int dot = getDot();
