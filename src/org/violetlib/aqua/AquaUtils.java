@@ -72,6 +72,8 @@ final public class AquaUtils {
 
     private static final String ANIMATIONS_PROPERTY = "swing.enableAnimations";
 
+    private static final int INSET_CORNER_RADIUS = 10;
+
     private static final HierarchyListener toolbarStatusListener = new HierarchyListener() {
         @Override
         public void hierarchyChanged(HierarchyEvent e) {
@@ -1307,9 +1309,12 @@ final public class AquaUtils {
     public static void paintInsetStripedRow(@NotNull Graphics2D g, int cx, int cy, int cw, int ch) {
         int top = 0;
         int side = 10;
-        int radius = 8;
+        int radius = INSET_CORNER_RADIUS;
         RoundRectangle2D r = new RoundRectangle2D.Float(cx + side, cy + top, cw - 2 * side, ch - 2 * top, radius, radius);
+        final Object preserveAntiAliasingRenderingHint = g.getRenderingHint(RenderingHints.KEY_ANTIALIASING);
+        g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
         g.fill(r);
+        g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, preserveAntiAliasingRenderingHint);
     }
 
     /**
@@ -1318,9 +1323,12 @@ final public class AquaUtils {
     public static void paintInsetCellSelection(@NotNull Graphics2D g, int cx, int cy, int cw, int ch) {
         int top = 3;
         int side = 10;
-        int radius = 8;
+        int radius = INSET_CORNER_RADIUS;
         RoundRectangle2D r = new RoundRectangle2D.Float(cx + side, cy + top, cw - 2 * side, ch - 2 * top, radius, radius);
+        final Object preserveAntiAliasingRenderingHint = g.getRenderingHint(RenderingHints.KEY_ANTIALIASING);
+        g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
         g.fill(r);
+        g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, preserveAntiAliasingRenderingHint);
     }
 
     /**
@@ -1330,7 +1338,7 @@ final public class AquaUtils {
                                                int cx, int cy, int cw, int ch) {
         int top = 0;
         int side = 10;
-        int r = 8;
+        int r = INSET_CORNER_RADIUS;
         int x = cx + side;
         int w = cw - 2 * side;
 
@@ -1344,7 +1352,10 @@ final public class AquaUtils {
         } else {
             s = new RoundRectangle2D.Float(cx + side, cy + top, cw - 2 * side, ch - 2 * top, r, r);
         }
+        final Object preserveAntiAliasingRenderingHint = g.getRenderingHint(RenderingHints.KEY_ANTIALIASING);
+        g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
         g.fill(s);
+        g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, preserveAntiAliasingRenderingHint);
     }
 
     /**
@@ -1353,9 +1364,12 @@ final public class AquaUtils {
     public static void paintInsetMenuItemSelection(@NotNull Graphics2D g, int cx, int cy, int cw, int ch) {
         int top = 0;
         int side = 4;
-        int radius = 8;
+        int radius = INSET_CORNER_RADIUS;
         RoundRectangle2D r = new RoundRectangle2D.Float(cx + side, cy + top, cw - 2 * side, ch - 2 * top, radius, radius);
+        final Object preserveAntiAliasingRenderingHint = g.getRenderingHint(RenderingHints.KEY_ANTIALIASING);
+        g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
         g.fill(r);
+        g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, preserveAntiAliasingRenderingHint);
     }
 
     /**
