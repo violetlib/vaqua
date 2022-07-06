@@ -452,12 +452,12 @@ public class AquaColors {
         AquaContextualColorImpl oddRowBackground;
 
         /* Before macOS 11 striped tables row are grey first; since macOS 11 striped tables rows are white first */
-        if (OSXSystemProperties.OSVersion < 1100) {
-            evenRowBackground = new AquaContextualColorImpl("StripedContainerColors.background 1", "alternatingContentBackground_1");
-            oddRowBackground = new AquaContextualColorImpl("StripedContainerColors.background 0", "alternatingContentBackground_0");
-        } else {
+        if (OSXSystemProperties.OSVersion >= 1016) {
             evenRowBackground = new AquaContextualColorImpl("StripedContainerColors.background 0", "alternatingContentBackground_0");
             oddRowBackground = new AquaContextualColorImpl("StripedContainerColors.background 1", "alternatingContentBackground_1");
+        } else {
+            evenRowBackground = new AquaContextualColorImpl("StripedContainerColors.background 1", "alternatingContentBackground_1");
+            oddRowBackground = new AquaContextualColorImpl("StripedContainerColors.background 0", "alternatingContentBackground_0");
         }
 
         evenRowBackground.setActiveDefaultSelectedName("selectedContentBackground");
