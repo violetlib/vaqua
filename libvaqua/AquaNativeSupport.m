@@ -1291,7 +1291,6 @@ JNIEXPORT jobjectArray JNICALL Java_org_violetlib_aqua_fc_OSXFile_nativeGetSideb
                     icon1J = renderImageIntoBufferForDisplay(env, iconImage, iconSize, iconSize, 1);
                     icon2J = renderImageIntoBufferForDisplay(env, iconImage, iconSize, iconSize, 2);
                     [iconImage release];
-                    CFRelease(icon);
                 }
             }
 
