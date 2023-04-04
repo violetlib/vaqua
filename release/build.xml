@@ -19,7 +19,7 @@
         <arg value="-v"/>
         <arg value="9+"/>
     </exec> -->
-    <property name="jdk" value="/Library/Java/JavaVirtualMachines/adoptopenjdk-11.jdk/Contents/Home" />
+    <property name="jdk" value="/Library/Java/JavaVirtualMachines/temurin-11.jdk/Contents/Home" />
 
     <property name="javac" location="${jdk}/bin/javac"/>
 
@@ -30,7 +30,7 @@
         <arg value="-v"/>
         <arg value="1.8"/>
     </exec> -->
-    <property name="jdk8" value="/Library/Java/JavaVirtualMachines/adoptopenjdk-8.jdk/Contents/Home" />
+    <property name="jdk8" value="/Library/Java/JavaVirtualMachines/zulu-8.jdk/Contents/Home" />
 
     <property name="bootclasspath" location="${jdk8}/jre/lib/rt.jar" />
 
