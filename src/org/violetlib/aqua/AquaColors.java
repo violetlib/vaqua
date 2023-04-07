@@ -448,11 +448,20 @@ public class AquaColors {
         background.setActiveDefaultSelectedName("selectedContentBackground");
         background.setSelectedName("unemphasizedSelectedTextBackground");
 
-        AquaContextualColorImpl evenRowBackground = new AquaContextualColorImpl("StripedContainerColors.background 1", "alternatingContentBackground_1");
+        AquaContextualColorImpl evenRowBackground;
+        AquaContextualColorImpl oddRowBackground;
+
+        /* Before macOS 11 striped tables row are grey first; since macOS 11 striped tables rows are white first */
+        if (OSXSystemProperties.OSVersion >= 1016) {
+            evenRowBackground = new AquaContextualColorImpl("StripedContainerColors.background 0", "alternatingContentBackground_0");
+            oddRowBackground = new AquaContextualColorImpl("StripedContainerColors.background 1", "alternatingContentBackground_1");
+        } else {
+            evenRowBackground = new AquaContextualColorImpl("StripedContainerColors.background 1", "alternatingContentBackground_1");
+            oddRowBackground = new AquaContextualColorImpl("StripedContainerColors.background 0", "alternatingContentBackground_0");
+        }
+
         evenRowBackground.setActiveDefaultSelectedName("selectedContentBackground");
         evenRowBackground.setSelectedName("unemphasizedSelectedTextBackground");
-
-        AquaContextualColorImpl oddRowBackground = new AquaContextualColorImpl("StripedContainerColors.background 0", "alternatingContentBackground_0");
         oddRowBackground.setActiveDefaultSelectedName("selectedContentBackground");
         oddRowBackground.setSelectedName("unemphasizedSelectedTextBackground");
 
