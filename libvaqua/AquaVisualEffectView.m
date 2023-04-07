@@ -7,7 +7,8 @@
  */
 
 #import "AquaVisualEffectView.h"
-#import "VAppearances.h"
+
+void VAppearances_updateAppearance(NSAppearance *appearance);
 
 #pragma weak VAppearances_updateAppearance=updateAppearanceMissing
 

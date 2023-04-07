@@ -9,7 +9,8 @@
 #import "AquaWrappedAWTView.h"
 #import "AquaVisualEffectView.h"
 #import "AquaNativeSupport.h"
-#import "VAppearances.h"
+
+void VAppearances_updateAppearance(NSAppearance *appearance);
 
 #pragma weak VAppearances_updateAppearance=updateAppearanceMissing
 
