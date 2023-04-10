@@ -1,5 +1,5 @@
 /*
- * Changes Copyright (c) 2015-2021 Alan Snyder.
+ * Changes Copyright (c) 2015-2023 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -410,30 +410,6 @@ public class AquaRootPaneUI extends BasicRootPaneUI implements AquaComponentUI
             configureRepresentedFilename();
         } else {
             reconfigureCustomWindowStyle();
-        }
-    }
-
-    /**
-     Configure or reconfigure the window based on root pane client properties and popup client properties, if
-     appropriate. This method has no effect if the root pane has no parent.
-     This method forces the root pane parent to become displayable.
-
-     @param appearanceName If not null, this appearance is installed on the window, overriding the appearance
-     inherited from the application.
-     */
-    public void configure(@Nullable String appearanceName)
-    {
-        Container parent = rootPane.getParent();
-        if (parent != null) {
-            if (!parent.isDisplayable()) {
-                parent.addNotify();
-            }
-            isInitialized = true;
-            updateAppearances(appearanceName, true);  // TBD: must install on native window
-            updatePopupStyle(rootPane);
-            reconfigureCustomWindowStyle();
-            updateVisualEffectView();
-            configureRepresentedFilename();
         }
     }
 

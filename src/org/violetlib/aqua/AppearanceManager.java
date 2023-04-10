@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2021 Alan Snyder.
+ * Copyright (c) 2018-2023 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -444,6 +444,16 @@ public class AppearanceManager {
 
     /**
      * Return the appearance name that has been specified for use by a component.
+     * @param c The component.
+     * @return the specified appearance name, or null if none.
+     */
+
+    public static @Nullable String getSpecifiedAppearanceName(@NotNull Component c) {
+        return c instanceof JComponent ? getSpecifiedAppearanceName((JComponent) c) : null;
+    }
+
+    /**
+     * Return the appearance name that has been specified for use by a component.
      * @param jc The component.
      * @return the specified appearance name, or null if none.
      */
@@ -454,6 +464,16 @@ public class AppearanceManager {
             return (String) o;
         }
         return null;
+    }
+
+    /**
+     * Set the name of the appearance to be used by a component.
+     * @param jc The component.
+     * @param name the appearance name, or null to remove any specified appearance name.
+     */
+
+    public static void setSpecifiedAppearanceName(@NotNull JComponent jc, @Nullable String name) {
+        jc.putClientProperty(AQUA_APPEARANCE_NAME_KEY, name);
     }
 
     /**
