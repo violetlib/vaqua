@@ -8,30 +8,23 @@
 
 package org.violetlib.aqua;
 
-import java.awt.Color;
-import java.awt.Component;
-import java.awt.Container;
-import java.awt.Window;
+import java.awt.*;
 import java.awt.event.HierarchyEvent;
 import java.awt.event.HierarchyListener;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.util.ArrayList;
 import java.util.WeakHashMap;
-import javax.swing.JComponent;
-import javax.swing.JLayeredPane;
-import javax.swing.JMenuBar;
-import javax.swing.JRootPane;
-import javax.swing.SwingUtilities;
+import javax.swing.*;
 import javax.swing.plaf.ColorUIResource;
 
 import org.jetbrains.annotations.*;
 
-import static org.violetlib.aqua.AquaFocusHandler.*;
+import static org.violetlib.aqua.AquaFocusHandler.FRAME_ACTIVE_PROPERTY;
 
 /**
-  * This class supports the association of appearances with components.
-*/
+ * This class supports the association of appearances with components.
+ */
 
 public class AppearanceManager {
 
@@ -51,10 +44,10 @@ public class AppearanceManager {
     private static @Nullable AquaAppearance currentAppearance;
 
     /**
-      * Return the current appearance. This method is for the very unusual cases where a component is painted that is
-      * not in the component hierarchy.
-      * @return the current appearance, or a default appearance if no current appearance has been registered.
-    */
+     * Return the current appearance. This method is for the very unusual cases where a component is painted that is
+     * not in the component hierarchy.
+     * @return the current appearance, or a default appearance if no current appearance has been registered.
+     */
 
     public static @NotNull AquaAppearance getCurrentAppearance() {
         if (currentAppearance != null) {
@@ -65,11 +58,11 @@ public class AppearanceManager {
     }
 
     /**
-      * Ensure that a component has the correct registered appearance for a painting operation in progress and
-      * make that appearance available using the {@link #getCurrentAppearance getCurrentAppearance} method.
-      * @param c The component.
+     * Ensure that a component has the correct registered appearance for a painting operation in progress and
+     * make that appearance available using the {@link #getCurrentAppearance getCurrentAppearance} method.
+     * @param c The component.
      * @return the appearance for the component.
-    */
+     */
 
     public static @NotNull AquaAppearance registerCurrentAppearance(@NotNull JComponent c) {
         AquaAppearance appearance = ensureAppearance(c);
@@ -83,10 +76,10 @@ public class AppearanceManager {
     }
 
     /**
-      * Install event listeners to help manage the appearance properties of the specified component.
-      * @param c The component.
+     * Install event listeners to help manage the appearance properties of the specified component.
+     * @param c The component.
      * @throws IllegalArgumentException if {@code c} does not support {@link AquaComponentUI}.
-    */
+     */
 
     public static void installListeners(@NotNull JComponent c) {
         AquaComponentUI ui = AquaUtils.getUI(c, AquaComponentUI.class);
@@ -100,9 +93,9 @@ public class AppearanceManager {
     }
 
     /**
-      * Uninstall the event listeners installed by {@link #installListeners}.
-      * @param c The component.
-    */
+     * Uninstall the event listeners installed by {@link #installListeners}.
+     * @param c The component.
+     */
 
     public static void uninstallListeners(@NotNull Component c) {
         c.removeHierarchyListener(hierarchyListener);
@@ -119,12 +112,12 @@ public class AppearanceManager {
     }
 
     /**
-      * Set the component registered appearance to the specified appearance.
-      * @param jc The component.
+     * Set the component registered appearance to the specified appearance.
+     * @param jc The component.
      * @param appearance The appearance.
      * @return true if the registered appearance was updated (or it should have been), false if the existing registered
      * appearance matches {@code appearance}.
-    */
+     */
 
     private static boolean setRegisteredAppearance(@NotNull JComponent jc, @NotNull AquaAppearance appearance) {
         AquaAppearance existingAppearance = getRegisteredAppearance(jc);
@@ -137,7 +130,7 @@ public class AppearanceManager {
                 appearanceHasChanged(jc, appearance);
             } catch (Throwable th) {
                 Utils.logError("Unable to set appearance property on " + AquaUtils.show(jc)
-                  + ". Check for failure in a property change listener", th);
+                        + ". Check for failure in a property change listener", th);
                 th.printStackTrace();
             }
             return true;
@@ -162,14 +155,14 @@ public class AppearanceManager {
             }
         } catch (Throwable th) {
             Utils.logError("Unable to uninstall appearance property on " + AquaUtils.show(jc)
-              + ". Check for failure in a property change listener", th);
+                    + ". Check for failure in a property change listener", th);
             th.printStackTrace();
         }
     }
 
     /**
-      * Return the current application appearance.
-    */
+     * Return the current application appearance.
+     */
 
     public static @NotNull AquaAppearance getApplicationAppearance() {
         String name = AquaUtils.nativeGetApplicationAppearanceName();
@@ -180,9 +173,9 @@ public class AppearanceManager {
     }
 
     /**
-      * Set the registered appearance for the specified component and update its subcomponents accordingly.
-      * This method short-circuits on any subcomponent that already has the appropriate registered appearance.
-    */
+     * Set the registered appearance for the specified component and update its subcomponents accordingly.
+     * This method short-circuits on any subcomponent that already has the appropriate registered appearance.
+     */
 
     public static void updateAppearancesInTree(@NotNull Component c, @NotNull AquaAppearance appearance) {
         setRegisteredAppearance(c, appearance);
@@ -198,12 +191,12 @@ public class AppearanceManager {
     }
 
     /**
-      * Set the registered appearance for the specified component and update its subcomponents accordingly.
-      * @param c The component.
+     * Set the registered appearance for the specified component and update its subcomponents accordingly.
+     * @param c The component.
      * @param appearance The appearance to register for the component.
      * @param force If true, any previously registered appearances are ignored. If false,
      * this method short-circuits on any component that already has the appropriate registered appearance.
-    */
+     */
 
     private static void updateAppearancesInSubtree(@NotNull Component c,
                                                    @NotNull AquaAppearance appearance,
@@ -256,20 +249,20 @@ public class AppearanceManager {
     }
 
     /**
-      * Ensure that a component has the proper appearance properties for painting. The selected appearance is based on
-      * the existence of a specified appearance, an appearance obtained from an ancestor, or the application appearance.
-      * If appropriate, the vibrant variant of the specified, inherited, or application appearance will be used. The
-      * currently registered appearance, if any, is ignored.
-      *
-      * A component UI should call this method before performing a painting operation to ensure that the correct
-      * appearance is used even if the component hierarchy has been modified since the UI last configured itself.
-      * Updating the configuration may be essential if the component is being used as a cell renderer.
-      * <p>
-      * The component is updated, if necessary, to register the appearance for future use. Ancestor components may also
-      * be updated.
-      * @param c The component.
+     * Ensure that a component has the proper appearance properties for painting. The selected appearance is based on
+     * the existence of a specified appearance, an appearance obtained from an ancestor, or the application appearance.
+     * If appropriate, the vibrant variant of the specified, inherited, or application appearance will be used. The
+     * currently registered appearance, if any, is ignored.
+     *
+     * A component UI should call this method before performing a painting operation to ensure that the correct
+     * appearance is used even if the component hierarchy has been modified since the UI last configured itself.
+     * Updating the configuration may be essential if the component is being used as a cell renderer.
+     * <p>
+     * The component is updated, if necessary, to register the appearance for future use. Ancestor components may also
+     * be updated.
+     * @param c The component.
      * @return the appearance to use for the component.
-    */
+     */
 
     public static @NotNull AquaAppearance ensureAppearance(@NotNull Component c) {
 
@@ -285,15 +278,15 @@ public class AppearanceManager {
     }
 
     /**
-      * Return the appearance that should be used by a component for a painting operation in progress. If the component
-      * has a registered appearance, that appearance is returned. Otherwise an appearance is determined based on the
-      * existence of a specified appearance, an appearance obtained from an ancestor, or the application appearance. If
-      * appropriate, the vibrant variant of the specified, inherited, or application appearance will be used. The
-      * component is updated to register the appearance for future use, if it is not a default appearance. Ancestors may
-      * also be updated.
-      * @param c The component.
+     * Return the appearance that should be used by a component for a painting operation in progress. If the component
+     * has a registered appearance, that appearance is returned. Otherwise an appearance is determined based on the
+     * existence of a specified appearance, an appearance obtained from an ancestor, or the application appearance. If
+     * appropriate, the vibrant variant of the specified, inherited, or application appearance will be used. The
+     * component is updated to register the appearance for future use, if it is not a default appearance. Ancestors may
+     * also be updated.
+     * @param c The component.
      * @return the appearance to use.
-    */
+     */
 
     public static @NotNull AquaAppearance getAppearance(@NotNull Component c) {
         AquaAppearance a = getKnownAppearance(c, false);
@@ -308,13 +301,13 @@ public class AppearanceManager {
     }
 
     /**
-      * Return the non-default appearance that should be used by a component for a painting operation in progress. If an
-      * appearance is found, the component and its descendants are updated (if possible and as needed) to register the
-      * appearance for future use. Ancestors and their descendants may also be updated.
-      * @param c The component.
+     * Return the non-default appearance that should be used by a component for a painting operation in progress. If an
+     * appearance is found, the component and its descendants are updated (if possible and as needed) to register the
+     * appearance for future use. Ancestors and their descendants may also be updated.
+     * @param c The component.
      * @param force If true, any existing registered appearance will be ignored.
      * @return the appearance to use, or null if no known appearance is available.
-    */
+     */
 
     private static @Nullable AquaAppearance getKnownAppearance(@NotNull Component c, boolean force) {
         if (c instanceof JComponent) {
@@ -354,10 +347,10 @@ public class AppearanceManager {
     }
 
     /**
-      * Identify the appearance for a component to inherit from an ancestor.
-      * @param c The component.
+     * Identify the appearance for a component to inherit from an ancestor.
+     * @param c The component.
      * @return the appearance to inherit, or null if no inherited appearance is available.
-    */
+     */
 
     private static @Nullable AquaAppearance getInheritedAppearance(@NotNull Component c)
     {
@@ -377,8 +370,8 @@ public class AppearanceManager {
     }
 
     /**
-      * Return the nearest ancestor that is a Swing component.
-    */
+     * Return the nearest ancestor that is a Swing component.
+     */
 
     private static @Nullable JComponent getJComponentAncestor(@NotNull Component c) {
         Component current = c;
@@ -395,10 +388,10 @@ public class AppearanceManager {
     }
 
     /**
-      * Return the appearance that has been registered for use by a component.
-      * @param c The component.
+     * Return the appearance that has been registered for use by a component.
+     * @param c The component.
      * @return the registered appearance, or null.
-    */
+     */
 
     public static @Nullable AquaAppearance getRegisteredAppearance(@NotNull Component c) {
         if (c instanceof JComponent) {
@@ -409,10 +402,10 @@ public class AppearanceManager {
     }
 
     /**
-      * Return the appearance that has been registered for use by a component.
-      * @param jc The component.
+     * Return the appearance that has been registered for use by a component.
+     * @param jc The component.
      * @return the registered appearance, or null.
-    */
+     */
 
     public static @Nullable AquaAppearance getRegisteredAppearance(@NotNull JComponent jc) {
         Object o = jc.getClientProperty(AQUA_APPEARANCE_KEY);
@@ -423,22 +416,22 @@ public class AppearanceManager {
     }
 
     /**
-      * Return the appearance that has been specified for use by a component, if valid. The vibrant version of the
-      * appearance will be returned, if appropriate. The component is not update.
-      * @param c The component.
+     * Return the appearance that has been specified for use by a component, if valid. The vibrant version of the
+     * appearance will be returned, if appropriate. The component is not update.
+     * @param c The component.
      * @return the specified appearance, or null if none.
-    */
+     */
 
     private static @Nullable AquaAppearance getSpecifiedAppearanceVariant(@NotNull Component c) {
         return c instanceof JComponent ? getSpecifiedAppearanceVariant((JComponent) c) : null;
     }
 
     /**
-      * Return the appearance that has been specified for use by a component, if valid. The vibrant version of the
-      * appearance will be returned, if appropriate. The component is not updated.
-      * @param jc The component.
+     * Return the appearance that has been specified for use by a component, if valid. The vibrant version of the
+     * appearance will be returned, if appropriate. The component is not updated.
+     * @param jc The component.
      * @return the specified appearance, or null if none.
-    */
+     */
 
     private static @Nullable AquaAppearance getSpecifiedAppearanceVariant(@NotNull JComponent jc) {
         String name = getSpecifiedAppearanceName(jc);
@@ -450,10 +443,10 @@ public class AppearanceManager {
     }
 
     /**
-      * Return the appearance name that has been specified for use by a component.
-      * @param jc The component.
+     * Return the appearance name that has been specified for use by a component.
+     * @param jc The component.
      * @return the specified appearance name, or null if none.
-    */
+     */
 
     private static @Nullable String getSpecifiedAppearanceName(@NotNull JComponent jc) {
         Object o = jc.getClientProperty(AQUA_APPEARANCE_NAME_KEY);
@@ -464,11 +457,11 @@ public class AppearanceManager {
     }
 
     /**
-      * Check for a valid specified appearance for a component. A specified appearance is valid if the specified
-      * appearance name identifies a supported appearance and the registered appearance matches that appearance,
-      * with vibrant variants taken into account.
-      * @return true if the component specifies an appearance and it matches the registered appearance.
-    */
+     * Check for a valid specified appearance for a component. A specified appearance is valid if the specified
+     * appearance name identifies a supported appearance and the registered appearance matches that appearance,
+     * with vibrant variants taken into account.
+     * @return true if the component specifies an appearance and it matches the registered appearance.
+     */
 
     private static boolean hasValidRegisteredSpecifiedAppearance(@NotNull JComponent jc) {
         AquaAppearance appearance = getSpecifiedAppearanceVariant(jc);
@@ -480,12 +473,12 @@ public class AppearanceManager {
     }
 
     /**
-      * Check for an unexpected mismatch between the specified appearance and the registered appearance.
-      * @param jc A component with a valid specified appearance.
+     * Check for an unexpected mismatch between the specified appearance and the registered appearance.
+     * @param jc A component with a valid specified appearance.
      * @param specifiedAppearance The specified appearance.
      * @return true if the registered appearance matches the specified appearance or there is no registered
      * appearance, false otherwise.
-    */
+     */
 
     private static boolean validateRegistrationForSpecifiedAppearance(@NotNull JComponent jc,
                                                                       @NotNull AquaAppearance specifiedAppearance) {
@@ -495,8 +488,8 @@ public class AppearanceManager {
         }
         if (registeredAppearance != specifiedAppearance) {
             AquaUtils.syslog("Registered appearance " + registeredAppearance.getName()
-              + " does not match specified appearance " + specifiedAppearance.getName()
-              + " for " + AquaUtils.show(jc));
+                    + " does not match specified appearance " + specifiedAppearance.getName()
+                    + " for " + AquaUtils.show(jc));
             return false;
         }
         return true;
@@ -542,7 +535,7 @@ public class AppearanceManager {
     }
 
     private static class AppearanceNamePropertyListener
-      implements PropertyChangeListener {
+            implements PropertyChangeListener {
         @Override
         public void propertyChange(@NotNull PropertyChangeEvent e) {
             Object source = e.getSource();
@@ -558,8 +551,8 @@ public class AppearanceManager {
     }
 
     /**
-      * This method is called when the specified appearance name client property of a managed component changes.
-    */
+     * This method is called when the specified appearance name client property of a managed component changes.
+     */
 
     private static void specifiedAppearanceNameChanged(@NotNull JComponent c, @Nullable String appearanceName) {
         if (appearanceName != null) {
@@ -574,7 +567,7 @@ public class AppearanceManager {
             } else {
                 if (isDebug) {
                     AquaUtils.syslog("Specified appearance " + appearanceName + " for " + AquaUtils.show(c)
-                      + " is not available");
+                            + " is not available");
                 }
             }
         } else {
@@ -612,19 +605,19 @@ public class AppearanceManager {
     }
 
     /**
-      This class manages the process of updating a subtree when it is added to a rooted hierarchy. Notification of
-      hierarchy changes are delivered to appearance-sensitive components individually; whichever one checks in first
-      initiates the update.
-    */
+     * This class manages the process of updating a subtree when it is added to a rooted hierarchy. Notification of
+     * hierarchy changes are delivered to appearance-sensitive components individually; whichever one checks in first
+     * initiates the update.
+     */
 
     private static class HierarchyUpdateProcessor {
         private @Nullable Component currentTop;
 
         /**
-          * Process the top component in a hierarchy changed event as needed.
-          *
-          * @param top The top component.
-        */
+         * Process the top component in a hierarchy changed event as needed.
+         *
+         * @param top The top component.
+         */
 
         public void acceptTop(@NotNull Component top) {
             if (top.getParent() == null) {
@@ -660,11 +653,11 @@ public class AppearanceManager {
     }
 
     /**
-      * Return the appearance with the specified name that is appropriate for the specified component.
-      * The returned appearance may be a vibrant appearance.
-      * @param jc The component.
+     * Return the appearance with the specified name that is appropriate for the specified component.
+     * The returned appearance may be a vibrant appearance.
+     * @param jc The component.
      * @param name The base (non-vibrant) appearance name.
-    */
+     */
 
     private static @Nullable AquaAppearance getNamedAppearanceVariant(@NotNull JComponent jc, @NotNull String name) {
         AquaAppearance appearance = AquaAppearances.getOptional(name);
