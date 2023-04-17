@@ -1,5 +1,5 @@
 /*
- * Changes copyright (c) 2016-2021 Alan Snyder.
+ * Changes copyright (c) 2016-2023 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -280,5 +280,15 @@ public class Java8Support implements JavaSupport.JavaSupportImpl {
             }
         }
         return UNKNOWN;
+    }
+
+    @Override
+    public void requestFocusInWindowFromMouseEvent(@NotNull Component c) {
+        try {
+            Method m = Component.class.getDeclaredMethod("requestFocusInWindow", sun.awt.CausedFocusEvent.Cause.class);
+            m.setAccessible(true);
+            m.invoke(c, sun.awt.CausedFocusEvent.Cause.MOUSE_EVENT);
+        } catch (Exception ignore) {
+        }
     }
 }

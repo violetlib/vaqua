@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014-2021 Alan Snyder.
+ * Copyright (c) 2014-2023 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -74,7 +74,7 @@ public class AquaTreeMouseBehavior extends MouseInputAdapter implements AquaDrag
             // Note: Some applications depend on selection changes only occurring on focused components. Maybe we must
             // not do any changes to the selection changes at all, when the component is not focused?
             if (tree.isRequestFocusEnabled()) {
-                tree.requestFocusInWindow();
+                JavaSupport.requestFocusInWindowFromMouseEvent(tree);
             }
 
             TreePath path = getMouseClickedClosestPathForLocation(tree, e.getX(), e.getY());
@@ -263,7 +263,7 @@ public class AquaTreeMouseBehavior extends MouseInputAdapter implements AquaDrag
             }
         }
         if (tree.isRequestFocusEnabled()) {
-            tree.requestFocus();
+            JavaSupport.requestFocusInWindowFromMouseEvent(tree);
         }
     }
 

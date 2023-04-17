@@ -1,5 +1,5 @@
 /*
- * Changes copyright (c) 2015-2021 Alan Snyder.
+ * Changes copyright (c) 2015-2023 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -603,7 +603,7 @@ public class AquaSliderUI extends BasicSliderUI
             currentMouseY = e.getY();
 
             if (slider.isRequestFocusEnabled()) {
-                slider.requestFocus();
+                JavaSupport.requestFocusInWindowFromMouseEvent(slider);
             }
 
             boolean isMouseEventInThumb = thumbRect.contains(currentMouseX, currentMouseY);

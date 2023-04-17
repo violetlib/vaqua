@@ -1,5 +1,5 @@
 /*
- * Changes copyright (c) 2018 Alan Snyder.
+ * Changes copyright (c) 2018-2023 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -3676,7 +3676,7 @@ public class AquaTabbedPaneCopyFromBasicUI extends TabbedPaneUI implements Swing
                 else if (tabPane.isRequestFocusEnabled()) {
                     // Clicking on selected tab, try and give the tabbedpane
                     // focus.  Repaint will occur in focusGained.
-                    tabPane.requestFocus();
+                    JavaSupport.requestFocusInWindowFromMouseEvent(tabPane);
                 }
             }
         }

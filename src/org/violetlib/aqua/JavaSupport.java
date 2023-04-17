@@ -1,5 +1,5 @@
 /*
- * Changes copyright (c) 2016-2021 Alan Snyder.
+ * Changes copyright (c) 2016-2023 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -61,6 +61,7 @@ public class JavaSupport {
         void unlockRenderQueue();
         AquaPopupFactory createPopupFactory();
         int getFocusEventCause(@NotNull FocusEvent e);
+        void requestFocusInWindowFromMouseEvent(@NotNull Component c);
     }
 
     private final static JavaSupportImpl impl = findImpl();
@@ -156,6 +157,10 @@ public class JavaSupport {
 
     public static int getFocusEventCause(@NotNull FocusEvent e) {
         return impl.getFocusEventCause(e);
+    }
+
+    public static void requestFocusInWindowFromMouseEvent(@NotNull Component c) {
+        impl.requestFocusInWindowFromMouseEvent(c);
     }
 
     private static JavaSupportImpl findImpl() {
