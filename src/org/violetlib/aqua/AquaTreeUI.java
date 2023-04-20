@@ -104,7 +104,7 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
     protected boolean isCellFilled;
     protected boolean isSideBar;
     protected boolean isStriped;
-    protected boolean isInset;
+    protected boolean _isInset;
     protected @Nullable Boolean _isShallowSideBar;
     protected int indentationPerLevel = DEFAULT_INDENTATION;
     protected int expandControlWidth = 16;
@@ -155,7 +155,7 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
         cellEditorChanged();
 
         isStriped = getStripedValue();
-        isInset = getInsetValue();
+        _isInset = getInsetValue();
         isSideBar = getSideBarValue();
         isCellFilled = getCellFilledValue();
 
@@ -464,12 +464,16 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
 
     private void updateInset() {
         boolean value = getInsetValue();
-        if (value != isInset) {
-            isInset = value;
-            updateBorder(isInset ? insetBorder : null);
-            tree.revalidate();
-            tree.repaint();
-            updateCellSizes();
+        if (value != _isInset) {
+            boolean oldIsInset = isInset();
+            _isInset = value;
+            boolean newIsInset = isInset();
+            if (newIsInset != oldIsInset) {
+                updateBorder(newIsInset ? insetBorder : null);
+                tree.revalidate();
+                tree.repaint();
+                updateCellSizes();
+            }
         }
     }
 
@@ -520,7 +524,7 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
 
     @Override
     public boolean isInset() {
-        return isInset || (isSideBar() && OSXSystemProperties.useInsetViewStyle());
+        return _isInset || (isSideBar() && OSXSystemProperties.useInsetViewStyle());
     }
 
     private boolean isBackgroundClear() {
