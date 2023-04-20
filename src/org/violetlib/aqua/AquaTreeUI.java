@@ -1,5 +1,5 @@
 /*
- * Changes Copyright (c) 2015-2021 Alan Snyder.
+ * Changes Copyright (c) 2015-2023 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -45,10 +45,7 @@ import javax.swing.*;
 import javax.swing.border.Border;
 import javax.swing.event.TreeModelEvent;
 import javax.swing.event.TreeModelListener;
-import javax.swing.plaf.ColorUIResource;
-import javax.swing.plaf.ComponentUI;
-import javax.swing.plaf.FontUIResource;
-import javax.swing.plaf.UIResource;
+import javax.swing.plaf.*;
 import javax.swing.plaf.basic.BasicTreeUI;
 import javax.swing.tree.*;
 
@@ -113,6 +110,7 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
     protected int expandControlWidth = 16;
     protected int trailingExpandControlInset = 13;
     protected int leadingExpandControlSeparation = 6;
+    private static final Border insetBorder = new BorderUIResource.EmptyBorderUIResource(5, 0, 5, 0);
 
     // state variables for painting, needed because we share painting implementation with the superclass
     protected boolean shouldPaintSelection;
@@ -300,6 +298,13 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
         return AquaFocusHandler.isActive(tree) && (AquaFocusHandler.hasFocus(tree) || tree.isEditing());
     }
 
+    private void updateBorder(@Nullable Border b) {
+        Border existing = tree.getBorder();
+        if (existing != b && existing == null || existing instanceof UIResource) {
+            tree.setBorder(b);
+        }
+    }
+
     protected void updateRowHeight() {
         // sidebar trees have two row heights, one for ordinary items and one for category headers
         int height = isSideBar() ? 0 : 19;
@@ -461,6 +466,7 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
         boolean value = getInsetValue();
         if (value != isInset) {
             isInset = value;
+            updateBorder(isInset ? insetBorder : null);
             tree.revalidate();
             tree.repaint();
             updateCellSizes();

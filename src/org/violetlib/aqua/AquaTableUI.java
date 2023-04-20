@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014-2021 Alan Snyder.
+ * Copyright (c) 2014-2023 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -79,6 +79,7 @@ public class AquaTableUI extends BasicTableUI
     public static final String QUAQUA_TABLE_STYLE_KEY = "Quaqua.Table.style";
     public static final String TABLE_VIEW_STYLE_KEY = "JTable.viewStyle";
     public static final String INSET_VIEW_MARGIN_KEY = "Aqua.insetViewMargin";
+    public static final String INSET_VIEW_VERTICAL_MARGIN_KEY = "Aqua.insetViewVerticalMargin";
 
     protected final PropertyChangeListener propertyChangeListener;
     protected final ListSelectionListener selectionListener;
@@ -92,6 +93,7 @@ public class AquaTableUI extends BasicTableUI
     private boolean isStriped = false;
     private boolean isInset = false;
     private int insetMargin = 15;
+    private int insetVerticalMargin = 5;
     protected @NotNull ContainerContextualColors colors;
     protected @Nullable AppearanceContext appearanceContext;
     protected @Nullable Color actualTableBackground;
@@ -409,7 +411,9 @@ public class AquaTableUI extends BasicTableUI
         if (value != isInset) {
             isInset = value;
             int margin = isInset ? insetMargin : 0;
+            int verticalMargin = isInset ? insetVerticalMargin : 0;
             table.putClientProperty(INSET_VIEW_MARGIN_KEY, margin);
+            table.putClientProperty(INSET_VIEW_VERTICAL_MARGIN_KEY, verticalMargin);
             table.setRowMargin(isInset ? 0 : 1);
             table.revalidate();
             table.repaint();
@@ -487,11 +491,15 @@ public class AquaTableUI extends BasicTableUI
     }
 
     private @NotNull Dimension expand(@NotNull Dimension d) {
-        long expanded = (long) d.width + 2 * insetMargin;
-        if (expanded > Integer.MAX_VALUE) {
-            expanded = Integer.MAX_VALUE;
+        long expandedWidth = (long) d.width + 2 * insetMargin;
+        if (expandedWidth > Integer.MAX_VALUE) {
+            expandedWidth = Integer.MAX_VALUE;
         }
-        return new Dimension((int) expanded, d.height);
+        long expandedHeight = (long) d.height + 2 * insetVerticalMargin;
+        if (expandedHeight > Integer.MAX_VALUE) {
+            expandedHeight = Integer.MAX_VALUE;
+        }
+        return new Dimension((int) expandedWidth, (int) expandedHeight);
     }
 
     /**

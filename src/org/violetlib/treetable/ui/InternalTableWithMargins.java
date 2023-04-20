@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Alan Snyder.
+ * Copyright (c) 2020-2023 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -20,8 +20,9 @@ import javax.swing.table.TableModel;
 import org.jetbrains.annotations.NotNull;
 
 import static org.violetlib.aqua.AquaTableUI.INSET_VIEW_MARGIN_KEY;
+import static org.violetlib.aqua.AquaTableUI.INSET_VIEW_VERTICAL_MARGIN_KEY;
 
-// Support side margins in a subclass of JTable
+// Support margins in a subclass of JTable
 
 public class InternalTableWithMargins
         extends JTable
@@ -30,6 +31,7 @@ public class InternalTableWithMargins
     private final MyPropertyChangeListener propertyChangeListener = new MyPropertyChangeListener();
 
     private int margin;
+    private int verticalMargin;
 
     public InternalTableWithMargins(TableModel dm, TableColumnModel cm, ListSelectionModel sm)
     {
@@ -46,15 +48,18 @@ public class InternalTableWithMargins
     private void updateMargins()
     {
         Object o = getClientProperty(INSET_VIEW_MARGIN_KEY);
+        Object vo = getClientProperty(INSET_VIEW_VERTICAL_MARGIN_KEY);
         int margin = Math.max(0, o instanceof Integer ? (Integer) o : 0);
-        if (margin != this.margin) {
-            installMargin(margin);
+        int verticalMargin = Math.max(0, vo instanceof Integer ? (Integer) vo : 0);
+        if (margin != this.margin || verticalMargin != this.verticalMargin) {
+            installMargin(margin, verticalMargin);
         }
     }
 
-    private void installMargin(int m)
+    private void installMargin(int m, int vm)
     {
         margin = m;
+        verticalMargin = vm;
         revalidate();
         repaint();
         JTableHeader header = getTableHeader();
@@ -62,10 +67,10 @@ public class InternalTableWithMargins
             header.revalidate();
             header.repaint();
         }
-        marginChanged(margin);
+        marginChanged(margin, verticalMargin);
     }
 
-    protected void marginChanged(int margin)
+    protected void marginChanged(int margin, int verticalMargin)
     {
     }
 
@@ -84,8 +89,8 @@ public class InternalTableWithMargins
     @Override
     public int columnAtPoint(@NotNull Point point)
     {
-        if (margin > 0) {
-            point = new Point(point.x - margin, point.y);
+        if (margin > 0 || verticalMargin > 0) {
+            point = new Point(point.x - margin, point.y - verticalMargin);
         }
         return super.columnAtPoint(point);
     }
@@ -94,8 +99,9 @@ public class InternalTableWithMargins
     public @NotNull Rectangle getCellRect(int row, int column, boolean includeSpacing)
     {
         Rectangle r = super.getCellRect(row, column, includeSpacing);
-        if (margin > 0 && columnModel.getColumnCount() > 0) {
+        if ((margin > 0 || verticalMargin > 0) && columnModel.getColumnCount() > 0) {
             r.x += margin;
+            r.y += verticalMargin;
         }
         return r;
     }
@@ -113,7 +119,7 @@ public class InternalTableWithMargins
         public void propertyChange(PropertyChangeEvent evt)
         {
             String name = evt.getPropertyName();
-            if (name == null || name.equals(INSET_VIEW_MARGIN_KEY)) {
+            if (name == null || name.equals(INSET_VIEW_MARGIN_KEY) || name.equals(INSET_VIEW_VERTICAL_MARGIN_KEY)) {
                 updateMargins();
             }
         }
