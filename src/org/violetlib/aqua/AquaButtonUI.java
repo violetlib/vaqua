@@ -293,6 +293,8 @@ public class AquaButtonUI extends BasicButtonUI
             AquaAppearance appearance = AppearanceManager.ensureAppearance(b);
             if (useSelectedForeground(b)) {
                 return appearance.getColor("alternateSelectedControlText");
+            } else if (useDisabledForeground(b)) {
+                return appearance.getColor("controlText_disabled");
             } else {
                 return appearance.getColor("controlText");
             }
@@ -306,6 +308,10 @@ public class AquaButtonUI extends BasicButtonUI
         }
 
         return false;
+    }
+
+    private boolean useDisabledForeground(AbstractButton b) {
+        return !b.getModel().isEnabled();
     }
 
     private void initializeToolbarStatus(@NotNull AbstractButton b) {
