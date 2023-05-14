@@ -1,5 +1,5 @@
 /*
- * Changes Copyright (c) 2015-2020 Alan Snyder.
+ * Changes Copyright (c) 2015-2023 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -431,7 +431,7 @@ public abstract class AquaButtonBorder extends AquaBorder implements FocusRingOu
         if (g != null) {
             iconSize = getIconSize(g);
         }
-        Dimension p = AquaButtonUI.getPreferredButtonSize(b, b.getIconTextGap(), iconSize);
+        Dimension p = AquaButtonSupport.getPreferredButtonSize(b, b.getIconTextGap(), iconSize);
         if (p != null) {
             if (p.width > d.width) {
                 d.width = p.width;
@@ -666,7 +666,7 @@ public abstract class AquaButtonBorder extends AquaBorder implements FocusRingOu
             return false;
         }
 
-        Dimension contentSize = AquaButtonUI.getPreferredContentSize(b, font, b.getIconTextGap());
+        Dimension contentSize = AquaButtonSupport.getPreferredContentSize(b, font, b.getIconTextGap());
         Dimension requiredSize = insetter.expand(contentSize);
         return requiredSize.height <= fixedHeight;
     }

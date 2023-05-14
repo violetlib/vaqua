@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2021 Alan Snyder.
+ * Copyright (c) 2015-2023 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -192,38 +192,12 @@ public class AquaButtonUI extends BasicButtonUI
         Object o = b.getClientProperty(SPECIAL_ICON_PROPERTY);
         if (o instanceof AquaButtonIcon) {
             AquaButtonIcon icon = (AquaButtonIcon) o;
-            boolean isTemplate = determineTemplateIconStatus(b);
+            boolean isTemplate = AquaButtonSupport.determineTemplateIconStatus(b);
             if (icon.isTemplate != isTemplate) {
                 // Force a new icon to be created with the new status
                 removeCachedIcons(b);
             }
         }
-    }
-
-    /**
-     * Determine whether or not the button is eligible for painting the icon as a template.
-     * To be eligible, the button must define an icon that is a template image, and it must not have any other
-     * application provided icon.
-     */
-    protected boolean determineTemplateIconStatus(AbstractButton b) {
-        Icon standardIcon = b.getIcon();
-        if (standardIcon instanceof ImageIcon) {
-            ImageIcon im = (ImageIcon) standardIcon;
-            Image image = im.getImage();
-
-            return !isApplicationDefined(b.getPressedIcon())
-                    && !isApplicationDefined(getDisabledIcon(b))
-                    && !isApplicationDefined(b.getSelectedIcon())
-                    && !isApplicationDefined(getDisabledSelectedIcon(b))
-                    && !isApplicationDefined(b.getRolloverIcon())
-                    && !isApplicationDefined(b.getRolloverSelectedIcon())
-                    && AquaImageFactory.isTemplateImage(image);
-        }
-        return false;
-    }
-
-    protected boolean isApplicationDefined(Icon ic) {
-        return ic != null && !(ic instanceof UIResource);
     }
 
     /**
@@ -429,11 +403,11 @@ public class AquaButtonUI extends BasicButtonUI
             b.setSelectedIcon(null);
         }
 
-        if (getDisabledIcon(b) instanceof UIResource) {
+        if (AquaButtonSupport.getDisabledIcon(b) instanceof UIResource) {
             b.setDisabledIcon(null);
         }
 
-        if (getDisabledSelectedIcon(b) instanceof UIResource) {
+        if (AquaButtonSupport.getDisabledSelectedIcon(b) instanceof UIResource) {
             b.setDisabledSelectedIcon(null);
         }
 
@@ -650,7 +624,14 @@ public class AquaButtonUI extends BasicButtonUI
         if (icon != null) {
             return icon;
         }
-        return definedIcon;
+        if (definedIcon != null) {
+            return definedIcon;
+        }
+        Icon ic = b.getIcon();
+        if (ic != null) {
+            return AquaButtonSupport.createIcon(b);
+        }
+        return null;
     }
 
     /**
@@ -716,8 +697,8 @@ public class AquaButtonUI extends BasicButtonUI
      */
     public static @Nullable Icon getDefinedIcon(AbstractButton b, ButtonIconState bs) {
         switch (bs) {
-            case DISABLED:              return getDisabledIcon(b);
-            case DISABLED_SELECTED:     return getDisabledSelectedIcon(b);
+            case DISABLED:              return AquaButtonSupport.getDisabledIcon(b);
+            case DISABLED_SELECTED:     return AquaButtonSupport.getDisabledSelectedIcon(b);
             case PRESSED:               return getIconForPressedState(b);
             case ROLLOVER_SELECTED:     return getIconForRolloverSelectedState(b);
             case ROLLOVER:              return b.getRolloverIcon();
@@ -749,9 +730,7 @@ public class AquaButtonUI extends BasicButtonUI
         }
         Border border = b.getBorder();
         if (border instanceof AquaButtonBorder) {
-            AquaButtonBorder bb = (AquaButtonBorder) border;
-            boolean isTemplate = determineTemplateIconStatus(b);
-            AquaButtonIcon icon = bb.createIcon(b, isTemplate);
+            AquaButtonIcon icon = AquaButtonSupport.createIcon(b);
             b.putClientProperty(SPECIAL_ICON_PROPERTY, icon);
             return icon;
         }
@@ -821,7 +800,7 @@ public class AquaButtonUI extends BasicButtonUI
             AquaButtonBorder bb = (AquaButtonBorder) border;
             return bb.getPreferredButtonSize(b);
         } else {
-            return getPreferredButtonSize(b, b.getIconTextGap(), null);
+            return AquaButtonSupport.getPreferredButtonSize(b, b.getIconTextGap(), null);
         }
     }
 
@@ -995,103 +974,4 @@ public class AquaButtonUI extends BasicButtonUI
         }
     }
 
-    /**
-     * Return the disabled icon explicitly assigned to a button. This method is useful only for buttons that use this
-     * class for their UI. It inhibits the automatic creation of a disabled icon by the UI when none is defined on the
-     * button.
-     *
-     * @param b the button.
-     *
-     * @return the disabled icon explicitly assigned to the button.
-     */
-    public static Icon getDisabledIcon(AbstractButton b) {
-        boolean oldValue = AquaLookAndFeel.suppressCreationOfDisabledButtonIcons;
-        AquaLookAndFeel.suppressCreationOfDisabledButtonIcons = true;
-        try {
-            return b.getDisabledIcon();
-        } finally {
-            AquaLookAndFeel.suppressCreationOfDisabledButtonIcons = oldValue;
-        }
-    }
-
-    /**
-     * Return the disabled selected icon explicitly assigned to a button. This method is useful only for buttons that
-     * use this class for their UI. It inhibits the automatic creation of a disabled selected icon by the UI when none
-     * is defined on the button.
-     *
-     * @param b the button.
-     *
-     * @return the disabled selected icon explicitly assigned to the button.
-     */
-    public static Icon getDisabledSelectedIcon(AbstractButton b) {
-        boolean oldValue = AquaLookAndFeel.suppressCreationOfDisabledButtonIcons;
-        AquaLookAndFeel.suppressCreationOfDisabledButtonIcons = true;
-        try {
-            return b.getDisabledSelectedIcon();
-        } finally {
-            AquaLookAndFeel.suppressCreationOfDisabledButtonIcons = oldValue;
-        }
-    }
-
-    public static @Nullable Dimension getPreferredButtonSize(@NotNull AbstractButton b,
-                                                             int textIconGap,
-                                                             @Nullable Dimension iconSize) {
-        if (b.getComponentCount() > 0) {
-            return null;
-        }
-
-        if (iconSize == null) {
-            Icon icon = b.getIcon();
-            if (icon != null) {
-                iconSize = new Dimension(icon.getIconWidth(), icon.getIconHeight());
-            }
-        }
-
-        String text = b.getText();
-        Font font = b.getFont();
-        FontMetrics fm = b.getFontMetrics(font);
-        Rectangle iconR = new Rectangle();
-        Rectangle textR = new Rectangle();
-        Rectangle viewR = new Rectangle(Short.MAX_VALUE, Short.MAX_VALUE);
-
-        AquaUtils.layoutCompoundLabel(
-                b, fm, text, iconSize,
-                b.getVerticalAlignment(), b.getHorizontalAlignment(),
-                b.getVerticalTextPosition(), b.getHorizontalTextPosition(),
-                viewR, iconR, textR, (text == null ? 0 : textIconGap)
-        );
-
-        // The preferred size of the button is the size of the text and icon rectangles plus the insets.
-        Rectangle r = iconR.union(textR);
-        Insets insets = b.getInsets();
-        r.width += insets.left + insets.right;
-        r.height += insets.top + insets.bottom;
-        return r.getSize();
-    }
-
-    /**
-     * Determine the preferred content size for a button. The preferred content size does not include the button insets
-     * and must be based only on the button text, icon, and the specified parameters. This code does not handle toolbar
-     * wells, and it does not need to. Only used for button styles with fixed heights.
-     */
-    public static Dimension getPreferredContentSize(AbstractButton b, Font font, int textIconGap) {
-        Icon icon = b.getIcon();
-        Dimension iconSize = icon != null ? new Dimension(icon.getIconWidth(), icon.getIconHeight()) : null;
-        String text = b.getText();
-        FontMetrics fm = b.getFontMetrics(font);
-
-        Rectangle iconR = new Rectangle();
-        Rectangle textR = new Rectangle();
-        Rectangle viewR = new Rectangle(Short.MAX_VALUE, Short.MAX_VALUE);
-
-        AquaUtils.layoutCompoundLabel(
-                b, fm, text, iconSize,
-                b.getVerticalAlignment(), b.getHorizontalAlignment(),
-                b.getVerticalTextPosition(), b.getHorizontalTextPosition(),
-                viewR, iconR, textR, (text == null ? 0 : textIconGap)
-        );
-
-        Rectangle r = iconR.union(textR);
-        return r.getSize();
-    }
 }
