@@ -110,7 +110,7 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
     protected int expandControlWidth = 16;
     protected int trailingExpandControlInset = 13;
     protected int leadingExpandControlSeparation = 6;
-    private static final Border insetBorder = new BorderUIResource.EmptyBorderUIResource(5, 0, 5, 0);
+    private static final Border insetBorder = new BorderUIResource.EmptyBorderUIResource(5, 11, 5, 11);
 
     // state variables for painting, needed because we share painting implementation with the superclass
     protected boolean shouldPaintSelection;
