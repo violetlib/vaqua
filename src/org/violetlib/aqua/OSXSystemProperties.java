@@ -184,7 +184,7 @@ public class OSXSystemProperties {
             SwingUtilities.invokeLater(new Runnable() {
                 public void run() {
                     ChangeEvent event = new ChangeEvent(OSXSystemProperties.class);
-                    for (ChangeListener listener : changeListeners) {
+                    for (ChangeListener listener : new ArrayList<>(changeListeners)) {
                         listener.stateChanged(event);
                     }
                 }
