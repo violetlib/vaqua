@@ -38,9 +38,11 @@ public class AquaCellBorder extends AbstractBorder implements UIResource {
             parent = parent.getParent();
         }
 
-        AquaViewStyleContainerUI ui = AquaUtils.getUI((JComponent) parent, AquaViewStyleContainerUI.class);
-        if (ui != null) {
-            return ui.isInset();
+        if (parent != null) {
+            AquaViewStyleContainerUI ui = AquaUtils.getUI((JComponent) parent, AquaViewStyleContainerUI.class);
+            if (ui != null) {
+                return ui.isInset();
+            }
         }
 
         Object o = c.getClientProperty(RENDERER_CONTAINER_KEY);
