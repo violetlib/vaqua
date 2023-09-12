@@ -16,8 +16,10 @@ import java.awt.image.*;
 import java.util.function.Function;
 import javax.swing.*;
 import javax.swing.plaf.basic.BasicGraphicsUtils;
+import javax.swing.plaf.ComponentUI;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import static org.violetlib.aqua.JavaSupport.FocusEventCause.*;
 
@@ -199,5 +201,9 @@ public class Java9Support implements JavaSupport.JavaSupportImpl {
     @Override
     public void requestFocusInWindowFromMouseEvent(@NotNull Component c) {
         c.requestFocusInWindow(FocusEvent.Cause.MOUSE_EVENT);
+    }
+
+    public @Nullable ComponentUI getUI(@NotNull JComponent jc) {
+        return jc.getUI();
     }
 }

@@ -14,8 +14,9 @@ import java.awt.image.BufferedImage;
 import java.awt.image.ImageFilter;
 import java.util.function.Function;
 import javax.swing.*;
+import javax.swing.plaf.ComponentUI;
 
-import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.*;
 
 /**
  * Platform support that varies based on the Java version.
@@ -62,6 +63,7 @@ public class JavaSupport {
         AquaPopupFactory createPopupFactory();
         int getFocusEventCause(@NotNull FocusEvent e);
         void requestFocusInWindowFromMouseEvent(@NotNull Component c);
+        @Nullable ComponentUI getUI(@NotNull JComponent jc);
     }
 
     private final static JavaSupportImpl impl = findImpl();
@@ -161,6 +163,10 @@ public class JavaSupport {
 
     public static void requestFocusInWindowFromMouseEvent(@NotNull Component c) {
         impl.requestFocusInWindowFromMouseEvent(c);
+    }
+
+    public static @Nullable ComponentUI getUI(@NotNull JComponent jc) {
+        return impl.getUI(jc);
     }
 
     private static JavaSupportImpl findImpl() {

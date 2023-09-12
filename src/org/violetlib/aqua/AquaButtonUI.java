@@ -56,7 +56,8 @@ import org.violetlib.jnr.aqua.ButtonLayoutConfiguration;
 import org.violetlib.jnr.aqua.LayoutConfiguration;
 
 public class AquaButtonUI extends BasicButtonUI
-        implements AquaUtilControlSize.Sizeable, FocusRingOutlineProvider, ToolbarSensitiveUI, AquaComponentUI {
+        implements AquaUtilControlSize.Sizeable, FocusRingOutlineProvider, ToolbarSensitiveUI, AquaComponentUI,
+        SystemPropertyChangeManager.SystemPropertyChangeListener {
 
     // This UI is shared.
     // Button borders may also be shared.
@@ -104,6 +105,19 @@ public class AquaButtonUI extends BasicButtonUI
         b.putClientProperty(DEFAULT_FONT_PROPERTY, b.getFont());
         initializeToolbarStatus(b);
         configure(b);
+        configureFocusable(b);
+    }
+
+    @Override
+    public void systemPropertyChanged(JComponent c, Object type) {
+        if (type.equals(OSXSystemProperties.USER_PREFERENCE_CHANGE_TYPE)) {
+            configureFocusable(c);
+        }
+    }
+
+    private void configureFocusable(JComponent c) {
+        boolean isFocusable = OSXSystemProperties.isFullKeyboardAccessEnabled();
+        c.setFocusable(isFocusable);
     }
 
     @Override
@@ -356,7 +370,7 @@ public class AquaButtonUI extends BasicButtonUI
             AquaUtils.installToolbarSensitivity(b);
         }
         AquaUtilControlSize.addSizePropertyListener(b);
-        AquaFullKeyboardFocusableHandler.addListener(b);
+        OSXSystemProperties.register(b);
         AppearanceManager.installListeners(b);
     }
 
@@ -394,7 +408,7 @@ public class AquaButtonUI extends BasicButtonUI
             b.removeActionListener(listener);
         }
         AquaUtilControlSize.removeSizePropertyListener(b);
-        AquaFullKeyboardFocusableHandler.removeListener(b);
+        OSXSystemProperties.unregister(b);
         AquaUtils.uninstallToolbarSensitivity(b);
     }
 

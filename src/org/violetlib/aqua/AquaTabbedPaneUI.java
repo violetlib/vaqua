@@ -1,5 +1,5 @@
 /*
- * Changes Copyright (c) 2015-2021 Alan Snyder.
+ * Changes Copyright (c) 2015-2023 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -64,7 +64,8 @@ import static org.violetlib.jnr.aqua.AquaUIPainter.Position.*;
 import static org.violetlib.jnr.aqua.SegmentedButtonConfiguration.DividerState;
 
 public class AquaTabbedPaneUI extends AquaTabbedPaneCopyFromBasicUI
-        implements AquaUtilControlSize.Sizeable, FocusRingOutlineProvider, AquaComponentUI {
+        implements AquaUtilControlSize.Sizeable, FocusRingOutlineProvider, AquaComponentUI,
+        SystemPropertyChangeManager.SystemPropertyChangeListener {
 
     public static ComponentUI createUI(JComponent c) {
         return new AquaTabbedPaneUI();
@@ -127,6 +128,7 @@ public class AquaTabbedPaneUI extends AquaTabbedPaneCopyFromBasicUI
         contentDrawingInsets.set(0, 10, 10, 10);
         LookAndFeel.installProperty(tabPane, "opaque", false);
         configureAppearanceContext(null, tabPane);
+        configureFocusable(tabPane);
     }
 
     @Override
@@ -144,7 +146,7 @@ public class AquaTabbedPaneUI extends AquaTabbedPaneCopyFromBasicUI
         }
 
         AquaUtilControlSize.addSizePropertyListener(tabPane);
-        AquaFullKeyboardFocusableHandler.addListener(tabPane);
+        OSXSystemProperties.register(tabPane);
         AppearanceManager.installListeners(tabPane);
     }
 
@@ -157,7 +159,7 @@ public class AquaTabbedPaneUI extends AquaTabbedPaneCopyFromBasicUI
 
         AppearanceManager.uninstallListeners(tabPane);
         AquaUtilControlSize.removeSizePropertyListener(tabPane);
-        AquaFullKeyboardFocusableHandler.removeListener(tabPane);
+        OSXSystemProperties.unregister(tabPane);
 
         super.uninstallListeners();
     }
@@ -180,6 +182,18 @@ public class AquaTabbedPaneUI extends AquaTabbedPaneCopyFromBasicUI
 
     protected boolean shouldRepaintSelectedTabOnMouseDown() {
         return false;
+    }
+
+    @Override
+    public void systemPropertyChanged(JComponent c, Object type) {
+        if (type.equals(OSXSystemProperties.USER_PREFERENCE_CHANGE_TYPE)) {
+            configureFocusable(c);
+        }
+    }
+
+    private void configureFocusable(JComponent c) {
+        boolean isFocusable = OSXSystemProperties.isFullKeyboardAccessEnabled();
+        c.setFocusable(isFocusable);
     }
 
     @Override

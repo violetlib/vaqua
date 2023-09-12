@@ -69,7 +69,9 @@ import org.violetlib.jnr.aqua.SpinnerArrowsLayoutConfiguration;
  * This is originally derived from BasicSpinnerUI, but they made everything private
  * so we can't subclass!
  */
-public class AquaSpinnerUI extends SpinnerUI implements AquaComponentUI {
+public class AquaSpinnerUI extends SpinnerUI implements AquaComponentUI,
+        SystemPropertyChangeManager.SystemPropertyChangeListener {
+
     private static final RecyclableSingleton<? extends PropertyChangeListener> propertyChangeListener = new RecyclableSingletonFromDefaultConstructor<PropertyChangeHandler>(PropertyChangeHandler.class);
     static PropertyChangeListener getPropertyChangeListener() {
         return propertyChangeListener.get();
@@ -138,6 +140,7 @@ public class AquaSpinnerUI extends SpinnerUI implements AquaComponentUI {
         spinner.setLayout(createLayout());
         LookAndFeel.installBorder(spinner, "Spinner.border");
         AquaUtils.installFont(spinner, "Spinner.font");
+        configureFocusable(spinner);
     }
 
     protected void uninstallDefaults() {
@@ -158,6 +161,18 @@ public class AquaSpinnerUI extends SpinnerUI implements AquaComponentUI {
 
     protected PropertyChangeListener createPropertyChangeListener() {
         return new PropertyChangeHandler();
+    }
+
+    @Override
+    public void systemPropertyChanged(JComponent c, Object type) {
+        if (type.equals(OSXSystemProperties.USER_PREFERENCE_CHANGE_TYPE)) {
+            configureFocusable(c);
+        }
+    }
+
+    private void configureFocusable(JComponent c) {
+        boolean isFocusable = OSXSystemProperties.isFullKeyboardAccessEnabled();
+        c.setFocusable(isFocusable);
     }
 
     @Override
@@ -591,12 +606,12 @@ public class AquaSpinnerUI extends SpinnerUI implements AquaComponentUI {
             // On Yosemite, the spinner control is a single control containing two buttons. The spinner control is
             // focusable in Full Keyboard Access mode. The individual buttons are not focusable.
 
-            AquaFullKeyboardFocusableHandler.addListener(c);
+            OSXSystemProperties.register(c);
         }
 
         @Override
         public void uninstallUI(JComponent c) {
-            AquaFullKeyboardFocusableHandler.removeListener(c);
+            OSXSystemProperties.unregister(c);
             super.uninstallUI(c);
         }
     }

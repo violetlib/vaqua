@@ -18,8 +18,10 @@ import java.security.PrivilegedAction;
 import java.util.WeakHashMap;
 import java.util.function.Function;
 import javax.swing.*;
+import javax.swing.plaf.ComponentUI;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import sun.awt.image.MultiResolutionImage;
 import sun.java2d.opengl.OGLRenderQueue;
 import sun.swing.SwingUtilities2;
@@ -289,6 +291,17 @@ public class Java8Support implements JavaSupport.JavaSupportImpl {
             m.setAccessible(true);
             m.invoke(c, sun.awt.CausedFocusEvent.Cause.MOUSE_EVENT);
         } catch (Exception ignore) {
+        }
+    }
+
+    @Override
+    public @Nullable ComponentUI getUI(@NotNull JComponent jc) {
+        try {
+            Field f = JComponent.class.getDeclaredField("ui");
+            f.setAccessible(true);
+            return (ComponentUI) f.get(jc);
+        } catch (Exception ignore) {
+            return null;
         }
     }
 }

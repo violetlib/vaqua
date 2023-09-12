@@ -214,7 +214,11 @@ jboolean ensureVM(JNIEnv *env)
 
 void runOnMainThread(void (^block)())
 {
-    [JNFRunLoop performOnMainThreadWaiting:YES withBlock:block];
+    if ([NSThread isMainThread]) {
+        block();
+    } else {
+        [JNFRunLoop performOnMainThreadWaiting:YES withBlock:block];
+    }
 }
 
 void runFromNativeThread(void (^block)(JNIEnv *))
