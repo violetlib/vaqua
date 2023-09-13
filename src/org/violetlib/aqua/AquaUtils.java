@@ -1311,10 +1311,7 @@ final public class AquaUtils {
         int side = 10;
         int radius = INSET_CORNER_RADIUS;
         RoundRectangle2D r = new RoundRectangle2D.Float(cx + side, cy + top, cw - 2 * side, ch - 2 * top, radius, radius);
-        final Object preserveAntiAliasingRenderingHint = g.getRenderingHint(RenderingHints.KEY_ANTIALIASING);
-        g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-        g.fill(r);
-        g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, preserveAntiAliasingRenderingHint);
+        fillAntiAliased(g, r);
     }
 
     /**
@@ -1325,10 +1322,7 @@ final public class AquaUtils {
         int side = 10;
         int radius = INSET_CORNER_RADIUS;
         RoundRectangle2D r = new RoundRectangle2D.Float(cx + side, cy + top, cw - 2 * side, ch - 2 * top, radius, radius);
-        final Object preserveAntiAliasingRenderingHint = g.getRenderingHint(RenderingHints.KEY_ANTIALIASING);
-        g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-        g.fill(r);
-        g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, preserveAntiAliasingRenderingHint);
+        fillAntiAliased(g, r);
     }
 
     /**
@@ -1352,10 +1346,7 @@ final public class AquaUtils {
         } else {
             s = new RoundRectangle2D.Float(cx + side, cy + top, cw - 2 * side, ch - 2 * top, r, r);
         }
-        final Object preserveAntiAliasingRenderingHint = g.getRenderingHint(RenderingHints.KEY_ANTIALIASING);
-        g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-        g.fill(s);
-        g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, preserveAntiAliasingRenderingHint);
+        fillAntiAliased(g, s);
     }
 
     /**
@@ -1366,9 +1357,16 @@ final public class AquaUtils {
         int side = 4;
         int radius = INSET_CORNER_RADIUS;
         RoundRectangle2D r = new RoundRectangle2D.Float(cx + side, cy + top, cw - 2 * side, ch - 2 * top, radius, radius);
-        final Object preserveAntiAliasingRenderingHint = g.getRenderingHint(RenderingHints.KEY_ANTIALIASING);
+        fillAntiAliased(g, r);
+    }
+
+    /**
+     * Fill shape using anti-aliasing.
+     */
+    public static void fillAntiAliased(@NotNull Graphics2D g, @NotNull Shape s) {
+        Object preserveAntiAliasingRenderingHint = g.getRenderingHint(RenderingHints.KEY_ANTIALIASING);
         g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-        g.fill(r);
+        g.fill(s);
         g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, preserveAntiAliasingRenderingHint);
     }
 
