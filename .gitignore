@@ -1,4 +1,4 @@
-/.idea
+.idea
 /archive
 /properties.txt
 /dist
@@ -8,7 +8,7 @@
 /resources/libvaqua.dylib
 /deploy
 /VAqua.iml
-/Java8Support.iml
-/Java9Support.iml
+Java8Support.iml
+Java9Support.iml
 /lib
 /build.xml
