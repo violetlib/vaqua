@@ -29,7 +29,7 @@ public class SystemPropertyChangeManager {
     private static final WeakHashMap<JComponent,JComponent> components = new WeakHashMap<>();
 
     public static void register(JComponent c) {
-        components.put(c, c);
+        components.put(c, null);
     }
 
     public static void unregister(JComponent c) {
@@ -37,7 +37,7 @@ public class SystemPropertyChangeManager {
     }
 
     public static void notifyChange(Object type) {
-        Collection<JComponent> cs = components.values();
+        Collection<JComponent> cs = components.keySet();
         if (!cs.isEmpty()) {
             List<JComponent> componentList = new ArrayList<>(cs);
             for (JComponent jc : componentList) {
