@@ -736,7 +736,9 @@ public class AquaButtonUI extends BasicButtonUI
         }
         Border border = b.getBorder();
         if (border instanceof AquaButtonBorder) {
-            AquaButtonIcon icon = AquaButtonSupport.createIcon(b);
+            AquaButtonBorder bb = (AquaButtonBorder) border;
+            boolean isTemplate = AquaButtonSupport.determineTemplateIconStatus(b);
+            AquaButtonIcon icon = bb.createIcon(b, isTemplate);
             b.putClientProperty(SPECIAL_ICON_PROPERTY, icon);
             return icon;
         }
