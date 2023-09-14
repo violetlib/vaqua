@@ -11,6 +11,8 @@ package org.violetlib.aqua;
 import java.awt.*;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
+import javax.accessibility.Accessible;
+import javax.accessibility.AccessibleContext;
 import javax.swing.*;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
@@ -180,14 +182,22 @@ public class OverlayScrollPaneHack {
                 Component view = SwingUtilities.getUnwrappedView(v);
                 if (view != lastKnownView) {
                     sync(false);
+                    lastKnownView = view;
                 }
             }
         }
     }
 
-    protected class AquaOverlayViewportHolder extends JComponent {
+    protected class AquaOverlayViewportHolder extends JComponent implements Accessible {
 
         public AquaOverlayViewportHolder() {
+        }
+
+        @Override
+        public AccessibleContext getAccessibleContext()
+        {
+            JViewport v = scrollPane.getViewport();
+            return v != null ? v.getAccessibleContext() : null;
         }
 
         @Override
