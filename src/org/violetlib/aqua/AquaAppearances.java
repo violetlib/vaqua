@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2021 Alan Snyder.
+ * Copyright (c) 2018-2023 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -10,12 +10,10 @@ package org.violetlib.aqua;
 
 import java.awt.*;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
+import javax.swing.*;
 import javax.swing.event.ChangeEvent;
-import javax.swing.event.ChangeListener;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -32,7 +30,7 @@ import static org.violetlib.aqua.OSXSystemProperties.OSVersion;
 public class AquaAppearances {
     private static final @NotNull Map<String,AquaAppearance> appearances = new HashMap<>();
     private static final @NotNull String defaultAppearanceName = "NSAppearanceNameAqua";
-    private static final @NotNull List<ChangeListener> changeListeners = new ArrayList<>();
+    public static final Object APPEARANCE_CHANGE_TYPE = "AppearanceChange";
 
     static {
         VAppearances.addChangeListener(AquaAppearances::appearanceChanged);
@@ -108,16 +106,16 @@ public class AquaAppearances {
     }
 
     /**
-     * Add a change listener to be called if the system appearance has changed or the colors associated with the
-     * existing system appearance may have changed.
+     * Register a component whose UI is to be notified when the system appearance has changed or the colors associated
+     * with the existing system appearance may have changed.
      */
 
-    public static void addChangeListener(@NotNull ChangeListener listener) {
-        changeListeners.add(listener);
+    public static void register(@NotNull JComponent jc) {
+        SystemPropertyChangeManager.register(jc);
     }
 
-    public static void removeChangeListener(@NotNull ChangeListener listener) {
-        changeListeners.remove(listener);
+    public static void unregister(@NotNull JComponent jc) {
+        SystemPropertyChangeManager.unregister(jc);
     }
 
     private static void appearanceChanged(@NotNull ChangeEvent ev) {
@@ -134,9 +132,9 @@ public class AquaAppearances {
                 // Must be an older release
             }
             AquaAppearance appearance = getAquaAppearance(a);
-            for (ChangeListener listener : changeListeners) {
-                listener.stateChanged(ev);
-            }
+            SwingUtilities.invokeLater(() -> {
+                SystemPropertyChangeManager.notifyChange(APPEARANCE_CHANGE_TYPE);
+            });
         } else {
             throw new RuntimeException("Unexpected change event: " + ev);
         }

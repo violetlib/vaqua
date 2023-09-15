@@ -1,5 +1,5 @@
 /*
- * Changes Copyright (c) 2015-2021 Alan Snyder.
+ * Changes Copyright (c) 2015-2023 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -39,8 +39,6 @@ import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import javax.swing.*;
 import javax.swing.border.Border;
-import javax.swing.event.ChangeEvent;
-import javax.swing.event.ChangeListener;
 import javax.swing.plaf.ComponentUI;
 import javax.swing.plaf.UIResource;
 import javax.swing.plaf.basic.BasicScrollPaneUI;
@@ -49,7 +47,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.violetlib.jnr.aqua.AquaUIPainter;
 
-public class AquaScrollPaneUI extends BasicScrollPaneUI implements AquaUtilControlSize.Sizeable, AquaComponentUI {
+public class AquaScrollPaneUI extends BasicScrollPaneUI
+        implements AquaUtilControlSize.Sizeable, AquaComponentUI, SystemPropertyChangeManager.SystemPropertyChangeListener {
 
     public static ComponentUI createUI(JComponent x) {
         return new AquaScrollPaneUI();
@@ -124,7 +123,6 @@ public class AquaScrollPaneUI extends BasicScrollPaneUI implements AquaUtilContr
     protected @Nullable AppearanceContext appearanceContext;
 
     protected PropertyChangeListener propertyChangeListener;
-    protected ChangeListener preferenceChangeListener;
     protected ComponentListener componentListener;
 
     protected MouseWheelListener createMouseWheelListener() {
@@ -187,8 +185,7 @@ public class AquaScrollPaneUI extends BasicScrollPaneUI implements AquaUtilContr
         c.addComponentListener(componentListener);
         propertyChangeListener = new MyPropertyChangeListener();
         c.addPropertyChangeListener(propertyChangeListener);
-        preferenceChangeListener = new PreferenceChangeListener();
-        OSXSystemProperties.addChangeListener(preferenceChangeListener);
+        OSXSystemProperties.register(c);
         AquaUtilControlSize.addSizePropertyListener(c);
         AppearanceManager.installListeners(c);
     }
@@ -205,8 +202,7 @@ public class AquaScrollPaneUI extends BasicScrollPaneUI implements AquaUtilContr
         }
         AppearanceManager.uninstallListeners(c);
         AquaUtilControlSize.removeSizePropertyListener(c);
-        OSXSystemProperties.removeChangeListener(preferenceChangeListener);
-        preferenceChangeListener = null;
+        OSXSystemProperties.unregister(c);
         c.removePropertyChangeListener(propertyChangeListener);
         propertyChangeListener = null;
         c.removeComponentListener(componentListener);
@@ -364,9 +360,9 @@ public class AquaScrollPaneUI extends BasicScrollPaneUI implements AquaUtilContr
         return !Boolean.FALSE.equals(p);
     }
 
-    protected class PreferenceChangeListener implements ChangeListener {
-        @Override
-        public void stateChanged(ChangeEvent e) {
+    @Override
+    public void systemPropertyChanged(JComponent c, Object type) {
+        if (type.equals(OSXSystemProperties.USER_PREFERENCE_CHANGE_TYPE)) {
             updateStyle();
         }
     }

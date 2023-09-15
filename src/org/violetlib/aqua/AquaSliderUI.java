@@ -61,7 +61,8 @@ import org.violetlib.jnr.aqua.SliderConfiguration;
 import org.violetlib.jnr.aqua.SliderLayoutConfiguration;
 
 public class AquaSliderUI extends BasicSliderUI
-        implements AquaUtilControlSize.Sizeable, FocusRingOutlineProvider, AquaComponentUI {
+        implements AquaUtilControlSize.Sizeable, FocusRingOutlineProvider, AquaComponentUI,
+        SystemPropertyChangeManager.SystemPropertyChangeListener {
 
     public final static String AQUA_SLIDER_STYLE_KEY = "Aqua.sliderStyle";
 
@@ -109,6 +110,7 @@ public class AquaSliderUI extends BasicSliderUI
         oldRequestFocusEnabled = slider.isRequestFocusEnabled();
         slider.setRequestFocusEnabled(false);
         configureAppearanceContext(null, slider);
+        configureFocusable(slider);
     }
 
     @Override
@@ -123,7 +125,7 @@ public class AquaSliderUI extends BasicSliderUI
         s.addPropertyChangeListener(propertyChangeListener);
         AquaFocusHandler.install(s);
         AquaUtilControlSize.addSizePropertyListener(s);
-        AquaFullKeyboardFocusableHandler.addListener(s);
+        OSXSystemProperties.register(s);
         AppearanceManager.installListeners(s);
     }
 
@@ -134,7 +136,19 @@ public class AquaSliderUI extends BasicSliderUI
         s.removePropertyChangeListener(propertyChangeListener);
         propertyChangeListener = null;
         super.uninstallListeners(s);
-        AquaFullKeyboardFocusableHandler.removeListener(s);
+        OSXSystemProperties.unregister(s);
+    }
+
+    @Override
+    public void systemPropertyChanged(JComponent c, Object type) {
+        if (type.equals(OSXSystemProperties.USER_PREFERENCE_CHANGE_TYPE)) {
+            configureFocusable(c);
+        }
+    }
+
+    private void configureFocusable(JComponent c) {
+        boolean isFocusable = OSXSystemProperties.isFullKeyboardAccessEnabled();
+        c.setFocusable(isFocusable);
     }
 
     @Override

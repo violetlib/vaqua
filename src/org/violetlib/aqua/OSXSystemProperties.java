@@ -9,11 +9,7 @@
 package org.violetlib.aqua;
 
 import java.io.InputStreamReader;
-import java.util.ArrayList;
-import java.util.List;
 import javax.swing.*;
-import javax.swing.event.ChangeEvent;
-import javax.swing.event.ChangeListener;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -23,6 +19,8 @@ import org.jetbrains.annotations.Nullable;
  */
 public class OSXSystemProperties {
 
+    public static Object USER_PREFERENCE_CHANGE_TYPE = "UserPreferenceChangeType";
+
     public static int simulatedOSVersion = 0;  // must come before OSVersion
 
     public final static int OSVersion = getOSVersion();  // for example: 1014 = macOS 10.14
@@ -31,8 +29,6 @@ public class OSXSystemProperties {
     private static boolean isFullKeyboardAccessEnabled; // cached value
     private static boolean useOverlayScrollBars;        // cached value
     private static boolean reduceTransparency;          // cached value
-
-    private static final List<ChangeListener> changeListeners = new ArrayList<>();
 
     private static int getOSVersion() {
 
@@ -169,27 +165,12 @@ public class OSXSystemProperties {
         }
     }
 
-    public static synchronized void addChangeListener(ChangeListener l) {
-        if (!changeListeners.contains(l)) {
-            changeListeners.add(l);
-        }
+    public static synchronized void register(JComponent jc) {
+        SystemPropertyChangeManager.register(jc);
     }
 
-    public static synchronized void removeChangeListener(ChangeListener l) {
-        changeListeners.remove(l);
-    }
-
-    private static void fireChangeEvent() {
-        if (!changeListeners.isEmpty()) {
-            SwingUtilities.invokeLater(new Runnable() {
-                public void run() {
-                    ChangeEvent event = new ChangeEvent(OSXSystemProperties.class);
-                    for (ChangeListener listener : changeListeners) {
-                        listener.stateChanged(event);
-                    }
-                }
-            });
-        }
+    public static synchronized void unregister(JComponent jc) {
+        SystemPropertyChangeManager.unregister(jc);
     }
 
     private static void ensureSynchronized() {
@@ -220,7 +201,7 @@ public class OSXSystemProperties {
                 (isFullKeyboardAccessEnabled != oldFullKeyboardAccessEnabled)
                 || (useOverlayScrollBars != oldUseOverlayScrollBars)
                 || (reduceTransparency != oldReduceTransparency)) {
-            fireChangeEvent();
+            SystemPropertyChangeManager.notifyChange(USER_PREFERENCE_CHANGE_TYPE);
         }
 
         hasBeenSynchronized = true;

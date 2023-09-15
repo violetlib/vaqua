@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2021 Alan Snyder.
+ * Copyright (c) 2015-2023 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -69,7 +69,8 @@ import static org.violetlib.jnr.aqua.AquaUIPainter.PopupButtonWidget.*;
 
 // Inspired by MetalComboBoxUI, which also has a combined text-and-arrow button for noneditables
 public class AquaComboBoxUI extends BasicComboBoxUI
-        implements AquaUtilControlSize.Sizeable, FocusRingOutlineProvider, ToolbarSensitiveUI, AquaComponentUI {
+        implements AquaUtilControlSize.Sizeable, FocusRingOutlineProvider, ToolbarSensitiveUI, AquaComponentUI,
+        SystemPropertyChangeManager.SystemPropertyChangeListener {
 
     public static @NotNull ComponentUI createUI(JComponent c) {
         return new AquaComboBoxUI();
@@ -85,7 +86,6 @@ public class AquaComboBoxUI extends BasicComboBoxUI
     public static final String TITLE_CLIENT_PROPERTY_KEY = "JComboBox.title";
 
     private static final AquaUIPainter painter = AquaPainting.create();
-    private static final OptionallyFocusableComponentHandler focusHandler = new MyOptionalFocusHandler();
 
     private int oldMaximumRowCount;
     protected Dimension cachedPreferredSize = new Dimension( 0, 0 );
@@ -99,7 +99,6 @@ public class AquaComboBoxUI extends BasicComboBoxUI
     private final HierarchyListener popupListener = new MyPopupListener();
     private @Nullable AquaComboBoxRenderer buttonRenderer;
     private @Nullable AquaComboBoxRenderer listRenderer;
-
 
     // derived configuration attributes
     protected Size sizeVariant;
@@ -141,6 +140,7 @@ public class AquaComboBoxUI extends BasicComboBoxUI
         isToolbar = AquaUtils.isOnToolbar(comboBox);
         updateFromRenderer();
         configure(sizeVariant);
+        configureFocusable(comboBox);
     }
 
     public void uninstallUI(@NotNull JComponent c) {
@@ -155,11 +155,10 @@ public class AquaComboBoxUI extends BasicComboBoxUI
         // An editable combo box is normally focusable.
         // A non-editable combo box (a pull down or pop menu button) is focusable only if Full Keyboard Access
         // is enabled.
-        // Because editability is a dynamic attribute, we install the change listener unconditionally, but make its
+        // Because editability is a dynamic attribute, we respond to changes unconditionally, but make the
         // effect conditional on the editability of the combo box.
 
-        comboBox.putClientProperty(AquaFullKeyboardFocusableHandler.OPTIONAL_FOCUSABILITY_HANDLER_KEY, focusHandler);
-        AquaFullKeyboardFocusableHandler.addListener(comboBox);
+        OSXSystemProperties.register(comboBox);
         hierarchyListener = new MyHierarchyListener();
         comboBox.addHierarchyListener(hierarchyListener);
         comboBox.addPropertyChangeListener(propertyChangeListener);
@@ -181,7 +180,7 @@ public class AquaComboBoxUI extends BasicComboBoxUI
         comboBox.removePropertyChangeListener(propertyChangeListener);
         hierarchyListener = null;
         AquaUtilControlSize.removeSizePropertyListener(comboBox);
-        AquaFullKeyboardFocusableHandler.removeListener(comboBox);
+        OSXSystemProperties.unregister(comboBox);
         super.uninstallListeners();
     }
 
@@ -207,13 +206,17 @@ public class AquaComboBoxUI extends BasicComboBoxUI
         }
     }
 
-    private static class MyOptionalFocusHandler implements OptionallyFocusableComponentHandler {
-        @Override
-        public void updateFocusability(JComponent c, boolean isFocusable) {
-            JComboBox<?> cb = (JComboBox) c;
-            if (!cb.isEditable()) {
-                cb.setFocusable(isFocusable);
-            }
+    @Override
+    public void systemPropertyChanged(JComponent c, Object type) {
+        if (type.equals(OSXSystemProperties.USER_PREFERENCE_CHANGE_TYPE)) {
+            configureFocusable((JComboBox) c);
+        }
+    }
+
+    private void configureFocusable(JComboBox c) {
+        boolean isFocusable = OSXSystemProperties.isFullKeyboardAccessEnabled();
+        if (!c.isEditable()) {
+            c.setFocusable(isFocusable);
         }
     }
 
