@@ -47,18 +47,22 @@ public class AquaButtonSupport {
 
         ButtonModel model = b.getModel();
         if (model.isArmed() && model.isPressed()) {
-            return AquaUIPainter.State.PRESSED;
+            return getPressedState(b);
         }
 
         if (b.isRolloverEnabled() && isRollover(b)) {
             return AquaUIPainter.State.ROLLOVER;
         }
 
-        if ((b instanceof JButton) && ((JButton)b).isDefaultButton()) {
-            return AquaUIPainter.State.ACTIVE_DEFAULT;
-        }
+        return getActiveState(b);
+    }
 
-        return AquaUIPainter.State.ACTIVE;
+    public static @NotNull AquaUIPainter.State getActiveState(@NotNull AbstractButton b) {
+        return (b instanceof JButton) && ((JButton)b).isDefaultButton() ? AquaUIPainter.State.ACTIVE_DEFAULT : AquaUIPainter.State.ACTIVE;
+    }
+
+    public static @NotNull AquaUIPainter.State getPressedState(@NotNull AbstractButton b) {
+        return (b instanceof JButton) && ((JButton)b).isDefaultButton() ? AquaUIPainter.State.PRESSED_DEFAULT : AquaUIPainter.State.PRESSED;
     }
 
     private static boolean isRollover(@NotNull AbstractButton b)

@@ -184,18 +184,14 @@ public abstract class AquaButtonBorder extends AquaBorder implements FocusRingOu
 
         ButtonModel model = b.getModel();
         if (model.isArmed() && model.isPressed()) {
-            return State.PRESSED;
+            return AquaButtonSupport.getPressedState(b);
         }
 
         if (b.isRolloverEnabled() && isRollover(b)) {
             return State.ROLLOVER;
         }
 
-        if ((b instanceof JButton) && ((JButton)b).isDefaultButton()) {
-            return State.ACTIVE_DEFAULT;
-        }
-
-        return State.ACTIVE;
+        return AquaButtonSupport.getActiveState(b);
     }
 
     protected boolean isRollover(@NotNull AbstractButton b)
@@ -245,6 +241,13 @@ public abstract class AquaButtonBorder extends AquaBorder implements FocusRingOu
         if (existingColor == null || existingColor instanceof UIResource || !isEnabled || useNonexclusive) {
             AquaUIPainter.ButtonState bs = getButtonState(b);
             AquaAppearance appearance = AppearanceManager.ensureAppearance(b);
+            // The foreground color of a default button does not change.
+            // Starting with macOS 12, the foreground color of any button does not change.
+            if (state == State.PRESSED_DEFAULT) {
+                state = State.ACTIVE_DEFAULT;
+            } else if (OSVersion >= 1200 && state == State.PRESSED) {
+                state = State.ACTIVE;
+            }
             return info.getForeground(state, bs, appearance, useNonexclusive, isIcon);
         } else {
             return existingColor;
