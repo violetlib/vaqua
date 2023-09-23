@@ -1371,6 +1371,16 @@ final public class AquaUtils {
     }
 
     /**
+     * Draw shape using anti-aliasing.
+     */
+    public static void drawAntiAliased(@NotNull Graphics2D g, @NotNull Shape s) {
+        Object preserveAntiAliasingRenderingHint = g.getRenderingHint(RenderingHints.KEY_ANTIALIASING);
+        g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        g.draw(s);
+        g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, preserveAntiAliasingRenderingHint);
+    }
+
+    /**
      * Fill with specified color or erase.
      * @param g The graphics context.
      * @param color The color to fill, or null to erase

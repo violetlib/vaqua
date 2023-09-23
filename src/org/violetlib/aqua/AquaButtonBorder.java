@@ -34,6 +34,7 @@
 package org.violetlib.aqua;
 
 import java.awt.*;
+import java.awt.geom.RoundRectangle2D;
 import javax.swing.*;
 import javax.swing.plaf.UIResource;
 
@@ -130,6 +131,34 @@ public abstract class AquaButtonBorder extends AquaBorder implements FocusRingOu
         int height = viewRect.height;
 
         if (isColorWell(b)) {
+
+            if (OSVersion >= 1300) {
+
+                // Because the selected color is painted as a rounded rectangle, it must be painted over the button
+                // background.
+
+                AquaAppearance a = AppearanceManager.ensureAppearance(b);
+                AquaUtils.configure(painter, b, width, height);
+                org.violetlib.jnr.Painter p = painter.getPainter(bg);
+                p.paint(g, x, y);
+
+                float t = 5;
+                float s = 6;
+
+                float x1 = x + s;
+                float ww = width - 2 * s;
+                float y1 = y + t;
+                float hh = height - 2 * t;
+                RoundRectangle2D rr = new RoundRectangle2D.Float(x1, y1, ww, hh, 3, 3);
+                Color c = b.getBackground();
+                g.setColor(c);
+                AquaUtils.fillAntiAliased(g, rr);
+                g.setColor(a.isDark() ? new Color(255, 255, 255, 52) : new Color(0, 0, 0, 52));
+                AquaUtils.drawAntiAliased(g, rr);
+                return;
+
+            }
+
             // Special background for color well contains black and white areas to allow translucent colors to be
             // recognized.
 
