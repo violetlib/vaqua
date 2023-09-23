@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2021 Alan Snyder.
+ * Copyright (c) 2018-2023 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -17,24 +17,10 @@ static JNF_MEMBER_CACHE(jf_target, jc_CPlatformWindow, "target", "Ljava/awt/Wind
 // Map a native window to its Java window, if possible.
 jobject getJavaWindow(JNIEnv *env, NSWindow *w)
 {
-    NSObject *delegate = [w delegate];
-
-    if ([delegate respondsToSelector: @selector(javaPlatformWindow)]) {
-        jobject jPlatformWindow;
-        long javaVersion = getJavaVersion();
-        if (javaVersion >= 1700000) {
-            jPlatformWindow = (*env)->NewLocalRef(env, [delegate javaPlatformWindow]);
-        } else {
-            JNFWeakJObjectWrapper *jPlatformWindowWrapper = [delegate javaPlatformWindow];
-            if (jPlatformWindowWrapper) {
-                jPlatformWindow = [jPlatformWindowWrapper jObjectWithEnv:env];
-            }
-        }
-        if (jPlatformWindow) {
-            return JNFGetObjectField(env, jPlatformWindow, jf_target);
-        }
+    jobject jPlatformWindow = getJavaPlatformWindow(env, w);
+    if (jPlatformWindow) {
+        return JNFGetObjectField(env, jPlatformWindow, jf_target);
     }
-
     return NULL;
 }
 
@@ -45,7 +31,11 @@ jobject getJavaPlatformWindow(JNIEnv *env, NSWindow *w)
 
     if ([delegate respondsToSelector: @selector(javaPlatformWindow)]) {
         long javaVersion = getJavaVersion();
-        if (javaVersion >= 1700000) {
+        if (javaVersion >= 1700000
+            || (javaVersion >= 1500004 && javaVersion < 1600000)
+            || (javaVersion >= 1300008 && javaVersion < 1400000)
+            || (javaVersion >= 1100012 && javaVersion < 1300000)
+           ) {
             return (*env)->NewLocalRef(env, [delegate javaPlatformWindow]);
         } else {
             JNFWeakJObjectWrapper *jPlatformWindowWrapper = [delegate javaPlatformWindow];
