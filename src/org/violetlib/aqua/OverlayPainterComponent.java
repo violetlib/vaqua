@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014-2019 Alan Snyder.
+ * Copyright (c) 2014-2023 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -26,7 +26,7 @@ public abstract class OverlayPainterComponent extends JComponent {
     private @Nullable Component base;           // the currently configured base component
     private @Nullable Rectangle baseBounds;     // the bounds of the base component in our coordinate space
     private @Nullable Rectangle visibleBounds;  // the bounds within our coordinate space where we may paint or null if not paintable
-    private @Nullable Window baseWindow;        // the window last known to contain the base component
+    private @Nullable Window baseWindow;        // the window that contains the base component
 
     private int layer;                          // the layer number of the layer containing the overlay painter component
 
@@ -49,6 +49,13 @@ public abstract class OverlayPainterComponent extends JComponent {
                 if (w != null) {
                     OverlayPainterComponent.this.windowChanged(w);
                     OverlayPainterComponent.this.visibleBoundsChanged();
+                }
+            }
+
+            @Override
+            protected void detached(@Nullable Window w) {
+                if (w != null) {
+                    OverlayPainterComponent.this.windowChanged(null);
                 }
             }
 
@@ -79,7 +86,6 @@ public abstract class OverlayPainterComponent extends JComponent {
      */
     public void attach(@Nullable JComponent c) {
         if (base != c) {
-            baseWindow = null;
             layer = -100000;
             if (c != null) {
                 base = c;
@@ -132,11 +138,13 @@ public abstract class OverlayPainterComponent extends JComponent {
             Container p = getParent();
             if (p != null) {
                 p.remove(this);
+                baseWindow = null;
             }
         }
 
         if (newLayeredPane != null) {
             addToLayeredPane(newLayeredPane);
+            baseWindow = newWindow;
         }
     }
 
