@@ -216,8 +216,8 @@ public class AquaSheetSupport {
             oldBackgroundStyle = rp.getClientProperty(AquaVibrantSupport.BACKGROUND_STYLE_KEY);
             debug("Setting background style client property to vibrantSheet");
             rp.putClientProperty(AquaVibrantSupport.BACKGROUND_STYLE_KEY, "vibrantSheet");
+            String windowStyle = AquaRootPaneUI.getWindowStyleKey(rp);
             if (OSXSystemProperties.OSVersion >= 1013) {
-                String windowStyle = AquaRootPaneUI.getWindowStyleKey(rp);
                 if (!"undecorated".equals(windowStyle)) {
                     if (!sheetWindowStyle.equals(windowStyle)) {
                         windowStyleToRestore = windowStyle;
@@ -229,6 +229,11 @@ public class AquaSheetSupport {
                     rp.setLocation(0, 0);
                     w.setSize(w.getWidth(), w.getHeight() - oldTop);
                 }
+            } else if ("noTitleBar".equals(windowStyle)) {
+                windowStyleToRestore = windowStyle;
+                debug("Removing the window style for a sheet: " + windowStyle);
+                rp.putClientProperty(AquaRootPaneUI.AQUA_WINDOW_STYLE_KEY, null);
+                w.pack();
             }
         }
 
