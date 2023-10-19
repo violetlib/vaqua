@@ -34,6 +34,8 @@
 package org.violetlib.aqua;
 
 import java.awt.*;
+import java.awt.geom.Path2D;
+import java.awt.geom.Rectangle2D;
 import java.awt.geom.RoundRectangle2D;
 import javax.swing.*;
 import javax.swing.plaf.UIResource;
@@ -132,51 +134,52 @@ public abstract class AquaButtonBorder extends AquaBorder implements FocusRingOu
 
         if (isColorWell(b)) {
 
+            Graphics2D gg = (Graphics2D) g.create();
+            Shape rr;
+
+            float t = 6;
+            float s = 6;
+            float x1 = x + s;
+            float ww = width - 2 * s;
+            float x2 = x1 + ww;
+            float y1 = y + t;
+            float hh = height - 2 * t;
+            float y2 = y1 + hh;
+
             if (OSVersion >= 1300) {
-
-                // Because the selected color is painted as a rounded rectangle, it must be painted over the button
-                // background.
-
-                AquaAppearance a = AppearanceManager.ensureAppearance(b);
-                AquaUtils.configure(painter, b, width, height);
-                org.violetlib.jnr.Painter p = painter.getPainter(bg);
-                p.paint(g, x, y);
-
-                float t = 5;
-                float s = 6;
-
-                float x1 = x + s;
-                float ww = width - 2 * s;
-                float y1 = y + t;
-                float hh = height - 2 * t;
-                RoundRectangle2D rr = new RoundRectangle2D.Float(x1, y1, ww, hh, 3, 3);
-                Color c = b.getBackground();
-                g.setColor(c);
-                AquaUtils.fillAntiAliased(g, rr);
-                g.setColor(a.isDark() ? new Color(255, 255, 255, 52) : new Color(0, 0, 0, 52));
-                AquaUtils.drawAntiAliased(g, rr);
-                return;
-
+                rr = new RoundRectangle2D.Float(x1, y1, ww, hh, 4, 4);
+            } else {
+                rr = new Rectangle2D.Float(x1, y1, ww, hh);
             }
 
-            // Special background for color well contains black and white areas to allow translucent colors to be
-            // recognized.
-
-            g.setColor(Color.BLACK);
-            g.fillRect(x, y, width, height);
-            g.setColor(Color.WHITE);
-            Insets margins = new Insets(6, 6, 6, 6);
-            int x1 = x + margins.left;
-            int x2 = x + width - margins.right;
-            int y1 = y + margins.top;
-            int y2 = y + height - margins.bottom;
-            int[] xx = {x1, x2, x2};
-            int[] yy = {y2, y1, y2};
-            g.fillPolygon(xx, yy, 3);
-
             Color c = b.getBackground();
-            g.setColor(c);
-            g.fillRect(x+4, y+4, width-8, height-8);
+            if (c.getAlpha() != 255) {
+                // Color is translucent. Paint a black and white background.
+                gg.setColor(Color.BLACK);
+                AquaUtils.fillAntiAliased(gg, rr);
+
+                Path2D.Float p = new Path2D.Float();
+                p.moveTo(x1, y2);
+                p.lineTo(x2, y1);
+                p.lineTo(x2, y2);
+                p.closePath();
+
+                gg.clip(rr);
+                gg.setColor(Color.WHITE);
+                AquaUtils.fillAntiAliased(gg, p);
+                gg.setClip(null);
+            }
+
+            gg.setColor(c);
+            AquaUtils.fillAntiAliased(gg, rr);
+
+            if (OSVersion >= 1300 && c.getAlpha() != 255) {
+                AquaAppearance a = AppearanceManager.ensureAppearance(b);
+                gg.setColor(a.isDark() ? new Color(255, 255, 255, 52) : new Color(0, 0, 0, 52));
+                AquaUtils.drawAntiAliased(gg, rr);
+            }
+
+            gg.dispose();
         }
 
         AppearanceManager.ensureAppearance(b);
