@@ -132,7 +132,15 @@ public abstract class AquaButtonBorder extends AquaBorder implements FocusRingOu
         int width = viewRect.width;
         int height = viewRect.height;
 
-        if (isColorWell(b)) {
+        AppearanceManager.ensureAppearance(b);
+        AquaUtils.configure(painter, b, width, height);
+        org.violetlib.jnr.Painter p = painter.getPainter(bg);
+        p.paint(g, x, y);
+
+        // The following code is obsolete, as JNR now does the full rendering of a color well button.
+        // It remains here just in case VAqua is used with an older version of JNR.
+
+        if (isColorWell(b) && !"ColorWellButtonConfiguration".equals(bg.getClass().getSimpleName())) {
 
             Graphics2D gg = (Graphics2D) g.create();
             Shape rr;
@@ -158,15 +166,15 @@ public abstract class AquaButtonBorder extends AquaBorder implements FocusRingOu
                 gg.setColor(Color.BLACK);
                 AquaUtils.fillAntiAliased(gg, rr);
 
-                Path2D.Float p = new Path2D.Float();
-                p.moveTo(x1, y2);
-                p.lineTo(x2, y1);
-                p.lineTo(x2, y2);
-                p.closePath();
+                Path2D.Float path = new Path2D.Float();
+                path.moveTo(x1, y2);
+                path.lineTo(x2, y1);
+                path.lineTo(x2, y2);
+                path.closePath();
 
                 gg.clip(rr);
                 gg.setColor(Color.WHITE);
-                AquaUtils.fillAntiAliased(gg, p);
+                AquaUtils.fillAntiAliased(gg, path);
                 gg.setClip(null);
             }
 
@@ -181,11 +189,6 @@ public abstract class AquaButtonBorder extends AquaBorder implements FocusRingOu
 
             gg.dispose();
         }
-
-        AppearanceManager.ensureAppearance(b);
-        AquaUtils.configure(painter, b, width, height);
-        org.violetlib.jnr.Painter p = painter.getPainter(bg);
-        p.paint(g, x, y);
     }
 
     protected @NotNull State getState(@NotNull Configuration g) {
@@ -569,7 +572,15 @@ public abstract class AquaButtonBorder extends AquaBorder implements FocusRingOu
             AquaUIPainter.State state = getState(b);
             boolean isFocused = computeIsFocused(state, b);
             AquaUIPainter.ButtonState bs = getButtonState(b);
-            return new ButtonConfiguration((ButtonLayoutConfiguration) g, state, isFocused, bs);
+            ButtonConfiguration bg = new ButtonConfiguration((ButtonLayoutConfiguration) g, state, isFocused, bs);
+            if (isColorWell(b)) {
+                try {
+                    bg = new ColorWellButtonConfiguration(bg, b.getBackground());
+                } catch (Throwable ignore) {
+                    // probably an old version of JNR
+                }
+            }
+            return bg;
         }
 
         return null;
