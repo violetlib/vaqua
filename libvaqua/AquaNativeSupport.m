@@ -1296,11 +1296,24 @@ JNIEXPORT jobjectArray JNICALL Java_org_violetlib_aqua_fc_OSXFile_nativeGetSideb
             if (iconSize > 0) {
                 IconRef icon = LSSharedFileListItemCopyIconRef(item);
                 if (icon) {
-                    NSImage *iconImage = [[NSImage alloc] initWithIconRef:icon];
-                    icon1J = renderImageIntoBufferForDisplay(env, iconImage, iconSize, iconSize, 1);
-                    icon2J = renderImageIntoBufferForDisplay(env, iconImage, iconSize, iconSize, 2);
-                    [iconImage release];
-                    CFRelease(icon);
+                    // Workaround for apparent bug in macOS 14
+                    long long ptr = (long long) icon;
+                    if (ptr > 0 && ptr < 10000) {
+                        CFStringRef displayName = LSSharedFileListItemCopyDisplayName(item);
+                        NSString *displayNameNS = (NSString *) displayName;
+                        if (displayNameNS) {
+                            NSLog(@"Bad pointer %llx returned by LSSharedFileListItemCopyIconRef for %@", ptr, displayNameNS);
+                            CFRelease(displayName);
+                        } else {
+                            NSLog(@"Bad pointer %llx returned by LSSharedFileListItemCopyIconRef for item with no name", ptr);
+                        }
+                    } else {
+                        NSImage *iconImage = [[NSImage alloc] initWithIconRef:icon];
+                        icon1J = renderImageIntoBufferForDisplay(env, iconImage, iconSize, iconSize, 1);
+                        icon2J = renderImageIntoBufferForDisplay(env, iconImage, iconSize, iconSize, 2);
+                        [iconImage release];
+                        CFRelease(icon);
+                    }
                 }
             }
 
