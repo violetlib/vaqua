@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Alan Snyder.
+ * Copyright (c) 2021-2023 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -24,6 +24,7 @@ public abstract class ListSelectionBoundsTracker implements SelectionBoundsTrack
     protected @Nullable JList<?> list;
     protected @Nullable Consumer<SelectionBoundsDescription> consumer;
     private @Nullable SelectionBoundsDescription currentSelectionDescription;
+    private int currentWidth;
 
     public ListSelectionBoundsTracker(@NotNull JList<?> list, @Nullable Consumer<SelectionBoundsDescription> consumer) {
         this.list = list;
@@ -46,6 +47,7 @@ public abstract class ListSelectionBoundsTracker implements SelectionBoundsTrack
     public void reset() {
         if (currentSelectionDescription != null) {
             currentSelectionDescription = null;
+            currentWidth = 0;
             if (consumer != null) {
                 consumer.accept(null);
             }
@@ -98,8 +100,10 @@ public abstract class ListSelectionBoundsTracker implements SelectionBoundsTrack
 
     protected void updateFromSelectedRows(int @NotNull [] rows) {
         SelectionBoundsDescription newSelectionDescription = createSelectionDescription(rows);
-        if (!Objects.equals(newSelectionDescription, currentSelectionDescription)) {
+        int newWidth = list != null ? list.getWidth() : 0;
+        if (newWidth != currentWidth || !Objects.equals(newSelectionDescription, currentSelectionDescription)) {
             currentSelectionDescription = newSelectionDescription;
+            currentWidth = newWidth;
             if (consumer != null) {
                 consumer.accept(currentSelectionDescription);
             }
