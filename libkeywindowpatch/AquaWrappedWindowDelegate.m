@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Alan Snyder.
+ * Copyright (c) 2018-2023 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -8,8 +8,6 @@
 
 #import "KeyWindowPatch.h"
 #import "AquaWrappedWindowDelegate.h"
-
-#import <JavaNativeFoundation/JavaNativeFoundation.h>
 
 @interface CMenuBar { }
 @end
@@ -171,7 +169,7 @@
     [delegate sendEvent:event];
 }
 
-- (JNFWeakJObjectWrapper *) javaPlatformWindow
+- (NSObject *) javaPlatformWindow
 {
     return [delegate javaPlatformWindow];
 }

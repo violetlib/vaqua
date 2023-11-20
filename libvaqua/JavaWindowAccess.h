@@ -9,7 +9,7 @@
 // Support for mapping a native window to a Java window or a Java platform window (CPlatformWindow).
 
 #import <Cocoa/Cocoa.h>
-#import <JavaNativeFoundation/JavaNativeFoundation.h>
+#import <jni.h>
 
 jobject getJavaWindow(JNIEnv *env, NSWindow *w);
 jobject getJavaPlatformWindow(JNIEnv *env, NSWindow *w);

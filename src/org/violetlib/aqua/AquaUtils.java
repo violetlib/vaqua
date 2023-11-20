@@ -2265,6 +2265,7 @@ final public class AquaUtils {
     private static native @Nullable String nativeGetWindowEffectiveAppearanceName(long w);
     public static native @Nullable String nativeGetApplicationAppearanceName();
     private static native void registerWindowChangedAppearanceCallback(@NotNull WindowAppearanceChangedCallback callback);
+    public static native void nativeFixPopupWindow(@NotNull Window parent, @NotNull Popup p);
 
     public static native int nativeDebugWindow(long w);
     public static native void syslog(String msg);

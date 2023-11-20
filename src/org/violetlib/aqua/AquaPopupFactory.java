@@ -73,6 +73,9 @@ public abstract class AquaPopupFactory extends PopupFactory {
             AppearanceManager.setSpecifiedAppearanceName(rp, appearanceName);
         }
 
+        // Workaround for JDK bug when popup owner is an embedded component
+        AquaUtils.nativeFixPopupWindow((Window) w.getParent(), p);
+
         return p;
     }
 }

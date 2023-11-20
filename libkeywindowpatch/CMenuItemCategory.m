@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Alan Snyder.
+ * Copyright (c) 2018-2023 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -7,9 +7,9 @@
  */
 
 #import <Cocoa/Cocoa.h>
-#import <JavaNativeFoundation/JavaNativeFoundation.h>
 #include <Carbon/Carbon.h>
 #import <sys/time.h>
+#include "jnix.h"
 #import "KeyWindowPatch.h"
 #import "CMenuItemCategory.h"
 
@@ -21,10 +21,6 @@ extern unichar NsCharToJavaChar(unichar nsChar, NSUInteger modifiers);
 jint NsKeyModifiersToJavaModifiers(NSUInteger nsFlags, BOOL isExtMods);
 jlong UTC(NSEvent *event);
 
-@interface ThreadUtilities { }
-+ (JNIEnv*)getJNIEnv;
-@end
-
 @implementation CMenuItem (CMenuItemCategory)
 
 - (void)handleAction:(NSMenuItem *)sender
@@ -34,8 +30,8 @@ jlong UTC(NSEvent *event);
 #endif
 
     //AWT_ASSERT_APPKIT_THREAD;
-    JNIEnv *env = [ThreadUtilities getJNIEnv];
-    JNF_COCOA_ENTER(env);
+    JNIEnv *env = GET_APPKIT_JNI_ENVIRONMENT();
+    COCOA_ENTER();
 
     // If we are called as a result of user pressing a shortcut, do nothing,
     // because AVTView has already sent corresponding key event to the Java
@@ -48,14 +44,17 @@ jlong UTC(NSEvent *event);
     // means we have to handle it here.
     NSEvent *currEvent = [[NSApplication sharedApplication] currentEvent];
     if (fIsCheckbox) {
-        static JNF_CLASS_CACHE(jc_CCheckboxMenuItem, "sun/lwawt/macosx/CCheckboxMenuItem");
-        static JNF_MEMBER_CACHE(jm_ckHandleAction, jc_CCheckboxMenuItem, "handleAction", "(Z)V");
+        static jclass jc_CCheckboxMenuItem;
+        static jmethodID jm_ckHandleAction;
+
+        GET_CLASS(jc_CCheckboxMenuItem, "sun/lwawt/macosx/CCheckboxMenuItem");
+        GET_METHOD(jm_ckHandleAction, jc_CCheckboxMenuItem, "handleAction", "(Z)V");
 
         // Send the opposite of what's currently checked -- the action
         // indicates what state we're going to.
         NSInteger state = [sender state];
         jboolean newState = (state == NSOnState ? JNI_FALSE : JNI_TRUE);
-        JNFCallVoidMethod(env, fPeer, jm_ckHandleAction, newState);
+        (*env)->CallVoidMethod(env, fPeer, jm_ckHandleAction, newState);
     }
     else {
         if ([currEvent type] == NSKeyDown) {
@@ -87,15 +86,19 @@ jlong UTC(NSEvent *event);
             }
         }
 
-        static JNF_CLASS_CACHE(jc_CMenuItem, "sun/lwawt/macosx/CMenuItem");
-        static JNF_MEMBER_CACHE(jm_handleAction, jc_CMenuItem, "handleAction", "(JI)V"); // AWT_THREADING Safe (event)
+        static jclass jc_CMenuItem;
+        static jmethodID jm_handleAction;
+
+        GET_CLASS(jc_CMenuItem, "sun/lwawt/macosx/CMenuItem");
+        GET_METHOD(jm_handleAction, jc_CMenuItem, "handleAction", "(JI)V"); // AWT_THREADING Safe (event)
 
         NSUInteger modifiers = [currEvent modifierFlags];
         jint javaModifiers = NsKeyModifiersToJavaModifiers(modifiers, NO);
 
-        JNFCallVoidMethod(env, fPeer, jm_handleAction, UTC(currEvent), javaModifiers); // AWT_THREADING Safe (event)
+        (*env)->CallVoidMethod(env, fPeer, jm_handleAction, UTC(currEvent), javaModifiers); // AWT_THREADING Safe (event)
     }
-    JNF_COCOA_EXIT(env);
+
+    COCOA_EXIT();
 }
 
 @end

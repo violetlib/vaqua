@@ -8,18 +8,23 @@
 
 // Support for mapping a native window to a Java window.
 
+#include "jnix.h"
 #import "JavaWindowAccess.h"
 #import "AquaNativeSupport.h"
 
-static JNF_CLASS_CACHE(jc_CPlatformWindow, "sun/lwawt/macosx/CPlatformWindow");
-static JNF_MEMBER_CACHE(jf_target, jc_CPlatformWindow, "target", "Ljava/awt/Window;");
+static jclass jc_CPlatformWindow;
+static jfieldID jf_target;
 
 // Map a native window to its Java window, if possible.
 jobject getJavaWindow(JNIEnv *env, NSWindow *w)
 {
     jobject jPlatformWindow = getJavaPlatformWindow(env, w);
     if (jPlatformWindow) {
-        return JNFGetObjectField(env, jPlatformWindow, jf_target);
+        GET_CLASS_RETURN(jc_CPlatformWindow, "sun/lwawt/macosx/CPlatformWindow", NULL);
+        GET_FIELD_RETURN(jf_target, jc_CPlatformWindow, "target", "Ljava/awt/Window;", NULL);
+        jobject result = (*env)->GetObjectField(env, jPlatformWindow, jf_target);
+        CHECK_EXCEPTION();
+        return result;
     }
     return NULL;
 }
@@ -38,7 +43,7 @@ jobject getJavaPlatformWindow(JNIEnv *env, NSWindow *w)
            ) {
             return (*env)->NewLocalRef(env, [delegate javaPlatformWindow]);
         } else {
-            JNFWeakJObjectWrapper *jPlatformWindowWrapper = [delegate javaPlatformWindow];
+            /* JNFWeakJObjectWrapper */ NSObject *jPlatformWindowWrapper = [delegate javaPlatformWindow];
             if (jPlatformWindowWrapper) {
                 return [jPlatformWindowWrapper jObjectWithEnv:env];
             }

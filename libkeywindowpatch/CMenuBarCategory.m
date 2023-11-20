@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Alan Snyder.
+ * Copyright (c) 2018-2023 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -7,16 +7,12 @@
  */
 
 #import <Cocoa/Cocoa.h>
-#import <JavaNativeFoundation/JavaNativeFoundation.h>
 #include <Carbon/Carbon.h>
+#include "jnix.h"
 #import "KeyWindowPatch.h"
 #import "CMenuBarCategory.h"
 
 @interface ApplicationDelegate { }
-@end
-
-@interface ThreadUtilities { }
-+ (JNIEnv*)getJNIEnv;
 @end
 
 static unichar CHAR_UNDEFINED = 0xFFFF;
@@ -162,7 +158,7 @@ NSString *CMenuBarDidReuseItemNotification =
 
     if (self == sActiveMenuBar) {
         NSArray *args = [[NSArray alloc] initWithObjects:theMenu, [NSNumber numberWithInt:-1], nil];
-        [ThreadUtilities performOnMainThread:@selector(nativeAddMenuAtIndex_OnAppKitThread:) on:self withObject:args waitUntilDone:YES];
+        APPKIT_PERFORM(self, @selector(nativeAddMenuAtIndex_OnAppKitThread:), args);
         [args release];
     }
 }
@@ -181,14 +177,14 @@ NSString *CMenuBarDidReuseItemNotification =
 
     if (self == sActiveMenuBar) {
         NSArray *args = [[NSArray alloc] initWithObjects:theMenu, [NSNumber numberWithInt:index], nil];
-        [ThreadUtilities performOnMainThread:@selector(nativeAddMenuAtIndex_OnAppKitThread:) on:self withObject:args waitUntilDone:YES];
+        APPKIT_PERFORM(self, @selector(nativeAddMenuAtIndex_OnAppKitThread:), args);
         [args release];
     }
 }
 
 - (void) javaDeleteMenu: (jint)index {
     if (self == sActiveMenuBar) {
-        [ThreadUtilities performOnMainThread:@selector(nativeDeleteMenu_OnAppKitThread:) on:self withObject:[NSNumber numberWithInt:index] waitUntilDone:YES];
+        APPKIT_PERFORM(self, @selector(nativeDeleteMenu_OnAppKitThread:), [NSNumber numberWithInt:index]);
     }
 
     @synchronized(self) {

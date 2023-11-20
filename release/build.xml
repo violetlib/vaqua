@@ -38,10 +38,6 @@
     <property name="cc" location="/usr/bin/cc"/>
     <property name="lipo" location="/usr/bin/lipo"/>
 
-    <!-- Note: open source JavaNativeFoundation is required to build for arm, see https://github.com/apple/openjdk -->
-
-    <property name="JNFdir" location="${SDKroot}/System/Library/Frameworks/JavaVM.framework/Versions/A/Frameworks"/>
-
     <property name="debug" value="false"/>
     <property name="debugoption" value=""/>
 
@@ -53,6 +49,7 @@
     <property name="src8" location="${base}/Java8Support/src"/>
     <property name="src9" location="${base}/Java9Support/src"/>
     <property name="jnisrc" location="${base}/libvaqua"/>
+    <property name="jnusrc" location="${base}/native"/>
     <property name="libkeywindowpatchsrc" location="${base}/libkeywindowpatch"/>
     <property name="libwindowstylepatchsrc" location="${base}/libwindowstylepatch"/>
     <property name="resources" location="${base}/resources"/>
@@ -63,6 +60,8 @@
     <property name="jnidir" location="${builddir}/jni"/>
     <property name="distdir" location="dist"/>
     <property name="libdir" location="${base}/lib"/>
+    <property name="jnuheadersdir" value="${base}/native"/>
+    <property name="jniheadersdir" value="${base}/native"/>
 
     <property name="annotationsVersion" value="20.1.0"/>
     <property name="vappearancesVersion" value="3"/>
@@ -220,6 +219,9 @@
                     <arg value="-I${jdk}/include/darwin"/>
                     <arg value="-I${headersdir}"/>
                     <arg value="-I${libdir}"/>
+                    <arg value="-I${jnuheadersdir}"/>
+                    <arg value="-I${nativeheadersdir}"/>
+                    <arg value="-I${jnusrc}"/>
 
                     <arg value="-dynamiclib"/>
                     <arg value="-ObjC"/>
@@ -231,10 +233,6 @@
                     <arg value="-framework"/>
                     <arg value="Quartz"/>
 
-                    <arg value="-F${JNFdir}"/>
-                    <arg value="-framework"/>
-                    <arg value="JavaNativeFoundation"/>
-
                     <arg value="-install_name"/>
                     <arg value="libvaqua.dylib"/>
 
@@ -245,6 +243,7 @@
 
                     <arg value="${debugoption}"/>
 
+                    <arg value="${jnusrc}/jnu_support.m"/>
                     <arg value="${jnisrc}/AquaNativeSupport.m"/>
                     <arg value="${jnisrc}/AquaSidebarBackground.m"/>
                     <arg value="${jnisrc}/AquaWrappedAWTView.m"/>
@@ -309,16 +308,15 @@
                     <arg value="-I${jdk}/include"/>
                     <arg value="-I${jdk}/include/darwin"/>
                     <arg value="-I${headersdir}"/>
+                    <arg value="-I${jnuheadersdir}"/>
+                    <arg value="-I${nativeheadersdir}"/>
+                    <arg value="-I${jnusrc}"/>
 
                     <arg value="-dynamiclib"/>
                     <arg value="-ObjC"/>
 
                     <arg value="-framework"/>
                     <arg value="Cocoa"/>
-
-                    <arg value="-F${JNFdir}"/>
-                    <arg value="-framework"/>
-                    <arg value="JavaNativeFoundation"/>
 
                     <arg value="-install_name"/>
                     <arg value="libkeywindowpatch.dylib"/>
