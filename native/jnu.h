@@ -232,7 +232,7 @@ extern JNIEnv *JNU_SUPPORT(getAppkitJNIEnvironment());
     }
 
 /* Create a pool and initiate a try block to catch any exception */
-#define COCOA_ENTER(env) \
+#define COCOA_ENTER() \
  NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init]; \
  @try {
 
@@ -240,7 +240,7 @@ extern JNIEnv *JNU_SUPPORT(getAppkitJNIEnvironment());
  * If there is a Java exception that has been thrown that should escape.
  * And ensure we drain the auto-release pool.
  */
-#define COCOA_EXIT(env) \
+#define COCOA_EXIT() \
  } \
  @catch (NSException *e) { \
      NSLog(@"%@", [e callStackSymbols]); \
