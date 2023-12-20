@@ -1605,7 +1605,8 @@ static NSWindow *getNativeWindow(JNIEnv *env, jobject w, jobject *readLockOutput
     // Check for an embedded frame (CViewEmbeddedFrame)
     if ((*env)->IsInstanceOf(env, w, jc_CViewEmbeddedFrame)) {
         NSView *v = (NSView *) (*env)->CallLongMethod(env, w, jm_getEmbedderHandle);
-        return v != NULL ? v.window : NULL;
+        NSLog(@"nativeGetNativeWindow: obtaining native window from embedded frame: %@", v);
+        return v != nil ? v.window : NULL;
     }
 
     NSWindow *result = 0;
@@ -2238,6 +2239,49 @@ JNIEXPORT void JNICALL Java_org_violetlib_aqua_AquaUtils_nativeFixPopupWindow
     }
 
     COCOA_EXIT();
+}
+
+/*
+ * Class:     org_violetlib_aqua_AquaUtils
+ * Method:    nativeFixWindowWithEmbeddedOwner
+ * Signature: (Ljava/awt/Window;Ljava/awt/Window;)V
+ */
+JNIEXPORT void JNICALL Java_org_violetlib_aqua_AquaUtils_nativeFixWindowWithEmbeddedOwner
+    (JNIEnv *env, jclass cl, jobject jWindow, jobject jOwner, jint windowLevel)
+{
+    jobject readLock = NULL;
+    __block NSWindow *window = getNativeWindow(env, jWindow, &readLock);
+    if (window != nil) {
+        __block NSWindow *oldOwnerWindow;
+
+        COCOA_ENTER();
+        APPKIT_EXEC(^() {
+            oldOwnerWindow = window.parentWindow;
+        });
+        COCOA_EXIT();
+
+       __block NSWindow *ownerWindow = getNativeWindow(env, jOwner, &readLock);
+        if (ownerWindow != oldOwnerWindow) {
+
+            // A special case for native file panels. VFileDialog replaces the NSAccessoryViewWindow owner with the
+            // corresponding NSOpenPanel or NSSavePanel. That replacement should not be reverted here.
+
+            if (oldOwnerWindow == nil || ![oldOwnerWindow isKindOfClass:[NSSavePanel class]]) {
+                COCOA_ENTER();
+                APPKIT_EXEC(^() {
+                    NSLog(@"Updating native owner of %@ from %@ to %@", window, oldOwnerWindow, ownerWindow);
+                    window.level = windowLevel;
+                    if (oldOwnerWindow != nil) {
+                        [oldOwnerWindow removeChildWindow:window];
+                    }
+                    if (ownerWindow != nil) {
+                        [ownerWindow addChildWindow:window ordered:NSWindowAbove];
+                    }
+                });
+                COCOA_EXIT();
+            }
+        }
+    }
 }
 
 /*

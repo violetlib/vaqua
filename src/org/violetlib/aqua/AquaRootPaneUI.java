@@ -427,6 +427,10 @@ public class AquaRootPaneUI extends BasicRootPaneUI implements AquaComponentUI,
     private void unconfigure()
     {
         removeVisualEffectView();
+        Window w = getWindow();
+        if (w != null) {
+            configureEmbeddedDialogPatchIfNeeded(w);
+        }
     }
 
     /**
@@ -497,6 +501,9 @@ public class AquaRootPaneUI extends BasicRootPaneUI implements AquaComponentUI,
     }
 
     protected void configureWindow(@NotNull Window w) {
+
+        configureEmbeddedDialogPatchIfNeeded(w);
+
         if (w.isDisplayable()) {
             if (OSXSystemProperties.OSVersion >= 1014 && !vibrantStyleIsExplicitlySet) {
                 int vibrantStyle = getDefaultWindowVibrantStyle();
@@ -514,6 +521,24 @@ public class AquaRootPaneUI extends BasicRootPaneUI implements AquaComponentUI,
             Color fc = w.getForeground();
             if (!(fc instanceof UIResource)) {
                 w.setForeground(new ColorUIResource(fc));
+            }
+        }
+    }
+
+    protected void configureEmbeddedDialogPatchIfNeeded(@NotNull Window w)
+    {
+        // Workaround for dialogs created by embedded components.
+        // See related issue JDK-8320438.
+
+        if (w instanceof Dialog) {
+            Dialog d = (Dialog) w;
+            if (AquaUtils.windowHasEmbeddedOwner(w)) {
+                String s = d.isModal() ? " modal" : "";
+                Utils.logDebug("Configuring" + s + " dialog with embedded owner");
+                // Note: a dialog may be disposed and later reanimated, which requires updating the fix.
+                if (d.isVisible() && d.isDisplayable()) {
+                    AquaUtils.fixWindowWithEmbeddedOwner(w, AquaUtils.NSModalPanelWindowLevel);
+                }
             }
         }
     }

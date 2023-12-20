@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2021 Alan Snyder.
+ * Copyright (c) 2015-2023 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -69,6 +69,9 @@ final public class AquaUtils {
 
     public static final String TOOLBAR_PANEL_PROPERTY = "Aqua.isToolBarPanel";
     public static final String IS_CELL_COMPONENT_KEY = "JComponent.isCellComponent";
+
+    public static final int NSModalPanelWindowLevel = 8;
+    public static final int NSPopUpMenuWindowLevel = 101;
 
     private static final String ANIMATIONS_PROPERTY = "swing.enableAnimations";
 
@@ -2227,6 +2230,31 @@ final public class AquaUtils {
         return name;
     }
 
+    /**
+     * Determine whether a window has an embedded owner.
+     */
+
+    public static boolean windowHasEmbeddedOwner(@NotNull Window w)
+    {
+        Window owner = w.getOwner();
+        return owner != null && owner.getClass().getSimpleName().equals("CViewEmbeddedFrame");
+    }
+
+    /**
+     * Apply workaround for JDK-8320438, if applicable.
+     * @param w A newly instantiated window.
+     * @param windowLevel The window level to be assigned to {@code w}.
+     */
+
+    public static void fixWindowWithEmbeddedOwner(@NotNull Window w, int windowLevel) {
+        if (w.isDisplayable() && windowHasEmbeddedOwner(w)) {
+            Window owner = w.getOwner();
+            if (owner != null) {
+                nativeFixWindowWithEmbeddedOwner(w, owner, windowLevel);
+            }
+        }
+    }
+
     public static void debugWindow(Window w) {
         execute(w, AquaUtils::nativeDebugWindow);
     }
@@ -2266,6 +2294,7 @@ final public class AquaUtils {
     public static native @Nullable String nativeGetApplicationAppearanceName();
     private static native void registerWindowChangedAppearanceCallback(@NotNull WindowAppearanceChangedCallback callback);
     public static native void nativeFixPopupWindow(@NotNull Window parent, @NotNull Popup p);
+    private static native void nativeFixWindowWithEmbeddedOwner(@NotNull Window w, @NotNull Window embeddedFrame, int windowLevel);
 
     public static native int nativeDebugWindow(long w);
     public static native void syslog(String msg);
