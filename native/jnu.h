@@ -41,7 +41,7 @@
 #define JNU_SUPPORT(name) _JNU_EVALUATOR(_JNU_PREFIX, name)
 
 
-
+extern void JNU_SUPPORT(setup)(JavaVM *vm);
 extern void JNU_SUPPORT(appkitExec)(void (^block)());
 extern void JNU_SUPPORT(appkitExecLater)(void (^block)());
 extern void JNU_SUPPORT(appkitPerform)(id target, SEL selector, id arg);
@@ -282,6 +282,8 @@ extern JNIEnv *JNU_SUPPORT(getAppkitJNIEnvironment());
 #define GET_APPKIT_JNI_ENVIRONMENT() \
     JNU_SUPPORT(getAppkitJNIEnvironment)();
 
+#define JNU_SETUP(jvm) \
+    JNU_SUPPORT(setup)(jvm);
 
 
 

@@ -35,6 +35,11 @@ static jobject appkitThreadGroup = NULL;
 static NSString* JavaRunLoopMode = @"AWTRunLoopMode";
 static NSArray<NSString*> *javaModes = nil;
 
+void JNU_SUPPORT(setup)(JavaVM *vm)
+{
+    jvm = vm;
+}
+
 static inline void attachCurrentThread(void** env) {
     if ([NSThread isMainThread]) {
         JavaVMAttachArgs args;

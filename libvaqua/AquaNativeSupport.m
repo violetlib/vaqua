@@ -3018,6 +3018,16 @@ JNIEXPORT void JNICALL Java_org_violetlib_aqua_AquaUtils_syslog
     (*env) -> ReleaseStringChars(env, msg, schars);
 }
 
+static void failure(JNIEnv *env, const char *msg)
+{
+    jclass cls = (*env)->FindClass(env, "java/lang/RuntimeException");
+    /* if cls is NULL, an exception has already been thrown */
+    if (cls != NULL) {
+        (*env)->ThrowNew(env, cls, msg);
+    }
+    (*env)->DeleteLocalRef(env, cls);
+}
+
 /*
  * Class:     org_violetlib_aqua_AquaNativeSupport
  * Method:    setup
@@ -3027,6 +3037,10 @@ JNIEXPORT void JNICALL Java_org_violetlib_aqua_AquaNativeSupport_setup
     (JNIEnv *env, jclass cl, jint jv)
 {
     javaVersion = jv;
+    if ((*env)->GetJavaVM(env, &vm) < 0) {
+       failure(env, "Failed to get Java VM for native code");
+    }
+    JNU_SETUP(vm);
 }
 
 /*
