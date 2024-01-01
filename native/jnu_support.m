@@ -31,25 +31,12 @@
 
 static JavaVM *jvm = NULL;
 static JNIEnv *appKitEnv = NULL;
-static jobject appkitThreadGroup = NULL;
 static NSString* JavaRunLoopMode = @"AWTRunLoopMode";
 static NSArray<NSString*> *javaModes = nil;
 
 void JNU_SUPPORT(setup)(JavaVM *vm)
 {
     jvm = vm;
-}
-
-static inline void attachCurrentThread(void** env) {
-    if ([NSThread isMainThread]) {
-        JavaVMAttachArgs args;
-        args.version = JNI_VERSION_1_4;
-        args.name = "AppKit Thread";
-        args.group = appkitThreadGroup;
-        (*jvm)->AttachCurrentThreadAsDaemon(jvm, env, &args);
-    } else {
-        (*jvm)->AttachCurrentThreadAsDaemon(jvm, env, NULL);
-    }
 }
 
 __attribute__((visibility("default")))
@@ -69,20 +56,6 @@ __attribute__((visibility("default")))
                                                JavaRunLoopMode,
                                                nil];
     }
-}
-
-+ (JNIEnv*)getJNIEnvUncached {
-    JNIEnv *env = NULL;
-    attachCurrentThread((void **)&env);
-    return env;
-}
-
-+ (void)detachCurrentThread {
-    (*jvm)->DetachCurrentThread(jvm);
-}
-
-+ (void)setAppkitThreadGroup:(jobject)group {
-    appkitThreadGroup = group;
 }
 
 /* This is needed because we can't directly pass a block to
@@ -152,7 +125,7 @@ JNIEnv *JNU_SUPPORT(getAppkitJNIEnvironment)()
 {
     //AWT_ASSERT_APPKIT_THREAD;
     if (appKitEnv == NULL) {
-        attachCurrentThread((void **)&appKitEnv);
+        (*jvm)->AttachCurrentThreadAsDaemon(jvm, &appKitEnv, NULL);
     }
     return appKitEnv;
 }
