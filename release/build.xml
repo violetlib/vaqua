@@ -1,435 +1,172 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<project name="VAqua Look and Feel"
-    basedir="."
-    default="release"
-    xmlns:if="ant:if"
-    xmlns:unless="ant:unless"
-    xmlns:resolver="antlib:org.apache.maven.resolver.ant"
-    xmlns:ivy="antlib:org.apache.ivy.ant"
-    xmlns:antcontrib="antlib:net.sf.antcontrib"
-    >
-
-    <tstamp>
-        <format property="NOW" timezone="GMT" pattern="yyyy-MM-dd'T'HH:mm:ss'Z'"/>
-    </tstamp>
-
-    <!-- A Java 9 or later compiler is required -->
-
-    <exec executable="java_home" outputproperty="jdk">
-        <arg value="-F"/>
-        <arg value="-v"/>
-        <arg value="9+"/>
-    </exec>
-
-    <property name="javac" location="${jdk}/bin/javac"/>
-
-    <!-- A Java 8 boot class path is required -->
-
-    <exec executable="java_home" outputproperty="jdk8">
-        <arg value="-F"/>
-        <arg value="-v"/>
-        <arg value="1.8"/>
-    </exec>
-
-    <property name="bootclasspath" location="${jdk8}/jre/lib/rt.jar" />
-
-    <property name="SDKroot" location="/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk" />
-    <property name="cc" location="/usr/bin/cc"/>
-    <property name="lipo" location="/usr/bin/lipo"/>
-
-    <property name="debug" value="false"/>
-    <property name="debugoption" value=""/>
-
-    <property name="RELEASE" value="0.9"/>
-    <property name="fullReleaseName" value="${RELEASE} ${NOW}"/>
-
-    <property name="base" location=".."/>
-    <property name="src" location="${base}/src"/>
-    <property name="src8" location="${base}/Java8Support/src"/>
-    <property name="src9" location="${base}/Java9Support/src"/>
-    <property name="jnisrc" location="${base}/libvaqua"/>
-    <property name="jnusrc" location="${base}/native"/>
-    <property name="libkeywindowpatchsrc" location="${base}/libkeywindowpatch"/>
-    <property name="libwindowstylepatchsrc" location="${base}/libwindowstylepatch"/>
-    <property name="resources" location="${base}/resources"/>
-    <property name="builddir" location="out"/>
-    <property name="classesdir" location="${builddir}/classes"/>
-    <property name="uber-classesdir" location="${builddir}/uber-classes"/>
-    <property name="headersdir" location="${builddir}/headers"/>
-    <property name="jnidir" location="${builddir}/jni"/>
-    <property name="distdir" location="dist"/>
-    <property name="libdir" location="${base}/lib"/>
-    <property name="jnuheadersdir" value="${base}/native"/>
-    <property name="jniheadersdir" value="${base}/native"/>
-
-    <property name="annotationsVersion" value="20.1.0"/>
-    <property name="vappearancesVersion" value="4"/>
-    <property name="jnrVersion" value="14"/>
-    <property name="activationVersion" value="1.2.0"/>
-
-    <target name="init">
-        <echo level="info" message="${fullReleaseName}"/>
-    </target>
-
-    <target name="clean">
-        <delete includeEmptyDirs="true" failonerror="false"><fileset dir="${builddir}"/></delete>
-    </target>
-
-    <target name="saveIDs">
-      <echo file="${classesdir}/org/violetlib/aqua/RELEASE.txt" message="${RELEASE}"/>
-      <echo file="${classesdir}/org/violetlib/aqua/BUILD.txt" message="${NOW}"/>
-    </target>
-
-    <!--
-      To use the Maven resolver, the Maven resolver ant tasks uber JAR must be installed in .ant/lib.
-      See https://maven.apache.org/resolver-ant-tasks/
-    -->
-
-    <target name="resolve-maven">
-        <resolver:resolve>
-          <dependencies>
-            <dependency coords="org.jetbrains:annotations:${annotationsVersion}"/>
-            <dependency coords="org.violetlib:vappearances:${vappearancesVersion}"/>
-            <dependency coords="org.violetlib:jnr:${jnrVersion}"/>
-            <dependency coords="com.sun.activation:javax.activation:${activationVersion}"/>
-          </dependencies>
-          <path refid="cp" classpath="compile"/>
-          <properties prefix="dep." scopes="compile"/>
-        </resolver:resolve>
-    </target>
-
-    <!--
-      To use the Ivy resolver, the Ivy uber JAR must be downloaded and installed in .ant/lib.
-      See https://ant.apache.org/ivy/
-    -->
-
-    <target name="resolve-ivy">
-        <ivy:cachepath pathid="cp">
-            <dependency org="org.jetbrains" name="annotations" rev="${annotationsVersion}"/>
-            <dependency org="org.violetlib" name="vappearances" rev="${vappearancesVersion}"/>
-            <dependency org="org.violetlib" name="jnr" rev="${jnrVersion}"/>
-            <dependency org="com.sun.activation" name="javax.activation" rev="${activationVersion}"/>
-        </ivy:cachepath>
-    </target>
-
-    <target name="resolve" depends="resolve-maven"/>
-
-    <condition property="resourcesPresent">
-        <resourceexists>
-            <file file="${resources}"/>
-        </resourceexists>
-    </condition>
-
-    <target name="copyResources" if="${resourcesPresent}">
-      <copy todir="${classesdir}">
-        <fileset dir="${resources}">
-          <include name="org/violetlib/**"/>
-        </fileset>
-      </copy>
-    </target>
-
-    <target name="compile8" depends="resolve">
-      <mkdir dir="${classesdir}"/>
-      <mkdir dir="${headersdir}"/>
-
-      <javac source="1.8" target="1.8"
-          bootclasspath="${bootclasspath}"
-          classpathref="cp"
-          encoding="UTF-8"
-          srcdir="${src}"
-          destdir="${classesdir}"
-          debug="${debug}"
-          optimize="true"
-          includeantruntime="false"
-          fork="true"
-          executable="${javac}"
-          >
-          <compilerarg value="-h"/>
-          <compilerarg path="${headersdir}"/>
-          <patternset>
-            <include name="org/violetlib/aqua/**/*.java"/>
-          </patternset>
-      </javac>
-
-      <javac source="1.8" target="1.8"
-          bootclasspath="${bootclasspath}"
-          classpathref="cp"
-          encoding="UTF-8"
-          srcdir="${src8}"
-          destdir="${classesdir}"
-          debug="${debug}"
-          optimize="true"
-          includeantruntime="false"
-          fork="true"
-          executable="${javac}"
-          >
-          <compilerarg value="-h"/>
-          <compilerarg path="${headersdir}"/>
-          <patternset>
-            <include name="org/violetlib/aqua/**/*.java"/>
-          </patternset>
-      </javac>
-    </target>
-
-    <target name="compile9" depends="resolve">
-      <mkdir dir="${classesdir}"/>
-      <javac
-          classpathref="cp"
-          encoding="UTF-8"
-          release="9"
-          srcdir="${src9}"
-          destdir="${classesdir}"
-          debug="${debug}"
-          optimize="true"
-          includeantruntime="false"
-          fork="true"
-          executable="${javac}"
-          >
-          <patternset>
-            <include name="org/violetlib/aqua/**/*.java"/>
-          </patternset>
-        </javac>
-    </target>
-
-    <target name="compile-VAqua-Java" depends="compile8, compile9">
-    </target>
-
-    <target name="compile-VAqua-JNI" depends="compile8">
-        <mkdir dir="${jnidir}"/>
-        <delete includeEmptyDirs="true" failonerror="false"><fileset dir="${jnidir}/libvaqua.dylib.dSYM"/></delete>
-        <delete includeEmptyDirs="true" failonerror="false"><fileset dir="${jnidir}/libvaqua-x86.dylib.dSYM"/></delete>
-        <delete includeEmptyDirs="true" failonerror="false"><fileset dir="${jnidir}/libvaqua-arm.dylib.dSYM"/></delete>
-
-        <macrodef name="build-for-target">
-            <attribute name="target"/>
-            <attribute name="name"/>
-            <sequential>
-                <exec executable="${cc}" failonerror="true" >
-                    <arg value="-target"/>
-                    <arg value="@{target}"/>
-
-                    <arg value="-isysroot"/>
-                    <arg value="${SDKroot}"/>
-
-                    <arg value="-o"/>
-                    <arg value="${jnidir}/libvaqua-@{name}.dylib"/>
-
-                    <arg value="-I${jdk}/include"/>
-                    <arg value="-I${jdk}/include/darwin"/>
-                    <arg value="-I${headersdir}"/>
-                    <arg value="-I${libdir}"/>
-                    <arg value="-I${jnuheadersdir}"/>
-                    <arg value="-I${nativeheadersdir}"/>
-                    <arg value="-I${jnusrc}"/>
-
-                    <arg value="-dynamiclib"/>
-                    <arg value="-ObjC"/>
-
-                    <arg value="-framework"/>
-                    <arg value="Cocoa"/>
-                    <arg value="-framework"/>
-                    <arg value="QuickLookThumbnailing"/>
-                    <arg value="-framework"/>
-                    <arg value="Quartz"/>
-
-                    <arg value="-install_name"/>
-                    <arg value="libvaqua.dylib"/>
-
-                    <arg value="-U"/>
-                    <arg value="_VAppearances_updateAppearance"/>
-                    <arg value="-undefined"/>
-                    <arg value="dynamic_lookup"/>
-
-                    <arg value="${debugoption}"/>
-
-                    <arg value="${jnusrc}/jnu_support.m"/>
-                    <arg value="${jnisrc}/AquaNativeSupport.m"/>
-                    <arg value="${jnisrc}/AquaSidebarBackground.m"/>
-                    <arg value="${jnisrc}/AquaWrappedAWTView.m"/>
-                    <arg value="${jnisrc}/AquaVisualEffectView.m"/>
-                    <arg value="${jnisrc}/JavaWindowAccess.m"/>
-                </exec>
-            </sequential>
-        </macrodef>
-
-        <build-for-target target="x86_64-apple-macos10.7" name="x86"/>
-        <build-for-target target="arm64-apple-macos11" name="arm"/>
-
-        <exec executable="${lipo}" failonerror="true">
-            <arg value="${jnidir}/libvaqua-x86.dylib"/>
-            <arg value="${jnidir}/libvaqua-arm.dylib"/>
-            <arg value="-create"/>
-            <arg value="-output"/>
-            <arg value="${jnidir}/libvaqua.dylib"/>
-        </exec>
-
-        <delete file="${jnidir}/libvaqua-x86.dylib"/>
-        <delete file="${jnidir}/libvaqua-arm.dylib"/>
-
-        <antcontrib:if>
-          <available file="${jnidir}/libvaqua-x86.dylib.dSYM" type="dir"/>
-          <then>
-              <copy todir="${jnidir}/libvaqua.dylib.dSYM">
-                <fileset dir="${jnidir}/libvaqua-x86.dylib.dSYM"/>
-              </copy>
-              <delete file="${jnidir}/libvaqua.dylib.dSYM/Contents/Resources/DWARF/libvaqua-x86.dylib"/>
-              <exec executable="${lipo}" failonerror="true">
-                  <arg value="${jnidir}/libvaqua-x86.dylib.dSYM/Contents/Resources/DWARF/libvaqua-x86.dylib"/>
-                  <arg value="${jnidir}/libvaqua-arm.dylib.dSYM/Contents/Resources/DWARF/libvaqua-arm.dylib"/>
-                  <arg value="-create"/>
-                  <arg value="-output"/>
-                  <arg value="${jnidir}/libvaqua.dylib.dSYM/Contents/Resources/DWARF/libvaqua.dylib"/>
-              </exec>
-              <delete includeEmptyDirs="true" failonerror="false"><fileset dir="${jnidir}/libvaqua-x86.dylib.dSYM"/></delete>
-              <delete includeEmptyDirs="true" failonerror="false"><fileset dir="${jnidir}/libvaqua-arm.dylib.dSYM"/></delete>
-          </then>
-        </antcontrib:if>
-
-    </target>
-
-    <target name="compile-KeyWindowPatch" depends="compile8">
-        <mkdir dir="${jnidir}"/>
-
-        <macrodef name="build-for-target">
-            <attribute name="target"/>
-            <attribute name="name"/>
-            <sequential>
-                <exec executable="${cc}" failonerror="true" >
-                    <arg value="-target"/>
-                    <arg value="@{target}"/>
-
-                    <arg value="-isysroot"/>
-                    <arg value="${SDKroot}"/>
-
-                    <arg value="-o"/>
-                    <arg value="${jnidir}/libkeywindowpatch-@{name}.dylib"/>
-
-                    <arg value="-I${jdk}/include"/>
-                    <arg value="-I${jdk}/include/darwin"/>
-                    <arg value="-I${headersdir}"/>
-                    <arg value="-I${jnuheadersdir}"/>
-                    <arg value="-I${nativeheadersdir}"/>
-                    <arg value="-I${jnusrc}"/>
-
-                    <arg value="-dynamiclib"/>
-                    <arg value="-ObjC"/>
-
-                    <arg value="-framework"/>
-                    <arg value="Cocoa"/>
-
-                    <arg value="-install_name"/>
-                    <arg value="libkeywindowpatch.dylib"/>
-
-                    <arg value="-undefined"/>
-                    <arg value="dynamic_lookup"/>
-
-                    <arg value="${libkeywindowpatchsrc}/KeyWindowPatch.m"/>
-                    <arg value="${libkeywindowpatchsrc}/AquaWrappedWindowDelegate.m"/>
-                    <arg value="${libkeywindowpatchsrc}/CMenuItemCategory.m"/>
-                    <arg value="${libkeywindowpatchsrc}/CMenuBarCategory.m"/>
-                </exec>
-            </sequential>
-        </macrodef>
-
-        <build-for-target target="x86_64-apple-macos10.7" name="x86"/>
-        <build-for-target target="arm64-apple-macos11" name="arm"/>
-
-        <exec executable="${lipo}" failonerror="true">
-            <arg value="${jnidir}/libkeywindowpatch-x86.dylib"/>
-            <arg value="${jnidir}/libkeywindowpatch-arm.dylib"/>
-            <arg value="-create"/>
-            <arg value="-output"/>
-            <arg value="${jnidir}/libkeywindowpatch.dylib"/>
-        </exec>
-
-        <delete file="${jnidir}/libkeywindowpatch-x86.dylib"/>
-        <delete file="${jnidir}/libkeywindowpatch-arm.dylib"/>
-    </target>
-
-    <target name="compile-WindowStylePatch" depends="compile8">
-        <mkdir dir="${jnidir}"/>
-
-        <macrodef name="build-for-target">
-            <attribute name="target"/>
-            <attribute name="name"/>
-            <sequential>
-                <exec executable="${cc}" failonerror="true">
-                    <arg value="-target"/>
-                    <arg value="@{target}"/>
-
-                    <arg value="-isysroot"/>
-                    <arg value="${SDKroot}"/>
-
-                    <arg value="-o"/>
-                    <arg value="${jnidir}/libwindowstylepatch-@{name}.dylib"/>
-
-                    <arg value="-I${headersdir}"/>
-
-                    <arg value="-dynamiclib"/>
-                    <arg value="-ObjC"/>
-
-                    <arg value="-framework"/>
-                    <arg value="Cocoa"/>
-
-                    <arg value="-install_name"/>
-                    <arg value="libwindowstylepatch.dylib"/>
-
-                    <arg value="-undefined"/>
-                    <arg value="dynamic_lookup"/>
-
-                    <arg value="${libwindowstylepatchsrc}/WindowStylePatch.m"/>
-                </exec>
-            </sequential>
-        </macrodef>
-
-        <build-for-target target="x86_64-apple-macos10.7" name="x86"/>
-        <build-for-target target="arm64-apple-macos11" name="arm"/>
-
-        <exec executable="${lipo}" failonerror="true">
-            <arg value="${jnidir}/libwindowstylepatch-x86.dylib"/>
-            <arg value="${jnidir}/libwindowstylepatch-arm.dylib"/>
-            <arg value="-create"/>
-            <arg value="-output"/>
-            <arg value="${jnidir}/libwindowstylepatch.dylib"/>
-        </exec>
-
-        <delete file="${jnidir}/libwindowstylepatch-x86.dylib"/>
-        <delete file="${jnidir}/libwindowstylepatch-arm.dylib"/>
-    </target>
-
-    <target name="createUberJAR" depends="resolve, VAqua">
-        <mkdir dir="${uber-classesdir}"/>
-        <delete includeemptydirs="true">
-            <fileset dir="${uber-classesdir}" includes="**/*"/>
-        </delete>
-
-        <copy todir="${uber-classesdir}">
-            <fileset dir="${classesdir}"/>
-        </copy>
-
-        <unjar overwrite="false" dest="${uber-classesdir}" src="${dep.org.violetlib:vappearances:jar}"/>
-        <unjar overwrite="false" dest="${uber-classesdir}" src="${dep.org.violetlib:jnr:jar}"/>
-        <unjar overwrite="false" dest="${uber-classesdir}" src="${dep.com.sun.activation:javax.activation:jar}"/>
-    </target>
-
-    <target name="uber-VAqua" depends="createUberJAR">
-        <echo level="info" message="Building VAqua ${fullReleaseName} uber-JAR"/>
-        <mkdir dir="${distdir}"/>
-        <jar jarfile="${distdir}/VAqua.jar" basedir="${uber-classesdir}">
-            <fileset dir="${jnidir}/"/>
-        </jar>
-    </target>
-
-
-    <target name="VAqua" depends="compile-VAqua-JNI,compile-KeyWindowPatch,compile-WindowStylePatch,compile-VAqua-Java,copyResources,saveIDs">
-        <echo level="info" message="Building VAqua ${fullReleaseName}"/>
-        <mkdir dir="${distdir}"/>
-        <jar jarfile="${distdir}/VAquaOnly.jar" basedir="${classesdir}">
-            <fileset dir="${jnidir}/"/>
-        </jar>
-    </target>
-
-    <target name="release" depends="clean,uber-VAqua"/>
+<project name="VAqua Look and Feel" default="release">
+
+  <!-- See https://violetlib.org/vbuilder/overview.html" -->
+
+  <typedef resource="org/violetlib/vbuilder/ant/antlib.xml"/>
+  
+  <property name="jdk8" value="/Library/Java/JavaVirtualMachines/jdk-8.jdk"/>
+  <property name="bootclasspath8" value="${jdk8}/Contents/Home/jre/lib/rt.jar"/>
+
+  <property name="RELEASE" value="13"/>
+  <property name="annotationsVersion" value="20.1.0"/>
+  <property name="vappearancesVersion" value="4"/>
+  <property name="jnrVersion" value="14"/>
+  <property name="activationVersion" value="1.2.0"/>
+
+  <property name="debug" value="false"/>
+  <property name="debugoption" value=""/>
+
+  <tstamp>
+    <format property="NOW" timezone="GMT" pattern="yyyy-MM-dd'T'HH:mm:ss'Z'"/>
+  </tstamp>
+
+  <use coords="org.jetbrains:annotations:${annotationsVersion}"/>
+  <use coords="org.violetlib:vappearances:${vappearancesVersion}"/>
+  <use coords="org.violetlib:jnr:${jnrVersion}"/>
+  <use coords="com.sun.activation:javax.activation:${activationVersion}"/>
+
+  <property name="artifactCoordinates" value="org.violetlib:vaqua:${RELEASE}"/>
+
+  <property name="base" location=".."/>
+  <property name="src" location="${base}/src"/>
+  <property name="src8" location="${base}/Java8Support/src"/>
+  <property name="src9" location="${base}/Java9Support/src"/>
+  <property name="jnisrc" location="${base}/libvaqua"/>
+  <property name="jnusrc" location="${base}/native"/>
+  <property name="libkeywindowpatchsrc" location="${base}/libkeywindowpatch"/>
+  <property name="libwindowstylepatchsrc" location="${base}/libwindowstylepatch"/>
+  <property name="resourcesdir" location="${base}/resources"/>
+  <property name="builddir" location="out"/>
+  <property name="classesdir" location="${builddir}/classes"/>
+  <property name="uber-classesdir" location="${builddir}/uber-classes"/>
+  <property name="headersdir" location="${builddir}/headers"/>
+  <property name="jnidir" location="${builddir}/jni"/>
+  <property name="distdir" location="dist"/>
+  <property name="libdir" location="${base}/lib"/>
+  <property name="jnuheadersdir" value="${base}/native"/>
+  <property name="jniheadersdir" value="${base}/native"/>
+
+  <property name="fullReleaseName" value="${RELEASE} ${NOW}"/>
+
+  <target name="clean">
+    <deleteDirectory directory="${builddir}"/>
+    <deleteDirectory directory="${distdir}"/>
+  </target>
+
+  <target name="saveIDs">
+    <echo file="${classesdir}/org/violetlib/aqua/RELEASE.txt" message="${RELEASE}"/>
+    <echo file="${classesdir}/org/violetlib/aqua/BUILD.txt" message="${NOW}"/>
+  </target>
+
+  <target name="native">
+
+    <jni
+      version="1"
+      compatibilityversion="1"
+      outputfile="${jnidir}/libvaqua.dylib"
+      includepath="${headersdir}:${jnuheadersdir}"
+      installdir="${distdir}"
+      installName="libvaqua.dylib"
+      visibility="hidden"
+      >
+
+      <target value="x86_64-apple-macos10.10"/>
+      <target value="arm64-apple-macos11"/>
+
+      <linkerOption>-U</linkerOption>
+      <linkerOption>_VAppearances_updateAppearance</linkerOption>
+      <linkerOption>-undefined</linkerOption>
+      <linkerOption>dynamic_lookup</linkerOption>
+
+      <filelist dir="${jnusrc}">
+        <file name="jnu_support.m"/>
+      </filelist>
+
+      <filelist dir="${jnisrc}">
+        <file name="AquaNativeSupport.m"/>
+        <file name="AquaSidebarBackground.m"/>
+        <file name="AquaWrappedAWTView.m"/>
+        <file name="AquaVisualEffectView.m"/>
+        <file name="JavaWindowAccess.m"/>
+      </filelist>
+
+      <framework>Cocoa</framework>
+      <framework>QuickLookThumbnailing</framework>
+      <framework>Quartz</framework>
+    </jni>
+
+    <jni
+      version="1"
+      compatibilityversion="1"
+      outputfile="${jnidir}/libkeywindowpatch.dylib"
+      includepath="${headersdir}:${jnuheadersdir}"
+      installdir="${distdir}"
+      installName="libkeywindowpatch.dylib"
+      visibility="hidden"
+      >
+
+      <target value="x86_64-apple-macos10.10"/>
+      <target value="arm64-apple-macos11"/>
+
+      <linkerOption>-undefined</linkerOption>
+      <linkerOption>dynamic_lookup</linkerOption>
+
+      <filelist dir="${libkeywindowpatchsrc}">
+        <file name="KeyWindowPatch.m"/>
+        <file name="AquaWrappedWindowDelegate.m"/>
+        <file name="CMenuItemCategory.m"/>
+        <file name="CMenuBarCategory.m"/>
+      </filelist>
+
+      <framework>Cocoa</framework>
+    </jni>
+
+    <jni
+      version="1"
+      compatibilityversion="1"
+      outputfile="${jnidir}/libwindowstylepatch.dylib"
+      includepath="${headersdir}:${jnuheadersdir}"
+      installdir="${distdir}"
+      installName="libwindowstylepatch.dylib"
+      visibility="hidden"
+      >
+
+      <target value="x86_64-apple-macos10.10"/>
+      <target value="arm64-apple-macos11"/>
+
+      <linkerOption>-undefined</linkerOption>
+      <linkerOption>dynamic_lookup</linkerOption>
+
+      <filelist dir="${libwindowstylepatchsrc}">
+        <file name="WindowStylePatch.m"/>
+      </filelist>
+
+      <framework>Cocoa</framework>
+    </jni>
+
+  </target>
+
+  <target name="library" depends="saveIDs">
+    <echo level="info" message="Building VAqua ${fullReleaseName}"/>
+    <mkdir dir="${jnidir}"/>
+    <javaLibrary
+      name="VAquaOnly"
+      expandedName="VAqua"
+      dist="${distdir}"
+      release="8"
+      mavenCoordinates="${artifactCoordinates}"
+      buildRoot="${builddir}"
+      >
+      <source base="${src}"/>
+      <source base="${src8}" release="8"/>
+      <source base="${src9}" release="9"/>
+      <classpath compile="org.jetbrains:annotations" required="org.violetlib:vappearances org.violetlib:jnr com.sun.activation:javax.activation"/>
+      <fileset dir="${jnidir}"/>
+    </javaLibrary>
+  </target>
+
+  <target name="release" depends="clean, saveIDs, library"/>
 
 </project>
