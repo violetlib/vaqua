@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<project name="VAqua Look and Feel" default="release">
+<project name="VAqua Look and Feel" default="build">
 
   <!-- See https://violetlib.org/vbuilder/overview.html" -->
 
@@ -10,24 +10,18 @@
   <property name="bootclasspath8" value="${jdk8}/Contents/Home/jre/lib/rt.jar"/>
 
   <property name="RELEASE" value="13"/>
-  <property name="annotationsVersion" value="20.1.0"/>
-  <property name="vappearancesVersion" value="4"/>
-  <property name="jnrVersion" value="14"/>
-  <property name="activationVersion" value="1.2.0"/>
-
-  <property name="debug" value="false"/>
-  <property name="debugoption" value=""/>
 
   <tstamp>
     <format property="NOW" timezone="GMT" pattern="yyyy-MM-dd'T'HH:mm:ss'Z'"/>
   </tstamp>
 
-  <use coords="org.jetbrains:annotations:${annotationsVersion}"/>
-  <use coords="org.violetlib:vappearances:${vappearancesVersion}"/>
-  <use coords="org.violetlib:jnr:${jnrVersion}"/>
-  <use coords="com.sun.activation:javax.activation:${activationVersion}"/>
-
+  <property name="libname" value="VAqua"/>
   <property name="artifactCoordinates" value="org.violetlib:vaqua:${RELEASE}"/>
+
+  <use key="org.jetbrains:annotations" version="20.1.0" scope="compile"/>
+  <use key="org.violetlib:vappearances" version="4"/>
+  <use key="org.violetlib:jnr" version="14"/>
+  <use key="com.sun.activation:javax.activation" version="1.2.0"/>
 
   <property name="base" location=".."/>
   <property name="src" location="${base}/src"/>
@@ -47,6 +41,8 @@
   <property name="libdir" location="${base}/lib"/>
   <property name="jnuheadersdir" value="${base}/native"/>
   <property name="jniheadersdir" value="${base}/native"/>
+  <property name="debug" value="false"/>
+  <property name="debugoption" value=""/>
 
   <property name="fullReleaseName" value="${RELEASE} ${NOW}"/>
 
@@ -68,7 +64,7 @@
       outputfile="${jnidir}/libvaqua.dylib"
       includepath="${headersdir}:${jnuheadersdir}"
       installdir="${distdir}"
-      installName="libvaqua.dylib"
+      installname="libvaqua.dylib"
       visibility="hidden"
       >
 
@@ -103,7 +99,7 @@
       outputfile="${jnidir}/libkeywindowpatch.dylib"
       includepath="${headersdir}:${jnuheadersdir}"
       installdir="${distdir}"
-      installName="libkeywindowpatch.dylib"
+      installname="libkeywindowpatch.dylib"
       visibility="hidden"
       >
 
@@ -129,7 +125,7 @@
       outputfile="${jnidir}/libwindowstylepatch.dylib"
       includepath="${headersdir}:${jnuheadersdir}"
       installdir="${distdir}"
-      installName="libwindowstylepatch.dylib"
+      installname="libwindowstylepatch.dylib"
       visibility="hidden"
       >
 
@@ -148,8 +144,8 @@
 
   </target>
 
-  <target name="library" depends="saveIDs">
-    <echo level="info" message="Building VAqua ${fullReleaseName}"/>
+  <target name="build" depends="clean, saveIDs">
+    <echo level="info" message="Building ${libname} ${fullReleaseName}"/>
     <mkdir dir="${jnidir}"/>
     <javaLibrary
       name="VAquaOnly"
@@ -162,11 +158,9 @@
       <source base="${src}"/>
       <source base="${src8}" release="8"/>
       <source base="${src9}" release="9"/>
-      <classpath compile="org.jetbrains:annotations" required="org.violetlib:vappearances org.violetlib:jnr com.sun.activation:javax.activation"/>
+      <fileset dir="${resourcesdir}"/>
       <fileset dir="${jnidir}"/>
     </javaLibrary>
   </target>
-
-  <target name="release" depends="clean, saveIDs, library"/>
 
 </project>
