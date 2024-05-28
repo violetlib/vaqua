@@ -1,5 +1,5 @@
 /*
- * Changes Copyright (c) 2015-2021 Alan Snyder.
+ * Changes Copyright (c) 2015-2024 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -37,6 +37,7 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.FocusEvent;
 import java.awt.event.FocusListener;
+import java.awt.geom.Point2D;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import javax.swing.*;
@@ -49,8 +50,7 @@ import javax.swing.plaf.UIResource;
 import javax.swing.plaf.basic.BasicListUI;
 import javax.swing.text.JTextComponent;
 
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.*;
 import org.violetlib.jnr.aqua.AquaUIPainter;
 
 /**
@@ -278,7 +278,7 @@ public class AquaListUI extends BasicListUI implements AquaComponentUI, AquaView
 
     protected boolean shouldDisplayAsFocused() {
         return AquaFocusHandler.hasFocus(list);
-   }
+    }
 
     // Called on a change to isSideBar or the ancestry of the tree
     protected void updateSideBarConfiguration() {
@@ -539,6 +539,14 @@ public class AquaListUI extends BasicListUI implements AquaComponentUI, AquaView
                 paintStripes(g);
             }
             super.paint(g, c);
+            JList.DropLocation loc = list.getDropLocation();
+            if (loc != null && loc.isInsert()) {
+                Color color = appearanceContext.getAppearance().getColor("controlAccent");
+                if (color == null) {
+                    color = appearanceContext.getAppearance().isDark() ? Color.WHITE : Color.BLACK;
+                }
+                paintDropLine(g, loc, color);
+            }
         }
     }
 
@@ -667,4 +675,143 @@ public class AquaListUI extends BasicListUI implements AquaComponentUI, AquaView
 //            aquaRenderer.setDrawCheckedItem(true);
 //        }
 //    }
+
+
+    // The following code, adapted from BasicListUI, supports drop insert highlighting.
+
+    private static final int DROP_LINE_THICKNESS = 2;
+    private int layoutOrientation;
+    private boolean isLeftToRight;
+
+    private void paintDropLine(Graphics g, @NotNull JList.DropLocation loc, @NotNull Color dropLineColor)
+    {
+        layoutOrientation = list.getLayoutOrientation();
+        isLeftToRight = list.getComponentOrientation().isLeftToRight();
+
+        g.setColor(dropLineColor);
+        Rectangle rect = getDropLineRect(loc);
+        g.fillRect(rect.x, rect.y, rect.width, rect.height);
+    }
+
+    private Rectangle getDropLineRect(JList.DropLocation loc)
+    {
+        int size = list.getModel().getSize();
+
+        if (size == 0) {
+            Insets insets = list.getInsets();
+            if (layoutOrientation == JList.HORIZONTAL_WRAP) {
+                if (isLeftToRight) {
+                    return new Rectangle(insets.left, insets.top, DROP_LINE_THICKNESS, 20);
+                } else {
+                    return new Rectangle(list.getWidth() - DROP_LINE_THICKNESS - insets.right,
+                      insets.top, DROP_LINE_THICKNESS, 20);
+                }
+            } else {
+                return new Rectangle(insets.left, insets.top,
+                  list.getWidth() - insets.left - insets.right,
+                  DROP_LINE_THICKNESS);
+            }
+        }
+
+        Rectangle rect;
+        int index = loc.getIndex();
+        boolean decr = false;
+
+        if (layoutOrientation == JList.HORIZONTAL_WRAP) {
+            if (index == size) {
+                decr = true;
+            } else if (index != 0) {
+                Rectangle prev = getCellBounds(index - 1);
+                Rectangle me = getCellBounds(index);
+                if (prev.y != me.y) {
+                    Point p = loc.getDropPoint();
+                    if (isLeftToRight) {
+                        decr = Point2D.distance(prev.x + prev.width, prev.y + (int)(prev.height / 2.0), p.x, p.y)
+                          < Point2D.distance(me.x, me.y + (int)(me.height / 2.0), p.x, p.y);
+                    } else {
+                        decr = Point2D.distance(prev.x,
+                          prev.y + (int)(prev.height / 2.0),
+                          p.x, p.y)
+                          < Point2D.distance(me.x + me.width,
+                          me.y + (int)(prev.height / 2.0),
+                          p.x, p.y);
+                    }
+                }
+            }
+
+            if (decr) {
+                index--;
+                rect = getCellBounds(index);
+                if (isLeftToRight) {
+                    rect.x += rect.width;
+                } else {
+                    rect.x -= DROP_LINE_THICKNESS;
+                }
+            } else {
+                rect = getCellBounds(index);
+                if (!isLeftToRight) {
+                    rect.x += rect.width - DROP_LINE_THICKNESS;
+                }
+            }
+
+            if (rect.x >= list.getWidth()) {
+                rect.x = list.getWidth() - DROP_LINE_THICKNESS;
+            } else if (rect.x < 0) {
+                rect.x = 0;
+            }
+
+            rect.width = DROP_LINE_THICKNESS;
+        } else if (layoutOrientation == JList.VERTICAL_WRAP) {
+            if (index == size) {
+                index--;
+                rect = getCellBounds(index);
+                rect.y += rect.height;
+            } else if (index != 0) {
+                Rectangle prev = getCellBounds(index - 1);
+                Rectangle me = getCellBounds(index);
+                if (prev.x != me.x) {
+                    Point p = loc.getDropPoint();
+                    if (Point2D.distance(prev.x + (int)(prev.width / 2.0), prev.y + prev.height, p.x, p.y)
+                      < Point2D.distance(me.x + (int)(me.width / 2.0), me.y, p.x, p.y)) {
+                        index--;
+                        rect = getCellBounds(index);
+                        rect.y += rect.height;
+                    } else {
+                        rect = getCellBounds(index);
+                    }
+                } else {
+                    rect = getCellBounds(index);
+                }
+            } else {
+                rect = getCellBounds(index);
+            }
+
+            if (rect.y >= list.getHeight()) {
+                rect.y = list.getHeight() - DROP_LINE_THICKNESS;
+            }
+
+            rect.height = DROP_LINE_THICKNESS;
+        } else {
+            if (index == size) {
+                index--;
+                rect = getCellBounds(index);
+                rect.y += rect.height;
+            } else {
+                rect = getCellBounds(index);
+            }
+
+            if (rect.y >= list.getHeight()) {
+                rect.y = list.getHeight() - DROP_LINE_THICKNESS;
+            }
+
+            rect.height = DROP_LINE_THICKNESS;
+        }
+
+        return rect;
+    }
+
+    private Rectangle getCellBounds(int index)
+    {
+        return getCellBounds(list, index, index);
+    }
 }
