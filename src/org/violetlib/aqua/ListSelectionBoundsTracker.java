@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2023 Alan Snyder.
+ * Copyright (c) 2021-2024 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -13,8 +13,7 @@ import java.util.Objects;
 import java.util.function.Consumer;
 import javax.swing.*;
 
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.*;
 
 /**
  * Update the bounds of the selected rows of a JList. The update() method must be called after potential changes to the
@@ -70,36 +69,62 @@ public abstract class ListSelectionBoundsTracker implements SelectionBoundsTrack
     @Override
     public void update() {
         if (list != null) {
-            int[] selectedRows = getSelectedIndices(list);
+            SelectionBoundsDescription d = getSelectionBoundsDescription(list);
             try {
-                updateFromSelectedRows(selectedRows);
+                updateFromSelectedRows(d);
             } catch (IllegalComponentStateException ex) {
                 // interaction with AquaUtils.paintImmediately()
             }
         }
     }
 
-    private int @NotNull [] getSelectedIndices(@NotNull JList<?> list) {
-        int min = list.getMinSelectionIndex();
-        int max = list.getMaxSelectionIndex();
-        if ((min < 0) || (max < 0)) {
-            return new int[0];
-        }
+    private @NotNull SelectionBoundsDescription getSelectionBoundsDescription(@NotNull JList<?> list) {
+        int regionCount = 0;
 
-        int[] temp = new int[max - min + 1];
-        int n = 0;
-        for (int i = min; i <= max; i++) {
-            if (list.isSelectedIndex(i)) {
-                temp[n++] = i;
+        // If a drop target is active, the "drop on" row should be highlighted
+        int dropTargetRow = -1;
+        JList.DropLocation loc = list.getDropLocation();
+        if (loc != null && !loc.isInsert()) {
+            dropTargetRow = loc.getIndex();
+            if (dropTargetRow >= 0) {
+                regionCount = 1;
             }
         }
-        int[] result = new int[n];
-        System.arraycopy(temp, 0, result, 0, n);
-        return result;
+
+        int[] temp = null;
+        int min = list.getMinSelectionIndex();
+        int max = list.getMaxSelectionIndex();
+        if ((min >= 0) && (max >= min)) {
+            temp = new int[max - min + 1];
+            int n = 0;
+            for (int i = min; i <= max; i++) {
+                if (list.isSelectedIndex(i) && i != dropTargetRow) {
+                    temp[n++] = i;
+                    regionCount++;
+                }
+            }
+        }
+
+        SelectionBoundsDescription d = new SelectionBoundsDescription(regionCount);
+        if (dropTargetRow >= 0) {
+            Rectangle bounds = list.getCellBounds(dropTargetRow, dropTargetRow);
+            int y = convertRowYCoordinateToSelectionDescription(bounds.y);
+            d.addDropTargetRegion(y, bounds.height);
+            regionCount--;
+        }
+        if (regionCount > 0) {
+            assert temp != null;
+            for (int i = 0; i < regionCount; i++) {
+                int row = temp[i];
+                Rectangle bounds = list.getCellBounds(row, row);
+                int y = convertRowYCoordinateToSelectionDescription(bounds.y);
+                d.addRegion(y, bounds.height);
+            }
+        }
+        return d;
     }
 
-    protected void updateFromSelectedRows(int @NotNull [] rows) {
-        SelectionBoundsDescription newSelectionDescription = createSelectionDescription(rows);
+    protected void updateFromSelectedRows(@NotNull SelectionBoundsDescription newSelectionDescription) {
         int newWidth = list != null ? list.getWidth() : 0;
         if (newWidth != currentWidth || !Objects.equals(newSelectionDescription, currentSelectionDescription)) {
             currentSelectionDescription = newSelectionDescription;
@@ -108,19 +133,6 @@ public abstract class ListSelectionBoundsTracker implements SelectionBoundsTrack
                 consumer.accept(currentSelectionDescription);
             }
         }
-    }
-
-    private @Nullable SelectionBoundsDescription createSelectionDescription(int @Nullable [] rows) {
-        if (list == null || rows == null) {
-            return null;
-        }
-        SelectionBoundsDescription sd = new SelectionBoundsDescription(rows.length);
-        for (int row : rows) {
-            Rectangle bounds = list.getCellBounds(row, row);
-            int y = convertRowYCoordinateToSelectionDescription(bounds.y);
-            sd.addRegion(y, bounds.height);
-        }
-        return sd;
     }
 
     /**

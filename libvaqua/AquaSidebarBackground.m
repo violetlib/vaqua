@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2021 Alan Snyder.
+ * Copyright (c) 2015-2024 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -67,6 +67,10 @@
     for (index = 0; index < count; index++) {
         int y = *p++;
         int h = *p++;
+        BOOL useEmphasized = h < 0;
+        if (useEmphasized) {
+            h = -h;
+        }
         NSRect frame = NSMakeRect(0, y, width, h);
         if (useInset) {
             int inset = 5;
@@ -75,12 +79,13 @@
         NSVisualEffectView *v = index < currentCount ? [selectionViews objectAtIndex:index] : nil;
         if (v) {
             v.frame = frame;
+            v.emphasized = (self.style != SIDEBAR_STYLE) || useEmphasized;
         } else {
             v = [[NSVisualEffectView alloc] initWithFrame: frame];
             v.wantsLayer = YES;
             v.autoresizingMask = NSViewWidthSizable;
             v.blendingMode = NSVisualEffectBlendingModeBehindWindow;
-            v.emphasized = self.style != SIDEBAR_STYLE;
+            v.emphasized = (self.style != SIDEBAR_STYLE) || useEmphasized;
             v.material = selectionMaterial;
             if (useInset) {
                 v.layer.cornerRadius = 4;

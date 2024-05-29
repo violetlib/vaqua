@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2021 Alan Snyder.
+ * Copyright (c) 2015-2024 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -27,6 +27,7 @@ public class SelectionBoundsDescription {
 
     private int regionCount;
     private int lastY;
+    private int lastH;
     private final int[] data;
 
     /**
@@ -46,12 +47,33 @@ public class SelectionBoundsDescription {
     }
 
     /**
+     * Add a full-width region for an active drop target.
+     * @param r The region.
+     */
+    public void addDropTargetRegion(@NotNull SelectionRegion r) {
+        addRegion(r.y, -r.height);
+    }
+
+    /**
      * Add a full-width selection region.
      * @param y The y coordinate of the region.
      * @param h The height of the region.
      */
     public void addRegion(int y, int h) {
-        if (regionCount > 0 && lastY == y) {
+        internalAddRegion(y, h);
+    }
+
+    /**
+     * Add a full-width region for an active drop target.
+     * @param y The y coordinate of the region.
+     * @param h The height of the region.
+     */
+    public void addDropTargetRegion(int y, int h) {
+        internalAddRegion(y, -h);
+    }
+
+    private void internalAddRegion(int y, int h) {
+        if (regionCount > 0 && lastY == y && h > 0 && lastH > 0) {
             // just extend the last region
             data[regionCount*2] += h;
         } else {
@@ -61,6 +83,7 @@ public class SelectionBoundsDescription {
             data[regionCount*2] = h;
         }
         lastY = y+h;
+        lastH = h;
     }
 
     /**
@@ -80,6 +103,6 @@ public class SelectionBoundsDescription {
 
     @Override
     public int hashCode() {
-        return Objects.hash(regionCount, data);
+        return Objects.hash(regionCount, Arrays.hashCode(data));
     }
 }

@@ -34,12 +34,14 @@
 package org.violetlib.aqua;
 
 import java.awt.*;
+import java.awt.dnd.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.FocusEvent;
 import java.awt.event.FocusListener;
 import java.awt.geom.Point2D;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
+import java.util.TooManyListenersException;
 import javax.swing.*;
 import javax.swing.border.Border;
 import javax.swing.event.MouseInputListener;
@@ -70,6 +72,7 @@ public class AquaListUI extends BasicListUI implements AquaComponentUI, AquaView
     private boolean isInset;
     private boolean isMenu;
     private boolean isVibrantMenu;
+    private boolean isDropActive;
 
     // Vibrant effects for sidebar lists and optionally for menus
     private ListVibrantEffects vibrantEffects;
@@ -77,6 +80,8 @@ public class AquaListUI extends BasicListUI implements AquaComponentUI, AquaView
     protected @NotNull ContainerContextualColors colors;
     protected @Nullable AppearanceContext appearanceContext;
     private static final Border insetBorder = new BorderUIResource.EmptyBorderUIResource(5, 0, 5, 0);
+    private DropTargetListener dropTargetListener;
+    private DropTarget knownDropTarget;
 
     public AquaListUI() {
         colors = AquaColors.CONTAINER_COLORS;
@@ -142,6 +147,10 @@ public class AquaListUI extends BasicListUI implements AquaComponentUI, AquaView
 
     @Override
     protected void uninstallListeners() {
+        if (knownDropTarget != null) {
+            knownDropTarget.removeDropTargetListener(dropTargetListener);
+            knownDropTarget = null;
+        }
         AquaUtils.uninstallInsetViewListener(list);
         AppearanceManager.uninstallListeners(list);
         super.uninstallListeners();
@@ -177,7 +186,7 @@ public class AquaListUI extends BasicListUI implements AquaComponentUI, AquaView
     }
 
     /**
-     * This focus listener repaints all of the selected cells, not just the lead cell, since the selected cell
+     * This focus listener repaints all selected cells, not just the lead cell, since the selected cell
      * background depends upon the list focus state.
      */
     protected class FocusHandler implements FocusListener {
@@ -193,6 +202,39 @@ public class AquaListUI extends BasicListUI implements AquaComponentUI, AquaView
         private void focusChanged() {
             configureAppearanceContext(null);
         }
+    }
+
+    protected class MyDropTargetListener implements DropTargetListener
+    {
+        @Override
+        public void dragEnter(DropTargetDragEvent dtde) {
+            isDropActive = true;
+            repaintDropTarget();
+        }
+
+        @Override
+        public void dragOver(DropTargetDragEvent dtde) {
+        }
+
+        @Override
+        public void dropActionChanged(DropTargetDragEvent dtde) {
+        }
+
+        @Override
+        public void dragExit(DropTargetEvent dte) {
+            isDropActive = false;
+            repaintDropTarget();
+        }
+
+        @Override
+        public void drop(DropTargetDropEvent dtde) {
+            isDropActive = false;
+            repaintDropTarget();
+        }
+    }
+
+    protected void repaintDropTarget() {
+        SwingUtilities.invokeLater(() -> list.repaint());
     }
 
     protected PropertyChangeListener createPropertyChangeListener() {
@@ -215,8 +257,29 @@ public class AquaListUI extends BasicListUI implements AquaComponentUI, AquaView
                     updateInset();
                 } else if ("ancestor".equals(prop)) {
                     updateSideBarConfiguration();
+                } else if ("transferHandler".equals(prop)) {
+                    configureDropTargetListener();
                 }
                 super.propertyChange(e);
+            }
+        }
+    }
+
+    private void configureDropTargetListener() {
+        if (knownDropTarget != null) {
+            knownDropTarget.removeDropTargetListener(dropTargetListener);
+            knownDropTarget = null;
+        }
+
+        if (dropTargetListener == null) {
+            dropTargetListener = new MyDropTargetListener();
+        }
+
+        knownDropTarget = list.getDropTarget();
+        if (knownDropTarget != null) {
+            try {
+                knownDropTarget.addDropTargetListener(dropTargetListener);
+            } catch (TooManyListenersException ignore) {
             }
         }
     }
@@ -533,13 +596,13 @@ public class AquaListUI extends BasicListUI implements AquaComponentUI, AquaView
     @Override
     public void paint(Graphics g, JComponent c) {
         if (appearanceContext != null) {
+            JList.DropLocation loc = list.getDropLocation();
             if (vibrantEffects != null) {
                 vibrantEffects.update();
             } else {
                 paintStripes(g);
             }
             super.paint(g, c);
-            JList.DropLocation loc = list.getDropLocation();
             if (loc != null && loc.isInsert()) {
                 Color color = appearanceContext.getAppearance().getColor("controlAccent");
                 if (color == null) {
@@ -608,11 +671,46 @@ public class AquaListUI extends BasicListUI implements AquaComponentUI, AquaView
         boolean isFocused = shouldDisplayAsFocused();
         boolean cellHasFocus = isFocused && (row == leadIndex);
         boolean isWrapped = list.getLayoutOrientation() != JList.VERTICAL;
+        boolean isSomeDropTarget = false;
+        boolean isDropTarget = false;
 
-        colors.configureForRow(row, isSelected);
-        if (isSelected && !isVibrant()) {
-            Color background = colors.getBackground(appearanceContext);
+        AppearanceContext ac = appearanceContext;
+
+        if (isDropActive) {
+            JList.DropLocation loc = list.getDropLocation();
+            if (loc != null) {
+
+                // When an accent color drop target is displayed, selected rows should not also use an accent color
+                // background.
+
+                if (loc.isInsert()) {
+                    cellHasFocus = false;
+                    ac = ac.withState(AquaUIPainter.State.INACTIVE);
+                } else {
+                    isSomeDropTarget = true;
+                    if (loc.getIndex() == row) {
+                        isDropTarget = true;
+                        cellHasFocus = true;
+                        ac = ac.withState(AquaUIPainter.State.ACTIVE_DEFAULT);
+                    } else {
+                        cellHasFocus = false;
+                        ac = ac.withState(AquaUIPainter.State.INACTIVE);
+                    }
+                }
+            }
+        }
+
+        colors.configureForRow(row, isSelected || isDropTarget);
+        if ((isSelected || isDropTarget) && !isVibrant()) {
+            if (isDropTarget) {
+                ac = ac.withSelected(true);
+            }
+            Color background = colors.getBackground(ac);
             g.setColor(background);
+            if (!AquaColors.isPriority(list.getSelectionBackground())) {
+                list.setSelectionBackground(background);
+            }
+
             if (isInset() && !isVibrantMenu) {
                 Graphics2D gg = (Graphics2D) g;
                 if (isMenu) {
@@ -620,13 +718,19 @@ public class AquaListUI extends BasicListUI implements AquaComponentUI, AquaView
                 } else if (isWrapped) {
                     AquaUtils.paintInsetCellSelection(gg, cx, cy, cw, ch);
                 } else {
-                    boolean isSelectedAbove = row > 0 && selModel.isSelectedIndex(row-1);
-                    boolean isSelectedBelow = row < list.getModel().getSize()-1 && selModel.isSelectedIndex(row+1);
+                    boolean isSelectedAbove
+                      = row > 0 && selModel.isSelectedIndex(row-1) && !isSomeDropTarget;
+                    boolean isSelectedBelow
+                      = row < list.getModel().getSize()-1 && selModel.isSelectedIndex(row+1) && !isSomeDropTarget;
                     AquaUtils.paintInsetCellSelection(gg, isSelectedAbove, isSelectedBelow, cx, cy, cw, ch);
                 }
             } else if (!isStriped) {
                 g.fillRect(cx, cy, cw, ch);
             }
+        }
+
+        if (isDropTarget && !isInset) {
+            isSelected = true;
         }
 
         Object value = dataModel.getElementAt(row);
@@ -675,7 +779,6 @@ public class AquaListUI extends BasicListUI implements AquaComponentUI, AquaView
 //            aquaRenderer.setDrawCheckedItem(true);
 //        }
 //    }
-
 
     // The following code, adapted from BasicListUI, supports drop insert highlighting.
 
