@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014-2023 Alan Snyder.
+ * Copyright (c) 2014-2024 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -52,8 +52,7 @@ import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableColumn;
 import javax.swing.table.TableColumnModel;
 
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.*;
 import org.violetlib.jnr.aqua.AquaUIPainter;
 
 import static org.violetlib.jnr.aqua.AquaUIPainter.State.ACTIVE;
@@ -70,7 +69,7 @@ import static org.violetlib.jnr.aqua.AquaUIPainter.State.ACTIVE_DEFAULT;
  * auto resizing and setFillsViewportHeight(true).
  */
 public class AquaTableUI extends BasicTableUI
-        implements SelectionRepaintable, AquaComponentUI, AquaViewStyleContainerUI {
+  implements SelectionRepaintable, AquaComponentUI, AquaViewStyleContainerUI {
     public static ComponentUI createUI(JComponent c) {
         return new AquaTableUI();
     }
@@ -80,6 +79,7 @@ public class AquaTableUI extends BasicTableUI
     public static final String TABLE_VIEW_STYLE_KEY = "JTable.viewStyle";
     public static final String INSET_VIEW_MARGIN_KEY = "Aqua.insetViewMargin";
     public static final String INSET_VIEW_VERTICAL_MARGIN_KEY = "Aqua.insetViewVerticalMargin";
+    public static final String USE_SHORT_DROP_LINE_COLOR_KEY = "JTable.useShortDropLineColor";
 
     protected final PropertyChangeListener propertyChangeListener;
     protected final ListSelectionListener selectionListener;
@@ -97,6 +97,7 @@ public class AquaTableUI extends BasicTableUI
     protected @NotNull ContainerContextualColors colors;
     protected @Nullable AppearanceContext appearanceContext;
     protected @Nullable Color actualTableBackground;
+    protected boolean useShortDropLineColor;
 
     public AquaTableUI() {
         propertyChangeListener = new TablePropertyChangeListener();
@@ -227,6 +228,8 @@ public class AquaTableUI extends BasicTableUI
                         TableCellEditor editor = (TableCellEditor) ev.getNewValue();
                         cellEditorFocusManager.cellEditorChanged(oldEditor, editor);
                     }
+                } else if (pn.equals(USE_SHORT_DROP_LINE_COLOR_KEY)) {
+                    useShortDropLineColor = Boolean.TRUE.equals(table.getClientProperty(USE_SHORT_DROP_LINE_COLOR_KEY));
                 }
             }
         }
@@ -249,6 +252,7 @@ public class AquaTableUI extends BasicTableUI
         isStriped = getStripedValue();
         configureAppearanceContext(null);
         updateInset();
+        useShortDropLineColor = Boolean.TRUE.equals(table.getClientProperty(USE_SHORT_DROP_LINE_COLOR_KEY));
     }
 
     @Override
@@ -345,7 +349,7 @@ public class AquaTableUI extends BasicTableUI
             Rectangle firstRowRect = table.getCellRect(firstIndex, 0, true);
             Rectangle lastRowRect = table.getCellRect(lastIndex, 0, true);
             Rectangle dirtyRegion = new Rectangle(0, firstRowRect.y, table.getWidth(),
-                    lastRowRect.y + lastRowRect.height - firstRowRect.y);
+              lastRowRect.y + lastRowRect.height - firstRowRect.y);
             table.repaint(dirtyRegion);
         }
 
@@ -381,8 +385,8 @@ public class AquaTableUI extends BasicTableUI
 
     protected AquaUIPainter.State getState() {
         return table.isEnabled()
-                ? (shouldDisplayAsFocused() ? AquaUIPainter.State.ACTIVE_DEFAULT : ACTIVE)
-                : AquaUIPainter.State.DISABLED;
+          ? (shouldDisplayAsFocused() ? AquaUIPainter.State.ACTIVE_DEFAULT : ACTIVE)
+          : AquaUIPainter.State.DISABLED;
     }
 
     protected boolean shouldDisplayAsFocused() {
@@ -428,8 +432,8 @@ public class AquaTableUI extends BasicTableUI
         if (AquaUtils.isInsetViewSupported()) {
             String value = getViewStyleProperty();
             return "inset".equals(value)
-                    && table.getRowMargin() <= 1
-                    && !table.getShowHorizontalLines();
+              && table.getRowMargin() <= 1
+              && !table.getShowHorizontalLines();
         }
         return false;
     }
@@ -573,7 +577,7 @@ public class AquaTableUI extends BasicTableUI
             tableHasFocus = tableHasFocus();
 
             boolean isSelection = table.getSelectedRowCount() > 0 && table.getRowSelectionAllowed()
-                    || table.getSelectedColumnCount() > 0 && table.getColumnSelectionAllowed();
+              || table.getSelectedColumnCount() > 0 && table.getColumnSelectionAllowed();
 
             // Most of the following code is copied from BasicTableUI, with minor changes.
 
@@ -593,7 +597,7 @@ public class AquaTableUI extends BasicTableUI
 
             Point upperLeft = clip.getLocation();
             Point lowerRight = new Point(clip.x + clip.width - 1,
-                    clip.y + clip.height - 1);
+              clip.y + clip.height - 1);
 
             int rMin = table.rowAtPoint(upperLeft);
             int rMax = table.rowAtPoint(lowerRight);
@@ -634,6 +638,40 @@ public class AquaTableUI extends BasicTableUI
             paintGrid(g, rMin, rMax, cMin, cMax, extendVerticalGrid, extendHorizontalGrid);
             paintCells(g, rMin, rMax, cMin, cMax);
             colors.configureForContainer();
+
+            JTable.DropLocation loc = table.getDropLocation();
+            if (loc != null) {
+                paintDropLines(g);
+            }
+        }
+
+        @Override
+        protected @Nullable Color getDropLineColor() {
+            assert appearanceContext != null;
+            boolean isDark = appearanceContext.getAppearance().isDark();
+            Color color = appearanceContext.getAppearance().getColor("controlAccent");
+            if (color == null) {
+                color = isDark ? new Color(200, 200, 200) : new Color(100, 100, 100);
+            }
+            return color;
+        }
+
+        @Override
+        protected @Nullable Color getShortDropLineColor() {
+            if (useShortDropLineColor) {
+                assert appearanceContext != null;
+                boolean isDark = appearanceContext.getAppearance().isDark();
+                Color color = appearanceContext.getAppearance().getColor("controlAccent");
+                if (color == null) {
+                    color = isDark ? Color.WHITE : Color.BLACK;
+                } else if (isDark) {
+                    color = color.brighter();
+                } else {
+                    color = color.darker();
+                }
+                return color;
+            }
+            return null;
         }
 
         protected void paintBackground(Graphics g, int rMin, int rMax, int cMin, int cMax) {
@@ -689,7 +727,7 @@ public class AquaTableUI extends BasicTableUI
                 // contrast with the selection background.
 
                 if (isSelected && isEditing && editingRow == row && editingColumn >= cMin && editingColumn <= cMax
-                        && shouldPaintSpecialEditedCellBackground()) {
+                  && shouldPaintSpecialEditedCellBackground()) {
                     Color b = AquaColors.getCellEditorBackground(table);
                     if (b != null) {
                         Rectangle editorCellRect = table.getCellRect(row, editingColumn, true);
@@ -814,7 +852,7 @@ public class AquaTableUI extends BasicTableUI
             TableCellRenderer renderer = table.getCellRenderer(row, column);
             Component rendererComponent = table.prepareRenderer(renderer, row, column);
             rendererPane.paintComponent(g, rendererComponent, table, cellRect.x, cellRect.y,
-                    cellRect.width, cellRect.height, true);
+              cellRect.width, cellRect.height, true);
         }
 
         protected void paintDraggedArea(Graphics g, int rMin, int rMax, TableColumn draggedColumn, int distance) {

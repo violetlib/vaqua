@@ -32,9 +32,12 @@ import javax.swing.table.TableColumn;
 import javax.swing.table.TableColumnModel;
 import java.awt.*;
 
+import org.jetbrains.annotations.*;
+
 /**
  * This class is a copy of the painting code from BasicTableUI. All methods have been changed from private to
  * protected to allow customization by subclassing. Includes a fix for drawing grid lines on HiDPI display.
+ * Also allows customization of the drop line colors by subclassing.
  */
 public class BasicTableUIPainter {
 
@@ -111,8 +114,25 @@ public class BasicTableUIPainter {
             return;
         }
 
-        Color color = UIManager.getColor("Table.dropLineColor");
-        Color shortColor = UIManager.getColor("Table.dropLineShortColor");
+        Color color = getDropLineColor();
+        Color shortColor = getShortDropLineColor();
+        paintDropLines(g, color, shortColor);
+    }
+
+    protected @Nullable Color getDropLineColor() {
+        return UIManager.getColor("Table.dropLineColor");
+    }
+
+    protected @Nullable Color getShortDropLineColor() {
+        return UIManager.getColor("Table.dropLineShortColor");
+    }
+
+    protected void paintDropLines(Graphics g, @Nullable Color color, @Nullable Color shortColor) {
+        JTable.DropLocation loc = table.getDropLocation();
+        if (loc == null) {
+            return;
+        }
+
         if (color == null && shortColor == null) {
             return;
         }
