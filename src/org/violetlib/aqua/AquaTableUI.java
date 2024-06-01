@@ -34,11 +34,13 @@
 package org.violetlib.aqua;
 
 import java.awt.*;
+import java.awt.dnd.*;
 import java.awt.event.FocusEvent;
 import java.awt.event.FocusListener;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.util.EventObject;
+import java.util.TooManyListenersException;
 import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
@@ -55,8 +57,7 @@ import javax.swing.table.TableColumnModel;
 import org.jetbrains.annotations.*;
 import org.violetlib.jnr.aqua.AquaUIPainter;
 
-import static org.violetlib.jnr.aqua.AquaUIPainter.State.ACTIVE;
-import static org.violetlib.jnr.aqua.AquaUIPainter.State.ACTIVE_DEFAULT;
+import static org.violetlib.jnr.aqua.AquaUIPainter.State.*;
 
 /**
  * A table UI based on AquaTableUI for Yosemite. It implements the striped style. It paints the selection background
@@ -92,10 +93,14 @@ public class AquaTableUI extends BasicTableUI
 
     private boolean isStriped = false;
     private boolean isInset = false;
+    private boolean isDropActive;
+
     private int insetMargin = 15;
     private int insetVerticalMargin = 5;
     protected @NotNull ContainerContextualColors colors;
     protected @Nullable AppearanceContext appearanceContext;
+    private DropTargetListener dropTargetListener;
+    private DropTarget knownDropTarget;
     protected @Nullable Color actualTableBackground;
     protected boolean useShortDropLineColor;
 
@@ -228,6 +233,8 @@ public class AquaTableUI extends BasicTableUI
                         TableCellEditor editor = (TableCellEditor) ev.getNewValue();
                         cellEditorFocusManager.cellEditorChanged(oldEditor, editor);
                     }
+                } else if ("transferHandler".equals(pn)) {
+                    configureDropTargetListener();
                 } else if (pn.equals(USE_SHORT_DROP_LINE_COLOR_KEY)) {
                     useShortDropLineColor = Boolean.TRUE.equals(table.getClientProperty(USE_SHORT_DROP_LINE_COLOR_KEY));
                 }
@@ -289,6 +296,10 @@ public class AquaTableUI extends BasicTableUI
 
     @Override
     protected void uninstallListeners() {
+        if (knownDropTarget != null) {
+            knownDropTarget.removeDropTargetListener(dropTargetListener);
+            knownDropTarget = null;
+        }
         AquaUtils.uninstallInsetViewListener(table);
         AppearanceManager.uninstallListeners(table);
         table.getSelectionModel().removeListSelectionListener(selectionListener);
@@ -308,6 +319,58 @@ public class AquaTableUI extends BasicTableUI
         public void mouseDragged(MouseEvent e) {
             super.mouseDragged(new SelectionMouseEvent(e));
         }*/
+    }
+
+    private void configureDropTargetListener() {
+        if (knownDropTarget != null) {
+            knownDropTarget.removeDropTargetListener(dropTargetListener);
+            knownDropTarget = null;
+        }
+
+        if (dropTargetListener == null) {
+            dropTargetListener = new MyDropTargetListener();
+        }
+
+        knownDropTarget = table.getDropTarget();
+        if (knownDropTarget != null) {
+            try {
+                knownDropTarget.addDropTargetListener(dropTargetListener);
+            } catch (TooManyListenersException ignore) {
+            }
+        }
+    }
+
+    protected class MyDropTargetListener implements DropTargetListener
+    {
+        @Override
+        public void dragEnter(DropTargetDragEvent dtde) {
+            isDropActive = true;
+            repaintDropTarget();
+        }
+
+        @Override
+        public void dragOver(DropTargetDragEvent dtde) {
+        }
+
+        @Override
+        public void dropActionChanged(DropTargetDragEvent dtde) {
+        }
+
+        @Override
+        public void dragExit(DropTargetEvent dte) {
+            isDropActive = false;
+            repaintDropTarget();
+        }
+
+        @Override
+        public void drop(DropTargetDropEvent dtde) {
+            isDropActive = false;
+            repaintDropTarget();
+        }
+    }
+
+    protected void repaintDropTarget() {
+        SwingUtilities.invokeLater(() -> table.repaint());
     }
 
     protected void updateSelectionListener(ListSelectionModel old) {
@@ -384,9 +447,7 @@ public class AquaTableUI extends BasicTableUI
     }
 
     protected AquaUIPainter.State getState() {
-        return table.isEnabled()
-          ? (shouldDisplayAsFocused() ? AquaUIPainter.State.ACTIVE_DEFAULT : ACTIVE)
-          : AquaUIPainter.State.DISABLED;
+        return table.isEnabled() ? (shouldDisplayAsFocused() ? ACTIVE_DEFAULT : ACTIVE) : DISABLED;
     }
 
     protected boolean shouldDisplayAsFocused() {
@@ -565,6 +626,10 @@ public class AquaTableUI extends BasicTableUI
     protected class AquaTablePainter extends BasicTableUIPainter {
 
         protected boolean tableHasFocus;
+        protected boolean isDropTarget;
+        protected boolean hasSelection;
+        protected boolean isSelectionMuted;
+        protected boolean hasDropOnTarget;
 
         public AquaTablePainter(JTable table, CellRendererPane rendererPane) {
             super(table, rendererPane);
@@ -576,8 +641,25 @@ public class AquaTableUI extends BasicTableUI
 
             tableHasFocus = tableHasFocus();
 
-            boolean isSelection = table.getSelectedRowCount() > 0 && table.getRowSelectionAllowed()
+            hasSelection = table.getSelectedRowCount() > 0 && table.getRowSelectionAllowed()
               || table.getSelectedColumnCount() > 0 && table.getColumnSelectionAllowed();
+
+            isDropTarget = false;
+            isSelectionMuted = false;
+            hasDropOnTarget = false;
+
+            if (isDropActive) {
+                JTable.DropLocation loc = table.getDropLocation();
+                if (loc != null && !loc.isInsertRow() && !loc.isInsertColumn()) {
+                    // The location is a cell, a row, a column, or the entire table.
+                    // The first three use the accent color as a background. To avoid confusion,
+                    // selected rows, columns, or cells should not also use the accent color.
+                    if (loc.getRow() >= 0 || loc.getColumn() >= 0) {
+                        hasDropOnTarget = true;
+                        isSelectionMuted = hasSelection;
+                    }
+                }
+            }
 
             // Most of the following code is copied from BasicTableUI, with minor changes.
 
@@ -631,7 +713,7 @@ public class AquaTableUI extends BasicTableUI
 
             colors.configureForContainer();
 
-            if (isStriped || isSelection) {
+            if (isStriped || hasSelection || hasDropOnTarget) {
                 paintBackground(g, rMin, rMax, cMin, cMax);
             }
 
@@ -674,6 +756,25 @@ public class AquaTableUI extends BasicTableUI
             return null;
         }
 
+        @Override
+        protected void paintDropLines(Graphics g, @Nullable Color color, @Nullable Color shortColor) {
+            super.paintDropLines(g, color, shortColor);
+            JTable.DropLocation loc = table.getDropLocation();
+            assert loc != null;
+            if (loc.getRow() < 0 && loc.getColumn() < 0) {
+                // drop on table
+                Color c = getDropLineColor();
+                if (c != null) {
+                    g.setColor(c);
+                    Rectangle bounds = table.getVisibleRect();
+                    g.fillRect(bounds.x - 1, bounds.y - 1, bounds.width + 2, 3);
+                    g.fillRect(bounds.x - 1, bounds.y + bounds.height - 2, bounds.width + 2, 3);
+                    g.fillRect(bounds.x - 1, bounds.y + 2, 3, bounds.height - 4);
+                    g.fillRect(bounds.x + bounds.width - 2, bounds.y + 2, 3, bounds.height - 4);
+                }
+            }
+        }
+
         protected void paintBackground(Graphics g, int rMin, int rMax, int cMin, int cMax) {
             Graphics2D gg = (Graphics2D) g;
             Rectangle clip = g.getClipBounds();
@@ -700,7 +801,11 @@ public class AquaTableUI extends BasicTableUI
                 } else {
                     colors.configureForRow(isSelected);
                 }
-                Color rowBackground = colors.getBackground(appearanceContext);
+                AppearanceContext ac = appearanceContext;
+                if (isSelected && isSelectionMuted) {
+                    ac = ac.withState(ACTIVE);
+                }
+                Color rowBackground = colors.getBackground(ac);
                 if (!isStriped && !isSelected) {
                     Color c = table.getBackground();
                     if (AquaColors.isPriority(c)) {
@@ -749,7 +854,11 @@ public class AquaTableUI extends BasicTableUI
                         int row = rMax + 1;
                         while (nextRowY < clipTop) {
                             colors.configureForRow(row, false);
-                            Color bg = colors.getBackground(appearanceContext);
+                            AppearanceContext ac = appearanceContext;
+                            if (ac.isSelected() && isSelectionMuted) {
+                                ac = appearanceContext.withState(ACTIVE);
+                            }
+                            Color bg = colors.getBackground(ac);
                             g.setColor(bg);
                             if (isInset) {
                                 AquaUtils.paintInsetStripedRow(gg, 0, nextRowY, tableWidth, rowHeight);
@@ -849,10 +958,51 @@ public class AquaTableUI extends BasicTableUI
                                          int row,
                                          int column) {
 
+            boolean isDropTarget = false;
+            boolean isSelected = table.isCellSelected(row, column);
+
+            if (isDropActive && hasDropOnTarget) {
+                JTable.DropLocation loc = table.getDropLocation();
+                if (loc != null && loc.getRow() == row && loc.getColumn() == column) {
+                    isDropTarget = true;
+                }
+            }
+
             TableCellRenderer renderer = table.getCellRenderer(row, column);
-            Component rendererComponent = table.prepareRenderer(renderer, row, column);
+            Component rendererComponent = getRendererComponent(renderer, row, column,
+              isSelected, isSelectionMuted, isDropTarget);
             rendererPane.paintComponent(g, rendererComponent, table, cellRect.x, cellRect.y,
               cellRect.width, cellRect.height, true);
+            table.setSelectionBackground(null);
+        }
+
+        protected Component getRendererComponent(TableCellRenderer renderer, int row, int column,
+                                                 boolean isSelected, boolean isSelectionMuted, boolean isDropTarget) {
+            assert appearanceContext != null;
+
+            // Only indicate the selection and focused cell if not printing
+            boolean hasFocus = false;
+            if (!isDropTarget && !isSelectionMuted && !table.isPaintingForPrint()) {
+                boolean rowIsLead = (table.getSelectionModel().getLeadSelectionIndex() == row);
+                boolean colIsLead = (table.getColumnModel().getSelectionModel().getLeadSelectionIndex() == column);
+                hasFocus = (rowIsLead && colIsLead) && table.isFocusOwner();
+            }
+
+            Color c = AquaColors.CLEAR;
+
+            if (isDropTarget) {
+                c = colors.getBackground(appearanceContext.withState(ACTIVE_DEFAULT).withSelected(true));
+            } else if (isSelected) {
+                if (appearanceContext.getState() == ACTIVE_DEFAULT && isSelectionMuted) {
+                    c = colors.getBackground(appearanceContext.withState(ACTIVE).withSelected(true));
+                } else {
+                    c = colors.getBackground(appearanceContext.withSelected(true));
+                }
+            }
+            table.setSelectionBackground(c);
+
+            return renderer.getTableCellRendererComponent(table, table.getValueAt(row, column),
+              isSelected, hasFocus, row, column);
         }
 
         protected void paintDraggedArea(Graphics g, int rMin, int rMax, TableColumn draggedColumn, int distance) {
