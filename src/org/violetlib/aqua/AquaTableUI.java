@@ -650,13 +650,12 @@ public class AquaTableUI extends BasicTableUI
 
             if (isDropActive) {
                 JTable.DropLocation loc = table.getDropLocation();
-                if (loc != null && !loc.isInsertRow() && !loc.isInsertColumn()) {
-                    // The location is a cell, a row, a column, or the entire table.
-                    // The first three use the accent color as a background. To avoid confusion,
-                    // selected rows, columns, or cells should not also use the accent color.
-                    if (loc.getRow() >= 0 || loc.getColumn() >= 0) {
+                if (loc != null) {
+                    // Drop target highlighting uses the accent color.
+                    // To avoid confusion, selections should not also use the accent color.
+                    isSelectionMuted = hasSelection;
+                    if (!loc.isInsertRow() && !loc.isInsertColumn() && (loc.getRow() >= 0 || loc.getColumn() >= 0)) {
                         hasDropOnTarget = true;
-                        isSelectionMuted = hasSelection;
                     }
                 }
             }
@@ -973,7 +972,9 @@ public class AquaTableUI extends BasicTableUI
               isSelected, isSelectionMuted, isDropTarget);
             rendererPane.paintComponent(g, rendererComponent, table, cellRect.x, cellRect.y,
               cellRect.width, cellRect.height, true);
-            table.setSelectionBackground(null);
+            if (!AquaColors.isPriority(table.getSelectionBackground())) {
+                table.setSelectionBackground(null);
+            }
         }
 
         protected Component getRendererComponent(TableCellRenderer renderer, int row, int column,
@@ -988,18 +989,19 @@ public class AquaTableUI extends BasicTableUI
                 hasFocus = (rowIsLead && colIsLead) && table.isFocusOwner();
             }
 
-            Color c = AquaColors.CLEAR;
-
-            if (isDropTarget) {
-                c = colors.getBackground(appearanceContext.withState(ACTIVE_DEFAULT).withSelected(true));
-            } else if (isSelected) {
-                if (appearanceContext.getState() == ACTIVE_DEFAULT && isSelectionMuted) {
-                    c = colors.getBackground(appearanceContext.withState(ACTIVE).withSelected(true));
-                } else {
-                    c = colors.getBackground(appearanceContext.withSelected(true));
+            if (!AquaColors.isPriority(table.getSelectionBackground())) {
+                Color c = AquaColors.CLEAR;
+                if (isDropTarget) {
+                    c = colors.getBackground(appearanceContext.withState(ACTIVE_DEFAULT).withSelected(true));
+                } else if (isSelected) {
+                    if (appearanceContext.getState() == ACTIVE_DEFAULT && isSelectionMuted) {
+                        c = colors.getBackground(appearanceContext.withState(ACTIVE).withSelected(true));
+                    } else {
+                        c = colors.getBackground(appearanceContext.withSelected(true));
+                    }
                 }
+                table.setSelectionBackground(c);
             }
-            table.setSelectionBackground(c);
 
             return renderer.getTableCellRendererComponent(table, table.getValueAt(row, column),
               isSelected, hasFocus, row, column);
