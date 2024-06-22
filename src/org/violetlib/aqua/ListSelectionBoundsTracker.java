@@ -113,7 +113,6 @@ public abstract class ListSelectionBoundsTracker implements SelectionBoundsTrack
             regionCount--;
         }
         if (regionCount > 0) {
-            assert temp != null;
             for (int i = 0; i < regionCount; i++) {
                 int row = temp[i];
                 Rectangle bounds = list.getCellBounds(row, row);

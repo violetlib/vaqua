@@ -1,5 +1,5 @@
 /*
- * Changes Copyright (c) 2015-2023 Alan Snyder.
+ * Changes Copyright (c) 2015-2024 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -49,8 +49,7 @@ import javax.swing.plaf.*;
 import javax.swing.plaf.basic.BasicTreeUI;
 import javax.swing.tree.*;
 
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.*;
 import org.violetlib.jnr.LayoutInfo;
 import org.violetlib.jnr.aqua.*;
 import org.violetlib.jnr.aqua.AquaUIPainter.ButtonState;
@@ -59,6 +58,7 @@ import org.violetlib.jnr.aqua.AquaUIPainter.State;
 import org.violetlib.jnr.aqua.AquaUIPainter.UILayoutDirection;
 
 import static org.violetlib.aqua.AquaImageFactory.LIGHTEN_FOR_DISABLED;
+import static org.violetlib.jnr.aqua.AquaUIPainter.State.*;
 
 /**
  * A tree UI based on AquaTreeUI for Yosemite. It supports filled cells. It supports the striped and sidebar styles.
@@ -115,6 +115,10 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
     // state variables for painting, needed because we share painting implementation with the superclass
     protected boolean shouldPaintSelection;
     protected boolean isActive;     // for communication between paint() and paintRow()
+    private boolean hasSelection;
+    private boolean isDropActive;
+    private boolean isSelectionMuted;
+    private boolean hasDropOnTarget;
 
     // state variables needed for cell renderer configuration
     private Font oldCellRendererFont;
@@ -126,7 +130,8 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
 
     private @Nullable TreePath pathWithVisibleExpandControl;
 
-    private static DropTargetListener defaultDropTargetListener = null;
+    private DropTargetListener dropTargetListener = null;
+    private DropTarget knownDropTarget;
 
     protected @NotNull ContainerContextualColors colors;
     protected @Nullable AppearanceContext appearanceContext;
@@ -222,6 +227,10 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
 
     @Override
     protected void uninstallListeners() {
+        if (knownDropTarget != null) {
+            knownDropTarget.removeDropTargetListener(dropTargetListener);
+            knownDropTarget = null;
+        }
         TreeModel model = tree.getModel();
         if (model != null) {
             model.removeTreeModelListener(treeModelListener);
@@ -287,11 +296,9 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
 
     protected AquaUIPainter.State getState() {
         if (!AquaFocusHandler.isActive(tree)) {
-            return State.INACTIVE;
+            return INACTIVE;
         }
-        return tree.isEnabled()
-                ? (shouldDisplayAsFocused() ? AquaUIPainter.State.ACTIVE_DEFAULT : AquaUIPainter.State.ACTIVE)
-                : AquaUIPainter.State.DISABLED;
+        return tree.isEnabled() ? (shouldDisplayAsFocused() ? ACTIVE_DEFAULT : ACTIVE) : DISABLED;
     }
 
     protected boolean shouldDisplayAsFocused() {
@@ -422,7 +429,7 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
 
     private boolean getCellFilledValue() {
         return tree != null
-                && Boolean.TRUE.equals(AquaUtils.getBooleanProperty(tree, IS_CELL_FILLED_KEY, QUAQUA_IS_CELL_FILLED_KEY));
+          && Boolean.TRUE.equals(AquaUtils.getBooleanProperty(tree, IS_CELL_FILLED_KEY, QUAQUA_IS_CELL_FILLED_KEY));
     }
 
     private void updateStyleProperties() {
@@ -819,7 +826,7 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
                 boolean isSelected = true;
 
                 aComponent = currentCellRenderer.getTreeCellRendererComponent(tree, value, isSelected,
-                        expanded, treeModel.isLeaf(value), row, false);
+                  expanded, treeModel.isLeaf(value), row, false);
 
                 boolean isCategory = isCategory(depth);
                 configureCellRenderer(true, aComponent, isCategory, isSelected);
@@ -922,6 +929,19 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
 
         isActive = AquaFocusHandler.isActive(c);
         shouldPaintSelection = !Boolean.FALSE.equals(tree.getClientProperty("JTree.paintSelectionBackground"));
+        hasSelection = !tree.getSelectionModel().isSelectionEmpty();
+        isSelectionMuted = false;
+        hasDropOnTarget = false;
+
+        if (isDropActive) {
+            JTree.DropLocation loc = tree.getDropLocation();
+            if (loc != null) {
+                // Drop target highlighting uses the accent color.
+                // To avoid confusion, selections should not also use the accent color.
+                hasDropOnTarget = loc.getChildIndex() < 0 && loc.getPath() != null;
+                isSelectionMuted = hasSelection;
+            }
+        }
 
         Color background = getCurrentBackground();
         paintBackground(g, background);
@@ -936,13 +956,15 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
             AquaUtils.fillRect(g, background, 0, 0, width, height);
         }
 
-        Rectangle paintBounds = g.getClipBounds();
-        TreePath initialPath = getClosestPathForLocation(tree, 0, paintBounds.y);
-        Enumeration paintingEnumerator = treeState.getVisiblePathsFrom(initialPath);
-        if (initialPath != null && paintingEnumerator != null) {
-            paintRowBackgrounds(g, initialPath, paintingEnumerator);
-        } else if (isStriped) {
-            paintEmptyTreeStripes(g);
+        if (!isSideBar) {
+            Rectangle paintBounds = g.getClipBounds();
+            TreePath initialPath = getClosestPathForLocation(tree, 0, paintBounds.y);
+            Enumeration paintingEnumerator = treeState.getVisiblePathsFrom(initialPath);
+            if (initialPath != null && paintingEnumerator != null) {
+                paintRowBackgrounds(g, initialPath, paintingEnumerator);
+            } else if (isStriped) {
+                paintEmptyTreeStripes(g);
+            }
         }
     }
 
@@ -986,7 +1008,8 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
             }
 
             boolean isRowSelected = tree.isRowSelected(row) && shouldPaintSelection;
-            Color bc = getSpecialBackgroundForRow(row, isRowSelected);
+            boolean isDropTarget = hasDropOnTarget && path.equals(tree.getDropLocation().getPath());
+            Color bc = getSpecialBackgroundForRow(row, isRowSelected, isDropTarget);
             if (bc != null) {
                 Graphics2D gg = (Graphics2D) g;
                 gg.setColor(bc);
@@ -994,9 +1017,9 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
                 int cy = bounds.y;
                 int cw = rwidth;
                 int ch = bounds.height;
-                if (isInset() && isRowSelected) {
-                    boolean isSelectedAbove = row > 0 && tree.isRowSelected(row - 1);
-                    boolean isSelectedBelow = row < tree.getRowCount() - 1 && tree.isRowSelected(row + 1);
+                if (isInset() && (isRowSelected || isDropTarget)) {
+                    boolean isSelectedAbove = row > 0 && tree.isRowSelected(row - 1) && !hasDropOnTarget;
+                    boolean isSelectedBelow = row < tree.getRowCount() - 1 && tree.isRowSelected(row + 1) && !hasDropOnTarget;
                     AquaUtils.paintInsetCellSelection(gg, isSelectedAbove, isSelectedBelow, 0, cy, width, ch);
                 } else if (isInset() && isStriped()) {
                     AquaUtils.paintInsetStripedRow(gg, 0, cy, width, ch);
@@ -1015,15 +1038,20 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
         colors.configureForContainer();
     }
 
-    protected @Nullable Color getSpecialBackgroundForRow(int row, boolean isRowSelected) {
+    protected @Nullable Color getSpecialBackgroundForRow(int row, boolean isRowSelected, boolean isDropTarget) {
         assert appearanceContext != null;
         AppearanceContext ac = appearanceContext;
-        if (isRowSelected) {
+        if (isDropTarget) {
+            ac = ac.withState(ACTIVE_DEFAULT).withSelected(true);
+        } else if (isRowSelected) {
             if (sidebarVibrantEffects != null) {
                 // sidebar selection backgrounds are managed using special views
                 return null;
             }
             ac = ac.withSelected(true);
+            if (isSelectionMuted) {
+                ac = ac.withState(ACTIVE);
+            }
         } else if (!isStriped) {
             return null;
         }
@@ -1094,9 +1122,9 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
         colors.configureForRow(row, isRowSelected);
 
         Component component = currentCellRenderer.getTreeCellRendererComponent
-                (tree, path.getLastPathComponent(),
-                        isRowSelected, isExpanded, isLeaf, row,
-                        (leadIndex == row));
+          (tree, path.getLastPathComponent(),
+            isRowSelected, isExpanded, isLeaf, row,
+            (leadIndex == row));
 
         boolean isCategory = path.getPathCount() == 2;
         configureCellRenderer(false, component, isCategory, isRowSelected);
@@ -1293,6 +1321,43 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
         }
     }
 
+    @Override
+    protected void paintDropLine(Graphics g) {
+        JTree.DropLocation loc = tree.getDropLocation();
+        if (loc == null || !(loc.getChildIndex() >= 0 || loc.getPath() == null)) {
+            return;
+        }
+
+        assert appearanceContext != null;
+
+        Color c = appearanceContext.getAppearance().getColor("controlAccent");
+        if (c == null) {
+            c = appearanceContext.getAppearance().isDark() ? Color.WHITE : Color.BLACK;
+        }
+        if (c != null) {
+            g.setColor(c);
+
+            if (loc.getChildIndex() >= 0) {
+                Rectangle rect = getDropLineRect(loc);
+                g.fillRect(rect.x, rect.y, rect.width, rect.height);
+            } else if (loc.getPath() == null) {
+                Rectangle bounds = tree.getVisibleRect();
+                g.fillRect(bounds.x - 1, bounds.y - 1, bounds.width + 2, 3);
+                g.fillRect(bounds.x - 1, bounds.y + bounds.height - 2, bounds.width + 2, 3);
+                g.fillRect(bounds.x - 1, bounds.y + 2, 3, bounds.height - 4);
+                g.fillRect(bounds.x + bounds.width - 2, bounds.y + 2, 3, bounds.height - 4);
+            }
+        }
+    }
+
+    @Override
+    protected Rectangle getDropLineRect(JTree.DropLocation loc) {
+        Rectangle r = super.getDropLineRect(loc);
+        Rectangle bounds = tree.getVisibleRect();
+        r.width = bounds.x + bounds.width - r.x;
+        return r;
+    }
+
     protected void paintHorizontalSeparators(Graphics g, JComponent c) {
         g.setColor(UIManager.getColor("Tree.line"));
 
@@ -1431,8 +1496,8 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
             drawCentered(tree, g, icon, center.x, center.y);
         } else {
             State state = getState(path);
-            if (!fIsInBounds && state == State.PRESSED) {
-                state = State.ACTIVE;
+            if (!fIsInBounds && state == PRESSED) {
+                state = ACTIVE;
             }
             boolean isLTR = AquaUtils.isLeftToRight(tree);
             Configuration tg = getDisclosureTriangleConfiguration(state, isExpanded, isLTR);
@@ -1515,7 +1580,7 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
         }
         if (width == 0) {
             // Assuming the width is not dependent on context
-            Configuration g = getDisclosureTriangleConfiguration(State.ACTIVE, true, true);
+            Configuration g = getDisclosureTriangleConfiguration(ACTIVE, true, true);
             LayoutInfo layoutInfo = painter.getLayoutInfo().getLayoutInfo((LayoutConfiguration) g);
             width = (int) Math.ceil(layoutInfo.getFixedVisualWidth());
             if (width == 0) {
@@ -1586,8 +1651,8 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
 
     private int findCenteredX(int x, int iconWidth) {
         return tree.getComponentOrientation().isLeftToRight()
-                ? x - (int)Math.ceil(iconWidth / 2.0)
-                : x - (int)Math.floor(iconWidth / 2.0);
+          ? x - (int)Math.ceil(iconWidth / 2.0)
+          : x - (int)Math.floor(iconWidth / 2.0);
     }
 
     @Override
@@ -1603,11 +1668,11 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
     }
 
     protected State getState(TreePath path) {
-        if (!tree.isEnabled()) return State.DISABLED;
+        if (!tree.isEnabled()) return DISABLED;
         if (fIsPressed) {
-            if (fTrackingPath.equals(path)) return State.PRESSED;
+            if (fTrackingPath.equals(path)) return PRESSED;
         }
-        return State.ACTIVE;
+        return ACTIVE;
     }
 
     @Override
@@ -1670,7 +1735,7 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
     }
 
     protected class MyVariableHeightLayoutCache
-            extends ExtendedVariableHeightLayoutCache
+      extends ExtendedVariableHeightLayoutCache
     {
         @Override
         protected int getRowSpacingAbove(int row) {
@@ -1710,16 +1775,21 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
         return 0;
     }
 
-    protected void updateDropTargetListener() {
-        DropTarget dropTarget = tree.getDropTarget();
-        if (dropTarget instanceof UIResource) {
-            if (defaultDropTargetListener == null) {
-                defaultDropTargetListener = new TreeDropTargetListener();
-            }
+    protected void configureDropTargetListener() {
+        if (knownDropTarget != null) {
+            knownDropTarget.removeDropTargetListener(dropTargetListener);
+            knownDropTarget = null;
+        }
+
+        if (dropTargetListener == null) {
+            dropTargetListener = new MyDropTargetListener();
+        }
+
+        knownDropTarget = tree.getDropTarget();
+        if (knownDropTarget != null) {
             try {
-                dropTarget.addDropTargetListener(defaultDropTargetListener);
-            } catch (TooManyListenersException tmle) {
-                // should not happen... swing drop target is multicast
+                knownDropTarget.addDropTargetListener(dropTargetListener);
+            } catch (TooManyListenersException ignore) {
             }
         }
     }
@@ -1741,7 +1811,7 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
     }
 
     public class MacPropertyChangeHandler
-            extends PropertyChangeHandler {
+      extends PropertyChangeHandler {
         public void propertyChange(@NotNull PropertyChangeEvent e) {
             String pn = e.getPropertyName();
             if (pn == null || e.getSource() != tree) {
@@ -1773,7 +1843,7 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
                 updateCellFilled();
                 return;
             } else if (pn.equals("transferHandler")) {
-                updateDropTargetListener();
+                configureDropTargetListener();
                 return;
             } else if (pn.equals(JTree.CELL_EDITOR_PROPERTY)) {
                 cellEditorChanged();
@@ -1783,6 +1853,8 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
                 treeModelChanged(e.getOldValue(), e.getNewValue());
             } else if (pn.equals("ancestor")) {
                 updateSideBarConfiguration();
+            } else if ("dropLocation".equals(pn)) {
+                tree.repaint();
             }
 
             super.propertyChange(e);
@@ -1921,8 +1993,9 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
     /**
      * A DropTargetListener to extend the default Swing handling of drop operations
      * by moving the tree selection to the nearest location to the mouse pointer.
+     * Also supports muted selection highlighting during drop operations.
      */
-    public static class TreeDropTargetListener extends DropTargetAdapter {
+    class MyDropTargetListener implements DropTargetListener {
 
         private boolean isStateSaved;
         private int[] selectedIndices;
@@ -1934,36 +2007,43 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
 
         @Override
         public void dragEnter(DropTargetDragEvent e) {
-            JTree c = getComponent(e);
-            TransferHandler th = c.getTransferHandler();
-            if (th.canImport(c, e.getCurrentDataFlavors())) {
-                saveComponentState(c);
+            TransferHandler th = tree.getTransferHandler();
+            if (th.canImport(tree, e.getCurrentDataFlavors())) {
+                saveComponentState(tree);
                 isStateSaved = true;
             } else {
                 isStateSaved = false;
             }
+            isDropActive = true;
+            repaintDropTarget();
         }
 
         @Override
         public void dragOver(DropTargetDragEvent e) {
             // In theory, the drop target may no longer be active.
-            JTree c = getComponent(e);
-            TransferHandler th = c.getTransferHandler();
-            if (th.canImport(c, e.getCurrentDataFlavors())) {
-                updateInsertionLocation(c, e.getLocation());
+            TransferHandler th = tree.getTransferHandler();
+            if (th.canImport(tree, e.getCurrentDataFlavors())) {
+                updateInsertionLocation(tree, e.getLocation());
             }
+        }
+
+        @Override
+        public void dropActionChanged(DropTargetDragEvent dtde) {
         }
 
         @Override
         public void dragExit(DropTargetEvent e) {
             if (isStateSaved) {
-                JTree c = getComponent(e);
-                restoreComponentState(c);
+                restoreComponentState(tree);
             }
+            isDropActive = false;
+            repaintDropTarget();
         }
 
         @Override
         public void drop(DropTargetDropEvent e) {
+            isDropActive = false;
+            repaintDropTarget();
         }
 
         protected void saveComponentState(JTree c) {
@@ -1983,8 +2063,7 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
         }
     }
 
-    protected static JTree getComponent(DropTargetEvent e) {
-        DropTargetContext context = e.getDropTargetContext();
-        return (JTree) context.getComponent();
+    protected void repaintDropTarget() {
+        SwingUtilities.invokeLater(() -> tree.repaint());
     }
 }

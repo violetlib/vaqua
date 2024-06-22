@@ -12,7 +12,7 @@ import java.awt.*;
 import java.util.Objects;
 import java.util.function.Consumer;
 import javax.swing.*;
-import javax.swing.tree.TreeSelectionModel;
+import javax.swing.tree.TreePath;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -71,21 +71,64 @@ public abstract class TreeSelectionBoundsTracker implements SelectionBoundsTrack
     @Override
     public void update() {
         if (tree != null) {
-            TreeSelectionModel sm = tree.getSelectionModel();
-            int[] selectedRows = sm != null ? sm.getSelectionRows() : null;
-            if (selectedRows != null && selectedRows.length == 0) {
-                selectedRows = null;
-            }
+            SelectionBoundsDescription d = getSelectionBoundsDescription(tree);
             try {
-                updateFromSelectedRows(selectedRows);
+                updateFromSelectedRows(d);
             } catch (IllegalComponentStateException ex) {
                 // interaction with AquaUtils.paintImmediately()
             }
         }
     }
 
-    protected void updateFromSelectedRows(int @Nullable [] rows) {
-        SelectionBoundsDescription newSelectionDescription = createSelectionDescription(rows);
+    private @NotNull SelectionBoundsDescription getSelectionBoundsDescription(@NotNull JTree tree) {
+        int regionCount = 0;
+
+        // If a drop target is active, the "drop on" row should be highlighted
+        int dropTargetRow = -1;
+        JTree.DropLocation loc = tree.getDropLocation();
+        if (loc != null && loc.getChildIndex() < 0) {
+            TreePath path = loc.getPath();
+            if (path != null) {
+                dropTargetRow = tree.getRowForPath(path);
+                if (dropTargetRow >= 0) {
+                    regionCount = 1;
+                }
+            }
+        }
+
+        int[] temp = null;
+        int min = tree.getMinSelectionRow();
+        int max = tree.getMaxSelectionRow();
+        if ((min >= 0) && (max >= min)) {
+            temp = new int[max - min + 1];
+            int n = 0;
+            for (int i = min; i <= max; i++) {
+                if (tree.isRowSelected(i) && i != dropTargetRow) {
+                    temp[n++] = i;
+                    regionCount++;
+                }
+            }
+        }
+
+        SelectionBoundsDescription d = new SelectionBoundsDescription(regionCount);
+        if (dropTargetRow >= 0) {
+            Rectangle bounds = tree.getRowBounds(dropTargetRow);
+            int y = convertRowYCoordinateToSelectionDescription(bounds.y);
+            d.addDropTargetRegion(y, bounds.height);
+            regionCount--;
+        }
+        if (regionCount > 0) {
+            for (int i = 0; i < regionCount; i++) {
+                int row = temp[i];
+                Rectangle bounds = tree.getRowBounds(row);
+                int y = convertRowYCoordinateToSelectionDescription(bounds.y);
+                d.addRegion(y, bounds.height);
+            }
+        }
+        return d;
+    }
+
+    protected void updateFromSelectedRows(@NotNull SelectionBoundsDescription newSelectionDescription) {
         int newWidth = tree != null ? tree.getWidth() : 0;
         if (newWidth != currentWidth || !Objects.equals(newSelectionDescription, currentSelectionDescription)) {
             currentSelectionDescription = newSelectionDescription;
@@ -94,19 +137,6 @@ public abstract class TreeSelectionBoundsTracker implements SelectionBoundsTrack
                 consumer.accept(currentSelectionDescription);
             }
         }
-    }
-
-    private @Nullable SelectionBoundsDescription createSelectionDescription(int @Nullable [] rows) {
-        if (tree == null || rows == null) {
-            return null;
-        }
-        SelectionBoundsDescription sd = new SelectionBoundsDescription(rows.length);
-        for (int row : rows) {
-            Rectangle bounds = tree.getRowBounds(row);
-            int y = convertRowYCoordinateToSelectionDescription(bounds.y);
-            sd.addRegion(y, bounds.height);
-        }
-        return sd;
     }
 
     /**
