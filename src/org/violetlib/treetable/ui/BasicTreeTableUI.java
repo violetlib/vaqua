@@ -455,7 +455,7 @@ public class BasicTreeTableUI extends TreeTableUI {
         }
 
         treeTableCellRenderer.prepareForTree();
-        Graphics cg = g.create(x, 0, tree.getWidth(), tree.getHeight());
+        Graphics cg = g.create(x, tree.getY(), tree.getWidth(), tree.getHeight());
         try {
             cg.clipRect(clipX, 0, clipW, tree.getHeight());
             tree.paint(cg);
