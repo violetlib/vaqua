@@ -1,5 +1,5 @@
 /*
- * Changes copyright (c) 2015-2021 Alan Snyder.
+ * Changes copyright (c) 2015-2024 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -734,6 +734,9 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
                 // *** ToolTips
                 "ToolTip.font", controlSmallFont,
                 "ToolTip.border", toolTipBorder,
+
+                // *** ToolTipManager
+                "ToolTipManager.enableToolTipMode", "activeApplication",
 
                 // *** Tree
                 "Tree.border", treeBorder,
