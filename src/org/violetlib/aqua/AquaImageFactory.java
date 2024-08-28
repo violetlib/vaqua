@@ -1,5 +1,5 @@
 /*
- * Changes copyright (c) 2015-2021 Alan Snyder.
+ * Changes copyright (c) 2015-2024 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -681,13 +681,19 @@ public class AquaImageFactory {
     }
 
     private static boolean determineTemplateImageStatus(@NotNull Image image) {
-        // Run the template filter in a special way that allows us to observe its behavior.
-        TemplateFilter filter = new TemplateFilter(Color.BLACK, true);
-        // The following is to force a lazy mapped image to run the filter
-        // Multiresolution toolkit images return themselves unless the requested size is greater than the nominal size
+        // Force the image to be loaded. Needed to test its size.
+        // Also needed to force a lazy mapped image to run the filter.
+        // Multiresolution toolkit images return themselves unless the requested size is greater than the nominal size.
         new ImageIcon(image);
         int width = image.getWidth(null);
         int height = image.getHeight(null);
+        if (width <= 0 || height <= 0) {
+            // Image has no pixels
+            return false;
+        }
+
+        // Run the template filter in a special way that allows us to observe its behavior.
+        TemplateFilter filter = new TemplateFilter(Color.BLACK, true);
         Image source = JavaSupport.getResolutionVariant(image, width * 2, height * 2);
         Image im = applyFilter(source, filter);
         // force the image to be created
