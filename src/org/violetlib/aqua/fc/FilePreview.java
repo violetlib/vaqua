@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2009-2010 Werner Randelshofer, Switzerland.
- * Copyright (c) 2014-2020 Alan Snyder.
+ * Copyright (c) 2014-2024 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the
@@ -51,7 +51,8 @@ public class FilePreview extends JComponent implements BrowserPreviewRenderer {
     private FilePreviewView view;
     private JPanel viewHolder;
 
-    public FilePreview(JFileChooser fileChooser) {
+    public FilePreview(JFileChooser fileChooser)
+      throws UnsupportedOperationException {
         this.fileChooser = fileChooser;
 
         int version = OSXSystemProperties.OSVersion;

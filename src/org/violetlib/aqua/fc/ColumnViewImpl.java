@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014-2019 Alan Snyder.
+ * Copyright (c) 2014-2024 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -200,8 +200,12 @@ public class ColumnViewImpl extends ColumnView {
             } else {
                 BrowserPreviewRenderer oldRenderer = browser.getPreviewRenderer();
                 if (!(oldRenderer instanceof FilePreview)) {
-                    BrowserPreviewRenderer previewRenderer = new FilePreview(fc);
-                    browser.setPreviewRenderer(previewRenderer);
+                    try {
+                        BrowserPreviewRenderer previewRenderer = new FilePreview(fc);
+                        browser.setPreviewRenderer(previewRenderer);
+                    } catch (UnsupportedOperationException ex) {
+                        browser.setPreviewRenderer(null);
+                    }
                 }
             }
         }
