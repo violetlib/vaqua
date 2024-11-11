@@ -2,7 +2,7 @@
  * @(#)AquaNativeSupport.m
  *
  * Copyright (c) 2004-2007 Werner Randelshofer, Switzerland.
- * Copyright (c) 2014-2023 Alan Snyder.
+ * Copyright (c) 2014-2024 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this software, except in
@@ -26,12 +26,10 @@ static int VERSION = 3;
 #import <CoreServices/CoreServices.h>
 #import <CoreFoundation/CoreFoundation.h>
 #import <CoreGraphics/CoreGraphics.h>
-#import <Quartz/Quartz.h>
 #import <Availability.h>
 
-#if __MAC_OS_X_VERSION_MAX_ALLOWED >= 101500
 #import <QuickLookThumbnailing/QuickLookThumbnailing.h>
-#endif
+#import <Quartz/Quartz.h>
 
 #include "jnix.h"
 
@@ -856,11 +854,9 @@ JNIEXPORT jboolean JNICALL Java_org_violetlib_aqua_fc_CatalinaFileIconServiceImp
 {
     jboolean result = 0;
 
-#if __MAC_OS_X_VERSION_MAX_ALLOWED >= 101500
     if (@available(macOS 10.15, *)) {
         result = 1;
     }
-#endif
 
     return result;
 }
@@ -879,7 +875,6 @@ JNIEXPORT void JNICALL Java_org_violetlib_aqua_fc_CatalinaFileIconServiceImpl_na
 
     COCOA_ENTER();
 
-#if __MAC_OS_X_VERSION_MAX_ALLOWED >= 101500
     if (@available(macOS 10.15, *)) {
         NSString *path = TO_NSPATH(jpath);
         NSURL *u = [NSURL fileURLWithPath:path];
@@ -927,7 +922,6 @@ JNIEXPORT void JNICALL Java_org_violetlib_aqua_fc_CatalinaFileIconServiceImpl_na
             }
         }
     }
-#endif
 
     COCOA_EXIT();
 }
@@ -2635,8 +2629,9 @@ static NSView *internalCreatePreviewView()
     return preview;
 }
 
-static void internalConfigurePreview(QLPreviewView *view, NSURL *u)
+static void internalConfigurePreview(NSView *v, NSURL *u)
 {
+    QLPreviewView *view = (QLPreviewView *) v;
     if (u) {
         BOOL oldHidden = view.hidden;
         view.hidden = YES;
