@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014-2020 Alan Snyder.
+ * Copyright (c) 2014-2024 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -71,7 +71,8 @@ public class ListViewImpl extends ListView {
         tree.setNodeSortingEnabled(true);
         tree.setRowMargin(0);
         tree.setRowHeight(18);
-        tree.setOpaque(true);
+        tree.setBackground(new Color(0, 0, 0, 0));
+        tree.setOpaque(false);
 
         listViewScrollPane = new JScrollPane();
         listViewScrollPane.setBorder(javax.swing.BorderFactory.createEmptyBorder(0, 0, 0, 0));
@@ -305,6 +306,10 @@ public class ListViewImpl extends ListView {
             }
 
             return c;
+        }
+
+        @Override
+        protected void setValue(Object value) {
         }
     }
 

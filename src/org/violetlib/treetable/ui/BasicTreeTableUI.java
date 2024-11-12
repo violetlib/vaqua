@@ -455,7 +455,7 @@ public class BasicTreeTableUI extends TreeTableUI {
         }
 
         treeTableCellRenderer.prepareForTree();
-        Graphics cg = g.create(x, 0, tree.getWidth(), tree.getHeight());
+        Graphics cg = g.create(x, tree.getY(), tree.getWidth(), tree.getHeight());
         try {
             cg.clipRect(clipX, 0, clipW, tree.getHeight());
             tree.paint(cg);
@@ -694,10 +694,10 @@ public class BasicTreeTableUI extends TreeTableUI {
 
     protected void layoutTree() {
         int hier = treeTable.getHierarchicalColumn();
-        if (hier < 0) {
+        if (hier < 0 || treeTable.getRowCount() == 0) {
             tree.setBounds(0, 0, 0, 0);
         } else {
-            Rectangle r = table.getCellRect(-1, hier, true);
+            Rectangle r = table.getCellRect(0, hier, true);
             int cm = treeTable.getColumnModel().getColumnMargin();
             r.x += cm/2;
             r.width -= cm;

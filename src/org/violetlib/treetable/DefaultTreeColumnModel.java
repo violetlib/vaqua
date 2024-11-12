@@ -71,6 +71,9 @@ public class DefaultTreeColumnModel extends AbstractTreeColumnModel {
 
     @Override
     public Object getValueAt(Object node, int column) {
+        if (column == hierarchialColumn) {
+            return "";
+        }
         return ((TreeTableNode)node).getValueAt(column);
     }
 
