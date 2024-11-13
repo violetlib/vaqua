@@ -93,6 +93,23 @@
       <framework>Quartz</framework>
     </jni>
 
+    <exec executable="/usr/bin/otool">
+      <arg value="-l"/>
+      <arg file="/Volumes/L/P/hack/VAqua/release/out/jni/libvaqua.dylib"/>
+      <redirector outputproperty="otool.output">
+        <outputfilterchain>
+          <linecontains>
+            <contains value="QuickLookUI"/>
+          </linecontains>
+        </outputfilterchain>
+      </redirector>
+    </exec>
+    <fail message="Xcode or Command Line Tools 16.1 required to support QLPreviewView on older macOS releases">
+      <condition>
+        <length string="${otool.output}" when="greater" length="0"/>
+      </condition>
+    </fail>
+
     <jni
       version="1"
       compatibilityversion="1"
