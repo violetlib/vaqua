@@ -304,8 +304,10 @@ public class AquaTableHeaderUI extends BasicTableHeaderUI implements AquaCompone
                 rendererComponent.setForeground(foreground);
             }
 
-            rendererPane.paintComponent(g, rendererComponent, header, cellRect.x, cellRect.y,
-                    cellRect.width, cellRect.height, true);
+            final Dimension intercellSpacing = header.getTable().getIntercellSpacing();
+
+            rendererPane.paintComponent(g, rendererComponent, header, cellRect.x + intercellSpacing.width / 2, cellRect.y,
+                    cellRect.width - intercellSpacing.width, cellRect.height, true);
 
             // Setting the foreground or background color of a DefaultTableCellRenderer makes that color the color
             // to use when the cell is not selected. So, if we installed a color, we should also remove it.
