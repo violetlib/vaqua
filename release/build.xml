@@ -28,7 +28,7 @@
   <property name="src8" location="${base}/Java8Support/src"/>
   <property name="src9" location="${base}/Java9Support/src"/>
   <property name="jnisrc" location="${base}/libvaqua"/>
-  <property name="jnusrc" location="${base}/native"/>
+  <property name="jnusrc" location="${base}/libvaqua"/>
   <property name="libkeywindowpatchsrc" location="${base}/libkeywindowpatch"/>
   <property name="libwindowstylepatchsrc" location="${base}/libwindowstylepatch"/>
   <property name="resourcesdir" location="${base}/resources"/>
@@ -39,8 +39,8 @@
   <property name="jnidir" location="${builddir}/jni"/>
   <property name="distdir" location="dist"/>
   <property name="libdir" location="${base}/lib"/>
-  <property name="jnuheadersdir" value="${base}/native"/>
-  <property name="jniheadersdir" value="${base}/native"/>
+  <property name="jnuheadersdir" value="${base}/libvaqua"/>
+  <property name="jniheadersdir" value="${base}/libvaqua"/>
   <property name="debug" value="false"/>
   <property name="debugoption" value=""/>
 
@@ -65,7 +65,6 @@
       includepath="${headersdir}:${jnuheadersdir}"
       installdir="${distdir}"
       installname="libvaqua.dylib"
-      visibility="hidden"
       >
 
       <target value="x86_64-apple-macos10.10"/>
@@ -118,6 +117,7 @@
       installdir="${distdir}"
       installname="libkeywindowpatch.dylib"
       visibility="hidden"
+      librarypath="${jnidir}"
       >
 
       <target value="x86_64-apple-macos10.10"/>
@@ -133,6 +133,7 @@
         <file name="CMenuBarCategory.m"/>
       </filelist>
 
+      <library>vaqua</library>
       <framework>Cocoa</framework>
     </jni>
 
