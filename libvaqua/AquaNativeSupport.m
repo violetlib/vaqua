@@ -2,7 +2,7 @@
  * @(#)AquaNativeSupport.m
  *
  * Copyright (c) 2004-2007 Werner Randelshofer, Switzerland.
- * Copyright (c) 2014-2024 Alan Snyder.
+ * Copyright (c) 2014-2025 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this software, except in
@@ -260,10 +260,10 @@ AquaWrappedAWTView *ensureWrapper(NSWindow *w)
         return (AquaWrappedAWTView *) contentView;
     }
 
-    [contentView retain];
     w.contentView = nil;
     AquaWrappedAWTView *wrapper = [[AquaWrappedAWTView alloc] initWithAWTView:contentView];
     w.contentView = wrapper;
+    [wrapper autorelease];
 
     return wrapper;
 }

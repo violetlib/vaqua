@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2018 Alan Snyder.
+ * Copyright (c) 2015-2025 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -37,6 +37,21 @@ static void updateAppearanceMissing(NSAppearance *appearance)
         [self addSubview: awtView];
     }
     return self;
+}
+
+- (void) dealloc {
+
+    if (awtView) {
+        [awtView release];
+        awtView = nil;
+    }
+
+    if (fullWindowVisualEffectView) {
+        [fullWindowVisualEffectView release];
+        fullWindowVisualEffectView = nil;
+    }
+
+    [super dealloc];
 }
 
 - (NSView *) awtView {
@@ -126,6 +141,7 @@ static void updateAppearanceMissing(NSAppearance *appearance)
 - (void) removeFullWindowVisualEffectView {
     if (fullWindowVisualEffectView != nil) {
         [fullWindowVisualEffectView removeFromSuperview];
+        [fullWindowVisualEffectView release];
         fullWindowVisualEffectView = nil;
     }
 }
