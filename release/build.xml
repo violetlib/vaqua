@@ -74,6 +74,7 @@
       <linkerOption>_VAppearances_updateAppearance</linkerOption>
       <linkerOption>-undefined</linkerOption>
       <linkerOption>dynamic_lookup</linkerOption>
+      <linkerOption>-headerpad_max_install_names</linkerOption>
 
       <filelist dir="${jnusrc}">
         <file name="jnu_support.m"/>
@@ -125,6 +126,7 @@
 
       <linkerOption>-undefined</linkerOption>
       <linkerOption>dynamic_lookup</linkerOption>
+      <linkerOption>-headerpad_max_install_names</linkerOption>
 
       <filelist dir="${libkeywindowpatchsrc}">
         <file name="KeyWindowPatch.m"/>
@@ -152,6 +154,7 @@
 
       <linkerOption>-undefined</linkerOption>
       <linkerOption>dynamic_lookup</linkerOption>
+      <linkerOption>-headerpad_max_install_names</linkerOption>
 
       <filelist dir="${libwindowstylepatchsrc}">
         <file name="WindowStylePatch.m"/>
