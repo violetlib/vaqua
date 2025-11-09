@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2021 Alan Snyder.
+ * Copyright (c) 2015-2025 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -70,6 +70,12 @@ public class AquaViewportUI extends ViewportUI implements AquaComponentUI {
         appearanceContext = new AppearanceContext(appearance, state, false, false);
         AquaColors.installColors(viewport, appearanceContext, colors);
         viewport.repaint();
+    }
+
+    public boolean shouldSuppressBackground()
+    {
+        JComponent view = viewport != null ? (JComponent) viewport.getView() : null;
+        return view != null && AquaVibrantSupport.isVibrant(view);
     }
 
     protected AquaUIPainter.State getState() {

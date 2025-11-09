@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2021 Alan Snyder.
+ * Copyright (c) 2018-2025 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -37,12 +37,10 @@ import java.awt.*;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import javax.swing.*;
-import javax.swing.plaf.ButtonUI;
 import javax.swing.plaf.ComponentUI;
 import javax.swing.plaf.basic.BasicMenuItemUI;
 
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.*;
 
 public class AquaMenuItemUI extends BasicMenuItemUI implements AquaComponentUI {
 
@@ -81,14 +79,14 @@ public class AquaMenuItemUI extends BasicMenuItemUI implements AquaComponentUI {
     @Override
     protected void installListeners() {
         super.installListeners();
-        IndeterminateListener.install(menuItem);
+        SelectionStateListener.install(menuItem);
         AppearanceManager.installListeners(menuItem);
     }
 
     @Override
     protected void uninstallListeners() {
         AppearanceManager.uninstallListeners(menuItem);
-        IndeterminateListener.uninstall(menuItem);
+        SelectionStateListener.uninstall(menuItem);
         super.uninstallListeners();
     }
 
@@ -120,32 +118,51 @@ public class AquaMenuItemUI extends BasicMenuItemUI implements AquaComponentUI {
     @Override
     public void paint(Graphics g, JComponent c) {
         appearanceContext = AquaMenuSupport.instance().getAppearanceContext(menuItem, null);
-        if (AquaLookAndFeel.USE_VIBRANT_MENU) {
-            Component parent = c.getParent();
-            if (parent instanceof JPopupMenu) {
-                JPopupMenu menu = (JPopupMenu) parent;
-                Object o = menu.getClientProperty(AquaPopupMenuUI.POP_UP_TRACKER);
+
+        MenuDescription md = getMenuDescription();
+        if (md != null) {
+            if (AquaLookAndFeel.USE_VIBRANT_MENU) {
+                Object o = getParent().getClientProperty(AquaPopupMenuUI.POP_UP_TRACKER);
                 if (o instanceof MenuSelectionBoundsTracker) {
                     MenuSelectionBoundsTracker tracker = (MenuSelectionBoundsTracker) o;
                     tracker.paintingItem((JMenuItem) c, appearanceContext);
                 }
+            } else if (menuItem.isOpaque()) {
+                Color background = md.colors.getBackground(appearanceContext);
+                g.setColor(background);
+                if (OSXSystemProperties.useInsetViewStyle()) {
+                    AquaUtils.paintInsetMenuItemSelection((Graphics2D) g, 0, 0, menuItem.getWidth(), menuItem.getHeight());
+                } else {
+                    g.fillRect(0, 0, menuItem.getWidth(), menuItem.getHeight());
+                }
             }
-
-        } else if (c.isOpaque()) {
-            Color background = colors.getBackground(appearanceContext);
-            g.setColor(background);
-            if (OSXSystemProperties.useInsetViewStyle()) {
-                AquaUtils.paintInsetMenuItemSelection((Graphics2D) g, 0, 0, c.getWidth(), c.getHeight());
-            } else {
-                g.fillRect(0, 0, c.getWidth(), c.getHeight());
-            }
+            AquaMenuSupport.instance().paintMenuItem((Graphics2D) g, menuItem, appearanceContext, md);
         }
-        AquaMenuSupport.instance().paintMenuItem((Graphics2D) g, menuItem, checkIcon, arrowIcon,
-                appearanceContext, colors, defaultTextIconGap, acceleratorFont);
     }
 
-    protected Dimension getPreferredMenuItemSize(JComponent c, Icon localCheckIcon, Icon localArrowIcon, int localDefaultTextIconGap) {
-        return AquaMenuSupport.instance().getPreferredMenuItemSize(c, localCheckIcon, localArrowIcon, localDefaultTextIconGap, acceleratorFont);
+    private @Nullable MenuDescription getMenuDescription() {
+        AquaPopupMenuUI ui = AquaUtils.getUI(menuItem.getParent(), AquaPopupMenuUI.class);
+        return ui != null ? ui.getMenuDescription() : null;
+    }
+
+    private @NotNull JPopupMenu getParent() {
+        Object parent = menuItem.getParent();
+        if (parent instanceof JPopupMenu) {
+            return (JPopupMenu) parent;
+        }
+        throw new AssertionError("JMenuItem does not have a JPopupMenu parent");
+    }
+
+    protected Dimension getPreferredMenuItemSize(JComponent c,
+                                                 Icon ignoreCheckIcon,
+                                                 Icon ingoreArrowIcon,
+                                                 int ignoreTextIconGap) {
+        MenuDescription md = getMenuDescription();
+        if (md != null) {
+            return AquaMenuSupport.instance().getPreferredMenuItemSize(menuItem, md.layoutInfo);
+        } else {
+            return new Dimension(0, 0);
+        }
     }
 
     protected void doClick(MenuSelectionManager msm) {
@@ -159,23 +176,21 @@ public class AquaMenuItemUI extends BasicMenuItemUI implements AquaComponentUI {
         super.doClick(msm);
     }
 
-    static final String CLIENT_PROPERTY_KEY = "JMenuItem.selectedState";
-
-    static final IndeterminateListener INDETERMINATE_LISTENER = new IndeterminateListener();
-    static class IndeterminateListener implements PropertyChangeListener {
+    static final String SELECTION_STATE_PROPERTY = "JMenuItem.selectedState";
+    static final SelectionStateListener SELECTION_STATE_LISTENER = new SelectionStateListener();
+    static class SelectionStateListener implements PropertyChangeListener {
 
         static void install(JMenuItem menuItem) {
-            menuItem.addPropertyChangeListener(CLIENT_PROPERTY_KEY, INDETERMINATE_LISTENER);
-            apply(menuItem, menuItem.getClientProperty(CLIENT_PROPERTY_KEY));
+            menuItem.addPropertyChangeListener(SELECTION_STATE_PROPERTY, SELECTION_STATE_LISTENER);
         }
 
         static void uninstall(JMenuItem menuItem) {
-            menuItem.removePropertyChangeListener(CLIENT_PROPERTY_KEY, INDETERMINATE_LISTENER);
+            menuItem.removePropertyChangeListener(SELECTION_STATE_PROPERTY, SELECTION_STATE_LISTENER);
         }
 
         public void propertyChange(PropertyChangeEvent evt) {
             String key = evt.getPropertyName();
-            if (!CLIENT_PROPERTY_KEY.equalsIgnoreCase(key)) {
+            if (!SELECTION_STATE_PROPERTY.equalsIgnoreCase(key)) {
                 return;
             }
 
@@ -185,26 +200,12 @@ public class AquaMenuItemUI extends BasicMenuItemUI implements AquaComponentUI {
             }
 
             JMenuItem c = (JMenuItem)source;
-            apply(c, evt.getNewValue());
+            c.revalidate();
+            c.repaint();
         }
+    }
 
-        static void apply(JMenuItem menuItem, Object value) {
-            ButtonUI ui = menuItem.getUI();
-            if (!(ui instanceof AquaMenuItemUI)) {
-                return;
-            }
-
-            AquaMenuItemUI aquaUI = (AquaMenuItemUI)ui;
-
-            if (aquaUI.fIsIndeterminate = "indeterminate".equals(value)) {
-                aquaUI.checkIcon = UIManager.getIcon(aquaUI.getPropertyPrefix() + ".dashIcon");
-            } else {
-                aquaUI.checkIcon = UIManager.getIcon(aquaUI.getPropertyPrefix() + ".checkIcon");
-            }
-        }
-
-        public static boolean isIndeterminate(JMenuItem menuItem) {
-            return "indeterminate".equals(menuItem.getClientProperty(CLIENT_PROPERTY_KEY));
-        }
+    public boolean isSelectable() {
+        return fType == kCheckBox || fType == kRadioButton;
     }
 }

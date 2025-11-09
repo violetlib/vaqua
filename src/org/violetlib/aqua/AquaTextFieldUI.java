@@ -1,5 +1,5 @@
 /*
- * Changes Copyright (c) 2015-2021 Alan Snyder.
+ * Changes Copyright (c) 2015-2025 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -44,8 +44,7 @@ import javax.swing.plaf.ComponentUI;
 import javax.swing.plaf.UIResource;
 import javax.swing.text.*;
 
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.*;
 import org.violetlib.jnr.Insetter;
 import org.violetlib.jnr.LayoutInfo;
 
@@ -59,6 +58,7 @@ public class AquaTextFieldUI extends AquaTextComponentUIBase implements ToolbarS
         return new AquaTextFieldUI();
     }
 
+    protected JTextField tf;
     protected HierarchyListener hierarchyListener;
     protected View topView;
     protected boolean isToolbar;
@@ -68,7 +68,8 @@ public class AquaTextFieldUI extends AquaTextComponentUIBase implements ToolbarS
     }
 
     @Override
-    public void installUI(JComponent c) {
+    public void installUI(@NotNull JComponent c) {
+        tf = (JTextField) c;
         super.installUI(c);
         isToolbar = AquaUtils.isOnToolbar(c);
     }
@@ -76,30 +77,30 @@ public class AquaTextFieldUI extends AquaTextComponentUIBase implements ToolbarS
     @Override
     protected void installDefaults() {
         super.installDefaults();
-        installBorder();
+        Border b = tf.getBorder();
+        if (((b == null) || (b instanceof UIResource)) && !(b instanceof AquaTreeEditorBorder)) {
+            AquaTextFieldBorder bb = new AquaTextFieldBorder(tf);
+            tf.setBorder(bb);
+            if (!bb.isOpaque()) {
+                LookAndFeel.installProperty(editor, "opaque", false);
+            }
+        }
     }
 
     @Override
     protected void installListeners() {
         super.installListeners();
         hierarchyListener = new AquaHierarchyListener();
-        editor.addHierarchyListener(hierarchyListener);
-        AquaUtils.installToolbarSensitivity(editor);
+        tf.addHierarchyListener(hierarchyListener);
+        AquaUtils.installToolbarSensitivity(tf);
     }
 
     @Override
     protected void uninstallListeners() {
-        AquaUtils.uninstallToolbarSensitivity(editor);
-        editor.removeHierarchyListener(hierarchyListener);
+        AquaUtils.uninstallToolbarSensitivity(tf);
+        tf.removeHierarchyListener(hierarchyListener);
         hierarchyListener = null;
         super.uninstallListeners();
-    }
-
-    protected void installBorder() {
-        Border b = editor.getBorder();
-        if (((b == null) || (b instanceof UIResource)) && !(b instanceof AquaTreeEditorBorder)) {
-            editor.setBorder(new AquaTextComponentBorder(editor));
-        }
     }
 
     @Override
@@ -112,7 +113,7 @@ public class AquaTextFieldUI extends AquaTextComponentUIBase implements ToolbarS
         public void focusLost(@NotNull FocusEvent ev) {
             super.focusLost(ev);
             if (!ev.isTemporary()) {
-                Caret c = editor.getCaret();
+                Caret c = tf.getCaret();
                 if (c != null) {
                     c.setDot(0);
                 }
@@ -157,9 +158,9 @@ public class AquaTextFieldUI extends AquaTextComponentUIBase implements ToolbarS
 
     public void updateStyle() {
         if (wantsToBeASearchField()) {
-            AquaTextFieldSearch.installSearchField(editor);
+            AquaTextFieldSearch.installSearchField(tf);
         } else {
-            AquaTextFieldSearch.uninstallSearchField(editor);
+            AquaTextFieldSearch.uninstallSearchField(tf);
         }
 
         if (topView instanceof AquaMarginView) {
@@ -168,8 +169,8 @@ public class AquaTextFieldUI extends AquaTextComponentUIBase implements ToolbarS
             v.setMargin(textMargin);
         }
 
-        editor.revalidate();
-        editor.repaint();
+        tf.revalidate();
+        tf.repaint();
     }
 
     protected boolean wantsToBeASearchField() {
@@ -182,7 +183,7 @@ public class AquaTextFieldUI extends AquaTextComponentUIBase implements ToolbarS
     }
 
     protected @Nullable String getStyleProperty() {
-        return AquaUtils.getProperty(editor, TEXT_FIELD_STYLE_KEY, TEXT_FIELD_VARIANT_KEY, QUAQUA_TEXT_FIELD_STYLE_KEY);
+        return AquaUtils.getProperty(tf, TEXT_FIELD_STYLE_KEY, TEXT_FIELD_VARIANT_KEY, QUAQUA_TEXT_FIELD_STYLE_KEY);
     }
 
     @Override
@@ -203,7 +204,7 @@ public class AquaTextFieldUI extends AquaTextComponentUIBase implements ToolbarS
     }
 
     protected @Nullable View createBasicView(@NotNull Element elem) {
-        View view = delegate.create(editor, elem);
+        View view = delegate.create(tf, elem);
         if (view != null) {
             Class c = view.getClass();
             if (c == FieldView.class) {
@@ -219,9 +220,9 @@ public class AquaTextFieldUI extends AquaTextComponentUIBase implements ToolbarS
      * field (exclusive of the actual border margin) is available for editing.
      */
     public int getTextMargin() {
-        Border b = editor.getBorder();
-        if (b instanceof AquaTextComponentBorder) {
-            AquaTextComponentBorder bb = (AquaTextComponentBorder) b;
+        Border b = tf.getBorder();
+        if (b instanceof AquaTextFieldBorder) {
+            AquaTextFieldBorder bb = (AquaTextFieldBorder) b;
             return bb.getTextMargin();
         }
         return 0;
@@ -244,9 +245,9 @@ public class AquaTextFieldUI extends AquaTextComponentUIBase implements ToolbarS
 
     protected Dimension getLayoutSize(LayoutOption opt) {
         Dimension size = getLayoutSizeFromText(opt);
-        Border b = editor.getBorder();
-        if (b instanceof AquaTextComponentBorder) {
-            AquaTextComponentBorder tb = (AquaTextComponentBorder) b;
+        Border b = tf.getBorder();
+        if (b instanceof AquaTextFieldBorder) {
+            AquaTextFieldBorder tb = (AquaTextFieldBorder) b;
             LayoutInfo info = tb.getLayoutInfo();
             int width = (int) Math.max(size.width, info.getMinimumVisualWidth());
             int height = (int) Math.max(size.height, info.getMinimumVisualHeight());
@@ -260,19 +261,16 @@ public class AquaTextFieldUI extends AquaTextComponentUIBase implements ToolbarS
         Dimension td = getTextSize(opt);
         int textWidth = td.width;
         int textHeight = td.height;
-        Border b = editor.getBorder();
-        if (b instanceof AquaTextComponentBorder) {
+        Border b = tf.getBorder();
+        if (b instanceof AquaTextFieldBorder) {
             // Our painter can tell us the minimum size
             // For the preferred size and maximum size, leave some extra room at the top and bottom
-            AquaTextComponentBorder tb = (AquaTextComponentBorder) b;
+            AquaTextFieldBorder tb = (AquaTextFieldBorder) b;
             Insetter insets = tb.getTextInsets();
-            if (insets != null) {
-                int extraHeight = opt != LayoutOption.MINIMUM ? tb.getExtraHeight() : 0;
-                Dimension size = insets.expand(new Dimension(textWidth, textHeight + extraHeight));
-                return size;
-            }
+            int extraHeight = opt != LayoutOption.MINIMUM ? tb.getExtraHeight() : 0;
+            return insets.expand(new Dimension(textWidth, textHeight + extraHeight));
         }
-        Insets insets = editor.getInsets();
+        Insets insets = tf.getInsets();
         return new Dimension(textWidth +  insets.left + insets.right, textHeight + insets.top + insets.bottom);
     }
 
@@ -281,18 +279,18 @@ public class AquaTextFieldUI extends AquaTextComponentUIBase implements ToolbarS
     protected Dimension getTextSize(LayoutOption opt) {
         Dimension d = new Dimension();
         if (topView != null) {
-            Document doc = editor.getDocument();
+            Document doc = tf.getDocument();
             if (doc instanceof AbstractDocument) {
                 ((AbstractDocument)doc).readLock();
             }
 
             if (opt == LayoutOption.PREFERRED) {
-                Dimension size = editor.getSize();
+                Dimension size = tf.getSize();
                 if (size.width == 0 && size.height == 0) {
                     // Probably haven't been layed out yet, force some sort of initial sizing.
                     topView.setSize(Integer.MAX_VALUE, Integer.MAX_VALUE);
                 } else {
-                    Insets s = editor.getInsets();
+                    Insets s = tf.getInsets();
                     if ((size.width > (s.left + s.right)) && (size.height > (s.top + s.bottom))) {
                         topView.setSize(size.width - s.left - s.right, size.height - s.top - s.bottom);
                     }
@@ -335,10 +333,10 @@ public class AquaTextFieldUI extends AquaTextComponentUIBase implements ToolbarS
 
     @Override
     protected void paintBackgroundSafely(@NotNull Graphics g, @Nullable Color background) {
-        int width = editor.getWidth();
-        int height = editor.getHeight();
+        int width = tf.getWidth();
+        int height = tf.getHeight();
 
-        Border b = editor.getBorder();
+        Border b = tf.getBorder();
 
         if (!(b instanceof AquaBackgroundBorder) && !(b instanceof AquaCellBorder)) {
             // developer must have set a custom border
@@ -347,8 +345,8 @@ public class AquaTextFieldUI extends AquaTextComponentUIBase implements ToolbarS
             // This code comes from Aqua LAF.
             // TBD: why is this a good idea?
 
-            boolean isOpaque = editor.isOpaque();
-            if (!isOpaque && JavaSupport.hasOpaqueBeenExplicitlySet(editor)) {
+            boolean isOpaque = tf.isOpaque();
+            if (!isOpaque && JavaSupport.hasOpaqueBeenExplicitlySet(tf)) {
                 return;
             }
 
@@ -363,7 +361,7 @@ public class AquaTextFieldUI extends AquaTextComponentUIBase implements ToolbarS
         if (b instanceof AquaBackgroundBorder) {
             // using our own border
             AquaBackgroundBorder tb = (AquaBackgroundBorder) b;
-            tb.paintBackground(editor, g, background);
+            tb.paintBackground(tf, g, background);
         }
     }
 }

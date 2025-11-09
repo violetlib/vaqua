@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020-2021 Alan Snyder.
+ * Copyright (c) 2020-2025 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -13,7 +13,7 @@ import javax.swing.*;
 import javax.swing.border.AbstractBorder;
 import javax.swing.plaf.UIResource;
 
-import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.*;
 
 /**
  * A context dependent border for trees that supports side margins when the inset view style is in use.
@@ -21,8 +21,11 @@ import org.jetbrains.annotations.NotNull;
 @SuppressWarnings("serial")
 public class AquaTreeBorder extends AbstractBorder implements UIResource {
 
+    public static final @NotNull String RENDERER_CONTAINER_KEY = "JComponent.rendererContainer";
+
+    @Override
     public Insets getBorderInsets(@NotNull Component c, @NotNull Insets insets) {
-        AquaTreeUI ui = AquaUtils.getUI((JComponent) c, AquaTreeUI.class);
+        AquaTreeUI ui = getTreeUI((JComponent) c);
         if (ui != null) {
             return ui.getInsets();
         }
@@ -31,5 +34,18 @@ public class AquaTreeBorder extends AbstractBorder implements UIResource {
         insets.left = 1;
         insets.right = 1;
         return insets;
+    }
+
+    private @Nullable AquaTreeUI getTreeUI(@NotNull JComponent jc)
+    {
+        AquaTreeUI ui = AquaUtils.getUI(jc, AquaTreeUI.class);
+        if (ui != null) {
+            return ui;
+        }
+        Object o = jc.getClientProperty(RENDERER_CONTAINER_KEY);
+        if (o instanceof Component) {
+            return AquaUtils.getUI((Component) o, AquaTreeUI.class);
+        }
+        return null;
     }
 }

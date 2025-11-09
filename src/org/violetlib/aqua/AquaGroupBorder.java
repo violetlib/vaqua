@@ -1,5 +1,5 @@
 /*
- * Changes Copyright (c) 2015-2020 Alan Snyder.
+ * Changes Copyright (c) 2015-2025 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -36,7 +36,7 @@ package org.violetlib.aqua;
 import java.awt.*;
 import javax.swing.border.Border;
 
-import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.*;
 import org.violetlib.aqua.AquaUtils.RecyclableSingletonFromDefaultConstructor;
 import org.violetlib.jnr.aqua.AquaUIPainter;
 import org.violetlib.jnr.aqua.Configuration;
@@ -95,6 +95,12 @@ public class AquaGroupBorder extends AquaBorder {
 
     protected Configuration getConfiguration() {
         return new GroupBoxConfiguration(AquaUIPainter.State.ACTIVE, isFrameOnly);
+    }
+
+    public static @NotNull AquaGroupBorder createTabbedPaneBorder(@Nullable Color contentBackground) {
+        // TBD: work in progress
+        boolean isClear = contentBackground != null && contentBackground.getAlpha() == 0;
+        return new AquaGroupBorder(new Insets(5, 5, 5, 5), new Insets(3, 7, 3, 7), isClear);
     }
 
     protected static class TabbedPane extends AquaGroupBorder {

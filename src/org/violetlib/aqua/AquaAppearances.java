@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2023 Alan Snyder.
+ * Copyright (c) 2018-2025 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -20,8 +20,6 @@ import org.jetbrains.annotations.Nullable;
 import org.violetlib.jnr.aqua.AquaNativeRendering;
 import org.violetlib.vappearances.VAppearance;
 import org.violetlib.vappearances.VAppearances;
-
-import static org.violetlib.aqua.OSXSystemProperties.OSVersion;
 
 /**
  * All methods must be called on the UI event thread.
@@ -141,6 +139,7 @@ public class AquaAppearances {
     }
 
     private static @NotNull AquaAppearance getAquaAppearance(@NotNull VAppearance a) {
+        int OSVersion = AquaPainting.getVersion();
         Map<String,Color> nativeColors = AquaNativeRendering.createPainter().getColors(a);
         Colors colors = new AppearanceColorsBuilder(a, OSVersion, nativeColors, null, Utils::logDebug).getResult();
         AquaAppearance appearance = new AquaAppearance(a, colors, Utils::logDebug);

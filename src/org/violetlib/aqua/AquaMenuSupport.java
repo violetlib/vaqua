@@ -1,5 +1,5 @@
 /*
- * Changes Copyright (c) 2015-2021 Alan Snyder.
+ * Changes Copyright (c) 2015-2025 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -40,8 +40,7 @@ import javax.swing.*;
 import javax.swing.plaf.basic.BasicHTML;
 import javax.swing.text.View;
 
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.*;
 import org.violetlib.aqua.AquaUtils.RecyclableSingleton;
 import org.violetlib.aqua.AquaUtils.RecyclableSingletonFromDefaultConstructor;
 import org.violetlib.jnr.aqua.AquaUIPainter;
@@ -54,16 +53,16 @@ public class AquaMenuSupport {
 
     // Unicode character codes
     static final char
-            kUBlackDiamond = 0x25C6,
-            kUCheckMark = 0x2713,
-            kUControlGlyph = 0x2303,
-            kUOptionGlyph = 0x2325,
-            kUEnterGlyph = 0x2324,
-            kUCommandGlyph = 0x2318,
-            kULeftDeleteGlyph = 0x232B,
-            kURightDeleteGlyph = 0x2326,
-            kUShiftGlyph = 0x21E7,
-            kUCapsLockGlyph = 0x21EA;
+      kUBlackDiamond = 0x25C6,
+      kUCheckMark = 0x2713,
+      kUControlGlyph = 0x2303,
+      kUOptionGlyph = 0x2325,
+      kUEnterGlyph = 0x2324,
+      kUCommandGlyph = 0x2318,
+      kULeftDeleteGlyph = 0x232B,
+      kURightDeleteGlyph = 0x2326,
+      kUShiftGlyph = 0x21E7,
+      kUCapsLockGlyph = 0x21EA;
 
     static final int ALT_GRAPH_MASK = 1 << 5; // New to Java2
 
@@ -147,36 +146,22 @@ public class AquaMenuSupport {
         return ancestor;
     }
 
-    public void paintMenuItem(Graphics2D g,
-                              JMenuItem b,
-                              Icon checkIcon,
-                              Icon arrowIcon,
-                              AppearanceContext context,
-                              BasicContextualColors colors,
-                              int defaultTextIconGap,
-                              Font acceleratorFont) {
-
+    public void paintMenuItem(@NotNull Graphics2D g,
+                              @NotNull JMenuItem b,
+                              @NotNull AppearanceContext context,
+                              @NotNull MenuDescription md
+    ) {
         ButtonModel model = b.getModel();
+        Rectangle viewRect = new Rectangle(0, 0, b.getWidth(), b.getHeight());
 
-        int menuWidth = b.getWidth();
-        int menuHeight = b.getHeight();
-        Insets i = b.getInsets();
-
-        Rectangle viewRect = new Rectangle(0, 0, menuWidth, menuHeight);
-
-        viewRect.x += i.left;
-        viewRect.y += i.top;
-        viewRect.width -= (i.right + viewRect.x);
-        viewRect.height -= (i.bottom + viewRect.y);
-
-        Font f = b.getFont();
+        Font f = md.labelFont;
         g.setFont(f);
-        FontMetrics fm = g.getFontMetrics(f);
-        FontMetrics fmAccel = g.getFontMetrics(acceleratorFont);
+        FontMetrics fm = md.layoutInfo.labelFontMetrics;
 
         // get Accelerator text
         KeyStroke accelerator = b.getAccelerator();
-        String modifiersString = "", keyString = "";
+        String modifiersString = "";
+        String keyString = "";
         boolean leftToRight = AquaUtils.isLeftToRight(b);
         if (accelerator != null) {
             int modifiers = accelerator.getModifiers();
@@ -196,11 +181,14 @@ public class AquaMenuSupport {
         Rectangle acceleratorRect = new Rectangle();
         Rectangle checkIconRect = new Rectangle();
         Rectangle arrowIconRect = new Rectangle();
+        Rectangle contentRect = new Rectangle();
 
         // layout the text and icon
-        String text = layoutMenuItem(b, fm, b.getText(), fmAccel, keyString, modifiersString, b.getIcon(), checkIcon, arrowIcon, b.getVerticalAlignment(), b.getHorizontalAlignment(), b.getVerticalTextPosition(), b.getHorizontalTextPosition(), viewRect, iconRect, textRect, acceleratorRect, checkIconRect, arrowIconRect, b.getText() == null ? 0 : defaultTextIconGap, defaultTextIconGap);
+        String text = layoutMenuItem(b, b.getText(), keyString, modifiersString, md.layoutInfo,
+          viewRect, iconRect, textRect, acceleratorRect, checkIconRect, arrowIconRect, contentRect
+        );
 
-        Color foreground = colors.getForeground(context);
+        Color foreground = md.colors.getForeground(context);
         g.setColor(foreground);
         boolean isSelected = context.isSelected();
         boolean isEnabled = context.getState() != AquaUIPainter.State.DISABLED;
@@ -208,20 +196,21 @@ public class AquaMenuSupport {
         // We want to paint the icon after the text color is set since some icon painting depends on the correct
         // graphics color being set
         // See <rdar://problem/3792383> Menu icons missing in Java2D's Lines.Joins demo
+
         // Paint the Icon
         if (b.getIcon() != null) {
             paintIcon(g, b, iconRect, isEnabled);
         }
 
-        // Paint the Check using the current text color
-        if (checkIcon != null) {
-            paintCheck(g, b, foreground, checkIcon, checkIconRect);
+        Icon selectionIcon = getSelectionIcon(b, md);
+        if (selectionIcon != null) {
+            paintCheck(g, b, foreground, selectionIcon, checkIconRect);
         }
 
         // Draw the accelerator first in case the HTML renderer changes the color
-        if (!keyString.equals("")) {
+        if (!keyString.isEmpty()) {
             int yAccel = acceleratorRect.y + fm.getAscent();
-            if (modifiersString.equals("")) {
+            if (modifiersString.isEmpty()) {
                 // just draw the keyString
                 JavaSupport.drawString(b, g, keyString, acceleratorRect.x, yAccel);
             } else {
@@ -233,13 +222,13 @@ public class AquaMenuSupport {
                 int emWidth = Math.max(fm.charWidth('M'), SwingUtilities.computeStringWidth(fm, keyString));
 
                 if (leftToRight) {
-                    g.setFont(acceleratorFont);
+                    g.setFont(md.acceleratorFont);
                     drawString(g, b, modifiersString, underlinedChar, acceleratorRect.x, yAccel, isEnabled, isSelected);
                     g.setFont(f);
                     JavaSupport.drawString(b, g, keyString, acceleratorRect.x + acceleratorRect.width - emWidth, yAccel);
                 } else {
                     int xAccel = acceleratorRect.x + emWidth;
-                    g.setFont(acceleratorFont);
+                    g.setFont(md.acceleratorFont);
                     drawString(g, b, modifiersString, underlinedChar, xAccel, yAccel, isEnabled, isSelected);
                     g.setFont(f);
                     JavaSupport.drawString(b, g, keyString, xAccel - fm.stringWidth(keyString), yAccel);
@@ -248,7 +237,7 @@ public class AquaMenuSupport {
         }
 
         // Draw the Text
-        if (text != null && !text.equals("")) {
+        if (text != null && !text.isEmpty()) {
             View v = (View)b.getClientProperty(BasicHTML.propertyKey);
             if (v != null) {
                 v.paint(g, textRect);
@@ -259,96 +248,42 @@ public class AquaMenuSupport {
         }
 
         // Paint the Arrow
-        if (arrowIcon != null) {
-            paintArrow(g, b, model, foreground, arrowIcon, arrowIconRect);
+        if (arrowIconRect.width > 0 && b instanceof JMenu) {
+            paintArrow(g, b, model, foreground, md.arrowIcon, arrowIconRect);
         }
     }
 
-    // All this had to be copied from BasicMenuItemUI, just to get the right keyModifiersText fn
-    // and a few Mac tweaks
-    protected Dimension getPreferredMenuItemSize(JComponent c, Icon checkIcon, Icon arrowIcon, int defaultTextIconGap, Font acceleratorFont) {
-        JMenuItem b = (JMenuItem)c;
-        Icon icon = b.getIcon();
-        String text = b.getText();
-        KeyStroke accelerator = b.getAccelerator();
-        String keyString = "", modifiersString = "";
-
-        if (accelerator != null) {
-            int modifiers = accelerator.getModifiers();
-            if (modifiers > 0) {
-                modifiersString = getKeyModifiersText(modifiers, true); // doesn't matter, this is just for metrics
+    private @Nullable Icon getSelectionIcon(@NotNull JMenuItem b, @NotNull MenuDescription md) {
+        Object value = b.getClientProperty(AquaMenuItemUI.SELECTION_STATE_PROPERTY);
+        if ("indeterminate".equals(value)) {
+            return md.indeterminateIcon;
+        }
+        if (b.isSelected()) {
+            if (b instanceof JRadioButtonMenuItem) {
+                return md.radioIcon;
             }
-            int keyCode = accelerator.getKeyCode();
-            if (keyCode != 0) {
-                keyString = KeyEvent.getKeyText(keyCode);
-            } else {
-                keyString += accelerator.getKeyChar();
-            }
+            return  md.checkIcon;
         }
-
-        Font font = b.getFont();
-        FontMetrics fm = b.getFontMetrics(font);
-        FontMetrics fmAccel = b.getFontMetrics(acceleratorFont);
-
-        Rectangle iconRect = new Rectangle();
-        Rectangle textRect = new Rectangle();
-        Rectangle acceleratorRect = new Rectangle();
-        Rectangle checkIconRect = new Rectangle();
-        Rectangle arrowIconRect = new Rectangle();
-        Rectangle viewRect = new Rectangle(Short.MAX_VALUE, Short.MAX_VALUE);
-
-        layoutMenuItem(b, fm, text, fmAccel, keyString, modifiersString, icon, checkIcon, arrowIcon, b.getVerticalAlignment(), b.getHorizontalAlignment(), b.getVerticalTextPosition(), b.getHorizontalTextPosition(), viewRect, iconRect, textRect, acceleratorRect, checkIconRect, arrowIconRect, text == null ? 0 : defaultTextIconGap, defaultTextIconGap);
-        // find the union of the icon and text rects
-        Rectangle r = new Rectangle();
-        r.setBounds(textRect);
-        r = SwingUtilities.computeUnion(iconRect.x, iconRect.y, iconRect.width, iconRect.height, r);
-        //   r = iconRect.union(textRect);
-
-        // Add in the accelerator
-        boolean acceleratorTextIsEmpty = keyString.equals("");
-
-        if (!acceleratorTextIsEmpty) {
-            r.width += acceleratorRect.width;
-        }
-
-        if (!isTopLevelMenu(b)) {
-            // Add in the checkIcon
-            r.width += checkIconRect.width;
-            r.width += defaultTextIconGap;
-
-            // Add in the arrowIcon space
-            r.width += defaultTextIconGap;
-            r.width += arrowIconRect.width;
-        }
-
-        Insets insets = b.getInsets();
-        if (insets != null) {
-            r.width += insets.left + insets.right;
-            r.height += insets.top + insets.bottom;
-        }
-
-        // Tweak for Mac
-        r.width += 4 + defaultTextIconGap;
-        r.height = Math.max(r.height, 18);
-
-        return r.getSize();
+        return null;
     }
 
-    protected void paintCheck(Graphics g, JMenuItem item, Color color, Icon checkIcon, Rectangle checkIconRect) {
-        if (isTopLevelMenu(item) || !item.isSelected()) return;
-
-        Image im = AquaImageFactory.getProcessedImage(checkIcon, color);
-        g.drawImage(im, checkIconRect.x, checkIconRect.y, null);
+    private void paintCheck(Graphics g, JMenuItem item, Color color, Icon checkIcon, Rectangle checkIconRect) {
+        if (isTopLevelMenu(item) || !item.isSelected()) {
+            return;
+        }
+        Icon ic = AquaImageFactory.getProcessedImage(checkIcon, color);
+        ic.paintIcon(item, g, checkIconRect.x, checkIconRect.y);
     }
 
-    protected void paintArrow(Graphics g, JMenuItem c, ButtonModel model, Color color, Icon arrowIcon, Rectangle arrowIconRect) {
-        if (isTopLevelMenu(c)) return;
-
-        Image im = AquaImageFactory.getProcessedImage(arrowIcon, color);
-        g.drawImage(im, arrowIconRect.x, arrowIconRect.y, null);
+    private void paintArrow(Graphics g, JMenuItem c, ButtonModel model, Color color, Icon arrowIcon, Rectangle arrowIconRect) {
+        if (isTopLevelMenu(c)) {
+            return;
+        }
+        Icon ic = AquaImageFactory.getProcessedImage(arrowIcon, color);
+        ic.paintIcon(c, g, arrowIconRect.x, arrowIconRect.y);
     }
 
-    protected void paintIcon(Graphics g, JMenuItem c, Rectangle localIconRect, boolean isEnabled) {
+    private void paintIcon(Graphics g, JMenuItem c, Rectangle localIconRect, boolean isEnabled) {
         ButtonModel model = c.getModel();
         Icon icon;
         if (!isEnabled) {
@@ -370,9 +305,9 @@ public class AquaMenuSupport {
 
     /** Draw a string with the graphics g at location (x,y) just like g.drawString() would.
      *  The first occurrence of underlineChar in text will be underlined. The matching is
-     *  not case sensitive.
+     *  not case-sensitive.
      */
-    public void drawString(Graphics g, JComponent c, String text, int underlinedChar, int x, int y, boolean isEnabled, boolean isSelected) {
+    private void drawString(Graphics g, JComponent c, String text, int underlinedChar, int x, int y, boolean isEnabled, boolean isSelected) {
         char lc, uc;
         int index = -1, lci, uci;
 
@@ -392,99 +327,218 @@ public class AquaMenuSupport {
     }
 
     /*
-     * Returns false if the component is a JMenu and it is a top
-     * level menu (on the menubar).
+     * Returns true if the menu item is a JMenu and it is a top level menu (on the menu bar).
      */
     private static boolean isTopLevelMenu(JMenuItem menuItem) {
         return (menuItem instanceof JMenu) && (((JMenu)menuItem).isTopLevelMenu());
     }
 
-    private String layoutMenuItem(JMenuItem menuItem, FontMetrics fm, String text, FontMetrics fmAccel,
-                                  String keyString, String modifiersString, Icon icon, Icon checkIcon,
-                                  Icon arrowIcon, int verticalAlignment, int horizontalAlignment,
-                                  int verticalTextPosition, int horizontalTextPosition, Rectangle viewR,
-                                  Rectangle iconR, Rectangle textR, Rectangle acceleratorR, Rectangle checkIconR,
-                                  Rectangle arrowIconR, int textIconGap, int menuItemGap) {
-        // Force it to do "LEFT", then flip the rects if we're right-to-left
-        Dimension iconSize = icon != null ? new Dimension(icon.getIconWidth(), icon.getIconHeight()) : null;
-        AquaUtils.layoutCompoundLabel(menuItem, fm, text, iconSize, verticalAlignment, SwingConstants.LEFT, verticalTextPosition, horizontalTextPosition, viewR, iconR, textR, textIconGap);
+    public @NotNull Dimension getPreferredMenuItemSize(@NotNull JMenuItem b, @NotNull MenuLayoutInfo info) {
+        Icon icon = b.getIcon();
+        String text = b.getText();
+        KeyStroke accelerator = b.getAccelerator();
+        String keyString = "";
+        String modifiersString = "";
 
-        boolean acceleratorTextIsEmpty = (keyString == null) || keyString.equals("");
+        if (accelerator != null) {
+            int modifiers = accelerator.getModifiers();
+            if (modifiers > 0) {
+                modifiersString = getKeyModifiersText(modifiers, true); // doesn't matter, this is just for metrics
+            }
+            int keyCode = accelerator.getKeyCode();
+            if (keyCode != 0) {
+                keyString = KeyEvent.getKeyText(keyCode);
+            } else {
+                keyString += accelerator.getKeyChar();
+            }
+        }
 
+        Rectangle iconRect = new Rectangle();
+        Rectangle textRect = new Rectangle();
+        Rectangle acceleratorRect = new Rectangle();
+        Rectangle checkIconRect = new Rectangle();
+        Rectangle arrowIconRect = new Rectangle();
+        Rectangle viewRect = new Rectangle(Short.MAX_VALUE, Short.MAX_VALUE);
+        Rectangle contentRect = new Rectangle();
+
+        layoutMenuItem(b, text, keyString, modifiersString, info,
+          viewRect, iconRect, textRect, acceleratorRect, checkIconRect, arrowIconRect, contentRect);
+        return AquaUtils.extend(contentRect.getSize(), info.insets);
+    }
+
+    private @Nullable String layoutMenuItem(@NotNull JMenuItem menuItem,
+                                            @NotNull String text,
+                                            @Nullable String keyString,
+                                            @Nullable String modifiersString,
+                                            @NotNull MenuLayoutInfo ml,
+                                            @NotNull Rectangle viewR,  // available space
+                                            @NotNull Rectangle iconR,  // output
+                                            @NotNull Rectangle textR,  // output
+                                            @NotNull Rectangle acceleratorR,  // output
+                                            @NotNull Rectangle selectionIconR,  // output
+                                            @NotNull Rectangle arrowIconR,  // output
+                                            @NotNull Rectangle contentRect  // output
+    ) {
+        // Do the initial arrangement LTR, then flip if needed for RTL.
+
+        // Determine the size of the accelerator.
+        boolean acceleratorTextIsEmpty = keyString == null || keyString.isEmpty();
         if (acceleratorTextIsEmpty) {
             acceleratorR.width = acceleratorR.height = 0;
-            keyString = "";
         } else {
-            // Accel space doesn't overlap arrow space, even though items can't have both
-            acceleratorR.width = SwingUtilities.computeStringWidth(fmAccel, modifiersString);
+            FontMetrics fm = ml.acceleratorFontMetrics;
+            acceleratorR.width = SwingUtilities.computeStringWidth(fm, modifiersString);
             // The keyStrings should all line up, so always adjust the width by the same amount
             // (if they're multi-char, they won't line up but at least they won't be cut off)
             acceleratorR.width += Math.max(fm.charWidth('M'), SwingUtilities.computeStringWidth(fm, keyString));
-            acceleratorR.height = fmAccel.getHeight();
+            acceleratorR.height = fm.getHeight();
+        }
+        int acceleratorExtraWidth = acceleratorR.width > 0 ? acceleratorR.width + ml.arrowIconSeparation : 0;
+
+        // Determine the arrangement of the icon and label (zero based)
+        Dimension availableSpaceBasic
+          = computeAvailableSpaceForIconAndLabel(menuItem, viewR.getSize(), acceleratorExtraWidth, ml);
+        ButtonLayoutInfo info = computeBasicLayout(menuItem, availableSpaceBasic);
+        if (info == null) {
+            return null;
         }
 
-        /* Initialize the checkIcon bounds rectangle checkIconR.
-         */
+        Insets s = ml.insets;
+        contentRect.setBounds(offset(info.contentBounds, s));
+        if (info.labelBounds != null) {
+            textR.setBounds(offset(info.labelBounds, s));
+        } else {
+            textR.setBounds(0, 0, 0, 0);
+        }
+        if (info.iconBounds != null) {
+            iconR.setBounds(offset(info.iconBounds, s));
+        } else {
+            iconR.setBounds(0, 0, 0, 0);
+        }
+        if (info.substitutedLabel != null) {
+            text = info.substitutedLabel;
+        }
 
         boolean isTopLevelMenu = isTopLevelMenu(menuItem);
         if (!isTopLevelMenu) {
-            if (checkIcon != null) {
-                checkIconR.width = checkIcon.getIconWidth();
-                checkIconR.height = checkIcon.getIconHeight();
+            Dimension selectionIconSize =  ml.selectionIconSize;
+            if (selectionIconSize.width > 0) {
+                selectionIconR.width = selectionIconSize.width;
+                selectionIconR.height = selectionIconSize.height;
             } else {
-                checkIconR.width = checkIconR.height = 16;
+                selectionIconR.width = selectionIconR.height = 0;
             }
-
-            /* Initialize the arrowIcon bounds rectangle arrowIconR.
-             */
-
-            if (arrowIcon != null) {
-                arrowIconR.width = arrowIcon.getIconWidth();
-                arrowIconR.height = arrowIcon.getIconHeight();
+            Dimension arrowSize = ml.arrowSize;
+            if (arrowSize.width > 0) {
+                arrowIconR.width = arrowSize.width;
+                arrowIconR.height = arrowSize.height;
             } else {
-                arrowIconR.width = arrowIconR.height = 16;
+                arrowIconR.width = arrowIconR.height = 0;
             }
-
-            textR.x += 12;
-            iconR.x += 12;
         }
 
-        Rectangle labelR = iconR.union(textR);
+        // Adjust the overall size
+        contentRect.width += acceleratorExtraWidth;
+
+        int left = s.left;
+        int extraLeft = 0;
+
+        if (!isTopLevelMenu(menuItem)) {
+            // Add in the checkIcon
+            if (selectionIconR.width > 0) {
+                contentRect.width += selectionIconR.width;
+                contentRect.width += ml.selectionIconSeparation;
+                extraLeft = selectionIconR.width + ml.selectionIconSeparation;
+                left += extraLeft;
+            }
+
+            // Add in the arrowIcon space
+            if (arrowIconR.width > 0) {
+                contentRect.width += ml.arrowIconSeparation;
+                contentRect.width += arrowIconR.width;
+            }
+        }
+
+        // Adjust the positions
+
+        iconR.x += extraLeft;
+        textR.x += extraLeft;
 
         // Position the Accelerator text rect
         // Menu shortcut text *ought* to have the letters left-justified - look at a menu with an "M" in it
-        acceleratorR.x += (viewR.width - arrowIconR.width - acceleratorR.width);
+        acceleratorR.x += (viewR.width - arrowIconR.width - acceleratorR.width - s.right);
         acceleratorR.y = viewR.y + (viewR.height / 2) - (acceleratorR.height / 2);
 
         if (!isTopLevelMenu) {
-            //    if ( GetSysDirection() < 0 ) hierRect.right = hierRect.left + w + 4;
-            //    else hierRect.left = hierRect.right - w - 4;
-            arrowIconR.x = (viewR.width - arrowIconR.width) + 1;
-            arrowIconR.y = viewR.y + (labelR.height / 2) - (arrowIconR.height / 2) + 1;
-
-            checkIconR.y = viewR.y + (labelR.height / 2) - (checkIconR.height / 2);
-            checkIconR.x = 5;
-
-            textR.width += 8;
+            arrowIconR.x = viewR.width - (arrowIconR.width + s.right);
+            arrowIconR.y = viewR.y + (contentRect.height / 2) - (arrowIconR.height / 2) + 1;
+            selectionIconR.y = viewR.y + (contentRect.height / 2) - (selectionIconR.height / 2);
+            selectionIconR.x = s.left;
         }
 
         if (false) {
-            Utils.logDebug("Layout: " +horizontalAlignment+ " v=" +viewR+"  c="+checkIconR+" i="+
-                    iconR+" t="+textR+" acc="+acceleratorR+" a="+arrowIconR);
+            Utils.logDebug("Layout: v=" +viewR+"  c="+ selectionIconR +" i="+
+              iconR+" t="+textR+" acc="+acceleratorR+" a="+arrowIconR);
         }
 
         if (!AquaUtils.isLeftToRight(menuItem)) {
             // Flip the rectangles so that instead of [check][icon][text][accel/arrow] it's [accel/arrow][text][icon][check]
             int w = viewR.width;
-            checkIconR.x = w - (checkIconR.x + checkIconR.width);
+            selectionIconR.x = w - (selectionIconR.x + selectionIconR.width);
             iconR.x = w - (iconR.x + iconR.width);
             textR.x = w - (textR.x + textR.width);
             acceleratorR.x = w - (acceleratorR.x + acceleratorR.width);
             arrowIconR.x = w - (arrowIconR.x + arrowIconR.width);
         }
-        textR.x += menuItemGap;
-        iconR.x += menuItemGap;
 
         return text;
+    }
+
+    private static @NotNull Rectangle offset(@NotNull Rectangle r, @NotNull Insets s) {
+        return new Rectangle(r.x + s.left, r.y + s.top, r.width, r.height);
+    }
+
+    /**
+     * Compute the available space for the menu icon and label. If computing a preferred size, no adjustment is needed.
+     */
+    private @NotNull Dimension computeAvailableSpaceForIconAndLabel(@NotNull JMenuItem menuItem,
+                                                                    @NotNull Dimension controlAvailableSpace,
+                                                                    int acceleratorWidth,
+                                                                    @NotNull MenuLayoutInfo info) {
+        if (controlAvailableSpace.width >= Short.MAX_VALUE) {
+            return controlAvailableSpace;
+        }
+        int width = controlAvailableSpace.width;
+        int height = controlAvailableSpace.height;
+        if (info.selectionIconSize.width > 0) {
+            width -= (info.selectionIconSize.width + info.selectionIconSeparation);
+        }
+        if (menuItem instanceof JMenu && info.arrowSize.width > 0) {
+            width -= (info.arrowSize.width + info.arrowIconSeparation);
+        }
+        width -= acceleratorWidth;
+        width -= (info.insets.left + info.insets.right);
+        height -= (info.insets.top + info.insets.bottom);
+        return new Dimension(Math.max(0, width), Math.max(0, height));
+    }
+
+    /**
+     * Compute a basic layout of the menu item label and icon.
+     * @param menuItem The menu item.
+     * @param availableSize The available size for the label and icon. The size can be very large when computing the
+     *                      preferred size.
+     * @return a description of the label and icon layout. The description is zero based.
+     */
+    private @Nullable ButtonLayoutInfo computeBasicLayout(@NotNull JMenuItem menuItem,
+                                                          @NotNull Dimension availableSize) {
+        Icon icon = menuItem.getIcon();
+        Dimension iconSize = icon != null ? new Dimension(icon.getIconWidth(), icon.getIconHeight()) : null;
+        CompoundLabelAlignment alignment = CompoundLabelAlignment.HORIZONTAL_RIGHT_TEXT;
+        CompoundLabelLayoutEngine engine
+          = AquaButtonSupport.createCompoundLayoutEngine(menuItem, iconSize, null, null, alignment);
+        if (engine == null) {
+            return null;
+        }
+        return engine.getLayoutInfo(availableSize.width, availableSize.height, new Insets(0, 0, 0, 0)).toLeftAligned();
     }
 }

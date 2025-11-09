@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018 Alan Snyder.
+ * Copyright (c) 2016-2025 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -17,7 +17,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * An icon for a specific button whose rendering may depend upon the widget, state, button state, and appearance. The
+ * An icon for a button whose rendering may depend upon the widget, state, button state, and appearance. The
  * rendering is based on the button's default icon.
  */
 
@@ -27,9 +27,9 @@ public class AquaButtonIcon implements Icon, UIResource, ImageObserver {
         @Nullable Object getCurrentImageProcessingOperator(@NotNull AbstractButton b, boolean isTemplate);
     }
 
-    protected final @NotNull AbstractButton b;
-    protected final boolean isTemplate;
-    protected final @NotNull ImageOperatorSupplier operatorSupplier;
+    private final @NotNull AbstractButton b;
+    private final boolean isTemplate;
+    private final @NotNull ImageOperatorSupplier operatorSupplier;
 
     /**
      * Create a context-sensitive button icon.
@@ -63,14 +63,18 @@ public class AquaButtonIcon implements Icon, UIResource, ImageObserver {
         Icon icon = b.getIcon();
         if (icon != null) {
             Object operator = operatorSupplier.getCurrentImageProcessingOperator(b, isTemplate);
-            Image im = AquaImageFactory.getProcessedImage(icon, operator);
-            if (im != null) {
+            icon = AquaImageFactory.getProcessedImage(icon, operator);
+            if (icon != null) {
                 // Using the button as the image observer can fail because it aborts drawing the image if the button
                 // does not recognize the image as the proper image for the button in its current state, and its ability
                 // to recognize images is not flexible enough for our usage.
-                g.drawImage(im, x, y, this);
+                icon.paintIcon(c, g, x, y);
             }
         }
+    }
+
+    public boolean isTemplate() {
+        return isTemplate;
     }
 
     @Override

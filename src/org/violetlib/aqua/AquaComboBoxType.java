@@ -13,6 +13,6 @@ package org.violetlib.aqua;
  */
 public enum AquaComboBoxType {
     EDITABLE_COMBO_BOX,     // the standard combo box, with an editable text field
-    POP_UP_MENU_BUTTON,     // a button that brings up a pop up menu (custom for Aqua)
-    PULL_DOWN_MENU_BUTTON   // a button that brings up a pull down menu (custom for Aqua)
+    POP_UP_MENU_BUTTON,     // a button that brings up a pop-up menu (menu items are possible selections)
+    PULL_DOWN_MENU_BUTTON   // a button that brings up a pull-down menu (menu items are actions)
 }

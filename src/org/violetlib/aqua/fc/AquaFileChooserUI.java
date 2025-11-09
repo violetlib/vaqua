@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2011-2013 Werner Randelshofer, Switzerland.
- * Copyright (c) 2014-2021 Alan Snyder.
+ * Copyright (c) 2014-2025 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the
@@ -822,7 +822,7 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
         sidebarScrollPane.setViewportView(sidebarTree);
 
         // A legacy scroll bar on a sidebar does not display a track
-        sidebarScrollPane.getVerticalScrollBar().putClientProperty("JScrollBar.style", "sidebar");
+        sidebarScrollPane.getVerticalScrollBar().putClientProperty("JScrollBar.style", "sideBar");
 
         splitPane.setLeftComponent(sidebarScrollPane);
         splitPane.setRightComponent(viewsPanel);

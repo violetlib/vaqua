@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020-2021 Alan Snyder.
+ * Copyright (c) 2020-2025 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -13,7 +13,7 @@ import javax.swing.*;
 import javax.swing.border.AbstractBorder;
 import javax.swing.plaf.UIResource;
 
-import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.*;
 
 /**
  * A context dependent border for list cells.
@@ -33,26 +33,24 @@ public class AquaCellBorder extends AbstractBorder implements UIResource {
     }
 
     private boolean computeIsInset(@NotNull JComponent c) {
+        AquaViewStyleContainerUI ui = getContainerUI(c);
+        return ui != null && ui.isInset();
+    }
+
+    protected @Nullable AquaViewStyleContainerUI getContainerUI(@NotNull JComponent c)
+    {
         Container parent = c.getParent();
         if (parent instanceof CellRendererPane) {
             parent = parent.getParent();
         }
-
-        if (parent != null) {
-            AquaViewStyleContainerUI ui = AquaUtils.getUI((JComponent) parent, AquaViewStyleContainerUI.class);
-            if (ui != null) {
-                return ui.isInset();
-            }
+        AquaViewStyleContainerUI ui = AquaUtils.getUI(parent, AquaViewStyleContainerUI.class);
+        if (ui != null) {
+            return ui;
         }
-
         Object o = c.getClientProperty(RENDERER_CONTAINER_KEY);
-        if (o instanceof JComponent) {
-            AquaViewStyleContainerUI ui = AquaUtils.getUI((JComponent) o, AquaViewStyleContainerUI.class);
-            if (ui != null) {
-                return ui.isInset();
-            }
+        if (o instanceof Component) {
+            return AquaUtils.getUI((Component) o, AquaViewStyleContainerUI.class);
         }
-
-        return false;
+        return null;
     }
 }

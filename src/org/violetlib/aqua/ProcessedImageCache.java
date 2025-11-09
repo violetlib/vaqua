@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2021 Alan Snyder.
+ * Copyright (c) 2018-2025 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -25,16 +25,22 @@ import org.jetbrains.annotations.Nullable;
 public abstract class ProcessedImageCache {
 
     private final WeakHashMap<Object,ImageInfo> imageMap = new WeakHashMap<>();
-
     /**
      * Return the processed version of the specified icon.
      * @param icon The source icon.
-     * @param operator The operation to be performed on the icon image, or null to return the actual icon image.
-     * @return the processed version of {@code icon}, or null if the icon is not valid.
+     * @param operator The operation to be performed on the icon image, or null to return the original icon.
+     * @return the processed version of {@code icon}, or an empty icon if the icon is not valid.
      */
-    public @Nullable Image getProcessedImage(@NotNull Icon icon, @Nullable Object operator) {
+    public @NotNull Icon getProcessedImage(@NotNull Icon icon, @Nullable Object operator) {
+        if (operator == null) {
+            return icon;
+        }
         ImageInfo info = getIconImageInfo(icon);
-        return info != null ? info.getProcessedImage(operator) : null;
+        if (info == null) {
+            return AquaIcon.createIcon(null, icon.getIconWidth(), icon.getIconHeight());
+        }
+        Image replacement = info.getProcessedImage(operator);
+        return AquaIcon.createIcon(replacement, icon.getIconWidth(), icon.getIconHeight());
     }
 
     /**

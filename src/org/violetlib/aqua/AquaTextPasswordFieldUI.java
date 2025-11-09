@@ -58,7 +58,7 @@ public class AquaTextPasswordFieldUI extends AquaTextFieldUI {
     }
 
     @Override
-    protected String getPropertyPrefix() {
+    protected @NotNull String getPropertyPrefix() {
         return "PasswordField";
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2021 Alan Snyder.
+ * Copyright (c) 2018-2025 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -45,6 +45,11 @@ public class AquaContextualColorImpl implements ContextualColor {
     // Most components use the same color when inactive or disabled.
     // In this case, either the disabled or inactive color name may be set.
 
+    /**
+     * Create a contextual color.
+     * @param colorName The name of this contextual color, for debugging purposes.
+     * @param basicName The basic color name.
+     */
     public AquaContextualColorImpl(@NotNull String colorName, @NotNull String basicName) {
         this.colorName = colorName;
         this.basicName = basicName;

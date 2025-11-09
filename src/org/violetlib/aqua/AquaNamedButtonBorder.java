@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2020 Alan Snyder.
+ * Copyright (c) 2015-2025 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -22,12 +22,12 @@ import org.violetlib.jnr.aqua.ButtonLayoutConfiguration;
  */
 public class AquaNamedButtonBorder extends AquaButtonBorder {
 
-    protected final @NotNull ButtonWidget widget;
+    protected final @NotNull ButtonWidget initialWidget;
     private final @NotNull AquaButtonExtendedTypes.WidgetInfo info;
     private final boolean allowsContent;
 
     public AquaNamedButtonBorder(@NotNull ButtonWidget w, @NotNull AquaButtonExtendedTypes.WidgetInfo info) {
-        this.widget = w;
+        this.initialWidget = w;
         this.info = info;
         this.allowsContent = determineAllowsContent(w);
     }
@@ -43,8 +43,8 @@ public class AquaNamedButtonBorder extends AquaButtonBorder {
     }
 
     @Override
-    public @NotNull ButtonWidget getButtonWidget(@NotNull AbstractButton b) {
-        return widget;
+    public @NotNull ButtonStyleInfo getButtonStyleInfo(@NotNull AbstractButton b) {
+        return AquaButtonSupport.getButtonStyleInfo(b, initialWidget);
     }
 
     @Override

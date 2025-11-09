@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2024 Alan Snyder.
+ * Copyright (c) 2015-2025 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -46,18 +46,15 @@ import javax.swing.plaf.basic.BasicButtonUI;
 import javax.swing.plaf.basic.BasicHTML;
 import javax.swing.text.View;
 
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.*;
 import org.violetlib.aqua.AquaUtils.RecyclableSingleton;
 import org.violetlib.aqua.AquaUtils.RecyclableSingletonFromDefaultConstructor;
-import org.violetlib.jnr.aqua.AquaUIPainter;
 import org.violetlib.jnr.aqua.AquaUIPainter.Size;
-import org.violetlib.jnr.aqua.ButtonLayoutConfiguration;
 import org.violetlib.jnr.aqua.LayoutConfiguration;
 
 public class AquaButtonUI extends BasicButtonUI
-        implements AquaUtilControlSize.Sizeable, FocusRingOutlineProvider, ToolbarSensitiveUI, AquaComponentUI,
-        SystemPropertyChangeManager.SystemPropertyChangeListener {
+  implements AquaUtilControlSize.Sizeable, FocusRingOutlineProvider, ToolbarSensitiveUI, AquaComponentUI,
+  SystemPropertyChangeManager.SystemPropertyChangeListener {
 
     // This UI is shared.
     // Button borders may also be shared.
@@ -66,7 +63,7 @@ public class AquaButtonUI extends BasicButtonUI
     // Important programming note:
     //
     // Do not call b.getDisabledIcon() or b.getDisabledSelectedIcon().
-    // Use the static methods defined here instead.
+    // Use the static methods defined in AquaButtonSupport instead.
 
     public static final String BUTTON_TYPE = "JButton.buttonType";
     public static final String SEGMENTED_BUTTON_POSITION = "JButton.segmentPosition";
@@ -93,9 +90,10 @@ public class AquaButtonUI extends BasicButtonUI
     @Override
     public void installUI(JComponent c) {
         super.installUI(c);
-        removeCachedIcons((AbstractButton) c);
+        AquaButtonSupport.removeCachedIcons((AbstractButton) c);
     }
 
+    @Override
     protected void installDefaults(@NotNull AbstractButton b) {
         // load shared instance defaults
         String pp = getPropertyPrefix();
@@ -105,19 +103,14 @@ public class AquaButtonUI extends BasicButtonUI
         b.putClientProperty(DEFAULT_FONT_PROPERTY, b.getFont());
         initializeToolbarStatus(b);
         configure(b);
-        configureFocusable(b);
+        AquaUtils.configureFocusable(b);
     }
 
     @Override
     public void systemPropertyChanged(JComponent c, Object type) {
         if (type.equals(OSXSystemProperties.USER_PREFERENCE_CHANGE_TYPE)) {
-            configureFocusable(c);
+            AquaUtils.configureFocusable(c);
         }
-    }
-
-    private void configureFocusable(JComponent c) {
-        boolean isFocusable = OSXSystemProperties.isFullKeyboardAccessEnabled();
-        c.setFocusable(isFocusable);
     }
 
     @Override
@@ -148,7 +141,7 @@ public class AquaButtonUI extends BasicButtonUI
             // The configuration of a button is rather complex. It potentially affects the border, the font, the
             // foreground color, the minimum and preferred component sizes. The configuration potentially depends upon
             // client properties (for button type, segment position, and size variant), whether the button is contained
-            // in a tool bar, whether the button is a member of a button group, whether the button has an icon or any
+            // in a toolbar, whether the button is a member of a button group, whether the button has an icon or any
             // child components (e.g. images). Instead of trying to figure out exactly which parts of the configuration
             // depend upon which inputs, we do a complete reconfiguration whenever an input has potentially changed.
 
@@ -159,35 +152,38 @@ public class AquaButtonUI extends BasicButtonUI
             // variant as part of its configuration of the button. The border performs all of the configuration based on
             // a defined button type.
 
-            boolean isToolbar = isToolbar(b);
+            boolean isToolbar = AquaButtonSupport.isToolbar(b);
             AquaButtonExtendedTypes.TypeSpecifier type = AquaButtonExtendedTypes.getTypeSpecifier(b, isToolbar);
             installBorder(b, type, isToolbar);
 
-            LayoutConfiguration g = null;
-            Border border = b.getBorder();
-            if (border instanceof AquaButtonBorder) {
-                AquaButtonBorder bb = (AquaButtonBorder) border;
-                g = bb.determineLayoutConfiguration(b);
-                if (bb.isRolloverEnabled(b)) {
+            AquaButtonBorder border = getAquaButtonBorder(b);
+            LayoutConfiguration g = border != null ? border.determineLayoutConfiguration(b) : null;
+            b.putClientProperty(LAYOUT_CONFIGURATION_PROPERTY, g);
+
+            if (border != null) {
+                if (border.isRolloverEnabled(b)) {
                     LookAndFeel.installProperty(b, "rolloverEnabled", true);
                 }
-                int iconTextGap = bb.getIconTextGap(b);
+                int iconTextGap = border.getIconTextGap(b);
                 LookAndFeel.installProperty(b, "iconTextGap", iconTextGap);
             }
-            b.putClientProperty(LAYOUT_CONFIGURATION_PROPERTY, g);
 
             // Perform configuration of the button based on the size variant, whether specified or implied.
             // This may change the button font, foreground color, and layout sizes.
-            Size size = AquaUtilControlSize.getUserSizeFrom(b);
+            Object widget = g != null ? g.getWidget() : null;
+            Size size = g != null ? g.getSize() : null;
+            if (size == null) {
+                size = AquaUtils.getSize(b, isToolbar, widget);
+            }
             if (AquaUtilControlSize.isOKToInstallDefaultFont(b)) {
                 Font df = getFontForButton(b, size);
                 b.setFont(df);
             }
 
-            updateTemplateIconStatus(b);
+            AquaButtonSupport.updateTemplateIconStatus(b);
 
-            if (!isColorWell(b)) {
-                disconnectColorChooser(b);
+            if (!AquaButtonSupport.isColorWell(b)) {
+                AquaButtonSupport.disconnectColorChooser(b);
             }
 
             b.setRequestFocusEnabled(false);
@@ -196,21 +192,6 @@ public class AquaButtonUI extends BasicButtonUI
             b.repaint();
         } finally {
             isConfiguring = false;
-        }
-    }
-
-    /**
-     * Invalidate the cached special icon if the template icon status has changed.
-     */
-    protected void updateTemplateIconStatus(AbstractButton b) {
-        Object o = b.getClientProperty(SPECIAL_ICON_PROPERTY);
-        if (o instanceof AquaButtonIcon) {
-            AquaButtonIcon icon = (AquaButtonIcon) o;
-            boolean isTemplate = AquaButtonSupport.determineTemplateIconStatus(b);
-            if (icon.isTemplate != isTemplate) {
-                // Force a new icon to be created with the new status
-                removeCachedIcons(b);
-            }
         }
     }
 
@@ -254,6 +235,14 @@ public class AquaButtonUI extends BasicButtonUI
         }
     }
 
+    protected @Nullable AquaButtonBorder getAquaButtonBorder(@NotNull JComponent c) {
+        Border border = c.getBorder();
+        if (border instanceof AquaButtonBorder) {
+            return (AquaButtonBorder) border;
+        }
+        return null;
+    }
+
     @Override
     public @Nullable Shape getFocusRingOutline(@NotNull JComponent c) {
         Border border = c.getBorder();
@@ -277,26 +266,15 @@ public class AquaButtonUI extends BasicButtonUI
      * The font may be chosen based on the button type and size.
      */
     protected @NotNull Font getFontForButton(@NotNull AbstractButton b, @NotNull Size size) {
-        Font base = getDefaultFontPropertyValue(b);
+        Font base = AquaButtonSupport.getDefaultFontPropertyValue(b);
         if (base == null) {
             // should not happen
             base = new Font("Default", Font.PLAIN, 12);
         }
-        Border border = b.getBorder();
-        if (border instanceof AquaButtonBorder) {
-            AquaButtonBorder bb = (AquaButtonBorder) border;
-            return bb.getCustomDefaultFont(b, size, base);
-        } else {
-            return AquaUtilControlSize.getFontForSize(base, size);
-        }
-    }
-
-    public static @Nullable Font getDefaultFontPropertyValue(@NotNull AbstractButton b) {
-        Object o = b.getClientProperty(DEFAULT_FONT_PROPERTY);
-        if (o instanceof Font) {
-            return (Font) o;
-        }
-        return null;
+        AquaButtonBorder border = getAquaButtonBorder(b);
+        return border != null
+          ? border.getCustomDefaultFont(b, size, base)
+          : AquaUtilControlSize.getFontForSize(base, size);
     }
 
     protected Color getDefaultForegroundColor(AbstractButton b) {
@@ -307,6 +285,8 @@ public class AquaButtonUI extends BasicButtonUI
             AquaAppearance appearance = AppearanceManager.ensureAppearance(b);
             if (useSelectedForeground(b)) {
                 return appearance.getColor("alternateSelectedControlText");
+            } else if (useSelectedDisabledForeground(b)) {
+                return appearance.getColor("selectedControlText_disabled");
             } else if (useDisabledForeground(b)) {
                 return appearance.getColor("controlText_disabled");
             } else {
@@ -318,12 +298,17 @@ public class AquaButtonUI extends BasicButtonUI
 
     private boolean useSelectedForeground(AbstractButton b) {
         if (b instanceof JToggleButton && !(b instanceof JCheckBox) && !(b instanceof JRadioButton)) {
-            return b.getModel().isSelected();
+            return b.getModel().isSelected() && b.isEnabled();
         }
-
         return false;
     }
 
+    private boolean useSelectedDisabledForeground(AbstractButton b) {
+        if (b instanceof JToggleButton && !(b instanceof JCheckBox) && !(b instanceof JRadioButton)) {
+            return b.getModel().isSelected() && !b.isEnabled();
+        }
+        return false;
+    }
     private boolean useDisabledForeground(AbstractButton b) {
         return !b.getModel().isEnabled();
     }
@@ -351,22 +336,19 @@ public class AquaButtonUI extends BasicButtonUI
         }
     }
 
+    @Override
     protected void installListeners(AbstractButton b) {
         AquaButtonListener listener = createButtonListener(b);
-        if (listener != null) {
-            // put the listener in the button's client properties so that
-            // we can get at it later
-            b.putClientProperty(this, listener);
-
-            b.addMouseListener(listener);
-            b.addMouseMotionListener(listener);
-            b.addFocusListener(listener);
-            b.addPropertyChangeListener(listener);
-            b.addChangeListener(listener);
-            b.addActionListener(listener);
-            b.addItemListener(listener);
-        }
-        if (isToolbarSensitive(b)) {
+        // put the listener in the button's client properties so that we can find it later
+        b.putClientProperty(this, listener);
+        b.addMouseListener(listener);
+        b.addMouseMotionListener(listener);
+        b.addFocusListener(listener);
+        b.addPropertyChangeListener(listener);
+        b.addChangeListener(listener);
+        b.addActionListener(listener);
+        b.addItemListener(listener);
+        if (AquaButtonSupport.isToolbarSensitive(b)) {
             AquaUtils.installToolbarSensitivity(b);
         }
         AquaUtilControlSize.addSizePropertyListener(b);
@@ -374,6 +356,7 @@ public class AquaButtonUI extends BasicButtonUI
         AppearanceManager.installListeners(b);
     }
 
+    @Override
     protected void installKeyboardActions(AbstractButton b) {
         BasicButtonListener listener = (BasicButtonListener)b.getClientProperty(this);
         if (listener != null) {
@@ -381,19 +364,22 @@ public class AquaButtonUI extends BasicButtonUI
         }
     }
 
+    @Override
     public void uninstallUI(JComponent c) {
-        disconnectColorChooser((AbstractButton)c);
+        AquaButtonSupport.disconnectColorChooser((AbstractButton)c);
         uninstallKeyboardActions((AbstractButton)c);
         uninstallListeners((AbstractButton)c);
         uninstallDefaults((AbstractButton)c);
-        removeCachedIcons((AbstractButton) c);
+        AquaButtonSupport.removeCachedIcons((AbstractButton) c);
     }
 
+    @Override
     protected void uninstallKeyboardActions(AbstractButton b) {
         BasicButtonListener listener = (BasicButtonListener)b.getClientProperty(this);
         if (listener != null) listener.uninstallKeyboardActions(b);
     }
 
+    @Override
     protected void uninstallListeners(AbstractButton b) {
         AppearanceManager.uninstallListeners(b);
         AquaButtonListener listener = (AquaButtonListener)b.getClientProperty(this);
@@ -412,68 +398,34 @@ public class AquaButtonUI extends BasicButtonUI
         AquaUtils.uninstallToolbarSensitivity(b);
     }
 
+    @Override
     protected void uninstallDefaults(AbstractButton b) {
         LookAndFeel.uninstallBorder(b);
         AquaUtilControlSize.uninstallDefaultFont(b);
     }
 
-    protected void removeCachedIcons(AbstractButton b) {
-
-        if (b.getSelectedIcon() instanceof UIResource) {
-            b.setSelectedIcon(null);
-        }
-
-        if (AquaButtonSupport.getDisabledIcon(b) instanceof UIResource) {
-            b.setDisabledIcon(null);
-        }
-
-        if (AquaButtonSupport.getDisabledSelectedIcon(b) instanceof UIResource) {
-            b.setDisabledSelectedIcon(null);
-        }
-
-        if (b.getPressedIcon() instanceof UIResource) {
-            b.setPressedIcon(null);
-        }
-
-        if (b.getRolloverIcon() instanceof UIResource) {
-            b.setRolloverIcon(null);
-        }
-
-        if (b.getRolloverSelectedIcon() instanceof UIResource) {
-            b.setRolloverSelectedIcon(null);
-        }
-
-        b.putClientProperty(SPECIAL_ICON_PROPERTY, null);
-    }
-
-    // Create Listeners
-    protected AquaButtonListener createButtonListener(AbstractButton b) {
+    @Override
+    protected @NotNull AquaButtonListener createButtonListener(AbstractButton b) {
         return new AquaButtonListener(b);
     }
 
-    // Paint Methods
     @Override
     public void update(Graphics g, JComponent c) {
         AppearanceManager.registerCurrentAppearance(c);
         super.update(g, c);
     }
 
+    @Override
     public final void paint(Graphics g, JComponent c) {
         paint((Graphics2D) g, (AbstractButton) c);
     }
 
     protected void paint(@NotNull Graphics2D g, @NotNull AbstractButton b) {
         Rectangle viewRect = new Rectangle(b.getWidth(), b.getHeight());
-        AquaButtonBorder aquaBorder = null;
-        if (b.isBorderPainted()) {
-            Border border = b.getBorder();
-            if (border instanceof AquaButtonBorder) {
-                aquaBorder = (AquaButtonBorder) border;
-            }
-        }
-        Icon icon = getIcon(b);
-        if (aquaBorder != null) {
-            aquaBorder.paintButton(g, b, icon, viewRect);
+        AquaButtonBorder border = b.isBorderPainted() ? getAquaButtonBorder(b) : null;
+        Icon icon = AquaButtonSupport.getIcon(b);
+        if (border != null) {
+            border.paintButton(g, b, icon, viewRect);
         } else {
             paintButtonDefault(g, b, icon, viewRect);
         }
@@ -487,7 +439,7 @@ public class AquaButtonUI extends BasicButtonUI
                                       @Nullable Icon icon,
                                       @NotNull Rectangle viewRect) {
         ButtonModel model = b.getModel();
-        boolean isColorWell = isColorWell(b);
+        boolean isColorWell = AquaButtonSupport.isColorWell(b);
         if (isColorWell) {
             // we are overdrawing here with translucent colors so we get
             // a darkening effect. How can we avoid it. Try clear rect?
@@ -515,109 +467,7 @@ public class AquaButtonUI extends BasicButtonUI
             }
         }
         Color textColor = getDefaultForegroundColor(b);
-        paintIconAndText(g, b, b.getInsets(), icon, textColor, viewRect, null);
-    }
-
-    public static void paintIconAndText(@NotNull Graphics2D g,
-                                        @NotNull AbstractButton b,
-                                        @NotNull Insets insets,
-                                        @Nullable Icon icon,
-                                        @NotNull Color textColor,
-                                        @NotNull Rectangle viewRect,
-                                        @Nullable Dimension iconSize) {
-        Rectangle iconRect = new Rectangle();
-        Rectangle textRect = new Rectangle();
-        String text = AquaButtonUI.layoutAndGetText(g, b, insets, viewRect, iconRect, textRect, iconSize);
-        if (icon != null) {
-            paintIcon(g, b, icon, iconRect);
-        }
-        paintText(g, b, textRect, textColor, text);
-    }
-
-    public static @NotNull String layoutAndGetText(@Nullable Graphics2D g,
-                                                   @NotNull AbstractButton b,
-                                                   @NotNull Insets i,
-                                                   @NotNull Rectangle viewRect,
-                                                   @NotNull Rectangle iconRect,
-                                                   @NotNull Rectangle textRect,
-                                                   @Nullable Dimension iconSize) {
-        // re-initialize the view rect to the selected insets
-        viewRect.x = i.left;
-        viewRect.y = i.top;
-        viewRect.width = b.getWidth() - (i.right + viewRect.x);
-        viewRect.height = b.getHeight() - (i.bottom + viewRect.y);
-
-        // reset the text and icon rects
-        textRect.x = textRect.y = textRect.width = textRect.height = 0;
-        iconRect.x = iconRect.y = iconRect.width = iconRect.height = 0;
-
-        // setup the font metrics
-        // If no graphics context is provided, the request is to determine the icon location under the
-        // assumption that the text does not matter.
-        FontMetrics fm = null;
-        if (g != null) {
-            g.setFont(b.getFont());
-            fm = g.getFontMetrics();
-        }
-
-        // layout the text and icon
-        String originalText = b.getText();
-        if (iconSize == null) {
-            Icon icon = b.getIcon();
-            if (icon != null) {
-                iconSize = new Dimension(icon.getIconWidth(), icon.getIconHeight());
-            }
-        }
-        String text = AquaUtils.layoutCompoundLabel(b, fm, originalText, iconSize, b.getVerticalAlignment(),
-                b.getHorizontalAlignment(), b.getVerticalTextPosition(), b.getHorizontalTextPosition(),
-                viewRect, iconRect, textRect, originalText == null ? 0 : b.getIconTextGap());
-        return text;
-    }
-
-    /**
-     * Paint the icon.
-     */
-    public static void paintIcon(Graphics2D g, @NotNull AbstractButton b, @NotNull Icon icon, Rectangle iconRect) {
-        Graphics2D gg = null;
-        if (icon.getIconWidth() != iconRect.width || icon.getIconHeight() != iconRect.height) {
-            gg = (Graphics2D) g.create();
-            g = gg;
-            gg.translate(iconRect.x, iconRect.y);
-            gg.scale(iconRect.getWidth() / icon.getIconWidth(), iconRect.getHeight() / icon.getIconHeight());
-            gg.translate(-iconRect.x, -iconRect.y);
-        }
-        icon.paintIcon(b, g, iconRect.x, iconRect.y);
-        if (gg != null) {
-            gg.dispose();
-        }
-    }
-
-    /**
-     * Paint the text.
-     */
-    public static void paintText(@NotNull Graphics2D g,
-                                 @NotNull AbstractButton b,
-                                 @NotNull Rectangle textRect,
-                                 @NotNull Color textColor,
-                                 @NotNull String text) {
-
-        if (!text.isEmpty()) {
-            if (textRect.width == 0) {
-                textRect.width = 50;
-            }
-            Object o = b.getClientProperty(BasicHTML.propertyKey);
-            if (o instanceof View) {
-                View v = (View) o;
-                v.paint(g, textRect);
-            } else {
-                FontMetrics fm = g.getFontMetrics();
-                int mnemonicIndex = AquaMnemonicHandler.isMnemonicHidden() ? -1 : b.getDisplayedMnemonicIndex();
-                g.setColor(textColor);
-                int x = textRect.x;
-                int y = textRect.y + fm.getAscent();
-                JavaSupport.drawStringUnderlineCharAt(b, g, text, mnemonicIndex, x, y);
-            }
-        }
+        AquaButtonSupport.paintIconAndText(g, b, null, null, b.getInsets(), icon, textColor, viewRect, null, false);
     }
 
     @Override
@@ -628,30 +478,6 @@ public class AquaButtonUI extends BasicButtonUI
     @Override
     protected final void paintText(Graphics g, JComponent c, Rectangle localTextRect, String text) {
         throw new UnsupportedOperationException("This method should not be used");
-    }
-
-    /**
-     * Obtain the icon to use based on the button state.
-     */
-    protected @Nullable Icon getIcon(AbstractButton b) {
-        ButtonIconState bs = getIconState(b);
-        Icon definedIcon = getDefinedIcon(b, bs);
-        if (definedIcon != null && bs != ButtonIconState.DEFAULT) {
-            return definedIcon;
-        }
-        // The special icon creates state specific renderings based on the button default icon.
-        Icon icon = getSpecialIcon(b);
-        if (icon != null) {
-            return icon;
-        }
-        if (definedIcon != null) {
-            return definedIcon;
-        }
-        Icon ic = b.getIcon();
-        if (ic != null) {
-            return AquaButtonSupport.createIcon(b);
-        }
-        return null;
     }
 
     /**
@@ -667,147 +493,14 @@ public class AquaButtonUI extends BasicButtonUI
         DEFAULT
     }
 
-    public static boolean isColorWell(@NotNull AbstractButton b) {
-        AquaUIPainter.ButtonWidget widget = getButtonWidget(b);
-        return widget == AquaUIPainter.ButtonWidget.BUTTON_COLOR_WELL;
-    }
-
-    private static @Nullable AquaUIPainter.ButtonWidget getButtonWidget(AbstractButton b) {
-        Object o = b.getClientProperty(LAYOUT_CONFIGURATION_PROPERTY);
-        if (o instanceof ButtonLayoutConfiguration) {
-            ButtonLayoutConfiguration bg = (ButtonLayoutConfiguration) o;
-            return bg.getButtonWidget();
-        }
-        return null;
-    }
-
-    /**
-     * Return a value that can be used to select an appropriate icon based on the current state of the specified button.
-     * @param b The button.
-     * @return the button icon state.
-     */
-    public static @NotNull ButtonIconState getIconState(AbstractButton b) {
-        ButtonModel model = b.getModel();
-        if (!model.isEnabled()) {
-            if (model.isSelected()) {
-                return ButtonIconState.DISABLED_SELECTED;
-            } else {
-                return ButtonIconState.DISABLED;
-            }
-        } else if (model.isPressed() && model.isArmed()) {
-            return ButtonIconState.PRESSED;
-        } else if (b.isRolloverEnabled() && model.isRollover()) {
-            if (model.isSelected()) {
-                return ButtonIconState.ROLLOVER_SELECTED;
-            } else {
-                return ButtonIconState.ROLLOVER;
-            }
-        } else if (model.isSelected()) {
-            return ButtonIconState.SELECTED;
-        } else {
-            return ButtonIconState.DEFAULT;
-        }
-    }
-
-    /**
-     * Obtain the explicitly defined icon for a button based on the specified button state.
-     * If the button uses this class for its UI, then this method will not install any default icons on the button.
-     * @param b The button.
-     * @return the icon defined on that button for the specified button state (may return null).
-     */
-    public static @Nullable Icon getDefinedIcon(AbstractButton b, ButtonIconState bs) {
-        switch (bs) {
-            case DISABLED:              return AquaButtonSupport.getDisabledIcon(b);
-            case DISABLED_SELECTED:     return AquaButtonSupport.getDisabledSelectedIcon(b);
-            case PRESSED:               return getIconForPressedState(b);
-            case ROLLOVER_SELECTED:     return getIconForRolloverSelectedState(b);
-            case ROLLOVER:              return b.getRolloverIcon();
-            case SELECTED:              return b.getSelectedIcon();
-            default:                    return b.getIcon();
-        }
-    }
-
-    private static @Nullable Icon getIconForPressedState(@NotNull AbstractButton b) {
-        Icon icon = b.getPressedIcon();
-        return icon != null ? icon : b.getSelectedIcon();
-    }
-
-    private static @Nullable Icon getIconForRolloverSelectedState(@NotNull AbstractButton b) {
-        Icon icon = b.getRolloverSelectedIcon();
-        return icon != null ? icon : b.getSelectedIcon();
-    }
-
-    /**
-     * Obtain a special icon to use for a button. The special icon rendering may be context dependent.
-     * This method should not be called unless the button has an icon.
-     * @param b The button.
-     * @return the special icon for the button, or null if no special icon is defined for the button.
-     */
-    protected @Nullable AquaButtonIcon getSpecialIcon(@NotNull AbstractButton b) {
-        Object o = b.getClientProperty(SPECIAL_ICON_PROPERTY);
-        if (o instanceof AquaButtonIcon) {
-            return (AquaButtonIcon) o;
-        }
-        Border border = b.getBorder();
-        if (border instanceof AquaButtonBorder) {
-            AquaButtonBorder bb = (AquaButtonBorder) border;
-            boolean isTemplate = AquaButtonSupport.determineTemplateIconStatus(b);
-            AquaButtonIcon icon = bb.createIcon(b, isTemplate);
-            b.putClientProperty(SPECIAL_ICON_PROPERTY, icon);
-            return icon;
-        }
-        return null;
-    }
-
-    /**
-     * This method is called by AbstractButton via the LAF to obtain an icon to use when a button is disabled.
-     * @param b The button.
-     * @param source The button icon.
-     * @return the icon to use.
-     */
-    public @NotNull Icon createDisabledIcon(AbstractButton b, ImageIcon source) {
-        AquaButtonIcon specialIcon = getSpecialIcon(b);
-        if (specialIcon != null) {
-            return specialIcon;
-        }
-        return createDefaultDisabledIcon(source);
-    }
-
-    /**
-     * This method is called by AbstractButton via the LAF to obtain an icon to use when a button is disabled and
-     * selected.
-     * @param b The button.
-     * @param source The button selected icon.
-     * @return the icon to use.
-     */
-    public @NotNull Icon createDisabledSelectedIcon(AbstractButton b, ImageIcon source) {
-        AquaButtonIcon specialIcon = getSpecialIcon(b);
-        if (specialIcon != null) {
-            return specialIcon;
-        }
-        return createDefaultDisabledIcon(source);
-    }
-
-    protected @NotNull ImageIcon createDefaultDisabledIcon(ImageIcon source) {
-        return new ImageIconUIResource(AquaImageFactory.getProcessedImage(source.getImage(), AquaImageFactory.LIGHTEN_FOR_DISABLED));
-    }
-
+    @Override
     protected void paintButtonPressed(Graphics g, AbstractButton b) {
         paint(g, b);
     }
 
-    // Layout Methods
+    @Override
     public Dimension getMinimumSize(JComponent c) {
-        AbstractButton b = (AbstractButton) c;
-        Border border = b.getBorder();
-        Dimension d;
-        if (border instanceof AquaButtonBorder) {
-            AquaButtonBorder bb = (AquaButtonBorder) border;
-            d = bb.getPreferredButtonSize(b);
-        } else {
-            d = getPreferredSize(b);
-        }
-
+        Dimension d = getPreferredSize(c);
         View v = (View)c.getClientProperty(BasicHTML.propertyKey);
         if (v != null) {
             d.width -= v.getPreferredSpan(View.X_AXIS) - v.getMinimumSpan(View.X_AXIS);
@@ -815,17 +508,20 @@ public class AquaButtonUI extends BasicButtonUI
         return d;
     }
 
+    @Override
     public Dimension getPreferredSize(JComponent c) {
         AbstractButton b = (AbstractButton) c;
-        Border border = b.getBorder();
-        if (border instanceof AquaButtonBorder) {
-            AquaButtonBorder bb = (AquaButtonBorder) border;
-            return bb.getPreferredButtonSize(b);
+        AquaButtonBorder border = getAquaButtonBorder(c);
+        if (border != null) {
+            return border.getPreferredButtonSize(b);
         } else {
-            return AquaButtonSupport.getPreferredButtonSize(b, b.getIconTextGap(), null);
+            Icon ic = b.getIcon();
+            Dimension iconSize = ic != null ? new Dimension(ic.getIconWidth(), ic.getIconHeight()) : null;
+            return AquaButtonSupport.getBasicPreferredButtonSize(b, iconSize, null, null);
         }
     }
 
+    @Override
     public Dimension getMaximumSize(JComponent c) {
         Dimension d = getPreferredSize(c);
         View v = (View)c.getClientProperty(BasicHTML.propertyKey);
@@ -833,23 +529,6 @@ public class AquaButtonUI extends BasicButtonUI
             d.width += v.getMaximumSpan(View.X_AXIS) - v.getPreferredSpan(View.X_AXIS);
         }
         return d;
-    }
-
-    private void toggleButtonStateChanged(@NotNull AbstractButton b) {
-        JToggleButton leftButton = SegmentedControlModel.getLeftAdjacentButton(b);
-        if (leftButton != null) {
-            leftButton.repaint();
-        }
-    }
-
-    public boolean isToolbar(@NotNull AbstractButton b) {
-        return Boolean.TRUE.equals(b.getClientProperty(CACHED_TOOLBAR_STATUS_PROPERTY));
-    }
-
-    private boolean isToolbarSensitive(@NotNull AbstractButton b) {
-        // Checkboxes and radio buttons are not toolbar sensitive
-        return b instanceof JButton
-                || b instanceof JToggleButton && !(b instanceof JCheckBox) && !(b instanceof JRadioButton);
     }
 
     class AquaButtonListener extends BasicButtonListener implements ActionListener, ItemListener {
@@ -863,23 +542,25 @@ public class AquaButtonUI extends BasicButtonUI
         @Override
         public void actionPerformed(ActionEvent e) {
             // If the button is a color well and no other action listeners are defined, bring up a color chooser.
-            if (isColorWell(b)) {
+            if (AquaButtonSupport.isColorWell(b)) {
                 ActionListener[] listeners = b.getActionListeners();
                 if (listeners.length == 1) {
-                    toggleColorChooser(b);
+                    AquaButtonSupport.toggleColorChooser(b);
                 }
             }
         }
 
         @Override
         public void itemStateChanged(ItemEvent e) {
-            toggleButtonStateChanged(b);
+            AquaButtonSupport.toggleButtonStateChanged(b);
         }
 
+        @Override
         public void focusGained(FocusEvent e) {
             ((Component)e.getSource()).repaint();
         }
 
+        @Override
         public void focusLost(FocusEvent e) {
             // 10-06-03 VL: [Radar 3187049]
             // If focusLost arrives while the button has been left-clicked this would disarm the button,
@@ -889,6 +570,7 @@ public class AquaButtonUI extends BasicButtonUI
             ((Component)e.getSource()).repaint();
         }
 
+        @Override
         public void propertyChange(PropertyChangeEvent e) {
             super.propertyChange(e);
 
@@ -900,7 +582,7 @@ public class AquaButtonUI extends BasicButtonUI
             }
 
             if (propertyName != null && !propertyName.contains(".") && propertyName.endsWith("Icon")) {
-                updateTemplateIconStatus(b);
+                AquaButtonSupport.updateTemplateIconStatus(b);
                 return;
             }
 
@@ -915,27 +597,25 @@ public class AquaButtonUI extends BasicButtonUI
             }
 
             if (AbstractButton.VERTICAL_ALIGNMENT_CHANGED_PROPERTY.equals(propertyName)
-                    || AbstractButton.VERTICAL_TEXT_POSITION_CHANGED_PROPERTY.equals(propertyName)
-                    || "font".equals(propertyName)) {
+              || AbstractButton.VERTICAL_TEXT_POSITION_CHANGED_PROPERTY.equals(propertyName)
+              || "font".equals(propertyName)) {
                 // A change to the preferred content height can change the selected button widget
                 configure(b);
                 return;
             }
 
             if ("componentOrientation".equals(propertyName)) {
-                Border border = b.getBorder();
-                if (border instanceof AquaSegmentedButtonBorder) {
-                    configure(b);
-                }
+                configure(b);
             }
 
             if ("ancestor".equals(propertyName)) {
                 if (!b.isDisplayable()) {
-                    disconnectColorChooser(b);
+                    AquaButtonSupport.disconnectColorChooser(b);
                 }
             }
         }
 
+        @Override
         public void mousePressed(MouseEvent e) {
             if (SwingUtilities.isLeftMouseButton(e) ) {
                 AbstractButton b = (AbstractButton) e.getSource();
@@ -954,47 +634,4 @@ public class AquaButtonUI extends BasicButtonUI
 
     protected void didHandleButtonPress(AbstractButton b, Object data) {
     }
-
-    protected void disconnectColorChooser(AbstractButton b)
-    {
-        Object o = b.getClientProperty(COLOR_CHOOSER_OWNER_PROPERTY);
-        if (o instanceof SharedColorChooserOwner) {
-            SharedColorChooserOwner owner = (SharedColorChooserOwner) o;
-            AquaSharedColorChooser.disconnect(owner);
-            b.putClientProperty(COLOR_CHOOSER_OWNER_PROPERTY, null);
-        }
-    }
-
-    protected void toggleColorChooser(AbstractButton b) {
-
-        Object o = b.getClientProperty(COLOR_CHOOSER_OWNER_PROPERTY);
-        if (o instanceof SharedColorChooserOwner) {
-            SharedColorChooserOwner owner = (SharedColorChooserOwner) o;
-            AquaSharedColorChooser.disconnect(owner);
-            b.setSelected(false);
-            b.putClientProperty(COLOR_CHOOSER_OWNER_PROPERTY, null);
-            return;
-        }
-
-        SharedColorChooserOwner owner = new SharedColorChooserOwner() {
-            @Override
-            public void applyColor(Color c) {
-                b.setBackground(c);
-            }
-
-            @Override
-            public void disconnected() {
-                b.setSelected(false);
-                b.putClientProperty(COLOR_CHOOSER_OWNER_PROPERTY, null);
-            }
-        };
-
-        Color c = b.getBackground();
-        boolean enableTranslucentColors = Boolean.TRUE.equals(b.getClientProperty(ENABLE_TRANSLUCENT_COLORS_KEY));
-        if (AquaSharedColorChooser.connect(owner, c, enableTranslucentColors)) {
-            b.putClientProperty(COLOR_CHOOSER_OWNER_PROPERTY, owner);
-            b.setSelected(true);
-        }
-    }
-
 }

@@ -1,5 +1,5 @@
 /*
- * Changes Copyright (c) 2015-2023 Alan Snyder.
+ * Changes Copyright (c) 2015-2025 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -46,6 +46,7 @@ import java.util.Calendar;
 import java.util.Map;
 import javax.swing.*;
 import javax.swing.JSpinner.DefaultEditor;
+import javax.swing.border.Border;
 import javax.swing.plaf.ActionMapUIResource;
 import javax.swing.plaf.ComponentUI;
 import javax.swing.plaf.SpinnerUI;
@@ -53,8 +54,7 @@ import javax.swing.plaf.UIResource;
 import javax.swing.plaf.basic.BasicButtonUI;
 import javax.swing.text.InternationalFormatter;
 
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.*;
 import org.violetlib.aqua.AquaUtils.RecyclableSingleton;
 import org.violetlib.aqua.AquaUtils.RecyclableSingletonFromDefaultConstructor;
 import org.violetlib.jnr.LayoutInfo;
@@ -69,8 +69,8 @@ import org.violetlib.jnr.aqua.SpinnerArrowsLayoutConfiguration;
  * This is originally derived from BasicSpinnerUI, but they made everything private
  * so we can't subclass!
  */
-public class AquaSpinnerUI extends SpinnerUI implements AquaComponentUI,
-        SystemPropertyChangeManager.SystemPropertyChangeListener {
+public class AquaSpinnerUI extends SpinnerUI implements AquaComponentUI, AquaUtilControlSize.Sizeable,
+  SystemPropertyChangeManager.SystemPropertyChangeListener {
 
     private static final RecyclableSingleton<? extends PropertyChangeListener> propertyChangeListener = new RecyclableSingletonFromDefaultConstructor<PropertyChangeHandler>(PropertyChangeHandler.class);
     static PropertyChangeListener getPropertyChangeListener() {
@@ -99,7 +99,6 @@ public class AquaSpinnerUI extends SpinnerUI implements AquaComponentUI,
     protected JSpinner spinner;
     protected SpinPainter spinPainter;
     protected final AquaUIPainter painter = AquaPainting.create();
-    protected final static int SEPARATION = 3;
 
     public static ComponentUI createUI(JComponent c) {
         return new AquaSpinnerUI();
@@ -149,9 +148,11 @@ public class AquaSpinnerUI extends SpinnerUI implements AquaComponentUI,
 
     protected void installListeners() {
         spinner.addPropertyChangeListener(getPropertyChangeListener());
+        AquaUtilControlSize.addSizePropertyListener(spinner);
     }
 
     protected void uninstallListeners() {
+        AquaUtilControlSize.removeSizePropertyListener(spinner);
         spinner.removePropertyChangeListener(getPropertyChangeListener());
     }
 
@@ -168,6 +169,11 @@ public class AquaSpinnerUI extends SpinnerUI implements AquaComponentUI,
         if (type.equals(OSXSystemProperties.USER_PREFERENCE_CHANGE_TYPE)) {
             configureFocusable(c);
         }
+    }
+
+    @Override
+    public void applySizeFor(@NotNull JComponent c, AquaUIPainter.Size size, boolean isDefaultSize) {
+        AquaUtilControlSize.configureFontFromSize(spinner, size);
     }
 
     private void configureFocusable(JComponent c) {
@@ -227,7 +233,7 @@ public class AquaSpinnerUI extends SpinnerUI implements AquaComponentUI,
      * {@inheritDoc}
      */
     public Component.BaselineResizeBehavior getBaselineResizeBehavior(
-            JComponent c) {
+      JComponent c) {
         super.getBaselineResizeBehavior(c);
         return spinner.getEditor().getBaselineResizeBehavior();
     }
@@ -616,6 +622,12 @@ public class AquaSpinnerUI extends SpinnerUI implements AquaComponentUI,
         }
     }
 
+    private static int getSeparation()
+    {
+        int version = AquaPainting.getVersion();
+        return version >= 1600 ? 7 : 3;
+    }
+
     /**
      * A simple layout manager for the editor and the next/previous buttons.
      * See the AquaSpinnerUI javadoc for more information about exactly
@@ -665,10 +677,12 @@ public class AquaSpinnerUI extends SpinnerUI implements AquaComponentUI,
              */
             editorD.height = ((editorD.height + 1) / 2) * 2;
 
+            int separation = getSeparation();
+
             Dimension size = new Dimension(editorD.width, Math.max(painterD.height, editorD.height));
             size.width += painterD.width; //Math.max(nextD.width, previousD.width);
             Insets insets = parent.getInsets();
-            size.width += insets.left + insets.right + SEPARATION;
+            size.width += insets.left + insets.right + separation;
             size.height += insets.top + insets.bottom;
             return size;
         }
@@ -688,23 +702,25 @@ public class AquaSpinnerUI extends SpinnerUI implements AquaComponentUI,
             int availWidth = parent.getWidth() - (insets.left + insets.right);
             int availHeight = parent.getHeight() - (insets.top + insets.bottom);
 
+            int separation = getSeparation();
+
             Dimension painterD = preferredSize(painter);
 //            Dimension nextD = preferredSize(nextButton);
 //            Dimension previousD = preferredSize(previousButton);
             int nextHeight = availHeight / 2;
             int previousHeight = availHeight - nextHeight;
             int buttonsWidth = painterD.width; //Math.max(nextD.width, previousD.width);
-            int editorWidth = availWidth - buttonsWidth - SEPARATION;
+            int editorWidth = availWidth - buttonsWidth - separation;
 
             /* Deal with the spinners componentOrientation property.
              */
             int editorX, buttonsX;
             if (parent.getComponentOrientation().isLeftToRight()) {
                 editorX = insets.left;
-                buttonsX = editorX + editorWidth + SEPARATION;
+                buttonsX = editorX + editorWidth + separation;
             } else {
                 buttonsX = insets.left;
-                editorX = buttonsX + buttonsWidth + SEPARATION;
+                editorX = buttonsX + buttonsWidth + separation;
             }
 
             int previousY = insets.top + nextHeight;
@@ -744,20 +760,11 @@ public class AquaSpinnerUI extends SpinnerUI implements AquaComponentUI,
                     JComponent editor = spinner.getEditor();
                     if (editor != null && editor instanceof JSpinner.DefaultEditor) {
                         JTextField tf =
-                                ((JSpinner.DefaultEditor) editor).getTextField();
+                          ((JSpinner.DefaultEditor) editor).getTextField();
                         if (tf != null) {
                             if (tf.getFont() instanceof UIResource) {
                                 tf.setFont(spinner.getFont());
                             }
-                        }
-                    }
-                } else if (AquaUtilControlSize.CLIENT_PROPERTY_KEY.equals(propertyName)) {
-                    JComponent editor = spinner.getEditor();
-                    if (editor != null && editor instanceof JSpinner.DefaultEditor) {
-                        JTextField tf =
-                                ((JSpinner.DefaultEditor) editor).getTextField();
-                        if (tf != null) {
-                            tf.putClientProperty(propertyName, e.getNewValue());
                         }
                     }
                 }

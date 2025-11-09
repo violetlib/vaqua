@@ -1,5 +1,5 @@
 /*
- * Changes Copyright (c) 2015-2023 Alan Snyder.
+ * Changes Copyright (c) 2015-2025 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -51,7 +51,7 @@ class AquaComboBoxPopup extends BasicComboPopup implements AquaExtendedPopup, Li
     public enum PopupDisplayType {
         EDITABLE_NO_SCROLL,     // an editable combo box pop up menu with no scroll pane
         EDITABLE_SCROLL,        // an editable combo box pop up menu with a scroll pane
-        CONTEXTUAL              // a non editable combo box pop up menu (similar to a contextual menu)
+        CONTEXTUAL              // a non-editable combo box pop up menu (similar to a contextual menu)
     }
 
     protected PopupDisplayType currentDisplayType;
@@ -376,7 +376,7 @@ class AquaComboBoxPopup extends BasicComboPopup implements AquaExtendedPopup, Li
         int yOffset = getNominalPopupYOffset();
         int y = p.y + yOffset;
 
-        // For a pop up menu, the goal is for the menu item label to exactly overlay the combo box button label, at
+        // For a pop-up menu, the goal is for the menu item label to exactly overlay the combo box button label, at
         // least in the case where our default renderer is used.
 
         int labelYOffset = 0;

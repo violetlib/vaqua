@@ -1,5 +1,5 @@
 /*
- * Changes Copyright (c) 2015-2023 Alan Snyder.
+ * Changes Copyright (c) 2015-2025 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -46,14 +46,13 @@ import javax.swing.plaf.MenuBarUI;
 import javax.swing.plaf.UIResource;
 import javax.swing.plaf.basic.BasicRootPaneUI;
 
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.*;
 
 import static org.violetlib.aqua.AquaVibrantSupport.NO_VIBRANT_STYLE;
 import static org.violetlib.aqua.AquaVibrantSupport.WINDOW_BACKGROUND_STYLE;
 
 public class AquaRootPaneUI extends BasicRootPaneUI implements AquaComponentUI,
-        SystemPropertyChangeManager.SystemPropertyChangeListener {
+  SystemPropertyChangeManager.SystemPropertyChangeListener {
 
     public final static String AQUA_WINDOW_STYLE_KEY = "Aqua.windowStyle";
     public final static String AQUA_WINDOW_TOP_MARGIN_KEY = "Aqua.windowTopMargin";
@@ -190,7 +189,7 @@ public class AquaRootPaneUI extends BasicRootPaneUI implements AquaComponentUI,
     }
 
     private class MyContainerListener
-            implements ContainerListener
+      implements ContainerListener
     {
 
         /**
@@ -280,7 +279,7 @@ public class AquaRootPaneUI extends BasicRootPaneUI implements AquaComponentUI,
     }
 
     protected class MyAncestorListener
-            implements AncestorListener
+      implements AncestorListener
     {
         /**
          This is sort of like viewDidMoveToWindow:.  When the root pane is put into a window
@@ -319,7 +318,7 @@ public class AquaRootPaneUI extends BasicRootPaneUI implements AquaComponentUI,
     }
 
     private class MyWindowListener
-            extends WindowAdapter
+      extends WindowAdapter
     {
 
         public void windowActivated(WindowEvent e)
@@ -368,7 +367,7 @@ public class AquaRootPaneUI extends BasicRootPaneUI implements AquaComponentUI,
     }
 
     protected class WindowHierarchyListener
-            implements HierarchyListener
+      implements HierarchyListener
     {
         @Override
         public void hierarchyChanged(HierarchyEvent e)
@@ -521,6 +520,10 @@ public class AquaRootPaneUI extends BasicRootPaneUI implements AquaComponentUI,
             Color fc = w.getForeground();
             if (!(fc instanceof UIResource)) {
                 w.setForeground(new ColorUIResource(fc));
+            }
+
+            if (customStyledWindow != null && isUndecoratedOptionPane()) {
+                customStyledWindow.setupWindowDragging();
             }
         }
     }
@@ -768,8 +771,22 @@ public class AquaRootPaneUI extends BasicRootPaneUI implements AquaComponentUI,
                 return AquaCustomStyledWindow.STYLE_UNDECORATED;
             }
         }
+        if (isUndecoratedOptionPane()) {
+            return AquaCustomStyledWindow.STYLE_HIDDEN;
+        }
 
         return -1;
+    }
+
+    protected boolean isUndecoratedOptionPane() {
+        if (AquaPainting.getVersion() >= 1600) {
+            Container contentPane = rootPane.getContentPane();
+            if (contentPane.getComponentCount() == 1) {
+                Component c = contentPane.getComponent(0);
+                return c instanceof JOptionPane;
+            }
+        }
+        return false;
     }
 
     protected int getTopMarginHeight() {

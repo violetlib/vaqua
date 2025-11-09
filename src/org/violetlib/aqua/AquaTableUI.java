@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014-2024 Alan Snyder.
+ * Copyright (c) 2014-2025 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -95,8 +95,10 @@ public class AquaTableUI extends BasicTableUI
     private boolean isInset = false;
     private boolean isDropActive;
 
-    private int insetMargin = 15;
-    private int insetVerticalMargin = 5;
+    private static final int insetSideMargin = 15;
+    private static final int insetVerticalMargin = 5;
+    private static final Insets insetViewInsets = new Insets(0, insetSideMargin, 0, insetSideMargin);  // sides only
+
     protected @NotNull ContainerContextualColors colors;
     protected @Nullable AppearanceContext appearanceContext;
     private DropTargetListener dropTargetListener;
@@ -441,13 +443,31 @@ public class AquaTableUI extends BasicTableUI
         colors.configureForContainer();
         actualTableBackground = colors.getBackground(appearanceContext);
         AquaColors.installColors(table, appearanceContext, colors);
-        // JTable forces opaque to be true, so LookAndFeel.installProperty cannot be used
-        table.setOpaque(!isStriped);
+        updateOpaque();
         table.repaint();
+    }
+
+    private void updateOpaque() {
+        // In some versions of the JDK, JTable forces opaque to be true, so LookAndFeel.installProperty cannot be used
+        Color background = table.getBackground();
+        if (background == null) {
+            table.setBackground(background = AquaColors.CLEAR);
+        }
+        table.setOpaque(background.getAlpha() == 255);
     }
 
     protected AquaUIPainter.State getState() {
         return table.isEnabled() ? (shouldDisplayAsFocused() ? ACTIVE_DEFAULT : ACTIVE) : DISABLED;
+    }
+
+    public boolean shouldSuppressBackground()
+    {
+        return isStriped();
+    }
+
+    public boolean shouldSuppressSelectionBackground()
+    {
+        return isInset() && table.getRowSelectionAllowed() && !table.getColumnSelectionAllowed();
     }
 
     protected boolean shouldDisplayAsFocused() {
@@ -471,11 +491,16 @@ public class AquaTableUI extends BasicTableUI
     public void scrollPaneAncestorChanged(@Nullable JScrollPane sp) {
     }
 
+    @Override
+    public void scrollPaneRoundedBorderStatusChanged(boolean isRoundedBorder) {
+
+    }
+
     private void updateInset() {
         boolean value = getInsetValue();
         if (value != isInset) {
             isInset = value;
-            int margin = isInset ? insetMargin : 0;
+            int margin = isInset ? insetSideMargin : 0;
             int verticalMargin = isInset ? insetVerticalMargin : 0;
             table.putClientProperty(INSET_VIEW_MARGIN_KEY, margin);
             table.putClientProperty(INSET_VIEW_VERTICAL_MARGIN_KEY, verticalMargin);
@@ -504,8 +529,24 @@ public class AquaTableUI extends BasicTableUI
     }
 
     @Override
+    public boolean isSideBar() {
+        return false;
+    }
+
+    @Override
+    public void configureSidebarStyle()
+    {
+    }
+
+    @Override
     public boolean isInset() {
         return isInset;
+    }
+
+    @Override
+    public @NotNull Insets getInsetViewInsets() {
+        // not actually used, as JTable cannot be a sidebar
+        return insetViewInsets;
     }
 
     private boolean isBackgroundClear() {
@@ -556,7 +597,7 @@ public class AquaTableUI extends BasicTableUI
     }
 
     private @NotNull Dimension expand(@NotNull Dimension d) {
-        long expandedWidth = (long) d.width + 2 * insetMargin;
+        long expandedWidth = (long) d.width + 2 * insetSideMargin;
         if (expandedWidth > Integer.MAX_VALUE) {
             expandedWidth = Integer.MAX_VALUE;
         }
@@ -582,24 +623,20 @@ public class AquaTableUI extends BasicTableUI
     public void update(Graphics g, JComponent c) {
         AppearanceManager.registerCurrentAppearance(c);
         Color background = getBackgroundColor();
-        if (background != null) {
+        if (background.getAlpha() > 0) {
             g.setColor(background);
             g.fillRect(0, 0, c.getWidth(), c.getHeight());
         }
-
         paint(g, c);
     }
 
-    private @Nullable Color getBackgroundColor() {
-        if (table.isOpaque()) {
-            if (isStriped && actualTableBackground != null) {
-                // The dark mode stripes presume a dark background.
-                return actualTableBackground;
-            } else {
-                return table.getBackground();
-            }
+    private @NotNull Color getBackgroundColor() {
+        if (table.isOpaque() && isStriped && actualTableBackground != null) {
+            // The dark mode stripes presume a dark background.
+            return actualTableBackground;
         }
-        return null;
+        Color c = table.getBackground();
+        return c != null ? c : AquaColors.CLEAR;
     }
 
     public void repaintScrollPaneCorner() {

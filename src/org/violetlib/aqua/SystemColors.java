@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2020 Alan Snyder.
+ * Copyright (c) 2018-2025 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -8,8 +8,7 @@
 
 package org.violetlib.aqua;
 
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.*;
 
 /**
  * A set of color definitions that can be combined to form a complete set of colors for an appearance.
@@ -99,6 +98,17 @@ public class SystemColors {
         colors.addAll("texturedSegmentedToolbarText", "texturedSegmentedText");
         colors.addAll("gradientSegmentedText", "gradientText");
         colors.addAll("pushPopText", "pushButtonText");
+        colors.addAll("toolbarText", "texturedText");
+
+        colors.add("toolbarBackground", "clear");
+        colors.add("toolbarBackground_rollover", "controlBackground_rollover");
+        colors.add("toolbarBackground_pressed", "controlBackground_deepPressed");
+        colors.add("texturedSegmentedToolbarBackground", "clear");
+        colors.add("texturedSegmentedToolbarBackground_rollover", "controlBackground_rollover");
+        colors.add("texturedSegmentedToolbarBackground_pressed", "controlBackground_deepPressed");
+        colors.add("nonexclusiveTexturedToolbarBackground", "clear");
+        colors.add("nonexclusiveTexturedToolbarBackground_rollover", "controlBackground_rollover");
+        colors.add("nonexclusiveTexturedToolbarBackground_pressed", "controlBackground_deepPressed");
 
         // rounded rect push and toggle buttons do not change when inactive
         colors.addAll("roundedRectText", "gradientText", BasicColorsBuilder.NO_INACTIVE);
@@ -113,6 +123,7 @@ public class SystemColors {
         // they do not have pressed behavior
         colors.addAll("segmentedText", "pushButtonText", BasicColorsBuilder.NO_INACTIVE);
         colors.add("segmentedText_pressed", "segmentedText");
+        colors.add("selectedSegmentedText", "selectedControlText");
         colors.add("selectedSegmentedText_pressed", "selectedSegmentedText");
 
         // textured segmented buttons do not have pressed behavior (unlike push and toggle buttons)
@@ -129,6 +140,8 @@ public class SystemColors {
         colors.defineNoInactive("gradientText");
 
         colors.add("selectedGradientText_disabled", "gradientText_disabled");
+
+        colors.addAll("sidebarBackground", "controlBackground");
 
         return colors.get();
     }
@@ -247,19 +260,21 @@ public class SystemColors {
             colors.addAll("segmentedText", "controlText");
             colors.add("segmentedText_inactive", 0, 240);
             colors.add("segmentedText_disabled_inactive", 0, 78);
+
             colors.add("selectedSegmentedText_disabled", 0, 78);
             colors.add("selectedSegmentedText_disabled_inactive", 0, 78);
             colors.add("selectedSegmentedText_inactive", 34);
             colors.add("selectedSegmentedSeparatedText", 255);
             colors.add("selectedSegmentedSeparatedText_disabled", 255, 140);
             colors.add("selectedSegmentedSeparatedText_inactive", 34);
+
             // changes to selected colors
             colors.add("selectedGradientSegmentedText", 255);
             colors.add("selectedGradientSegmentedText_disabled", 255, 128);
+
             colors.add("selectedNonexclusiveText", 255);
             colors.add("selectedNonexclusiveText_disabled", 255, 140);
         } else {
-            colors.add("selectedSegmentedText", 255);
             colors.add("selectedSegmentedText_disabled", 172);
             colors.add("selectedSegmentedText_inactive", 34);
             if (OSVersion == 1014 || OSVersion == 1015) {
@@ -269,7 +284,7 @@ public class SystemColors {
         }
 
         // colors related to textured segmented buttons
-        if (OSVersion < 1011) {
+        if (OSVersion< 1011) {
             colors.add("selectedNonexclusiveTexturedText", 0, 122, 255);
             colors.add("selectedNonexclusiveTexturedText_disabled", 0, 122, 255, 120);
         } else if (OSVersion < 1014) {
@@ -331,6 +346,7 @@ public class SystemColors {
         colors.add("toolbarItemText_inactive", 172);
         colors.add("toolbarItemText_inactive_disabled", 172);
         colors.add("toolbarItemText_focused", 250);
+        colors.add("toolbarItemText_pressed", "controlText_pressed");
         colors.add("selectedToolbarItemText", 81);
         colors.add("selectedToolbarItemText_disabled", 172);
         colors.add("selectedToolbarItemText_inactive", 153);
@@ -354,11 +370,22 @@ public class SystemColors {
             //colors.add("selectedInlineButtonText_disabled", 0, 80);
         }
 
+        // colors related to glass buttons (simulated)
+        colors.add("glassButtonText", 0);
+        colors.add("glassButtonText_inactive", 204);
+        colors.add("glassButtonText_disabled", 186);
+        colors.add("glassButtonText_inactive_disabled", 193);
+
         // colors related to sidebars
         colors.add("categoryText", 30, 220);
         colors.add("expandControl", 30, 220);
         colors.add("sidebarBorder", 220);
         colors.add("sidebarIcon", 30, 220);
+
+        if (OSVersion >= 1600) {
+            colors.add("sidebarBackground", 237);
+            colors.add("sidebarBackground_inactive", 243);
+        }
 
         // colors related to (non-sidebar) trees
         colors.add("treeIcon", 140);
@@ -416,6 +443,64 @@ public class SystemColors {
 
     private @NotNull BasicColors createHighContrastLightColors(int OSVersion) {
         BasicColorsBuilder colors = new BasicColorsBuilder("High Contrast Light", instrumentation, log);
+
+        if (OSVersion >= 1600) {
+            colors.add("sidebarBackground_inactive", 243);
+        }
+
+        colors.add("toolbarBackground_rollover", "clear");
+        colors.add("toolbarBackground_pressed", "controlBackground_pressed");
+        colors.add("texturedSegmentedToolbarBackground_rollover", "clear");
+        colors.add("texturedSegmentedToolbarBackground_pressed", "controlBackground_pressed");
+        colors.add("nonexclusiveTexturedToolbarBackground_rollover", "clear");
+        colors.add("nonexclusiveTexturedToolbarBackground_pressed", "controlBackground_pressed");
+
+        colors.add("texturedText", 240);
+        colors.add("texturedText_disabled", 200);
+        colors.add("recessedText", 255);
+        colors.add("recessedText_disabled", 255, 128);
+        colors.add("recessedText_inactive", 255, 100);
+        colors.add("recessedText_pressed", 255);
+        colors.add("recessedText_rollover", 255);
+        colors.add("recessedText_inactive_disabled", 255, 80);
+        colors.add("selectedRecessedText", 255, 206);
+        colors.add("selectedRecessedText_disabled", 255, 128);
+        colors.add("selectedRecessedText_pressed", 255);
+        colors.add("selectedRecessedText_rollover", 255, 200);
+        colors.add("selectedRecessedText_inactive", 255, 100);
+        colors.add("selectedRecessedText_inactive_disabled", 255, 80);
+        colors.add("selectedGlassButtonText", 255);
+        colors.add("selectedGlassButtonText_inactive", 0);
+        colors.add("glassButtonText_inactive", 0, 128);  // a guess
+
+        if (OSVersion >= 1600) {
+            colors.add("selectedRoundedRectText", 255);
+            colors.add("selectedRoundedRectText_inactive", 0);
+            colors.add("selectedBevelText", 255);
+            colors.add("selectedBevelText_inactive", 0);
+            colors.add("selectedPushButtonText_inactive", 0);
+            colors.add("recessedText", 0, 200);
+            colors.add("recessedText_inactive", 0, 150);
+            colors.add("recessedText_disabled", 0, 100);  // native is darker, seems wrong
+            colors.add("recessedText_inactive_disabled", 0, 100);
+            colors.add("texturedText", 0, 200);
+
+            colors.add("selectedSegmentedText", 255);
+            colors.add("selectedSegmentedText_rollover", 255);
+            colors.add("selectedSegmentedText_disabled", 255, 100);
+            colors.add("selectedSegmentedText_inactive", 255, 150);
+            colors.add("selectedSegmentedText_inactive_disabled", 255, 100);
+            colors.add("selectedTexturedSegmentedText", 255);
+            colors.add("selectedTexturedSegmentedText_rollover", 255);
+            colors.add("selectedTexturedSegmentedText_disabled", 255, 100);
+            colors.add("selectedTexturedSegmentedText_inactive", 255, 150);
+            colors.add("selectedTexturedSegmentedText_inactive_disabled", 255, 100);
+            colors.add("selectedTexturedSegmentedToolbarText", 255);
+            colors.add("selectedTexturedSegmentedToolbarText_rollover", 255);
+            colors.add("selectedTexturedSegmentedToolbarText_disabled", 255, 100);
+            colors.add("selectedTexturedSegmentedToolbarText_inactive", 255, 150);
+            colors.add("selectedTexturedSegmentedToolbarText_inactive_disabled", 255, 100);
+        }
 
         if (OSVersion < 1014) {
             colors.add("windowBackground", 246);
@@ -533,7 +618,7 @@ public class SystemColors {
         colors.add("texturedText_focused", 0, 192);
         colors.add("texturedText_disabled", "disabledControlText");
         colors.add("texturedText_inactive", "disabledControlText");
-        colors.add("texturedText_inactive_disabled", 0, 96);
+        colors.add("texturedText_inactive_disabled", 255, 32);
 
         if (OSVersion < 1016) {
             colors.add("selectedTexturedText", 0, 192);
@@ -677,23 +762,25 @@ public class SystemColors {
             colors.add("segmentedText", "controlText");
             colors.add("segmentedText_focused", "controlText");
         } else {
-            colors.add("tabText", "controlText");
-            colors.add("tabText_focused", "controlText");
-            colors.add("tabText_inactive", "controlText");
+            //colors.add("tabText", "controlText");
+            //colors.add("tabText_focused", "controlText");
+            //colors.add("tabText_inactive", "controlText");
             colors.add("segmentedText", 255, 192);
             colors.add("segmentedText_disabled", 255, 48);
             colors.add("segmentedText_inactive", "segmentedText");
             colors.add("segmentedText_inactive_disabled", "segmentedText_disabled");
         }
 
-        colors.addAll("selectedSegmentedText", "controlText");
         //colors.add("selectedSegmentedText_disabled", 0, 64);
 
         if (OSVersion == 1014 || OSVersion == 1015) {
             colors.add("selectedTabText_disabled", 0, 96);
             colors.add("selectedTabText_inactive_disabled", 0, 96);
             colors.add("selectedSegmentedText_inactive", 0, 192);
-        } else if (OSVersion >= 1016) {
+        } else if (OSVersion >= 1600) {
+            colors.add("selectedSegmentedText", 0);
+            colors.add("selectedSegmentedText_inactive", 0);
+
 //            colors.add("selectedSegmentedText", 0, 192);
 //            colors.add("selectedSegmentedText_disabled", 0, 64);
 //            colors.add("selectedSegmentedText_inactive", "selectedSegmentedText");
@@ -743,7 +830,9 @@ public class SystemColors {
 
         // colors related to toolbar items (dark mode)
         colors.add("toolbarItemText", "controlText");
+        colors.add("toolbarItemText_pressed", "controlText_pressed");
         colors.add("toolbarItemText_inactive", "disabledControlText");
+        colors.add("toolbarItemText_disabled", "disabledControlText");
         colors.add("toolbarItemText_focused", "alternateSelectedControlText");
         colors.add("selectedToolbarItemText", "alternateSelectedControlText");
         colors.add("selectedToolbarItemText_disabled", "alternateSelectedControlText_disabled");
@@ -770,11 +859,28 @@ public class SystemColors {
             colors.add("selectedTabText_inactive", 0, 192);
         }
 
+        // colors related to glass buttons (simulated dark mode)
+        if (OSVersion >= 1600) {
+            colors.add("glassButtonText", 255);
+            colors.add("glassButtonText_inactive", 109);
+            colors.add("glassButtonText_disabled", 108);
+            colors.add("glassButtonText_inactive_disabled", 74);
+        } else {
+            colors.add("glassButtonText", 255);
+            colors.add("glassButtonText_inactive", 200);
+            colors.add("glassButtonText_disabled", 108);
+            colors.add("glassButtonText_inactive_disabled", 90);
+        }
+
         // colors related to sidebars (dark mode)
         colors.add("categoryText", 255, 160);
         colors.add("expandControl", 255, 160);
         colors.add("sidebarBorder", 0);
         colors.add("sidebarIcon", 255, 160);
+
+        if (OSVersion >= 1600) {
+            colors.add("sidebarBackground_inactive", 45);
+        }
 
         // colors related to (non-sidebar) trees (dark mode)
         colors.add("treeIcon", 160);
@@ -811,6 +917,25 @@ public class SystemColors {
 
         colors.add("windowBackground", 50);
         colors.add("texturedWindowBackground", 53);
+
+        if (OSVersion >= 1600) {
+            colors.add("sidebarBackground_inactive", 30);
+            colors.add("selectedSegmentedText", 255);
+            colors.add("selectedSegmentedText_inactive", 255);
+            colors.add("selectedTexturedSegmentedText", 0);
+            colors.add("selectedTexturedSegmentedText_rollover", 0);
+            colors.add("selectedTexturedSegmentedText_disabled", 0, 100);
+            colors.add("selectedTexturedSegmentedText_inactive", 0, 150);
+            colors.add("selectedTexturedSegmentedText_inactive_disabled", 0, 100);
+            colors.add("selectedTexturedSegmentedToolbarText", 0);
+            colors.add("selectedTexturedSegmentedToolbarText_rollover", 0);
+            colors.add("selectedTexturedSegmentedToolbarText_disabled", 0, 100);
+            colors.add("selectedTexturedSegmentedToolbarText_inactive", 0, 150);
+            colors.add("selectedTexturedSegmentedToolbarText_inactive_disabled", 0, 100);
+        }
+
+        colors.add("toolbarBackground_rollover", "clear");
+        colors.add("toolbarBackground_pressed", "controlBackground_pressed");
 
         // file tag colors (dark mode)
         colors.add("tagBlue", 103, 176, 255);
@@ -851,6 +976,13 @@ public class SystemColors {
             colors.add("topTexturedWindowDivider_disabled", c, a);
             colors.add("bottomTexturedWindowDivider_disabled", c, a);
         }
+
+        // This definition should not be needed, but it is.
+        colors.add("selectedControlText", 0);
+        colors.add("selectedControlText_disabled", 0, 128);
+        colors.add("selectedBevelText_disabled", 0, 128);
+        colors.add("selectedPushButtonText_disabled", 0, 128);
+        colors.add("selectedPushButtonText_inactive", 0, 128);
 
         return colors.get();
     }

@@ -40,7 +40,7 @@ import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import javax.swing.*;
 
-import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.*;
 
 /**
  * This class is used by the text components, AquaEditorPaneUI, AquaTextAreaUI, AquaTextFieldUI and AquaTextPaneUI to
@@ -161,7 +161,7 @@ public class AquaFocusHandler implements FocusListener, PropertyChangeListener {
         }
     }
 
-    public static boolean isActive(JComponent c) {
+    public static boolean isActive(@Nullable JComponent c) {
         if (c == null) return true;
         Object activeObj = c.getClientProperty(AquaFocusHandler.FRAME_ACTIVE_PROPERTY);
         if (Boolean.FALSE.equals(activeObj)) return false;

@@ -1,5 +1,5 @@
 /*
- * Changes copyright (c) 2015-2024 Alan Snyder.
+ * Changes copyright (c) 2015-2025 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -142,7 +142,7 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
                 if (component instanceof AbstractButton) {
                     AquaButtonUI ui = AquaUtils.getUI(component, AquaButtonUI.class);
                     if (ui != null) {
-                        return ui.createDisabledIcon((AbstractButton) component, (ImageIcon) icon);
+                        return AquaButtonSupport.createDisabledIcon((AbstractButton) component, (ImageIcon) icon);
                     }
                 }
             }
@@ -160,7 +160,7 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
                 if (component instanceof AbstractButton) {
                     AquaButtonUI ui = AquaUtils.getUI(component, AquaButtonUI.class);
                     if (ui != null) {
-                        return ui.createDisabledSelectedIcon((AbstractButton) component, (ImageIcon) icon);
+                        return AquaButtonSupport.createDisabledSelectedIcon((AbstractButton) component, (ImageIcon) icon);
                     }
                 }
             }
@@ -349,6 +349,7 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
         Border listHeaderBorder = AquaTableHeaderBorder.getListHeaderBorder();
         Border zeroBorder = new BorderUIResource.EmptyBorderUIResource(0, 0, 0, 0);
         Border scrollPaneBorder = new AquaLineBorder("scrollPaneBorder");
+        Border listBorder = new AquaListBorder();
         Border treeBorder = new AquaTreeBorder();
 
         int sidebarRowHeight = OSXSystemProperties.useInsetViewStyle() ? 28 : 24;
@@ -380,7 +381,7 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
         LazyValue recessedFont = t -> AquaFonts.getRecessedButtonFont();
         LazyValue inlineFont = t -> AquaFonts.getInlineButtonFont();
 
-        Border menuItemBorder = new AquaMenuItemBorder();
+        Border menuItemBorder = new BorderUIResource.EmptyBorderUIResource(0, 0, 0, 0);
         Border popupMenuBorder = new BorderUIResource.EmptyBorderUIResource(0, 0, 0, 0);
 
         UIDefaults.LazyInputMap controlFocusInputMap = new UIDefaults.LazyInputMap(new Object[]{
@@ -429,15 +430,15 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
                 "CheckBoxMenuItem.border", menuItemBorder, // for inset calculation
                 "CheckBoxMenuItem.margin", menuItemMargin,
                 "CheckBoxMenuItem.borderPainted", true,
-                "CheckBoxMenuItem.checkIcon",(LazyValue) t -> AquaImageFactory.getMenuItemCheckIcon(),
-                "CheckBoxMenuItem.dashIcon",(LazyValue) t -> AquaImageFactory.getMenuItemDashIcon(),
+                //"CheckBoxMenuItem.checkIcon",(LazyValue) t -> AquaImageFactory.getMenuItemCheckIcon(),
+                //"CheckBoxMenuItem.dashIcon",(LazyValue) t -> AquaImageFactory.getMenuItemDashIcon(),
 
                 "ColorChooser.background", panelBackgroundColor,
 
                 // *** ComboBox
                 "ComboBox.font", controlFont,
                 "ComboBox.ancestorInputMap", aquaKeyBindings.getComboBoxInputMap(),
-                "ComboBox.padding", new InsetsUIResource(1, 4, 1, 4),   // affects only non-editable combo boxes
+                "ComboBox.padding", new InsetsUIResource(0, 4, 0, 4),   // affects only non-editable combo boxes
                 "ComboBox.maximumRowCount", 5,
 
                 "DesktopIcon.border", internalFrameBorder,
@@ -534,7 +535,7 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
                 "List.focusCellHighlightBorder", cellBorder,
                 "List.focusSelectedCellHighlightBorder", cellBorder,
                 "List.cellNoFocusBorder", cellBorder,
-                "List.border", null,
+                "List.border", listBorder,
                 "List.cellRenderer", listCellRendererActiveValue,
                 "List.focusInputMap", aquaKeyBindings.getListInputMap(),
 
@@ -544,7 +545,7 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
                 "Menu.border", menuItemBorder,
                 "Menu.borderPainted", false,
                 "Menu.margin", menuItemMargin,
-                "Menu.arrowIcon",(LazyValue) t -> AquaImageFactory.getMenuArrowIcon(),
+                //"Menu.arrowIcon",(LazyValue) t -> AquaImageFactory.getMenuArrowIcon(),
                 "Menu.consumesTabs", true,
                 "Menu.menuPopupOffsetY", 1,
                 "Menu.submenuPopupOffsetY", -4,
@@ -560,6 +561,8 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
                 "MenuItem.border", menuItemBorder,
                 "MenuItem.margin", menuItemMargin,
                 "MenuItem.borderPainted", true,
+                //"MenuItem.checkIcon",(LazyValue) t -> AquaImageFactory.getMenuItemCheckIcon(), // needed for layout
+                //"MenuItem.dashIcon",(LazyValue) t -> AquaImageFactory.getMenuItemDashIcon(), // needed for layout
 
                 // *** OptionPane
                 // You can additionally define OptionPane.messageFont which will
@@ -618,8 +621,8 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
                 "RadioButtonMenuItem.border", menuItemBorder, // for inset calculation
                 "RadioButtonMenuItem.margin", menuItemMargin,
                 "RadioButtonMenuItem.borderPainted", true,
-                "RadioButtonMenuItem.checkIcon",(LazyValue) t -> AquaImageFactory.getMenuItemCheckIcon(),
-                "RadioButtonMenuItem.dashIcon",(LazyValue) t -> AquaImageFactory.getMenuItemDashIcon(),
+                //"RadioButtonMenuItem.checkIcon",(LazyValue) t -> AquaImageFactory.getMenuItemCheckIcon(),
+                //"RadioButtonMenuItem.dashIcon",(LazyValue) t -> AquaImageFactory.getMenuItemDashIcon(),
 
                 "Separator.width", 1,
 
@@ -740,6 +743,7 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
 
                 // *** Tree
                 "Tree.border", treeBorder,
+                "Tree.cellBorder", cellBorder,
                 "Tree.font", viewFont, // [3577901] Aqua HIG says "default font of text in lists and tables" should be 12 point (vm).
                 "Tree.editorBorder", (LazyValue) t -> new AquaTreeEditorBorder(),
                 "Tree.leftChildIndent", 8,
@@ -893,6 +897,16 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
     public static String getVersion() {
         return "VAqua look and feel release " + getReleaseName() + ", build " + getBuildID()
                 + " using VAquaRendering release " + AquaNativeRendering.getReleaseName() + ", build " + AquaNativeRendering.getBuildID();
+    }
+
+    /**
+     * Identify the UI version. The UI version normally matches the OS release, except where macOS is supporting
+     * backward compatibility.
+     * @return an integer version with the decimal form MMmm, where MM is the major release number and mm is the minor
+     * release number. For example, 2600 represents the first release of macOS 26 (Tahoe).
+     */
+    public static int getUIVersion() {
+        return AquaPainting.getVersion();
     }
 
     public static void showVersion() {

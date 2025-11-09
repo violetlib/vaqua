@@ -1,5 +1,5 @@
 /*
- * Changes copyright (c) 2015-2023 Alan Snyder.
+ * Changes copyright (c) 2015-2025 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -46,8 +46,7 @@ import javax.swing.plaf.ColorUIResource;
 import javax.swing.plaf.ComponentUI;
 import javax.swing.plaf.basic.BasicSliderUI;
 
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.*;
 import org.violetlib.geom.ExpandableOutline;
 import org.violetlib.jnr.LayoutInfo;
 import org.violetlib.jnr.Painter;
@@ -61,10 +60,11 @@ import org.violetlib.jnr.aqua.SliderConfiguration;
 import org.violetlib.jnr.aqua.SliderLayoutConfiguration;
 
 public class AquaSliderUI extends BasicSliderUI
-        implements AquaUtilControlSize.Sizeable, FocusRingOutlineProvider, AquaComponentUI,
-        SystemPropertyChangeManager.SystemPropertyChangeListener {
+  implements AquaUtilControlSize.Sizeable, FocusRingOutlineProvider, AquaComponentUI,
+  SystemPropertyChangeManager.SystemPropertyChangeListener {
 
     public final static String AQUA_SLIDER_STYLE_KEY = "Aqua.sliderStyle";
+    public final static String AQUA_SLIDER_NEUTRAL_VALUE_KEY = "Slider.neutralValue";
 
     public static ComponentUI createUI(JComponent c) {
         return new AquaSliderUI((JSlider)c);
@@ -251,8 +251,8 @@ public class AquaSliderUI extends BasicSliderUI
         boolean isInverted = drawInverted();
 
         return isHorizontal ?
-                isInverted ? SliderWidget.SLIDER_HORIZONTAL_RIGHT_TO_LEFT : SliderWidget.SLIDER_HORIZONTAL
-                : isInverted ? SliderWidget.SLIDER_UPSIDE_DOWN : SliderWidget.SLIDER_VERTICAL;
+          isInverted ? SliderWidget.SLIDER_HORIZONTAL_RIGHT_TO_LEFT : SliderWidget.SLIDER_HORIZONTAL
+          : isInverted ? SliderWidget.SLIDER_UPSIDE_DOWN : SliderWidget.SLIDER_VERTICAL;
     }
 
     @Override
@@ -326,7 +326,49 @@ public class AquaSliderUI extends BasicSliderUI
         SliderWidget widget = getSliderWidget();
         TickMarkPosition tickPosition = getTickMarkPosition();
         boolean isFocused = slider.hasFocus();
+
+//        // Possible workaround for a hopefully temporary macOS 26 beta problem that caused disabled sliders to paint
+//        // the thumb in the minimum position.
+//
+//        if (AquaPainting.getSystemRenderingVersion() == 2600 && widget != SliderWidget.SLIDER_CIRCULAR && thumbPosition > 0) {
+//            if (state == State.DISABLED || state == State.DISABLED_INACTIVE) {
+//                String message = "Replacing slider state with inactive state";
+//                String name = slider.getName();
+//                if (name != null) {
+//                    message = message + ": " + name;
+//                } else {
+//                    message = message + ": " + thumbPosition;
+//                }
+//                Utils.logDebug(message);
+//                state = State.INACTIVE;
+//            }
+//        }
+
+        Double neutralValue = getNeutralValue();
+        if (neutralValue != null) {
+            double relativeValue = (neutralValue - slider.getMinimum()) / valueRange;
+            try {
+                return new SliderConfiguration(widget, sizeVariant, state, isFocused, thumbPosition, tickCount, tickPosition, relativeValue);
+            } catch (NoSuchMethodError ignore) {
+            }
+        }
+
         return new SliderConfiguration(widget, sizeVariant, state, isFocused, thumbPosition, tickCount, tickPosition);
+    }
+
+    protected @Nullable Double getNeutralValue()
+    {
+        Object o = slider.getClientProperty(AQUA_SLIDER_NEUTRAL_VALUE_KEY);
+        if (o instanceof Double) {
+            return (Double) o;
+        }
+        if (o instanceof Float) {
+            return Double.valueOf((Float) o);
+        }
+        if (o instanceof Integer) {
+            return Double.valueOf((Integer) o);
+        }
+        return null;
     }
 
     protected TickMarkPosition getTickMarkPosition() {
@@ -546,6 +588,8 @@ public class AquaSliderUI extends BasicSliderUI
             String prop = evt.getPropertyName();
             if (AQUA_SLIDER_STYLE_KEY.equals(prop)) {
                 updateStyle();
+            } else if (AQUA_SLIDER_NEUTRAL_VALUE_KEY.equals(prop)) {
+                slider.repaint();
             }
         }
     }

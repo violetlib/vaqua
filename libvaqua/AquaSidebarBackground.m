@@ -10,6 +10,8 @@
 #import "org_violetlib_aqua_AquaVibrantSupport.h"
 #import <Availability.h>
 
+BOOL DEBUG = NO;
+
 // This background is used for sidebars and optionally for menus
 
 @implementation AquaSidebarBackground {
@@ -44,6 +46,7 @@
         forceActive = shouldForceActive;
         self.wantsLayer = YES;
         self.autoresizesSubviews = YES;
+        self.clipsToBounds = YES;
         selectionViews = [[NSMutableArray alloc] init];
         self.blendingMode = NSVisualEffectBlendingModeBehindWindow;
         if (shouldForceActive) {
@@ -61,17 +64,18 @@
     int currentCount = (int) selectionViews.count;
     float width = self.bounds.size.width;
 
-//    NSLog(@"Updating selection views %@ %f %f %@ %f %f",
-//        [self description],
-//        self.frame.size.width,
-//        self.frame.size.height,
-//        [backgroundView description],
-//        backgroundView.frame.size.width,
-//        backgroundView.frame.size.height);
-
     BOOL useInset = NO;
     if (@available(macOS 10.16, *)) {
         useInset = YES;
+    }
+
+    if (DEBUG) {
+        NSLog(@"Updating selection views %@ %f %f %ld %ld",
+            [self description],
+            self.frame.size.width,
+            self.frame.size.height,
+            count,
+            useInset);
     }
 
     for (index = 0; index < count; index++) {
@@ -88,9 +92,24 @@
         }
         NSVisualEffectView *v = index < currentCount ? [selectionViews objectAtIndex:index] : nil;
         if (v) {
+            if (DEBUG) {
+                NSLog(@"Reusing visual effect view %@", [v description]);
+            }
             v.frame = frame;
             v.emphasized = (self.style != SIDEBAR_STYLE) || useEmphasized;
+            if (useInset) {
+                v.layer.cornerRadius = 4;
+                v.layer.masksToBounds = YES;
+            }
+            if (forceActive) {
+                v.state = NSVisualEffectStateActive;
+            }
+            [v.layer setNeedsDisplay];
+            v.needsDisplay = YES;
         } else {
+            if (DEBUG) {
+                NSLog(@"Creating visual effect view");
+            }
             v = [[NSVisualEffectView alloc] initWithFrame: frame];
             v.wantsLayer = YES;
             v.autoresizingMask = NSViewWidthSizable;
@@ -104,6 +123,8 @@
             if (forceActive) {
                 v.state = NSVisualEffectStateActive;
             }
+            [v.layer setNeedsDisplay];
+            v.needsDisplay = YES;
             [selectionViews addObject: v];
             [self addSubview: v];
         }

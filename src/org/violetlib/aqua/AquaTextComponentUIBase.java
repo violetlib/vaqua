@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2021 Alan Snyder.
+ * Copyright (c) 2018-2025 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -47,7 +47,9 @@ import org.violetlib.jnr.aqua.AquaUIPainter;
 /**
  * Common code for text components.
  */
-public class AquaTextComponentUIBase extends AquaTextComponentDelegatedUIBase implements FocusRingOutlineProvider, AquaComponentUI {
+public abstract class AquaTextComponentUIBase
+  extends AquaTextComponentDelegatedUIBase
+  implements FocusRingOutlineProvider, AquaComponentUI {
 
     private AquaFocusHandler handler;
     private boolean oldDragState;
@@ -92,7 +94,6 @@ public class AquaTextComponentUIBase extends AquaTextComponentDelegatedUIBase im
             editor.setDragEnabled(true);
         }
         super.installDefaults();
-        LookAndFeel.installProperty(editor, "opaque", false);
         configureAppearanceContext(null);
     }
 
@@ -197,18 +198,7 @@ public class AquaTextComponentUIBase extends AquaTextComponentDelegatedUIBase im
         return editor.getBackground();
     }
 
-    protected void paintBackgroundSafely(@NotNull Graphics g, @Nullable Color background) {
-        Border b = editor.getBorder();
-        if (b instanceof AquaBackgroundBorder) {
-            AquaBackgroundBorder tb = (AquaBackgroundBorder) b;
-            tb.paintBackground(editor, g, background);
-        } else if (background != null && editor.isOpaque() && background.getAlpha() > 0) {
-            int width = editor.getWidth();
-            int height = editor.getHeight();
-            g.setColor(background);
-            g.fillRect(0, 0, width, height);
-        }
-    }
+    protected abstract void paintBackgroundSafely(@NotNull Graphics g, @Nullable Color background);
 
     protected void paintBackground(@NotNull Graphics g) {
         // we have already ensured that the background is painted to our liking

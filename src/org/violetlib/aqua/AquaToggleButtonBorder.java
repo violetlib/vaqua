@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014-2020 Alan Snyder.
+ * Copyright (c) 2014-2025 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -10,8 +10,7 @@ package org.violetlib.aqua;
 
 import javax.swing.*;
 
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.*;
 import org.violetlib.jnr.aqua.*;
 import org.violetlib.jnr.aqua.AquaUIPainter.ButtonWidget;
 import org.violetlib.jnr.aqua.AquaUIPainter.GenericButtonWidget;
@@ -27,21 +26,26 @@ import org.violetlib.jnr.aqua.AquaUIPainter.SegmentedButtonWidget;
 public class AquaToggleButtonBorder extends AquaButtonBorder implements FocusRingOutlineProvider {
 
     @Override
-    public final @NotNull GenericButtonWidget getButtonWidget(@NotNull AbstractButton b) {
+    public final @NotNull ButtonStyleInfo getButtonStyleInfo(@NotNull AbstractButton b) {
         boolean isOnToolbar = AquaUtils.isOnToolbar(b);
+        if (isOnToolbar) {
+            return AquaButtonSupport.getToolbarItemStyleInfo(b, painter);
+        }
 
-        GenericButtonWidget preferredWidget = isOnToolbar
-                ? ButtonWidget.BUTTON_TEXTURED_TOOLBAR
-                : SegmentedButtonWidget.BUTTON_SEGMENTED;
-        if (isProposedButtonWidgetUsable(b, preferredWidget)) {
-            return preferredWidget;
+        int version = AquaPainting.getVersion();
+        boolean isOld = version < 1500;
+
+        GenericButtonWidget preferredWidget = isOld ? SegmentedButtonWidget.BUTTON_SEGMENTED : ButtonWidget.BUTTON_PUSH;
+        if (AquaButtonSupport.isButtonWidgetUsable(b, preferredWidget, painter)) {
+            return AquaButtonSupport.getButtonStyleInfo(b, preferredWidget);
         }
 
         if (b.getIcon() != null) {
-            return isOnToolbar ? ButtonWidget.BUTTON_TOOLBAR_ITEM : ButtonWidget.BUTTON_GRADIENT;
+            ButtonWidget w = isOld ? ButtonWidget.BUTTON_GRADIENT : ButtonWidget.BUTTON_BEVEL_ROUND;
+            return AquaButtonSupport.getButtonStyleInfo(b, w);
         }
 
-        return ButtonWidget.BUTTON_BEVEL_ROUND;
+        return AquaButtonSupport.getButtonStyleInfo(b, ButtonWidget.BUTTON_BEVEL_ROUND);
     }
 
     @Override
@@ -55,7 +59,7 @@ public class AquaToggleButtonBorder extends AquaButtonBorder implements FocusRin
             boolean isSelected = b.getModel().isSelected();
             AquaUIPainter.Direction d = AquaUIPainter.Direction.NONE;
             return new SegmentedButtonConfiguration((SegmentedButtonLayoutConfiguration) g, state, isSelected,
-                    isFocused, d, SegmentedButtonConfiguration.DividerState.NONE, SegmentedButtonConfiguration.DividerState.NONE);
+              isFocused, d, SegmentedButtonConfiguration.DividerState.NONE, SegmentedButtonConfiguration.DividerState.NONE);
         }
 
         return super.getConfiguration(b, width, height);

@@ -1,5 +1,5 @@
 /*
- * Changes copyright (c) 2016-2021 Alan Snyder.
+ * Changes copyright (c) 2016-2025 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -220,11 +220,12 @@ public class AquaToolBarUI extends BasicToolBarUI implements SwingConstants, Aqu
             JToolBar tb = (JToolBar) c;
 
             boolean isTallFormat = isTallFormatToolBar(tb);
+            int version = AquaPainting.getVersion();
 
             borderInsets.left = 4;
             borderInsets.right = 4;
             borderInsets.top = 4;
-            borderInsets.bottom = isTallFormat ? 0 : 4;
+            borderInsets.bottom = isTallFormat && version < 1500 ? 0 : 4;
 
             if (tb.isFloatable()) {
                 if (tb.getOrientation() == HORIZONTAL) {
@@ -254,7 +255,8 @@ public class AquaToolBarUI extends BasicToolBarUI implements SwingConstants, Aqu
 
     /**
      * Determine if the toolbar or toolbar panel contains a tall format button. A tall format button is a toggle button
-     * that uses the toolbar item button style. A tall format button should have no space below it in the toolbar.
+     * that uses the toolbar item button style. On some releases, a tall format button should have no space below it in
+     * the toolbar.
      */
     public static boolean isTallFormatToolBar(@NotNull JComponent tb) {
         int count = tb.getComponentCount();
@@ -272,7 +274,7 @@ public class AquaToolBarUI extends BasicToolBarUI implements SwingConstants, Aqu
 
     /**
      * Determine if the specified button is a tall format button. A tall format button is a toggle button that uses the
-     * toolbar item button style. A tall format button should have no space below it in the toolbar.
+     * toolbar item button style. On some releases, tall format button should have no space below it in the toolbar.
      */
     protected static boolean isTallFormatButton(AbstractButton b) {
         Border border = b.getBorder();

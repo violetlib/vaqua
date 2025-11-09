@@ -1,5 +1,5 @@
 /*
- * Changes Copyright (c) 2015-2023 Alan Snyder.
+ * Changes Copyright (c) 2015-2025 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -37,18 +37,20 @@ import java.awt.*;
 import java.awt.event.*;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
+import java.util.Objects;
 import javax.swing.*;
 import javax.swing.border.Border;
+import javax.swing.border.EmptyBorder;
 import javax.swing.plaf.ComponentUI;
 import javax.swing.plaf.UIResource;
 import javax.swing.plaf.basic.BasicScrollPaneUI;
 
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.*;
 import org.violetlib.jnr.aqua.AquaUIPainter;
 
 public class AquaScrollPaneUI extends BasicScrollPaneUI
-        implements AquaUtilControlSize.Sizeable, AquaComponentUI, SystemPropertyChangeManager.SystemPropertyChangeListener {
+  implements AquaUtilControlSize.Sizeable, AquaComponentUI, SystemPropertyChangeManager.SystemPropertyChangeListener,
+  FocusRingOutlineProvider {
 
     public static ComponentUI createUI(JComponent x) {
         return new AquaScrollPaneUI();
@@ -72,14 +74,9 @@ public class AquaScrollPaneUI extends BasicScrollPaneUI
     public static final int WHEEL_CHANGE_DIRECTION_MINIMUM = 3;
 
     /**
-     * true if native scroll panes relocate the vertical scroll bar in RTL orientation
+     * This flag is true if native scroll panes relocate the vertical scroll bar in RTL orientation.
      */
     public static final boolean isRTLSupported = OSXSystemProperties.doScrollPanesSupportRTL();
-
-    /**
-     * enable or disable a gross hack to allow ordinary JScrollPanes to correctly paint overlay scroll bars
-     */
-    private static final boolean useViewportHack = true;
 
     protected JScrollBar originalHorizontalScrollBar;
     protected JScrollBar originalVerticalScrollBar;
@@ -110,9 +107,9 @@ public class AquaScrollPaneUI extends BasicScrollPaneUI
     protected int contraryScrollCount;
 
     /**
-     * non-null when using the intermediate container hack to properly paint overlay scroll bars
+     * non-null when using the intermediate container
      */
-    protected OverlayScrollPaneHack overlayScrollPaneHack;
+    protected ScrollPaneInterposedContainer interposedContainer;
 
     /**
      * the layout manager used for legacy scroll bars
@@ -122,12 +119,24 @@ public class AquaScrollPaneUI extends BasicScrollPaneUI
     protected int defaultSmoothScrollingUnitIncrement = 16;
     protected @Nullable AppearanceContext appearanceContext;
 
+    private final int sidebarScrollBarExtraMargin = 11;
+
+    private boolean isSidebar;
+
+    /**
+     * Not null when the scroll pane is a sidebar container using rounded borders.
+     */
+    private @Nullable SidebarContainerSupport sidebarContainerSupport;
+
     protected PropertyChangeListener propertyChangeListener;
     protected ComponentListener componentListener;
 
     protected MouseWheelListener createMouseWheelListener() {
         return new XYMouseWheelHandler();
     }
+
+    private static final @NotNull Border legacySidebarBorder
+      = AquaPainting.getVersion() >= 2600 ? new EmptyBorder(0, 2, 0, 2) : new EmptyBorder(0, 3, 0, 3);
 
     @Override
     public void installUI(JComponent x) {
@@ -140,10 +149,12 @@ public class AquaScrollPaneUI extends BasicScrollPaneUI
         scrollpane.putClientProperty(SCROLL_PANE_AQUA_OVERLAY_SCROLL_BARS_KEY, isOverlayScrollBars);
         configureAppearanceContext(null);
         isSmoothScrolling = computeSmoothScrolling();
+        AquaVibrantSupport.installVibrantStyle(scrollpane);
     }
 
     @Override
     protected void uninstallDefaults(JScrollPane c) {
+        AquaVibrantSupport.uninstallVibrantStyle(scrollpane);
         if (c.getHorizontalScrollBar() instanceof AquaScrollBar && originalHorizontalScrollBar != null) {
             c.setHorizontalScrollBar(originalHorizontalScrollBar);
         }
@@ -168,13 +179,17 @@ public class AquaScrollPaneUI extends BasicScrollPaneUI
         if (b instanceof AquaTextComponentBorder) {
             scrollpane.setBorder(b);
         }
+
         originalHorizontalScrollBar = scrollpane.getHorizontalScrollBar();
         originalVerticalScrollBar = scrollpane.getVerticalScrollBar();
+
         if (originalVerticalScrollBar instanceof UIResource) {
-            scrollpane.setHorizontalScrollBar(new AquaScrollBar(JScrollBar.HORIZONTAL, defaultSmoothScrollingUnitIncrement));
+            scrollpane.setHorizontalScrollBar(
+              new AquaScrollBar(JScrollBar.HORIZONTAL, defaultSmoothScrollingUnitIncrement));
         }
         if (originalVerticalScrollBar instanceof UIResource) {
-            scrollpane.setVerticalScrollBar(new AquaScrollBar(JScrollBar.VERTICAL, defaultSmoothScrollingUnitIncrement));
+            scrollpane.setVerticalScrollBar(
+              new AquaScrollBar(JScrollBar.VERTICAL, defaultSmoothScrollingUnitIncrement));
         }
     }
 
@@ -196,9 +211,9 @@ public class AquaScrollPaneUI extends BasicScrollPaneUI
             overlayController.dispose();
             overlayController = null;
         }
-        if (overlayScrollPaneHack != null) {
-            overlayScrollPaneHack.dispose();
-            overlayScrollPaneHack = null;
+        if (interposedContainer != null) {
+            interposedContainer.dispose();
+            interposedContainer = null;
         }
         AppearanceManager.uninstallListeners(c);
         AquaUtilControlSize.removeSizePropertyListener(c);
@@ -215,8 +230,7 @@ public class AquaScrollPaneUI extends BasicScrollPaneUI
         this.size = size;
         if (c instanceof JScrollPane) {
             JScrollPane sp = (JScrollPane) c;
-            updateScrollBar(sp.getHorizontalScrollBar());
-            updateScrollBar(sp.getVerticalScrollBar());
+            updateScrollBars();
         }
     }
 
@@ -227,6 +241,7 @@ public class AquaScrollPaneUI extends BasicScrollPaneUI
 
     @Override
     public void activeStateChanged(@NotNull JComponent c, boolean isActive) {
+        configureAppearanceContext(null);
     }
 
     protected void configureAppearanceContext(@Nullable AquaAppearance appearance) {
@@ -240,17 +255,36 @@ public class AquaScrollPaneUI extends BasicScrollPaneUI
     }
 
     protected @NotNull AquaUIPainter.State getState() {
+        if (sidebarContainerSupport != null) {
+            if (!AquaFocusHandler.isActive(scrollpane)) {
+                return AquaUIPainter.State.INACTIVE;
+            }
+        }
         return AquaUIPainter.State.ACTIVE;
+    }
+
+    @Override
+    public @Nullable Shape getFocusRingOutline(@NotNull JComponent c) {
+        Border b = c.getBorder();
+        if (b instanceof FocusRingOutlineProvider) {
+            FocusRingOutlineProvider p = (FocusRingOutlineProvider) b;
+            return p.getFocusRingOutline(c);
+        }
+        return AquaDefaultFocusRingProvider.getDefaultFocusRing(c);
     }
 
     @Override
     public void update(Graphics g, JComponent c) {
         AppearanceManager.registerCurrentAppearance(c);
-        if (c.isOpaque()) {
+        if (sidebarContainerSupport == null && (c.isOpaque() || AquaVibrantSupport.isVibrant(c))) {
             Color background = AquaColors.getBackground(c, "controlBackground");
             AquaUtils.fillRect(g, c, background, AquaUtils.ERASE_IF_VIBRANT);
         }
         paint(g, c);
+    }
+
+    private @Nullable Insetter2D getInsetter() {
+        return sidebarContainerSupport != null ? sidebarContainerSupport.getInsetter() : null;
     }
 
     @Override
@@ -262,43 +296,56 @@ public class AquaScrollPaneUI extends BasicScrollPaneUI
             scrollpane.validate();
         }
 
-        // The following supports the translucent legacy scroll bar used for a sidebar tree
-        boolean isSideBar = isSideBar();
-        if (isSideBar && !isOverlayScrollBars) {
-            setSidebarStyle(scrollpane.getHorizontalScrollBar(), true);
-            setSidebarStyle(scrollpane.getVerticalScrollBar(), true);
-        } else {
-            setSidebarStyle(scrollpane.getHorizontalScrollBar(), false);
-            setSidebarStyle(scrollpane.getVerticalScrollBar(), false);
-        }
+        updateScrollbarStyles();
 
         Border b = c.getBorder();
         if (b instanceof AquaTextComponentBorder) {
             AquaTextComponentBorder tcb = (AquaTextComponentBorder) b;
             tcb.paintBackground(c, g, null);
+        } else if (sidebarContainerSupport != null) {
+            assert appearanceContext != null;
+            g = sidebarContainerSupport.setupContainerGraphics(g, appearanceContext);
         }
 
         super.paint(g, c);
 
         // If two legacy scroll bars are displayed, the corner must be painted to match.
-        if (!isOverlayScrollBars && !isSideBar) {
-            JScrollBar vb = scrollpane.getVerticalScrollBar();
-            JScrollBar hb = scrollpane.getHorizontalScrollBar();
-            if (vb != null && hb != null && vb.isVisible() && hb.isVisible()) {
-                int x1 = vb.getX();
-                int x2 = vb.getX() + vb.getWidth();
-                int y1 = hb.getY();
-                int y2 = hb.getY() + hb.getHeight();
+        if (isTrackPainted()) {
+            paintCorner(g);
+        }
+    }
 
-                assert appearanceContext != null;
-                AquaAppearance appearance = appearanceContext.getAppearance();
+    private boolean isTrackPainted() {
+        if (isOverlayScrollBars()) {
+            return false;
+        }
+        if (sidebarContainerSupport != null) {
+            return false;
+        }
+        if (!isSidebar()) {
+            return true;
+        }
+        return AquaPainting.getVersion() >= 1600;
+    }
 
-                Color trackColor = appearance.getColor("legacyScrollBarTrack");
-                Color outerBorderColor = appearance.getColor("legacyScrollBarOuterBorder");
+    private void paintCorner(@NotNull Graphics g) {
+        JScrollBar vb = scrollpane.getVerticalScrollBar();
+        JScrollBar hb = scrollpane.getHorizontalScrollBar();
+        if (vb != null && hb != null && vb.isVisible() && hb.isVisible()) {
+            int x1 = vb.getX();
+            int x2 = vb.getX() + vb.getWidth();
+            int y1 = hb.getY();
+            int y2 = hb.getY() + hb.getHeight();
 
-                int w = x2 - x1;
-                int h = y2 - y1;
+            assert appearanceContext != null;
+            AquaAppearance appearance = appearanceContext.getAppearance();
 
+            Color trackColor = appearance.getColor("legacyScrollBarTrack");
+            Color outerBorderColor = appearance.getColor("legacyScrollBarOuterBorder");
+
+            int w = x2 - x1;
+            int h = y2 - y1;
+            if (w > 0 && h > 0) {
                 g.setColor(trackColor);
                 g.fillRect(x1, y1, w - 1, h - 1);
 
@@ -316,35 +363,55 @@ public class AquaScrollPaneUI extends BasicScrollPaneUI
         }
     }
 
-    protected boolean isSideBar() {
-        JViewport v = scrollpane.getViewport();
-        if (v != null) {
-            Component view = SwingUtilities.getUnwrappedView(v);
-            if (view instanceof JTree) {
-                AquaTreeUI treeUI = AquaUtils.getUI((JTree) view, AquaTreeUI.class);
-                if (treeUI != null) {
-                    if (treeUI.isSideBar()) {
-                        return true;
-                    }
-                }
+    private void oldPaintCorner(@NotNull Graphics g) {
+        JScrollBar vb = scrollpane.getVerticalScrollBar();
+        JScrollBar hb = scrollpane.getHorizontalScrollBar();
+        if (vb != null && hb != null && vb.isVisible() && hb.isVisible()) {
+            int x1 = vb.getX();
+            int x2 = vb.getX() + vb.getWidth();
+            int y1 = hb.getY();
+            int y2 = hb.getY() + hb.getHeight();
+
+            assert appearanceContext != null;
+            AquaAppearance appearance = appearanceContext.getAppearance();
+
+            Color trackColor = appearance.getColor("legacyScrollBarTrack");
+            Color outerBorderColor = appearance.getColor("legacyScrollBarOuterBorder");
+
+            int w = x2 - x1;
+            int h = y2 - y1;
+
+            g.setColor(trackColor);
+            g.fillRect(x1, y1, w - 1, h - 1);
+
+            g.setColor(outerBorderColor);
+            g.fillRect(x1, y2 - 1, w, 1);
+
+            if (AquaUtils.isLeftToRight(scrollpane) || !isRTLSupported) {
+                g.fillRect(x2 - 1, y1, 1, h - 1);
+                g.fillRect(x1, y1, 1, 1);
+            } else {
+                g.fillRect(x1, y1, 1, h - 1);
+                g.fillRect(x2 - 1, y1, 1, 1);
             }
         }
-        return false;
     }
 
-    protected void setSidebarStyle(JScrollBar sb, boolean b) {
+    private void updateScrollbarStyles() {
+        updateScrollbarStyle(scrollpane.getHorizontalScrollBar());
+        updateScrollbarStyle(scrollpane.getVerticalScrollBar());
+    }
+
+    private void updateScrollbarStyle(@Nullable JScrollBar sb) {
         if (sb != null) {
-            Object o = sb.getClientProperty(AquaScrollBarUI.INTERNAL_STYLE_CLIENT_PROPERTY_KEY);
-            if (o == null) {
-                if (b) {
-                    sb.putClientProperty(AquaScrollBarUI.INTERNAL_STYLE_CLIENT_PROPERTY_KEY, "sidebar");
-                }
-            } else if (o.equals("sidebar")) {
-                if (!b) {
-                    sb.putClientProperty(AquaScrollBarUI.INTERNAL_STYLE_CLIENT_PROPERTY_KEY, null);
-                }
-            }
+            String sbs = getScrollbarStyle(isSidebar(), isOverlayScrollBars());
+            sb.putClientProperty(AquaScrollBarUI.INTERNAL_STYLE_CLIENT_PROPERTY_KEY, sbs);
         }
+    }
+
+    private @Nullable String getScrollbarStyle(boolean isSidebar, boolean isOverlay)
+    {
+        return isSidebar ? "sideBar" : null;
     }
 
     public boolean isOverlayScrollBars() {
@@ -353,6 +420,10 @@ public class AquaScrollPaneUI extends BasicScrollPaneUI
 
     public boolean isSmoothScrolling() {
         return isSmoothScrolling;
+    }
+
+    public boolean isSidebar() {
+        return isSidebar;
     }
 
     protected boolean computeSmoothScrolling() {
@@ -386,18 +457,12 @@ public class AquaScrollPaneUI extends BasicScrollPaneUI
             }
         }
 
-        protected void updateVerticalScrollBar() {
-            if (overlayController != null) {
-                overlayController.setVerticalScrollBar(scrollpane.getVerticalScrollBar());
-            }
-            updateScrollBar(scrollpane.getVerticalScrollBar());
+        protected void updateHorizontalScrollBar() {
+            updateScrollBar(scrollpane.getHorizontalScrollBar(), ScrollPaneConstants.HORIZONTAL_SCROLLBAR);
         }
 
-        protected void updateHorizontalScrollBar() {
-            if (overlayController != null) {
-                overlayController.setHorizontalScrollBar(scrollpane.getHorizontalScrollBar());
-            }
-            updateScrollBar(scrollpane.getHorizontalScrollBar());
+        protected void updateVerticalScrollBar() {
+            updateScrollBar(scrollpane.getVerticalScrollBar(), ScrollPaneConstants.VERTICAL_SCROLLBAR);
         }
     }
 
@@ -415,9 +480,49 @@ public class AquaScrollPaneUI extends BasicScrollPaneUI
     protected void updateThumbStyle() {
         // Thumb style used only with overlay scroll bars
         if (isOverlayScrollBars) {
-            updateScrollBar(scrollpane.getHorizontalScrollBar());
-            updateScrollBar(scrollpane.getVerticalScrollBar());
+            updateScrollBars();
         }
+    }
+
+    public void configureAsSidebarContainer(@Nullable AquaViewStyleContainerUI ui)
+    {
+        isSidebar = ui != null && ui.isSideBar();
+        boolean wasRounded = AquaUtils.isRoundedBorderScrollPane(scrollpane);
+        if (ui != null && AquaPainting.useLiquidGlassSidebar()) {
+            sidebarContainerSupport = new SidebarContainerSupport(scrollpane);
+            syncInterposedContainer();
+            interposedContainer.setInsetter(getInsetter());
+            JViewport viewport = scrollpane.getViewport();
+            if (viewport != null) {
+                viewport.setScrollMode(JViewport.SIMPLE_SCROLL_MODE);
+            }
+            reconfigureScrollBars();
+            syncScrollPaneLayoutConfiguration();
+        } else {
+            if (sidebarContainerSupport != null) {
+                sidebarContainerSupport.uninstall();
+                sidebarContainerSupport = null;
+                syncInterposedContainer();
+                syncScrollPaneLayoutConfiguration();
+            }
+        }
+
+        if (isSidebar && scrollpane.isOpaque()) {
+            Utils.logDebug("Setting sidebar scroll pane to be not opaque");
+            scrollpane.setOpaque(false);
+        } else if (!isSidebar && !scrollpane.isOpaque()) {
+            Utils.logDebug("Setting non-sidebar scroll pane to be opaque");
+            scrollpane.setOpaque(true);
+        }
+
+        updateScrollBars();
+        boolean isRounded = AquaUtils.isRoundedBorderScrollPane(scrollpane);
+        if (isRounded != wasRounded && ui != null) {
+            ui.scrollPaneRoundedBorderStatusChanged(isRounded);
+        }
+
+        scrollpane.revalidate();
+        scrollpane.repaint();
     }
 
     protected boolean shouldUseOverlayScrollBars() {
@@ -444,12 +549,12 @@ public class AquaScrollPaneUI extends BasicScrollPaneUI
      */
     protected void setScrollBarStyle(boolean isOverlay) {
         isOverlayScrollBars = isOverlay;
-        syncLayoutManager();
-        syncOverlayScrollPaneHack();
+        syncInterposedContainer();
 
         if (isOverlayScrollBars) {
             if (overlayController == null) {
-                overlayController = new AquaOverlayJScrollPaneController();
+                overlayController = new AquaOverlayScrollPaneController(scrollpane);
+                reconfigureScrollBars();
             }
         } else {
             if (overlayController != null) {
@@ -458,40 +563,83 @@ public class AquaScrollPaneUI extends BasicScrollPaneUI
             }
         }
 
-        updateScrollBar(scrollpane.getHorizontalScrollBar());
-        updateScrollBar(scrollpane.getVerticalScrollBar());
+        updateScrollBars();
 
         scrollpane.revalidate();
         scrollpane.repaint();
     }
 
     /**
-     * Install or remove the overlay scroll pane hack, as needed.
+     * Install or remove the interposed container, as needed.
      */
-    protected void syncOverlayScrollPaneHack() {
-        if (isOverlayScrollBars && useViewportHack && scrollpane.isOptimizedDrawingEnabled()) {
-            if (overlayScrollPaneHack == null) {
-                overlayScrollPaneHack = new OverlayScrollPaneHack(scrollpane);
+    protected void syncInterposedContainer() {
+        if (isInterposedContainerNeeded()) {
+            if (interposedContainer == null) {
+                updateScrollBars();  // ensure the overlay scroll bar controller gets the scroll bars
+                interposedContainer = new ScrollPaneInterposedContainer(scrollpane);
+                interposedContainer.syncScrollPaneSize();
+                syncLayoutManager();
             }
-        } else if (overlayScrollPaneHack != null) {
-            overlayScrollPaneHack.dispose();
-            overlayScrollPaneHack = null;
+        } else if (interposedContainer != null) {
+            interposedContainer.dispose();
+            interposedContainer = null;
+            syncLayoutManager();
         }
+    }
+
+    private boolean isInterposedContainerNeeded() {
+        return isOverlayScrollBars && scrollpane.isOptimizedDrawingEnabled() || sidebarContainerSupport != null;
     }
 
     /**
-     * If there is a viewport holder, set its size to the size of the scroll pane.
+     * If there is an interposed container, set its size to the size of the scroll pane.
      */
-    public void syncOverlayScrollPaneViewportHolderSize() {
-        if (overlayScrollPaneHack != null) {
-            overlayScrollPaneHack.syncScrollPaneSize();
+    public void syncInterposedContainerSize() {
+        if (interposedContainer != null) {
+            interposedContainer.syncScrollPaneSize();
         }
     }
 
-    protected void updateScrollBar(JScrollBar bar) {
+    private void syncScrollPaneLayoutConfiguration()
+    {
+        LayoutManager lm = scrollpane.getLayout();
+        if (lm instanceof AquaScrollPaneLayout) {
+            AquaScrollPaneLayout nlm = (AquaScrollPaneLayout) lm;
+            if (sidebarContainerSupport != null) {
+                nlm.setScrollBarExtraMargin(sidebarScrollBarExtraMargin);
+            } else {
+                nlm.setScrollBarExtraMargin(0);
+            }
+        }
+    }
+
+    protected void updateScrollBars()
+    {
+        updateScrollBar(scrollpane.getHorizontalScrollBar(), ScrollPaneConstants.HORIZONTAL_SCROLLBAR);
+        updateScrollBar(scrollpane.getVerticalScrollBar(), ScrollPaneConstants.VERTICAL_SCROLLBAR);
+    }
+
+    protected void updateScrollBar(@Nullable JScrollBar bar, @NotNull String which) {
         // Called to initialize and when the scroll pane size variant or style or thumb style may have changed.
         // An appearance change may change the default thumb style.
         if (bar != null) {
+            if (overlayController != null) {
+                if (which.equals(JScrollPane.HORIZONTAL_SCROLLBAR)) {
+                    overlayController.setHorizontalScrollBar(bar);
+                } else {
+                    overlayController.setVerticalScrollBar(bar);
+                }
+            } else {
+                bar.setVisible(true);
+            }
+
+            boolean isLegacySidebar = isSidebar() && !isOverlayScrollBars;
+            Border border = isLegacySidebar ? legacySidebarBorder : null;
+            Border existingBorder = bar.getBorder();
+            if (!Objects.equals(border, existingBorder)) {
+                bar.setBorder(border);
+            }
+
             bar.revalidate();
             bar.repaint();
             bar.putClientProperty(AquaUtilControlSize.CLIENT_PROPERTY_KEY, AquaUtilControlSize.getStringFromSize(size));
@@ -508,7 +656,11 @@ public class AquaScrollPaneUI extends BasicScrollPaneUI
                 }
             } else {
                 bar.putClientProperty(AquaScrollBarUI.INTERNAL_THUMB_STYLE_CLIENT_PROPERTY_KEY, null);
+                if (interposedContainer != null) {
+                    interposedContainer.reconfigureScrollBar(bar, which);
+                }
             }
+            updateScrollbarStyle(bar);
         }
     }
 
@@ -522,23 +674,28 @@ public class AquaScrollPaneUI extends BasicScrollPaneUI
      */
     protected boolean syncLayoutManager() {
         LayoutManager m = scrollpane.getLayout();
-        if (m instanceof AquaOverlayScrollPaneLayout) {
-            // Our overlay scroll bar layout is installed
-            if (!isOverlayScrollBars) {
+        if (m instanceof AquaScrollPaneLayout) {
+            // Our scroll bar layout is installed
+            if (!shouldUseCustomLayoutManager()) {
                 scrollpane.setLayout(legacyLayoutManager);
                 return true;
             }
+            syncScrollPaneLayoutConfiguration();
         } else {
             // The legacy layout manager is installed
             legacyLayoutManager = m;
-            if (isOverlayScrollBars) {
+            if (shouldUseCustomLayoutManager()) {
                 if (m instanceof UIResource) {
                     // OK to replace
-                    scrollpane.setLayout(new AquaOverlayScrollPaneLayout());
+                    AquaScrollPaneLayout nlm = new AquaScrollPaneLayout();
+                    scrollpane.setLayout(nlm);
+                    syncScrollPaneLayoutConfiguration();
                     // Visibility of legacy scroll bars is controlled by the layout manager.
                     // Visibility of overlay scroll bars is determined by the controller, but is initially off.
-                    hideScrollBar(scrollpane.getHorizontalScrollBar());
-                    hideScrollBar(scrollpane.getVerticalScrollBar());
+                    if (shouldUseOverlayScrollBars()) {
+                        hideScrollBar(scrollpane.getHorizontalScrollBar());
+                        hideScrollBar(scrollpane.getVerticalScrollBar());
+                    }
                     return true;
                 } else {
                     // Not OK to replace; revert to legacy scroll bars
@@ -549,23 +706,33 @@ public class AquaScrollPaneUI extends BasicScrollPaneUI
         return false;
     }
 
-    protected void hideScrollBar(JScrollBar sb) {
+    private boolean shouldUseCustomLayoutManager()
+    {
+        // Previously used if and only if there is an interposed container.
+        // But it is also needed to prevent the vertical scroll bar from being put on the left side in RTL.
+        return true;
+    }
+
+    protected void hideScrollBar(@Nullable JScrollBar sb) {
         if (sb != null) {
             sb.setVisible(false);
         }
     }
 
-    protected class AquaOverlayJScrollPaneController extends AquaOverlayScrollPaneController {
-        public AquaOverlayJScrollPaneController() {
-            setVerticalScrollBar(scrollpane.getVerticalScrollBar());
-            setHorizontalScrollBar(scrollpane.getHorizontalScrollBar());
-        }
+    public void reconfigureScrollBars()
+    {
+        reconfigureScrollBar(scrollpane.getVerticalScrollBar(), ScrollPaneConstants.VERTICAL_SCROLLBAR);
+        reconfigureScrollBar(scrollpane.getHorizontalScrollBar(), ScrollPaneConstants.HORIZONTAL_SCROLLBAR);
+    }
 
-        @Override
-        protected void reconfigure(JScrollBar sb, String which) {
-
-            if (overlayScrollPaneHack != null) {
-                overlayScrollPaneHack.reconfigure(sb, which);
+    private void reconfigureScrollBar(@Nullable JScrollBar sb, @NotNull String which)
+    {
+        if (sb != null) {
+            if (interposedContainer != null) {
+                if (sidebarContainerSupport != null && sb.isOpaque()) {
+                    sb.setOpaque(false);
+                }
+                interposedContainer.reconfigureScrollBar(sb, which);
             } else {
                 // Ensure that the components are ordered so that the scroll bar will be painted after (on top of) the
                 // viewport.
@@ -582,9 +749,8 @@ public class AquaScrollPaneUI extends BasicScrollPaneUI
         }
     }
 
-    // This is a grody hack to trick BasicScrollPaneUI into scrolling horizontally
-    // when we notice that the shift key is down. This should be removed when AWT/Swing
-    // becomes aware of multi-axis scroll wheels.
+    // This is a grody hack to trick BasicScrollPaneUI into scrolling horizontally when we notice that the shift key is
+    // down. This should be removed when AWT/Swing becomes aware of multi-axis scroll wheels.
 
     // It also supports the OS X behavior that wheel scrolling is enabled even when the corresponding scroll bar is not
     // shown.
@@ -604,7 +770,7 @@ public class AquaScrollPaneUI extends BasicScrollPaneUI
                 // Ignore small motions that would flip to the other scroll bar.
                 int axis = overlayController.getActiveAxis();
                 if (axis == SwingConstants.HORIZONTAL && !isHorizontalScroll
-                        || axis == SwingConstants.VERTICAL && isHorizontalScroll) {
+                  || axis == SwingConstants.VERTICAL && isHorizontalScroll) {
 
                     contraryScrollCount += getUnitsToScroll(e, isSmoothScrolling);
                     if (Math.abs(contraryScrollCount) < WHEEL_CHANGE_DIRECTION_MINIMUM) {

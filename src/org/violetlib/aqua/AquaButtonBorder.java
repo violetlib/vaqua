@@ -1,5 +1,5 @@
 /*
- * Changes Copyright (c) 2015-2023 Alan Snyder.
+ * Changes Copyright (c) 2015-2025 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -40,8 +40,7 @@ import java.awt.geom.RoundRectangle2D;
 import javax.swing.*;
 import javax.swing.plaf.UIResource;
 
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.*;
 import org.violetlib.aqua.AquaUtils.RecyclableSingleton;
 import org.violetlib.aqua.AquaUtils.RecyclableSingletonFromDefaultConstructor;
 import org.violetlib.jnr.Insets2D;
@@ -52,8 +51,7 @@ import org.violetlib.jnr.aqua.AquaUIPainter.GenericButtonWidget;
 import org.violetlib.jnr.aqua.AquaUIPainter.Size;
 import org.violetlib.jnr.aqua.AquaUIPainter.State;
 
-import static org.violetlib.aqua.AquaButtonUI.getDefaultFontPropertyValue;
-import static org.violetlib.aqua.AquaButtonUI.isColorWell;
+import static org.violetlib.aqua.AquaButtonSupport.isColorWell;
 import static org.violetlib.aqua.OSXSystemProperties.OSVersion;
 import static org.violetlib.jnr.aqua.AquaUIPainter.ButtonState.OFF;
 import static org.violetlib.jnr.aqua.AquaUIPainter.ButtonState.ON;
@@ -66,17 +64,21 @@ public abstract class AquaButtonBorder extends AquaBorder implements FocusRingOu
 
     public static final @NotNull String AQUA_EXCLUSIVE_BUTTON = "Aqua.Button.isExclusiveButton";
 
-    public static final RecyclableSingleton<AquaPushButtonBorder> fPush = new RecyclableSingletonFromDefaultConstructor<>(AquaPushButtonBorder.class);
+    public static final RecyclableSingleton<AquaPushButtonBorder> fPush
+      = new RecyclableSingletonFromDefaultConstructor<>(AquaPushButtonBorder.class);
     static public AquaButtonBorder getPushButtonBorder() {
         return fPush.get();
     }
 
-    private static final RecyclableSingleton<AquaToggleButtonBorder> fToggle = new RecyclableSingletonFromDefaultConstructor<>(AquaToggleButtonBorder.class);
+    private static final RecyclableSingleton<AquaToggleButtonBorder> fToggle
+      = new RecyclableSingletonFromDefaultConstructor<>(AquaToggleButtonBorder.class);
     static public AquaButtonBorder getToggleButtonBorder() {
         return fToggle.get();
     }
 
-    private static final RecyclableSingleton<AquaIconToggleButtonBorder> fIconToggle = new RecyclableSingletonFromDefaultConstructor<>(AquaIconToggleButtonBorder.class);
+    private static final RecyclableSingleton<AquaIconToggleButtonBorder> fIconToggle
+      = new RecyclableSingletonFromDefaultConstructor<>(AquaIconToggleButtonBorder.class);
+
     static public AquaButtonBorder getIconToggleButtonBorder() {
         return fIconToggle.get();
     }
@@ -89,10 +91,12 @@ public abstract class AquaButtonBorder extends AquaBorder implements FocusRingOu
         return fToggle.get();
     }
 
-    public static final RecyclableSingleton<AquaDisclosureTriangleButtonBorder> fDisclosureTriangle = new RecyclableSingletonFromDefaultConstructor<>(AquaDisclosureTriangleButtonBorder.class);
+    public static final RecyclableSingleton<AquaDisclosureTriangleButtonBorder> fDisclosureTriangle
+      = new RecyclableSingletonFromDefaultConstructor<>(AquaDisclosureTriangleButtonBorder.class);
     public static AquaButtonBorder getDisclosureTriangleButtonBorder() { return fDisclosureTriangle.get(); }
 
-    public static final RecyclableSingleton<AquaDisclosureButtonBorder> fDisclosure = new RecyclableSingletonFromDefaultConstructor<>(AquaDisclosureButtonBorder.class);
+    public static final RecyclableSingleton<AquaDisclosureButtonBorder> fDisclosure
+      = new RecyclableSingletonFromDefaultConstructor<>(AquaDisclosureButtonBorder.class);
     public static AquaButtonBorder getDisclosureButtonBorder() { return fDisclosure.get(); }
 
     protected static final Dimension regularToolbarSize = new Dimension(32, 32);
@@ -113,12 +117,19 @@ public abstract class AquaButtonBorder extends AquaBorder implements FocusRingOu
                             @NotNull Rectangle viewRect) {
         GenericButtonConfiguration bg = getConfiguration(b, viewRect.width, viewRect.height);
         if (bg != null) {
-            paintBackground(g, b, bg, viewRect);
+            // It is easier to paint the border of a split toolbar item when the compound layout is known
+            boolean isSplit = isSplitToolbarItem(b, bg);
+            if (!isSplit) {
+                paintBackground(g, b, bg, viewRect);
+            }
             if (allowsContent()) {
-                Dimension iconSize = getIconSize(bg);
+                Dimension iconSize = getRequiredIconSizeFromConfiguration(bg, icon);
+                if (iconSize == null && icon != null) {
+                    iconSize = new Dimension(icon.getIconWidth(), icon.getIconHeight());
+                }
                 Color textColor = getForegroundColor(b, bg, false);
                 Insets insets = getButtonContentInsets(b);
-                AquaButtonUI.paintIconAndText(g, b, insets, icon, textColor, viewRect, iconSize);
+                AquaButtonSupport.paintIconAndText(g, b, bg, painter, insets, icon, textColor, viewRect, iconSize, isSplit);
             }
         }
     }
@@ -276,7 +287,7 @@ public abstract class AquaButtonBorder extends AquaBorder implements FocusRingOu
         if (existingColor == null || existingColor instanceof UIResource || !isEnabled || useNonexclusive) {
             AquaUIPainter.ButtonState bs = getButtonState(b);
             AquaAppearance appearance = AppearanceManager.ensureAppearance(b);
-            // The foreground color of a default button does not change.
+            // The foreground color of a default button does not change when pressed.
             // Starting with macOS 12, the foreground color of any button does not change.
             if (state == State.PRESSED_DEFAULT) {
                 state = State.ACTIVE_DEFAULT;
@@ -291,14 +302,14 @@ public abstract class AquaButtonBorder extends AquaBorder implements FocusRingOu
 
     protected boolean shouldUseNonexclusiveStyle(@NotNull AbstractButton b,
                                                  @NotNull AquaButtonExtendedTypes.WidgetInfo info) {
-        // Some segmented buttons should use a special style when selected and they are not in a button
-        // group. This corresponds to the "select any" option in AppKit.
+        // Some segmented buttons should use a special style when the button is selected and the button is not in a
+        // button group. This corresponds to the "select any" option in AppKit.
 
         // These buttons are textured or separated.
 
         return info.usesNonexclusiveSelectionStyle()
-                && b.getModel().isSelected()
-                && !isButtonExclusive(b);
+          && b.getModel().isSelected()
+          && !isButtonExclusive(b);
     }
 
     protected boolean isButtonExclusive(@NotNull AbstractButton b) {
@@ -308,6 +319,19 @@ public abstract class AquaButtonBorder extends AquaBorder implements FocusRingOu
             return dm.getGroup() != null || Boolean.TRUE.equals(b.getClientProperty(AQUA_EXCLUSIVE_BUTTON));
         }
         return true;
+    }
+
+    /**
+     * Indicate whether the border for a toolbar item is drawn around the icon only, instead of around the entire
+     * content (icon and label).
+     */
+
+    protected boolean isSplitToolbarItem(@NotNull AbstractButton b, @NotNull GenericButtonConfiguration g) {
+        if (g.getWidget() == AquaUIPainter.ButtonWidget.BUTTON_TOOLBAR_ITEM && b.getIcon() != null) {
+            int version = AquaPainting.getVersion();
+            return version >= 1500;
+        }
+        return false;
     }
 
     public int getIconTextGap(AbstractButton b) {
@@ -347,7 +371,8 @@ public abstract class AquaButtonBorder extends AquaBorder implements FocusRingOu
     }
 
     /**
-     * Return the margin adjustments to use for the specified button.
+     * Return the margin adjustments to use for the specified button when the application has not set the button margin.
+     * The margin adjustments are added to the default button margin. The button margin is the content insets.
      * @param b The button.
      * @return the margin adjustments, or null if none.
      */
@@ -365,7 +390,7 @@ public abstract class AquaButtonBorder extends AquaBorder implements FocusRingOu
     }
 
     protected @Nullable Insets getSpecialMarginAdjustments(@NotNull AbstractButton b) {
-        int m = getMargin(b);
+        int m = getDefaultSideMargin(b);
         int top = 0;
         int left = m;
         int bottom = 0;
@@ -378,20 +403,29 @@ public abstract class AquaButtonBorder extends AquaBorder implements FocusRingOu
             SegmentedButtonLayoutConfiguration sg = (SegmentedButtonLayoutConfiguration) g;
             AquaUIPainter.SegmentedButtonWidget w = sg.getWidget();
             if (w == AquaUIPainter.SegmentedButtonWidget.BUTTON_SEGMENTED_SMALL_SQUARE
-                    || w == AquaUIPainter.SegmentedButtonWidget.BUTTON_SEGMENTED
-                    || w == AquaUIPainter.SegmentedButtonWidget.BUTTON_TAB) {
+              || w == AquaUIPainter.SegmentedButtonWidget.BUTTON_SEGMENTED
+              || w == AquaUIPainter.SegmentedButtonWidget.BUTTON_TAB) {
                 if (sg.getSize() == Size.MINI) {
                     top = 1;
                 }
+            }
+            // The fixed side margin of 9 is too large for mini, small, and regular
+            switch(sg.getSize()) {
+                case REGULAR:
+                    left = right = 7; break;
+                case SMALL:
+                    left = right = 5; break;
+                case MINI:
+                    left = right = 3; break;
             }
         }
 
         return new Insets(top, left, bottom, right);
     }
 
-    protected int getMargin(@NotNull AbstractButton b) {
+    protected int getDefaultSideMargin(@NotNull AbstractButton b) {
         AquaButtonExtendedTypes.WidgetInfo info = getWidgetInfo(b);
-        return info.getMargin();
+        return info.getDefaultSideMargin();
     }
 
     protected @Nullable Insetter getContentInsets(@NotNull AbstractButton b) {
@@ -416,7 +450,7 @@ public abstract class AquaButtonBorder extends AquaBorder implements FocusRingOu
     /**
      * Create a special icon to use for a button. The icon rendering may be context dependent.
      */
-    public @Nullable AquaButtonIcon createIcon(@NotNull AbstractButton b, boolean isTemplate) {
+    public @Nullable AquaButtonIcon createSpecialIcon(@NotNull AbstractButton b, boolean isTemplate) {
         return new AquaButtonIcon(b, isTemplate, keySupplier);
     }
 
@@ -428,7 +462,7 @@ public abstract class AquaButtonBorder extends AquaBorder implements FocusRingOu
                 return getForegroundColor(b, g, true);
             }
             State state = g != null ? g.getState() : getState(b);
-            if (state == State.PRESSED) {
+            if (state == State.PRESSED && shouldHighlightPressedIcon(g)) {
                 AquaAppearance appearance = AppearanceManager.ensureAppearance(b);
                 return appearance.isDark() ? AquaImageFactory.LIGHTEN_FOR_DISABLED : AquaImageFactory.DARKEN_FOR_PRESSED;
             }
@@ -438,6 +472,11 @@ public abstract class AquaButtonBorder extends AquaBorder implements FocusRingOu
             }
             return null;
         }
+    }
+
+    protected boolean shouldHighlightPressedIcon(@Nullable GenericButtonConfiguration g)
+    {
+        return true;
     }
 
     protected boolean shouldUseDisabledIcon(@Nullable GenericButtonConfiguration g, @NotNull State state)
@@ -467,9 +506,9 @@ public abstract class AquaButtonBorder extends AquaBorder implements FocusRingOu
         Dimension d = getMinimumButtonSize(g);
         Dimension iconSize = null;
         if (g != null) {
-            iconSize = getIconSize(g);
+            iconSize = getRequiredIconSize(g, b.getIcon());
         }
-        Dimension p = AquaButtonSupport.getPreferredButtonSize(b, b.getIconTextGap(), iconSize);
+        Dimension p = AquaButtonSupport.getBasicPreferredButtonSize(b, iconSize, g, painter);
         if (p != null) {
             if (p.width > d.width) {
                 d.width = p.width;
@@ -478,10 +517,19 @@ public abstract class AquaButtonBorder extends AquaBorder implements FocusRingOu
                 d.height = p.height;
             }
         }
+        Dimension max = getMaximumButtonSize(g);
+        if (max != null) {
+            if (max.width > 0 && d.width > max.width) {
+                d.width = max.width;
+            }
+            if (max.height > 0 && d.height > max.height) {
+                d.height = max.height;
+            }
+        }
         return d;
     }
 
-    private @NotNull Dimension getMinimumButtonSize(@Nullable LayoutConfiguration g) {
+    protected @NotNull Dimension getMinimumButtonSize(@Nullable LayoutConfiguration g) {
         Dimension d = new Dimension(10, 10);
         if (g != null) {
             LayoutInfo layoutInfo = painter.getLayoutInfo().getLayoutInfo(g);
@@ -497,18 +545,38 @@ public abstract class AquaButtonBorder extends AquaBorder implements FocusRingOu
         return d;
     }
 
-    protected @Nullable Dimension getIconSize(@NotNull Configuration g) {
-        if (g instanceof LayoutConfiguration) {
-            return getIconSize((LayoutConfiguration) g);
+    protected @Nullable Dimension getMaximumButtonSize(@Nullable LayoutConfiguration g) {
+        if (g != null) {
+            LayoutInfo layoutInfo = painter.getLayoutInfo().getLayoutInfo(g);
+            int fixedWidth = (int) Math.ceil(layoutInfo.getFixedVisualWidth());
+            int fixedHeight = (int) Math.ceil(layoutInfo.getFixedVisualHeight());
+            if (fixedWidth > 0 || fixedHeight > 0) {
+                return new Dimension(fixedWidth, fixedHeight);
+            }
         }
         return null;
     }
 
-    protected @Nullable Dimension getIconSize(@NotNull LayoutConfiguration g) {
+    protected @Nullable Dimension getRequiredIconSizeFromConfiguration(@NotNull Configuration g, @Nullable Icon icon) {
+        if (icon != null && g instanceof LayoutConfiguration) {
+            return getRequiredIconSize((LayoutConfiguration) g, icon);
+        }
+        return null;
+    }
+
+    protected @Nullable Dimension getRequiredIconSize(@NotNull LayoutConfiguration g, @Nullable Icon icon) {
+        if (icon == null) {
+            return null;
+        }
+
         if (g instanceof ButtonLayoutConfiguration) {
             ButtonLayoutConfiguration bg = (ButtonLayoutConfiguration) g;
             AquaUIPainter.ButtonWidget widget = bg.getButtonWidget();
             if (widget == AquaUIPainter.ButtonWidget.BUTTON_TOOLBAR_ITEM) {
+                int version = AquaPainting.getVersion();
+                if (version >= 1600) {
+                    return smallToolbarSize;
+                }
                 Size size = bg.getSize();
                 switch (size) {
                     case SMALL:
@@ -519,7 +587,38 @@ public abstract class AquaButtonBorder extends AquaBorder implements FocusRingOu
                 }
             }
         }
+
+        int maximumHeight = getButtonIconMaximumHeight(g);
+        if (maximumHeight > 0) {
+            int iconHeight = icon.getIconHeight();
+            if (iconHeight > maximumHeight) {
+                float scaleFactor = maximumHeight / (float) iconHeight;
+                int width = (int) Math.round(Math.ceil(icon.getIconWidth() * scaleFactor));
+                return new Dimension(width, maximumHeight);
+            }
+        }
+
         return null;
+    }
+
+    /**
+     * Return the maximum supported icon height for the given configuration.
+     * @return the maximum height, or zero if the icon height is unrestricted.
+     */
+    private int getButtonIconMaximumHeight(@NotNull LayoutConfiguration g)
+    {
+        AquaUILayoutInfo layoutInfo = painter.getLayoutInfo();
+        LayoutInfo info = layoutInfo.getLayoutInfo(g);
+        int h = (int) info.getFixedVisualHeight();
+        if (h == 0) {
+            return 0;
+        }
+        Insetter s = layoutInfo.getContentInsets(g);
+        if (s != null) {
+            Rectangle bounds = s.apply(100, h);
+            return bounds.height;
+        }
+        return h;
     }
 
     protected @NotNull AquaButtonExtendedTypes.WidgetInfo getWidgetInfo(@NotNull AbstractButton b) {
@@ -555,8 +654,8 @@ public abstract class AquaButtonBorder extends AquaBorder implements FocusRingOu
     }
 
     protected @NotNull AquaUIPainter.ButtonWidget getIconicWidget(@NotNull AquaUIPainter.ButtonWidget bw) {
-        if (bw == AquaUIPainter.ButtonWidget.BUTTON_TEXTURED_TOOLBAR && VAquaRenderingAccess.BUTTON_TEXTURED_TOOLBAR_ICONS != null) {
-            return VAquaRenderingAccess.BUTTON_TEXTURED_TOOLBAR_ICONS;
+        if (bw == AquaUIPainter.ButtonWidget.BUTTON_TEXTURED_TOOLBAR) {
+            return AquaUIPainter.ButtonWidget.BUTTON_TEXTURED_TOOLBAR_ICONS;
         }
         return bw;
     }
@@ -589,8 +688,8 @@ public abstract class AquaButtonBorder extends AquaBorder implements FocusRingOu
     protected boolean computeIsFocused(@NotNull AquaUIPainter.State state, @NotNull AbstractButton b) {
         if (b.isFocusPainted() && b.hasFocus()) {
             return state != State.DISABLED
-                    && state != State.INACTIVE
-                    && state != State.DISABLED_INACTIVE;
+              && state != State.INACTIVE
+              && state != State.DISABLED_INACTIVE;
         }
         return false;
     }
@@ -614,7 +713,7 @@ public abstract class AquaButtonBorder extends AquaBorder implements FocusRingOu
     }
 
     /**
-     * Return the layout configuration for the button. They layout configuration is determined when the button is
+     * Return the layout configuration for the button. The layout configuration is determined when the button is
      * configured by the button UI. The button layout is presumed to be invalid at that time.
      */
     public @Nullable LayoutConfiguration getLayoutConfiguration(@NotNull AbstractButton b) {
@@ -622,37 +721,28 @@ public abstract class AquaButtonBorder extends AquaBorder implements FocusRingOu
     }
 
     /**
-     * Determine the layout configuration for the button. They layout configuration is determined when the button is
+     * Determine the layout configuration for the button. The layout configuration is determined when the button is
      * configured by the button UI. The button layout is presumed to be invalid at that time.
      */
     public @Nullable LayoutConfiguration determineLayoutConfiguration(@NotNull AbstractButton b) {
-        GenericButtonWidget widget = getButtonWidget(b);
-        Size defaultSize = getSpecialDefaultSize(b);
-        Size size = AquaUtilControlSize.getUserSizeFrom(b, defaultSize);
+        ButtonStyleInfo si = getButtonStyleInfo(b);
+        GenericButtonWidget widget = si.widget;
         if (widget instanceof AquaUIPainter.ButtonWidget) {
             AquaUIPainter.ButtonWidget bw = (AquaUIPainter.ButtonWidget) widget;
             AquaUIPainter.UILayoutDirection ld = AquaUtils.getLayoutDirection(b);
             if (shouldUseIconicWidget(b)) {
                 bw = getIconicWidget(bw);
             }
-            return new ButtonLayoutConfiguration(bw, size, ld);
+            return new ButtonLayoutConfiguration(bw, si.size, ld);
         }
         if (widget instanceof AquaUIPainter.SegmentedButtonWidget) {
             AquaUIPainter.SegmentedButtonWidget bw = (AquaUIPainter.SegmentedButtonWidget) widget;
-            return new SegmentedButtonLayoutConfiguration(bw, size, AquaUIPainter.Position.ONLY);
+            return new SegmentedButtonLayoutConfiguration(bw, si.size, AquaUIPainter.Position.ONLY);
         }
         return null;
     }
 
-    public abstract @NotNull GenericButtonWidget getButtonWidget(@NotNull AbstractButton b);
-
-    protected @Nullable Size getSpecialDefaultSize(@NotNull AbstractButton b) {
-        if (OSVersion >= 1016) {
-            boolean isToolbar = AquaUtils.isOnToolbar(b);
-            return isToolbar ? AquaUIPainter.Size.LARGE : null;
-        }
-        return null;
-    }
+    public abstract @NotNull ButtonStyleInfo getButtonStyleInfo(@NotNull AbstractButton b);
 
     @Override
     public @Nullable Shape getFocusRingOutline(@NotNull JComponent c) {
@@ -672,11 +762,19 @@ public abstract class AquaButtonBorder extends AquaBorder implements FocusRingOu
      * Determine if a proposed button widget is usable for a button based on the fixed height (if any) imposed by the
      * widget.
      */
-    protected boolean isProposedButtonWidgetUsable(@NotNull AbstractButton b, @NotNull Object widget) {
+    protected boolean isProposedButtonWidgetUsable(@NotNull AbstractButton b,
+                                                   boolean isOnToolbar,
+                                                   @NotNull Object widget) {
+
+        // If the button has no text, then any widget is usable because icons are scaled as needed.
+        String text = b.getText();
+        if (text == null || text.isEmpty()) {
+            return true;
+        }
+
         LayoutConfiguration g;
 
-        Size size = AquaUtilControlSize.getUserSizeFrom(b);
-
+        Size size = AquaUtils.getSize(b, isOnToolbar, widget);
         if (widget instanceof AquaUIPainter.ButtonWidget) {
             AquaUIPainter.ButtonWidget w = (AquaUIPainter.ButtonWidget) widget;
             AquaUIPainter.UILayoutDirection ld = AquaUtils.getLayoutDirection(b);
@@ -704,29 +802,19 @@ public abstract class AquaButtonBorder extends AquaBorder implements FocusRingOu
         // configuration of the button, which we may be in the process of replacing.
 
         Font font = AquaUtilControlSize.isOKToInstallDefaultFont(b)
-                ? AquaButtonExtendedTypes.getFont(widget, size, getGenericDefaultFont(b))
-                : b.getFont();
+          ? AquaButtonExtendedTypes.getFont(widget, size, AquaButtonSupport.getGenericDefaultFont(b))
+          : b.getFont();
 
         // If the font cannot be determined, a fixed height widget is not usable.
         if (font == null) {
             return false;
         }
 
-        Dimension contentSize = AquaButtonSupport.getPreferredContentSize(b, font, b.getIconTextGap());
-        Dimension requiredSize = insetter.expand(contentSize);
+        FontMetrics fm = b.getFontMetrics(font);
+        int requiredHeight = AquaUtils.getTextHeight(b, fm);
+        Dimension d = new Dimension(1000, requiredHeight); // width does not matter
+        Dimension requiredSize = insetter.expand(d);
         return requiredSize.height <= fixedHeight;
-    }
-
-    /**
-     * Return a configuration independent font for a button with no application defined font.
-     */
-    private static @NotNull Font getGenericDefaultFont(@NotNull AbstractButton b) {
-        Font f = getDefaultFontPropertyValue(b);
-        if (f == null) {
-            // should not happen
-            return new Font("Default", Font.PLAIN, 12);
-        }
-        return f;
     }
 
     protected @NotNull AquaUIPainter.ButtonState getButtonState(@NotNull AbstractButton b) {

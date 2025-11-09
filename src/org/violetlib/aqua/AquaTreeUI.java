@@ -1,5 +1,5 @@
 /*
- * Changes Copyright (c) 2015-2024 Alan Snyder.
+ * Changes Copyright (c) 2015-2025 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -45,7 +45,10 @@ import javax.swing.*;
 import javax.swing.border.Border;
 import javax.swing.event.TreeModelEvent;
 import javax.swing.event.TreeModelListener;
-import javax.swing.plaf.*;
+import javax.swing.plaf.ColorUIResource;
+import javax.swing.plaf.ComponentUI;
+import javax.swing.plaf.FontUIResource;
+import javax.swing.plaf.UIResource;
 import javax.swing.plaf.basic.BasicTreeUI;
 import javax.swing.tree.*;
 
@@ -104,13 +107,15 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
     protected boolean isCellFilled;
     protected boolean isSideBar;
     protected boolean isStriped;
+    private boolean isRoundedScrollable;
     protected boolean _isInset;
     protected @Nullable Boolean _isShallowSideBar;
+    private @Nullable LocalSidebarContainerSupport sidebarContainerSupport;
     protected int indentationPerLevel = DEFAULT_INDENTATION;
     protected int expandControlWidth = 16;
     protected int trailingExpandControlInset = 13;
     protected int leadingExpandControlSeparation = 6;
-    private static final Border insetBorder = new BorderUIResource.EmptyBorderUIResource(5, 11, 5, 11);
+    private static final Insets insetViewInsets = new Insets(0, 18, 0, 18);  // sides only
 
     // state variables for painting, needed because we share painting implementation with the superclass
     protected boolean shouldPaintSelection;
@@ -125,9 +130,8 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
     private Icon oldCellRendererIcon;
     private Icon oldCellRendererDisabledIcon;
 
-    // support for sidebar presentation
-    private SidebarVibrantEffects sidebarVibrantEffects;
-
+    // support for sidebar presentation (prior to macOS 26)
+    private @Nullable SidebarVibrantEffects sidebarVibrantEffects;
     private @Nullable TreePath pathWithVisibleExpandControl;
 
     private DropTargetListener dropTargetListener = null;
@@ -158,7 +162,8 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
 
         originalTreeCellEditor = null;
         cellEditorChanged();
-
+        sidebarContainerSupport = new LocalSidebarContainerSupport(tree, this);
+        isRoundedScrollable = AquaUtils.isRoundedScrollable(tree);
         isStriped = getStripedValue();
         _isInset = getInsetValue();
         isSideBar = getSideBarValue();
@@ -170,8 +175,8 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
         }
         colors = determineColors();
         updateExpandControlSize();
-        updateInset();
         updateSideBarConfiguration();
+        sidebarContainerSupport.update();
         configureAppearanceContext(null);
     }
 
@@ -209,6 +214,10 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
             tree.setCellEditor(originalTreeCellEditor);
         }
         originalTreeCellEditor = null;
+        if (sidebarContainerSupport != null) {
+            sidebarContainerSupport.detach();
+            sidebarContainerSupport = null;
+        }
 
         super.uninstallDefaults();
     }
@@ -259,15 +268,18 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
         appearanceContext = new AppearanceContext(appearance, state, false, false);
         colors.configureForContainer();
         AquaColors.installColors(tree, appearanceContext, colors);
-        // Workaround for JDK-8253266
-        if (Utils.getJavaVersion() < 1700000) {
-            Color background = tree.getBackground();
-            tree.setOpaque(!isStriped && (background == null || background.getAlpha() == 255));
-        } else {
-            LookAndFeel.installProperty(tree, "opaque", !isStriped);
-        }
+        updateOpaque();
         tree.repaint();
         repaintScrollPane();
+    }
+
+    private void updateOpaque() {
+        // In some versions of the JDK, JTree forces opaque to be true, so LookAndFeel.installProperty cannot be used
+        Color background = tree.getBackground();
+        if (background == null) {
+            tree.setBackground(background = AquaColors.CLEAR);
+        }
+        tree.setOpaque(background.getAlpha() == 255);
     }
 
     protected @NotNull ContainerContextualColors determineColors() {
@@ -302,15 +314,18 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
         return tree.isEnabled() ? (shouldDisplayAsFocused() ? ACTIVE_DEFAULT : ACTIVE) : DISABLED;
     }
 
-    protected boolean shouldDisplayAsFocused() {
-        return AquaFocusHandler.isActive(tree) && (AquaFocusHandler.hasFocus(tree) || tree.isEditing());
+    public boolean shouldSuppressBackground()
+    {
+        return isStriped() || isVibrant();
     }
 
-    private void updateBorder(@Nullable Border b) {
-        Border existing = tree.getBorder();
-        if (existing != b && existing == null || existing instanceof UIResource) {
-            tree.setBorder(b);
-        }
+    public boolean shouldSuppressSelectionBackground()
+    {
+        return isInset() || isVibrant();
+    }
+
+    protected boolean shouldDisplayAsFocused() {
+        return AquaFocusHandler.isActive(tree) && (AquaFocusHandler.hasFocus(tree) || tree.isEditing());
     }
 
     protected void updateRowHeight() {
@@ -319,9 +334,17 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
         LookAndFeel.installProperty(tree, "rowHeight", height);
     }
 
-    // Called on a change to isSideBar or the ancestry of the tree
-    protected void updateSideBarConfiguration() {
-        if (isSideBar() && tree.isDisplayable()) {
+    // Called on a change to the style or a possibly relevant change to ancestry of the list
+    protected void updateSideBarConfiguration()
+    {
+        if (sidebarContainerSupport != null) {
+            sidebarContainerSupport.update();
+        }
+    }
+
+    public void configureSidebarStyle()
+    {
+        if (isSideBar() && !AquaPainting.useLiquidGlassSidebar() && tree.isDisplayable()) {
             ensureSidebarVibrantEffects();
         } else {
             disposeSidebarVibrantEffects();
@@ -329,6 +352,10 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
 
         if (isSideBar()) {
             indentationPerLevel = SIDEBAR_INDENTATION;
+            if (AquaPainting.useLiquidGlassSidebar()) {
+                // must ensure rounded clip region when painting the tree
+                LookAndFeel.installProperty(tree, "opaque", Boolean.FALSE);
+            }
         } else {
             indentationPerLevel = DEFAULT_INDENTATION;
         }
@@ -363,9 +390,9 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
     }
 
     protected @NotNull JComponent getComponentForVisualEffectView() {
-        Container parent = tree.getParent();
-        if (parent instanceof JViewport) {
-            return (JViewport) parent;
+        JComponent c = AquaUtils.getScrollPaneContainer(tree);
+        if (c != null) {
+            return c;
         }
         return tree;
     }
@@ -467,28 +494,43 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
     }
 
     @Override
-    public void scrollPaneAncestorChanged(@Nullable JScrollPane sp) {
+    public void scrollPaneAncestorChanged(@Nullable JScrollPane sp)
+    {
+        if (sidebarContainerSupport != null) {
+            sidebarContainerSupport.update();
+        }
+    }
+
+    @Override
+    public void scrollPaneRoundedBorderStatusChanged(boolean isRoundedBorder) {
+        isRoundedScrollable = isRoundedBorder;
+        updateInset();
     }
 
     private void updateInset() {
         boolean value = getInsetValue();
         if (value != _isInset) {
-            boolean oldIsInset = isInset();
             _isInset = value;
-            boolean newIsInset = isInset();
-            if (newIsInset != oldIsInset) {
-                updateBorder(newIsInset ? insetBorder : null);
-                tree.revalidate();
-                tree.repaint();
-                updateCellSizes();
-            }
+            updateInsetConfiguration();
         }
+    }
+
+    private void updateInsetConfiguration()
+    {
+        configureAppearanceContext(null);
+        tree.revalidate();
+        tree.repaint();
     }
 
     private boolean getInsetValue() {
         if (AquaUtils.isInsetViewSupported()) {
             String value = getViewStyleProperty();
-            return "inset".equals(value);
+            if ("inset".equals(value)) {
+                return true;
+            }
+            if (isRoundedScrollable) {
+                return true;
+            }
         }
         return false;
     }
@@ -497,6 +539,7 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
         return isStriped;
     }
 
+    @Override
     public boolean isSideBar() {
         return isSideBar;
     }
@@ -530,9 +573,18 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
         return true;
     }
 
+    public boolean isVibrant() {
+        return sidebarVibrantEffects != null;
+    }
+
     @Override
     public boolean isInset() {
         return _isInset || (isSideBar() && OSXSystemProperties.useInsetViewStyle());
+    }
+
+    @Override
+    public @NotNull Insets getInsetViewInsets() {
+        return insetViewInsets;
     }
 
     private boolean isBackgroundClear() {
@@ -658,9 +710,8 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
     }
 
     //
-    // The following selection methods (lead/anchor) are covers for the
-    // methods in JTree.
-    //
+// The following selection methods (lead/anchor) are covers for the methods in JTree.
+//
     public void setAnchorSelectionPath(TreePath newPath) {
         ignoreLAChange = true;
         try {
@@ -924,6 +975,8 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
 
         if (sidebarVibrantEffects != null) {
             sidebarVibrantEffects.update();
+        } else if (sidebarContainerSupport != null) {
+            g = sidebarContainerSupport.setupContainerGraphics(g, appearanceContext);
         }
 
         // Set the variables used by paintRow
@@ -944,23 +997,23 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
             }
         }
 
-        Color background = getCurrentBackground();
+        Color background = getBackgroundColor();
         paintBackground(g, background);
 
         super.paint(g, c);
     }
 
-    protected void paintBackground(@NotNull Graphics g, @Nullable Color background) {
-        if (tree.isOpaque()) {
+    protected void paintBackground(@NotNull Graphics g, @NotNull Color background) {
+        if (background.getAlpha() > 0) {
             int width = tree.getWidth();
             int height = tree.getHeight();
             AquaUtils.fillRect(g, background, 0, 0, width, height);
         }
 
-        if (!isSideBar) {
+        if (!isSideBar || AquaPainting.useLiquidGlassSidebar()) {
             Rectangle paintBounds = g.getClipBounds();
             TreePath initialPath = getClosestPathForLocation(tree, 0, paintBounds.y);
-            Enumeration paintingEnumerator = treeState.getVisiblePathsFrom(initialPath);
+            Enumeration<?> paintingEnumerator = treeState.getVisiblePathsFrom(initialPath);
             if (initialPath != null && paintingEnumerator != null) {
                 paintRowBackgrounds(g, initialPath, paintingEnumerator);
             } else if (isStriped) {
@@ -969,8 +1022,9 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
         }
     }
 
-    public @Nullable Color getCurrentBackground() {
-        return isSideBar() ? null : tree.getBackground();
+    private @NotNull Color getBackgroundColor() {
+        Color c = tree.getBackground();
+        return c != null ? c : AquaColors.CLEAR;
     }
 
     /**
@@ -1247,10 +1301,7 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
         if (AquaImageFactory.isTemplateIcon(icon)) {
             Object operator = getOperatorForTemplateIcon(isSelected);
             if (operator != null) {
-                Image image = AquaImageFactory.getProcessedImage(icon, operator);
-                if (image != null) {
-                    return new ImageIcon(image);
-                }
+                return AquaImageFactory.getProcessedImage(icon, operator);
             }
         }
         return icon;
@@ -1464,7 +1515,8 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
      */
     protected void paintExpandControl(@NotNull Graphics g,
                                       @NotNull Rectangle clipBounds,
-                                      @NotNull Insets insets, Rectangle bounds,
+                                      @NotNull Insets insets,
+                                      Rectangle bounds,
                                       @NotNull TreePath path,
                                       int row,
                                       boolean isExpanded,

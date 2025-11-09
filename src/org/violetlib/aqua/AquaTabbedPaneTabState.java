@@ -1,5 +1,5 @@
 /*
- * Changes Copyright (c) 2015-2018 Alan Snyder.
+ * Changes Copyright (c) 2015-2025 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -34,19 +34,18 @@
 package org.violetlib.aqua;
 
 import java.awt.*;
-
-import javax.swing.SwingConstants;
+import javax.swing.*;
 
 class AquaTabbedPaneTabState {
-    static final int FIXED_SCROLL_TAB_LENGTH = 27;
+    static final int FIXED_SCROLL_TAB_LENGTH = 30;
 
     protected final Rectangle leftScrollTabRect = new Rectangle();
     protected final Rectangle rightScrollTabRect = new Rectangle();
 
     protected int numberOfVisibleTabs = 0;
-    protected int visibleTabList[] = new int[10];
+    protected int[] visibleTabList = new int[10];
     protected int lastLeftmostTab;
-    protected int lastReturnAt;
+    protected int lastTabsLength;
 
     private boolean needsScrollers;
     private boolean hasMoreLeftTabs;
@@ -59,7 +58,9 @@ class AquaTabbedPaneTabState {
     }
 
     protected int getIndex(int i) {
-        if (i >= visibleTabList.length) return Integer.MIN_VALUE;
+        if (i >= visibleTabList.length) {
+            return Integer.MIN_VALUE;
+        }
         return visibleTabList[i];
     }
 
@@ -69,6 +70,18 @@ class AquaTabbedPaneTabState {
         int[] tempVisibleTabs = new int[tabCount];
         System.arraycopy(visibleTabList, 0, tempVisibleTabs, 0, Math.min(visibleTabList.length, tabCount));
         visibleTabList = tempVisibleTabs;
+    }
+
+    protected void invalidateTabs() {
+        visibleTabList = new int[0];
+        numberOfVisibleTabs = 0;
+        lastTabsLength = 0;
+        invalidateLayout();
+    }
+
+    protected void invalidateLayout() {
+        hasMoreLeftTabs = false;
+        hasMoreRightTabs = false;
     }
 
     int getTotal() {
@@ -119,11 +132,14 @@ class AquaTabbedPaneTabState {
         visibleTabList[0] = idToAdd;
     }
 
-
-    void relayoutForScrolling(Rectangle[] rects, int startX, int startY, int returnAt, int selectedIndex, boolean verticalTabRuns, int tabCount, boolean isLeftToRight) {
+    /**
+     * This method performs a left-to-right layout when the tabs are horizontal.
+     */
+    void relayoutForScrolling(Rectangle[] rects, int tabsLength, int selectedIndex, boolean isVertical, int tabCount) {
         if (!needsScrollers) {
             hasMoreLeftTabs = false;
             hasMoreRightTabs = false;
+            numberOfVisibleTabs = tabCount;
             return;
         }
 
@@ -131,9 +147,9 @@ class AquaTabbedPaneTabState {
         // tab, then add the tabs, centering the selected tab as much as possible.
 
         // Tabs on TOP or BOTTOM or LEFT or RIGHT
-        // if top or bottom, width is hardocoded
+        // if top or bottom, width is hard-coded
         // if left or right height should be hardcoded.
-        if (verticalTabRuns) {
+        if (isVertical) {
             rightScrollTabRect.height = FIXED_SCROLL_TAB_LENGTH;
             leftScrollTabRect.height = FIXED_SCROLL_TAB_LENGTH;
         } else {
@@ -157,10 +173,9 @@ class AquaTabbedPaneTabState {
         // tabs on screen so we don't get a jarring tab moving out from under the mouse
         // effect.
 
-        boolean sizeChanged = returnAt != lastReturnAt;
         // so if we stay the same, make right the first tab and say left done = true
-        if (pane.popupSelectionChanged || sizeChanged) {
-            pane.popupSelectionChanged = false;
+        if (pane.scrollPositionChangeNeeded || tabsLength != lastTabsLength) {
+            pane.scrollPositionChangeNeeded = false;
             lastLeftmostTab = -1;
         }
 
@@ -178,14 +193,14 @@ class AquaTabbedPaneTabState {
             left = -1;
         }
 
-        int remainingSpace = returnAt - pane.tabAreaInsets.right - pane.tabAreaInsets.left - FIXED_SCROLL_TAB_LENGTH * 2;
+        int remainingSpace = tabsLength - pane.tabAreaInsets.right - pane.tabAreaInsets.left - FIXED_SCROLL_TAB_LENGTH * 2;
         int visibleCount = 0;
 
         Rectangle firstRect = rects[right];
-        if ((verticalTabRuns ? firstRect.height : firstRect.width) > remainingSpace) {
+        if ((isVertical ? firstRect.height : firstRect.width) > remainingSpace) {
             // always show at least the selected one!
             addToEnd(right, visibleCount);
-            if (verticalTabRuns) {
+            if (isVertical) {
                 firstRect.height = remainingSpace; // force it to fit!
             } else {
                 firstRect.width = remainingSpace; // force it to fit!
@@ -199,12 +214,12 @@ class AquaTabbedPaneTabState {
             while ((visibleCount < tabCount) && !(rightDone && leftDone)) {
                 if (!rightDone && right >= 0 && right < tabCount) {
                     Rectangle rightRect = rects[right];
-                    if ((verticalTabRuns ? rightRect.height : rightRect.width) > remainingSpace) {
+                    if ((isVertical ? rightRect.height : rightRect.width) > remainingSpace) {
                         rightDone = true;
                     } else {
                         addToEnd(right, visibleCount);
                         visibleCount++;
-                        remainingSpace -= (verticalTabRuns ? rightRect.height : rightRect.width);
+                        remainingSpace -= (isVertical ? rightRect.height : rightRect.width);
                         right++;
                         continue; // this gives a bias to "paging forward", and "inching backward"
                     }
@@ -214,12 +229,12 @@ class AquaTabbedPaneTabState {
 
                 if (!leftDone && left >= 0 && left < tabCount) {
                     Rectangle leftRect = rects[left];
-                    if ((verticalTabRuns ? leftRect.height : leftRect.width) > remainingSpace) {
+                    if ((isVertical ? leftRect.height : leftRect.width) > remainingSpace) {
                         leftDone = true;
                     } else {
                         addToBeginning(left, visibleCount);
                         visibleCount++;
-                        remainingSpace -= (verticalTabRuns ? leftRect.height : leftRect.width);
+                        remainingSpace -= (isVertical ? leftRect.height : leftRect.width);
                         left--;
                     }
                 } else {
@@ -228,7 +243,9 @@ class AquaTabbedPaneTabState {
             }
         }
 
-        if (visibleCount > visibleTabList.length) visibleCount = visibleTabList.length;
+        if (visibleCount > visibleTabList.length) {
+            visibleCount = visibleTabList.length;
+        }
 
         hasMoreLeftTabs = visibleTabList[0] > 0;
         hasMoreRightTabs = visibleTabList[visibleCount - 1] < visibleTabList.length - 1;
@@ -236,7 +253,7 @@ class AquaTabbedPaneTabState {
         numberOfVisibleTabs = visibleCount;
         // add the scroll tab at the end;
         lastLeftmostTab = getIndex(0);
-        lastReturnAt = returnAt;
+        lastTabsLength = tabsLength;
 
         int firstTabIndex = getIndex(0);
         int lastTabIndex = getIndex(visibleCount - 1);
@@ -251,8 +268,24 @@ class AquaTabbedPaneTabState {
         }
     }
 
-    protected void alignRectsRunFor(Rectangle[] rects, Dimension tabPaneSize, int tabPlacement, boolean isRightToLeft) {
+    protected void alignRectsRunFor(Rectangle[] rects,
+                                    Dimension tabPaneSize,
+                                    int rightMargin,
+                                    int tabPlacement,
+                                    boolean isReversed) {
+
         boolean isVertical = tabPlacement == SwingConstants.LEFT || tabPlacement == SwingConstants.RIGHT;
+
+        // Adjust tab information for a reversed horizontal layout
+        if (isReversed && tabPlacement != SwingConstants.LEFT) {
+            int tabCount = getTotal();
+            for (int i = 0; i < tabCount; i++) {
+                rects[i].x = rightMargin - rects[i].x - rects[i].width;
+            }
+            boolean temp = hasMoreLeftTabs;
+            hasMoreLeftTabs = hasMoreRightTabs;
+            hasMoreRightTabs = temp;
+        }
 
         if (isVertical) {
             if (needsScrollers) {
@@ -262,14 +295,23 @@ class AquaTabbedPaneTabState {
             }
         } else {
             if (needsScrollers) {
-                stretchScrollingHorizontalRun(rects, tabPaneSize, isRightToLeft);
+                stretchScrollingHorizontalRun(rects, tabPaneSize, isReversed);
             } else {
-                centerHorizontalRun(rects, tabPaneSize, isRightToLeft);
+                centerHorizontalRun(rects, tabPaneSize, isReversed);
             }
+        }
+
+        if (tabPlacement == SwingConstants.LEFT) {
+            boolean temp = hasMoreLeftTabs;
+            hasMoreLeftTabs = hasMoreRightTabs;
+            hasMoreRightTabs = temp;
+            Rectangle tempR = new Rectangle(leftScrollTabRect);
+            leftScrollTabRect.setBounds(rightScrollTabRect);
+            rightScrollTabRect.setBounds(tempR);
         }
     }
 
-    private void centerHorizontalRun(Rectangle[] rects, Dimension size, boolean isRightToLeft) {
+    private void centerHorizontalRun(Rectangle[] rects, Dimension size, boolean isReversed) {
         int totalLength = 0;
         for (Rectangle element : rects) {
             totalLength += element.width;
@@ -277,7 +319,7 @@ class AquaTabbedPaneTabState {
 
         int x = size.width / 2 - totalLength / 2;
 
-        if (isRightToLeft) {
+        if (!isReversed) {
             for (Rectangle rect : rects) {
                 rect.x = x;
                 x += rect.width;
@@ -313,7 +355,7 @@ class AquaTabbedPaneTabState {
         }
     }
 
-    private void stretchScrollingHorizontalRun(Rectangle[] rects, Dimension size, boolean isRightToLeft) {
+    private void stretchScrollingHorizontalRun(Rectangle[] rects, Dimension size, boolean isReversed) {
         int totalTabs = getTotal();
         int firstTabIndex = getIndex(0);
         int lastTabIndex = getIndex(totalTabs - 1);
@@ -336,7 +378,7 @@ class AquaTabbedPaneTabState {
         int runningLength = 0;
         int xOffset = pane.tabAreaInsets.left + (needsLeftScrollTab() ? FIXED_SCROLL_TAB_LENGTH : 0);
 
-        if (isRightToLeft) {
+        if (!isReversed) {
             for (int i = firstTabIndex; i <= lastTabIndex; i++) {
                 Rectangle rect = rects[i];
                 int slackToAdd = minSlack;
@@ -362,37 +404,13 @@ class AquaTabbedPaneTabState {
             }
         }
 
-        if (isRightToLeft) {
-            leftScrollTabRect.x = pane.tabAreaInsets.left;
-            leftScrollTabRect.y = rects[firstTabIndex].y;
-            leftScrollTabRect.height = rects[firstTabIndex].height;
+        leftScrollTabRect.x = pane.tabAreaInsets.left;
+        leftScrollTabRect.y = rects[firstTabIndex].y;
+        leftScrollTabRect.height = rects[firstTabIndex].height;
 
-            rightScrollTabRect.x = size.width - pane.tabAreaInsets.right - rightScrollTabRect.width;
-            rightScrollTabRect.y = rects[lastTabIndex].y;
-            rightScrollTabRect.height = rects[lastTabIndex].height;
-        } else {
-            rightScrollTabRect.x = pane.tabAreaInsets.left;
-            rightScrollTabRect.y = rects[firstTabIndex].y;
-            rightScrollTabRect.height = rects[firstTabIndex].height;
-
-            leftScrollTabRect.x = size.width - pane.tabAreaInsets.right - rightScrollTabRect.width;
-            leftScrollTabRect.y = rects[lastTabIndex].y;
-            leftScrollTabRect.height = rects[lastTabIndex].height;
-
-            if (needsLeftScrollTab()) {
-                for (int i = lastTabIndex; i >= firstTabIndex; i--) {
-                    Rectangle rect = rects[i];
-                    rect.x -= FIXED_SCROLL_TAB_LENGTH;
-                }
-            }
-
-            if (needsRightScrollTab()) {
-                for (int i = lastTabIndex; i >= firstTabIndex; i--) {
-                    Rectangle rect = rects[i];
-                    rect.x += FIXED_SCROLL_TAB_LENGTH;
-                }
-            }
-        }
+        rightScrollTabRect.x = size.width - pane.tabAreaInsets.right - rightScrollTabRect.width;
+        rightScrollTabRect.y = rects[lastTabIndex].y;
+        rightScrollTabRect.height = rects[lastTabIndex].height;
     }
 
     private void stretchScrollingVerticalRun(Rectangle[] rects, Dimension size) {

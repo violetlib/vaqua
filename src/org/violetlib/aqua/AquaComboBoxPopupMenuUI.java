@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2021 Alan Snyder.
+ * Copyright (c) 2015-2025 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -12,8 +12,7 @@ import java.awt.*;
 import javax.swing.*;
 import javax.swing.plaf.ComponentUI;
 
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.*;
 
 /**
  * The UI for a combo box popup menu. It installs the intended menu border. Needed because a JPopupMenu uninstalls and
@@ -61,7 +60,10 @@ public class AquaComboBoxPopupMenuUI extends AquaPopupMenuUI {
         if (owner instanceof JComboBox) {
             JComboBox cb = (JComboBox) owner;
             if (cb.isEditable()) {
-                return OSXSystemProperties.OSVersion >= 1014 ? SIMPLE_CONTEXTUAL_MENU_STYLE : ORDINARY_CONTEXTUAL_MENU_STYLE;
+                int version = AquaPainting.getVersion();
+                if (version < 1600) {
+                    return version >= 1014 ? SIMPLE_CONTEXTUAL_MENU_STYLE : ORDINARY_CONTEXTUAL_MENU_STYLE;
+                }
             }
         }
         return super.getContextualMenuStyle(owner);

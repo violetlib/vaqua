@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2021 Alan Snyder.
+ * Copyright (c) 2015-2025 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -350,13 +350,18 @@ public class AquaCustomStyledWindow {
         attachHierarchyListener(tb);
     }
 
+    public void setupWindowDragging() {
+        attachWindowDraggingMouseListener(rp);
+    }
+
     protected void installToolbarBorder(JComponent tb) {
         Border b = tb.getBorder();
         if (b == null || b instanceof UIResource) {
+            int version = AquaPainting.getVersion();
             boolean isTall = AquaToolBarUI.isTallFormatToolBar(tb);
             int left = 4;
             int top = 4;
-            int bottom = isTall ? 0 : 4;
+            int bottom = isTall && version < 1500 ? 0 : 4;
             if (style == STYLE_UNIFIED) {
                 tb.setBorder(new CustomToolbarBorder(left, TITLE_BAR_HEIGHT, bottom));
             } else if (style == STYLE_COMBINED) {

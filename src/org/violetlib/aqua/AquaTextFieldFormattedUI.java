@@ -39,6 +39,8 @@ import javax.swing.JComponent;
 import javax.swing.plaf.ComponentUI;
 import javax.swing.text.JTextComponent;
 
+import org.jetbrains.annotations.*;
+
 /**
  * This class exists only as a hack to work around a Sun bug which parks the
  * insertion caret at the beginning of a text field when it gets clicked on.
@@ -50,7 +52,7 @@ public class AquaTextFieldFormattedUI extends AquaTextFieldUI implements MouseLi
     }
 
     @Override
-    protected String getPropertyPrefix() {
+    protected @NotNull String getPropertyPrefix() {
         return "FormattedTextField";
     }
 

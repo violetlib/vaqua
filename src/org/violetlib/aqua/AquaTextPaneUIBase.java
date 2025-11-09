@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2021 Alan Snyder.
+ * Copyright (c) 2018-2025 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -19,8 +19,7 @@ import javax.swing.*;
 import javax.swing.border.Border;
 import javax.swing.plaf.UIResource;
 
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.*;
 
 /**
  * A base class for multiple-line text component UIs.
@@ -63,6 +62,9 @@ public class AquaTextPaneUIBase extends AquaTextComponentUIBase {
     @Override
     protected void installDefaults() {
         super.installDefaults();
+        // A disabled text pane uses a translucent background
+        LookAndFeel.installProperty(editor, "opaque", false);
+        installBorder();
         updateBorderOwner();
     }
 
@@ -222,5 +224,24 @@ public class AquaTextPaneUIBase extends AquaTextComponentUIBase {
                 updateBorderOwner();
             }
         }
+    }
+
+    @Override
+    protected void paintBackgroundSafely(@NotNull Graphics g, @Nullable Color background) {
+        Border b = editor.getBorder();
+        if (b instanceof AquaBackgroundBorder) {
+            AquaBackgroundBorder tb = (AquaBackgroundBorder) b;
+            tb.paintBackground(editor, g, background);
+        } else if (background != null && background.getAlpha() > 0 && shouldPaintBackground()) {
+            int width = editor.getWidth();
+            int height = editor.getHeight();
+            g.setColor(background);
+            g.fillRect(0, 0, width, height);
+        }
+    }
+
+
+    protected boolean shouldPaintBackground() {
+        return editor.isOpaque() || owningScrollPane != null;
     }
 }
