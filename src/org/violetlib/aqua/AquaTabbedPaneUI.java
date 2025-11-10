@@ -304,7 +304,7 @@ public class AquaTabbedPaneUI extends AquaTabbedPaneCopyFromBasicUI
     private void createPaneModel() {
 
         // debug
-        System.err.println("Creating tabbed pane model for " + tabPane.getTabCount() + " tabs");
+        // System.err.println("Creating tabbed pane model for " + tabPane.getTabCount() + " tabs");
 
         int tabCount = tabPane.getTabCount();
         int placement = tabPane.getTabPlacement();
