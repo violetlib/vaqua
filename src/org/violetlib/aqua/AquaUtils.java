@@ -776,7 +776,7 @@ final public class AquaUtils {
     // options for when to use a magic eraser
     public final static int ERASE_IF_TEXTURED = 1<<0;   // erase if the window is natively textured
     public final static int ERASE_IF_VIBRANT = 1<<1;    // erase if the window is vibrant
-    public final static int ERASE_ALWLAYS = 1<<2;
+    public final static int ERASE_ALWAYS = 1<<2;
 
     /**
      * Fill the component bounds with the appropriate fill color or magic eraser.
@@ -801,7 +801,7 @@ final public class AquaUtils {
      * @return the fill color, or null to use the magic eraser.
      */
     private static Color getFillColor(Component c, int eraserMode) {
-        if ((eraserMode & ERASE_ALWLAYS) != 0) {
+        if ((eraserMode & ERASE_ALWAYS) != 0) {
             return null;
         }
 
@@ -836,7 +836,7 @@ final public class AquaUtils {
      * @return the fill color, or null to use the magic eraser.
      */
     private static Color getFillColor(Component c, @NotNull Color color, int eraserMode) {
-        if ((eraserMode & ERASE_ALWLAYS) != 0) {
+        if ((eraserMode & ERASE_ALWAYS) != 0) {
             return null;
         }
 
@@ -1236,41 +1236,42 @@ final public class AquaUtils {
      * @param color The color to fill, or null to erase
      */
     public static void fillRect(Graphics g, @Nullable Color color, int x, int y, int w, int h) {
-        Graphics cg = g.create();
+        Graphics2D cg = (Graphics2D) g.create();
 
         try {
-            if (color instanceof GradientColor && cg instanceof Graphics2D) {
+            if (color instanceof GradientColor) {
                 GradientColor gradientColor = (GradientColor) color;
-                Graphics2D gg = (Graphics2D) cg;
                 if (gradientColor.useMagicEraser()) {
-                    gg.setComposite(AlphaComposite.Src);
-                    gg.setColor(AquaColors.CLEAR);
-                    gg.fillRect(x, y, w, h);
+                    erase(cg, x, y, w, h);
                 }
                 Color start = gradientColor.getStart();
                 Color finish = gradientColor.getFinish();
                 GradientPaint gp = new GradientPaint(0, y, start, 0, y + h, finish);
-                gg.setPaint(gp);
-                gg.fillRect(x, y, w, h);
-            } else if (color instanceof TintedEraser && cg instanceof Graphics2D) {
+                cg.setPaint(gp);
+                cg.fillRect(x, y, w, h);
+            } else if (color instanceof TintedEraser) {
                 TintedEraser tintedEraser = (TintedEraser) color;
-                Graphics2D gg = (Graphics2D) cg;
-                gg.setComposite(AlphaComposite.Src);
-                gg.setColor(AquaColors.CLEAR);
-                gg.fillRect(x, y, w, h);
+                erase(cg, x, y, w, h);
                 cg.setColor(tintedEraser);
                 cg.fillRect(x, y, w, h);
             } else if (color != null && color != AquaColors.MAGIC_ERASER) {
                 cg.setColor(color);
                 cg.fillRect(x, y, w, h);
-            } else if (cg instanceof Graphics2D) {
-                ((Graphics2D) cg).setComposite(AlphaComposite.Src);
-                cg.setColor(AquaColors.CLEAR);
-                cg.fillRect(x, y, w, h);
+            } else {
+                erase(cg, x, y, w, h);
             }
         } finally {
             cg.dispose();
         }
+    }
+
+    public static void erase(@NotNull Graphics g, int x, int y, int w, int h)
+    {
+        Graphics2D e = (Graphics2D) g.create();
+        e.setComposite(AlphaComposite.Src);
+        e.setColor(AquaColors.CLEAR);
+        e.fillRect(x, y, w, h);
+        e.dispose();
     }
 
     public static Graphics2D toGraphics2D(Graphics g) {

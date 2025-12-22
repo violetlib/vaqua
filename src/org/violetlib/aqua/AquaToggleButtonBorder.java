@@ -32,16 +32,14 @@ public class AquaToggleButtonBorder extends AquaButtonBorder implements FocusRin
             return AquaButtonSupport.getToolbarItemStyleInfo(b, painter);
         }
 
-        int version = AquaPainting.getVersion();
-        boolean isOld = version < 1500;
-
-        GenericButtonWidget preferredWidget = isOld ? SegmentedButtonWidget.BUTTON_SEGMENTED : ButtonWidget.BUTTON_PUSH;
+        GenericButtonWidget preferredWidget = SegmentedButtonWidget.BUTTON_SEGMENTED;
         if (AquaButtonSupport.isButtonWidgetUsable(b, preferredWidget, painter)) {
             return AquaButtonSupport.getButtonStyleInfo(b, preferredWidget);
         }
 
         if (b.getIcon() != null) {
-            ButtonWidget w = isOld ? ButtonWidget.BUTTON_GRADIENT : ButtonWidget.BUTTON_BEVEL_ROUND;
+            int version = AquaPainting.getVersion();
+            ButtonWidget w = version < 1500 ? ButtonWidget.BUTTON_GRADIENT : ButtonWidget.BUTTON_BEVEL_ROUND;
             return AquaButtonSupport.getButtonStyleInfo(b, w);
         }
 

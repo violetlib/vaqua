@@ -41,7 +41,7 @@ public class AquaColors {
     public static final BasicContextualColors TEXTURED_COLORS
       = createButtonColors("TexturedButton", "texturedText");
 
-    /** For the textured style of buttons, in a tool bar **/
+    /** For the textured style of buttons, in a toolbar **/
     public static final BasicContextualColors TEXTURED_TOOLBAR_COLORS
       = createButtonColors("TexturedToolbarButton", "texturedToolbarText");
 
@@ -85,7 +85,7 @@ public class AquaColors {
     public static final BasicContextualColors POP_UP_DOWN_BUTTON_COLORS
       = createButtonColors("PopUpDown", "pushPopText");
 
-    /** For the default style of segmented buttons, with select one behavior and not in a tool bar **/
+    /** For the default style of segmented buttons, with select one behavior and not in a toolbar **/
     public static final BasicContextualColors SEGMENTED_BUTTON_COLORS
       = createButtonColors("SegmentedButton", "segmentedText");
 
@@ -147,14 +147,15 @@ public class AquaColors {
 
 
     private static boolean COLORS_DEBUG = false;
-    private static @Nullable BasicContextualColors COLORS_DEBUG_CHOICE = TEXTURED_SEGMENTED_BUTTON_COLORS;
+    private static @Nullable BasicContextualColors COLORS_DEBUG_CHOICE = TEXTURED_COLORS;
+
     private static boolean currentColorsDebugFlag;
 
-    public static void setupDebugging(@Nullable BasicContextualColors colors) {
+    /* package private */ static void setupDebugging(@Nullable BasicContextualColors colors) {
         currentColorsDebugFlag = COLORS_DEBUG && (COLORS_DEBUG_CHOICE == null || COLORS_DEBUG_CHOICE == colors);
     }
 
-    public static void clearDebugging() {
+    /* package private */ static void clearDebugging() {
         currentColorsDebugFlag = false;
     }
 

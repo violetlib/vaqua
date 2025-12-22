@@ -53,6 +53,8 @@ import org.violetlib.aqua.AquaUtils.RecyclableSingleton;
 import org.violetlib.aqua.fc.OSXFile;
 import org.violetlib.jnr.aqua.AquaUIPainter.Size;
 
+import static java.awt.MediaTracker.COMPLETE;
+
 public class AquaImageFactory {
 
     public static final Object DARKEN_FOR_SELECTION = new Object();
@@ -68,7 +70,7 @@ public class AquaImageFactory {
 
     // Template images are used with a variety of colors depending upon context.
     // They also need to be identified as such.
-    // To avoid recomputation, we soft cache this information.
+    // To avoid recomputation, we soft-cache this information.
 
     private static final AquaImageCache imageCache = new AquaImageCache();
 
@@ -405,15 +407,20 @@ public class AquaImageFactory {
 //    }
 
     private static Image getNSIcon(String imageName) {
+
         Image im = Toolkit.getDefaultToolkit().getImage("NSImage://" + imageName);
+        // The new code below creates a bad image on older macOS releases
+        if (OSXSystemProperties.OSVersion < 1500) {
+            return im;
+        }
         ImageIcon ic = new ImageIcon(im);
-        if (ic.getImageLoadStatus() == MediaTracker.COMPLETE) {
+        if (ic.getImageLoadStatus() == COMPLETE) {
             int width = ic.getIconWidth();
             int height = ic.getIconHeight();
             // Try to get a 2x version
             Image im2 = getNativeImage(imageName, width * 2, height * 2);
             ImageIcon ic2 = new ImageIcon(im2);
-            if (ic2.getImageLoadStatus() == MediaTracker.COMPLETE) {
+            if (ic2.getImageLoadStatus() == COMPLETE) {
                 BufferedImage b1 = Images.toBufferedImage(ic);
                 BufferedImage b2 = Images.toBufferedImage(ic2);
                 return JavaSupport.createMultiResolutionImage(b1, b2);

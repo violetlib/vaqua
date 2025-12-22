@@ -35,6 +35,8 @@ package org.violetlib.aqua;
 
 import java.awt.*;
 import java.awt.event.*;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import javax.swing.*;
 import javax.swing.border.Border;
 import javax.swing.plaf.ComponentUI;
@@ -68,13 +70,13 @@ public class AquaPopupMenuUI extends BasicPopupMenuUI implements AquaComponentUI
 
     private AquaContextualPopup cp;
     private ScrollingMouseListener scrollingMouseListener = new ScrollingMouseListener();
+    private PropertyChangeListener componentOrientationListener = new MyComponentOrientationListener();
     protected @Nullable AppearanceContext appearanceContext;
     protected @Nullable MenuDescription menuDescription;
 
     private final @NotNull BasicContextualColors colors;
     private @Nullable Dimension selectionIconSize;
     private @Nullable Dimension arrowIconSize;
-
 
     private @Nullable Icon checkIcon;
     private @Nullable Icon radioIcon;
@@ -156,12 +158,14 @@ public class AquaPopupMenuUI extends BasicPopupMenuUI implements AquaComponentUI
         popupMenu.addMouseListener(scrollingMouseListener);
         popupMenu.addMouseMotionListener(scrollingMouseListener);
         popupMenu.addMouseWheelListener(scrollingMouseListener);
+        popupMenu.addPropertyChangeListener("componentOrientation", componentOrientationListener);
         AppearanceManager.installListeners(popupMenu);
     }
 
     @Override
     protected void uninstallListeners() {
         AppearanceManager.uninstallListeners(popupMenu);
+        popupMenu.removePropertyChangeListener("componentOrientation", componentOrientationListener);
         popupMenu.removeMouseListener(scrollingMouseListener);
         popupMenu.removeMouseMotionListener(scrollingMouseListener);
         popupMenu.removeMouseWheelListener(scrollingMouseListener);
@@ -330,6 +334,18 @@ public class AquaPopupMenuUI extends BasicPopupMenuUI implements AquaComponentUI
             HIDE_POPUP_KEY = cb.getClientProperty("doNotCancelPopup");
         }
         return HIDE_POPUP_KEY;
+    }
+
+    private class MyComponentOrientationListener
+      implements PropertyChangeListener
+    {
+        @Override
+        public void propertyChange(PropertyChangeEvent e) {
+            if (arrowIconSize != null) {  // should not be null
+                arrowIcon = AquaImageFactory.getSubmenuArrow(popupMenu, arrowIconSize);
+                menuDescription = null; // force recomputation when needed
+            }
+        }
     }
 
     private class ScrollingMouseListener implements MouseListener, MouseMotionListener, MouseWheelListener {

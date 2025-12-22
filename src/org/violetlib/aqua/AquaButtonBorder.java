@@ -55,6 +55,7 @@ import static org.violetlib.aqua.AquaButtonSupport.isColorWell;
 import static org.violetlib.aqua.OSXSystemProperties.OSVersion;
 import static org.violetlib.jnr.aqua.AquaUIPainter.ButtonState.OFF;
 import static org.violetlib.jnr.aqua.AquaUIPainter.ButtonState.ON;
+import static org.violetlib.jnr.aqua.AquaUIPainter.ButtonWidget.BUTTON_TOOLBAR_ITEM;
 
 /**
  * A border for a button. The border is painted by a native painter. The native painter defines the border insets,
@@ -144,6 +145,15 @@ public abstract class AquaButtonBorder extends AquaBorder implements FocusRingOu
         int height = viewRect.height;
 
         AppearanceManager.ensureAppearance(b);
+
+        int version = AquaPainting.getVersion();
+        if (bg.getWidget() == BUTTON_TOOLBAR_ITEM && version < 1600)
+        {
+            RoundRectangle2D shape = new RoundRectangle2D.Double(x, y, width - 1, height - 1, 8, 8);
+            AquaButtonSupport.paintToolbarItemBackground(b, (ButtonConfiguration) bg, g, shape);
+            return;
+        }
+
         AquaUtils.configure(painter, b, width, height);
         org.violetlib.jnr.Painter p = painter.getPainter(bg);
         p.paint(g, x, y);
@@ -327,7 +337,7 @@ public abstract class AquaButtonBorder extends AquaBorder implements FocusRingOu
      */
 
     protected boolean isSplitToolbarItem(@NotNull AbstractButton b, @NotNull GenericButtonConfiguration g) {
-        if (g.getWidget() == AquaUIPainter.ButtonWidget.BUTTON_TOOLBAR_ITEM && b.getIcon() != null) {
+        if (g.getWidget() == BUTTON_TOOLBAR_ITEM && b.getIcon() != null) {
             int version = AquaPainting.getVersion();
             return version >= 1500;
         }
@@ -572,7 +582,7 @@ public abstract class AquaButtonBorder extends AquaBorder implements FocusRingOu
         if (g instanceof ButtonLayoutConfiguration) {
             ButtonLayoutConfiguration bg = (ButtonLayoutConfiguration) g;
             AquaUIPainter.ButtonWidget widget = bg.getButtonWidget();
-            if (widget == AquaUIPainter.ButtonWidget.BUTTON_TOOLBAR_ITEM) {
+            if (widget == BUTTON_TOOLBAR_ITEM) {
                 int version = AquaPainting.getVersion();
                 if (version >= 1600) {
                     return smallToolbarSize;

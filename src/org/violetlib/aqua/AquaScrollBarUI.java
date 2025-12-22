@@ -52,6 +52,8 @@ import org.violetlib.jnr.Painter;
 import org.violetlib.jnr.aqua.*;
 import org.violetlib.jnr.aqua.AquaUIPainter.*;
 
+import static org.violetlib.jnr.aqua.AquaUIPainter.ScrollBarWidget.LEGACY_SIDEBAR;
+
 public class AquaScrollBarUI extends ScrollBarUI implements AquaComponentUI {
 
     public static final String INTERNAL_STYLE_CLIENT_PROPERTY_KEY = "JScrollBar.style";
@@ -179,6 +181,17 @@ public class AquaScrollBarUI extends ScrollBarUI implements AquaComponentUI {
             return;
         }
 
+        int width = fScrollBar.getWidth();
+        int height = fScrollBar.getHeight();
+        ScrollBarConfiguration bg = getConfiguration(false);
+        int x = 0;
+        int y = 0;
+
+        if (bg.getWidget() == LEGACY_SIDEBAR && bg.isTrackSuppressed() && !AquaPainting.useLiquidGlassSidebar()) {
+            // The track is part of the sidebar, which means it must reveal the vibrant background.
+            AquaUtils.fillRect(g, null, 0, 0, width, height);
+        }
+
         Graphics2D gg = null;
 
         if (alpha < 1) {
@@ -188,12 +201,6 @@ public class AquaScrollBarUI extends ScrollBarUI implements AquaComponentUI {
         }
 
         // Since 10.7, there are no arrow buttons, just a thumb in a track.
-
-        int width = fScrollBar.getWidth();
-        int height = fScrollBar.getHeight();
-        ScrollBarConfiguration bg = getConfiguration(false);
-        int x = 0;
-        int y = 0;
 
         // If the scroll bar is an overlay scroll bar in non-rollover mode, we may need to offset the rendering to abut
         // the outer edge of the scroll bar
@@ -306,7 +313,7 @@ public class AquaScrollBarUI extends ScrollBarUI implements AquaComponentUI {
 
         boolean isOverlay = isOverlay();
         if (isSidebar() && !isOverlay) {
-            return ScrollBarWidget.LEGACY_SIDEBAR;
+            return LEGACY_SIDEBAR;
         }
 
         if (isOverlay) {

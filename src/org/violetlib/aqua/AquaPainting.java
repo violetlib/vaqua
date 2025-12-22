@@ -34,6 +34,13 @@ public class AquaPainting {
         return cachedRenderingVersion = version;
     }
 
+    public static boolean isSidebarVibrant()
+    {
+        // TBD: the current VisualEffectView code does not support rounded corners.
+
+        return !useLiquidGlassSidebar();
+    }
+
     public static boolean useLiquidGlassSidebar()
     {
         return getVersion() >= 1600;

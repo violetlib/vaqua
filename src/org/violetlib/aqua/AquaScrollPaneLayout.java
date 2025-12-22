@@ -193,6 +193,9 @@ public class AquaScrollPaneLayout extends ScrollPaneLayout implements UIResource
                 } else {
                     vsb.setBounds(availR.x, availR.y + scrollBarExtraMargin, width, height);
                 }
+                if (!isOverlay) {
+                    vsb.setVisible(true);
+                }
             } else {
                 vsb.setBounds(0, 0, 0, 0);
             }
@@ -206,6 +209,9 @@ public class AquaScrollPaneLayout extends ScrollPaneLayout implements UIResource
                     width -= scrollBarExtraMargin;
                 }
                 hsb.setBounds(availR.x + scrollBarExtraMargin, availR.y + availR.height - height, width, height);
+                if (!isOverlay) {
+                    hsb.setVisible(true);
+                }
             } else {
                 hsb.setBounds(0, 0, 0, 0);
             }

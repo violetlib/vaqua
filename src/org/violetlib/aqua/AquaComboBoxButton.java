@@ -1,5 +1,5 @@
 /*
- * Changes Copyright (c) 2015-2018 Alan Snyder.
+ * Changes Copyright (c) 2015-2025 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -76,12 +76,14 @@ class AquaComboBoxButton extends JButton {
         public void mouseEntered(MouseEvent e) {
             isRollover = true;
             comboBox.repaint();
+            ui.rolloverStateChanged(true);
         }
 
         @Override
         public void mouseExited(MouseEvent e) {
             isRollover = false;
             comboBox.repaint();
+            ui.rolloverStateChanged(false);
         }
     }
 }

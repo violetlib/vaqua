@@ -42,7 +42,7 @@ public class SegmentedControlModel {
     // is represented in VAqua using distinct segmented button widgets. Although the segmented control membership
     // affects the choice of segmented button widget, it does not affect layout.
 
-    // In macOS 11, when the mouse moves over a textured segmented control on the toolbar. all of the buttons react.
+    // In macOS 11, when the mouse moves over a textured segmented control on the toolbar, all of the buttons react.
 
     // In macOS 11, a default segmented control uses a slider style if the control contains more than one button.
 
@@ -335,9 +335,9 @@ public class SegmentedControlModel {
         if (m != null) {
             return getSpecialWidget(m, standardWidget);
         } else if ("only".equals(AquaButtonExtendedTypes.getValidSegmentPosition(b))) {
-            if (standardWidget == BUTTON_SEGMENTED && OSXSystemProperties.OSVersion > 1015) {
-                return BUTTON_SEGMENTED_SLIDER;
-            }
+//            if (standardWidget == BUTTON_SEGMENTED && OSXSystemProperties.OSVersion > 1015) {
+//                return BUTTON_SEGMENTED_SLIDER;
+//            }
             if (AquaButtonBorder.isIconOnly(b)) {
                 // A solo segmented button must be "select any"
                 if (standardWidget == BUTTON_SEGMENTED_TEXTURED_TOOLBAR) {

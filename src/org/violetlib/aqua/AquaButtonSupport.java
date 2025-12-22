@@ -479,28 +479,9 @@ public class AquaButtonSupport {
 
                 int version = AquaPainting.getVersion();
                 if (version < 1600) {
-                    AquaAppearance appearance = AppearanceManager.ensureAppearance(b);
                     int d = 1;
                     RoundRectangle2D shape = new RoundRectangle2D.Double(x, y - d, width - 1, height + 2 * d, 8, 8);
-                    AquaButtonExtendedTypes.WidgetInfo wi = AquaButtonExtendedTypes.getWidgetInfo(bg.getButtonWidget());
-                    AquaUIPainter.State state = bg.getState();
-                    AquaUIPainter.ButtonState bs = bg.getButtonState();
-                    boolean useNonexclusive = false;
-                    boolean isIcon = true;
-                    if (bg.getState() == AquaUIPainter.State.PRESSED) {
-                        Color c = AquaColors.getBackground(b, "controlBackground", EffectName.EFFECT_DEEP_PRESSED);
-                        g.setColor(c);
-                        AquaUtils.fillAntiAliased(g, shape);
-                    }
-                    if (appearance.isHighContrast()) {
-                        Color c = wi.getForeground(state, bs, appearance, useNonexclusive, isIcon);
-                        g.setColor(c);
-                        AquaUtils.drawAntiAliased(g, shape);
-                    } else if (bg.getState() == AquaUIPainter.State.ROLLOVER) {
-                        Color c = AquaColors.getBackground(b, "controlBackground", EffectName.EFFECT_ROLLOVER);
-                        g.setColor(c);
-                        AquaUtils.fillAntiAliased(g, shape);
-                    }
+                    paintToolbarItemBackground(b, bg, g, shape);
                 } else {
                     AquaUIPainter.Size sz = bg.getSize();
                     AquaUIPainter.ButtonWidget w = AquaUIPainter.ButtonWidget.BUTTON_GLASS;
@@ -512,6 +493,36 @@ public class AquaButtonSupport {
                     p.paint(g, x, y);
                 }
             }
+        }
+    }
+
+    public static void paintToolbarItemBackground(@NotNull AbstractButton b, @NotNull ButtonConfiguration bg,
+                                                  @NotNull Graphics2D g, @NotNull Shape shape)
+    {
+        AquaAppearance appearance = AppearanceManager.ensureAppearance(b);
+        AquaButtonExtendedTypes.WidgetInfo wi = AquaButtonExtendedTypes.getWidgetInfo(bg.getButtonWidget());
+        AquaUIPainter.State state = bg.getState();
+        AquaUIPainter.ButtonState bs = bg.getButtonState();
+        boolean useNonexclusive = false;
+        boolean isIcon = true;
+        if (bg.getState() == AquaUIPainter.State.PRESSED) {
+            Color c = AquaColors.getBackground(b, "controlBackground", EffectName.EFFECT_DEEP_PRESSED);
+            g.setColor(c);
+            AquaUtils.fillAntiAliased(g, shape);
+        }
+        if (bg.getState() == AquaUIPainter.State.ROLLOVER) {
+            Color c = AquaColors.getBackground(b, "controlBackground", EffectName.EFFECT_ROLLOVER);
+            g.setColor(c);
+            AquaUtils.fillAntiAliased(g, shape);
+        } else if (bg.getButtonState() == AquaUIPainter.ButtonState.ON) {
+            Color c = AquaColors.getBackground(b, "controlBackground", EffectName.EFFECT_PRESSED);
+            g.setColor(c);
+            AquaUtils.fillAntiAliased(g, shape);
+        }
+        if (appearance.isHighContrast()) {
+            Color c = wi.getForeground(state, bs, appearance, useNonexclusive, isIcon);
+            g.setColor(c);
+            AquaUtils.drawAntiAliased(g, shape);
         }
     }
 

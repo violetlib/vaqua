@@ -176,7 +176,6 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
         colors = determineColors();
         updateExpandControlSize();
         updateSideBarConfiguration();
-        sidebarContainerSupport.update();
         configureAppearanceContext(null);
     }
 
@@ -342,13 +341,10 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
         }
     }
 
+    @Override
     public void configureSidebarStyle()
     {
-        if (isSideBar() && !AquaPainting.useLiquidGlassSidebar() && tree.isDisplayable()) {
-            ensureSidebarVibrantEffects();
-        } else {
-            disposeSidebarVibrantEffects();
-        }
+        updateVibrantEffects();
 
         if (isSideBar()) {
             indentationPerLevel = SIDEBAR_INDENTATION;
@@ -369,7 +365,20 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
             tree.revalidate();
             tree.repaint();
             updateCellSizes();
+            updateInsetConfiguration();
+        } else if (isSideBar()) {
+            configureAppearanceContext(null);
         }
+    }
+
+    protected void updateVibrantEffects() {
+        if (tree.isDisplayable()) {
+            if (isSideBar() && AquaPainting.isSidebarVibrant()) {
+                ensureSidebarVibrantEffects();
+                return;
+            }
+        }
+        disposeSidebarVibrantEffects();
     }
 
     protected void ensureSidebarVibrantEffects() {
@@ -973,10 +982,14 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
 
         // An assumption is made here that scrolling a tree will cause the tree to be painted.
 
+        if (sidebarContainerSupport != null) {
+            g = sidebarContainerSupport.setupContainerGraphics(g, appearanceContext);
+        } else {
+            g = g.create();
+        }
+
         if (sidebarVibrantEffects != null) {
             sidebarVibrantEffects.update();
-        } else if (sidebarContainerSupport != null) {
-            g = sidebarContainerSupport.setupContainerGraphics(g, appearanceContext);
         }
 
         // Set the variables used by paintRow
@@ -1001,24 +1014,29 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
         paintBackground(g, background);
 
         super.paint(g, c);
+
+        g.dispose();
     }
 
     protected void paintBackground(@NotNull Graphics g, @NotNull Color background) {
+        int width = tree.getWidth();
+        int height = tree.getHeight();
+        if (sidebarVibrantEffects != null) {
+            AquaUtils.fillRect(g, null, 0, 0, width, height);
+            return;
+        }
+
         if (background.getAlpha() > 0) {
-            int width = tree.getWidth();
-            int height = tree.getHeight();
             AquaUtils.fillRect(g, background, 0, 0, width, height);
         }
 
-        if (!isSideBar || AquaPainting.useLiquidGlassSidebar()) {
-            Rectangle paintBounds = g.getClipBounds();
-            TreePath initialPath = getClosestPathForLocation(tree, 0, paintBounds.y);
-            Enumeration<?> paintingEnumerator = treeState.getVisiblePathsFrom(initialPath);
-            if (initialPath != null && paintingEnumerator != null) {
-                paintRowBackgrounds(g, initialPath, paintingEnumerator);
-            } else if (isStriped) {
-                paintEmptyTreeStripes(g);
-            }
+        Rectangle paintBounds = g.getClipBounds();
+        TreePath initialPath = getClosestPathForLocation(tree, 0, paintBounds.y);
+        Enumeration<?> paintingEnumerator = treeState.getVisiblePathsFrom(initialPath);
+        if (initialPath != null && paintingEnumerator != null) {
+            paintRowBackgrounds(g, initialPath, paintingEnumerator);
+        } else if (isStriped) {
+            paintEmptyTreeStripes(g);
         }
     }
 

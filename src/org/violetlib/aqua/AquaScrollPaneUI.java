@@ -124,7 +124,7 @@ public class AquaScrollPaneUI extends BasicScrollPaneUI
     private boolean isSidebar;
 
     /**
-     * Not null when the scroll pane is a sidebar container using rounded borders.
+     * Not null when the scroll pane is a sidebar container using rounded corners.
      */
     private @Nullable SidebarContainerSupport sidebarContainerSupport;
 
@@ -275,11 +275,6 @@ public class AquaScrollPaneUI extends BasicScrollPaneUI
 
     @Override
     public void update(Graphics g, JComponent c) {
-        AppearanceManager.registerCurrentAppearance(c);
-        if (sidebarContainerSupport == null && (c.isOpaque() || AquaVibrantSupport.isVibrant(c))) {
-            Color background = AquaColors.getBackground(c, "controlBackground");
-            AquaUtils.fillRect(g, c, background, AquaUtils.ERASE_IF_VIBRANT);
-        }
         paint(g, c);
     }
 
@@ -289,6 +284,8 @@ public class AquaScrollPaneUI extends BasicScrollPaneUI
 
     @Override
     public void paint(Graphics g, JComponent c) {
+
+        AppearanceManager.registerCurrentAppearance(c);
 
         // This check is necessary because we are not informed when a new layout manager is installed in the scroll
         // pane. It may change the selected style.
@@ -302,9 +299,16 @@ public class AquaScrollPaneUI extends BasicScrollPaneUI
         if (b instanceof AquaTextComponentBorder) {
             AquaTextComponentBorder tcb = (AquaTextComponentBorder) b;
             tcb.paintBackground(c, g, null);
+            g = g.create();
         } else if (sidebarContainerSupport != null) {
             assert appearanceContext != null;
             g = sidebarContainerSupport.setupContainerGraphics(g, appearanceContext);
+            if ((isSidebar && AquaPainting.isSidebarVibrant()) || AquaVibrantSupport.isVibrant(c)) {
+                AquaUtils.fillRect(g, c, AquaUtils.ERASE_ALWAYS);
+            } else {
+                Color background = AquaColors.getBackground(c, "controlBackground");
+                AquaUtils.fillRect(g, c, background, 0);
+            }
         }
 
         super.paint(g, c);
@@ -313,6 +317,8 @@ public class AquaScrollPaneUI extends BasicScrollPaneUI
         if (isTrackPainted()) {
             paintCorner(g);
         }
+
+        g.dispose();
     }
 
     private boolean isTrackPainted() {

@@ -55,7 +55,6 @@ public class AquaMenuUI extends BasicMenuUI implements AquaComponentUI {
     protected @Nullable JMenu menu;
     protected @NotNull BasicContextualColors colors;
     protected @Nullable AppearanceContext appearanceContext;
-    protected @Nullable Icon arrowIcon;
     protected int textIconGap;
     protected @NotNull Insets menuBarMargin;
 
@@ -70,8 +69,6 @@ public class AquaMenuUI extends BasicMenuUI implements AquaComponentUI {
         super.installUI(c);
 
         assert menu != null;
-        int size = AquaImageFactory.getMenuIconSize(c);
-        arrowIcon = AquaImageFactory.getSubmenuArrow(menu, new Dimension(size, size));
         textIconGap = 4;
         menuBarMargin = UIManager.getInsets("MenuBar.margin");
         if (menuBarMargin == null) {

@@ -39,6 +39,12 @@ public class LocalSidebarContainerSupport
         }
     }
 
+    /**
+     * Return a new graphics context to use when painting the container.
+     *
+     * @param o The original graphics context given to the UI.
+     * @return a graphics context to use instead of {@code o} to paint the container.
+     */
     public @NotNull Graphics2D setupContainerGraphics(@NotNull Graphics o, @NotNull AppearanceContext ac)
     {
         if (directSupport != null) {
@@ -74,7 +80,7 @@ public class LocalSidebarContainerSupport
             c.putClientProperty("Aqua.clip", clip);
             return gg;
         } else {
-            return (Graphics2D) o;
+            return (Graphics2D) o.create();
         }
     }
 

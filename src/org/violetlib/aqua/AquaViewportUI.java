@@ -13,8 +13,7 @@ import javax.swing.*;
 import javax.swing.plaf.ComponentUI;
 import javax.swing.plaf.ViewportUI;
 
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.*;
 import org.violetlib.jnr.aqua.AquaUIPainter;
 
 /**
@@ -38,6 +37,7 @@ public class AquaViewportUI extends ViewportUI implements AquaComponentUI {
     public void installUI(JComponent c) {
         super.installUI(c);
         viewport = (JViewport) c;
+        viewport.setOpaque(false);  // needed in JDKs prior to 17 (see JDK-8253266)
         AquaVibrantSupport.installVibrantStyle(c);
         AppearanceManager.installListeners(c);
         configureAppearanceContext(null);

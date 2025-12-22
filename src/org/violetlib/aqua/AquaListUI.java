@@ -385,9 +385,36 @@ public class AquaListUI extends BasicListUI implements AquaComponentUI, AquaView
         return AquaFocusHandler.hasFocus(list);
     }
 
+    // Called on a change to the style or a possibly relevant change to ancestry of the list
+    protected void updateSideBarConfiguration()
+    {
+        if (sidebarContainerSupport != null) {
+            sidebarContainerSupport.update();
+        }
+    }
+
+    @Override
+    public void configureSidebarStyle()
+    {
+        if (isSideBar()) {
+            list.setLayoutOrientation(JList.VERTICAL);
+            updateVibrantEffects();
+            // On macOS 11+, the sidebar style implies the inset view style.
+            if (AquaUtils.isInsetViewSupported()) {
+                updateInsetConfiguration();
+            }
+            configureAppearanceContext(null);
+        } else {
+            updateVibrantEffects();
+            if (AquaUtils.isInsetViewSupported()) {
+                updateInsetConfiguration();
+            }
+        }
+    }
+
     protected void updateVibrantEffects() {
         if (list.isDisplayable()) {
-            if (isSideBar() && !AquaPainting.useLiquidGlassSidebar()) {
+            if (isSideBar() && AquaPainting.isSidebarVibrant()) {
                 ensureVibrantEffects(AquaVibrantSupport.SIDEBAR_STYLE);
                 return;
             }
@@ -522,33 +549,6 @@ public class AquaListUI extends BasicListUI implements AquaComponentUI, AquaView
         updateInset();
     }
 
-    // Called on a change to the style or a possibly relevant change to ancestry of the list
-    protected void updateSideBarConfiguration()
-    {
-        if (sidebarContainerSupport != null) {
-            sidebarContainerSupport.update();
-        }
-    }
-
-    @Override
-    public void configureSidebarStyle()
-    {
-        if (isSideBar()) {
-            list.setLayoutOrientation(JList.VERTICAL);
-            updateVibrantEffects();
-            // On macOS 11+, the sidebar style implies the inset view style.
-            if (AquaUtils.isInsetViewSupported()) {
-                updateInsetConfiguration();
-            }
-            configureAppearanceContext(null);
-        } else {
-            updateVibrantEffects();
-            if (AquaUtils.isInsetViewSupported()) {
-                updateInsetConfiguration();
-            }
-        }
-    }
-
     private void updateInset() {
         boolean value = getInsetValue();
         if (value != isInset) {
@@ -668,12 +668,16 @@ public class AquaListUI extends BasicListUI implements AquaComponentUI, AquaView
             }
         }
 
+        if (sidebarContainerSupport != null) {
+            g = sidebarContainerSupport.setupContainerGraphics(g, appearanceContext);
+        } else {
+            g = g.create();
+        }
+
         if (vibrantEffects != null) {
+            eraseBackground(g);
             vibrantEffects.update();
         } else {
-            if (sidebarContainerSupport != null) {
-                g = sidebarContainerSupport.setupContainerGraphics(g, appearanceContext);
-            }
             paintBackground(g);
             paintStripes(g);
         }
@@ -688,6 +692,7 @@ public class AquaListUI extends BasicListUI implements AquaComponentUI, AquaView
             }
             paintDropLine(g, loc, color);
         }
+        g.dispose();
     }
 
     private void paintBackground(@NotNull Graphics g) {
@@ -697,6 +702,12 @@ public class AquaListUI extends BasicListUI implements AquaComponentUI, AquaView
             int height = list.getHeight();
             AquaUtils.fillRect(g, background, 0, 0, width, height);
         }
+    }
+
+    private void eraseBackground(@NotNull Graphics g) {
+        int width = list.getWidth();
+        int height = list.getHeight();
+        AquaUtils.erase(g, 0, 0, width, height);
     }
 
     private @NotNull Color getBackgroundColor() {

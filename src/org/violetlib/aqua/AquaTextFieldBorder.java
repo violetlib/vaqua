@@ -77,11 +77,17 @@ public class AquaTextFieldBorder extends AquaTextComponentBorder {
         }
         // An application-specified background supersedes the native background unless the text field has focus
         if (background != null && !(background instanceof UIResource) && !AquaFocusHandler.hasFocus(c)) {
-            if (c.isOpaque()) {
+            if (background.getAlpha() > 0) {
                 g.setColor(background);
                 int width = c.getWidth();
                 int height = c.getHeight();
-                g.fillRect(0, 0, width, height);
+                Shape outline = getFocusRingOutline((JComponent)c);
+                if (outline != null && !(outline instanceof Rectangle2D)) {
+                    Graphics2D gg = (Graphics2D) g;
+                    AquaUtils.fillAntiAliased(gg, outline);
+                } else {
+                    g.fillRect(0, 0, width, height);
+                }
             }
         } else {
             Painter p = getConfiguredPainter(c);

@@ -131,18 +131,16 @@ public class AquaSegmentedButtonBorder extends AquaButtonBorder implements Focus
         Size sz = g.getSize();
         AquaUIPainter.Direction d = AquaUIPainter.Direction.UP;
         Position pos = g.getPosition();
-        boolean leftDividerPainted = false;
+        boolean leftDividerPainted = shouldPaintLeftDivider(pos, widget, b.isSelected(), isExclusive);
         boolean leftDividerSelected = false;
         boolean rightDividerPainted = pos == Position.FIRST || pos == Position.MIDDLE;
         boolean rightDividerSelected = false;
 
         // The divider on the right side must be suppressed in certain cases.
-
         if (rightDividerPainted) {
             AbstractButton rightButton = SegmentedControlModel.getRightAdjacentButton(b);
             if (rightButton != null && rightButton.isSelected() && !b.isSelected()) {
-                SegmentedButtonWidget w = getButtonWidgetForPainting(rightButton);
-                if (w != null && w.isSlider()) {
+                if (shouldSuppressRightDivider(rightButton, isExclusive)) {
                     rightDividerPainted = false;
                 }
             }
@@ -153,6 +151,46 @@ public class AquaSegmentedButtonBorder extends AquaButtonBorder implements Focus
         AquaUIPainter.SwitchTracking tracking = isExclusive ? SwitchTracking.SELECT_ONE : SwitchTracking.SELECT_ANY;
         return new SegmentedButtonConfiguration(widget, sz, state, isSelected, isFocused, d, pos,
           leftState, rightState, tracking);
+    }
+
+    private boolean shouldPaintLeftDivider(@NotNull Position pos,
+                                           @NotNull SegmentedButtonWidget widget,
+                                           boolean isSelected,
+                                           boolean isExclusive)
+    {
+        if ((pos == Position.MIDDLE || pos == Position.LAST) && isSelected) {
+            if (widget.isSlider()) {
+                return true;
+            }
+            if (widget == SegmentedButtonWidget.BUTTON_SEGMENTED && isExclusive) {
+                int version = AquaNativeRendering.getSystemRenderingVersion();
+                return version >= 1100;
+            }
+        }
+        return false;
+    }
+
+    private boolean shouldSuppressRightDivider(@NotNull AbstractButton rightButton, boolean isExclusive)
+    {
+        // A selected slider style button owns the divider on the left side if the left side button is not selected.
+        SegmentedButtonWidget w = getButtonWidgetForPainting(rightButton);
+        if (w == null) {
+            return false;
+        }
+
+        if (w.isSlider()) {
+            return true;
+        }
+        // A selected button that paints a background owns the divider on the left side if the left side button
+        // is not selected.
+        int version = AquaPainting.getVersion();
+        if (version >= 1100 && version < 1600 && w == SegmentedButtonWidget.BUTTON_SEGMENTED && !isExclusive) {
+            return true;
+        }
+        if (version >= 1100 && version < 1600 && isExclusive && w.isTextured() && !w.isSeparated()) {
+            return true;
+        }
+        return false;
     }
 
     private @Nullable SegmentedButtonWidget getButtonWidgetForPainting(@NotNull AbstractButton b) {

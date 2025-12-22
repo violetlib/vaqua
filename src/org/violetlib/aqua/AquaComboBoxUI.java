@@ -212,6 +212,11 @@ public class AquaComboBoxUI extends BasicComboBoxUI
         }
     }
 
+    public void rolloverStateChanged(boolean isRollover)
+    {
+        configure(null);
+    }
+
     private void configureFocusable(JComboBox c) {
         boolean isFocusable = OSXSystemProperties.isFullKeyboardAccessEnabled();
         if (!c.isEditable()) {
@@ -1450,8 +1455,8 @@ public class AquaComboBoxUI extends BasicComboBoxUI
             } else {
                 o = comboBox.getClientProperty(AquaComboBoxUI.ISSQUARE_CLIENT_PROPERTY_KEY);
                 if (Boolean.TRUE.equals(o)) {
-                    // old client property gets the old square style
-                    style = "old_square";
+                    // old client property gets the square style
+                    style = "square";
                 }
             }
 
@@ -1603,10 +1608,6 @@ public class AquaComboBoxUI extends BasicComboBoxUI
                 case "borderless":
                     return isPopDown ? BUTTON_POP_DOWN_CELL : BUTTON_POP_UP_CELL;
                 case "square":
-                    // Gradient is the new Square
-                    return isPopDown ? BUTTON_POP_DOWN_GRADIENT : BUTTON_POP_UP_GRADIENT;
-                case "old_square":
-                    // Old API gets the old style (if available)
                     return isPopDown ? BUTTON_POP_DOWN_SQUARE : BUTTON_POP_UP_SQUARE;
                 case "bevel":
                     return isPopDown ? BUTTON_POP_DOWN_BEVEL : BUTTON_POP_UP_BEVEL;
@@ -1644,7 +1645,7 @@ public class AquaComboBoxUI extends BasicComboBoxUI
      * @return the offset, or null if none.
      */
     public @Nullable Point getPopupButtonLabelOffset() {
-        // For a pop up menu, the goal is for the menu item label to exactly overlay the combo box button label, at
+        // For a popup menu, the goal is for the menu item label to exactly overlay the combo box button label, at
         // least in the case where our default renderer is used. The correction factors are based on a number of
         // parameters, many of which are not currently accessible. We can get a good approximation with the following
         // values.

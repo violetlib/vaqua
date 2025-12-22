@@ -142,6 +142,8 @@ public class SystemColors {
         colors.add("selectedGradientText_disabled", "gradientText_disabled");
 
         colors.addAll("sidebarBackground", "controlBackground");
+        colors.add("sidebarBorder", "scrollPaneBorder");
+        colors.add("sidebarBorder_inactive", "sidebarBorder");
 
         return colors.get();
     }
@@ -234,6 +236,9 @@ public class SystemColors {
 
         if (OSVersion >= 1016) {
             colors.add("recessedText", 0, 140);
+            if (OSVersion < 1600) {
+                colors.add("recessedText_rollover", 0);
+            }
             colors.add("selectedRecessedText", 0, 206);
             colors.add("selectedRecessedText_disabled", 0, 64);
             colors.add("selectedRecessedText_pressed", 0, 140);
@@ -248,7 +253,13 @@ public class SystemColors {
         colors.add("pushButtonText_pressed", 255, 224);
         colors.add("pushButtonText_focused", 250);
 
-        colors.add("selectedPushButtonText", "alternateSelectedControlText");
+        if (OSVersion >= 1500 && OSVersion < 1600) {
+            colors.add("selectedPushButtonText", 0);
+            colors.add("selectedPushButtonText_disabled", 0, 64);
+            colors.add("selectedPushButtonText_inactive", 0, 128);
+        } else {
+            colors.add("selectedPushButtonText", "alternateSelectedControlText");
+        }
 
         // colors related to pop up and pop down push buttons
         colors.add("pushPopText_pressed", 0, 224);
@@ -445,7 +456,21 @@ public class SystemColors {
         BasicColorsBuilder colors = new BasicColorsBuilder("High Contrast Light", instrumentation, log);
 
         if (OSVersion >= 1600) {
-            colors.add("sidebarBackground_inactive", 243);
+            int bc = OSVersion >= 2602 ? 244 : 237;
+            int sb = OSVersion >= 2602 ? 10 : 73;
+            int sbi = OSVersion >= 2602 ? 99 : 138;
+            colors.add("sidebarBackground", bc);
+            colors.add("sidebarBackground_inactive", bc);
+            colors.add("sidebarBorder", sb);
+            colors.add("sidebarBorder_inactive", sbi);
+        } else if (OSVersion < 1014) {
+            colors.add("windowBackground", 246);
+            colors.add("windowBackground_disabled", 246);
+            colors.add("texturedWindowBackground", 207);
+        } else {
+            colors.add("windowBackground", 236);
+            colors.add("windowBackground_disabled", 236);
+            colors.add("texturedWindowBackground", 212);
         }
 
         colors.add("toolbarBackground_rollover", "clear");
@@ -455,20 +480,34 @@ public class SystemColors {
         colors.add("nonexclusiveTexturedToolbarBackground_rollover", "clear");
         colors.add("nonexclusiveTexturedToolbarBackground_pressed", "controlBackground_pressed");
 
-        colors.add("texturedText", 240);
-        colors.add("texturedText_disabled", 200);
-        colors.add("recessedText", 255);
-        colors.add("recessedText_disabled", 255, 128);
-        colors.add("recessedText_inactive", 255, 100);
-        colors.add("recessedText_pressed", 255);
-        colors.add("recessedText_rollover", 255);
-        colors.add("recessedText_inactive_disabled", 255, 80);
-        colors.add("selectedRecessedText", 255, 206);
-        colors.add("selectedRecessedText_disabled", 255, 128);
-        colors.add("selectedRecessedText_pressed", 255);
-        colors.add("selectedRecessedText_rollover", 255, 200);
-        colors.add("selectedRecessedText_inactive", 255, 100);
-        colors.add("selectedRecessedText_inactive_disabled", 255, 80);
+        if (OSVersion >= 1016) {
+            colors.add("texturedText", 20);
+            colors.add("texturedText_disabled", 60);
+            colors.add("selectedTexturedText", 200);
+        } else if (OSVersion == 1015) {
+            colors.add("texturedText", "controlText");
+        } else {
+            colors.add("texturedText", 240);
+            colors.add("texturedText_disabled", 200);
+        }
+
+        int recessed = OSVersion >= 1015 ? 0 : 255;
+        colors.add("recessedText", recessed);
+        colors.add("recessedText_disabled", recessed, 128);
+        colors.add("recessedText_inactive", recessed, 100);
+        colors.add("recessedText_pressed", recessed);
+        colors.add("recessedText_rollover", OSVersion >= 1015 && OSVersion < 1600 ? 255 : recessed);
+        colors.add("recessedText_inactive_disabled", recessed, 80);
+
+        int selectedRecessed = 255;
+        int selectedRecessedDisabled = OSVersion >= 1600 ? selectedRecessed : 0;
+        colors.add("selectedRecessedText", selectedRecessed, 206);
+        colors.add("selectedRecessedText_disabled", selectedRecessedDisabled, 128);
+        colors.add("selectedRecessedText_pressed", selectedRecessed);
+        colors.add("selectedRecessedText_rollover", selectedRecessed, 200);
+        colors.add("selectedRecessedText_inactive", selectedRecessed, 100);
+        colors.add("selectedRecessedText_inactive_disabled", selectedRecessed, 80);
+
         colors.add("selectedGlassButtonText", 255);
         colors.add("selectedGlassButtonText_inactive", 0);
         colors.add("glassButtonText_inactive", 0, 128);  // a guess
@@ -484,12 +523,13 @@ public class SystemColors {
             colors.add("recessedText_disabled", 0, 100);  // native is darker, seems wrong
             colors.add("recessedText_inactive_disabled", 0, 100);
             colors.add("texturedText", 0, 200);
+        } else if (OSVersion >= 1500) {
+            colors.add("selectedRecessedText_inactive_disabled", 0, 120);
+            colors.add("selectedGlassButtonText_inactive_disabled", 255, 120);
+        }
 
-            colors.add("selectedSegmentedText", 255);
-            colors.add("selectedSegmentedText_rollover", 255);
-            colors.add("selectedSegmentedText_disabled", 255, 100);
-            colors.add("selectedSegmentedText_inactive", 255, 150);
-            colors.add("selectedSegmentedText_inactive_disabled", 255, 100);
+        if (OSVersion >= 1015) {
+            colors.add("selectedTexturedToolbarText_rollover", 255);
             colors.add("selectedTexturedSegmentedText", 255);
             colors.add("selectedTexturedSegmentedText_rollover", 255);
             colors.add("selectedTexturedSegmentedText_disabled", 255, 100);
@@ -500,16 +540,6 @@ public class SystemColors {
             colors.add("selectedTexturedSegmentedToolbarText_disabled", 255, 100);
             colors.add("selectedTexturedSegmentedToolbarText_inactive", 255, 150);
             colors.add("selectedTexturedSegmentedToolbarText_inactive_disabled", 255, 100);
-        }
-
-        if (OSVersion < 1014) {
-            colors.add("windowBackground", 246);
-            colors.add("windowBackground_disabled", 246);
-            colors.add("texturedWindowBackground", 207);
-        } else {
-            colors.add("windowBackground", 236);
-            colors.add("windowBackground_disabled", 236);
-            colors.add("texturedWindowBackground", 212);
         }
 
         if (OSVersion < 1014) {
@@ -613,7 +643,7 @@ public class SystemColors {
         if (OSVersion < 1016) {
             colors.add("texturedText", "controlText");
         } else {
-            colors.add("texturedText", 255, 115);
+            colors.add("texturedText", 255, 134);
         }
         colors.add("texturedText_focused", 0, 192);
         colors.add("texturedText_disabled", "disabledControlText");
@@ -645,6 +675,7 @@ public class SystemColors {
             colors.add("selectedTexturedToolbarText_inactive_disabled", "selectedTexturedText_inactive_disabled");
         } else {
             colors.addAll("selectedTexturedToolbarText", "controlText");
+            colors.add("texturedToolbarText", 255, 134);
         }
 
         // colors related to textured segmented buttons (dark mode)
@@ -919,7 +950,17 @@ public class SystemColors {
         colors.add("texturedWindowBackground", 53);
 
         if (OSVersion >= 1600) {
-            colors.add("sidebarBackground_inactive", 30);
+            int bc = OSVersion >= 2602 ? 12 : 30;
+            int sb = OSVersion >= 2602 ? 168 : 196;
+            int sbi = OSVersion >= 2602 ? 133 : 138;
+
+            colors.add("sidebarBackground", bc);
+            colors.add("sidebarBackground_inactive", bc);
+            colors.add("windowBackground", 22);
+            colors.add("texturedWindowBackground", 22);
+            colors.add("sidebarBorder", sb);
+            colors.add("sidebarBorder_inactive", sbi);
+
             colors.add("selectedSegmentedText", 255);
             colors.add("selectedSegmentedText_inactive", 255);
             colors.add("selectedTexturedSegmentedText", 0);
@@ -932,6 +973,27 @@ public class SystemColors {
             colors.add("selectedTexturedSegmentedToolbarText_disabled", 0, 100);
             colors.add("selectedTexturedSegmentedToolbarText_inactive", 0, 150);
             colors.add("selectedTexturedSegmentedToolbarText_inactive_disabled", 0, 100);
+        } else if (OSVersion >= 1016) {
+            int sbc = OSVersion < 1200 ? 0 : 255;
+            colors.add("selectedBevelText", sbc);
+            colors.add("selectedGlassButtonText", sbc);
+            colors.add("selectedBevelText_rollover", sbc);
+            colors.add("selectedGlassButtonText_rollover", sbc);
+            colors.add("selectedGlassButtonText_disabled", 0, 100);
+            colors.add("selectedTexturedText_disabled", 0, 100);
+            colors.add("selectedTexturedToolbarText_disabled", 0, 100);
+            colors.add("selectedGradientText", 255);
+            colors.add("selectedRoundText", 255);
+            colors.add("selectedRecessedText", 0);
+            colors.add("selectedTexturedText", 0);
+            colors.add("selectedTexturedToolbarText", 0);
+            colors.add("selectedBevelText_inactive", 0);
+            colors.add("selectedGlassButtonText_inactive", 0);
+        } else if (OSVersion == 1015) {
+            colors.add("selectedBevelText", 0);
+            colors.add("selectedGlassButtonText", 0);
+            colors.add("selectedRoundedRectText", 255);
+            colors.add("selectedGradientText_disabled", 0, 100);
         }
 
         colors.add("toolbarBackground_rollover", "clear");

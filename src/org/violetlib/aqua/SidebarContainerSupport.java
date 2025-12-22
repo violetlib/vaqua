@@ -66,13 +66,12 @@ public class SidebarContainerSupport
     }
 
     /**
-     * Return a graphics context to use when painting the container.
+     * Return a new graphics context to use when painting the container.
      * This method retains data used by other methods.
      *
      * @param o The original graphics context given to the UI.
      * @return a graphics context to use instead of {@code o} to paint the container.
      */
-
     public @NotNull Graphics2D setupContainerGraphics(@NotNull Graphics o, @NotNull AppearanceContext ac)
     {
         int w = container.getWidth();
@@ -102,13 +101,15 @@ public class SidebarContainerSupport
     @Override
     public void paintBorder(Component c, Graphics o, int x, int y, int width, int height) {
         AquaAppearance appearance = AppearanceManager.getAppearance(c);
-        if (AquaFocusHandler.isActive((JComponent)c) || appearance.isHighContrast()) {
+        boolean isActive = AquaFocusHandler.isActive((JComponent)c);
+
+        if (isActive || appearance.isHighContrast()) {
             float d = 0.5f;
             float r = radius;
             Shape borderPath = new RoundRectangle2D.Float(x+d, y+d, width-2*d, height-2*d, r, r);
             Graphics2D g = (Graphics2D) o;
 
-            Color color = appearance.getColor("scrollPaneBorder");
+            Color color = appearance.getColor(isActive ? "sidebarBorder" : "sidebarBorder_inactive");
             g.setColor(color);
             g.setStroke(new BasicStroke(0.5f));
             AquaUtils.drawAntiAliased(g, borderPath);
