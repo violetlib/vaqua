@@ -99,6 +99,7 @@ public class SystemColors {
         colors.addAll("gradientSegmentedText", "gradientText");
         colors.addAll("pushPopText", "pushButtonText");
         colors.addAll("toolbarText", "texturedText");
+        colors.addAll("glassButtonText", "bevelText");  // maps to bevel on macOS 15 and earlier
 
         colors.add("toolbarBackground", "clear");
         colors.add("toolbarBackground_rollover", "controlBackground_rollover");
@@ -218,6 +219,10 @@ public class SystemColors {
         colors.add("texturedText_pressed", 34);
         colors.add("texturedText_inactive_disabled", 211);
 
+        if (OSVersion >= 1500) {
+            colors.add("selectedTexturedText", 0);
+        }
+
         if (OSVersion < 1016) {
             colors.add("selectedTexturedText", 255);
             colors.add("selectedTexturedText_disabled", 255, 155);
@@ -283,8 +288,13 @@ public class SystemColors {
             colors.add("selectedGradientSegmentedText", 255);
             colors.add("selectedGradientSegmentedText_disabled", 255, 128);
 
-            colors.add("selectedNonexclusiveText", 255);
-            colors.add("selectedNonexclusiveText_disabled", 255, 140);
+            if (OSVersion >= 1500 && OSVersion < 1600) {
+                colors.add("selectedNonexclusiveText", 0);
+                colors.add("selectedNonexclusiveText_disabled", 0, 140);
+            } else {
+                colors.add("selectedNonexclusiveText", 255);
+                colors.add("selectedNonexclusiveText_disabled", 255, 140);
+            }
         } else {
             colors.add("selectedSegmentedText_disabled", 172);
             colors.add("selectedSegmentedText_inactive", 34);
@@ -382,10 +392,12 @@ public class SystemColors {
         }
 
         // colors related to glass buttons (simulated)
-        colors.add("glassButtonText", 0);
-        colors.add("glassButtonText_inactive", 204);
-        colors.add("glassButtonText_disabled", 186);
-        colors.add("glassButtonText_inactive_disabled", 193);
+        if (OSVersion >= 1600) {
+            colors.add("glassButtonText", 0);
+            colors.add("glassButtonText_inactive", 204);
+            colors.add("glassButtonText_disabled", 186);
+            colors.add("glassButtonText_inactive_disabled", 193);
+        }
 
         // colors related to sidebars
         colors.add("categoryText", 30, 220);
@@ -508,9 +520,6 @@ public class SystemColors {
         colors.add("selectedRecessedText_inactive", selectedRecessed, 100);
         colors.add("selectedRecessedText_inactive_disabled", selectedRecessed, 80);
 
-        colors.add("selectedGlassButtonText", 255);
-        colors.add("selectedGlassButtonText_inactive", 0);
-        colors.add("glassButtonText_inactive", 0, 128);  // a guess
 
         if (OSVersion >= 1600) {
             colors.add("selectedRoundedRectText", 255);
@@ -523,6 +532,7 @@ public class SystemColors {
             colors.add("recessedText_disabled", 0, 100);  // native is darker, seems wrong
             colors.add("recessedText_inactive_disabled", 0, 100);
             colors.add("texturedText", 0, 200);
+            colors.add("glassButtonText_inactive", 0, 128);  // a guess
         } else if (OSVersion >= 1500) {
             colors.add("selectedRecessedText_inactive_disabled", 0, 120);
             colors.add("selectedGlassButtonText_inactive_disabled", 255, 120);
@@ -650,17 +660,18 @@ public class SystemColors {
         colors.add("texturedText_inactive", "disabledControlText");
         colors.add("texturedText_inactive_disabled", 255, 32);
 
-        if (OSVersion < 1016) {
+        if (OSVersion >= 1600) {
+            colors.addAll("selectedTexturedText", "controlText");
+        } else if (OSVersion >= 1500) {
+            colors.add("selectedTexturedText", 255);
+            colors.add("selectedTexturedText_disabled", 255, 64);
+            colors.add("selectedTexturedText_inactive", 255, 128);
+            colors.add("selectedTexturedText_inactive_disabled", 255, 64);
+        } else {
             colors.add("selectedTexturedText", 0, 192);
             colors.add("selectedTexturedText_disabled", 0, 64);
-            if (OSVersion == 1015) {
-                colors.add("selectedTexturedText_inactive", 0, 192);
-            } else {
-                colors.add("selectedTexturedText_inactive", 0, 128);
-            }
+            colors.add("selectedTexturedText_inactive", 0, 128);
             colors.add("selectedTexturedText_inactive_disabled", 0, 64);
-        } else {
-            colors.addAll("selectedTexturedText", "controlText");
         }
 
         colors.add("texturedToolbarText", "controlText");
@@ -675,6 +686,7 @@ public class SystemColors {
             colors.add("selectedTexturedToolbarText_inactive_disabled", "selectedTexturedText_inactive_disabled");
         } else {
             colors.addAll("selectedTexturedToolbarText", "controlText");
+            colors.add("selectedTexturedToolbarText_inactive", "selectedTexturedText_inactive");
             colors.add("texturedToolbarText", 255, 134);
         }
 
@@ -975,24 +987,22 @@ public class SystemColors {
             colors.add("selectedTexturedSegmentedToolbarText_inactive_disabled", 0, 100);
         } else if (OSVersion >= 1016) {
             int sbc = OSVersion < 1200 ? 0 : 255;
+            int tc = OSVersion >= 1500 ? 255 : 0;
+
             colors.add("selectedBevelText", sbc);
             colors.add("selectedGlassButtonText", sbc);
             colors.add("selectedBevelText_rollover", sbc);
             colors.add("selectedGlassButtonText_rollover", sbc);
-            colors.add("selectedGlassButtonText_disabled", 0, 100);
-            colors.add("selectedTexturedText_disabled", 0, 100);
-            colors.add("selectedTexturedToolbarText_disabled", 0, 100);
+            colors.add("selectedTexturedText", tc);
+            colors.add("selectedTexturedToolbarText", tc);
+            colors.add("selectedTexturedText_disabled", tc, 100);
+            colors.add("selectedTexturedToolbarText_disabled", tc, 100);
             colors.add("selectedGradientText", 255);
             colors.add("selectedRoundText", 255);
             colors.add("selectedRecessedText", 0);
-            colors.add("selectedTexturedText", 0);
-            colors.add("selectedTexturedToolbarText", 0);
+            colors.add("selectedRoundedRectText", 255);
             colors.add("selectedBevelText_inactive", 0);
             colors.add("selectedGlassButtonText_inactive", 0);
-        } else if (OSVersion == 1015) {
-            colors.add("selectedBevelText", 0);
-            colors.add("selectedGlassButtonText", 0);
-            colors.add("selectedRoundedRectText", 255);
             colors.add("selectedGradientText_disabled", 0, 100);
         }
 
