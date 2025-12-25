@@ -71,7 +71,6 @@ public class AquaPopupMenuUI extends BasicPopupMenuUI implements AquaComponentUI
     private AquaContextualPopup cp;
     private ScrollingMouseListener scrollingMouseListener = new ScrollingMouseListener();
     private PropertyChangeListener componentOrientationListener = new MyComponentOrientationListener();
-    protected @Nullable AppearanceContext appearanceContext;
     protected @Nullable MenuDescription menuDescription;
 
     private final @NotNull BasicContextualColors colors;
@@ -184,13 +183,12 @@ public class AquaPopupMenuUI extends BasicPopupMenuUI implements AquaComponentUI
 
     protected void configureAppearanceContext(@Nullable AquaAppearance appearance) {
         if (appearance == null) {
-            appearance = AppearanceManager.ensureAppearance(popupMenu);
+            appearance = AppearanceManager.getAppearance(popupMenu);
         }
         AquaUIPainter.State state = AquaUIPainter.State.ACTIVE;
-        appearanceContext = new AppearanceContext(appearance, state, false, false);
+        AppearanceContext appearanceContext = new AppearanceContext(appearance, state, false, false);
         BasicContextualColors colors = getMenuColors(popupMenu.getInvoker());
         AquaColors.installColors(popupMenu, appearanceContext, colors);
-        popupMenu.repaint();
     }
 
     @Override

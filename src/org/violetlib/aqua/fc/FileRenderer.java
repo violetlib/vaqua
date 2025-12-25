@@ -114,7 +114,7 @@ public class FileRenderer extends JLabel implements ListCellRenderer, GenericCel
                                                   boolean cellHasFocus) {
 
         AquaListUI ui = AquaUtils.getUI(list, AquaListUI.class);
-        AquaAppearance appearance = AppearanceManager.ensureAppearance(list);
+        AquaAppearance appearance = AppearanceManager.getAppearance(list);
         ContainerContextualColors colors = ui != null ? ui.getColors() : AquaColors.CONTAINER_COLORS;
         return getCellRendererComponent(list, appearance, colors, value, isSelected, cellHasFocus, false);
     }

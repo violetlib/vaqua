@@ -487,7 +487,6 @@ public class AquaButtonSupport {
                     AquaUIPainter.ButtonWidget w = AquaUIPainter.ButtonWidget.BUTTON_GLASS;
                     ButtonConfiguration ig = new ButtonConfiguration(w, sz, bg.getState(), bg.isFocused(),
                       bg.getButtonState(), bg.getLayoutDirection());
-                    AppearanceManager.ensureAppearance(b);
                     AquaUtils.configure(painter, b, width, height);
                     org.violetlib.jnr.Painter p = painter.getPainter(ig);
                     p.paint(g, x, y);
@@ -499,7 +498,7 @@ public class AquaButtonSupport {
     public static void paintToolbarItemBackground(@NotNull AbstractButton b, @NotNull ButtonConfiguration bg,
                                                   @NotNull Graphics2D g, @NotNull Shape shape)
     {
-        AquaAppearance appearance = AppearanceManager.ensureAppearance(b);
+        AquaAppearance appearance = AppearanceManager.getAppearance(b);
         AquaButtonExtendedTypes.WidgetInfo wi = AquaButtonExtendedTypes.getWidgetInfo(bg.getButtonWidget());
         AquaUIPainter.State state = bg.getState();
         AquaUIPainter.ButtonState bs = bg.getButtonState();
@@ -833,11 +832,11 @@ public class AquaButtonSupport {
         public @Nullable Object getCurrentImageProcessingOperator(@NotNull AbstractButton b, boolean isTemplate) {
             AquaUIPainter.State state = getState(b);
             if (state == AquaUIPainter.State.PRESSED) {
-                AquaAppearance appearance = AppearanceManager.ensureAppearance(b);
+                AquaAppearance appearance = AppearanceManager.getAppearance(b);
                 return appearance.isDark() ? AquaImageFactory.LIGHTEN_FOR_DISABLED : AquaImageFactory.DARKEN_FOR_PRESSED;
             }
             if (shouldUseDisabledIcon(state)) {
-                AquaAppearance appearance = AppearanceManager.ensureAppearance(b);
+                AquaAppearance appearance = AppearanceManager.getAppearance(b);
                 return appearance.isDark() ? AquaImageFactory.DARKEN_FOR_PRESSED : AquaImageFactory.LIGHTEN_FOR_DISABLED;
             }
             return null;

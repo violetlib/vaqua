@@ -1,5 +1,5 @@
 /*
- * Changes Copyright (c) 2015-2021 Alan Snyder.
+ * Changes Copyright (c) 2015-2025 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -193,12 +193,11 @@ public class AquaProgressBarUI
 
     protected void configureAppearanceContext(@Nullable AquaAppearance appearance) {
         if (appearance == null) {
-            appearance = AppearanceManager.ensureAppearance(progressBar);
+            appearance = AppearanceManager.getAppearance(progressBar);
         }
         AquaUIPainter.State state = getState();
         AppearanceContext appearanceContext = new AppearanceContext(appearance, state, false, false);
         AquaColors.installColors(progressBar, appearanceContext, colors);
-        progressBar.repaint();
     }
 
     protected @NotNull AquaUIPainter.State getState() {

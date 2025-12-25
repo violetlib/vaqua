@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Alan Snyder.
+ * Copyright (c) 2018-2025 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -151,7 +151,7 @@ public class AquaTextPasswordFieldUI extends AquaTextFieldUI {
         @Override
         public void paintBorder(Component c, Graphics g, int x, int y, int width, int height) {
 
-            AquaAppearance appearance = AppearanceManager.ensureAppearance(c);
+            AquaAppearance appearance = AppearanceManager.getAppearance(c);
             Color color = appearance.getColor("capsLockIcon");
 
             g = g.create(width - 23, height / 2 - 8, 18, 18);

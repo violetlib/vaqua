@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014-2021 Alan Snyder.
+ * Copyright (c) 2014-2025 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -35,7 +35,6 @@ public class AquaTreeTableUI extends BasicTreeTableUI implements AquaComponentUI
 
     protected MyHandler handler;
     protected @NotNull ContainerContextualColors colors;
-    protected @Nullable AppearanceContext appearanceContext;
 
     public AquaTreeTableUI() {
         handler = new MyHandler();
@@ -62,8 +61,14 @@ public class AquaTreeTableUI extends BasicTreeTableUI implements AquaComponentUI
     public void appearanceChanged(@NotNull JComponent c, @NotNull AquaAppearance appearance) {
         JTable table = getTable();
         JTree tree = getTree();
-        AppearanceManager.updateAppearancesInTree(table, appearance);
-        AppearanceManager.updateAppearancesInTree(tree, appearance);
+        AquaComponentUI tableUI = AquaUtils.getUI(table, AquaComponentUI.class);
+        AquaComponentUI treeUI = AquaUtils.getUI(tree, AquaComponentUI.class);
+        if (tableUI != null) {
+            tableUI.appearanceChanged(table, appearance);
+        }
+        if (treeUI != null) {
+            treeUI.appearanceChanged(tree, appearance);
+        }
         configureAppearanceContext(appearance);
     }
 
@@ -78,15 +83,14 @@ public class AquaTreeTableUI extends BasicTreeTableUI implements AquaComponentUI
 
     protected void configureAppearanceContext(@Nullable AquaAppearance appearance) {
         if (appearance == null) {
-            appearance = AppearanceManager.ensureAppearance(treeTable);
+            appearance = AppearanceManager.getAppearance(treeTable);
         }
         AquaUIPainter.State state = getState();
-        appearanceContext = new AppearanceContext(appearance, state, false, false);
+        AppearanceContext appearanceContext = new AppearanceContext(appearance, state, false, false);
         boolean isStriped = computeStriped();
         colors = isStriped ? AquaColors.STRIPED_CONTAINER_COLORS : AquaColors.CONTAINER_COLORS;
         colors.configureForContainer();
         AquaColors.installColors(treeTable, appearanceContext, colors);
-        treeTable.repaint();
     }
 
     protected AquaUIPainter.State getState() {
@@ -170,8 +174,9 @@ public class AquaTreeTableUI extends BasicTreeTableUI implements AquaComponentUI
             super.propertyChange(evt);
             if (AquaFocusHandler.FRAME_ACTIVE_PROPERTY.equals(evt.getPropertyName())) {
                 // Need to propagate manually because the tree and table are not child components
-                getTree().putClientProperty(AquaFocusHandler.FRAME_ACTIVE_PROPERTY, evt.getNewValue());
-                getTable().putClientProperty(AquaFocusHandler.FRAME_ACTIVE_PROPERTY, evt.getNewValue());
+                boolean isActive = Boolean.TRUE.equals(evt.getNewValue());
+                AquaFocusHandler.setActiveStatus(getTree(), isActive);
+                AquaFocusHandler.setActiveStatus(getTable(), isActive);
             }
         }
     }

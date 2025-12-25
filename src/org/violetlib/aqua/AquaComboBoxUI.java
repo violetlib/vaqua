@@ -91,7 +91,6 @@ public class AquaComboBoxUI extends BasicComboBoxUI
     protected AquaComboBoxButton arrowButton;
     protected HierarchyListener hierarchyListener;
     protected @NotNull BasicContextualColors colors;
-    protected @Nullable AppearanceContext appearanceContext;
     protected @NotNull JList<Object> buttonList;
     private final PropertyChangeListener propertyChangeListener = new AquaPropertyChangeListener();
     private final DocumentListener documentListener = new MyDocumentListener();
@@ -283,16 +282,15 @@ public class AquaComboBoxUI extends BasicComboBoxUI
 
     protected void configureAppearanceContext(@Nullable AquaAppearance appearance) {
         if (appearance == null) {
-            appearance = AppearanceManager.ensureAppearance(comboBox);
+            appearance = AppearanceManager.getAppearance(comboBox);
         }
         AquaUIPainter.State state = getState();
-        appearanceContext = new AppearanceContext(appearance, state, false, false);
+        AppearanceContext appearanceContext = new AppearanceContext(appearance, state, false, false);
         // If the combo box is being used as a cell renderer component, it is up to the cell renderer to configure
         // its colors.
         if (cellStatus == null) {
             AquaColors.installColors(comboBox, appearanceContext, colors);
         }
-        comboBox.repaint();
     }
 
     protected void updateFromRenderer() {

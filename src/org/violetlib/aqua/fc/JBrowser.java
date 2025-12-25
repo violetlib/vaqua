@@ -1,5 +1,5 @@
 /*
- * Changes copyright (c) 2014-2020 Alan Snyder.
+ * Changes copyright (c) 2014-2025 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -3767,7 +3767,7 @@ public class JBrowser extends JComponent implements Scrollable {
 
         @Override
         public void paintComponent(Graphics g) {
-            AquaAppearance appearance = AppearanceManager.ensureAppearance(this);
+            AquaAppearance appearance = AppearanceManager.registerCurrentAppearance(this);
             Color backgroundColor = appearance.getColor("legacyScrollBarTrack");
             Color innerBorderColor = appearance.getColor("legacyScrollBarInnerBorder");
             Color outerBorderColor = appearance.getColor("legacyScrollBarOuterBorder");
@@ -3804,7 +3804,7 @@ public class JBrowser extends JComponent implements Scrollable {
 
         @Override
         protected void paintComponent(Graphics g) {
-            AquaAppearance appearance = AppearanceManager.ensureAppearance(this);
+            AquaAppearance appearance = AppearanceManager.registerCurrentAppearance(this);
             Color background = appearance.getColor("controlBackground");
             Color handleColor = appearance.getColor("separator");
             g.setColor(background);

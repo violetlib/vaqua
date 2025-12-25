@@ -2776,7 +2776,7 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
             if (value instanceof SidebarTreeNode) {
                 SidebarTreeNode info = (SidebarTreeNode) value;
                 setText(info.getUserName());
-                AquaAppearance appearance = AppearanceManager.ensureAppearance(tree);
+                AquaAppearance appearance = AppearanceManager.getAppearance(tree);
                 setIcon(info.getIcon(appearance));
             }
             return this;
@@ -3673,7 +3673,7 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
 
         configureTopPanel();
 
-        AquaAppearance appearance = AppearanceManager.ensureAppearance(fc);
+        AquaAppearance appearance = AppearanceManager.getAppearance(fc);
         if (isStandardDialog) {
             splitPane.setBorder(null);
         } else {

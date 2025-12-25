@@ -10,13 +10,10 @@ package org.violetlib.aqua;
 
 import java.awt.*;
 import java.lang.ref.SoftReference;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.WeakHashMap;
+import java.util.*;
 import javax.swing.*;
 
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.*;
 
 /**
  * Softly cache processed images and image analysis results to avoid recomputation.
@@ -25,6 +22,7 @@ import org.jetbrains.annotations.Nullable;
 public abstract class ProcessedImageCache {
 
     private final WeakHashMap<Object,ImageInfo> imageMap = new WeakHashMap<>();
+
     /**
      * Return the processed version of the specified icon.
      * @param icon The source icon.
@@ -72,6 +70,16 @@ public abstract class ProcessedImageCache {
     public boolean isTemplateIcon(@NotNull Icon icon) {
         ImageInfo info = getIconImageInfo(icon);
         return info != null && info.isTemplate;
+    }
+
+    /**
+     * Flush cached images whose processing may be appearance dependent.
+     */
+    public void flushAppearanceDependentImages() {
+        Collection<ImageInfo> ns = imageMap.values();
+        for (ImageInfo n : ns) {
+            n.flushAppearanceDependentImages();
+        }
     }
 
     private @Nullable ImageInfo getIconImageInfo(@NotNull Icon icon) {
@@ -135,6 +143,19 @@ public abstract class ProcessedImageCache {
             }
             processedImageMap.put(operator, new SoftReference<>(result));
             return result;
+        }
+
+        public void flushAppearanceDependentImages()
+        {
+            // only Color processed templates need to be flushed
+            if (isTemplate && processedImageMap != null && !processedImageMap.isEmpty()) {
+                Set<Object> operators = new HashSet<>(processedImageMap.keySet());
+                for (Object operator : operators) {
+                    if (operator instanceof Color) {
+                        processedImageMap.remove(operator);
+                    }
+                }
+            }
         }
     }
 

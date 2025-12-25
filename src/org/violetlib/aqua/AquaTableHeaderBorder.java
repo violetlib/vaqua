@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2018 Alan Snyder.
+ * Copyright (c) 2015-2025 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -76,9 +76,8 @@ public class AquaTableHeaderBorder extends AbstractBorder {
         // To compensate, we increase the width and offset the rendering.
         // The divider will either paint over the divider for the cell to the left or get clipped away.
         // Unlike the Aqua Look and Feel painter, our painter should not draw a top or bottom border.
-        // Therefore we do not need to offset the rendering vertically.
+        // Therefore, we do not need to offset the rendering vertically.
 
-        AppearanceManager.ensureAppearance(c);
         AquaUtils.configure(painter, c, width+1, height);
         Configuration tg = getConfiguration(jc);
         painter.getPainter(tg).paint(g, x-1, y);

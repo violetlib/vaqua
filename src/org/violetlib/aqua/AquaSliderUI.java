@@ -73,7 +73,6 @@ public class AquaSliderUI extends BasicSliderUI
     private final AquaUIPainter painter = AquaPainting.create();
 
     protected @NotNull BasicContextualColors colors;
-    protected @Nullable AppearanceContext appearanceContext;
     protected @Nullable PropertyChangeListener propertyChangeListener;
 
     protected Size sizeVariant = Size.REGULAR;
@@ -123,7 +122,6 @@ public class AquaSliderUI extends BasicSliderUI
         super.installListeners(s);
         propertyChangeListener = new MyPropertyChangeListener();
         s.addPropertyChangeListener(propertyChangeListener);
-        AquaFocusHandler.install(s);
         AquaUtilControlSize.addSizePropertyListener(s);
         OSXSystemProperties.register(s);
         AppearanceManager.installListeners(s);
@@ -132,7 +130,6 @@ public class AquaSliderUI extends BasicSliderUI
     protected void uninstallListeners(JSlider s) {
         AppearanceManager.uninstallListeners(s);
         AquaUtilControlSize.removeSizePropertyListener(s);
-        AquaFocusHandler.uninstall(s);
         s.removePropertyChangeListener(propertyChangeListener);
         propertyChangeListener = null;
         super.uninstallListeners(s);
@@ -163,12 +160,11 @@ public class AquaSliderUI extends BasicSliderUI
 
     protected void configureAppearanceContext(@Nullable AquaAppearance appearance, @NotNull JSlider s) {
         if (appearance == null) {
-            appearance = AppearanceManager.ensureAppearance(s);
+            appearance = AppearanceManager.getAppearance(s);
         }
         AquaUIPainter.State state = AquaUIPainter.State.ACTIVE;
-        appearanceContext = new AppearanceContext(appearance, state, false, false);
+        AppearanceContext appearanceContext = new AppearanceContext(appearance, state, false, false);
         AquaColors.installColors(s, appearanceContext, colors);
-        s.repaint();
     }
 
     @Override

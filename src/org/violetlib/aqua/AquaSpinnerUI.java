@@ -46,7 +46,6 @@ import java.util.Calendar;
 import java.util.Map;
 import javax.swing.*;
 import javax.swing.JSpinner.DefaultEditor;
-import javax.swing.border.Border;
 import javax.swing.plaf.ActionMapUIResource;
 import javax.swing.plaf.ComponentUI;
 import javax.swing.plaf.SpinnerUI;
@@ -549,7 +548,6 @@ public class AquaSpinnerUI extends SpinnerUI implements AquaComponentUI, AquaUti
             }
 
             Rectangle bounds = getBounds();
-            AppearanceManager.ensureAppearance(spinner);
             AquaUtils.configure(painter, spinner, bounds.width, bounds.height);
             Configuration cg = getConfiguration();
             painter.getPainter(cg).paint(g, 0, 0);
@@ -600,7 +598,6 @@ public class AquaSpinnerUI extends SpinnerUI implements AquaComponentUI, AquaUti
             Size size = AquaUtilControlSize.getUserSizeFrom(spinner);
             SpinnerArrowsLayoutConfiguration g = new SpinnerArrowsLayoutConfiguration(size);
             Rectangle bounds = c.getBounds();
-            AppearanceManager.ensureAppearance(c);
             AquaUtils.configure(painter, c, bounds.width, bounds.height);
             return painter.getOutline(g);
         }

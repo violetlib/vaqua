@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2018 Alan Snyder.
+ * Copyright (c) 2015-2025 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -16,7 +16,6 @@ import javax.swing.text.html.InlineView;
 import javax.swing.text.html.ParagraphView;
 
 import org.jetbrains.annotations.NotNull;
-import org.violetlib.aqua.AppearanceManager;
 import org.violetlib.aqua.AquaLookAndFeel;
 
 /**
@@ -32,7 +31,7 @@ public class NameView extends JTextPane {
         setEditable(false);
         setFocusable(false);
         setBorder(AquaLookAndFeel.NOTHING_BORDER);
-        addPropertyChangeListener(AppearanceManager.AQUA_APPEARANCE_KEY, ev -> updateAttributes());
+        //addPropertyChangeListener(AppearanceManager.AQUA_APPEARANCE_KEY, ev -> updateAttributes());
     }
 
     public void setText(@NotNull String text) {

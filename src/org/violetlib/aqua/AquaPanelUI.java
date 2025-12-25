@@ -1,5 +1,5 @@
 /*
- * Changes Copyright (c) 2015-2021 Alan Snyder.
+ * Changes Copyright (c) 2015-2025 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -103,7 +103,7 @@ public class AquaPanelUI extends BasicPanelUI implements AquaComponentUI {
 
     protected void configureAppearanceContext(@NotNull JComponent c, @Nullable AquaAppearance appearance) {
         if (appearance == null) {
-            appearance = AppearanceManager.ensureAppearance(c);
+            appearance = AppearanceManager.getAppearance(c);
         }
 
         // Although a JPanel is not-opaque by default, it is still important to set appropriate foreground and

@@ -334,14 +334,13 @@ public class AquaListUI extends BasicListUI implements AquaComponentUI, AquaView
 
     protected void configureAppearanceContext(@Nullable AquaAppearance appearance) {
         if (appearance == null) {
-            appearance = AppearanceManager.ensureAppearance(list);
+            appearance = AppearanceManager.getAppearance(list);
         }
         AquaUIPainter.State state = getState();
         appearanceContext = new AppearanceContext(appearance, state, false, false);
         colors.configureForContainer();
         AquaColors.installColors(list, appearanceContext, colors);
         updateOpaque();
-        list.repaint();
     }
 
     private void updateOpaque() {

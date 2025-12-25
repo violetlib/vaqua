@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2021 Alan Snyder.
+ * Copyright (c) 2018-2025 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -27,7 +27,6 @@ public class AquaMenuBarUI extends BasicMenuBarUI implements AquaComponentUI {
     }
 
     protected @NotNull BasicContextualColors colors;
-    protected @Nullable AppearanceContext appearanceContext;
 
     public AquaMenuBarUI() {
         colors = AquaColors.CONTROL_COLORS;
@@ -62,12 +61,11 @@ public class AquaMenuBarUI extends BasicMenuBarUI implements AquaComponentUI {
 
     protected void configureAppearanceContext(@Nullable AquaAppearance appearance) {
         if (appearance == null) {
-            appearance = AppearanceManager.ensureAppearance(menuBar);
+            appearance = AppearanceManager.getAppearance(menuBar);
         }
         AquaUIPainter.State state = AquaUIPainter.State.ACTIVE;
-        appearanceContext = new AppearanceContext(appearance, state, false, false);
+        AppearanceContext appearanceContext = new AppearanceContext(appearance, state, false, false);
         AquaColors.installColors(menuBar, appearanceContext, colors);
-        menuBar.repaint();
     }
 
     @Override

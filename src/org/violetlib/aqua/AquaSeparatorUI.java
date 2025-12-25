@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014-2021 Alan Snyder.
+ * Copyright (c) 2014-2025 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -29,7 +29,6 @@ public class AquaSeparatorUI extends SeparatorUI implements AquaComponentUI {
     }
 
     protected @NotNull BasicContextualColors colors;
-    protected @Nullable AppearanceContext appearanceContext;
 
     public AquaSeparatorUI() {
         colors = AquaColors.SEPARATOR_COLORS;
@@ -76,12 +75,11 @@ public class AquaSeparatorUI extends SeparatorUI implements AquaComponentUI {
 
     protected void configureAppearanceContext(@Nullable AquaAppearance appearance, @NotNull JSeparator s) {
         if (appearance == null) {
-            appearance = AppearanceManager.ensureAppearance(s);
+            appearance = AppearanceManager.getAppearance(s);
         }
         AquaUIPainter.State state = AquaUIPainter.State.ACTIVE;
-        appearanceContext = new AppearanceContext(appearance, state, false, false);
+        AppearanceContext appearanceContext = new AppearanceContext(appearance, state, false, false);
         AquaColors.installColors(s, appearanceContext, colors);
-        s.repaint();
     }
 
     @Override

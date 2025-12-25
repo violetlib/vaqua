@@ -145,9 +145,8 @@ public class AquaColors {
      */
     public static final Color MAGIC_ERASER = new javax.swing.plaf.ColorUIResource(new Color(0, 0, 0, 0));
 
-
     private static boolean COLORS_DEBUG = false;
-    private static @Nullable BasicContextualColors COLORS_DEBUG_CHOICE = TEXTURED_COLORS;
+    private static @Nullable BasicContextualColors COLORS_DEBUG_CHOICE = null;
 
     private static boolean currentColorsDebugFlag;
 
@@ -239,7 +238,7 @@ public class AquaColors {
             return color;
         }
 
-        AquaAppearance appearance = AppearanceManager.ensureAppearance(c);
+        AquaAppearance appearance = AppearanceManager.getAppearance(c);
         Color appearanceColor = appearance.getColor(colorName);
         if (appearanceColor != null) {
             return appearanceColor;
@@ -265,7 +264,7 @@ public class AquaColors {
             return color;
         }
 
-        AquaAppearance appearance = AppearanceManager.ensureAppearance(c);
+        AquaAppearance appearance = AppearanceManager.getAppearance(c);
         Color appearanceColor = appearance.getColorForOptionalEffect(colorName, effect);
         if (appearanceColor != null) {
             return appearanceColor;
@@ -282,7 +281,7 @@ public class AquaColors {
      * @throws UnsupportedOperationException if the specified color is not defined.
      */
     public static @NotNull Color getSystemColor(@NotNull JComponent c, @NotNull String colorName) {
-        AquaAppearance appearance = AppearanceManager.ensureAppearance(c);
+        AquaAppearance appearance = AppearanceManager.getAppearance(c);
         Color appearanceColor = appearance.getColor(colorName);
         if (appearanceColor != null) {
             return appearanceColor;
@@ -300,7 +299,7 @@ public class AquaColors {
     public static @NotNull Color getSystemColor(@NotNull JComponent c,
                                                 @NotNull String colorName,
                                                 @NotNull EffectName effect) {
-        AquaAppearance appearance = AppearanceManager.ensureAppearance(c);
+        AquaAppearance appearance = AppearanceManager.getAppearance(c);
         Color appearanceColor = appearance.getColorForOptionalEffect(colorName, effect);
         if (appearanceColor != null) {
             return appearanceColor;

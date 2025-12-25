@@ -435,7 +435,7 @@ public class AquaTableUI extends BasicTableUI
 
     protected void configureAppearanceContext(@Nullable AquaAppearance appearance) {
         if (appearance == null) {
-            appearance = AppearanceManager.ensureAppearance(table);
+            appearance = AppearanceManager.getAppearance(table);
         }
         AquaUIPainter.State state = getState();
         appearanceContext = new AppearanceContext(appearance, state, false, false);
@@ -444,7 +444,6 @@ public class AquaTableUI extends BasicTableUI
         actualTableBackground = colors.getBackground(appearanceContext);
         AquaColors.installColors(table, appearanceContext, colors);
         updateOpaque();
-        table.repaint();
     }
 
     private void updateOpaque() {

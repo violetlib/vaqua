@@ -97,7 +97,7 @@ public class AquaRootPaneUI extends BasicRootPaneUI implements AquaComponentUI,
                     AquaRootPaneUI ui = AquaUtils.getUI(rp, AquaRootPaneUI.class);
                     if (ui != null) {
                         boolean shouldBeActive = b || w.isActive();
-                        boolean isActiveStyle = Boolean.TRUE.equals(rp.getClientProperty(AquaFocusHandler.FRAME_ACTIVE_PROPERTY));
+                        boolean isActiveStyle = AquaFocusHandler.isActive(rp);
                         if (shouldBeActive != isActiveStyle) {
                             rp.repaint();
                             AquaFocusHandler.updateComponentTreeUIActivation(rp, shouldBeActive);
@@ -184,7 +184,7 @@ public class AquaRootPaneUI extends BasicRootPaneUI implements AquaComponentUI,
     @Override
     public void systemPropertyChanged(JComponent c, Object type) {
         if (type.equals(AquaAppearances.APPEARANCE_CHANGE_TYPE)) {
-            updateAppearances(null, false);
+            updateAppearance(null);
         }
     }
 
@@ -393,7 +393,7 @@ public class AquaRootPaneUI extends BasicRootPaneUI implements AquaComponentUI,
         if (rootPane.getParent() != null && rootPane.getParent().isDisplayable()) {
             isInitialized = true;
             configureSpecifiedWindowAppearance(false);
-            updateAppearances(null, false);
+            updateAppearance(null);
             updatePopupStyle(rootPane);
             reconfigureCustomWindowStyle();
             updateVisualEffectView();
@@ -440,53 +440,21 @@ public class AquaRootPaneUI extends BasicRootPaneUI implements AquaComponentUI,
      */
     public void windowAppearanceChanged(@NotNull String appearanceName)
     {
-        updateAppearances(appearanceName, false);
+        updateAppearance(appearanceName);
     }
 
     /**
-     Update the appearances in the component tree based on the most current information.
+     * Inform the appearance manager of the window appearance.
      */
-
-    protected void updateAppearances(@Nullable String appearanceName, boolean forceInitialization)
+    protected void updateAppearance(@Nullable String appearanceName)
     {
         Window w = getWindow();
         if (w != null) {
-            updateWindowAppearances(w, appearanceName, forceInitialization);
-        }
-    }
-
-    protected void updateWindowAppearances(@NotNull Window w,
-                                           @Nullable String appearanceName,
-                                           boolean forceInitialization)
-    {
-        if (appearanceName == null) {
-            appearanceName = AquaUtils.getWindowEffectiveAppearanceName(w);
-        }
-        if (appearanceName != null) {
-            AquaAppearance appearance = AquaAppearances.get(appearanceName);
-            AquaAppearance oldAppearance = (AquaAppearance) rootPane.getClientProperty(AppearanceManager.AQUA_APPEARANCE_KEY);
-            if (appearance != oldAppearance) {
-                if (false) {
-                    // debug
-                    String windowName = AquaUtils.getWindowNameForDebugging(w);
-                    String message = "Updating appearances for window " + windowName + ": ";
-                    if (oldAppearance == null) {
-                        message += "initial appearance " + appearanceName;
-                    } else {
-                        String oldAppearanceName = oldAppearance.getName();
-                        if (appearanceName.equals(oldAppearanceName)) {
-                            message += "updated appearance " + appearanceName;
-                        } else {
-                            message += oldAppearanceName + " -> " + appearanceName;
-                        }
-                    }
-                    Utils.logDebug(message);
-                }
-                rootPane.repaint();
-                AppearanceManager.setRootPaneRegisteredAppearance(rootPane, appearance);  // a callback will be invoked
-            } else if (forceInitialization) {
-                configureWindow(w);
-                appearanceHasChanged();
+            if (appearanceName == null) {
+                appearanceName = AquaUtils.getWindowEffectiveAppearanceName(w);
+            }
+            if (appearanceName != null) {
+                AppearanceManager.setRootPaneAppearance(rootPane, appearanceName);
             }
         }
     }
@@ -509,7 +477,7 @@ public class AquaRootPaneUI extends BasicRootPaneUI implements AquaComponentUI,
                 updateVibrantStyle(vibrantStyle, false);
             }
 
-            if (!AquaColors.isPriority(rootPane.getBackground())) {
+            if (rootPane.isBackgroundSet() && !AquaColors.isPriority(rootPane.getBackground())) {
                 rootPane.setBackground(null);
             }
 
@@ -568,7 +536,6 @@ public class AquaRootPaneUI extends BasicRootPaneUI implements AquaComponentUI,
             Window w = (Window) parent;
             configureWindow(w);
         }
-        appearanceHasChanged();
     }
 
     @Override

@@ -246,12 +246,11 @@ public class AquaScrollPaneUI extends BasicScrollPaneUI
 
     protected void configureAppearanceContext(@Nullable AquaAppearance appearance) {
         if (appearance == null) {
-            appearance = AppearanceManager.ensureAppearance(scrollpane);
+            appearance = AppearanceManager.getAppearance(scrollpane);
         }
         AquaUIPainter.State state = getState();
         appearanceContext = new AppearanceContext(appearance, state, false, false);
         updateThumbStyle();
-        scrollpane.repaint();
     }
 
     protected @NotNull AquaUIPainter.State getState() {
@@ -656,7 +655,7 @@ public class AquaScrollPaneUI extends BasicScrollPaneUI
                 } else if (THUMB_STYLE_DARK.equals(o)) {
                     bar.putClientProperty(AquaScrollBarUI.INTERNAL_THUMB_STYLE_CLIENT_PROPERTY_KEY, "overlayDark");
                 } else {
-                    AquaAppearance appearance = AppearanceManager.ensureAppearance(scrollpane);
+                    AquaAppearance appearance = AppearanceManager.getAppearance(scrollpane);
                     String style = appearance.isDark() ? "overlayLight" : "overlayDark";
                     bar.putClientProperty(AquaScrollBarUI.INTERNAL_THUMB_STYLE_CLIENT_PROPERTY_KEY, style);
                 }

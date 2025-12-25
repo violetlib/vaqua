@@ -144,8 +144,6 @@ public abstract class AquaButtonBorder extends AquaBorder implements FocusRingOu
         int width = viewRect.width;
         int height = viewRect.height;
 
-        AppearanceManager.ensureAppearance(b);
-
         int version = AquaPainting.getVersion();
         if (bg.getWidget() == BUTTON_TOOLBAR_ITEM && version < 1600)
         {
@@ -203,7 +201,7 @@ public abstract class AquaButtonBorder extends AquaBorder implements FocusRingOu
             AquaUtils.fillAntiAliased(gg, rr);
 
             if (OSVersion >= 1300 && c.getAlpha() != 255) {
-                AquaAppearance a = AppearanceManager.ensureAppearance(b);
+                AquaAppearance a = AppearanceManager.getAppearance(b);
                 gg.setColor(a.isDark() ? new Color(255, 255, 255, 52) : new Color(0, 0, 0, 52));
                 AquaUtils.drawAntiAliased(gg, rr);
             }
@@ -296,7 +294,7 @@ public abstract class AquaButtonBorder extends AquaBorder implements FocusRingOu
         Color existingColor = b.getForeground();
         if (existingColor == null || existingColor instanceof UIResource || !isEnabled || useNonexclusive) {
             AquaUIPainter.ButtonState bs = getButtonState(b);
-            AquaAppearance appearance = AppearanceManager.ensureAppearance(b);
+            AquaAppearance appearance = AppearanceManager.getAppearance(b);
             // The foreground color of a default button does not change when pressed.
             // Starting with macOS 12, the foreground color of any button does not change.
             if (state == State.PRESSED_DEFAULT) {
@@ -473,11 +471,11 @@ public abstract class AquaButtonBorder extends AquaBorder implements FocusRingOu
             }
             State state = g != null ? g.getState() : getState(b);
             if (state == State.PRESSED && shouldHighlightPressedIcon(g)) {
-                AquaAppearance appearance = AppearanceManager.ensureAppearance(b);
+                AquaAppearance appearance = AppearanceManager.getAppearance(b);
                 return appearance.isDark() ? AquaImageFactory.LIGHTEN_FOR_DISABLED : AquaImageFactory.DARKEN_FOR_PRESSED;
             }
             if (shouldUseDisabledIcon(g, state)) {
-                AquaAppearance appearance = AppearanceManager.ensureAppearance(b);
+                AquaAppearance appearance = AppearanceManager.getAppearance(b);
                 return appearance.isDark() ? AquaImageFactory.DARKEN_FOR_PRESSED : AquaImageFactory.LIGHTEN_FOR_DISABLED;
             }
             return null;
@@ -760,7 +758,7 @@ public abstract class AquaButtonBorder extends AquaBorder implements FocusRingOu
         if (g != null) {
             int width = c.getWidth();
             int height = c.getHeight();
-            AppearanceManager.ensureAppearance(c);
+            AppearanceManager.getAppearance(c);
             AquaUtils.configure(painter, c, width, height);
             return painter.getOutline(g);
         } else {

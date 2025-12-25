@@ -83,7 +83,6 @@ public class AquaSplitPaneUI extends BasicSplitPaneUI
     private boolean isInLayout;
 
     private @NotNull BasicContextualColors colors;
-    private @Nullable AppearanceContext appearanceContext;
 
     public AquaSplitPaneUI() {
         colors = AquaColors.CLEAR_CONTROL_COLORS;
@@ -136,6 +135,15 @@ public class AquaSplitPaneUI extends BasicSplitPaneUI
         // not active state sensitive
     }
 
+    private void configureAppearanceContext(@Nullable AquaAppearance appearance, @NotNull JSplitPane s) {
+        if (appearance == null) {
+            appearance = AppearanceManager.getAppearance(s);
+        }
+        AquaUIPainter.State state = AquaUIPainter.State.ACTIVE;
+        AppearanceContext appearanceContext = new AppearanceContext(appearance, state, false, false);
+        AquaColors.installColors(s, appearanceContext, colors);
+    }
+
     public void configureAsSidebar(int option) {
         option = validateSidebarOption(option);
         if (option != sidebarOption) {
@@ -160,16 +168,6 @@ public class AquaSplitPaneUI extends BasicSplitPaneUI
         updateBorder(oldOption);
         splitPane.revalidate();
         splitPane.repaint();
-    }
-
-    private void configureAppearanceContext(@Nullable AquaAppearance appearance, @NotNull JSplitPane s) {
-        if (appearance == null) {
-            appearance = AppearanceManager.ensureAppearance(s);
-        }
-        AquaUIPainter.State state = AquaUIPainter.State.ACTIVE;
-        appearanceContext = new AppearanceContext(appearance, state, false, false);
-        AquaColors.installColors(s, appearanceContext, colors);
-        s.repaint();
     }
 
     private void updateBorder(int oldOption) {

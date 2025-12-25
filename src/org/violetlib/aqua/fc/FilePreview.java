@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2009-2010 Werner Randelshofer, Switzerland.
- * Copyright (c) 2014-2024 Alan Snyder.
+ * Copyright (c) 2014-2025 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the
@@ -182,7 +182,7 @@ public class FilePreview extends JComponent implements BrowserPreviewRenderer {
     @Override
     protected void paintComponent(Graphics g) {
 
-        AppearanceManager.ensureAppearance(this);
+        AppearanceManager.registerCurrentAppearance(this);
         Color background = AquaColors.getBackground(this, "controlBackground");
         Color labelForeground = AquaColors.getSystemColor(this, "secondaryLabel");
         Color valueForeground = AquaColors.getSystemColor(this, "label");

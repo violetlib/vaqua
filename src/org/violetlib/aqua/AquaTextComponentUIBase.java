@@ -138,12 +138,11 @@ public abstract class AquaTextComponentUIBase
 
     protected void configureAppearanceContext(@Nullable AquaAppearance appearance) {
         if (appearance == null) {
-            appearance = AppearanceManager.ensureAppearance(editor);
+            appearance = AppearanceManager.getAppearance(editor);
         }
         AquaUIPainter.State state = getState();
         appearanceContext = new AppearanceContext(appearance, state, false, false);
         AquaColors.installColors(editor, appearanceContext, colors);
-        editor.repaint();
     }
 
     protected @NotNull AquaUIPainter.State getState() {

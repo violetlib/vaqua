@@ -114,7 +114,7 @@ public class AquaMenuSupport {
 
     public @NotNull AppearanceContext getAppearanceContext(@NotNull JMenuItem b, @Nullable AquaAppearance appearance) {
         if (appearance == null) {
-            appearance = AppearanceManager.ensureAppearance(b);
+            appearance = AppearanceManager.getAppearance(b);
         }
         ButtonModel model = b.getModel();
         Container ancestor = getAncestor(b);

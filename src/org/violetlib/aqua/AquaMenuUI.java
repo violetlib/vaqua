@@ -54,7 +54,6 @@ public class AquaMenuUI extends BasicMenuUI implements AquaComponentUI {
 
     protected @Nullable JMenu menu;
     protected @NotNull BasicContextualColors colors;
-    protected @Nullable AppearanceContext appearanceContext;
     protected int textIconGap;
     protected @NotNull Insets menuBarMargin;
 
@@ -127,12 +126,11 @@ public class AquaMenuUI extends BasicMenuUI implements AquaComponentUI {
     protected void configureAppearanceContext(@Nullable AquaAppearance appearance) {
         assert menu != null;
         if (appearance == null) {
-            appearance = AppearanceManager.ensureAppearance(menu);
+            appearance = AppearanceManager.getAppearance(menu);
         }
         assert menu != null;
-        appearanceContext = AquaMenuSupport.instance().getAppearanceContext(menu, appearance);
+        AppearanceContext appearanceContext = AquaMenuSupport.instance().getAppearanceContext(menu, appearance);
         AquaColors.installColors(menu, appearanceContext, colors);
-        menu.repaint();
     }
 
     @Override
@@ -144,7 +142,7 @@ public class AquaMenuUI extends BasicMenuUI implements AquaComponentUI {
     @Override
     public void paint(Graphics g, JComponent c) {
         assert menu != null;
-        appearanceContext = AquaMenuSupport.instance().getAppearanceContext(menu, null);
+        AppearanceContext appearanceContext = AquaMenuSupport.instance().getAppearanceContext(menu, null);
 
         MenuDescription md = getMenuDescription();
         if (md != null) {

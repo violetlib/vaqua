@@ -130,7 +130,7 @@ public class AquaTitleBar {
     }
 
     public void paint(@NotNull Graphics g) {
-        AquaAppearance appearance = AppearanceManager.ensureAppearance(frame);
+        AquaAppearance appearance = AppearanceManager.registerCurrentAppearance(frame);
         boolean isSelected = AquaFocusHandler.isActive(frame) && (frame.isSelected() || widget == AquaUIPainter.TitleBarWidget.UTILITY_WINDOW);
         EffectName effect = isSelected ? EffectName.EFFECT_NONE : EffectName.EFFECT_DISABLED;
         Color textColor = appearance.getColorForOptionalEffect("text", effect);

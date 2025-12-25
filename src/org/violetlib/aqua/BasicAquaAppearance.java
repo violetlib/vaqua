@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2020 Alan Snyder.
+ * Copyright (c) 2018-2025 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -13,6 +13,7 @@ import java.util.Map;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.violetlib.vappearances.AppearanceSettings;
 import org.violetlib.vappearances.VAppearance;
 
 /**
@@ -33,6 +34,11 @@ public class BasicAquaAppearance implements VAppearance {
         this.log = log;
     }
 
+    public @NotNull VAppearance getBase()
+    {
+        return appearance;
+    }
+
     @Override
     public @NotNull String getName() {
         return appearance.getName();
@@ -46,6 +52,20 @@ public class BasicAquaAppearance implements VAppearance {
     @Override
     public boolean isHighContrast() {
         return appearance.isHighContrast();
+    }
+
+    public boolean isTinted()
+    {
+        try {
+            return appearance.isTinted();
+        } catch (NoSuchMethodError e) {
+            return false;
+        }
+    }
+
+    @Override
+    public @NotNull AppearanceSettings getSettings() {
+        return appearance.getSettings();
     }
 
     @Override

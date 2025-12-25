@@ -1,5 +1,5 @@
 /*
- * Changes Copyright (c) 2015-2021 Alan Snyder.
+ * Changes Copyright (c) 2015-2025 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -679,7 +679,7 @@ public class AquaInternalFrameUI extends BasicInternalFrameUI implements SwingCo
 
     static void updateComponentTreeUIActivation(Component c, Object active) {
         if (c instanceof javax.swing.JComponent) {
-            ((javax.swing.JComponent)c).putClientProperty(AquaFocusHandler.FRAME_ACTIVE_PROPERTY, active);
+            AquaFocusHandler.setActiveStatus(c, Boolean.TRUE.equals(active));
         }
 
         Component[] children = null;

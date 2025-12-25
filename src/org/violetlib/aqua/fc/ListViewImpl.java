@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014-2024 Alan Snyder.
+ * Copyright (c) 2014-2025 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -281,7 +281,7 @@ public class ListViewImpl extends ListView {
         }
 
         protected Component fix(Component c, boolean selected) {
-            AquaAppearance appearance = AppearanceManager.ensureAppearance(c);
+            AquaAppearance appearance = AppearanceManager.getAppearance(c);
             Color fg = appearance.getColor(selected ? "alternateSelectedControlText" : textColorName);
             if (fg == null) {
                 fg = Color.BLACK;
@@ -298,7 +298,7 @@ public class ListViewImpl extends ListView {
 
         @Override
         public Component getTreeTableCellRendererComponent(TreeTable treeTable, Object value, boolean selected, boolean hasFocus, int row, int column, boolean expanded, boolean leaf) {
-            AquaAppearance appearance = AppearanceManager.ensureAppearance(treeTable);
+            AquaAppearance appearance = AppearanceManager.getAppearance(treeTable);
             ContainerContextualColors colors = AquaColors.STRIPED_CONTAINER_COLORS;
             Component c = fileRenderer.getCellRendererComponent(treeTable, appearance, colors, value, selected, hasFocus);
             if (c == null) {

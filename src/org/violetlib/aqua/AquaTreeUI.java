@@ -257,19 +257,18 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
     @Override
     public void activeStateChanged(@NotNull JComponent c, boolean isActive) {
         configureAppearanceContext(null);
+        repaintScrollPane();
     }
 
     protected void configureAppearanceContext(@Nullable AquaAppearance appearance) {
         if (appearance == null) {
-            appearance = AppearanceManager.ensureAppearance(tree);
+            appearance = AppearanceManager.getAppearance(tree);
         }
         AquaUIPainter.State state = getState();
         appearanceContext = new AppearanceContext(appearance, state, false, false);
         colors.configureForContainer();
         AquaColors.installColors(tree, appearanceContext, colors);
         updateOpaque();
-        tree.repaint();
-        repaintScrollPane();
     }
 
     private void updateOpaque() {

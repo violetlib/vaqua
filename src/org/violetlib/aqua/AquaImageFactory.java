@@ -91,6 +91,13 @@ public class AquaImageFactory {
         }
     }
 
+    /**
+     * Flush cached images whose processing may be appearance dependent.
+     */
+    public static void flushAppearanceDependentImages() {
+        imageCache.flushAppearanceDependentImages();
+    }
+
     public static IconUIResource getComputerIcon() {
         return new IconUIResource(new AquaIcon.CachingScalingIcon(16, 16) {
             Image createImage() {

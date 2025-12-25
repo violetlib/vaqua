@@ -27,7 +27,6 @@ public class AquaViewportUI extends ViewportUI implements AquaComponentUI {
 
     protected @Nullable JViewport viewport;
     protected final @NotNull BasicContextualColors colors;
-    protected @Nullable AppearanceContext appearanceContext;
 
     public AquaViewportUI() {
         colors = AquaColors.CONTROL_COLORS;
@@ -64,12 +63,11 @@ public class AquaViewportUI extends ViewportUI implements AquaComponentUI {
     protected void configureAppearanceContext(@Nullable AquaAppearance appearance) {
         assert viewport != null;
         if (appearance == null) {
-            appearance = AppearanceManager.ensureAppearance(viewport);
+            appearance = AppearanceManager.getAppearance(viewport);
         }
         AquaUIPainter.State state = getState();
-        appearanceContext = new AppearanceContext(appearance, state, false, false);
+        AppearanceContext appearanceContext = new AppearanceContext(appearance, state, false, false);
         AquaColors.installColors(viewport, appearanceContext, colors);
-        viewport.repaint();
     }
 
     public boolean shouldSuppressBackground()

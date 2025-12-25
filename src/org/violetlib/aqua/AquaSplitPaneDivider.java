@@ -1,5 +1,5 @@
 /*
- * Changes copyright (c) 2015-2018 Alan Snyder.
+ * Changes copyright (c) 2015-2025 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -104,7 +104,7 @@ public class AquaSplitPaneDivider extends BasicSplitPaneDivider {
      */
     public void paint(Graphics g) {
 
-        AquaAppearance appearance = AppearanceManager.ensureAppearance(splitPane);
+        AquaAppearance appearance = AppearanceManager.registerCurrentAppearance(splitPane);
         Color c = appearance.getColor("separator");
 
         Dimension size = getSize();

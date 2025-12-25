@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2005-2013 Werner Randelshofer, Switzerland.
- * Copyright (c) 2018 Alan Snyder
+ * Copyright (c) 2018-2025 Alan Snyder
  * You may not use, copy or modify this file, except in compliance with the
  * accompanying license terms.
  */
@@ -72,7 +72,7 @@ public class BasicBrowserUI extends BrowserUI {
 
     @Override
     public void update(Graphics g, JComponent c) {
-        AquaAppearance appearance = AppearanceManager.ensureAppearance(c);
+        AquaAppearance appearance = AppearanceManager.registerCurrentAppearance(c);
          if (c.isOpaque()) {
              Color background = appearance.getColor("controlBackground");
              g.setColor(background);

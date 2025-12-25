@@ -120,8 +120,7 @@ public class AquaButtonUI extends BasicButtonUI
 
     @Override
     public void activeStateChanged(@NotNull JComponent c, boolean isActive) {
-        // Repaint the button, since its border needs to handle the new state.
-        c.repaint();
+        // The button will be repainted: its border needs to handle the new state.
     }
 
     /**
@@ -282,7 +281,7 @@ public class AquaButtonUI extends BasicButtonUI
         Color existingColor = b.getForeground();
         if (existingColor == null || existingColor instanceof UIResource || !isEnabled) {
             // Most buttons do not display text differently when the window is inactive
-            AquaAppearance appearance = AppearanceManager.ensureAppearance(b);
+            AquaAppearance appearance = AppearanceManager.getAppearance(b);
             if (useSelectedForeground(b)) {
                 return appearance.getColor("alternateSelectedControlText");
             } else if (useSelectedDisabledForeground(b)) {

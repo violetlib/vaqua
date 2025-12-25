@@ -87,7 +87,6 @@ public class AquaGroupBorder extends AquaBorder {
 
         // TBD: state is not currently used, but perhaps someday it will be...
 
-        AppearanceManager.ensureAppearance(c);
         AquaUtils.configure(painter, c, width, height);
         Configuration bg = getConfiguration();
         painter.getPainter(bg).paint(g, x, y);

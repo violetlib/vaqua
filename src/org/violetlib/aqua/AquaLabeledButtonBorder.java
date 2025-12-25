@@ -85,7 +85,6 @@ public abstract class AquaLabeledButtonBorder extends AquaNamedButtonBorder {
             Insets s = getButtonContentInsets(b);
             ButtonLayoutInfo info = engine.getLayoutInfo(c.getWidth(), c.getHeight(), s);
             if (info.iconBounds != null) {
-                AppearanceManager.ensureAppearance(b);
                 AquaUtils.configure(painter, b, info.iconBounds.width, info.iconBounds.height);
                 Shape outline = painter.getOutline(g);
                 if (outline != null) {

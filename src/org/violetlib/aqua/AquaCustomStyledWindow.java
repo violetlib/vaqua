@@ -130,7 +130,7 @@ public class AquaCustomStyledWindow {
     protected final boolean isTextured;
 
     protected JComponent contentPane;   // the window content pane
-    protected JComponent windowToolBar;   // the window tool bar, if we care about it -- depends on the style
+    protected JComponent windowToolBar;   // the window toolbar, if we care about it -- depends on the style
 
     protected WindowPropertyChangeListener propertyChangeListener;
     protected WindowDraggingMouseListener windowDraggingMouseListener;

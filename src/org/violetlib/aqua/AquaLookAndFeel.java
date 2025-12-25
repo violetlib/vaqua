@@ -119,6 +119,8 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
         }
 
         UIManager.addPropertyChangeListener(uiChangeListener);
+
+        AppearanceManager.initialize();
     }
 
     public void uninitialize() {

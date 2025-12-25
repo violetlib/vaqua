@@ -213,13 +213,12 @@ public class AquaTabbedPaneUI extends AquaTabbedPaneCopyFromBasicUI
 
     protected void configureAppearanceContext(@Nullable AquaAppearance appearance, @NotNull JTabbedPane s) {
         if (appearance == null) {
-            appearance = AppearanceManager.ensureAppearance(s);
+            appearance = AppearanceManager.getAppearance(s);
         }
         AquaUIPainter.State state = getState();
         appearanceContext = new AppearanceContext(appearance, state, false, false);
         isDark = appearance.isDark();
         AquaColors.installColors(s, appearanceContext, colors);
-        s.repaint();
     }
 
     @Override
@@ -433,7 +432,6 @@ public class AquaTabbedPaneUI extends AquaTabbedPaneCopyFromBasicUI
         int height = isVertical ? bounds.width : bounds.height;
 
         SegmentedButtonLayoutConfiguration lg = getTabLayoutConfiguration(tabIndex);
-        AppearanceManager.ensureAppearance(tabPane);
         AquaUtils.configure(painter, tabPane, width, height);
         Shape outline = painter.getOutline(lg);
         AffineTransform tr = new AffineTransform();

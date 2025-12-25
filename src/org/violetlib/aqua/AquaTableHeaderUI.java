@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2021 Alan Snyder.
+ * Copyright (c) 2018-2025 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -144,14 +144,13 @@ public class AquaTableHeaderUI extends BasicTableHeaderUI implements AquaCompone
 
     protected void configureAppearanceContext(@Nullable AquaAppearance appearance) {
         if (appearance == null) {
-            appearance = AppearanceManager.ensureAppearance(header);
+            appearance = AppearanceManager.getAppearance(header);
         }
         AquaUIPainter.State state = getState();
         appearanceContext = new AppearanceContext(appearance, state, false, false);
         AquaColors.installColors(header, appearanceContext, colors);
         EffectName effect = state == AquaUIPainter.State.ACTIVE ? EffectName.EFFECT_NONE : EffectName.EFFECT_DISABLED;
         separatorColor = appearance.getColorForEffect("tableHeaderSeparator", effect);
-        header.repaint();
     }
 
     protected @NotNull AquaUIPainter.State getState() {

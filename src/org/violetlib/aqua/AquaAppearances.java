@@ -15,8 +15,7 @@ import java.util.Map;
 import javax.swing.*;
 import javax.swing.event.ChangeEvent;
 
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.*;
 import org.violetlib.jnr.aqua.AquaNativeRendering;
 import org.violetlib.vappearances.VAppearance;
 import org.violetlib.vappearances.VAppearances;
@@ -31,7 +30,8 @@ public class AquaAppearances {
     public static final Object APPEARANCE_CHANGE_TYPE = "AppearanceChange";
 
     static {
-        VAppearances.addChangeListener(AquaAppearances::appearanceChanged);
+        VAppearances.addChangeListener(AquaAppearances::appearanceAnnounced);
+        VAppearances.addEffectiveAppearanceChangeListener(AquaAppearances::appearancesChanged);
     }
 
     /**
@@ -57,7 +57,7 @@ public class AquaAppearances {
         if (appearance == null) {
             try {
                 VAppearance a = VAppearances.getAppearance(appearanceName);
-                return getAquaAppearance(a);
+                return updateAquaAppearance(a);
             } catch (IOException ex) {
                 AquaUtils.syslog("Unable to get " + appearanceName + ": " + ex.getMessage());
             }
@@ -71,12 +71,14 @@ public class AquaAppearances {
      * @throws UnsupportedOperationException if the default appearance is not available.
      */
 
-    public static @NotNull AquaAppearance getDefaultAppearance() throws UnsupportedOperationException {
+    public static @NotNull AquaAppearance getDefaultAppearance()
+      throws UnsupportedOperationException
+    {
         AquaAppearance appearance = appearances.get(defaultAppearanceName);
         if (appearance == null) {
             try {
                 VAppearance a = VAppearances.getAppearance(defaultAppearanceName);
-                appearance = getAquaAppearance(a);
+                appearance = updateAquaAppearance(a);
             } catch (IOException ex) {
                 AquaUtils.syslog("Unable to get " + defaultAppearanceName + ": " + ex.getMessage());
                 ex.printStackTrace();
@@ -116,7 +118,19 @@ public class AquaAppearances {
         SystemPropertyChangeManager.unregister(jc);
     }
 
-    private static void appearanceChanged(@NotNull ChangeEvent ev) {
+    private static void appearancesChanged(@NotNull ChangeEvent ev) {
+        // invoked by VAppearances on the AWT event thread
+        resetNativeRendering();
+        AquaImageFactory.flushAppearanceDependentImages();
+        for (AquaAppearance a : appearances.values()) {
+            updateAquaAppearance(a.getBase());
+        }
+        SwingUtilities.invokeLater(() -> {
+            SystemPropertyChangeManager.notifyChange(APPEARANCE_CHANGE_TYPE);
+        });
+    }
+
+    private static void appearanceAnnounced(@NotNull ChangeEvent ev) {
         if (ev instanceof VAppearances.AppearanceChangeEvent) {
             VAppearances.AppearanceChangeEvent ace = (VAppearances.AppearanceChangeEvent) ev;
             VAppearance a = ace.getAppearance();
@@ -124,12 +138,9 @@ public class AquaAppearances {
             if (false) {
                 Utils.logDebug("AquaAppearances: appearance " + name + " updated");
             }
-            try {
-                AquaNativeRendering.invalidateAppearances();
-            } catch (Throwable ex) {
-                // Must be an older release
-            }
-            AquaAppearance appearance = getAquaAppearance(a);
+            resetNativeRendering();
+            AquaImageFactory.flushAppearanceDependentImages();
+            AquaAppearance appearance = updateAquaAppearance(a);
             SwingUtilities.invokeLater(() -> {
                 SystemPropertyChangeManager.notifyChange(APPEARANCE_CHANGE_TYPE);
             });
@@ -138,7 +149,17 @@ public class AquaAppearances {
         }
     }
 
-    private static @NotNull AquaAppearance getAquaAppearance(@NotNull VAppearance a) {
+    private static void resetNativeRendering()
+    {
+        AquaNativeRendering.clearCache();
+        try {
+            AquaNativeRendering.invalidateAppearances();
+        } catch (Throwable ex) {
+            // Must be an older release
+        }
+    }
+
+    private static @NotNull AquaAppearance updateAquaAppearance(@NotNull VAppearance a) {
         int OSVersion = AquaPainting.getVersion();
         Map<String,Color> nativeColors = AquaNativeRendering.createPainter().getColors(a);
         Colors colors = new AppearanceColorsBuilder(a, OSVersion, nativeColors, null, Utils::logDebug).getResult();

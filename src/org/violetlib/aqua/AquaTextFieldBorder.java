@@ -121,7 +121,6 @@ public class AquaTextFieldBorder extends AquaTextComponentBorder {
         JComponent cc = getComponentForFocusRing(c);
         if (cc != null) {
             TextFieldLayoutConfiguration g = getLayoutConfiguration();
-            AppearanceManager.ensureAppearance(tf);
             AquaUtils.configure(painter, tf, cc.getWidth(), cc.getHeight());
             return painter.getOutline(g);
         }
@@ -218,7 +217,6 @@ public class AquaTextFieldBorder extends AquaTextComponentBorder {
     protected @NotNull Painter getConfiguredPainter(@NotNull Component c) {
         int width = c.getWidth();
         int height = c.getHeight();
-        AppearanceManager.ensureAppearance(tf);
         AquaUtils.configure(painter, tf, width, height);
         TextFieldConfiguration tg = getConfiguration();
         return painter.getPainter(tg);

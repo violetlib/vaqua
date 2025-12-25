@@ -66,7 +66,6 @@ public class AquaToolBarUI extends BasicToolBarUI implements SwingConstants, Aqu
     private LayoutManager originalLayoutManager;
 
     protected @NotNull BasicContextualColors colors;
-    protected @Nullable AppearanceContext appearanceContext;
 
     protected boolean isRendering;
 
@@ -136,12 +135,11 @@ public class AquaToolBarUI extends BasicToolBarUI implements SwingConstants, Aqu
 
     protected void configureAppearanceContext(@Nullable AquaAppearance appearance) {
         if (appearance == null) {
-            appearance = AppearanceManager.ensureAppearance(toolBar);
+            appearance = AppearanceManager.getAppearance(toolBar);
         }
         AquaUIPainter.State state = getState();
-        appearanceContext = new AppearanceContext(appearance, state, false, false);
+        AppearanceContext appearanceContext = new AppearanceContext(appearance, state, false, false);
         AquaColors.installColors(toolBar, appearanceContext, colors);
-        toolBar.repaint();
     }
 
     protected AquaUIPainter.State getState() {

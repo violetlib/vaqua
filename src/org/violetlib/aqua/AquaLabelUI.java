@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2021 Alan Snyder.
+ * Copyright (c) 2018-2025 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -57,7 +57,6 @@ public class AquaLabelUI extends BasicLabelUI implements AquaComponentUI {
     private static AquaCellEditorPolicy cellEditorPolicy = AquaCellEditorPolicy.getInstance();
 
     protected @NotNull BasicContextualColors colors;
-    protected @Nullable AppearanceContext appearanceContext;
 
     private Rectangle paintIconR = new Rectangle();
     private Rectangle paintTextR = new Rectangle();
@@ -98,16 +97,15 @@ public class AquaLabelUI extends BasicLabelUI implements AquaComponentUI {
 
     protected void configureAppearanceContext(@Nullable AquaAppearance appearance, @NotNull JLabel label) {
         if (appearance == null) {
-            appearance = AppearanceManager.ensureAppearance(label);
+            appearance = AppearanceManager.getAppearance(label);
         }
         AquaUIPainter.State state = AquaUIPainter.State.ACTIVE;
-        appearanceContext = new AppearanceContext(appearance, state, false, false);
+        AppearanceContext appearanceContext = new AppearanceContext(appearance, state, false, false);
         // If the label is being used as a cell renderer component, it is up to the cell renderer to configure
         // its colors.
         if (cellEditorPolicy.getCellStatus(label) == null) {
             AquaColors.installColors(label, appearanceContext, colors);
         }
-        label.repaint();
     }
 
     @Override
@@ -203,13 +201,13 @@ public class AquaLabelUI extends BasicLabelUI implements AquaComponentUI {
 
     protected Color getTextColor(@NotNull JLabel l) {
         if (isSearchFieldPrompt(l)) {
-            AquaAppearance appearance = AppearanceManager.ensureAppearance(l.getParent());
+            AquaAppearance appearance = AppearanceManager.getAppearance(l.getParent());
             return appearance.getColor("searchFieldPrompt");
         } else if (l.getParent() == null) {
             // Special case for TitledBorder, where the label is not in the hierarchy and has no back link.
             Color defaultColor = UIManager.getColor("TitledBorder.titleColor");
             if (l.getForeground() == defaultColor) {
-                AquaAppearance appearance = AppearanceManager.getCurrentAppearance();
+                AquaAppearance appearance = AppearanceManager.getApplicationAppearance();
                 return appearance.getColor("controlText");
             }
         }
