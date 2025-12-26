@@ -1523,7 +1523,7 @@ final public class AquaUtils {
 
     public static void configure(@NotNull AquaUIPainter painter, @NotNull Component c, int width, int height) {
         AquaAppearance appearance = AppearanceManager.getAppearance(c);
-        painter.configureAppearance(appearance);
+        painter.configureAppearance(appearance.getAppearance());
         painter.configure(width, height);
     }
 

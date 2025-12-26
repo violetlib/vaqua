@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2021 Alan Snyder.
+ * Copyright (c) 2018-2025 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -9,21 +9,49 @@
 package org.violetlib.aqua;
 
 import java.awt.*;
+import java.util.Map;
 
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.*;
 import org.violetlib.vappearances.VAppearance;
 
 /**
  * An object representing a specific appearance, including the current accent and highlight colors.
  */
 
-public class AquaAppearance extends BasicAquaAppearance {
+public class AquaAppearance
+{
+
+    private final @NotNull VAppearance appearance;
+    private final @NotNull Colors colors;
+    private final @NotNull Logger log;
 
     public AquaAppearance(@NotNull VAppearance appearance,
                           @NotNull Colors colors,
-                          @NotNull Logger log) {
-        super(appearance, colors, log);
+                          @NotNull Logger log)
+    {
+        this.appearance = appearance;
+        this.colors = colors;
+        this.log = log;
+    }
+
+    public @NotNull String getName()
+    {
+        return appearance.getName();
+    }
+
+    public boolean isDark()
+    {
+        return appearance.isDark();
+    }
+
+    public boolean isHighContrast()
+    {
+        return appearance.isHighContrast();
+    }
+
+    public @NotNull Map<String,Color> getColors()
+    {
+        return appearance.getColors();
     }
 
     /**
@@ -32,10 +60,11 @@ public class AquaAppearance extends BasicAquaAppearance {
      * @return the color, as a ColorUIResource, or null if the color name not defined in this appearance.
      */
 
-    public @Nullable Color getColor(@NotNull String colorName) {
-        Color color = super.getColor(colorName);
+    public @Nullable Color getColor(@NotNull String colorName)
+    {
+        Color color = colors.get(colorName);
         if (AquaColors.isDebugging()) {
-            Utils.logDebug("  Color " + colorName + ": " + AquaColors.toString(color));
+            log.log("  Color " + colorName + ": " + AquaColors.toString(color));
         }
         return color;
     }
@@ -49,7 +78,8 @@ public class AquaAppearance extends BasicAquaAppearance {
      * defined for the specified effect, or null if the color name is note defined in this appearance.
      */
 
-    public @Nullable Color getColorForEffect(@NotNull String colorName, @NotNull EffectName effectName) {
+    public @Nullable Color getColorForEffect(@NotNull String colorName, @NotNull EffectName effectName)
+    {
         if (effectName == EffectName.EFFECT_NONE) {
             return getColor(colorName);
         }
@@ -71,7 +101,8 @@ public class AquaAppearance extends BasicAquaAppearance {
      * defined for the specified effect, or null if the color name is note defined in this appearance.
      */
 
-    public @Nullable Color getColorForOptionalEffect(@NotNull String colorName, @NotNull EffectName effectName) {
+    public @Nullable Color getColorForOptionalEffect(@NotNull String colorName, @NotNull EffectName effectName)
+    {
         if (effectName == EffectName.EFFECT_NONE) {
             return getColor(colorName);
         }
@@ -79,5 +110,20 @@ public class AquaAppearance extends BasicAquaAppearance {
         String extendedName = colorName + "_" + effectName;
         Color c = getColor(extendedName);
         return c != null ? c : getColor(colorName);
+    }
+
+    public @NotNull VAppearance getAppearance()
+    {
+        return appearance;
+    }
+
+    public boolean isBasedOn(@NotNull VAppearance va) {
+        return va == appearance;
+    }
+
+    @Override
+    public @NotNull String toString()
+    {
+        return super.toString() + "[" + appearance.getName() + "]";
     }
 }
