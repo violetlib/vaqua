@@ -753,6 +753,7 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
                 "Tree.openIcon",(LazyValue) t -> AquaImageFactory.getTreeOpenFolderIcon(), // Open folder icon
                 "Tree.closedIcon",(LazyValue) t -> AquaImageFactory.getTreeFolderIcon(), // Closed folder icon
                 "Tree.leafIcon", OSXFile.getGenericFileSidebarIcon(),
+                "Tree.repaintWholeRow", true,
                 // no expand or collapse icons
                 "Tree.changeSelectionWithFocus", true,
                 "Tree.drawsFocusBorderAroundIcon", false,
