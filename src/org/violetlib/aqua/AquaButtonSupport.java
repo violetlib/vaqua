@@ -384,7 +384,7 @@ public class AquaButtonSupport {
                 assert painter != null;
                 paintSplitIconBackground(g, b, bg, painter, info);
             }
-            paintIcon(g, b, icon, info.iconBounds);
+            paintIcon(g, b, icon, info.iconBounds, textColor);
         }
         if (info.labelBounds != null) {
             String text = info.substitutedLabel != null ? info.substitutedLabel : b.getText();
@@ -532,7 +532,11 @@ public class AquaButtonSupport {
     private static void paintIcon(@NotNull Graphics2D g,
                                   @NotNull AbstractButton b,
                                   @NotNull Icon icon,
-                                  @NotNull Rectangle iconRect) {
+                                  @NotNull Rectangle iconRect,
+                                  @NotNull Color iconColor) {
+        if (AquaImageFactory.isTemplateIcon(icon)) {
+            icon = AquaImageFactory.getProcessedImage(icon, iconColor);
+        }
         Graphics2D gg = null;
         if (icon.getIconWidth() != iconRect.width || icon.getIconHeight() != iconRect.height) {
             gg = (Graphics2D) g.create();
