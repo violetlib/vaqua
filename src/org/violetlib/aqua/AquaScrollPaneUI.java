@@ -305,9 +305,6 @@ public class AquaScrollPaneUI extends BasicScrollPaneUI
             g = sidebarContainerSupport.setupContainerGraphics(g, appearanceContext);
             if ((isSidebar && AquaPainting.isSidebarVibrant()) || AquaVibrantSupport.isVibrant(c)) {
                 AquaUtils.fillRect(g, c, AquaUtils.ERASE_ALWAYS);
-            } else {
-                Color background = AquaColors.getBackground(c, "controlBackground");
-                AquaUtils.fillRect(g, c, background, 0);
             }
         }
 

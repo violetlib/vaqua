@@ -187,7 +187,7 @@ public class AquaScrollBarUI extends ScrollBarUI implements AquaComponentUI {
         int x = 0;
         int y = 0;
 
-        if (bg.getWidget() == LEGACY_SIDEBAR && bg.isTrackSuppressed() && !AquaPainting.useLiquidGlassSidebar()) {
+        if (bg.getWidget() == LEGACY_SIDEBAR && bg.isTrackSuppressed() && AquaPainting.isSidebarVibrant()) {
             // The track is part of the sidebar, which means it must reveal the vibrant background.
             AquaUtils.fillRect(g, null, 0, 0, width, height);
         }
