@@ -468,7 +468,7 @@ public class SystemColors {
         BasicColorsBuilder colors = new BasicColorsBuilder("High Contrast Light", instrumentation, log);
 
         if (OSVersion >= 1600) {
-            int bc = OSVersion >= 2602 ? 244 : 237;
+            int bc = OSVersion >= 2602 ? 251 : 237;
             int sb = OSVersion >= 2602 ? 10 : 73;
             int sbi = OSVersion >= 2602 ? 99 : 138;
             colors.add("sidebarBackground", bc);
