@@ -23,7 +23,8 @@ public class OSXSystemProperties {
 
     public static int simulatedOSVersion = 0;  // must come before OSVersion
 
-    public final static int OSVersion = getOSVersion();  // for example: 1014 = macOS 10.14
+    public static final int OSVersion = getOSVersion();  // for example: 1014 = macOS 10.14
+    public static final int macOS11 = 1016;  // macOS 11 was renamed after being available as 10.16
 
     private static boolean hasBeenSynchronized;
     private static boolean isFullKeyboardAccessEnabled; // cached value
@@ -109,7 +110,7 @@ public class OSXSystemProperties {
     }
 
     public static boolean useInsetViewStyle() {
-        return OSVersion >= 1016;
+        return OSVersion >= macOS11;
     }
 
     public static boolean isFullKeyboardAccessEnabled() {

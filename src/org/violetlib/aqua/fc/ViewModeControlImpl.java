@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014-2021 Alan Snyder.
+ * Copyright (c) 2014-2025 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the
@@ -14,10 +14,10 @@ import java.awt.event.ActionListener;
 import java.awt.event.KeyListener;
 import javax.swing.*;
 
-import org.violetlib.aqua.OSXSystemProperties;
-
 import static org.violetlib.aqua.AquaButtonUI.BUTTON_TYPE;
 import static org.violetlib.aqua.AquaButtonUI.SEGMENTED_BUTTON_POSITION;
+import static org.violetlib.aqua.OSXSystemProperties.OSVersion;
+import static org.violetlib.aqua.OSXSystemProperties.macOS11;
 
 /**
  * Control to select list or column view in the file chooser.
@@ -95,10 +95,10 @@ public class ViewModeControlImpl extends ViewModeControl {
 
     protected JToggleButton createButton(ImageIcon ic, String position, int viewMode) {
         JToggleButton b = new JToggleButton(ic);
-        b.putClientProperty(BUTTON_TYPE, OSXSystemProperties.OSVersion < 1016 ? "segmentedTextured" : "segmented");
+        b.putClientProperty(BUTTON_TYPE, OSVersion < macOS11 ? "segmentedTextured" : "segmented");
         b.putClientProperty(SEGMENTED_BUTTON_POSITION, position);
 
-        if (OSXSystemProperties.OSVersion >= 1011) {
+        if (OSVersion >= 1011) {
             b.setMargin(new Insets(5, 5, 5, 5));
         } else {
             b.setMargin(new Insets(6, 5, 6, 5));

@@ -54,6 +54,7 @@ import org.violetlib.aqua.fc.OSXFile;
 import org.violetlib.jnr.aqua.AquaUIPainter.Size;
 
 import static java.awt.MediaTracker.COMPLETE;
+import static org.violetlib.aqua.OSXSystemProperties.OSVersion;
 
 public class AquaImageFactory {
 
@@ -330,7 +331,7 @@ public class AquaImageFactory {
     }
 
     private static @NotNull String getMenuCheckName(@NotNull JComponent c) {
-        return OSXSystemProperties.OSVersion >= 1500 ? "NSMenuOnStateTemplate" : "NSMenuCheckmark";
+        return OSVersion >= 1500 ? "NSMenuOnStateTemplate" : "NSMenuCheckmark";
     }
 
     public static @NotNull Icon getMenuIndeterminateSelectionIcon(@NotNull JComponent c, @NotNull Dimension size) {
@@ -351,7 +352,7 @@ public class AquaImageFactory {
     }
 
     private static @NotNull String getMenuIndeterminateName(@NotNull JComponent c) {
-        return OSXSystemProperties.OSVersion >= 1500 ? "NSMenuMixedStateTemplate" : "NSMenuMixedState";
+        return OSVersion >= 1500 ? "NSMenuMixedStateTemplate" : "NSMenuMixedState";
     }
 
     public static @NotNull Icon getSubmenuArrow(@NotNull JComponent c, @NotNull Dimension size) {
@@ -375,9 +376,9 @@ public class AquaImageFactory {
 
     private static @NotNull String getSubmenuArrowName(@NotNull JComponent c) {
         if (c.getComponentOrientation().isLeftToRight()) {
-            return OSXSystemProperties.OSVersion >= 1500 ? "NSGoRightTemplate" : "NSMenuSubmenu";
+            return OSVersion >= 1500 ? "NSGoRightTemplate" : "NSMenuSubmenu";
         } else {
-            return OSXSystemProperties.OSVersion >= 1500 ? "NSGoLeftTemplate" : "NSMenuSubmenuLeft";
+            return OSVersion >= 1500 ? "NSGoLeftTemplate" : "NSMenuSubmenuLeft";
         }
     }
 
@@ -410,7 +411,7 @@ public class AquaImageFactory {
 
         Image im = Toolkit.getDefaultToolkit().getImage("NSImage://" + imageName);
         // The new code below creates a bad image on older macOS releases
-        if (OSXSystemProperties.OSVersion < 1500) {
+        if (OSVersion < 1500) {
             return im;
         }
         ImageIcon ic = new ImageIcon(im);

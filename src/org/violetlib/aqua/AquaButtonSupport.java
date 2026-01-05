@@ -21,6 +21,7 @@ import org.violetlib.jnr.Insetter;
 import org.violetlib.jnr.LayoutInfo;
 import org.violetlib.jnr.aqua.*;
 
+import static org.violetlib.aqua.OSXSystemProperties.macOS11;
 import static org.violetlib.jnr.aqua.AquaUIPainter.ButtonWidget;
 import static org.violetlib.jnr.aqua.AquaUIPainter.ButtonWidget.*;
 import static org.violetlib.jnr.aqua.AquaUIPainter.Size.*;
@@ -215,14 +216,17 @@ public class AquaButtonSupport {
             return createToolbarItemStyleInfo(b, BUTTON_TOOLBAR_ITEM);
         }
 
-        if (text == null || text.isEmpty()) {
-            return createToolbarItemStyleInfo(b, BUTTON_TOOLBAR);
-        }
-
         int version = AquaPainting.getVersion();
         if (version >= 1600) {
-            AquaUIPainter.Size sz = AquaUtilControlSize.getUserSizeFrom(b, EXTRA_LARGE);
-            return new ButtonStyleInfo(BUTTON_TOOLBAR, sz);
+            AquaUIPainter.Size specifiedSize = AquaUtilControlSize.getOptionalUserSizeFrom(b);
+            if (specifiedSize == null) {
+                return new ButtonStyleInfo(BUTTON_TOOLBAR, EXTRA_LARGE);
+            }
+            return new ButtonStyleInfo(BUTTON_TOOLBAR, specifiedSize);
+        }
+
+        if (text == null || text.isEmpty()) {
+            return createToolbarItemStyleInfo(b, BUTTON_TOOLBAR);
         }
 
         ButtonWidget widget = BUTTON_TEXTURED_TOOLBAR;
@@ -232,20 +236,22 @@ public class AquaButtonSupport {
 
     private static @NotNull ButtonStyleInfo createToolbarItemStyleInfo(@NotNull AbstractButton b,
                                                                        @NotNull ButtonWidget widget) {
-        AquaUIPainter.Size size = getPreferredToolbarButtonSize(b);
+        AquaUIPainter.Size size = getPreferredToolbarButtonSize(b, widget);
         return new ButtonStyleInfo(widget, size);
     }
 
-    public static @NotNull AquaUIPainter.Size getPreferredToolbarButtonSize(@NotNull AbstractButton b) {
-        int version = AquaPainting.getVersion();
-        if (version >= 1600) {
-            return AquaUtilControlSize.getUserSizeFrom(b, EXTRA_LARGE);
-        }
+    public static @NotNull AquaUIPainter.Size
+    getPreferredToolbarButtonSize(@NotNull AbstractButton b, @NotNull AquaUIPainter.GenericButtonWidget widget) {
         AquaUIPainter.Size size = AquaUtilControlSize.getOptionalUserSizeFrom(b);
         if (size != null) {
             return size;
         }
-        return version >= 1016 ? LARGE : REGULAR;
+        int version = AquaPainting.getVersion();
+        if (version >= macOS11) {
+            // EXTRA_LARGE looks better for ordinary buttons, but LARGE is a better match for EXTRA_LARGE popup buttons
+            return widget instanceof AquaUIPainter.SegmentedButtonWidget ? EXTRA_LARGE : LARGE;
+        }
+        return REGULAR;
     }
 
     public static @NotNull ButtonStyleInfo getButtonStyleInfo(@NotNull AbstractButton b,
@@ -269,14 +275,16 @@ public class AquaButtonSupport {
             } else {
                 w = AquaUIPainter.SegmentedButtonWidget.BUTTON_SEGMENTED_TEXTURED_TOOLBAR;
             }
-            size = AquaButtonSupport.getPreferredToolbarButtonSize(b);
+            size = AquaButtonSupport.getPreferredToolbarButtonSize(b, w);
         } else if (isOnToolbar && w == AquaUIPainter.SegmentedButtonWidget.BUTTON_SEGMENTED_SEPARATED) {
             if (version >= 160000) {
                 w = AquaUIPainter.SegmentedButtonWidget.BUTTON_SEGMENTED_SEPARATED;
             } else {
                 w = AquaUIPainter.SegmentedButtonWidget.BUTTON_SEGMENTED_TEXTURED_SEPARATED_TOOLBAR;
             }
-            size = AquaButtonSupport.getPreferredToolbarButtonSize(b);
+            size = AquaButtonSupport.getPreferredToolbarButtonSize(b, w);
+        } else if (isOnToolbar) {
+            size = AquaButtonSupport.getPreferredToolbarButtonSize(b, w);
         } else {
             size = AquaUtilControlSize.getUserSizeFrom(b);
         }
@@ -368,6 +376,7 @@ public class AquaButtonSupport {
                                         @NotNull Insets insets,
                                         @Nullable Icon icon,
                                         @NotNull Color textColor,
+                                        @Nullable Color iconColor,
                                         @NotNull Rectangle viewRect,
                                         @Nullable Dimension iconSize,
                                         boolean isSplit) {
@@ -384,7 +393,7 @@ public class AquaButtonSupport {
                 assert painter != null;
                 paintSplitIconBackground(g, b, bg, painter, info);
             }
-            paintIcon(g, b, icon, info.iconBounds, textColor);
+            paintIcon(g, b, icon, info.iconBounds, iconColor);
         }
         if (info.labelBounds != null) {
             String text = info.substitutedLabel != null ? info.substitutedLabel : b.getText();
@@ -533,8 +542,8 @@ public class AquaButtonSupport {
                                   @NotNull AbstractButton b,
                                   @NotNull Icon icon,
                                   @NotNull Rectangle iconRect,
-                                  @NotNull Color iconColor) {
-        if (AquaImageFactory.isTemplateIcon(icon)) {
+                                  @Nullable Color iconColor) {
+        if (iconColor != null && AquaImageFactory.isTemplateIcon(icon)) {
             icon = AquaImageFactory.getProcessedImage(icon, iconColor);
         }
         Graphics2D gg = null;

@@ -63,6 +63,7 @@ import org.violetlib.jnr.aqua.AquaUIPainter.PopupButtonWidget;
 import org.violetlib.jnr.aqua.AquaUIPainter.Size;
 import org.violetlib.jnr.aqua.AquaUIPainter.State;
 
+import static org.violetlib.aqua.OSXSystemProperties.OSVersion;
 import static org.violetlib.jnr.aqua.AquaUIPainter.ComboBoxWidget.*;
 import static org.violetlib.jnr.aqua.AquaUIPainter.PopupButtonWidget.*;
 
@@ -484,7 +485,7 @@ public class AquaComboBoxUI extends BasicComboBoxUI
 
         } else if (st == State.INACTIVE) {
             if (isTextured) {
-                return OSXSystemProperties.OSVersion < 1015;
+                return OSVersion < 1015;
             }
         }
         return false;
@@ -1474,13 +1475,16 @@ public class AquaComboBoxUI extends BasicComboBoxUI
 
         if (isEditable) {
             ComboBoxWidget widget = determineComboBoxWidget(cellStatus);
+            if (isToolbar) {
+                sizeVariant = AquaUtils.getSize(comboBox, true, widget);
+            }
             layoutConfiguration = new ComboBoxLayoutConfiguration(widget, sizeVariant, ld);
             colors = getRendererStyleColors();
             updateEditorStyle(editor);
         } else {
             PopupButtonWidget widget = determinePopupButtonWidget(cellStatus);
             if (isToolbar) {
-                sizeVariant = AquaUtils.getSize(comboBox, isToolbar, widget);
+                sizeVariant = AquaUtils.getSize(comboBox, true, widget);
             }
             layoutConfiguration = new PopupButtonLayoutConfiguration(widget, sizeVariant, ld);
             AquaButtonExtendedTypes.WidgetInfo info = AquaButtonExtendedTypes.getWidgetInfo(widget);
@@ -1546,7 +1550,7 @@ public class AquaComboBoxUI extends BasicComboBoxUI
             Object widget = getWidget();
             AquaButtonExtendedTypes.WidgetInfo info = AquaButtonExtendedTypes.getWidgetInfo(widget);
             int bottomGap = info.getBottomMenuGap();
-            if (OSXSystemProperties.OSVersion >= 1014 && isTextured) {
+            if (OSVersion >= 1014 && isTextured) {
                 // If no focus ring is shown, then we need less room.
                 bottomGap -= 2;
             }
@@ -1590,7 +1594,8 @@ public class AquaComboBoxUI extends BasicComboBoxUI
         }
 
         if (isToolbar) {
-            return BUTTON_COMBO_BOX_TEXTURED_TOOLBAR;
+            int version = AquaPainting.getVersion();
+            return version >= 1600 ? BUTTON_COMBO_BOX : BUTTON_COMBO_BOX_TEXTURED_TOOLBAR;
         }
 
         return BUTTON_COMBO_BOX;

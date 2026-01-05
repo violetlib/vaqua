@@ -466,8 +466,8 @@ public class AquaButtonUI extends BasicButtonUI
                 g.fillRect(viewRect.x, viewRect.y, viewRect.width, viewRect.height);
             }
         }
-        Color textColor = getDefaultForegroundColor(b);
-        AquaButtonSupport.paintIconAndText(g, b, null, null, b.getInsets(), icon, textColor, viewRect, null, false);
+        Color fc = getDefaultForegroundColor(b);
+        AquaButtonSupport.paintIconAndText(g, b, null, null, b.getInsets(), icon, fc, fc, viewRect, null, false);
     }
 
     @Override

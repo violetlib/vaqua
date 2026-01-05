@@ -8,9 +8,11 @@
 
 package org.violetlib.aqua;
 
-import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.*;
 import org.violetlib.jnr.aqua.AquaNativeRendering;
 import org.violetlib.jnr.aqua.AquaUIPainter;
+
+import static org.violetlib.aqua.OSXSystemProperties.OSVersion;
 
 /**
  * Provides access to the native painter.
@@ -24,7 +26,7 @@ public class AquaPainting {
         if (cachedRenderingVersion > 0) {
             return cachedRenderingVersion;
         }
-        int version = OSXSystemProperties.OSVersion;
+        int version = OSVersion;
         if (version >= 1600) {
             try {
                 version = AquaNativeRendering.getSystemRenderingVersion() / 100;
