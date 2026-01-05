@@ -302,12 +302,12 @@ public class AquaScrollPaneUI extends BasicScrollPaneUI
         } else if (sidebarContainerSupport != null) {
             assert appearanceContext != null;
             g = sidebarContainerSupport.setupContainerGraphics(g, appearanceContext);
-            if ((isSidebar && AquaPainting.isSidebarVibrant()) || AquaVibrantSupport.isVibrant(c)) {
+            if (isVibrant(c)) {
                 AquaUtils.fillRect(g, c, AquaUtils.ERASE_ALWAYS);
-            } else {
-                Color background = AquaColors.getBackground(c, "controlBackground");
-                AquaUtils.fillRect(g, c, background, 0);
             }
+        } else if (!isVibrant(c)) {
+            Color background = AquaColors.getBackground(c, "controlBackground");
+            AquaUtils.fillRect(g, c, background, 0);
         }
 
         super.paint(g, c);
@@ -318,6 +318,10 @@ public class AquaScrollPaneUI extends BasicScrollPaneUI
         }
 
         g.dispose();
+    }
+
+    private boolean isVibrant(@NotNull JComponent c) {
+        return (isSidebar && AquaPainting.isSidebarVibrant()) || AquaVibrantSupport.isVibrant(c);
     }
 
     private boolean isTrackPainted() {
@@ -754,11 +758,11 @@ public class AquaScrollPaneUI extends BasicScrollPaneUI
         }
     }
 
-    // This is a grody hack to trick BasicScrollPaneUI into scrolling horizontally when we notice that the shift key is
-    // down. This should be removed when AWT/Swing becomes aware of multi-axis scroll wheels.
+// This is a grody hack to trick BasicScrollPaneUI into scrolling horizontally when we notice that the shift key is
+// down. This should be removed when AWT/Swing becomes aware of multi-axis scroll wheels.
 
-    // It also supports the OS X behavior that wheel scrolling is enabled even when the corresponding scroll bar is not
-    // shown.
+// It also supports the OS X behavior that wheel scrolling is enabled even when the corresponding scroll bar is not
+// shown.
 
     protected class XYMouseWheelHandler extends BasicScrollPaneUI.MouseWheelHandler {
         public void mouseWheelMoved(MouseWheelEvent e) {

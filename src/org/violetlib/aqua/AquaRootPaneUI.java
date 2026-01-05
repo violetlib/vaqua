@@ -50,6 +50,7 @@ import org.jetbrains.annotations.*;
 
 import static org.violetlib.aqua.AquaVibrantSupport.NO_VIBRANT_STYLE;
 import static org.violetlib.aqua.AquaVibrantSupport.WINDOW_BACKGROUND_STYLE;
+import static org.violetlib.aqua.OSXSystemProperties.OSVersion;
 
 public class AquaRootPaneUI extends BasicRootPaneUI implements AquaComponentUI,
   SystemPropertyChangeManager.SystemPropertyChangeListener {
@@ -472,7 +473,7 @@ public class AquaRootPaneUI extends BasicRootPaneUI implements AquaComponentUI,
         configureEmbeddedDialogPatchIfNeeded(w);
 
         if (w.isDisplayable()) {
-            if (OSXSystemProperties.OSVersion >= 1014 && !vibrantStyleIsExplicitlySet) {
+            if (OSVersion >= 1014 && !vibrantStyleIsExplicitlySet) {
                 int vibrantStyle = getDefaultWindowVibrantStyle();
                 updateVibrantStyle(vibrantStyle, false);
             }

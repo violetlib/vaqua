@@ -61,6 +61,8 @@ import org.violetlib.jnr.aqua.AquaUIPainter.State;
 import org.violetlib.jnr.aqua.AquaUIPainter.UILayoutDirection;
 
 import static org.violetlib.aqua.AquaImageFactory.LIGHTEN_FOR_DISABLED;
+import static org.violetlib.aqua.OSXSystemProperties.OSVersion;
+import static org.violetlib.aqua.OSXSystemProperties.macOS11;
 import static org.violetlib.jnr.aqua.AquaUIPainter.State.*;
 
 /**
@@ -942,7 +944,7 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
         int fudge = 0;
         if (isSideBar()) {
             effectiveDepth--;
-            if (OSXSystemProperties.OSVersion < 1016) {
+            if (OSVersion < macOS11) {
                 if (!isCategory(depth)) {
                     fudge = 3;
                 }
@@ -1327,7 +1329,7 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
     protected @Nullable Object getOperatorForTemplateIcon(boolean isSelected) {
         AquaAppearance appearance = appearanceContext != null ? appearanceContext.getAppearance() : null;
         if (isSideBar()) {
-            if (OSXSystemProperties.OSVersion >= 1016 && appearance != null) {
+            if (OSVersion >= macOS11 && appearance != null) {
                 if (AquaFocusHandler.isActive(tree)) {
                     if (appearance.isDark()) {
                         return appearance.getColor("controlAccent");
@@ -1824,7 +1826,7 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
         if (isSideBar()) {
             TreePath path = getPathForRow(tree, row);
             if (path != null && path.getPathCount() == 2) {
-                if (OSXSystemProperties.OSVersion >= 1016) {
+                if (OSVersion >= macOS11) {
                     return 14;
                 }
                 return 9;

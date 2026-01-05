@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2023 Alan Snyder.
+ * Copyright (c) 2015-2025 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -19,11 +19,11 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import javax.swing.plaf.FileChooserUI;
 
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.*;
 
 import static org.violetlib.aqua.AquaUtils.execute;
 import static org.violetlib.aqua.AquaUtils.syslog;
+import static org.violetlib.aqua.OSXSystemProperties.OSVersion;
 
 /**
  * Support for displaying windows as sheets.
@@ -113,7 +113,7 @@ public class AquaSheetSupport {
         contentPane.setLayout(new BorderLayout());
         contentPane.add(fc, BorderLayout.CENTER);
 
-        if (OSXSystemProperties.OSVersion >= 1013) {
+        if (OSVersion >= 1013) {
             Dimension size = dialog.getPreferredSize();
             dialog.setSize(size);
         } else {
@@ -217,7 +217,7 @@ public class AquaSheetSupport {
             debug("Setting background style client property to vibrantSheet");
             rp.putClientProperty(AquaVibrantSupport.BACKGROUND_STYLE_KEY, "vibrantSheet");
             String windowStyle = AquaRootPaneUI.getWindowStyleKey(rp);
-            if (OSXSystemProperties.OSVersion >= 1013) {
+            if (OSVersion >= 1013) {
                 if (!"undecorated".equals(windowStyle)) {
                     if (!sheetWindowStyle.equals(windowStyle)) {
                         windowStyleToRestore = windowStyle;

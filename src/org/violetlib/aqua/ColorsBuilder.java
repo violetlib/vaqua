@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2020 Alan Snyder.
+ * Copyright (c) 2018-2025 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -171,7 +171,7 @@ public class ColorsBuilder {
 
         Map<String,Color> definitions = new HashMap<>();
         for (String name : synonyms.keySet()) {
-            Color c = getIndirect(name, 5);
+            Color c = getIndirect(name, 10);
             if (instrumentation != null) {
                 assert access != null;
                 instrumentation.applyingSynonym(context, name, c, access);

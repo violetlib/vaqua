@@ -39,6 +39,7 @@ import org.jetbrains.annotations.*;
 import org.violetlib.jnr.aqua.*;
 import org.violetlib.jnr.aqua.AquaUIPainter.*;
 
+import static org.violetlib.aqua.OSXSystemProperties.OSVersion;
 import static org.violetlib.jnr.aqua.SegmentedButtonConfiguration.DividerState;
 
 /**
@@ -120,7 +121,7 @@ public class AquaSegmentedButtonBorder extends AquaButtonBorder implements Focus
         // This is not what macOS 10.14 actually does, but it is much more readable, and it is similar to what macOS
         // 10.15 does, which is to make all textured segmented buttons active-insensitive.
 
-        if (OSXSystemProperties.OSVersion == 1014
+        if (OSVersion == 1014
           && state.isInactive()
           && widget.isTextured()
           && !AppearanceManager.getAppearance(b).isDark()

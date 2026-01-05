@@ -53,6 +53,7 @@ import org.violetlib.jnr.aqua.AquaUIPainter.State;
 
 import static org.violetlib.aqua.AquaButtonSupport.isColorWell;
 import static org.violetlib.aqua.OSXSystemProperties.OSVersion;
+import static org.violetlib.aqua.OSXSystemProperties.macOS11;
 import static org.violetlib.jnr.aqua.AquaUIPainter.ButtonState.OFF;
 import static org.violetlib.jnr.aqua.AquaUIPainter.ButtonState.ON;
 import static org.violetlib.jnr.aqua.AquaUIPainter.ButtonWidget.BUTTON_TOOLBAR_ITEM;
@@ -130,7 +131,9 @@ public abstract class AquaButtonBorder extends AquaBorder implements FocusRingOu
                 }
                 Color textColor = getForegroundColor(b, bg, false);
                 Insets insets = getButtonContentInsets(b);
-                AquaButtonSupport.paintIconAndText(g, b, bg, painter, insets, icon, textColor, viewRect, iconSize, isSplit);
+                Color iconColor = null;
+                AquaButtonSupport.paintIconAndText(g, b, bg, painter, insets, icon,
+                  textColor, iconColor, viewRect, iconSize, isSplit);
             }
         }
     }
@@ -302,6 +305,13 @@ public abstract class AquaButtonBorder extends AquaBorder implements FocusRingOu
             } else if (OSVersion >= 1200 && state == State.PRESSED) {
                 state = State.ACTIVE;
             }
+
+            // Special case for the text color of a split button, which may be different than the icon color
+            // when the icon background is the accent color.
+            if (isSplitToolbarItem(b, g) && !isIcon && state == State.ACTIVE && getButtonState(b) == ON) {
+                bs = OFF;
+            }
+
             return info.getForeground(state, bs, appearance, useNonexclusive, isIcon);
         } else {
             return existingColor;
@@ -503,7 +513,7 @@ public abstract class AquaButtonBorder extends AquaBorder implements FocusRingOu
 
         } else if (st == State.INACTIVE) {
             if (g.isTextured()) {
-                return OSXSystemProperties.OSVersion < 1015;
+                return OSVersion < 1015;
             }
         }
         return false;
@@ -645,7 +655,7 @@ public abstract class AquaButtonBorder extends AquaBorder implements FocusRingOu
     }
 
     protected boolean shouldUseIconicWidget(@NotNull AbstractButton b) {
-        return OSVersion >= 1016 && isIconOnly(b);
+        return OSVersion >= macOS11 && isIconOnly(b);
     }
 
     public static boolean isIconOnly(@NotNull AbstractButton b)

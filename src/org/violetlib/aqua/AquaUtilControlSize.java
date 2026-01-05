@@ -88,6 +88,7 @@ public class AquaUtilControlSize {
         if (sz == Size.SMALL) return "small";
         if (sz == Size.MINI) return "mini";
         if (sz == Size.LARGE) return "large";
+        if (sz == Size.EXTRA_LARGE) return "extraLarge";
         return null;
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014-2024 Alan Snyder.
+ * Copyright (c) 2014-2025 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -24,7 +24,8 @@ import javax.swing.tree.TreePath;
 import javax.swing.tree.TreeSelectionModel;
 
 import org.violetlib.aqua.AquaUtils;
-import org.violetlib.aqua.OSXSystemProperties;
+
+import static org.violetlib.aqua.OSXSystemProperties.OSVersion;
 
 /**
  * An implementation of column view.
@@ -48,11 +49,9 @@ public class ColumnViewImpl extends ColumnView {
 
         setFocusable(false);
 
-        int version = OSXSystemProperties.OSVersion;
-
         int columnMinimumWidth;
 
-        if (version <= 1013) {
+        if (OSVersion <= 1013) {
             columnMinimumWidth = 164;
         } else {
             columnMinimumWidth = 206;
@@ -66,9 +65,9 @@ public class ColumnViewImpl extends ColumnView {
 
         int minimumHeight;
 
-        if (version <= 1011) {
+        if (OSVersion <= 1011) {
             minimumHeight = 332;
-        } else if (version == 1012) {
+        } else if (OSVersion == 1012) {
             minimumHeight = 203;
         } else {
             minimumHeight = 100;

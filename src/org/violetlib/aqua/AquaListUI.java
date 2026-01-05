@@ -50,6 +50,7 @@ import javax.swing.text.JTextComponent;
 import org.jetbrains.annotations.*;
 import org.violetlib.jnr.aqua.AquaUIPainter;
 
+import static org.violetlib.aqua.OSXSystemProperties.OSVersion;
 import static org.violetlib.jnr.aqua.AquaUIPainter.State.*;
 
 /**
@@ -364,7 +365,7 @@ public class AquaListUI extends BasicListUI implements AquaComponentUI, AquaView
 
     protected AquaUIPainter.State getState() {
         // Not sure which OS release made this change:
-        if (!AquaFocusHandler.isActive(list) && OSXSystemProperties.OSVersion >= 1500) {
+        if (!AquaFocusHandler.isActive(list) && OSVersion >= 1500) {
             return INACTIVE;
         }
         return list.isEnabled() ? (shouldDisplayAsFocused() ? ACTIVE_DEFAULT : ACTIVE) : DISABLED;

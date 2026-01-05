@@ -46,6 +46,8 @@ import org.violetlib.jnr.aqua.AquaUIPainter.ButtonWidget;
 import org.violetlib.jnr.aqua.AquaUIPainter.Position;
 import org.violetlib.jnr.aqua.AquaUIPainter.SegmentedButtonWidget;
 
+import static org.violetlib.aqua.OSXSystemProperties.OSVersion;
+import static org.violetlib.aqua.OSXSystemProperties.macOS11;
 import static org.violetlib.jnr.aqua.AquaUIPainter.ButtonWidget.*;
 import static org.violetlib.jnr.aqua.AquaUIPainter.ComboBoxWidget.*;
 import static org.violetlib.jnr.aqua.AquaUIPainter.PopupButtonWidget.*;
@@ -568,7 +570,7 @@ public class AquaButtonExtendedTypes {
           .withNonexclusiveSelectionColors(AquaColors.TEXTURED_TOOLBAR_NONEXCLUSIVE_COLORS)
           ;
 
-        if (OSXSystemProperties.OSVersion >= 1016) {
+        if (OSVersion >= macOS11) {
             texturedToolbar = texturedToolbar.withRolloverEnabled();
         }
 
@@ -665,11 +667,11 @@ public class AquaButtonExtendedTypes {
           new BorderDefinedTypeSpecifier("help", BUTTON_HELP),
           new BorderDefinedTypeSpecifier("round", BUTTON_ROUND),
           new BorderDefinedTypeSpecifier("round-onToolbar",
-            OSXSystemProperties.OSVersion >= 1011 ? BUTTON_ROUND_TEXTURED_TOOLBAR : BUTTON_ROUND),
+            OSVersion >= 1011 ? BUTTON_ROUND_TEXTURED_TOOLBAR : BUTTON_ROUND),
           new BorderDefinedTypeSpecifier("texturedRound", BUTTON_ROUND_INSET),  // TBD: this is not correct, but the button type is undocumented
           new BorderDefinedTypeSpecifier("roundTextured", BUTTON_ROUND_TEXTURED),
           new BorderDefinedTypeSpecifier("roundTextured-onToolbar",
-            OSXSystemProperties.OSVersion >= 1011 ? BUTTON_ROUND_TEXTURED_TOOLBAR : BUTTON_ROUND_TEXTURED),
+            OSVersion >= 1011 ? BUTTON_ROUND_TEXTURED_TOOLBAR : BUTTON_ROUND_TEXTURED),
           new BorderDefinedTypeSpecifier("roundInset", BUTTON_ROUND_INSET),
           new BorderDefinedTypeSpecifier("colorWell", BUTTON_COLOR_WELL),
 

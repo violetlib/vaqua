@@ -62,9 +62,11 @@ import org.violetlib.jnr.Insetter;
 import org.violetlib.jnr.aqua.AquaUIPainter;
 
 import static org.violetlib.aqua.JavaSupport.FocusEventCause.*;
+import static org.violetlib.aqua.OSXSystemProperties.OSVersion;
+import static org.violetlib.aqua.OSXSystemProperties.macOS11;
 import static org.violetlib.jnr.aqua.AquaUIPainter.ButtonWidget.BUTTON_GLASS;
-import static org.violetlib.jnr.aqua.AquaUIPainter.PopupButtonWidget.BUTTON_POP_UP;
-import static org.violetlib.jnr.aqua.AquaUIPainter.SegmentedButtonWidget.BUTTON_SEGMENTED;
+import static org.violetlib.jnr.aqua.AquaUIPainter.Size.EXTRA_LARGE;
+import static org.violetlib.jnr.aqua.AquaUIPainter.Size.REGULAR;
 
 final public class AquaUtils {
 
@@ -467,7 +469,7 @@ final public class AquaUtils {
     }
 
     public static boolean isInsetViewSupported() {
-        return OSXSystemProperties.OSVersion >= 1016;
+        return OSVersion >= macOS11;
     }
 
     public static boolean isCellComponent(@NotNull Component c) {
@@ -487,48 +489,57 @@ final public class AquaUtils {
         }
 
         if (isOnToolbar && widget != null) {
-            int version = AquaPainting.getVersion();
-            if (version >= 1600 && isToolbarGlassWidget(widget)) {
-                return AquaUIPainter.Size.EXTRA_LARGE;
-            }
-            if (version >= 1016 && isToolbarSizedWidget(widget)) {
-                return AquaUIPainter.Size.LARGE;
+            AquaUIPainter.Size sz = getToolbarSize(widget);
+            if (sz != null) {
+                return sz;
             }
         }
 
         return AquaUtilControlSize.getUserSizeFrom(c); // returns a default size
     }
 
-    private static boolean isToolbarGlassWidget(@NotNull Object widget)
+    private static @Nullable AquaUIPainter.Size getToolbarSize(@NotNull Object widget)
     {
-        if (widget == BUTTON_GLASS || widget == BUTTON_POP_UP || widget == BUTTON_SEGMENTED) {
-            return true;
-        }
-        if (widget instanceof AquaUIPainter.TextFieldWidget) {
-            AquaUIPainter.TextFieldWidget w = (AquaUIPainter.TextFieldWidget) widget;
-            return w.isSearch();
-        }
-        return false;
-    }
+        int version = AquaPainting.getVersion();
 
-    private static boolean isToolbarSizedWidget(@NotNull Object widget)
-    {
+        if (version >= 1600) {
+            if (widget == BUTTON_GLASS
+              || widget instanceof AquaUIPainter.PopupButtonWidget
+              || widget instanceof AquaUIPainter.ComboBoxWidget
+              || widget instanceof AquaUIPainter.SegmentedButtonWidget) {
+                return EXTRA_LARGE;
+            }
+        }
+
+        if (version < macOS11) {
+            return null;
+        }
+
+        AquaUIPainter.Size toolbarSize = REGULAR;
+
         if (widget instanceof AquaUIPainter.TextFieldWidget) {
             AquaUIPainter.TextFieldWidget w = (AquaUIPainter.TextFieldWidget) widget;
-            return w.isSearch();
+            if (w.isSearch()) {
+                if (version >= 1600) {
+                    return EXTRA_LARGE;
+                }
+                return toolbarSize;
+            }
+            return null;
         }
+
         if (widget instanceof AquaUIPainter.SegmentedButtonWidget) {
-            return true;
+            return toolbarSize;
         }
         if (widget instanceof AquaUIPainter.ButtonWidget) {
             AquaUIPainter.ButtonWidget w = (AquaUIPainter.ButtonWidget) widget;
-            return w.isToolbar();
+            return w.isToolbar() ? toolbarSize : null;
         }
         if (widget instanceof AquaUIPainter.PopupButtonWidget) {
             AquaUIPainter.PopupButtonWidget w = (AquaUIPainter.PopupButtonWidget) widget;
-            return w.isToolbar();
+            return w.isToolbar() ? toolbarSize : null;
         }
-        return false;
+        return null;
     }
 
     public static boolean isAutoSelectOnFocusAppropriate(@NotNull FocusEvent e) {
@@ -1523,7 +1534,7 @@ final public class AquaUtils {
 
     public static void configure(@NotNull AquaUIPainter painter, @NotNull Component c, int width, int height) {
         AquaAppearance appearance = AppearanceManager.getAppearance(c);
-        painter.configureAppearance(appearance);
+        painter.configureAppearance(appearance.getAppearance());
         painter.configure(width, height);
     }
 
@@ -1610,7 +1621,7 @@ final public class AquaUtils {
                 case TITLE_BAR_HIDDEN:
                     isFullWindowContent = true;
                     isTransparentTitleBar = true;
-                    isMovable = OSXSystemProperties.OSVersion < 1011;
+                    isMovable = OSVersion < 1011;
                     isMovableByBackground = false;
                     isFixNeeded = true;
                     isHidden = true;

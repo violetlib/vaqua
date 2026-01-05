@@ -22,11 +22,12 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import static org.violetlib.aqua.AquaUtils.*;
+import static org.violetlib.aqua.OSXSystemProperties.*;
 
 /**
  * This class supports custom window styles that use the NSView full content view option on a decorated window. In all
  * cases the content pane occupies the entire window and title bar paints over the content pane. The styles differ in
- * the treatment of the title bar, the tool bar (if any), and the window background.
+ * the treatment of the title bar, the toolbar (if any), and the window background.
  *
  * <ul>
  * <li>{@code STYLE_OVERLAY}</li> - A normal title bar is used. The content pane will be visible beneath the title bar
@@ -44,25 +45,25 @@ import static org.violetlib.aqua.AquaUtils.*;
  * margin is defined, the content pane is set to not-opaque to expose the margin backgrounds.
  *
  * <li>{@code STYLE_UNIFIED}</li> - This option requires a non-floatable JToolBar or toolbar panel as a child component
- * of the content pane positioned at the top of the content pane. It creates a unified title bar and tool bar by using a
- * transparent title bar, painting a textured window background that includes a gradient under the title bar and tool
- * bar, and by installing a default tool bar border with a top inset, so that the tool bar is positioned below the title
- * bar. The content pane and tool bar are set to not-opaque to expose the textured background. The window title is
+ * of the content pane positioned at the top of the content pane. It creates a unified title bar and toolbar by using a
+ * transparent title bar, painting a textured window background that includes a gradient under the title bar and
+ * toolbar, and by installing a default toolbar border with a top inset, so that the toolbar is positioned below the
+ * title bar. The content pane and toolbar are set to not-opaque to expose the textured background. The window title is
  * cleared; the application should avoid setting a title on the window. A mouse listener is attached to the toolbar to
  * support dragging the window.
  *
  * <li>{@code STYLE_COMBINED}</li> - This option requires a non-floatable JToolBar or toolbar panel as a child
- * component of the content pane positioned at the top of the content pane. It creates a combined title bar and tool bar
+ * component of the content pane positioned at the top of the content pane. It creates a combined title bar and toolbar
  * by using a transparent title bar, painting a textured window background that includes a gradient under the title bar
- * and tool bar, and by installing a default tool bar border with a left inset, so that the tool bar is positioned to
- * the right of the title bar buttons. The content pane and tool bar are set to not-opaque to expose the textured
+ * and toolbar, and by installing a default toolbar border with a left inset, so that the toolbar is positioned to
+ * the right of the title bar buttons. The content pane and toolbar are set to not-opaque to expose the textured
  * background. The window title is cleared; the application should avoid setting a title on the window. A mouse listener
  * is attached to the toolbar to support dragging the window.
  *
  * <li>{@code STYLE_TEXTURED_HIDDEN}</li> - This option requires a non-floatable JToolBar or toolbar panel as a child
- * component of the content pane positioned at the top of the content pane. It creates a textured window with a tool bar
+ * component of the content pane positioned at the top of the content pane. It creates a textured window with a toolbar
  * instead of a title bar by using a transparent title bar, and by painting a textured window background that includes a
- * gradient under the tool bar. The content pane and tool bar are set to not-opaque to expose the textured background.
+ * gradient under the toolbar. The content pane and toolbar are set to not-opaque to expose the textured background.
  * The window title is cleared; the application should avoid setting a title on the window. A mouse listener is attached
  * to the toolbar to support dragging the window.
  */
@@ -78,12 +79,12 @@ public class AquaCustomStyledWindow {
     public static final int STYLE_OVERLAY = 0;          // AKA overlay title bar
     public static final int STYLE_TRANSPARENT = 1;      // AKA transparent title bar
     public static final int STYLE_HIDDEN = 2;           // AKA no title bar
-    public static final int STYLE_UNIFIED = 3;          // AKA unified tool bar
-    public static final int STYLE_TEXTURED_HIDDEN = 4;  // AKA textured tool bar
-    public static final int STYLE_COMBINED = 5;         // AKA combined title and tool bar
+    public static final int STYLE_UNIFIED = 3;          // AKA unified toolbar
+    public static final int STYLE_TEXTURED_HIDDEN = 4;  // AKA textured toolbar
+    public static final int STYLE_COMBINED = 5;         // AKA combined title bar and toolbar
     public static final int STYLE_UNDECORATED = 6;      // Internal use
 
-    protected final int TITLE_BAR_HEIGHT = OSXSystemProperties.OSVersion >= 1016 ? 27: 22;
+    protected final int TITLE_BAR_HEIGHT = OSVersion >= macOS11 ? 27: 22;
     protected final int TITLE_BAR_BUTTONS_WIDTH = 78;
 
     protected @Nullable Window w;

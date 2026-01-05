@@ -17,6 +17,7 @@ import org.jetbrains.annotations.*;
 import org.violetlib.jnr.aqua.PopupButtonLayoutConfiguration;
 
 import static org.violetlib.aqua.OSXSystemProperties.OSVersion;
+import static org.violetlib.aqua.OSXSystemProperties.macOS11;
 import static org.violetlib.jnr.aqua.AquaUIPainter.Size;
 
 /**
@@ -30,14 +31,14 @@ import static org.violetlib.jnr.aqua.AquaUIPainter.Size;
 @SuppressWarnings("serial") // Superclass is not serializable across versions
 public class AquaComboBoxRenderer implements ListCellRenderer<Object>, UIResource {
 
-    protected static int menuLabelLeftInset = OSVersion >= 1016 ? 25 : 21;
+    protected static int menuLabelLeftInset = OSVersion >= macOS11 ? 25 : 21;
     protected static int editableMenuLabelLeftInset = OSVersion >= 1015 ? 16 : 5;
     protected static int menuLabelRightInset = OSVersion >= 1015 ? 19 : 5;
     protected static int menuLabelTopInset = 2;
     protected static int menuLabelBottomInset = 3;
     protected static int miniMenuLabelTopInset = 1;
     protected static int miniMenuLabelBottomInset = 0;
-    protected static int checkMarkLeftInset = OSVersion >= 1016 ? 10 : OSVersion >= 1015 ? 7 : 5;
+    protected static int checkMarkLeftInset = OSVersion >= macOS11 ? 10 : OSVersion >= 1015 ? 7 : 5;
     protected static int checkMarkTopInset = 3;
     protected static int pullDownMenuLabelLeftInset = menuLabelRightInset;
 
