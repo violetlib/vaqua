@@ -1,5 +1,5 @@
 /*
- * Changes Copyright (c) 2015-2025 Alan Snyder.
+ * Changes Copyright (c) 2015-2026 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -95,7 +95,6 @@ public class AquaPopupMenuUI extends BasicPopupMenuUI implements AquaComponentUI
     public void installDefaults() {
         super.installDefaults();
         LookAndFeel.installProperty(popupMenu, "opaque", false);
-        configureAppearanceContext(null);
 
         int version = AquaPainting.getVersion();
 
@@ -173,28 +172,28 @@ public class AquaPopupMenuUI extends BasicPopupMenuUI implements AquaComponentUI
 
     @Override
     public void appearanceChanged(@NotNull JComponent c, @NotNull AquaAppearance appearance) {
-        configureAppearanceContext(appearance);
     }
 
     @Override
     public void activeStateChanged(@NotNull JComponent c, boolean isActive) {
-        configureAppearanceContext(null);
-    }
-
-    protected void configureAppearanceContext(@Nullable AquaAppearance appearance) {
-        if (appearance == null) {
-            appearance = AppearanceManager.getAppearance(popupMenu);
-        }
-        AquaUIPainter.State state = AquaUIPainter.State.ACTIVE;
-        AppearanceContext appearanceContext = new AppearanceContext(appearance, state, false, false);
-        BasicContextualColors colors = getMenuColors(popupMenu.getInvoker());
-        AquaColors.installColors(popupMenu, appearanceContext, colors);
     }
 
     @Override
     public void update(Graphics g, JComponent c) {
-        AppearanceManager.registerCurrentAppearance(c);
-        super.update(g, c);
+        paint(g, c);
+    }
+
+    @Override
+    public void paint(Graphics g, JComponent c) {
+        AppearanceSupport.withContext(g, c, this::paint);
+    }
+
+    public void paint(Graphics2D g, JComponent c, @NotNull PaintingContext pc) {
+        AquaUIPainter.State state = AquaUIPainter.State.ACTIVE;
+        AppearanceContext appearanceContext = new AppearanceContext(pc.appearance, state, false, false);
+        BasicContextualColors colors = getMenuColors(popupMenu.getInvoker());
+        AquaColors.installColors(popupMenu, appearanceContext, colors);
+        super.paint(g, c);
     }
 
     public boolean isPopupTrigger(MouseEvent e) {

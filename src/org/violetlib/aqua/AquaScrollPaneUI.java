@@ -1,5 +1,5 @@
 /*
- * Changes Copyright (c) 2015-2025 Alan Snyder.
+ * Changes Copyright (c) 2015-2026 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -147,7 +147,6 @@ public class AquaScrollPaneUI extends BasicScrollPaneUI
         }
         setScrollBarStyle(shouldUseOverlayScrollBars());
         scrollpane.putClientProperty(SCROLL_PANE_AQUA_OVERLAY_SCROLL_BARS_KEY, isOverlayScrollBars);
-        configureAppearanceContext(null);
         isSmoothScrolling = computeSmoothScrolling();
         AquaVibrantSupport.installVibrantStyle(scrollpane);
     }
@@ -236,21 +235,10 @@ public class AquaScrollPaneUI extends BasicScrollPaneUI
 
     @Override
     public void appearanceChanged(@NotNull JComponent c, @NotNull AquaAppearance appearance) {
-        configureAppearanceContext(appearance);
     }
 
     @Override
     public void activeStateChanged(@NotNull JComponent c, boolean isActive) {
-        configureAppearanceContext(null);
-    }
-
-    protected void configureAppearanceContext(@Nullable AquaAppearance appearance) {
-        if (appearance == null) {
-            appearance = AppearanceManager.getAppearance(scrollpane);
-        }
-        AquaUIPainter.State state = getState();
-        appearanceContext = new AppearanceContext(appearance, state, false, false);
-        updateThumbStyle();
     }
 
     protected @NotNull AquaUIPainter.State getState() {
@@ -272,17 +260,25 @@ public class AquaScrollPaneUI extends BasicScrollPaneUI
         return AquaDefaultFocusRingProvider.getDefaultFocusRing(c);
     }
 
-    @Override
-    public void update(Graphics g, JComponent c) {
-        paint(g, c);
-    }
-
     private @Nullable Insetter2D getInsetter() {
         return sidebarContainerSupport != null ? sidebarContainerSupport.getInsetter() : null;
     }
 
     @Override
+    public void update(Graphics g, JComponent c) {
+        paint(g, c);
+    }
+
+    @Override
     public void paint(Graphics g, JComponent c) {
+        AppearanceSupport.withContext(g, c, this::paint);
+    }
+
+    public void paint(Graphics2D g, JComponent c, @NotNull PaintingContext pc) {
+
+        AquaUIPainter.State state = getState();
+        appearanceContext = new AppearanceContext(pc.appearance, state, false, false);
+        updateThumbStyle();
 
         AppearanceManager.registerCurrentAppearance(c);
 
@@ -298,7 +294,7 @@ public class AquaScrollPaneUI extends BasicScrollPaneUI
         if (b instanceof AquaTextComponentBorder) {
             AquaTextComponentBorder tcb = (AquaTextComponentBorder) b;
             tcb.paintBackground(c, g, null);
-            g = g.create();
+            g = (Graphics2D) g.create();
         } else if (sidebarContainerSupport != null) {
             assert appearanceContext != null;
             g = sidebarContainerSupport.setupContainerGraphics(g, appearanceContext);

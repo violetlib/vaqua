@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2025 Alan Snyder.
+ * Copyright (c) 2018-2026 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -62,10 +62,6 @@ public class AppearanceManager {
     }
 
     public static void uninstallListeners(@NotNull JComponent c) {
-    }
-
-    public static void setRootPaneAppearance(@NotNull JRootPane rp, @NotNull String appearanceName) {
-        rp.repaint();
     }
 
     /**
@@ -156,7 +152,7 @@ public class AppearanceManager {
      * @return the specified appearance name, or null if none.
      */
 
-    private static @Nullable String getSpecifiedAppearanceName(@NotNull JComponent jc) {
+    public static @Nullable String getSpecifiedAppearanceName(@NotNull JComponent jc) {
         Object o = jc.getClientProperty(AQUA_APPEARANCE_NAME_KEY);
         if (o instanceof String) {
             return (String) o;

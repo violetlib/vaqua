@@ -1,5 +1,5 @@
 /*
- * Changes Copyright (c) 2015-2025 Alan Snyder.
+ * Changes Copyright (c) 2015-2026 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -131,7 +131,7 @@ public class AquaTextFieldUI extends AquaTextComponentUIBase implements ToolbarS
             Object o = evt.getNewValue();
             if (o instanceof BasicContextualColors) {
                 colors = (BasicContextualColors) o;
-                configureAppearanceContext(null);
+                editor.repaint();
             }
         }
     }

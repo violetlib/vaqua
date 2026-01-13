@@ -1,5 +1,5 @@
 /*
- * Changes Copyright (c) 2015-2025 Alan Snyder.
+ * Changes Copyright (c) 2015-2026 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -105,7 +105,6 @@ public class AquaProgressBarUI
         LookAndFeel.installProperty(progressBar, "opaque", false);
         LookAndFeel.installBorder(progressBar, "ProgressBar.border");
         AquaUtils.installFont(progressBar, "ProgressBar.font");
-        configureAppearanceContext(null);
     }
 
     protected void uninstallDefaults() {
@@ -130,12 +129,10 @@ public class AquaProgressBarUI
 
     @Override
     public void appearanceChanged(@NotNull JComponent c, @NotNull AquaAppearance appearance) {
-        configureAppearanceContext(appearance);
     }
 
     @Override
     public void activeStateChanged(@NotNull JComponent c, boolean isActive) {
-        configureAppearanceContext(null);
     }
 
     @Override
@@ -191,15 +188,6 @@ public class AquaProgressBarUI
     public void ancestorMoved(AncestorEvent e) {
     }
 
-    protected void configureAppearanceContext(@Nullable AquaAppearance appearance) {
-        if (appearance == null) {
-            appearance = AppearanceManager.getAppearance(progressBar);
-        }
-        AquaUIPainter.State state = getState();
-        AppearanceContext appearanceContext = new AppearanceContext(appearance, state, false, false);
-        AquaColors.installColors(progressBar, appearanceContext, colors);
-    }
-
     protected @NotNull AquaUIPainter.State getState() {
         if (!progressBar.isEnabled()) {
             return State.INACTIVE;
@@ -212,14 +200,20 @@ public class AquaProgressBarUI
 
     @Override
     public void update(Graphics g, JComponent c) {
-        AppearanceManager.registerCurrentAppearance(c);
-        super.update(g, c);
+        paint(g, c);
     }
 
     @Override
     public void paint(Graphics g, JComponent c) {
+        AppearanceSupport.withContext(g, c, this::paint);
+    }
 
+    public void paint(Graphics2D g, JComponent c, @NotNull PaintingContext pc) {
         revalidateAnimationTimers(); // revalidate to turn on/off timers when values change
+
+        AquaUIPainter.State state = getState();
+        AppearanceContext appearanceContext = new AppearanceContext(pc.appearance, state, false, false);
+        AquaColors.installColors(progressBar, appearanceContext, colors);
 
         // this is questionable. We may want the insets to mean something different.
         Insets i = progressBar.getInsets();

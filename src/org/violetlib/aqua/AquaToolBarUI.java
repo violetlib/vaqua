@@ -1,5 +1,5 @@
 /*
- * Changes copyright (c) 2016-2025 Alan Snyder.
+ * Changes copyright (c) 2016-2026 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -46,8 +46,7 @@ import javax.swing.plaf.ComponentUI;
 import javax.swing.plaf.UIResource;
 import javax.swing.plaf.basic.BasicToolBarUI;
 
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.*;
 import org.violetlib.jnr.aqua.AquaUIPainter;
 import org.violetlib.jnr.aqua.ButtonLayoutConfiguration;
 import org.violetlib.jnr.aqua.LayoutConfiguration;
@@ -88,7 +87,6 @@ public class AquaToolBarUI extends BasicToolBarUI implements SwingConstants, Aqu
             toolBar.setLayout(new AquaToolBarLayout());
         }
         toolBar.setFloatable(false);
-        configureAppearanceContext(null);
     }
 
     protected void installBorder() {
@@ -125,21 +123,10 @@ public class AquaToolBarUI extends BasicToolBarUI implements SwingConstants, Aqu
 
     @Override
     public void appearanceChanged(@NotNull JComponent c, @NotNull AquaAppearance appearance) {
-        configureAppearanceContext(appearance);
     }
 
     @Override
     public void activeStateChanged(@NotNull JComponent c, boolean isActive) {
-        configureAppearanceContext(null);
-    }
-
-    protected void configureAppearanceContext(@Nullable AquaAppearance appearance) {
-        if (appearance == null) {
-            appearance = AppearanceManager.getAppearance(toolBar);
-        }
-        AquaUIPainter.State state = getState();
-        AppearanceContext appearanceContext = new AppearanceContext(appearance, state, false, false);
-        AquaColors.installColors(toolBar, appearanceContext, colors);
     }
 
     protected AquaUIPainter.State getState() {
@@ -292,12 +279,23 @@ public class AquaToolBarUI extends BasicToolBarUI implements SwingConstants, Aqu
 
     @Override
     public void update(Graphics g, JComponent c) {
-        AppearanceManager.registerCurrentAppearance(c);
+        paint(g, c);
+    }
+
+    @Override
+    public void paint(Graphics g, JComponent c) {
+        AppearanceSupport.withContext(g, c, this::paint);
+    }
+
+    public void paint(Graphics2D g, JComponent c, @NotNull PaintingContext pc) {
+        AquaUIPainter.State state = AquaUIPainter.State.ACTIVE;
+        AppearanceContext appearanceContext = new AppearanceContext(pc.appearance, state, false, false);
+        AquaColors.installColors(c, appearanceContext, colors);
+
         if (!isRendering && c.isOpaque()) {
             Color bc = c.getBackground();
             AquaUtils.fillRect(g, c, bc, AquaUtils.ERASE_IF_TEXTURED|AquaUtils.ERASE_IF_VIBRANT);
         }
-        paint(g, c);
     }
 
     @Override
@@ -344,7 +342,7 @@ public class AquaToolBarUI extends BasicToolBarUI implements SwingConstants, Aqu
                 Point dragOffset = e.getPoint();
                 if (!AquaUtils.isLeftToRight(toolBar)) {
                     dragOffset.x -= (toolBar.getSize().width
-                                     - toolBar.getPreferredSize().width);
+                      - toolBar.getPreferredSize().width);
                 }
                 setDragOffset(dragOffset);
             }
@@ -382,7 +380,7 @@ public class AquaToolBarUI extends BasicToolBarUI implements SwingConstants, Aqu
     }
 
     private class AquaToolBarLayout
-        implements LayoutManager2, Serializable, PropertyChangeListener, UIResource {
+      implements LayoutManager2, Serializable, PropertyChangeListener, UIResource {
 
         GroupLayout gl;
         GroupLayout.SequentialGroup major;

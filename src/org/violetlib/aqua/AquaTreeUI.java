@@ -1,5 +1,5 @@
 /*
- * Changes Copyright (c) 2015-2025 Alan Snyder.
+ * Changes Copyright (c) 2015-2026 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -178,7 +178,6 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
         colors = determineColors();
         updateExpandControlSize();
         updateSideBarConfiguration();
-        configureAppearanceContext(null);
     }
 
     protected void cellEditorChanged() {
@@ -253,24 +252,11 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
 
     @Override
     public void appearanceChanged(@NotNull JComponent c, @NotNull AquaAppearance appearance) {
-        configureAppearanceContext(appearance);
     }
 
     @Override
     public void activeStateChanged(@NotNull JComponent c, boolean isActive) {
-        configureAppearanceContext(null);
         repaintScrollPane();
-    }
-
-    protected void configureAppearanceContext(@Nullable AquaAppearance appearance) {
-        if (appearance == null) {
-            appearance = AppearanceManager.getAppearance(tree);
-        }
-        AquaUIPainter.State state = getState();
-        appearanceContext = new AppearanceContext(appearance, state, false, false);
-        colors.configureForContainer();
-        AquaColors.installColors(tree, appearanceContext, colors);
-        updateOpaque();
     }
 
     private void updateOpaque() {
@@ -367,8 +353,6 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
             tree.repaint();
             updateCellSizes();
             updateInsetConfiguration();
-        } else if (isSideBar()) {
-            configureAppearanceContext(null);
         }
     }
 
@@ -485,7 +469,6 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
         }
         if (isStripedChanged || isSideBarChanged) {
             colors = determineColors();
-            configureAppearanceContext(null);
             tree.repaint();
         }
         if (isSideBarChanged) {
@@ -527,7 +510,6 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
 
     private void updateInsetConfiguration()
     {
-        configureAppearanceContext(null);
         tree.revalidate();
         tree.repaint();
     }
@@ -665,7 +647,6 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
             editorFocusOwner.removeFocusListener(editingComponentFocusListener);
         }
         super.completeEditing(messageStop, messageCancel, messageTree);
-        configureAppearanceContext(null);
     }
 
     public void mouseMoved(@Nullable MouseEvent e) {
@@ -965,14 +946,23 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
 
     @Override
     public void update(Graphics g, JComponent c) {
-        AppearanceManager.registerCurrentAppearance(c);
         paint(g, c);
     }
 
     @Override
-    public void paint(@NotNull Graphics g, @NotNull JComponent c) {
+    public void paint(Graphics g, JComponent c) {
+        AppearanceSupport.withContext(g, c, this::paint);
+    }
 
-        if (treeState == null || appearanceContext == null) {
+    public void paint(Graphics2D g, JComponent c, @NotNull PaintingContext pc) {
+
+        AquaUIPainter.State state = getState();
+        appearanceContext = new AppearanceContext(pc.appearance, state, false, false);
+        colors.configureForContainer();
+        AquaColors.installColors(tree, appearanceContext, colors);
+        updateOpaque();
+
+        if (treeState == null) {
             return;
         }
 
@@ -986,7 +976,7 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
         if (sidebarContainerSupport != null) {
             g = sidebarContainerSupport.setupContainerGraphics(g, appearanceContext);
         } else {
-            g = g.create();
+            g = (Graphics2D) g.create();
         }
 
         if (sidebarVibrantEffects != null) {
@@ -1374,7 +1364,10 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
             return AquaColors.getSystemColor(tree, "secondaryLabel");
         } else {
             AppearanceContext context = AquaTreeUI.this.appearanceContext;
-            assert context != null;
+            if (context == null) {
+                // configuring the cell renderer for layout, color does not matter
+                return Color.WHITE;
+            }
             if (isSelected) {
                 context = context.withSelected(true);
             }
@@ -1878,7 +1871,6 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
         }
 
         private void focusChanged() {
-            configureAppearanceContext(null);
         }
     }
 
@@ -1901,9 +1893,8 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
             }
 
             if (pn.equals("enabled")) {
-                configureAppearanceContext(null);
             } else if (AquaFocusHandler.DISPLAY_AS_FOCUSED_KEY.equals(pn)) {
-                configureAppearanceContext(null);
+                tree.repaint();
                 return;
             } else if (isStyleProperty(pn)) {
                 updateStyleProperties();

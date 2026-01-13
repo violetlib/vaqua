@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2025 Alan Snyder.
+ * Copyright (c) 2018-2026 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -72,7 +72,6 @@ public class AquaMenuItemUI extends BasicMenuItemUI implements AquaComponentUI {
 
     protected void installDefaults() {
         super.installDefaults();
-        configureAppearanceContext(null);
     }
 
     @Override
@@ -91,31 +90,26 @@ public class AquaMenuItemUI extends BasicMenuItemUI implements AquaComponentUI {
 
     @Override
     public void appearanceChanged(@NotNull JComponent c, @NotNull AquaAppearance appearance) {
-        configureAppearanceContext(appearance);
     }
 
     @Override
     public void activeStateChanged(@NotNull JComponent c, boolean isActive) {
-        configureAppearanceContext(null);
-    }
-
-    protected void configureAppearanceContext(@Nullable AquaAppearance appearance) {
-        if (appearance == null) {
-            appearance = AppearanceManager.getAppearance(menuItem);
-        }
-        AppearanceContext appearanceContext = AquaMenuSupport.instance().getAppearanceContext(menuItem, appearance);
-        AquaColors.installColors(menuItem, appearanceContext, colors);
     }
 
     @Override
     public void update(Graphics g, JComponent c) {
-        AppearanceManager.registerCurrentAppearance(c);
-        super.update(g, c);
+        paint(g, c);
     }
 
     @Override
     public void paint(Graphics g, JComponent c) {
-        AppearanceContext appearanceContext = AquaMenuSupport.instance().getAppearanceContext(menuItem, null);
+        AppearanceSupport.withContext(g, c, this::paint);
+    }
+
+    public void paint(Graphics2D g, JComponent c, @NotNull PaintingContext pc) {
+        assert menuItem != null;
+        AppearanceContext appearanceContext = AquaMenuSupport.instance().getAppearanceContext(menuItem, pc.appearance);
+        AquaColors.installColors(menuItem, appearanceContext, colors);
 
         MenuDescription md = getMenuDescription();
         if (md != null) {

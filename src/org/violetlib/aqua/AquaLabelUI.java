@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2025 Alan Snyder.
+ * Copyright (c) 2018-2026 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -41,9 +41,9 @@ import javax.swing.plaf.basic.BasicHTML;
 import javax.swing.plaf.basic.BasicLabelUI;
 import javax.swing.text.View;
 
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.*;
 import org.violetlib.jnr.aqua.AquaUIPainter;
+import org.violetlib.vappearances.VAppearance;
 
 public class AquaLabelUI extends BasicLabelUI implements AquaComponentUI {
 
@@ -56,10 +56,11 @@ public class AquaLabelUI extends BasicLabelUI implements AquaComponentUI {
 
     private static AquaCellEditorPolicy cellEditorPolicy = AquaCellEditorPolicy.getInstance();
 
-    protected @NotNull BasicContextualColors colors;
+    protected final @NotNull BasicContextualColors colors;
+    protected @Nullable AppearanceContext appearanceContext;
 
-    private Rectangle paintIconR = new Rectangle();
-    private Rectangle paintTextR = new Rectangle();
+    private final @NotNull Rectangle paintIconR = new Rectangle();
+    private final @NotNull Rectangle paintTextR = new Rectangle();
 
     public AquaLabelUI() {
         colors = AquaColors.CLEAR_CONTROL_COLORS;
@@ -68,7 +69,6 @@ public class AquaLabelUI extends BasicLabelUI implements AquaComponentUI {
     @Override
     protected void installDefaults(JLabel c) {
         super.installDefaults(c);
-        configureAppearanceContext(null, c);
     }
 
     @Override
@@ -87,7 +87,6 @@ public class AquaLabelUI extends BasicLabelUI implements AquaComponentUI {
 
     @Override
     public void appearanceChanged(@NotNull JComponent c, @NotNull AquaAppearance appearance) {
-        configureAppearanceContext(appearance, (JLabel)c);
     }
 
     @Override
@@ -95,40 +94,31 @@ public class AquaLabelUI extends BasicLabelUI implements AquaComponentUI {
         // JLabel is not active state sensitive
     }
 
-    protected void configureAppearanceContext(@Nullable AquaAppearance appearance, @NotNull JLabel label) {
-        if (appearance == null) {
-            appearance = AppearanceManager.getAppearance(label);
-        }
-        AquaUIPainter.State state = AquaUIPainter.State.ACTIVE;
-        AppearanceContext appearanceContext = new AppearanceContext(appearance, state, false, false);
-        // If the label is being used as a cell renderer component, it is up to the cell renderer to configure
-        // its colors.
-        if (cellEditorPolicy.getCellStatus(label) == null) {
-            AquaColors.installColors(label, appearanceContext, colors);
-        }
-    }
-
     @Override
     public void update(Graphics g, JComponent c) {
-        // If a label is used for the title of a titled border, it has no parent and its appearance property may be
-        // stale.
-        if (c.getParent() != null) {
-            AppearanceManager.registerCurrentAppearance(c);
-            super.update(g, c);
-        } else {
-            super.update(g, c);
-        }
+        paint(g, c);
     }
 
     @Override
-    public void paint(Graphics g, JComponent c)
-    {
+    public void paint(Graphics g, JComponent c) {
+        AppearanceSupport.withContext(g, c, this::paint);
+    }
+
+    public void paint(Graphics2D g, JComponent c, @NotNull PaintingContext pc) {
         JLabel label = (JLabel)c;
         String text = label.getText();
         Icon icon = (label.isEnabled()) ? label.getIcon() : label.getDisabledIcon();
 
         if ((icon == null) && (text == null)) {
             return;
+        }
+
+        AquaUIPainter.State state = AquaUIPainter.State.ACTIVE;
+        appearanceContext = new AppearanceContext(pc.appearance, state, false, false);
+        // If the label is being used as a cell renderer component, it is up to the cell renderer to configure
+        // its colors.
+        if (cellEditorPolicy.getCellStatus(label) == null) {
+            AquaColors.installColors(label, appearanceContext, colors);
         }
 
         FontMetrics fm = label.getFontMetrics(g.getFont());
@@ -200,14 +190,14 @@ public class AquaLabelUI extends BasicLabelUI implements AquaComponentUI {
     }
 
     protected Color getTextColor(@NotNull JLabel l) {
+        assert appearanceContext != null;
+        AquaAppearance appearance = appearanceContext.getAppearance();
         if (isSearchFieldPrompt(l)) {
-            AquaAppearance appearance = AppearanceManager.getAppearance(l.getParent());
             return appearance.getColor("searchFieldPrompt");
         } else if (l.getParent() == null) {
             // Special case for TitledBorder, where the label is not in the hierarchy and has no back link.
             Color defaultColor = UIManager.getColor("TitledBorder.titleColor");
             if (l.getForeground() == defaultColor) {
-                AquaAppearance appearance = AppearanceManager.getApplicationAppearance();
                 return appearance.getColor("controlText");
             }
         }

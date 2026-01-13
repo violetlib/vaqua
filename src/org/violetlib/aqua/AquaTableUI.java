@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014-2025 Alan Snyder.
+ * Copyright (c) 2014-2026 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -131,7 +131,7 @@ public class AquaTableUI extends BasicTableUI
         }
 
         private void focusChanged() {
-            configureAppearanceContext(null);
+            table.repaint();
         }
     }
 
@@ -215,9 +215,9 @@ public class AquaTableUI extends BasicTableUI
             String pn = ev.getPropertyName();
             if (pn != null) {
                 if (pn.equals("enabled")) {
-                    configureAppearanceContext(null);
+                    table.repaint();
                 } else if (AquaFocusHandler.DISPLAY_AS_FOCUSED_KEY.equals(pn)) {
-                    configureAppearanceContext(null);
+                    table.repaint();
                 } else if (pn.equals("selectionModel")) {
                     ListSelectionModel old = (ListSelectionModel) ev.getOldValue();
                     updateSelectionListener(old);
@@ -259,7 +259,6 @@ public class AquaTableUI extends BasicTableUI
         originalNumberEditor = installEditorIfPossible(Number.class, AquaNumberEditor.class);
         originalBooleanEditor = installEditorIfPossible(Boolean.class, AquaBooleanEditor.class);
         isStriped = getStripedValue();
-        configureAppearanceContext(null);
         updateInset();
         useShortDropLineColor = Boolean.TRUE.equals(table.getClientProperty(USE_SHORT_DROP_LINE_COLOR_KEY));
     }
@@ -425,25 +424,10 @@ public class AquaTableUI extends BasicTableUI
 
     @Override
     public void appearanceChanged(@NotNull JComponent c, @NotNull AquaAppearance appearance) {
-        configureAppearanceContext(appearance);
     }
 
     @Override
     public void activeStateChanged(@NotNull JComponent c, boolean isActive) {
-        configureAppearanceContext(null);
-    }
-
-    protected void configureAppearanceContext(@Nullable AquaAppearance appearance) {
-        if (appearance == null) {
-            appearance = AppearanceManager.getAppearance(table);
-        }
-        AquaUIPainter.State state = getState();
-        appearanceContext = new AppearanceContext(appearance, state, false, false);
-        colors = isStriped ? AquaColors.STRIPED_CONTAINER_COLORS : AquaColors.CONTAINER_COLORS;
-        colors.configureForContainer();
-        actualTableBackground = colors.getBackground(appearanceContext);
-        AquaColors.installColors(table, appearanceContext, colors);
-        updateOpaque();
     }
 
     private void updateOpaque() {
@@ -477,7 +461,7 @@ public class AquaTableUI extends BasicTableUI
         boolean value = getStripedValue();
         if (value != isStriped) {
             isStriped = value;
-            configureAppearanceContext(null);
+            table.repaint();
         }
     }
 
@@ -615,18 +599,38 @@ public class AquaTableUI extends BasicTableUI
         // All of the selected cells must be repainted when the focus/active/enabled state changes, because the selected
         // cell background depends upon these states.
 
-        configureAppearanceContext(null);
+        table.repaint();
     }
 
     @Override
     public void update(Graphics g, JComponent c) {
-        AppearanceManager.registerCurrentAppearance(c);
+        paint(g, c);
+    }
+
+    @Override
+    public void paint(Graphics g, JComponent c) {
+        AppearanceSupport.withContext(g, c, this::paint);
+    }
+
+    public void paint(Graphics2D g, JComponent c, @NotNull PaintingContext pc) {
+
+        AquaUIPainter.State state = getState();
+        appearanceContext = new AppearanceContext(pc.appearance, state, false, false);
+        colors = isStriped ? AquaColors.STRIPED_CONTAINER_COLORS : AquaColors.CONTAINER_COLORS;
+        colors.configureForContainer();
+        actualTableBackground = colors.getBackground(appearanceContext);
+        AquaColors.installColors(table, appearanceContext, colors);
+        updateOpaque();
+
         Color background = getBackgroundColor();
         if (background.getAlpha() > 0) {
             g.setColor(background);
             g.fillRect(0, 0, c.getWidth(), c.getHeight());
         }
-        paint(g, c);
+
+        if (painter != null) {
+            painter.paint(g, c);
+        }
     }
 
     private @NotNull Color getBackgroundColor() {
@@ -649,13 +653,6 @@ public class AquaTableUI extends BasicTableUI
                     corner.repaint();
                 }
             }
-        }
-    }
-
-    @Override
-    public void paint(Graphics g, JComponent c) {
-        if (painter != null && appearanceContext != null) {
-            painter.paint(g, c);
         }
     }
 
@@ -747,11 +744,9 @@ public class AquaTableUI extends BasicTableUI
             }
 
             colors.configureForContainer();
-
             if (isStriped || hasSelection || hasDropOnTarget) {
                 paintBackground(g, rMin, rMax, cMin, cMax);
             }
-
             paintGrid(g, rMin, rMax, cMin, cMax, extendVerticalGrid, extendHorizontalGrid);
             paintCells(g, rMin, rMax, cMin, cMax);
             colors.configureForContainer();
@@ -1008,9 +1003,6 @@ public class AquaTableUI extends BasicTableUI
               isSelected, isSelectionMuted, isDropTarget);
             rendererPane.paintComponent(g, rendererComponent, table, cellRect.x, cellRect.y,
               cellRect.width, cellRect.height, true);
-            if (!AquaColors.isPriority(table.getSelectionBackground())) {
-                table.setSelectionBackground(null);
-            }
         }
 
         protected Component getRendererComponent(TableCellRenderer renderer, int row, int column,
@@ -1025,18 +1017,16 @@ public class AquaTableUI extends BasicTableUI
                 hasFocus = (rowIsLead && colIsLead) && table.isFocusOwner();
             }
 
-            if (!AquaColors.isPriority(table.getSelectionBackground())) {
-                Color c = AquaColors.CLEAR;
+            if (isSelected && !AquaColors.isPriority(table.getSelectionBackground())) {
+                Color c;
                 if (isDropTarget) {
                     c = colors.getBackground(appearanceContext.withState(ACTIVE_DEFAULT).withSelected(true));
-                } else if (isSelected) {
-                    if (appearanceContext.getState() == ACTIVE_DEFAULT && isSelectionMuted) {
-                        c = colors.getBackground(appearanceContext.withState(ACTIVE).withSelected(true));
-                    } else {
-                        c = colors.getBackground(appearanceContext.withSelected(true));
-                    }
+                } else if (appearanceContext.getState() == ACTIVE_DEFAULT && isSelectionMuted) {
+                    c = colors.getBackground(appearanceContext.withState(ACTIVE).withSelected(true));
+                } else {
+                    c = colors.getBackground(appearanceContext.withSelected(true));
                 }
-                table.setSelectionBackground(c);
+                AquaColors.setSelectionBackground(table, c);
             }
 
             return renderer.getTableCellRendererComponent(table, table.getValueAt(row, column),

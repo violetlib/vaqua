@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2025 Alan Snyder.
+ * Copyright (c) 2015-2026 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -264,7 +264,7 @@ public class AquaComboBoxUI extends BasicComboBoxUI
         public void propertyChange(PropertyChangeEvent e) {
             String name = e.getPropertyName();
             if (name.equals("enabled")) {
-                configureAppearanceContext(null);
+                comboBox.repaint();
             } else if (name.equals("renderer")) {
                 updateFromRenderer();
             }
@@ -273,25 +273,10 @@ public class AquaComboBoxUI extends BasicComboBoxUI
 
     @Override
     public void appearanceChanged(@NotNull JComponent c, @NotNull AquaAppearance appearance) {
-        configureAppearanceContext(appearance);
     }
 
     @Override
     public void activeStateChanged(@NotNull JComponent c, boolean isActive) {
-        configureAppearanceContext(null);
-    }
-
-    protected void configureAppearanceContext(@Nullable AquaAppearance appearance) {
-        if (appearance == null) {
-            appearance = AppearanceManager.getAppearance(comboBox);
-        }
-        AquaUIPainter.State state = getState();
-        AppearanceContext appearanceContext = new AppearanceContext(appearance, state, false, false);
-        // If the combo box is being used as a cell renderer component, it is up to the cell renderer to configure
-        // its colors.
-        if (cellStatus == null) {
-            AquaColors.installColors(comboBox, appearanceContext, colors);
-        }
     }
 
     protected void updateFromRenderer() {
@@ -376,29 +361,37 @@ public class AquaComboBoxUI extends BasicComboBoxUI
     }
 
     @Override
-    public void update(@NotNull Graphics g, @NotNull JComponent c) {
-        AppearanceManager.registerCurrentAppearance(c);
-        super.update(g, c);
+    public void update(Graphics g, JComponent c) {
+        paint(g, c);
     }
 
     @Override
-    public void paint(@NotNull Graphics g, @NotNull JComponent c) {
+    public void paint(Graphics g, JComponent c) {
+        AppearanceSupport.withContext(g, c, this::paint);
+    }
+
+    public void paint(Graphics2D g, JComponent c, @NotNull PaintingContext pc) {
 
         int width = comboBox.getWidth();
         int height = comboBox.getHeight();
-
         if (height <= 0 || width <= 0) {
             return;
         }
 
-        // paint the button
+        AquaUIPainter.State state = getState();
+        AppearanceContext appearanceContext = new AppearanceContext(pc.appearance, state, false, false);
+        // If the combo box is being used as a cell renderer component, it is up to the cell renderer to configure
+        // its colors.
+        if (cellStatus == null) {
+            AquaColors.installColors(comboBox, appearanceContext, colors);
+        }
 
+        // paint the button
         Configuration bg = getConfiguration();
         AquaUtils.configure(painter, comboBox, width, height);
         if (bg != null) {
             painter.getPainter(bg).paint(g, 0, 0);
         }
-
         if (!comboBox.isEditable()) {
             paintButtonValue(g);
         }
@@ -662,7 +655,7 @@ public class AquaComboBoxUI extends BasicComboBoxUI
         if (!isPopupReallyVisible(popup) && arrowButton != null) {
             arrowButton.isRollover = false;
         }
-        configureAppearanceContext(null); // the arrow button may need to be repainted with a new state
+        comboBox.repaint(); // the arrow button may need to be repainted with a new state
     }
 
     @Override
@@ -793,8 +786,6 @@ public class AquaComboBoxUI extends BasicComboBoxUI
             // BasicTextUI property change listener for edited and enabled.
 
             super.installUI(c);
-            assert appearanceContext != null;
-            AquaColors.installColors(editor, appearanceContext, colors);
             editor.repaint();
         }
 
@@ -1170,7 +1161,7 @@ public class AquaComboBoxUI extends BasicComboBoxUI
             int height = comboBox.getHeight();
 
             if (comboBox.isEditable()) {
-                ComboBoxConfiguration g = (ComboBoxConfiguration) getConfiguration();
+                ComboBoxLayoutConfiguration g = (ComboBoxLayoutConfiguration) getLayoutConfiguration();
                 assert g != null;
                 AquaUtils.configure(painter, comboBox, width, height);
                 if (editor != null) {
@@ -1503,7 +1494,6 @@ public class AquaComboBoxUI extends BasicComboBoxUI
 
         isDefaultStyle = determineIsDefaultStyle();
         isTextured = determineIsTextured();
-        configureAppearanceContext(null);
         comboBox.revalidate();
         comboBox.repaint();
         isMinimumSizeDirty = true;

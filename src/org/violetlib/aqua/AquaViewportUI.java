@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2025 Alan Snyder.
+ * Copyright (c) 2015-2026 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -39,7 +39,6 @@ public class AquaViewportUI extends ViewportUI implements AquaComponentUI {
         viewport.setOpaque(false);  // needed in JDKs prior to 17 (see JDK-8253266)
         AquaVibrantSupport.installVibrantStyle(c);
         AppearanceManager.installListeners(c);
-        configureAppearanceContext(null);
     }
 
     @Override
@@ -52,22 +51,10 @@ public class AquaViewportUI extends ViewportUI implements AquaComponentUI {
 
     @Override
     public void appearanceChanged(@NotNull JComponent c, @NotNull AquaAppearance appearance) {
-        configureAppearanceContext(appearance);
     }
 
     @Override
     public void activeStateChanged(@NotNull JComponent c, boolean isActive) {
-        configureAppearanceContext(null);
-    }
-
-    protected void configureAppearanceContext(@Nullable AquaAppearance appearance) {
-        assert viewport != null;
-        if (appearance == null) {
-            appearance = AppearanceManager.getAppearance(viewport);
-        }
-        AquaUIPainter.State state = getState();
-        AppearanceContext appearanceContext = new AppearanceContext(appearance, state, false, false);
-        AquaColors.installColors(viewport, appearanceContext, colors);
     }
 
     public boolean shouldSuppressBackground()
@@ -81,11 +68,21 @@ public class AquaViewportUI extends ViewportUI implements AquaComponentUI {
     }
 
     @Override
-    public final void update(@NotNull Graphics g, @NotNull JComponent c) {
-        AppearanceManager.registerCurrentAppearance(c);
+    public void update(Graphics g, JComponent c) {
+        paint(g, c);
+    }
+
+    @Override
+    public void paint(Graphics g, JComponent c) {
+        AppearanceSupport.withContext(g, c, this::paint);
+    }
+
+    public void paint(Graphics2D g, JComponent c, @NotNull PaintingContext pc) {
+        AquaUIPainter.State state = getState();
+        AppearanceContext appearanceContext = new AppearanceContext(pc.appearance, state, false, false);
+        AquaColors.installColors(c, appearanceContext, colors);
         if (c.isOpaque() || AquaVibrantSupport.isVibrant(c)) {
             AquaUtils.fillRect(g, c, AquaUtils.ERASE_IF_VIBRANT);
         }
-        paint(g, c);
     }
 }

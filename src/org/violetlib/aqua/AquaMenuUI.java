@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2025 Alan Snyder.
+ * Copyright (c) 2018-2026 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -91,7 +91,6 @@ public class AquaMenuUI extends BasicMenuUI implements AquaComponentUI {
         // That makes the millisecond delay 8 ticks * 1 second / 60 ticks * 1000 milliseconds/second
         assert menu != null;
         menu.setDelay(8 * 1000 / 60);
-        configureAppearanceContext(null);
     }
 
     @Override
@@ -115,34 +114,26 @@ public class AquaMenuUI extends BasicMenuUI implements AquaComponentUI {
 
     @Override
     public void appearanceChanged(@NotNull JComponent c, @NotNull AquaAppearance appearance) {
-        configureAppearanceContext(appearance);
     }
 
     @Override
     public void activeStateChanged(@NotNull JComponent c, boolean isActive) {
-        configureAppearanceContext(null);
-    }
-
-    protected void configureAppearanceContext(@Nullable AquaAppearance appearance) {
-        assert menu != null;
-        if (appearance == null) {
-            appearance = AppearanceManager.getAppearance(menu);
-        }
-        assert menu != null;
-        AppearanceContext appearanceContext = AquaMenuSupport.instance().getAppearanceContext(menu, appearance);
-        AquaColors.installColors(menu, appearanceContext, colors);
     }
 
     @Override
     public void update(Graphics g, JComponent c) {
-        AppearanceManager.registerCurrentAppearance(c);
-        super.update(g, c);
+        paint(g, c);
     }
 
     @Override
     public void paint(Graphics g, JComponent c) {
+        AppearanceSupport.withContext(g, c, this::paint);
+    }
+
+    public void paint(Graphics2D g, JComponent c, @NotNull PaintingContext pc) {
         assert menu != null;
-        AppearanceContext appearanceContext = AquaMenuSupport.instance().getAppearanceContext(menu, null);
+        AppearanceContext appearanceContext = AquaMenuSupport.instance().getAppearanceContext(menu, pc.appearance);
+        AquaColors.installColors(c, appearanceContext, colors);
 
         MenuDescription md = getMenuDescription();
         if (md != null) {
@@ -161,11 +152,11 @@ public class AquaMenuUI extends BasicMenuUI implements AquaComponentUI {
                     g.fillRect(0, 0, menu.getWidth(), menu.getHeight());
                 }
             }
-            AquaMenuSupport.instance().paintMenuItem((Graphics2D) g, menu, appearanceContext, md);
+            AquaMenuSupport.instance().paintMenuItem(g, menu, appearanceContext, md);
         } else {
             // A top level menu (an element of a menu bar)
             md = getTopLevelMenuDescription();
-            AquaMenuSupport.instance().paintMenuItem((Graphics2D) g, menu, appearanceContext, md);
+            AquaMenuSupport.instance().paintMenuItem(g, menu, appearanceContext, md);
         }
     }
 

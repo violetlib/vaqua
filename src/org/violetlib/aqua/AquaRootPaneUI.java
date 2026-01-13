@@ -1,5 +1,5 @@
 /*
- * Changes Copyright (c) 2015-2025 Alan Snyder.
+ * Changes Copyright (c) 2015-2026 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -185,7 +185,8 @@ public class AquaRootPaneUI extends BasicRootPaneUI implements AquaComponentUI,
     @Override
     public void systemPropertyChanged(JComponent c, Object type) {
         if (type.equals(AquaAppearances.APPEARANCE_CHANGE_TYPE)) {
-            updateAppearance(null);
+            AquaAppearance a = AquaAppearances.getDefaultAppearance();
+            appearanceChanged(rootPane, a);
         }
     }
 
@@ -346,17 +347,20 @@ public class AquaRootPaneUI extends BasicRootPaneUI implements AquaComponentUI,
     @Override
     public final void update(Graphics g, JComponent c)
     {
-
         if (!isInitialized) {
             configure();
         }
 
-        AquaAppearance appearance = AppearanceManager.registerCurrentAppearance(c);
+        AppearanceSupport.withContext(g, c, this::paint);
+    }
+
+    public void paint(Graphics2D g, JComponent c, @NotNull PaintingContext pc)
+    {
         if (c.isOpaque() || vibrantStyle >= 0) {
             // Need a special case here. A dark mode textured window has a vibrant background (needed for a unified
             // title/toolbar), but the content area is opaque.
             int eraserMode = AquaUtils.ERASE_IF_TEXTURED | AquaUtils.ERASE_IF_VIBRANT;
-            if (appearance.isDark() && customStyledWindow != null && customStyledWindow.isTextured()) {
+            if (pc.appearance.isDark() && customStyledWindow != null && customStyledWindow.isTextured()) {
                 eraserMode = 0;
             }
             AquaUtils.fillRect(g, c, eraserMode);
@@ -364,7 +368,8 @@ public class AquaRootPaneUI extends BasicRootPaneUI implements AquaComponentUI,
         if (customStyledWindow != null) {
             customStyledWindow.paintMarginBackgrounds(g);
         }
-        paint(g, c);
+
+        super.paint(g, c);
     }
 
     protected class WindowHierarchyListener
@@ -394,7 +399,6 @@ public class AquaRootPaneUI extends BasicRootPaneUI implements AquaComponentUI,
         if (rootPane.getParent() != null && rootPane.getParent().isDisplayable()) {
             isInitialized = true;
             configureSpecifiedWindowAppearance(false);
-            updateAppearance(null);
             updatePopupStyle(rootPane);
             reconfigureCustomWindowStyle();
             updateVisualEffectView();
@@ -430,33 +434,6 @@ public class AquaRootPaneUI extends BasicRootPaneUI implements AquaComponentUI,
         Window w = getWindow();
         if (w != null) {
             configureEmbeddedDialogPatchIfNeeded(w);
-        }
-    }
-
-    /**
-     This method is called when the native window discovers that it has been assigned a different appearance,
-     meaning an appearance with a different appearance name.
-
-     @param appearanceName The new appearance name.
-     */
-    public void windowAppearanceChanged(@NotNull String appearanceName)
-    {
-        updateAppearance(appearanceName);
-    }
-
-    /**
-     * Inform the appearance manager of the window appearance.
-     */
-    protected void updateAppearance(@Nullable String appearanceName)
-    {
-        Window w = getWindow();
-        if (w != null) {
-            if (appearanceName == null) {
-                appearanceName = AquaUtils.getWindowEffectiveAppearanceName(w);
-            }
-            if (appearanceName != null) {
-                AppearanceManager.setRootPaneAppearance(rootPane, appearanceName);
-            }
         }
     }
 
@@ -525,10 +502,6 @@ public class AquaRootPaneUI extends BasicRootPaneUI implements AquaComponentUI,
         return NO_VIBRANT_STYLE;
     }
 
-    protected void appearanceHasChanged() {
-        rootPane.repaint();
-    }
-
     @Override
     public void appearanceChanged(@NotNull JComponent c, @NotNull AquaAppearance appearance) {
         // This method is called when the registered appearance of the root pane is changed.
@@ -536,6 +509,7 @@ public class AquaRootPaneUI extends BasicRootPaneUI implements AquaComponentUI,
         if (parent instanceof Window) {
             Window w = (Window) parent;
             configureWindow(w);
+            rootPane.repaint();
         }
     }
 
@@ -546,6 +520,7 @@ public class AquaRootPaneUI extends BasicRootPaneUI implements AquaComponentUI,
         if (parent instanceof Window) {
             Window w = (Window) parent;
             configureWindow(w);
+            rootPane.repaint();
         }
     }
 

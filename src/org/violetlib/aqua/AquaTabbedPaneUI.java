@@ -1,5 +1,5 @@
 /*
- * Changes Copyright (c) 2015-2025 Alan Snyder.
+ * Changes Copyright (c) 2015-2026 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -133,7 +133,6 @@ public class AquaTabbedPaneUI extends AquaTabbedPaneCopyFromBasicUI
         updateLayoutParameters();
         contentDrawingInsets.set(0, 10, 10, 10);
         LookAndFeel.installProperty(tabPane, "opaque", false);
-        configureAppearanceContext(null, tabPane);
         configureFocusable(tabPane);
     }
 
@@ -204,22 +203,10 @@ public class AquaTabbedPaneUI extends AquaTabbedPaneCopyFromBasicUI
 
     @Override
     public void appearanceChanged(@NotNull JComponent c, @NotNull AquaAppearance appearance) {
-        configureAppearanceContext(appearance, (JTabbedPane)c);
     }
 
     @Override
     public void activeStateChanged(@NotNull JComponent c, boolean isActive) {
-        configureAppearanceContext(null, (JTabbedPane)c);
-    }
-
-    protected void configureAppearanceContext(@Nullable AquaAppearance appearance, @NotNull JTabbedPane s) {
-        if (appearance == null) {
-            appearance = AppearanceManager.getAppearance(s);
-        }
-        AquaUIPainter.State state = getState();
-        appearanceContext = new AppearanceContext(appearance, state, false, false);
-        isDark = appearance.isDark();
-        AquaColors.installColors(s, appearanceContext, colors);
     }
 
     @Override
@@ -331,15 +318,25 @@ public class AquaTabbedPaneUI extends AquaTabbedPaneCopyFromBasicUI
     // UI Rendering
 
     @Override
-    public void update(@NotNull Graphics g, @NotNull JComponent c) {
-        AppearanceManager.registerCurrentAppearance(c);
-        if (c.isOpaque()) {
-            AquaUtils.fillRect(g, c, AquaUtils.ERASE_IF_VIBRANT);
-        }
+    public void update(Graphics g, JComponent c) {
         paint(g, c);
     }
 
-    public void paint(@NotNull Graphics g, @NotNull JComponent c) {
+    @Override
+    public void paint(Graphics g, JComponent c) {
+        AppearanceSupport.withContext(g, c, this::paint);
+    }
+
+    public void paint(Graphics2D g, JComponent c, @NotNull PaintingContext pc) {
+
+        if (c.isOpaque()) {
+            AquaUtils.fillRect(g, c, AquaUtils.ERASE_IF_VIBRANT);
+        }
+
+        AquaUIPainter.State state = getState();
+        appearanceContext = new AppearanceContext(pc.appearance, state, false, false);
+        isDark = pc.appearance.isDark();
+        AquaColors.installColors(c, appearanceContext, colors);
 
         ensureCurrentLayout();
 
@@ -350,8 +347,8 @@ public class AquaTabbedPaneUI extends AquaTabbedPaneCopyFromBasicUI
         Rectangle clipRect = g.getClipBounds();
 
         if (DEBUG_CUTOUT && !isDark) {
-            g = g.create();
-            ((Graphics2D) g).setComposite(AlphaComposite.SrcOver.derive(0.2f));
+            g = (Graphics2D) g.create();
+            g.setComposite(AlphaComposite.SrcOver.derive(0.2f));
         }
 
         if (visibleTabState.needsScrollTabs()) {
@@ -1089,11 +1086,6 @@ public class AquaTabbedPaneUI extends AquaTabbedPaneCopyFromBasicUI
             if ("componentOrientation".equals(prop) || "tabPlacement".equals(prop)) {
                 updateOrientation();
                 super.propertyChange(e);  // in case a future JDK does something
-                return;
-            }
-
-            if ("enabled".equals(prop)) {
-                configureAppearanceContext(null, comp);
                 return;
             }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014-2025 Alan Snyder.
+ * Copyright (c) 2014-2026 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -8,13 +8,12 @@
 
 package org.violetlib.aqua;
 
+import java.awt.*;
 import javax.swing.*;
 import javax.swing.plaf.ComponentUI;
 import javax.swing.plaf.SeparatorUI;
-import java.awt.*;
 
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.*;
 import org.violetlib.jnr.aqua.AquaUIPainter;
 
 /**
@@ -28,7 +27,7 @@ public class AquaSeparatorUI extends SeparatorUI implements AquaComponentUI {
         return new AquaSeparatorUI();
     }
 
-    protected @NotNull BasicContextualColors colors;
+    private final @NotNull BasicContextualColors colors;
 
     public AquaSeparatorUI() {
         colors = AquaColors.SEPARATOR_COLORS;
@@ -48,7 +47,6 @@ public class AquaSeparatorUI extends SeparatorUI implements AquaComponentUI {
     protected void installDefaults(JSeparator s) {
         LookAndFeel.installProperty(s, "opaque", false);
         installListeners(s);
-        configureAppearanceContext(null, s);
     }
 
     protected void uninstallDefaults(JSeparator s) {
@@ -65,7 +63,6 @@ public class AquaSeparatorUI extends SeparatorUI implements AquaComponentUI {
 
     @Override
     public void appearanceChanged(@NotNull JComponent c, @NotNull AquaAppearance appearance) {
-        configureAppearanceContext(appearance, (JSeparator)c);
     }
 
     @Override
@@ -73,22 +70,20 @@ public class AquaSeparatorUI extends SeparatorUI implements AquaComponentUI {
         // not active state sensitive
     }
 
-    protected void configureAppearanceContext(@Nullable AquaAppearance appearance, @NotNull JSeparator s) {
-        if (appearance == null) {
-            appearance = AppearanceManager.getAppearance(s);
-        }
-        AquaUIPainter.State state = AquaUIPainter.State.ACTIVE;
-        AppearanceContext appearanceContext = new AppearanceContext(appearance, state, false, false);
-        AquaColors.installColors(s, appearanceContext, colors);
+    @Override
+    public void update(Graphics g, JComponent c) {
+        paint(g, c);
     }
 
     @Override
-    public void update(Graphics g, JComponent c) {
-        AppearanceManager.registerCurrentAppearance(c);
-        super.update(g, c);
+    public void paint(Graphics g, JComponent c) {
+        AppearanceSupport.withContext(g, c, this::paint);
     }
 
-    public void paint(Graphics g, JComponent c) {
+    public void paint(Graphics2D g, JComponent c, @NotNull PaintingContext pc) {
+        AquaUIPainter.State state = AquaUIPainter.State.ACTIVE;
+        AppearanceContext appearanceContext = new AppearanceContext(pc.appearance, state, false, false);
+        AquaColors.installColors(c, appearanceContext, colors);
         Dimension size = c.getSize();
         Insets s = c.getInsets();
         g.setColor(c.getForeground());

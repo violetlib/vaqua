@@ -1,5 +1,5 @@
 /*
- * Changes Copyright (c) 2015-2025 Alan Snyder.
+ * Changes Copyright (c) 2015-2026 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -112,10 +112,7 @@ public class AquaMenuSupport {
         return sPainter.get();
     }
 
-    public @NotNull AppearanceContext getAppearanceContext(@NotNull JMenuItem b, @Nullable AquaAppearance appearance) {
-        if (appearance == null) {
-            appearance = AppearanceManager.getAppearance(b);
-        }
+    public @NotNull AppearanceContext getAppearanceContext(@NotNull JMenuItem b, @NotNull AquaAppearance appearance) {
         ButtonModel model = b.getModel();
         Container ancestor = getAncestor(b);
         boolean isSelected = model.isArmed() || (b instanceof JMenu && model.isSelected());

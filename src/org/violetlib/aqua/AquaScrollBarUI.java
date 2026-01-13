@@ -1,5 +1,5 @@
 /*
- * Changes Copyright (c) 2015-2025 Alan Snyder.
+ * Changes Copyright (c) 2015-2026 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -259,6 +259,32 @@ public class AquaScrollBarUI extends ScrollBarUI implements AquaComponentUI {
     }
 
     /**
+     * Return an extended layout configuration that includes thumb location information, but does not include the
+     * current scroll bar state.
+     */
+    protected ScrollBarConfiguration getLayoutConfiguration(boolean isForLayoutSize) {
+        ScrollBarWidget sw = getScrollBarWidget(isForLayoutSize);
+        ScrollBarKnobWidget kw = getScrollBarKnobWidget(sw);
+        Size size = getScrollBarSize();
+        State state = State.ACTIVE; // a placeholder
+
+        Orientation o = getScrollBarOrientation();
+        float thumbPosition = getCurrentThumbPosition();
+        float thumbExtent = getCurrentThumbExtent();
+
+        // Do not display a thumb if scrolling is not possible
+        if (thumbExtent >= 0.999) {
+            kw = ScrollBarKnobWidget.NONE;
+        }
+
+        if (o == Orientation.HORIZONTAL && !AquaUtils.isLeftToRight(fScrollBar)) {
+            thumbPosition = 1 - thumbPosition;
+        }
+        boolean noTrack = isSidebar() && AquaPainting.getVersion() < 1600;
+        return new ScrollBarConfiguration(sw, kw, size, state, o, thumbPosition, thumbExtent, noTrack);
+    }
+
+    /**
      * Return the thumb position corresponding to the scroll bar value.
      * The thumb position is zero when the scroll bar value is at its minimum.
      * The thumb position is one when the scroll bar value is at its maximum.
@@ -386,7 +412,7 @@ public class AquaScrollBarUI extends ScrollBarUI implements AquaComponentUI {
     protected int getThumbTrackPosition() {
         int width = fScrollBar.getWidth();
         int height = fScrollBar.getHeight();
-        ScrollBarConfiguration g = getConfiguration(false);
+        ScrollBarConfiguration g = getLayoutConfiguration(false);
         Rectangle bounds = new Rectangle(0, 0, width, height);
         AquaUILayoutInfo uiLayout = painter.getLayoutInfo();
         Rectangle2D thumbBounds = uiLayout.getScrollBarThumbBounds(bounds, g);
@@ -407,7 +433,7 @@ public class AquaScrollBarUI extends ScrollBarUI implements AquaComponentUI {
             int width = fScrollBar.getWidth();
             int height = fScrollBar.getHeight();
             AquaUtils.configure(painter, fScrollBar, width, height);
-            ScrollBarConfiguration g = getConfiguration(false);
+            ScrollBarConfiguration g = getLayoutConfiguration(false);
             boolean isHorizontal = isHorizontal();
             int c = isHorizontal ? x : y;
             ScrollBarThumbConfiguration tg = new ScrollBarThumbConfiguration(g, c);
@@ -872,7 +898,7 @@ public class AquaScrollBarUI extends ScrollBarUI implements AquaComponentUI {
     }
 
     public int getScrollBarThickness() {
-        LayoutConfiguration g = getConfiguration(true);
+        LayoutConfiguration g = getLayoutConfiguration(true);
         return getScrollBarThickness(g);
     }
 

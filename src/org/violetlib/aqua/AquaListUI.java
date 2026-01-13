@@ -1,5 +1,5 @@
 /*
- * Changes Copyright (c) 2015-2025 Alan Snyder.
+ * Changes Copyright (c) 2015-2026 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -95,13 +95,11 @@ public class AquaListUI extends BasicListUI implements AquaComponentUI, AquaView
         isMenu = true;
         isVibrantMenu = isVibrant;
         updateVibrantEffects();
-        configureAppearanceContext(null);
     }
 
     public void setColors(@NotNull ContainerContextualColors colors) {
         if (colors != this.colors) {
             this.colors = colors;
-            configureAppearanceContext(null);
         }
     }
 
@@ -132,7 +130,6 @@ public class AquaListUI extends BasicListUI implements AquaComponentUI, AquaView
         colors = determineColors();
         sidebarContainerSupport.update();
         updateVibrantEffects();
-        configureAppearanceContext(null);
     }
 
     @Override
@@ -209,7 +206,7 @@ public class AquaListUI extends BasicListUI implements AquaComponentUI, AquaView
         }
 
         private void focusChanged() {
-            configureAppearanceContext(null);
+            list.repaint();
         }
     }
 
@@ -263,9 +260,9 @@ public class AquaListUI extends BasicListUI implements AquaComponentUI, AquaView
         public void propertyChange(PropertyChangeEvent e) {
             String prop = e.getPropertyName();
             if ("enabled".equals(prop)) {
-                configureAppearanceContext(null);
+                list.repaint();
             } else if (AquaFocusHandler.DISPLAY_AS_FOCUSED_KEY.equals(prop)) {
-                configureAppearanceContext(null);
+                list.repaint();
             } else {
                 if (isStyleProperty(prop)) {
                     updateStyleProperties();
@@ -325,23 +322,10 @@ public class AquaListUI extends BasicListUI implements AquaComponentUI, AquaView
 
     @Override
     public void appearanceChanged(@NotNull JComponent c, @NotNull AquaAppearance appearance) {
-        configureAppearanceContext(appearance);
     }
 
     @Override
     public void activeStateChanged(@NotNull JComponent c, boolean isActive) {
-        configureAppearanceContext(null);
-    }
-
-    protected void configureAppearanceContext(@Nullable AquaAppearance appearance) {
-        if (appearance == null) {
-            appearance = AppearanceManager.getAppearance(list);
-        }
-        AquaUIPainter.State state = getState();
-        appearanceContext = new AppearanceContext(appearance, state, false, false);
-        colors.configureForContainer();
-        AquaColors.installColors(list, appearanceContext, colors);
-        updateOpaque();
     }
 
     private void updateOpaque() {
@@ -403,7 +387,6 @@ public class AquaListUI extends BasicListUI implements AquaComponentUI, AquaView
             if (AquaUtils.isInsetViewSupported()) {
                 updateInsetConfiguration();
             }
-            configureAppearanceContext(null);
         } else {
             updateVibrantEffects();
             if (AquaUtils.isInsetViewSupported()) {
@@ -514,7 +497,6 @@ public class AquaListUI extends BasicListUI implements AquaComponentUI, AquaView
         }
         if (isStripedChanged || isSideBarChanged) {
             colors = determineColors();
-            configureAppearanceContext(null);
         }
         if (isSideBarChanged) {
             updateSideBarConfiguration();
@@ -526,7 +508,6 @@ public class AquaListUI extends BasicListUI implements AquaComponentUI, AquaView
         if (value != isStriped) {
             isStriped = value;
             colors = isStriped ? AquaColors.STRIPED_CONTAINER_COLORS : AquaColors.CONTAINER_COLORS;
-            configureAppearanceContext(null);
         }
     }
 
@@ -558,7 +539,6 @@ public class AquaListUI extends BasicListUI implements AquaComponentUI, AquaView
     }
 
     private void updateInsetConfiguration() {
-        configureAppearanceContext(null);
         // If the default cell renderer is being used, its insets will be different.
         updateLayoutStateNeeded |= cellRendererChanged;
         list.revalidate();
@@ -641,16 +621,21 @@ public class AquaListUI extends BasicListUI implements AquaComponentUI, AquaView
 
     @Override
     public void update(Graphics g, JComponent c) {
-        AppearanceManager.registerCurrentAppearance(c);
         paint(g, c);
     }
 
     @Override
     public void paint(Graphics g, JComponent c) {
+        AppearanceSupport.withContext(g, c, this::paint);
+    }
 
-        if (appearanceContext == null) {
-            return;
-        }
+    public void paint(Graphics2D g, JComponent c, @NotNull PaintingContext pc) {
+
+        AquaUIPainter.State state = getState();
+        appearanceContext = new AppearanceContext(pc.appearance, state, false, false);
+        colors.configureForContainer();
+        AquaColors.installColors(list, appearanceContext, colors);
+        updateOpaque();
 
         hasSelection = !list.getSelectionModel().isSelectionEmpty();
         isSelectionMuted = false;
@@ -671,7 +656,7 @@ public class AquaListUI extends BasicListUI implements AquaComponentUI, AquaView
         if (sidebarContainerSupport != null) {
             g = sidebarContainerSupport.setupContainerGraphics(g, appearanceContext);
         } else {
-            g = g.create();
+            g = (Graphics2D) g.create();
         }
 
         if (vibrantEffects != null) {
@@ -679,7 +664,7 @@ public class AquaListUI extends BasicListUI implements AquaComponentUI, AquaView
             vibrantEffects.update();
         } else {
             paintBackground(g);
-            paintStripes(g);
+            paintStripes(g, appearanceContext);
         }
 
         SafeGraphics sg = new SafeGraphics(g);
@@ -756,13 +741,9 @@ public class AquaListUI extends BasicListUI implements AquaComponentUI, AquaView
     /**
      * Paint stripes, if appropriate.
      */
-    public void paintStripes(Graphics g) {
+    public void paintStripes(@NotNull Graphics2D g, @NotNull AppearanceContext appearanceContext) {
 
         if (isStriped && list.getModel() != null) {
-            Graphics2D gg = (Graphics2D) g;
-
-            assert appearanceContext != null;
-
             Dimension vs = list.getSize();
             Insets s = list.getInsets();
             int rh = list.getFixedCellHeight();
@@ -782,7 +763,7 @@ public class AquaListUI extends BasicListUI implements AquaComponentUI, AquaView
                 g.setColor(background);
                 if (isInset()) {
                     if (row % 2 == 1) {
-                        AquaUtils.paintInsetStripedRow(gg, 0, y, vs.width, rh);
+                        AquaUtils.paintInsetStripedRow(g, 0, y, vs.width, rh);
                     }
                 } else {
                     g.fillRect(0, y, vs.width, rh);
@@ -808,13 +789,13 @@ public class AquaListUI extends BasicListUI implements AquaComponentUI, AquaView
         int cw = rowBounds.width;
         int ch = rowBounds.height;
 
-        assert appearanceContext != null;
         boolean isSelected = selModel.isSelectedIndex(row);
         boolean isFocused = shouldDisplayAsFocused();
         boolean cellHasFocus = isFocused && (row == leadIndex);
         boolean isWrapped = list.getLayoutOrientation() != JList.VERTICAL;
         boolean isDropTarget = false;
 
+        assert appearanceContext != null;
         AppearanceContext ac = appearanceContext;
         // When an accent color drop target is displayed, selected rows should not also use an accent color background.
         if (isSelected && isSelectionMuted) {

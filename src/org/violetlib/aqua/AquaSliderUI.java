@@ -1,5 +1,5 @@
 /*
- * Changes copyright (c) 2015-2025 Alan Snyder.
+ * Changes copyright (c) 2015-2026 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -108,7 +108,6 @@ public class AquaSliderUI extends BasicSliderUI
         super.installDefaults(slider);
         oldRequestFocusEnabled = slider.isRequestFocusEnabled();
         slider.setRequestFocusEnabled(false);
-        configureAppearanceContext(null, slider);
         configureFocusable(slider);
     }
 
@@ -150,21 +149,11 @@ public class AquaSliderUI extends BasicSliderUI
 
     @Override
     public void appearanceChanged(@NotNull JComponent c, @NotNull AquaAppearance appearance) {
-        configureAppearanceContext(appearance, (JSlider)c);
     }
 
     @Override
     public void activeStateChanged(@NotNull JComponent c, boolean isActive) {
         // colors are not active state sensitive
-    }
-
-    protected void configureAppearanceContext(@Nullable AquaAppearance appearance, @NotNull JSlider s) {
-        if (appearance == null) {
-            appearance = AppearanceManager.getAppearance(s);
-        }
-        AquaUIPainter.State state = AquaUIPainter.State.ACTIVE;
-        AppearanceContext appearanceContext = new AppearanceContext(appearance, state, false, false);
-        AquaColors.installColors(s, appearanceContext, colors);
     }
 
     @Override
@@ -263,12 +252,19 @@ public class AquaSliderUI extends BasicSliderUI
 
     @Override
     public void update(Graphics g, JComponent c) {
-        AppearanceManager.registerCurrentAppearance(c);
-        super.update(g, c);
+        paint(g, c);
     }
 
     @Override
     public void paint(Graphics g, JComponent c) {
+        AppearanceSupport.withContext(g, c, this::paint);
+    }
+
+    public void paint(Graphics2D g, JComponent c, @NotNull PaintingContext pc) {
+
+        AquaUIPainter.State state = AquaUIPainter.State.ACTIVE;
+        AppearanceContext appearanceContext = new AppearanceContext(pc.appearance, state, false, false);
+        AquaColors.installColors(c, appearanceContext, colors);
 
         // We have to override paint of BasicSliderUI because we need slight differences.
         // We don't paint focus the same way - it is part of the thumb.
@@ -404,7 +400,7 @@ public class AquaSliderUI extends BasicSliderUI
     public void paintTicks(Graphics g) {
     }
 
-    // Layout Methods
+// Layout Methods
 
     @Override
     protected void calculateGeometry() {
@@ -541,9 +537,9 @@ public class AquaSliderUI extends BasicSliderUI
         return 0;
     }
 
-    // The renderer adds a separation when determining label bounds.
-    // Instead of hard wiring this separation here, we could change computeLabelRect to asks the painter
-    // for the bounds of labels.
+// The renderer adds a separation when determining label bounds.
+// Instead of hard wiring this separation here, we could change computeLabelRect to asks the painter
+// for the bounds of labels.
 
     @Override
     protected int getWidthOfWidestLabel() {
@@ -611,7 +607,7 @@ public class AquaSliderUI extends BasicSliderUI
     }
 
     // This is copied almost verbatim from superclass, except we changed things to use fIsDragging
-    // instead of isDragging since isDragging was a private member.
+// instead of isDragging since isDragging was a private member.
     class TrackListener extends BasicSliderUI.TrackListener {
         protected transient int offset;
         protected transient int currentMouseX = -1, currentMouseY = -1;

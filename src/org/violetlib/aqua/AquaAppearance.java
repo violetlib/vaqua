@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2025 Alan Snyder.
+ * Copyright (c) 2018-2026 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -9,28 +9,24 @@
 package org.violetlib.aqua;
 
 import java.awt.*;
-import java.util.Map;
 
 import org.jetbrains.annotations.*;
 import org.violetlib.vappearances.AppearanceSettings;
 import org.violetlib.vappearances.VAppearance;
 
 /**
- * An object representing a specific appearance, including the current accent and highlight colors.
+ * An object representing a specific appearance. It provides access to the colors based on the current appearance
+ * settings.
  */
 
 public class AquaAppearance
 {
     private final @NotNull VAppearance appearance;
-    private final @NotNull Colors colors;
     private final @NotNull Logger log;
 
-    public AquaAppearance(@NotNull VAppearance appearance,
-                          @NotNull Colors colors,
-                          @NotNull Logger log)
+    public AquaAppearance(@NotNull VAppearance appearance, @NotNull Logger log)
     {
         this.appearance = appearance;
-        this.colors = colors;
         this.log = log;
     }
 
@@ -68,11 +64,6 @@ public class AquaAppearance
         return appearance.getSettings();
     }
 
-    public @NotNull Map<String,Color> getColors()
-    {
-        return appearance.getColors();
-    }
-
     /**
      * Return the color with the specified name.
      * @param colorName The color name.
@@ -81,6 +72,7 @@ public class AquaAppearance
 
     public @Nullable Color getColor(@NotNull String colorName)
     {
+        Colors colors = AquaAppearances.getColorsForAppearance(appearance);
         Color color = colors.get(colorName);
         if (AquaColors.isDebugging()) {
             log.log("  Color " + colorName + ": " + AquaColors.toString(color));
@@ -134,10 +126,6 @@ public class AquaAppearance
     public @NotNull VAppearance getAppearance()
     {
         return appearance;
-    }
-
-    public boolean isBasedOn(@NotNull VAppearance va) {
-        return va == appearance;
     }
 
     @Override

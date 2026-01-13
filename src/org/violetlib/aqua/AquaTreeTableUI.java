@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014-2025 Alan Snyder.
+ * Copyright (c) 2014-2026 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -17,8 +17,7 @@ import javax.swing.*;
 import javax.swing.plaf.TableUI;
 import javax.swing.tree.TreePath;
 
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.*;
 import org.violetlib.jnr.aqua.AquaUIPainter;
 import org.violetlib.treetable.TreeTable;
 import org.violetlib.treetable.TreeTableCellRenderer;
@@ -34,7 +33,6 @@ import static org.violetlib.aqua.AquaFocusHandler.HAS_FOCUS_DELEGATE_KEY;
 public class AquaTreeTableUI extends BasicTreeTableUI implements AquaComponentUI {
 
     protected MyHandler handler;
-    protected @NotNull ContainerContextualColors colors;
 
     public AquaTreeTableUI() {
         handler = new MyHandler();
@@ -59,17 +57,6 @@ public class AquaTreeTableUI extends BasicTreeTableUI implements AquaComponentUI
 
     @Override
     public void appearanceChanged(@NotNull JComponent c, @NotNull AquaAppearance appearance) {
-        JTable table = getTable();
-        JTree tree = getTree();
-        AquaComponentUI tableUI = AquaUtils.getUI(table, AquaComponentUI.class);
-        AquaComponentUI treeUI = AquaUtils.getUI(tree, AquaComponentUI.class);
-        if (tableUI != null) {
-            tableUI.appearanceChanged(table, appearance);
-        }
-        if (treeUI != null) {
-            treeUI.appearanceChanged(tree, appearance);
-        }
-        configureAppearanceContext(appearance);
     }
 
     @Override
@@ -78,25 +65,14 @@ public class AquaTreeTableUI extends BasicTreeTableUI implements AquaComponentUI
         JTree tree = getTree();
         AquaFocusHandler.updateComponentTreeUIActivation(table, isActive);
         AquaFocusHandler.updateComponentTreeUIActivation(tree, isActive);
-        configureAppearanceContext(null);
-    }
-
-    protected void configureAppearanceContext(@Nullable AquaAppearance appearance) {
-        if (appearance == null) {
-            appearance = AppearanceManager.getAppearance(treeTable);
-        }
-        AquaUIPainter.State state = getState();
-        AppearanceContext appearanceContext = new AppearanceContext(appearance, state, false, false);
-        boolean isStriped = computeStriped();
-        colors = isStriped ? AquaColors.STRIPED_CONTAINER_COLORS : AquaColors.CONTAINER_COLORS;
-        colors.configureForContainer();
-        AquaColors.installColors(treeTable, appearanceContext, colors);
+        table.repaint();
+        tree.repaint();
     }
 
     protected AquaUIPainter.State getState() {
         return treeTable.isEnabled()
-                ? (AquaFocusHandler.hasFocus(treeTable) ? AquaUIPainter.State.ACTIVE_DEFAULT : AquaUIPainter.State.ACTIVE)
-                : AquaUIPainter.State.DISABLED;
+          ? (AquaFocusHandler.hasFocus(treeTable) ? AquaUIPainter.State.ACTIVE_DEFAULT : AquaUIPainter.State.ACTIVE)
+          : AquaUIPainter.State.DISABLED;
     }
 
     protected boolean computeStriped() {
@@ -131,7 +107,6 @@ public class AquaTreeTableUI extends BasicTreeTableUI implements AquaComponentUI
         // If the tree is asked to repaint the selection, it should delegate to the table.
         // This is not actually needed at present, but who knows about the future?
         tree.putClientProperty("JTree.selectionRepainter", table);
-        configureAppearanceContext(null);
     }
 
     @Override
@@ -165,7 +140,6 @@ public class AquaTreeTableUI extends BasicTreeTableUI implements AquaComponentUI
 
         @Override
         protected void focusChanged() {
-            configureAppearanceContext(null);
             repaintSelection();
         }
 
@@ -194,7 +168,21 @@ public class AquaTreeTableUI extends BasicTreeTableUI implements AquaComponentUI
 
     @Override
     public void update(Graphics g, JComponent c) {
-        AppearanceManager.registerCurrentAppearance(c);
-        super.update(g, c);
+        paint(g, c);
+    }
+
+    @Override
+    public void paint(Graphics g, JComponent c) {
+        AppearanceSupport.withContext(g, c, this::paint);
+    }
+
+    public void paint(Graphics2D g, JComponent c, @NotNull PaintingContext pc) {
+        AquaUIPainter.State state = getState();
+        AppearanceContext appearanceContext = new AppearanceContext(pc.appearance, state, false, false);
+        boolean isStriped = computeStriped();
+        ContainerContextualColors colors = isStriped ? AquaColors.STRIPED_CONTAINER_COLORS : AquaColors.CONTAINER_COLORS;
+        colors.configureForContainer();
+        AquaColors.installColors(treeTable, appearanceContext, colors);
+        super.paint(g, c);
     }
 }
