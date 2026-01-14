@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2021 Alan Snyder.
+ * Copyright (c) 2018-2026 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -613,20 +613,44 @@ public class AquaColors {
         if (colors instanceof ContainerContextualColors) {
             ContainerContextualColors cc = (ContainerContextualColors) colors;
             if (!AquaColors.isPriority(c.getGridColor())) {
-                c.setGridColor(cc.getGrid(context));
+                setGridColor(c, cc.getGrid(context));
             }
         }
 
         AppearanceContext selectedContext = context.withSelected(true);
 
         if (isInset && c.getRowSelectionAllowed() && !c.getColumnSelectionAllowed()) {
-            c.setSelectionBackground(AquaColors.CLEAR);
+            setSelectionBackground(c, AquaColors.CLEAR);
         } else if (!AquaColors.isPriority(c.getSelectionBackground())) {
-            c.setSelectionBackground(colors.getBackground(selectedContext));
+            setSelectionBackground(c, colors.getBackground(selectedContext));
         }
 
         if (!AquaColors.isPriority(c.getSelectionForeground())) {
-            c.setSelectionForeground(colors.getForeground(selectedContext));
+            setSelectionForeground(c, colors.getForeground(selectedContext));
+        }
+    }
+
+    public static void setGridColor(@NotNull JTable table, @NotNull Color color)
+    {
+        Color existing = table.getGridColor();
+        if (!color.equals(existing)) {  // avoid unnecessary repaint
+            table.setGridColor(color);
+        }
+    }
+
+    public static void setSelectionForeground(@NotNull JTable table, @NotNull Color color)
+    {
+        Color existing = table.getSelectionForeground();
+        if (!color.equals(existing)) {  // avoid unnecessary repaint
+            table.setSelectionForeground(color);
+        }
+    }
+
+    public static void setSelectionBackground(@NotNull JTable table, @NotNull Color color)
+    {
+        Color existing = table.getSelectionBackground();
+        if (!color.equals(existing)) {  // avoid unnecessary repaint
+            table.setSelectionBackground(color);
         }
     }
 

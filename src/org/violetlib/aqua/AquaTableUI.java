@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014-2024 Alan Snyder.
+ * Copyright (c) 2014-2026 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -972,9 +972,6 @@ public class AquaTableUI extends BasicTableUI
               isSelected, isSelectionMuted, isDropTarget);
             rendererPane.paintComponent(g, rendererComponent, table, cellRect.x, cellRect.y,
               cellRect.width, cellRect.height, true);
-            if (!AquaColors.isPriority(table.getSelectionBackground())) {
-                table.setSelectionBackground(null);
-            }
         }
 
         protected Component getRendererComponent(TableCellRenderer renderer, int row, int column,
@@ -989,18 +986,16 @@ public class AquaTableUI extends BasicTableUI
                 hasFocus = (rowIsLead && colIsLead) && table.isFocusOwner();
             }
 
-            if (!AquaColors.isPriority(table.getSelectionBackground())) {
-                Color c = AquaColors.CLEAR;
+            if (isSelected && !AquaColors.isPriority(table.getSelectionBackground())) {
+                Color c;
                 if (isDropTarget) {
                     c = colors.getBackground(appearanceContext.withState(ACTIVE_DEFAULT).withSelected(true));
-                } else if (isSelected) {
-                    if (appearanceContext.getState() == ACTIVE_DEFAULT && isSelectionMuted) {
-                        c = colors.getBackground(appearanceContext.withState(ACTIVE).withSelected(true));
-                    } else {
-                        c = colors.getBackground(appearanceContext.withSelected(true));
-                    }
+                } else if (appearanceContext.getState() == ACTIVE_DEFAULT && isSelectionMuted) {
+                    c = colors.getBackground(appearanceContext.withState(ACTIVE).withSelected(true));
+                } else {
+                    c = colors.getBackground(appearanceContext.withSelected(true));
                 }
-                table.setSelectionBackground(c);
+                AquaColors.setSelectionBackground(table, c);
             }
 
             return renderer.getTableCellRendererComponent(table, table.getValueAt(row, column),
