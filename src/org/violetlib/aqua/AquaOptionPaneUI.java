@@ -1,5 +1,5 @@
 /*
- * Changes Copyright (c) 2015-2021 Alan Snyder.
+ * Changes Copyright (c) 2015-2026 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -40,7 +40,7 @@ import javax.swing.plaf.basic.BasicOptionPaneUI;
 import javax.swing.text.Document;
 import javax.swing.text.View;
 
-import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.*;
 
 public class AquaOptionPaneUI extends BasicOptionPaneUI implements AquaComponentUI {
     private static final int kOKCancelButtonWidth = 79;
@@ -83,7 +83,6 @@ public class AquaOptionPaneUI extends BasicOptionPaneUI implements AquaComponent
 
     @Override
     public final void update(Graphics g, JComponent c) {
-        AppearanceManager.registerCurrentAppearance(c);
         paint(g, c);
     }
 
@@ -105,7 +104,7 @@ public class AquaOptionPaneUI extends BasicOptionPaneUI implements AquaComponent
      */
     protected Container createMessageArea() {
         JPanel top = new JPanel();
-        top.setBorder(UIManager.getBorder("OptionPane.messageAreaBorder"));
+        AquaBorderSupport.installBorder(top, UIManager.getBorder("OptionPane.messageAreaBorder"));
         top.setLayout(new BorderLayout());
 
         JComponent iconPanel = createIconPanel();
@@ -221,9 +220,9 @@ public class AquaOptionPaneUI extends BasicOptionPaneUI implements AquaComponent
     }
 
     protected void addMessageComponents(Container container,
-                                     GridBagConstraints cons,
-                                     Object msg, int maxll,
-                                     boolean internallyCreated) {
+                                        GridBagConstraints cons,
+                                        Object msg, int maxll,
+                                        boolean internallyCreated) {
         if (msg == null) {
             return;
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2025 Alan Snyder.
+ * Copyright (c) 2015-2026 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -200,15 +200,15 @@ public class AquaButtonUI extends BasicButtonUI
     protected void installBorder(AbstractButton b, AquaButtonExtendedTypes.TypeSpecifier type, boolean isToolbar) {
         Border customBorder = type != null ? type.getBorder() : null;
         if (customBorder != null) {
-            b.setBorder(customBorder);
+            AquaBorderSupport.installBorder(b, customBorder);
         } else {
-            Border oldBorder = b.getBorder();
+            Border oldBorder = AquaBorderSupport.getBorder(b);
             if (oldBorder == null || oldBorder instanceof UIResource) {
                 Border border = getDefaultBorder(b, isToolbar);
                 if (border == null) {
                     border = new AquaPushButtonBorder();
                 }
-                b.setBorder(border);
+                AquaBorderSupport.installBorder(b, border);
             }
         }
     }
@@ -235,21 +235,16 @@ public class AquaButtonUI extends BasicButtonUI
     }
 
     protected @Nullable AquaButtonBorder getAquaButtonBorder(@NotNull JComponent c) {
-        Border border = c.getBorder();
-        if (border instanceof AquaButtonBorder) {
-            return (AquaButtonBorder) border;
-        }
-        return null;
+        return AquaBorderSupport.get(c, AquaButtonBorder.class);
     }
 
     @Override
     public @Nullable Shape getFocusRingOutline(@NotNull JComponent c) {
         Border border = c.getBorder();
-        if (border instanceof FocusRingOutlineProvider) {
-            FocusRingOutlineProvider bb = (FocusRingOutlineProvider) border;
-            return bb.getFocusRingOutline(c);
+        FocusRingOutlineProvider p = AquaBorderSupport.get(border, FocusRingOutlineProvider.class);
+        if (p != null) {
+            return p.getFocusRingOutline(c);
         }
-
         int width = c.getWidth();
         int height = c.getHeight();
         return new RoundRectangle2D.Double(OUTLINE_OFFSET, OUTLINE_OFFSET, width-2*OUTLINE_OFFSET, height-2*OUTLINE_OFFSET, OUTLINE_CORNER, OUTLINE_CORNER);
@@ -352,7 +347,7 @@ public class AquaButtonUI extends BasicButtonUI
         }
         AquaUtilControlSize.addSizePropertyListener(b);
         OSXSystemProperties.register(b);
-        AppearanceManager.installListeners(b);
+        AppearanceManager.install(b);
     }
 
     @Override
@@ -380,7 +375,7 @@ public class AquaButtonUI extends BasicButtonUI
 
     @Override
     protected void uninstallListeners(AbstractButton b) {
-        AppearanceManager.uninstallListeners(b);
+        AppearanceManager.uninstall(b);
         AquaButtonListener listener = (AquaButtonListener)b.getClientProperty(this);
         b.putClientProperty(this, null);
         if (listener != null) {
@@ -410,7 +405,6 @@ public class AquaButtonUI extends BasicButtonUI
 
     @Override
     public void update(Graphics g, JComponent c) {
-        AppearanceManager.registerCurrentAppearance(c);
         super.update(g, c);
     }
 

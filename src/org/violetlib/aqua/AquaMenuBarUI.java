@@ -38,12 +38,12 @@ public class AquaMenuBarUI extends BasicMenuBarUI implements AquaComponentUI {
     @Override
     protected void installListeners() {
         super.installListeners();
-        AppearanceManager.installListeners(menuBar);
+        AppearanceManager.install(menuBar);
     }
 
     @Override
     protected void uninstallListeners() {
-        AppearanceManager.uninstallListeners(menuBar);
+        AppearanceManager.uninstall(menuBar);
         super.uninstallListeners();
     }
 
@@ -62,7 +62,7 @@ public class AquaMenuBarUI extends BasicMenuBarUI implements AquaComponentUI {
 
     @Override
     public void paint(Graphics g, JComponent c) {
-        AppearanceSupport.withContext(g, c, this::paint);
+        AppearanceManager.withContext(g, c, this::paint);
     }
 
     public void paint(Graphics2D g, JComponent c, @NotNull PaintingContext pc) {

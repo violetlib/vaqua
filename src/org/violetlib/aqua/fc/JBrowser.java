@@ -1,5 +1,5 @@
 /*
- * Changes copyright (c) 2014-2025 Alan Snyder.
+ * Changes copyright (c) 2014-2026 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -40,8 +40,7 @@ import javax.swing.plaf.ListUI;
 import javax.swing.plaf.UIResource;
 import javax.swing.tree.*;
 
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.*;
 import org.violetlib.aqua.*;
 
 /**
@@ -472,7 +471,7 @@ public class JBrowser extends JComponent implements Scrollable {
         DefaultMutableTreeNode root;
 
         if ((value instanceof Object[]) || (value instanceof Hashtable)
-                || (value instanceof Vector)) {
+          || (value instanceof Vector)) {
             root = new DefaultMutableTreeNode("root");
             JTree.DynamicUtilTreeNode.createChildren(root, value);
         } else {
@@ -1162,7 +1161,7 @@ public class JBrowser extends JComponent implements Scrollable {
             this.selectionModel.addPropertyChangeListener(selectionModeUpdater);
         }
         firePropertyChange(SELECTION_MODEL_PROPERTY, oldValue,
-                this.selectionModel);
+          this.selectionModel);
     }
 
     /**
@@ -1534,7 +1533,7 @@ public class JBrowser extends JComponent implements Scrollable {
 
         @Override
         public String getToolTipText(
-                MouseEvent event) {
+          MouseEvent event) {
             Point mouseLocation = event.getPoint();
             int index = locationToIndex(mouseLocation);
             if (index != -1) {
@@ -1553,7 +1552,7 @@ public class JBrowser extends JComponent implements Scrollable {
 
         @Override
         public Point getToolTipLocation(
-                MouseEvent event) {
+          MouseEvent event) {
             Point mouseLocation = event.getPoint();
             int index = locationToIndex(mouseLocation);
             if (index != -1) {
@@ -1673,7 +1672,7 @@ public class JBrowser extends JComponent implements Scrollable {
             switch (orientation) {
                 case SwingConstants.HORIZONTAL:
                     for (int i = components.length - 1; i
-                            >= 0; i--) {
+                      >= 0; i--) {
                         Rectangle cbounds = components[i].getBounds();
                         if (cbounds.x + cbounds.width > visibleRect.x + visibleRect.width) {
                             increment = Math.min(10, cbounds.x + cbounds.width - visibleRect.x - visibleRect.width);
@@ -1690,7 +1689,7 @@ public class JBrowser extends JComponent implements Scrollable {
             switch (orientation) {
                 case SwingConstants.HORIZONTAL:
                     for (int i = 0; i
-                            < components.length; i++) {
+                      < components.length; i++) {
                         Rectangle cbounds = components[i].getBounds();
                         if (cbounds.x < visibleRect.x) {
                             increment = Math.min(10, visibleRect.x - cbounds.x);
@@ -1776,7 +1775,7 @@ public class JBrowser extends JComponent implements Scrollable {
             switch (orientation) {
                 case SwingConstants.HORIZONTAL:
                     for (int i = 0; i
-                            < components.length; i++) {
+                      < components.length; i++) {
                         Rectangle cbounds = components[i].getBounds();
                         if (cbounds.x + cbounds.width < visibleRect.x) {
                             increment = visibleRect.x - cbounds.x;
@@ -1893,9 +1892,9 @@ public class JBrowser extends JComponent implements Scrollable {
      * @return the {@code String} representation of the node's value
      */
     public String convertValueToText(
-            Object value, boolean selected,
-            boolean expanded, boolean leaf, int row,
-            boolean hasFocus) {
+      Object value, boolean selected,
+      boolean expanded, boolean leaf, int row,
+      boolean hasFocus) {
         if (value != null) {
             String sValue = value.toString();
             if (sValue != null) {
@@ -2273,7 +2272,7 @@ public class JBrowser extends JComponent implements Scrollable {
      * listeners.
      */
     private class TreeSelectionUpdater
-            implements java.io.Serializable, TreeSelectionListener {
+      implements java.io.Serializable, TreeSelectionListener {
 
         /**
          * Invoked by the {@code TreeSelectionModel} when the
@@ -2371,7 +2370,7 @@ public class JBrowser extends JComponent implements Scrollable {
      * ListSelectionModel's of the columns.
      */
     private class SelectionModeUpdater
-            implements java.io.Serializable, PropertyChangeListener {
+      implements java.io.Serializable, PropertyChangeListener {
 
         public void propertyChange(PropertyChangeEvent evt) {
             if (evt.getPropertyName().equals("selectionMode")) {
@@ -2419,9 +2418,9 @@ public class JBrowser extends JComponent implements Scrollable {
                     c = c.getParent();
                 }
                 MouseEvent refiredEvent = new MouseEvent(
-                        JBrowser.this, evt.getID(), evt.getWhen(), evt.getModifiers(),
-                        x, y,
-                        evt.getClickCount(), evt.isPopupTrigger() //, evt.getButton()
+                  JBrowser.this, evt.getID(), evt.getWhen(), evt.getModifiers(),
+                  x, y,
+                  evt.getClickCount(), evt.isPopupTrigger() //, evt.getButton()
                 );
                 for (int i = 0; i < listeners.length; i++) {
                     ((MouseListener) listeners[i]).mouseReleased(refiredEvent);
@@ -2491,9 +2490,9 @@ public class JBrowser extends JComponent implements Scrollable {
                     c = c.getParent();
                 }
                 MouseEvent refiredEvent = new MouseEvent(
-                        JBrowser.this, evt.getID(), evt.getWhen(), evt.getModifiers(),
-                        x, y,
-                        evt.getClickCount(), evt.isPopupTrigger() //, evt.getButton()
+                  JBrowser.this, evt.getID(), evt.getWhen(), evt.getModifiers(),
+                  x, y,
+                  evt.getClickCount(), evt.isPopupTrigger() //, evt.getButton()
                 );
                 for (int i = 0; i < listeners.length; i++) {
                     ((MouseListener) listeners[i]).mouseClicked(refiredEvent);
@@ -2515,9 +2514,9 @@ public class JBrowser extends JComponent implements Scrollable {
                     c = c.getParent();
                 }
                 MouseEvent refiredEvent = new MouseEvent(
-                        JBrowser.this, evt.getID(), evt.getWhen(), evt.getModifiers(),
-                        x, y,
-                        evt.getClickCount(), evt.isPopupTrigger() /*, evt.getButton()*/);
+                  JBrowser.this, evt.getID(), evt.getWhen(), evt.getModifiers(),
+                  x, y,
+                  evt.getClickCount(), evt.isPopupTrigger() /*, evt.getButton()*/);
                 for (int i = 0; i < listeners.length; i++) {
                     ((MouseListener) listeners[i]).mousePressed(refiredEvent);
                 }
@@ -2733,7 +2732,7 @@ public class JBrowser extends JComponent implements Scrollable {
          */
         public ListSelectionListener[] getListSelectionListeners() {
             return (ListSelectionListener[]) listenerList.getListeners(
-                    ListSelectionListener.class);
+              ListSelectionListener.class);
         }
 
         /**
@@ -3065,7 +3064,7 @@ public class JBrowser extends JComponent implements Scrollable {
             // If the removal would produce to two disjoint selections in a mode
             // that only allows one, extend the removal to the end of the selection.
             if (getSelectionMode() != MULTIPLE_INTERVAL_SELECTION
-                    && clearMin > minIndex && clearMax < maxIndex) {
+              && clearMin > minIndex && clearMax < maxIndex) {
                 clearMax = maxIndex;
             }
 
@@ -3334,7 +3333,7 @@ public class JBrowser extends JComponent implements Scrollable {
             setOpaque(true);
 
             arrowLabel.putClientProperty("Quaqua.Component.visualMargin",
-                    new Insets(0, 0, 0, 0));
+              new Insets(0, 0, 0, 0));
 
             arrowLabel.setIcon(expandedIcon);
         }
@@ -3353,7 +3352,7 @@ public class JBrowser extends JComponent implements Scrollable {
 
             @Override
             public void repaint(
-                    long tm, int x, int y, int width, int height) {
+              long tm, int x, int y, int width, int height) {
             }
 
             @Override
@@ -3420,8 +3419,8 @@ public class JBrowser extends JComponent implements Scrollable {
             }
 
             browserCellRendererComponent = browserCellRenderer.getBrowserCellRendererComponent(
-                    JBrowser.this, value, isSelected, isExpanded, isLeaf, index,
-                    isFocused && list.getLeadSelectionIndex() == index);
+              JBrowser.this, value, isSelected, isExpanded, isLeaf, index,
+              isFocused && list.getLeadSelectionIndex() == index);
 
             removeAll();
             add(browserCellRendererComponent, BorderLayout.CENTER);
@@ -3521,7 +3520,7 @@ public class JBrowser extends JComponent implements Scrollable {
         protected void configureFromScrollBars() {
             // The configuration is based on whether or not overlay scroll bars are being used
             boolean isOverlayScrollBars = Boolean.TRUE.equals(
-                    scrollPane.getClientProperty(AquaScrollPaneUI.SCROLL_PANE_AQUA_OVERLAY_SCROLL_BARS_KEY));
+              scrollPane.getClientProperty(AquaScrollPaneUI.SCROLL_PANE_AQUA_OVERLAY_SCROLL_BARS_KEY));
 
             if (sizeHandle != null) {
                 remove(sizeHandle);
@@ -3766,15 +3765,20 @@ public class JBrowser extends JComponent implements Scrollable {
         }
 
         @Override
-        public void paintComponent(Graphics g) {
-            AquaAppearance appearance = AppearanceManager.registerCurrentAppearance(this);
-            Color backgroundColor = appearance.getColor("legacyScrollBarTrack");
-            Color innerBorderColor = appearance.getColor("legacyScrollBarInnerBorder");
-            Color outerBorderColor = appearance.getColor("legacyScrollBarOuterBorder");
-            Color grabberColor = appearance.getColor("scrollPaneGrabber");
+        protected void paintComponent(Graphics g) {
+            AppearanceManager.withContext(g, this, this::paint);
+        }
 
-            g.setColor(backgroundColor);
-            g.fillRect(0, 0, width, height);
+        public void paint(Graphics2D g, JComponent c, @NotNull PaintingContext pc) {
+            Color backgroundColor = pc.appearance.getColor("legacyScrollBarTrack");
+            Color innerBorderColor = pc.appearance.getColor("legacyScrollBarInnerBorder");
+            Color outerBorderColor = pc.appearance.getColor("legacyScrollBarOuterBorder");
+            Color grabberColor = pc.appearance.getColor("scrollPaneGrabber");
+
+            if (backgroundColor != null) {
+                g.setColor(backgroundColor);
+                g.fillRect(0, 0, width, height);
+            }
             if (innerBorderColor != null) {
                 g.setColor(innerBorderColor);
                 g.fillRect(0, 0, 1, height);
@@ -3783,9 +3787,11 @@ public class JBrowser extends JComponent implements Scrollable {
                 g.setColor(outerBorderColor);
                 g.fillRect(width - 1, 0, 1, height);
             }
-            g.setColor(grabberColor);
-            g.fillRect(5, 4, 1, 7);
-            g.fillRect(9, 4, 1, 7);
+            if (grabberColor != null) {
+                g.setColor(grabberColor);
+                g.fillRect(5, 4, 1, 7);
+                g.fillRect(9, 4, 1, 7);
+            }
         }
 
         @Override
@@ -3804,13 +3810,20 @@ public class JBrowser extends JComponent implements Scrollable {
 
         @Override
         protected void paintComponent(Graphics g) {
-            AquaAppearance appearance = AppearanceManager.registerCurrentAppearance(this);
-            Color background = appearance.getColor("controlBackground");
-            Color handleColor = appearance.getColor("separator");
-            g.setColor(background);
-            g.fillRect(0, 0, getWidth(), getHeight());
-            g.setColor(handleColor);
-            g.fillRect(getWidth()-1, 0, 1, getHeight());
+            AppearanceManager.withContext(g, this, this::paint);
+        }
+
+        public void paint(Graphics2D g, JComponent c, @NotNull PaintingContext pc) {
+            Color background = pc.appearance.getColor("controlBackground");
+            Color handleColor = pc.appearance.getColor("separator");
+            if (background != null) {
+                g.setColor(background);
+                g.fillRect(0, 0, getWidth(), getHeight());
+            }
+            if (handleColor != null) {
+                g.setColor(handleColor);
+                g.fillRect(getWidth()-1, 0, 1, getHeight());
+            }
         }
 
         @Override

@@ -54,11 +54,11 @@ public class AquaSeparatorUI extends SeparatorUI implements AquaComponentUI {
     }
 
     protected void installListeners(JSeparator s) {
-        AppearanceManager.installListeners(s);
+        AppearanceManager.install(s);
     }
 
     protected void uninstallListeners(JSeparator s) {
-        AppearanceManager.uninstallListeners(s);
+        AppearanceManager.uninstall(s);
     }
 
     @Override
@@ -77,7 +77,7 @@ public class AquaSeparatorUI extends SeparatorUI implements AquaComponentUI {
 
     @Override
     public void paint(Graphics g, JComponent c) {
-        AppearanceSupport.withContext(g, c, this::paint);
+        AppearanceManager.withContext(g, c, this::paint);
     }
 
     public void paint(Graphics2D g, JComponent c, @NotNull PaintingContext pc) {

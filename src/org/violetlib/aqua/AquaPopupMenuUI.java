@@ -157,12 +157,12 @@ public class AquaPopupMenuUI extends BasicPopupMenuUI implements AquaComponentUI
         popupMenu.addMouseMotionListener(scrollingMouseListener);
         popupMenu.addMouseWheelListener(scrollingMouseListener);
         popupMenu.addPropertyChangeListener("componentOrientation", componentOrientationListener);
-        AppearanceManager.installListeners(popupMenu);
+        AppearanceManager.install(popupMenu);
     }
 
     @Override
     protected void uninstallListeners() {
-        AppearanceManager.uninstallListeners(popupMenu);
+        AppearanceManager.uninstall(popupMenu);
         popupMenu.removePropertyChangeListener("componentOrientation", componentOrientationListener);
         popupMenu.removeMouseListener(scrollingMouseListener);
         popupMenu.removeMouseMotionListener(scrollingMouseListener);
@@ -185,7 +185,7 @@ public class AquaPopupMenuUI extends BasicPopupMenuUI implements AquaComponentUI
 
     @Override
     public void paint(Graphics g, JComponent c) {
-        AppearanceSupport.withContext(g, c, this::paint);
+        AppearanceManager.withContext(g, c, this::paint);
     }
 
     public void paint(Graphics2D g, JComponent c, @NotNull PaintingContext pc) {
@@ -252,7 +252,7 @@ public class AquaPopupMenuUI extends BasicPopupMenuUI implements AquaComponentUI
             AquaBasicPopupMenuWrapper wrapper = new AquaBasicPopupMenuWrapper(popup, border);
             wrapper.putClientProperty(AquaVibrantSupport.POPUP_BACKGROUND_STYLE_KEY, "vibrantMenu");
             wrapper.putClientProperty(AquaVibrantSupport.POPUP_CORNER_RADIUS_KEY, 6);
-            popup.setBorder(null);
+            AquaBorderSupport.installBorder(popup, null);
             PopupFactory f = PopupFactory.getSharedInstance();
             y += 2;
             return f.getPopup(owner, wrapper, x, y);

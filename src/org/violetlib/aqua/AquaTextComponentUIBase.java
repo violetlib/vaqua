@@ -72,12 +72,12 @@ public abstract class AquaTextComponentUIBase
         editor.addFocusListener(handler);
         editor.addPropertyChangeListener(handler);
         AquaUtilControlSize.addSizePropertyListener(editor);
-        AppearanceManager.installListeners(editor);
+        AppearanceManager.install(editor);
     }
 
     @Override
     protected void uninstallListeners() {
-        AppearanceManager.uninstallListeners(editor);
+        AppearanceManager.uninstall(editor);
         AquaUtilControlSize.removeSizePropertyListener(editor);
         editor.removeFocusListener(handler);
         editor.removePropertyChangeListener(handler);
@@ -145,7 +145,7 @@ public abstract class AquaTextComponentUIBase
 
     @Override
     public void update(Graphics g, JComponent c) {
-        AppearanceSupport.withContext(g, c, this::paint);
+        AppearanceManager.withContext(g, c, this::paint);
     }
 
     public void paint(Graphics2D g, JComponent c, @NotNull PaintingContext pc) {
@@ -165,19 +165,17 @@ public abstract class AquaTextComponentUIBase
 
         if (g instanceof Graphics2D) {
             Border b = editor.getBorder();
-            if (b instanceof Border2D) {
-                Border2D ab = (Border2D) b;
+            Border2D ab = AquaBorderSupport.get(b, Border2D.class);
+            if (ab != null) {
                 Insets2D n = ab.getBorderInsets2D(editor);
-                if (n != null) {
-                    float top = n.getTop();
-                    float floor = (float) Math.floor(top);
-                    if (top - floor > 0.001f) {
-                        Graphics2D gg = (Graphics2D) g.create();
-                        gg.translate(0, top - floor);
-                        super.paintSafely(gg);
-                        gg.dispose();
-                        return;
-                    }
+                float top = n.getTop();
+                float floor = (float) Math.floor(top);
+                if (top - floor > 0.001f) {
+                    Graphics2D gg = (Graphics2D) g.create();
+                    gg.translate(0, top - floor);
+                    super.paintSafely(gg);
+                    gg.dispose();
+                    return;
                 }
             }
         }
@@ -204,8 +202,8 @@ public abstract class AquaTextComponentUIBase
     @Override
     public @Nullable Shape getFocusRingOutline(@NotNull JComponent c) {
         Border b = c.getBorder();
-        if (b instanceof FocusRingOutlineProvider) {
-            FocusRingOutlineProvider p = (FocusRingOutlineProvider) b;
+        FocusRingOutlineProvider p = AquaBorderSupport.get(b, FocusRingOutlineProvider.class);
+        if (p != null) {
             return p.getFocusRingOutline(c);
         }
         return new Rectangle(0, 0, c.getWidth(), c.getHeight());

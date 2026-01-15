@@ -43,7 +43,6 @@ import javax.swing.text.View;
 
 import org.jetbrains.annotations.*;
 import org.violetlib.jnr.aqua.AquaUIPainter;
-import org.violetlib.vappearances.VAppearance;
 
 public class AquaLabelUI extends BasicLabelUI implements AquaComponentUI {
 
@@ -75,12 +74,12 @@ public class AquaLabelUI extends BasicLabelUI implements AquaComponentUI {
     protected void installListeners(JLabel c) {
         super.installListeners(c);
         AquaUtilControlSize.addSizePropertyListener(c);
-        AppearanceManager.installListeners(c);
+        AppearanceManager.install(c);
     }
 
     @Override
     protected void uninstallListeners(JLabel c) {
-        AppearanceManager.uninstallListeners(c);
+        AppearanceManager.uninstall(c);
         AquaUtilControlSize.removeSizePropertyListener(c);
         super.uninstallListeners(c);
     }
@@ -101,7 +100,7 @@ public class AquaLabelUI extends BasicLabelUI implements AquaComponentUI {
 
     @Override
     public void paint(Graphics g, JComponent c) {
-        AppearanceSupport.withContext(g, c, this::paint);
+        AppearanceManager.withContext(g, c, this::paint);
     }
 
     public void paint(Graphics2D g, JComponent c, @NotNull PaintingContext pc) {

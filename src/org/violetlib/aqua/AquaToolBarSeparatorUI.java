@@ -1,5 +1,5 @@
 /*
- * Changes Copyright (c) 2016-2021 Alan Snyder.
+ * Changes Copyright (c) 2016-2026 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -63,7 +63,6 @@ public class AquaToolBarSeparatorUI extends BasicToolBarSeparatorUI implements A
 
     @Override
     public void update(Graphics g, JComponent c) {
-        AppearanceManager.registerCurrentAppearance(c);
         super.update(g, c);
     }
 

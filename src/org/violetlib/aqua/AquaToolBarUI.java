@@ -90,9 +90,9 @@ public class AquaToolBarUI extends BasicToolBarUI implements SwingConstants, Aqu
     }
 
     protected void installBorder() {
-        Border b = toolBar.getBorder();
+        Border b = AquaBorderSupport.getBorder(toolBar);
         if (b == null || b instanceof UIResource) {
-            toolBar.setBorder(createBorder());
+            AquaBorderSupport.installBorder(toolBar, createBorder());
         }
     }
 
@@ -112,12 +112,12 @@ public class AquaToolBarUI extends BasicToolBarUI implements SwingConstants, Aqu
     @Override
     protected void installListeners(){
         super.installListeners();
-        AppearanceManager.installListeners(toolBar);
+        AppearanceManager.install(toolBar);
     }
 
     @Override
     protected void uninstallListeners(){
-        AppearanceManager.uninstallListeners(toolBar);
+        AppearanceManager.uninstall(toolBar);
         super.uninstallListeners();
     }
 
@@ -263,9 +263,8 @@ public class AquaToolBarUI extends BasicToolBarUI implements SwingConstants, Aqu
      */
     protected static boolean isTallFormatButton(AbstractButton b) {
         Border border = b.getBorder();
-
-        if (border instanceof AquaButtonBorder) {
-            AquaButtonBorder bb = (AquaButtonBorder) border;
+        AquaButtonBorder bb = AquaBorderSupport.get(border, AquaButtonBorder.class);
+        if (bb != null) {
             LayoutConfiguration g = bb.getLayoutConfiguration(b);
             if (g instanceof ButtonLayoutConfiguration) {
                 ButtonLayoutConfiguration bg = (ButtonLayoutConfiguration) g;
@@ -284,7 +283,7 @@ public class AquaToolBarUI extends BasicToolBarUI implements SwingConstants, Aqu
 
     @Override
     public void paint(Graphics g, JComponent c) {
-        AppearanceSupport.withContext(g, c, this::paint);
+        AppearanceManager.withContext(g, c, this::paint);
     }
 
     public void paint(Graphics2D g, JComponent c, @NotNull PaintingContext pc) {

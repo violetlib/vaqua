@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014-2025 Alan Snyder.
+ * Copyright (c) 2014-2026 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -27,7 +27,7 @@ import javax.swing.tree.TreeModel;
 import javax.swing.tree.TreePath;
 import javax.swing.tree.TreeSelectionModel;
 
-import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.*;
 import org.violetlib.aqua.*;
 import org.violetlib.treetable.*;
 
@@ -75,7 +75,7 @@ public class ListViewImpl extends ListView {
         tree.setOpaque(false);
 
         listViewScrollPane = new JScrollPane();
-        listViewScrollPane.setBorder(javax.swing.BorderFactory.createEmptyBorder(0, 0, 0, 0));
+        AquaBorderSupport.installBorder(listViewScrollPane, javax.swing.BorderFactory.createEmptyBorder(0, 0, 0, 0));
         listViewScrollPane.setViewportView(tree);
         listViewScrollPane.setColumnHeaderView(tree.getTableHeader());
 
@@ -360,9 +360,9 @@ public class ListViewImpl extends ListView {
         @Override
         public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
             JComponent c = (JComponent) super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-            Border border = c.getBorder();
+            Border border = AquaBorderSupport.getBorder(c);
             Border b = border != null ? new CompoundBorder(border, tableHeaderBorder) : tableHeaderBorder;
-            c.setBorder(b);
+            AquaBorderSupport.installBorder(c, b);
 
             if (AquaTableHeaderCellRenderer.getColumnSortOrder(table, column) != null) {
                 // Display sorted column title in bold

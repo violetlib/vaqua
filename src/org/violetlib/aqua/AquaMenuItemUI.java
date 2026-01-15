@@ -78,12 +78,12 @@ public class AquaMenuItemUI extends BasicMenuItemUI implements AquaComponentUI {
     protected void installListeners() {
         super.installListeners();
         SelectionStateListener.install(menuItem);
-        AppearanceManager.installListeners(menuItem);
+        AppearanceManager.install(menuItem);
     }
 
     @Override
     protected void uninstallListeners() {
-        AppearanceManager.uninstallListeners(menuItem);
+        AppearanceManager.uninstall(menuItem);
         SelectionStateListener.uninstall(menuItem);
         super.uninstallListeners();
     }
@@ -103,7 +103,7 @@ public class AquaMenuItemUI extends BasicMenuItemUI implements AquaComponentUI {
 
     @Override
     public void paint(Graphics g, JComponent c) {
-        AppearanceSupport.withContext(g, c, this::paint);
+        AppearanceManager.withContext(g, c, this::paint);
     }
 
     public void paint(Graphics2D g, JComponent c, @NotNull PaintingContext pc) {

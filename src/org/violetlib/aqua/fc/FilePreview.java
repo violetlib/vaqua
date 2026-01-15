@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2009-2010 Werner Randelshofer, Switzerland.
- * Copyright (c) 2014-2025 Alan Snyder.
+ * Copyright (c) 2014-2026 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the
@@ -28,8 +28,11 @@ import javax.swing.plaf.basic.BasicHTML;
 import javax.swing.table.*;
 import javax.swing.tree.TreePath;
 
+import org.jetbrains.annotations.*;
 import org.violetlib.aqua.AppearanceManager;
+import org.violetlib.aqua.AquaBorderSupport;
 import org.violetlib.aqua.AquaColors;
+import org.violetlib.aqua.PaintingContext;
 
 import static org.violetlib.aqua.OSXSystemProperties.OSVersion;
 
@@ -127,7 +130,7 @@ public class FilePreview extends JComponent implements BrowserPreviewRenderer {
 
         if (OSVersion < 1010) {
             GrayLine b = new GrayLine();
-            b.setBorder(new EmptyBorder(5, 25, 5, 25));
+            AquaBorderSupport.installBorder(b, new EmptyBorder(5, 25, 5, 25));
             vb.add(b);
         } else {
             nameView = new NameView();
@@ -183,18 +186,25 @@ public class FilePreview extends JComponent implements BrowserPreviewRenderer {
 
     @Override
     protected void paintComponent(Graphics g) {
+        AppearanceManager.withContext(g, this, this::paint);
+    }
 
-        AppearanceManager.registerCurrentAppearance(this);
-        Color background = AquaColors.getBackground(this, "controlBackground");
-        Color labelForeground = AquaColors.getSystemColor(this, "secondaryLabel");
-        Color valueForeground = AquaColors.getSystemColor(this, "label");
+    public void paint(Graphics2D g, JComponent c, @NotNull PaintingContext pc) {
+        Color background = pc.appearance.getColor("controlBackground");
+        Color labelForeground = pc.appearance.getColor("secondaryLabel");
+        Color valueForeground = pc.appearance.getColor("label");
 
-        nameRenderer.setColor(AquaColors.getOrdinaryColor(labelForeground));
-        valueRenderer.setColor(AquaColors.getOrdinaryColor(valueForeground));
-        if (typeSizeView != null) {
-            typeSizeView.setForeground(AquaColors.getOrdinaryColor(labelForeground));
-        } else if (OSVersion >= 1010) {
-            valueRenderer.setRowZeroColor(AquaColors.getOrdinaryColor(labelForeground));
+        if (labelForeground != null) {
+            Color labelColor = AquaColors.getOrdinaryColor(labelForeground);
+            nameRenderer.setColor(labelColor);
+            if (typeSizeView != null) {
+                typeSizeView.setForeground(labelColor);
+            } else if (OSVersion >= 1010) {
+                valueRenderer.setRowZeroColor(labelColor);
+            }        }
+
+        if (valueForeground != null) {
+            valueRenderer.setColor(AquaColors.getOrdinaryColor(valueForeground));
         }
 
         // Avoid the magic eraser when displayed as a sheet

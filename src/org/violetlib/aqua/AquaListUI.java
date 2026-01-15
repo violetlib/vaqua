@@ -145,7 +145,7 @@ public class AquaListUI extends BasicListUI implements AquaComponentUI, AquaView
     @Override
     protected void installListeners() {
         super.installListeners();
-        AppearanceManager.installListeners(list);
+        AppearanceManager.install(list);
         AquaUtils.installInsetViewListener(list);
         list.addHierarchyListener(hierarchyListener);
     }
@@ -158,7 +158,7 @@ public class AquaListUI extends BasicListUI implements AquaComponentUI, AquaView
         }
         list.removeHierarchyListener(hierarchyListener);
         AquaUtils.uninstallInsetViewListener(list);
-        AppearanceManager.uninstallListeners(list);
+        AppearanceManager.uninstall(list);
         super.uninstallListeners();
     }
 
@@ -626,7 +626,7 @@ public class AquaListUI extends BasicListUI implements AquaComponentUI, AquaView
 
     @Override
     public void paint(Graphics g, JComponent c) {
-        AppearanceSupport.withContext(g, c, this::paint);
+        AppearanceManager.withContext(g, c, this::paint);
     }
 
     public void paint(Graphics2D g, JComponent c, @NotNull PaintingContext pc) {

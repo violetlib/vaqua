@@ -38,12 +38,12 @@ public class AquaViewportUI extends ViewportUI implements AquaComponentUI {
         viewport = (JViewport) c;
         viewport.setOpaque(false);  // needed in JDKs prior to 17 (see JDK-8253266)
         AquaVibrantSupport.installVibrantStyle(c);
-        AppearanceManager.installListeners(c);
+        AppearanceManager.install(c);
     }
 
     @Override
     public void uninstallUI(JComponent c) {
-        AppearanceManager.uninstallListeners(c);
+        AppearanceManager.uninstall(c);
         AquaVibrantSupport.uninstallVibrantStyle(c);
         viewport = null;
         super.uninstallUI(c);
@@ -74,7 +74,7 @@ public class AquaViewportUI extends ViewportUI implements AquaComponentUI {
 
     @Override
     public void paint(Graphics g, JComponent c) {
-        AppearanceSupport.withContext(g, c, this::paint);
+        AppearanceManager.withContext(g, c, this::paint);
     }
 
     public void paint(Graphics2D g, JComponent c, @NotNull PaintingContext pc) {

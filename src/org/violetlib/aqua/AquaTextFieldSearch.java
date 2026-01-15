@@ -1,5 +1,5 @@
 /*
- * Changes Copyright (c) 2015-2025 Alan Snyder.
+ * Changes Copyright (c) 2015-2026 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -65,7 +65,7 @@ public class AquaTextFieldSearch {
         uninstallSearchField(c);
 
         SearchFieldBorder border = new AquaTextFieldSearch.SearchFieldBorder(c);
-        c.setBorder(border);
+        AquaBorderSupport.installBorder(c, border);
         c.setLayout(border.getCustomLayout());
         c.add(getFindButton(c), BorderLayout.WEST);
         c.add(getCancelButton(c), BorderLayout.EAST);
@@ -73,8 +73,9 @@ public class AquaTextFieldSearch {
     }
 
     protected static void uninstallSearchField(@NotNull JTextField c) {
-        if (c.getBorder() instanceof SearchFieldBorder) {
-            c.setBorder(UIManager.getBorder("TextField.border"));
+        SearchFieldBorder sfb = AquaBorderSupport.get(c, SearchFieldBorder.class);
+        if (sfb != null) {
+            AquaBorderSupport.installBorder(c, UIManager.getBorder("TextField.border"));
             c.removeAll();
         }
     }
@@ -125,7 +126,7 @@ public class AquaTextFieldSearch {
           ;
 
         //Insets i = icon.sizeVariant.margins;
-        //b.setBorder(BorderFactory.createEmptyBorder(i.top, i.left, i.bottom, i.right));
+        //AquaBorderSupport.installBorder(b, BorderFactory.createEmptyBorder(i.top, i.left, i.bottom, i.right));
 
         //b.setIcon(icon);
         b.setBorderPainted(false);

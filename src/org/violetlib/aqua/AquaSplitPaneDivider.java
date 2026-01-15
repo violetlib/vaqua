@@ -1,5 +1,5 @@
 /*
- * Changes copyright (c) 2015-2025 Alan Snyder.
+ * Changes copyright (c) 2015-2026 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -38,7 +38,7 @@ import java.beans.PropertyChangeEvent;
 import javax.swing.*;
 import javax.swing.plaf.basic.BasicSplitPaneDivider;
 
-import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.*;
 import org.violetlib.aqua.AquaUtils.LazyKeyedSingleton;
 import org.violetlib.jnr.aqua.AquaUIPainter;
 import org.violetlib.jnr.aqua.AquaUIPainter.DividerWidget;
@@ -102,10 +102,13 @@ public class AquaSplitPaneDivider extends BasicSplitPaneDivider {
     /**
      * Paints the divider.
      */
-    public void paint(Graphics g) {
+    public void paint(Graphics g, JComponent c) {
+        AppearanceManager.withContext(g, c, this::paint);
+    }
 
-        AquaAppearance appearance = AppearanceManager.registerCurrentAppearance(splitPane);
-        Color c = appearance.getColor("separator");
+    public void paint(Graphics2D g, JComponent c, @NotNull PaintingContext pc) {
+
+        Color color = pc.appearance.getColor("separator");
 
         Dimension size = getSize();
         int x = 0;
@@ -145,7 +148,7 @@ public class AquaSplitPaneDivider extends BasicSplitPaneDivider {
             SplitPaneDividerConfiguration dg = new SplitPaneDividerConfiguration(w, state, orientation, 0);
             painter.getPainter(dg).paint(g, x, y);
         } else {
-            AquaUtils.fillRect(g, c, x, y, size.width, size.height);
+            AquaUtils.fillRect(g, color, x, y, size.width, size.height);
         }
 
         super.paint(g); // Ends up at Container.paint, which paints our JButton children
@@ -196,7 +199,7 @@ public class AquaSplitPaneDivider extends BasicSplitPaneDivider {
         button.setFocusPainted(false);
         button.setRequestFocusEnabled(false);
         button.setFocusable(false);
-        button.setBorder(BorderFactory.createEmptyBorder(1, 1, 1, 1));
+        AquaBorderSupport.installBorder(button, BorderFactory.createEmptyBorder(1, 1, 1, 1));
         return button;
     }
 

@@ -165,13 +165,13 @@ public class AquaComboBoxUI extends BasicComboBoxUI
         if (popup instanceof AquaComboBoxPopup) {
             ((AquaComboBoxPopup) popup).addHierarchyListener(popupListener);
         }
-        AppearanceManager.installListeners(comboBox);
+        AppearanceManager.install(comboBox);
         AquaUtils.installToolbarSensitivity(comboBox);
     }
 
     protected void uninstallListeners() {
         AquaUtils.uninstallToolbarSensitivity(comboBox);
-        AppearanceManager.uninstallListeners(comboBox);
+        AppearanceManager.uninstall(comboBox);
         ComboPopup popup = getPopup();
         if (popup instanceof AquaComboBoxPopup) {
             ((AquaComboBoxPopup) popup).removeHierarchyListener(popupListener);
@@ -367,7 +367,7 @@ public class AquaComboBoxUI extends BasicComboBoxUI
 
     @Override
     public void paint(Graphics g, JComponent c) {
-        AppearanceSupport.withContext(g, c, this::paint);
+        AppearanceManager.withContext(g, c, this::paint);
     }
 
     public void paint(Graphics2D g, JComponent c, @NotNull PaintingContext pc) {
@@ -671,7 +671,7 @@ public class AquaComboBoxUI extends BasicComboBoxUI
 
             if (!(editor instanceof AquaCustomComboTextField)) {
                 tf.setUI(new AquaComboBoxEditorUI());
-                tf.setBorder(null);
+                AquaBorderSupport.installBorder(tf, null);
             }
         }
 
@@ -793,9 +793,9 @@ public class AquaComboBoxUI extends BasicComboBoxUI
         protected void installDefaults() {
             super.installDefaults();
             JTextComponent c = getComponent();
-            Border b = c.getBorder();
+            Border b = AquaBorderSupport.getBorder(c);
             if (b == null || b instanceof UIDefaults) {
-                c.setBorder(null);
+                AquaBorderSupport.installBorder(c, null);
             }
         }
 

@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2011-2013 Werner Randelshofer, Switzerland.
- * Copyright (c) 2014-2025 Alan Snyder.
+ * Copyright (c) 2014-2026 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the
@@ -302,7 +302,7 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
             }
         };
 
-        pane.setBorder(new EmptyBorder(20, 15, 10, 15));
+        AquaBorderSupport.installBorder(pane, new EmptyBorder(20, 15, 10, 15));
         pane.setComponentOrientation(parent.getComponentOrientation());
         dialog.setContentPane(pane);
         dialog.pack();
@@ -375,7 +375,7 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
 
             JPanel buttonPane = new JPanel();
             buttonPane.setAlignmentX(0);
-            buttonPane.setBorder(new EmptyBorder(12, 0, 6, 0));
+            AquaBorderSupport.installBorder(buttonPane, new EmptyBorder(12, 0, 6, 0));
             buttonPane.setLayout(new BoxLayout(buttonPane, BoxLayout.X_AXIS));
             buttonPane.add(errorLabel);
             buttonPane.add(cancelButton);
@@ -770,11 +770,11 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
         fileNameLine.add(fileNameSpringPanel, gridBagConstraints);
 
         if (OSVersion >= 1013) {
-            fileNameLine.setBorder(new EmptyBorder(5, 0, 7, 0));
+            AquaBorderSupport.installBorder(fileNameLine, new EmptyBorder(5, 0, 7, 0));
         } else if (OSVersion >= 1011) {
-            fileNameLine.setBorder(new EmptyBorder(12, 0, 7, 0));
+            AquaBorderSupport.installBorder(fileNameLine, new EmptyBorder(12, 0, 7, 0));
         } else {
-            fileNameLine.setBorder(new EmptyBorder(12, 0, 14, 0));
+            AquaBorderSupport.installBorder(fileNameLine, new EmptyBorder(12, 0, 14, 0));
         }
 
         savePanel.add(fileNameLine);
@@ -815,7 +815,7 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
         splitPane.setDividerLocation(sidebarWidth); // used by subclass
         splitPane.putClientProperty("JSplitPane.style", "thin");
 
-        sidebarScrollPane.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 0));
+        AquaBorderSupport.installBorder(sidebarScrollPane, BorderFactory.createEmptyBorder(0, 0, 0, 0));
         sidebarScrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
         sidebarTree.setRootVisible(false);
         sidebarTree.setShowsRootHandles(true);
@@ -836,7 +836,7 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
         buttonsPanel.setOpaque(false);
 
         formatPanel.setLayout(new GridBagLayout());
-        formatPanel.setBorder(BorderFactory.createEmptyBorder(6, 0, 6, 0));
+        AquaBorderSupport.installBorder(formatPanel, BorderFactory.createEmptyBorder(6, 0, 6, 0));
         filesOfTypeLabel.setHorizontalAlignment(SwingConstants.RIGHT);
         filesOfTypeLabel.setText("Format:");
         gridBagConstraints = new GridBagConstraints();
@@ -1183,13 +1183,13 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
 
     protected JSeparator createSeparator() {
         JSeparator s = new JSeparator();
-        s.setBorder(AquaLookAndFeel.NOTHING_BORDER);
+        AquaBorderSupport.installBorder(s, AquaLookAndFeel.NOTHING_BORDER);
         return s;
     }
 
     protected JSeparator createOptionsSeparator() {
         JSeparator s = new JSeparator();
-        s.setBorder(AquaLookAndFeel.NOTHING_BORDER);
+        AquaBorderSupport.installBorder(s, AquaLookAndFeel.NOTHING_BORDER);
         return s;
     }
 
@@ -1218,13 +1218,13 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
             fc.addHierarchyListener(hierarchyListener);
         }
         fc.addPropertyChangeListener(filterComboBoxModel);
-        AppearanceManager.installListeners(fc);
+        AppearanceManager.install(fc);
     }
 
     @Override
     protected void uninstallListeners(JFileChooser fc) {
         super.uninstallListeners(fc);
-        AppearanceManager.uninstallListeners(fc);
+        AppearanceManager.uninstall(fc);
         if (hierarchyListener != null) {
             fc.removeHierarchyListener(hierarchyListener);
         }
@@ -2086,15 +2086,15 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
         if (accessoryPanel != null) {
             accessoryPanel.removeAll();
             if (c != null) {
-                Border b = c.getBorder();
+                Border b = AquaBorderSupport.getBorder(c);
                 if (!(b instanceof EmptyBorder)) {
-                    c.setBorder(null);
+                    AquaBorderSupport.installBorder(c, null);
                     c.revalidate();
                 }
                 JPanel wrapper = new JPanel();
                 wrapper.setOpaque(false);
                 wrapper.setLayout(new BorderLayout());
-                wrapper.setBorder(new EmptyBorder(5, 15, 5, 15));
+                AquaBorderSupport.installBorder(wrapper, new EmptyBorder(5, 15, 5, 15));
                 wrapper.add(c, BorderLayout.CENTER);
                 wrapper.revalidate();
                 accessoryPanel.add(wrapper, BorderLayout.CENTER);
@@ -3675,10 +3675,10 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
 
         AquaAppearance appearance = AppearanceManager.getAppearance(fc);
         if (isStandardDialog) {
-            splitPane.setBorder(null);
+            AquaBorderSupport.installBorder(splitPane, null);
         } else {
             Color divider = appearance.getColor("separator");
-            splitPane.setBorder(BorderFactory.createMatteBorder(1, 0, 1, 0, divider));
+            AquaBorderSupport.installBorder(splitPane, BorderFactory.createMatteBorder(1, 0, 1, 0, divider));
         }
 
         configureDialogSize();

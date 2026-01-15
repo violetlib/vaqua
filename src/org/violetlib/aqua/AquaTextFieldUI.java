@@ -78,9 +78,10 @@ public class AquaTextFieldUI extends AquaTextComponentUIBase implements ToolbarS
     protected void installDefaults() {
         super.installDefaults();
         Border b = tf.getBorder();
-        if (((b == null) || (b instanceof UIResource)) && !(b instanceof AquaTreeEditorBorder)) {
+        AquaTreeEditorBorder eb = b != null ? AquaBorderSupport.get(b, AquaTreeEditorBorder.class) : null;
+        if (((b == null) || (b instanceof UIResource)) && eb == null) {
             AquaTextFieldBorder bb = new AquaTextFieldBorder(tf);
-            tf.setBorder(bb);
+            AquaBorderSupport.installBorder(tf, bb);
             if (!bb.isOpaque()) {
                 LookAndFeel.installProperty(editor, "opaque", false);
             }
@@ -220,9 +221,8 @@ public class AquaTextFieldUI extends AquaTextComponentUIBase implements ToolbarS
      * field (exclusive of the actual border margin) is available for editing.
      */
     public int getTextMargin() {
-        Border b = tf.getBorder();
-        if (b instanceof AquaTextFieldBorder) {
-            AquaTextFieldBorder bb = (AquaTextFieldBorder) b;
+        AquaTextFieldBorder bb = AquaBorderSupport.get(tf, AquaTextFieldBorder.class);
+        if (bb != null) {
             return bb.getTextMargin();
         }
         return 0;
@@ -245,10 +245,9 @@ public class AquaTextFieldUI extends AquaTextComponentUIBase implements ToolbarS
 
     protected Dimension getLayoutSize(LayoutOption opt) {
         Dimension size = getLayoutSizeFromText(opt);
-        Border b = tf.getBorder();
-        if (b instanceof AquaTextFieldBorder) {
-            AquaTextFieldBorder tb = (AquaTextFieldBorder) b;
-            LayoutInfo info = tb.getLayoutInfo();
+        AquaTextFieldBorder bb = AquaBorderSupport.get(tf, AquaTextFieldBorder.class);
+        if (bb != null) {
+            LayoutInfo info = bb.getLayoutInfo();
             int width = (int) Math.max(size.width, info.getMinimumVisualWidth());
             int height = (int) Math.max(size.height, info.getMinimumVisualHeight());
             return new Dimension(width, height);
@@ -261,13 +260,12 @@ public class AquaTextFieldUI extends AquaTextComponentUIBase implements ToolbarS
         Dimension td = getTextSize(opt);
         int textWidth = td.width;
         int textHeight = td.height;
-        Border b = tf.getBorder();
-        if (b instanceof AquaTextFieldBorder) {
+        AquaTextFieldBorder bb = AquaBorderSupport.get(tf, AquaTextFieldBorder.class);
+        if (bb != null) {
             // Our painter can tell us the minimum size
             // For the preferred size and maximum size, leave some extra room at the top and bottom
-            AquaTextFieldBorder tb = (AquaTextFieldBorder) b;
-            Insetter insets = tb.getTextInsets();
-            int extraHeight = opt != LayoutOption.MINIMUM ? tb.getExtraHeight() : 0;
+            Insetter insets = bb.getTextInsets();
+            int extraHeight = opt != LayoutOption.MINIMUM ? bb.getExtraHeight() : 0;
             return insets.expand(new Dimension(textWidth, textHeight + extraHeight));
         }
         Insets insets = tf.getInsets();
@@ -337,8 +335,9 @@ public class AquaTextFieldUI extends AquaTextComponentUIBase implements ToolbarS
         int height = tf.getHeight();
 
         Border b = tf.getBorder();
-
-        if (!(b instanceof AquaBackgroundBorder) && !(b instanceof AquaCellBorder)) {
+        AquaBackgroundBorder abb = AquaBorderSupport.get(b, AquaBackgroundBorder.class);
+        AquaCellBorder cb = AquaBorderSupport.get(b, AquaCellBorder.class);
+        if (abb == null && cb == null) {
             // developer must have set a custom border
 
             // The effect of this code is to make isOpaque=true the default when a custom border is used.
@@ -358,10 +357,9 @@ public class AquaTextFieldUI extends AquaTextComponentUIBase implements ToolbarS
             return;
         }
 
-        if (b instanceof AquaBackgroundBorder) {
+        if (abb != null) {
             // using our own border
-            AquaBackgroundBorder tb = (AquaBackgroundBorder) b;
-            tb.paintBackground(tf, g, background);
+            abb.paintBackground(tf, g, background);
         }
     }
 }

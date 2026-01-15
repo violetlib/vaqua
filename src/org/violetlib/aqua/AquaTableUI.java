@@ -291,7 +291,7 @@ public class AquaTableUI extends BasicTableUI
         super.installListeners();
         table.addPropertyChangeListener(propertyChangeListener);
         updateSelectionListener(null);
-        AppearanceManager.installListeners(table);
+        AppearanceManager.install(table);
         AquaUtils.installInsetViewListener(table);
     }
 
@@ -302,7 +302,7 @@ public class AquaTableUI extends BasicTableUI
             knownDropTarget = null;
         }
         AquaUtils.uninstallInsetViewListener(table);
-        AppearanceManager.uninstallListeners(table);
+        AppearanceManager.uninstall(table);
         table.getSelectionModel().removeListSelectionListener(selectionListener);
         table.removePropertyChangeListener(propertyChangeListener);
         cellEditorFocusManager.detach();
@@ -609,7 +609,7 @@ public class AquaTableUI extends BasicTableUI
 
     @Override
     public void paint(Graphics g, JComponent c) {
-        AppearanceSupport.withContext(g, c, this::paint);
+        AppearanceManager.withContext(g, c, this::paint);
     }
 
     public void paint(Graphics2D g, JComponent c, @NotNull PaintingContext pc) {

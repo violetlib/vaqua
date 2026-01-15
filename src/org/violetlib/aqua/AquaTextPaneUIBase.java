@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2025 Alan Snyder.
+ * Copyright (c) 2018-2026 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -131,11 +131,12 @@ public class AquaTextPaneUIBase extends AquaTextComponentUIBase {
                 installingBorder = true;
                 if (JavaSupport.hasOpaqueBeenExplicitlySet(editor)) {
                     // If the application set the opaque attribute, do not install our border
-                    editor.setBorder(null);
+                    AquaBorderSupport.installBorder(editor, null);
                 } else {
-                    if (!(textComponentBorder instanceof AquaBackgroundBorder)) {
+                    AquaBackgroundBorder abb = textComponentBorder != null ? AquaBorderSupport.get(textComponentBorder, AquaBackgroundBorder.class) : null;
+                    if (abb == null) {
                         Border b = new AquaTextComponentBorder(editor);
-                        editor.setBorder(b);
+                        AquaBorderSupport.installBorder(editor, b);
                     }
                 }
                 installingBorder = false;
@@ -183,13 +184,13 @@ public class AquaTextPaneUIBase extends AquaTextComponentUIBase {
 
         AquaTextComponentBorder tcb = new AquaTextComponentBorder(editor);
         installingBorder = true;
-        scrollPane.setBorder(tcb);
+        AquaBorderSupport.installBorder(scrollPane, tcb);
         LookAndFeel.installProperty(scrollPane, "opaque", Boolean.FALSE);
 
         JViewport viewport = scrollPane.getViewport();
         viewport.setOpaque(false);
 
-        editor.setBorder(null);
+        AquaBorderSupport.installBorder(editor, null);
         installingBorder = false;
     }
 
@@ -229,9 +230,9 @@ public class AquaTextPaneUIBase extends AquaTextComponentUIBase {
     @Override
     protected void paintBackgroundSafely(@NotNull Graphics g, @Nullable Color background) {
         Border b = editor.getBorder();
-        if (b instanceof AquaBackgroundBorder) {
-            AquaBackgroundBorder tb = (AquaBackgroundBorder) b;
-            tb.paintBackground(editor, g, background);
+        AquaBackgroundBorder bb = AquaBorderSupport.get(b, AquaBackgroundBorder.class);
+        if (bb != null) {
+            bb.paintBackground(editor, g, background);
         } else if (background != null && background.getAlpha() > 0 && shouldPaintBackground()) {
             int width = editor.getWidth();
             int height = editor.getHeight();

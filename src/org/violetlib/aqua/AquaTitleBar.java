@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2025 Alan Snyder.
+ * Copyright (c) 2015-2026 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -12,7 +12,7 @@ import java.awt.*;
 import java.util.Arrays;
 import javax.swing.*;
 
-import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.*;
 import org.violetlib.jnr.Insetter;
 import org.violetlib.jnr.LayoutInfo;
 import org.violetlib.jnr.aqua.*;
@@ -129,11 +129,15 @@ public class AquaTitleBar {
         return result;
     }
 
-    public void paint(@NotNull Graphics g) {
-        AquaAppearance appearance = AppearanceManager.registerCurrentAppearance(frame);
+    public void paint(Graphics g) {
+        PaintingContext pc = AppearanceManager.getCurrentPaintingContext();
+        paint((Graphics2D) g, pc);
+    }
+
+    public void paint(Graphics2D g, @NotNull PaintingContext pc) {
         boolean isSelected = AquaFocusHandler.isActive(frame) && (frame.isSelected() || widget == AquaUIPainter.TitleBarWidget.UTILITY_WINDOW);
         EffectName effect = isSelected ? EffectName.EFFECT_NONE : EffectName.EFFECT_DISABLED;
-        Color textColor = appearance.getColorForOptionalEffect("text", effect);
+        Color textColor = pc.appearance.getColorForOptionalEffect("text", effect);
         assert textColor != null;
         // paint the background and buttons
         Configuration tg = getConfiguration();

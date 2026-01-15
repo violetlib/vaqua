@@ -1,5 +1,5 @@
 /*
- * Changes Copyright (c) 2015-2025 Alan Snyder.
+ * Changes Copyright (c) 2015-2026 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -48,11 +48,12 @@ import javax.swing.plaf.MenuBarUI;
 import javax.swing.plaf.UIResource;
 import javax.swing.plaf.basic.BasicInternalFrameUI;
 
-import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.*;
 import org.violetlib.aqua.AquaUtils.RecyclableSingleton;
 import org.violetlib.jnr.NullPainter;
 import org.violetlib.jnr.Painter;
 import org.violetlib.jnr.aqua.AquaUIPainter;
+import org.violetlib.jnr.aqua.AquaUIPainter.State;
 
 /**
  * From AquaInternalFrameUI
@@ -319,17 +320,40 @@ public class AquaInternalFrameUI extends BasicInternalFrameUI implements SwingCo
 
     @Override
     public void update(Graphics g, JComponent c) {
-        AppearanceManager.registerCurrentAppearance(c);
         paint(g, c);
-        // The root pane must paint over the extra shadow
-        JRootPane rp = frame.getRootPane();
-        rp.setOpaque(true);
-        Color bc = AquaUtils.getWindowBackground(rp);
-        rp.setBackground(bc);
     }
 
     @Override
     public void paint(Graphics g, JComponent c) {
+        AppearanceManager.withContext(g, c, this::paint);
+    }
+
+    public void paint(Graphics2D g, JComponent c, @NotNull PaintingContext pc) {
+        AquaUIPainter.State state = frame.isSelected() && AquaFocusHandler.isActive(frame)
+          ? AquaUIPainter.State.ACTIVE : AquaUIPainter.State.INACTIVE;
+        AppearanceContext ac = new AppearanceContext(pc.appearance, state, false, false);
+        Color bc = getWindowBackground(ac);
+
+        // The root pane must paint over the extra shadow
+
+        JRootPane rp = frame.getRootPane();
+        rp.setOpaque(true);
+        rp.setBackground(bc);
+    }
+
+    private @NotNull Color getWindowBackground(@NotNull AppearanceContext ac)
+    {
+        String baseColor = "windowBackground";
+        JRootPane rp = frame.getRootPane();
+        if (rp != null && AquaUtils.isTextured(rp)) {
+            baseColor = "texturedWindowBackground";
+        }
+        EffectName effect = ac.getState() == State.ACTIVE ? EffectName.EFFECT_NONE : EffectName.EFFECT_DISABLED;
+        Color color = ac.getAppearance().getColorForOptionalEffect(baseColor, effect);
+        if (color == null) {
+            color = new Color(150, 150, 150);
+        }
+        return color;
     }
 
     protected void doButtonAction(JInternalFrame frame, int whichButton) {
@@ -788,7 +812,7 @@ public class AquaInternalFrameUI extends BasicInternalFrameUI implements SwingCo
                     g.drawLine(x + 2, y - 8, x + w - 2, y - 8);
                 }
             },
-            0, 7, 1.1f, 1.0f, 24, 51, 51, 25, 25, 25, 25);
+              0, 7, 1.1f, 1.0f, 24, 51, 51, 25, 25, 25, 25);
         }
 
         Border getBackgroundShadowBorder() {
@@ -804,7 +828,7 @@ public class AquaInternalFrameUI extends BasicInternalFrameUI implements SwingCo
                     g.drawLine(x, y - 11, x + w - 1, y - 11);
                 }
             },
-            0, 0, 3.0f, 1.0f, 10, 51, 51, 25, 25, 25, 25);
+              0, 0, 3.0f, 1.0f, 10, 51, 51, 25, 25, 25, 25);
         }
     };
 
@@ -816,7 +840,7 @@ public class AquaInternalFrameUI extends BasicInternalFrameUI implements SwingCo
                     g.fillRect(x, y + 3, w, h - 3);
                 }
             }, null,
-            0, 3, 1.0f, 1.0f, 10, 25, 25, 12, 12, 12, 12);
+              0, 3, 1.0f, 1.0f, 10, 25, 25, 12, 12, 12, 12);
         }
 
         Border getBackgroundShadowBorder() {
@@ -1015,10 +1039,10 @@ public class AquaInternalFrameUI extends BasicInternalFrameUI implements SwingCo
             Component c = getComponentToForwardTo(e, pt);
             if (c == null) return;
             c.dispatchEvent(new MouseWheelEvent(c, e.getID(), e.getWhen(),
-                    e.getModifiers(), pt.x, pt.y, e.getXOnScreen(), e.getYOnScreen(),
-                    e.getClickCount(), e.isPopupTrigger(), e.getScrollType(),
-                    e.getScrollAmount(), e.getWheelRotation(),
-                    e.getPreciseWheelRotation()));
+              e.getModifiers(), pt.x, pt.y, e.getXOnScreen(), e.getYOnScreen(),
+              e.getClickCount(), e.isPopupTrigger(), e.getScrollType(),
+              e.getScrollAmount(), e.getWheelRotation(),
+              e.getPreciseWheelRotation()));
         }
 
         public void componentResized(ComponentEvent e) {

@@ -152,7 +152,7 @@ public class AquaTabbedPaneUI extends AquaTabbedPaneCopyFromBasicUI
 
         AquaUtilControlSize.addSizePropertyListener(tabPane);
         OSXSystemProperties.register(tabPane);
-        AppearanceManager.installListeners(tabPane);
+        AppearanceManager.install(tabPane);
     }
 
     @Override
@@ -162,7 +162,7 @@ public class AquaTabbedPaneUI extends AquaTabbedPaneCopyFromBasicUI
             tabPane.removeMouseMotionListener((MouseMotionListener) mouseListener);
         }
 
-        AppearanceManager.uninstallListeners(tabPane);
+        AppearanceManager.uninstall(tabPane);
         AquaUtilControlSize.removeSizePropertyListener(tabPane);
         OSXSystemProperties.unregister(tabPane);
 
@@ -324,7 +324,7 @@ public class AquaTabbedPaneUI extends AquaTabbedPaneCopyFromBasicUI
 
     @Override
     public void paint(Graphics g, JComponent c) {
-        AppearanceSupport.withContext(g, c, this::paint);
+        AppearanceManager.withContext(g, c, this::paint);
     }
 
     public void paint(Graphics2D g, JComponent c, @NotNull PaintingContext pc) {

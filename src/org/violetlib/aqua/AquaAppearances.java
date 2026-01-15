@@ -27,7 +27,6 @@ import org.violetlib.vappearances.VAppearances;
 public class AquaAppearances {
     private static final @NotNull Map<String,AquaAppearance> appearances = new HashMap<>();
     private static final @NotNull String defaultAppearanceName = "NSAppearanceNameAqua";
-    public static final Object APPEARANCE_CHANGE_TYPE = "AppearanceChange";
 
     /**
      * There can be at most one set of colors for each native appearance. Currently, that means one set of colors for
@@ -38,7 +37,7 @@ public class AquaAppearances {
     private static final @NotNull Map<String,Colors> appearanceColors = new HashMap<>();
 
     static {
-        VAppearances.addEffectiveAppearanceChangeListener(AquaAppearances::appearancesChanged);
+        VAppearances.addEffectiveAppearanceChangeListener(AquaAppearances::effectiveAppearanceChanged);
     }
 
     /**
@@ -99,27 +98,12 @@ public class AquaAppearances {
         return appearance;
     }
 
-    /**
-     * Register a component whose UI is to be notified when the system appearance has changed or the colors associated
-     * with the existing system appearance may have changed.
-     */
-
-    public static void register(@NotNull JComponent jc) {
-        SystemPropertyChangeManager.register(jc);
-    }
-
-    public static void unregister(@NotNull JComponent jc) {
-        SystemPropertyChangeManager.unregister(jc);
-    }
-
-    private static void appearancesChanged(@NotNull ChangeEvent ev) {
+    private static void effectiveAppearanceChanged(@NotNull ChangeEvent ev) {
         // invoked by VAppearances on the AWT event thread
         resetNativeRendering();
         AquaImageFactory.flushAppearanceDependentImages();
         appearanceColors.clear();
-        SwingUtilities.invokeLater(() -> {
-            SystemPropertyChangeManager.notifyChange(APPEARANCE_CHANGE_TYPE);
-        });
+        // notification is not required, JRootPane gets a direct notification from the native window
     }
 
     private static void resetNativeRendering()

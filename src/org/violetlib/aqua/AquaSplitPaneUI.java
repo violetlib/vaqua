@@ -111,12 +111,12 @@ public class AquaSplitPaneUI extends BasicSplitPaneUI
         splitPane.addPropertyChangeListener(SPLIT_PANE_STYLE_KEY, this);
         splitPane.addPropertyChangeListener(QUAQUA_SPLIT_PANE_STYLE_KEY, this);
         splitPane.addContainerListener(this);
-        AppearanceManager.installListeners(splitPane);
+        AppearanceManager.install(splitPane);
     }
 
     @Override
     protected void uninstallListeners() {
-        AppearanceManager.uninstallListeners(splitPane);
+        AppearanceManager.uninstall(splitPane);
         splitPane.removeContainerListener(this);
         splitPane.removePropertyChangeListener(DIVIDER_PAINTER_KEY, this);
         splitPane.removePropertyChangeListener(SPLIT_PANE_STYLE_KEY, this);
@@ -167,11 +167,11 @@ public class AquaSplitPaneUI extends BasicSplitPaneUI
             }
             int gap = 7;
             if (newOption == SIDEBAR_LEFT) {
-                splitPane.setBorder(new EmptyBorder(gap, gap, gap, 0));
+                AquaBorderSupport.installBorder(splitPane, new EmptyBorder(gap, gap, gap, 0));
             } else if (newOption == SIDEBAR_RIGHT) {
-                splitPane.setBorder(new EmptyBorder(gap, 0, gap, gap));
+                AquaBorderSupport.installBorder(splitPane, new EmptyBorder(gap, 0, gap, gap));
             } else {
-                splitPane.setBorder(originalBorder);
+                AquaBorderSupport.installBorder(splitPane, originalBorder);
             }
         }
     }
@@ -468,7 +468,7 @@ public class AquaSplitPaneUI extends BasicSplitPaneUI
 
     @Override
     public void paint(Graphics g, JComponent c) {
-        AppearanceSupport.withContext(g, c, this::paint);
+        AppearanceManager.withContext(g, c, this::paint);
     }
 
     public void paint(Graphics2D g, JComponent c, @NotNull PaintingContext pc) {
@@ -531,9 +531,10 @@ public class AquaSplitPaneUI extends BasicSplitPaneUI
             if (prop.equals(DIVIDER_PAINTER_KEY)) {
                 Object value = evt.getNewValue();
                 if (value instanceof Border) {
-                    divider.setBorder((Border)value);
+                    Border b = (Border) value;
+                    AquaBorderSupport.installBorder(divider, b);
                 } else {
-                    divider.setBorder(null);
+                    AquaBorderSupport.installBorder(divider, null);
                 }
             } else if (isStyleProperty(prop)) {
                 updateStyle();

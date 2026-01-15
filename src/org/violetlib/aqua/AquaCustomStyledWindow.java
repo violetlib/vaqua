@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2025 Alan Snyder.
+ * Copyright (c) 2015-2026 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -18,11 +18,11 @@ import javax.swing.border.AbstractBorder;
 import javax.swing.border.Border;
 import javax.swing.plaf.UIResource;
 
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.*;
 
 import static org.violetlib.aqua.AquaUtils.*;
-import static org.violetlib.aqua.OSXSystemProperties.*;
+import static org.violetlib.aqua.OSXSystemProperties.OSVersion;
+import static org.violetlib.aqua.OSXSystemProperties.macOS11;
 
 /**
  * This class supports custom window styles that use the NSView full content view option on a decorated window. In all
@@ -72,7 +72,7 @@ public class AquaCustomStyledWindow {
     public static class RequiredToolBarNotFoundException extends IllegalArgumentException {
         public RequiredToolBarNotFoundException() {
             super("Window content pane must contain a non-floatable JToolBar or a toolbar panel identified by "
-                    + TOOLBAR_PANEL_PROPERTY + "=true");
+              + TOOLBAR_PANEL_PROPERTY + "=true");
         }
     }
 
@@ -150,7 +150,7 @@ public class AquaCustomStyledWindow {
      *  pane is not a JComponent, or a required JToolBar or toolbar panel is not found.
      */
     public AquaCustomStyledWindow(@NotNull Window w, int style, int declaredTopMarginHeight, int declaredBottomMarginHeight)
-            throws IllegalArgumentException {
+      throws IllegalArgumentException {
 
         boolean isDecorated = AquaUtils.isDecorated(w);
         if (style == STYLE_UNDECORATED) {
@@ -268,8 +268,8 @@ public class AquaCustomStyledWindow {
 
     public boolean isValid(int style, int declaredTopMarginHeight, int declaredBottomMarginHeight) {
         return style == this.style
-                && declaredTopMarginHeight == this.declaredTopMarginHeight
-                && declaredBottomMarginHeight == this.declaredBottomMarginHeight;
+          && declaredTopMarginHeight == this.declaredTopMarginHeight
+          && declaredBottomMarginHeight == this.declaredBottomMarginHeight;
     }
 
     public boolean isTextured() {
@@ -356,7 +356,7 @@ public class AquaCustomStyledWindow {
     }
 
     protected void installToolbarBorder(JComponent tb) {
-        Border b = tb.getBorder();
+        Border b = AquaBorderSupport.getBorder(tb);
         if (b == null || b instanceof UIResource) {
             int version = AquaPainting.getVersion();
             boolean isTall = AquaToolBarUI.isTallFormatToolBar(tb);
@@ -364,29 +364,29 @@ public class AquaCustomStyledWindow {
             int top = 4;
             int bottom = isTall && version < 1500 ? 0 : 4;
             if (style == STYLE_UNIFIED) {
-                tb.setBorder(new CustomToolbarBorder(left, TITLE_BAR_HEIGHT, bottom));
+                AquaBorderSupport.installBorder(tb, new CustomToolbarBorder(left, TITLE_BAR_HEIGHT, bottom));
             } else if (style == STYLE_COMBINED) {
-                tb.setBorder(new CustomToolbarBorder(TITLE_BAR_BUTTONS_WIDTH, top, bottom));
+                AquaBorderSupport.installBorder(tb, new CustomToolbarBorder(TITLE_BAR_BUTTONS_WIDTH, top, bottom));
             } else if (style == STYLE_TEXTURED_HIDDEN){
-                tb.setBorder(new CustomToolbarBorder(left, top, bottom));
+                AquaBorderSupport.installBorder(tb, new CustomToolbarBorder(left, top, bottom));
             }
         }
     }
 
     protected void installContentPaneBorder(JComponent c, int top, int left, int bottom, int right) {
-        Border b = c.getBorder();
+        Border b = AquaBorderSupport.getBorder(c);
         if (b == null || b instanceof UIResource) {
-            c.setBorder(new CustomContentPaneBorder(top, left, bottom, right));
+            AquaBorderSupport.installBorder(c, new CustomContentPaneBorder(top, left, bottom, right));
         }
     }
 
     protected void resetBorder(JComponent c) {
-        Border b = c.getBorder();
+        Border b = AquaBorderSupport.getBorder(c);
         if (b == null || b instanceof UIResource) {
             if (c instanceof JToolBar) {
-                c.setBorder(AquaToolBarUI.getToolBarBorder((JToolBar) c));
+                AquaBorderSupport.installBorder(c, AquaToolBarUI.getToolBarBorder((JToolBar) c));
             } else {
-                c.setBorder(null);
+                AquaBorderSupport.installBorder(c, null);
             }
         }
     }
@@ -609,8 +609,8 @@ public class AquaCustomStyledWindow {
     }
 
     protected class CustomBorderBase
-            extends AbstractBorder
-            implements UIResource {
+      extends AbstractBorder
+      implements UIResource {
     }
 
     protected class CustomContentPaneBorder extends CustomBorderBase {

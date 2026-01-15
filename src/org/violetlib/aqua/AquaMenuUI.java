@@ -97,13 +97,13 @@ public class AquaMenuUI extends BasicMenuUI implements AquaComponentUI {
     protected void installListeners() {
         super.installListeners();
         assert menu != null;
-        AppearanceManager.installListeners(menu);
+        AppearanceManager.install(menu);
     }
 
     @Override
     protected void uninstallListeners() {
         assert menu != null;
-        AppearanceManager.uninstallListeners(menu);
+        AppearanceManager.uninstall(menu);
         super.uninstallListeners();
     }
 
@@ -127,7 +127,7 @@ public class AquaMenuUI extends BasicMenuUI implements AquaComponentUI {
 
     @Override
     public void paint(Graphics g, JComponent c) {
-        AppearanceSupport.withContext(g, c, this::paint);
+        AppearanceManager.withContext(g, c, this::paint);
     }
 
     public void paint(Graphics2D g, JComponent c, @NotNull PaintingContext pc) {

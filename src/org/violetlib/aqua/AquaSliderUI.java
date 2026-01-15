@@ -123,11 +123,11 @@ public class AquaSliderUI extends BasicSliderUI
         s.addPropertyChangeListener(propertyChangeListener);
         AquaUtilControlSize.addSizePropertyListener(s);
         OSXSystemProperties.register(s);
-        AppearanceManager.installListeners(s);
+        AppearanceManager.install(s);
     }
 
     protected void uninstallListeners(JSlider s) {
-        AppearanceManager.uninstallListeners(s);
+        AppearanceManager.uninstall(s);
         AquaUtilControlSize.removeSizePropertyListener(s);
         s.removePropertyChangeListener(propertyChangeListener);
         propertyChangeListener = null;
@@ -257,7 +257,7 @@ public class AquaSliderUI extends BasicSliderUI
 
     @Override
     public void paint(Graphics g, JComponent c) {
-        AppearanceSupport.withContext(g, c, this::paint);
+        AppearanceManager.withContext(g, c, this::paint);
     }
 
     public void paint(Graphics2D g, JComponent c, @NotNull PaintingContext pc) {

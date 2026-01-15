@@ -41,12 +41,12 @@ public class AquaTreeTableUI extends BasicTreeTableUI implements AquaComponentUI
     @Override
     protected void installListeners() {
         super.installListeners();
-        AppearanceManager.installListeners(treeTable);
+        AppearanceManager.install(treeTable);
     }
 
     @Override
     protected void uninstallListeners() {
-        AppearanceManager.uninstallListeners(treeTable);
+        AppearanceManager.uninstall(treeTable);
         super.uninstallListeners();
     }
 
@@ -173,7 +173,7 @@ public class AquaTreeTableUI extends BasicTreeTableUI implements AquaComponentUI
 
     @Override
     public void paint(Graphics g, JComponent c) {
-        AppearanceSupport.withContext(g, c, this::paint);
+        AppearanceManager.withContext(g, c, this::paint);
     }
 
     public void paint(Graphics2D g, JComponent c, @NotNull PaintingContext pc) {

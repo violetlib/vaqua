@@ -72,12 +72,12 @@ public class AquaPanelUI extends BasicPanelUI implements AquaComponentUI {
         AquaVibrantSupport.installVibrantStyle(c);
         c.addPropertyChangeListener(propertyChangeListener);
         updateStyle(c);
-        AppearanceManager.installListeners(c);
+        AppearanceManager.install(c);
     }
 
     @Override
     public void uninstallUI(JComponent c) {
-        AppearanceManager.uninstallListeners(c);
+        AppearanceManager.uninstall(c);
         c.removePropertyChangeListener(propertyChangeListener);
         AquaVibrantSupport.uninstallVibrantStyle(c);
         super.uninstallUI(c);
@@ -104,7 +104,7 @@ public class AquaPanelUI extends BasicPanelUI implements AquaComponentUI {
 
     @Override
     public void paint(@NotNull Graphics g, @NotNull JComponent c) {
-        AppearanceSupport.withContext(g, c, this::paint);
+        AppearanceManager.withContext(g, c, this::paint);
     }
 
     public void paint(Graphics2D g, JComponent c, @NotNull PaintingContext pc)
@@ -140,9 +140,9 @@ public class AquaPanelUI extends BasicPanelUI implements AquaComponentUI {
     protected void updateStyle(JComponent c) {
         c.repaint();
 
-        Border b = c.getBorder();
+        Border b = AquaBorderSupport.getBorder(c);
         if (b == null || b instanceof UIResource) {
-            c.setBorder(getDefaultBorder(c));
+            AquaBorderSupport.installBorder(c, getDefaultBorder(c));
         }
     }
 

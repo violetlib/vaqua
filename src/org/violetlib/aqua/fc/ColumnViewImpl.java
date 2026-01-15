@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014-2025 Alan Snyder.
+ * Copyright (c) 2014-2026 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -23,6 +23,7 @@ import javax.swing.event.TreeSelectionListener;
 import javax.swing.tree.TreePath;
 import javax.swing.tree.TreeSelectionModel;
 
+import org.violetlib.aqua.AquaBorderSupport;
 import org.violetlib.aqua.AquaUtils;
 
 import static org.violetlib.aqua.OSXSystemProperties.OSVersion;
@@ -77,7 +78,7 @@ public class ColumnViewImpl extends ColumnView {
 
         browserScrollPane = new JScrollPane();
         browserScrollPane.setViewport(new BrowserViewport());
-        browserScrollPane.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 0));
+        AquaBorderSupport.installBorder(browserScrollPane, BorderFactory.createEmptyBorder(0, 0, 0, 0));
         browserScrollPane.setViewportView(browser);
         browserScrollPane.putClientProperty("Quaqua.Component.visualMargin", new Insets(3, 2, 3, 2));
         //browserScrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_ALWAYS);

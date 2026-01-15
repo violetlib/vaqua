@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2021 Alan Snyder.
+ * Copyright (c) 2018-2026 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -38,7 +38,7 @@ import javax.swing.*;
 import javax.swing.plaf.ComponentUI;
 import javax.swing.plaf.basic.BasicToolTipUI;
 
-import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.*;
 import org.violetlib.aqua.AquaUtils.RecyclableSingletonFromDefaultConstructor;
 import org.violetlib.jnr.aqua.AquaUIPainter;
 
@@ -66,9 +66,17 @@ public class AquaToolTipUI extends BasicToolTipUI implements AquaComponentUI {
 
     @Override
     public void update(Graphics g, JComponent c) {
-        AquaAppearance appearance = AppearanceManager.registerCurrentAppearance(c);
+        paint(g, c);
+    }
+
+    @Override
+    public void paint(Graphics g, JComponent c) {
+        AppearanceManager.withContext(g, c, this::paint);
+    }
+
+    public void paint(Graphics2D g, JComponent c, @NotNull PaintingContext pc) {
         AquaUIPainter.State state = AquaUIPainter.State.ACTIVE;
-        AppearanceContext context = new AppearanceContext(appearance, state, false, false);
+        AppearanceContext context = new AppearanceContext(pc.appearance, state, false, false);
         AquaColors.installColors(c, context, colors);
         super.update(g, c);
     }

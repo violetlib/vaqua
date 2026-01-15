@@ -52,8 +52,7 @@ import static org.violetlib.aqua.AquaVibrantSupport.NO_VIBRANT_STYLE;
 import static org.violetlib.aqua.AquaVibrantSupport.WINDOW_BACKGROUND_STYLE;
 import static org.violetlib.aqua.OSXSystemProperties.OSVersion;
 
-public class AquaRootPaneUI extends BasicRootPaneUI implements AquaComponentUI,
-  SystemPropertyChangeManager.SystemPropertyChangeListener {
+public class AquaRootPaneUI extends BasicRootPaneUI implements AquaComponentUI {
 
     public final static String AQUA_WINDOW_STYLE_KEY = "Aqua.windowStyle";
     public final static String AQUA_WINDOW_TOP_MARGIN_KEY = "Aqua.windowTopMargin";
@@ -154,18 +153,16 @@ public class AquaRootPaneUI extends BasicRootPaneUI implements AquaComponentUI,
         super.installListeners(root);
         hierarchyListener = new WindowHierarchyListener();
         root.addHierarchyListener(hierarchyListener);
-        AquaAppearances.register(root);
         ancestorListener = new MyAncestorListener();
         root.addAncestorListener(ancestorListener);
         windowListener = new MyWindowListener();
-        AppearanceManager.installListeners(root);
+        AppearanceManager.install(root);
     }
 
     @Override
     protected void uninstallListeners(JRootPane root)
     {
-        AppearanceManager.uninstallListeners(root);
-        AquaAppearances.unregister(root);
+        AppearanceManager.uninstall(root);
         root.removeHierarchyListener(hierarchyListener);
         hierarchyListener = null;
         root.removeAncestorListener(ancestorListener);
@@ -179,14 +176,6 @@ public class AquaRootPaneUI extends BasicRootPaneUI implements AquaComponentUI,
         if (windowStylePropertyChangeListener != null) {
             root.removePropertyChangeListener(windowStylePropertyChangeListener);
             windowStylePropertyChangeListener = null;
-        }
-    }
-
-    @Override
-    public void systemPropertyChanged(JComponent c, Object type) {
-        if (type.equals(AquaAppearances.APPEARANCE_CHANGE_TYPE)) {
-            AquaAppearance a = AquaAppearances.getDefaultAppearance();
-            appearanceChanged(rootPane, a);
         }
     }
 
@@ -351,7 +340,7 @@ public class AquaRootPaneUI extends BasicRootPaneUI implements AquaComponentUI,
             configure();
         }
 
-        AppearanceSupport.withContext(g, c, this::paint);
+        AppearanceManager.withContext(g, c, this::paint);
     }
 
     public void paint(Graphics2D g, JComponent c, @NotNull PaintingContext pc)
@@ -559,7 +548,7 @@ public class AquaRootPaneUI extends BasicRootPaneUI implements AquaComponentUI,
     protected void configureLayeredPane()
     {
         JLayeredPane layeredPane = rootPane.getLayeredPane();
-        AppearanceManager.installListeners(layeredPane);
+        AppearanceManager.install(layeredPane);
         if (sUseScreenMenuBar) {
             layeredPane.addContainerListener(containerListener);
         }
@@ -568,7 +557,7 @@ public class AquaRootPaneUI extends BasicRootPaneUI implements AquaComponentUI,
     protected void unconfigureLayeredPane()
     {
         JLayeredPane layeredPane = rootPane.getLayeredPane();
-        AppearanceManager.uninstallListeners(layeredPane);
+        AppearanceManager.uninstall(layeredPane);
         if (sUseScreenMenuBar) {
             layeredPane.removeContainerListener(containerListener);
         }

@@ -175,8 +175,9 @@ public class AquaScrollPaneUI extends BasicScrollPaneUI
     protected void installDefaults(JScrollPane scrollpane) {
         Border b = scrollpane.getBorder();
         super.installDefaults(scrollpane);
-        if (b instanceof AquaTextComponentBorder) {
-            scrollpane.setBorder(b);
+        AquaTextComponentBorder tcb = AquaBorderSupport.get(b, AquaTextComponentBorder.class);
+        if (tcb != null) {
+            AquaBorderSupport.installBorder(scrollpane, tcb);
         }
 
         originalHorizontalScrollBar = scrollpane.getHorizontalScrollBar();
@@ -201,7 +202,7 @@ public class AquaScrollPaneUI extends BasicScrollPaneUI
         c.addPropertyChangeListener(propertyChangeListener);
         OSXSystemProperties.register(c);
         AquaUtilControlSize.addSizePropertyListener(c);
-        AppearanceManager.installListeners(c);
+        AppearanceManager.install(c);
     }
 
     @Override
@@ -214,7 +215,7 @@ public class AquaScrollPaneUI extends BasicScrollPaneUI
             interposedContainer.dispose();
             interposedContainer = null;
         }
-        AppearanceManager.uninstallListeners(c);
+        AppearanceManager.uninstall(c);
         AquaUtilControlSize.removeSizePropertyListener(c);
         OSXSystemProperties.unregister(c);
         c.removePropertyChangeListener(propertyChangeListener);
@@ -253,8 +254,8 @@ public class AquaScrollPaneUI extends BasicScrollPaneUI
     @Override
     public @Nullable Shape getFocusRingOutline(@NotNull JComponent c) {
         Border b = c.getBorder();
-        if (b instanceof FocusRingOutlineProvider) {
-            FocusRingOutlineProvider p = (FocusRingOutlineProvider) b;
+        FocusRingOutlineProvider p = AquaBorderSupport.get(b, FocusRingOutlineProvider.class);
+        if (p != null) {
             return p.getFocusRingOutline(c);
         }
         return AquaDefaultFocusRingProvider.getDefaultFocusRing(c);
@@ -271,7 +272,7 @@ public class AquaScrollPaneUI extends BasicScrollPaneUI
 
     @Override
     public void paint(Graphics g, JComponent c) {
-        AppearanceSupport.withContext(g, c, this::paint);
+        AppearanceManager.withContext(g, c, this::paint);
     }
 
     public void paint(Graphics2D g, JComponent c, @NotNull PaintingContext pc) {
@@ -279,8 +280,6 @@ public class AquaScrollPaneUI extends BasicScrollPaneUI
         AquaUIPainter.State state = getState();
         appearanceContext = new AppearanceContext(pc.appearance, state, false, false);
         updateThumbStyle();
-
-        AppearanceManager.registerCurrentAppearance(c);
 
         // This check is necessary because we are not informed when a new layout manager is installed in the scroll
         // pane. It may change the selected style.
@@ -291,8 +290,8 @@ public class AquaScrollPaneUI extends BasicScrollPaneUI
         updateScrollbarStyles();
 
         Border b = c.getBorder();
-        if (b instanceof AquaTextComponentBorder) {
-            AquaTextComponentBorder tcb = (AquaTextComponentBorder) b;
+        AquaTextComponentBorder tcb = AquaBorderSupport.get(b, AquaTextComponentBorder.class);
+        if (tcb != null) {
             tcb.paintBackground(c, g, null);
             g = (Graphics2D) g.create();
         } else if (sidebarContainerSupport != null) {
@@ -640,9 +639,9 @@ public class AquaScrollPaneUI extends BasicScrollPaneUI
 
             boolean isLegacySidebar = isSidebar() && !isOverlayScrollBars;
             Border border = isLegacySidebar ? legacySidebarBorder : null;
-            Border existingBorder = bar.getBorder();
+            Border existingBorder = AquaBorderSupport.getBorder(bar);
             if (!Objects.equals(border, existingBorder)) {
-                bar.setBorder(border);
+                AquaBorderSupport.installBorder(bar, border);
             }
 
             bar.revalidate();

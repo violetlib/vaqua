@@ -132,7 +132,7 @@ public class AquaScrollBarUI extends ScrollBarUI implements AquaComponentUI {
         fScrollBar.addMouseMotionListener(fTrackListener);
         fScrollBar.getModel().addChangeListener(fModelListener);
         fScrollBar.addPropertyChangeListener(fPropertyChangeListener);
-        AppearanceManager.installListeners(fScrollBar);
+        AppearanceManager.install(fScrollBar);
         fScrollListener = createScrollListener();
         fScrollTimer = new Timer(kNormalDelay, fScrollListener);
         fScrollTimer.setInitialDelay(kInitialDelay); // default InitialDelay?
@@ -141,7 +141,7 @@ public class AquaScrollBarUI extends ScrollBarUI implements AquaComponentUI {
     protected void uninstallListeners() {
         fScrollTimer.stop();
         fScrollTimer = null;
-        AppearanceManager.uninstallListeners(fScrollBar);
+        AppearanceManager.uninstall(fScrollBar);
         fScrollBar.getModel().removeChangeListener(fModelListener);
         fScrollBar.removeMouseListener(fTrackListener);
         fScrollBar.removeMouseMotionListener(fTrackListener);
@@ -170,7 +170,6 @@ public class AquaScrollBarUI extends ScrollBarUI implements AquaComponentUI {
 
     @Override
     public void update(Graphics g, JComponent c) {
-        AppearanceManager.registerCurrentAppearance(c);
         super.update(g, c);
     }
 

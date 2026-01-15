@@ -104,12 +104,12 @@ public class AquaTableHeaderUI extends BasicTableHeaderUI implements AquaCompone
         super.installListeners();
         propertyChangeListener = new AquaPropertyChangeListener();
         header.addPropertyChangeListener(propertyChangeListener);
-        AppearanceManager.installListeners(header);
+        AppearanceManager.install(header);
     }
 
     @Override
     protected void uninstallListeners() {
-        AppearanceManager.uninstallListeners(header);
+        AppearanceManager.uninstall(header);
         header.removePropertyChangeListener(propertyChangeListener);
         propertyChangeListener = null;
         super.uninstallListeners();
@@ -150,7 +150,7 @@ public class AquaTableHeaderUI extends BasicTableHeaderUI implements AquaCompone
 
     @Override
     public void paint(Graphics g, JComponent c) {
-        AppearanceSupport.withContext(g, c, this::paint);
+        AppearanceManager.withContext(g, c, this::paint);
     }
 
     public void paint(Graphics2D g, JComponent c, @NotNull PaintingContext pc) {

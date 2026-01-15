@@ -195,7 +195,7 @@ public class AquaSpinnerUI extends SpinnerUI implements AquaComponentUI, AquaUti
 
     @Override
     public void paint(Graphics g, JComponent c) {
-        AppearanceSupport.withContext(g, c, this::paint);
+        AppearanceManager.withContext(g, c, this::paint);
     }
 
     public void paint(Graphics2D g, JComponent c, @NotNull PaintingContext pc) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Alan Snyder.
+ * Copyright (c) 2025-2026 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -50,8 +50,8 @@ public class SidebarContainerSupport
     public SidebarContainerSupport(@NotNull JComponent container)
     {
         this.container = container;
-        oldBorder = container.getBorder();
-        container.setBorder(this);
+        oldBorder = AquaBorderSupport.getBorder(container);
+        AquaBorderSupport.installBorder(container, this);
         updateSplitPaneParent();
         container.addHierarchyListener(myHierarchyListener);
     }
@@ -90,7 +90,7 @@ public class SidebarContainerSupport
 
     public void uninstall()
     {
-        container.setBorder(oldBorder);
+        AquaBorderSupport.installBorder(container, oldBorder);
         container.removeHierarchyListener(myHierarchyListener);
         if (configuredSplitPaneUI != null) {
             configuredSplitPaneUI.configureAsSidebar(0);

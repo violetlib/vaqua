@@ -116,11 +116,11 @@ public class AquaProgressBarUI
         progressBar.addPropertyChangeListener(this); // Listen for changes between determinate and indeterminate state
         progressBar.addAncestorListener(this);
         AquaUtilControlSize.addSizePropertyListener(progressBar);
-        AppearanceManager.installListeners(progressBar);
+        AppearanceManager.install(progressBar);
     }
 
     protected void uninstallListeners() {
-        AppearanceManager.uninstallListeners(progressBar);
+        AppearanceManager.uninstall(progressBar);
         AquaUtilControlSize.removeSizePropertyListener(progressBar);
         progressBar.removeAncestorListener(this);
         progressBar.removePropertyChangeListener(this);
@@ -205,7 +205,7 @@ public class AquaProgressBarUI
 
     @Override
     public void paint(Graphics g, JComponent c) {
-        AppearanceSupport.withContext(g, c, this::paint);
+        AppearanceManager.withContext(g, c, this::paint);
     }
 
     public void paint(Graphics2D g, JComponent c, @NotNull PaintingContext pc) {
