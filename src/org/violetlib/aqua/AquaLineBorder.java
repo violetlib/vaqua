@@ -1,5 +1,5 @@
 /*
- * Changes copyright (c) 2018 Alan Snyder.
+ * Changes copyright (c) 2018-2026 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -34,26 +34,28 @@
 package org.violetlib.aqua;
 
 import java.awt.*;
-import javax.swing.border.Border;
+import javax.swing.*;
 
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.*;
 
 /**
  * The class renders a line border using an appearance based color.
  */
-public class AquaLineBorder implements Border {
+public final class AquaLineBorder
+  extends AquaBorder
+{
+    private static final @NotNull Insets borderInsets = new Insets(1, 1, 1, 1);
 
-    private static final Insets borderInsets = new Insets(1, 1, 1, 1);
+    private final @NotNull String colorName;
 
-    private final String colorName;
-
-    public AquaLineBorder(@NotNull String colorName) {
+    public AquaLineBorder(@NotNull String colorName)
+    {
         this.colorName = colorName;
     }
 
     @Override
-    public void paintBorder(Component c, Graphics g, int x, int y, int width, int height) {
+    protected void paint(@NotNull JComponent c, @NotNull Graphics2D g, int x, int y, int width, int height)
+    {
         Color color = getColor(c);
         if (color == null) {
             color = Color.gray;
@@ -66,18 +68,15 @@ public class AquaLineBorder implements Border {
         g.fillRect(x + width - 1, y+1, 1, height-2);
     }
 
-    protected @Nullable Color getColor(@NotNull Component c) {
-        AquaAppearance appearance = AppearanceManager.getAppearance(c);
+    private @Nullable Color getColor(@NotNull Component c)
+    {
+        AquaAppearance appearance = AppearanceManager.getCurrentAppearance();
         return appearance.getColor(colorName);
     }
 
     @Override
-    public @NotNull Insets getBorderInsets(Component c) {
+    public @NotNull Insets getBorderInsets(Component c)
+    {
         return borderInsets;
-    }
-
-    @Override
-    public boolean isBorderOpaque() {
-        return false;
     }
 }

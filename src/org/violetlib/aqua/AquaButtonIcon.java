@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2025 Alan Snyder.
+ * Copyright (c) 2016-2026 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -13,8 +13,7 @@ import java.awt.image.ImageObserver;
 import javax.swing.*;
 import javax.swing.plaf.UIResource;
 
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.*;
 
 /**
  * An icon for a button whose rendering may depend upon the widget, state, button state, and appearance. The
@@ -24,7 +23,7 @@ import org.jetbrains.annotations.Nullable;
 public class AquaButtonIcon implements Icon, UIResource, ImageObserver {
 
     public interface ImageOperatorSupplier {
-        @Nullable Object getCurrentImageProcessingOperator(@NotNull AbstractButton b, boolean isTemplate);
+        @Nullable Object getCurrentImageProcessingOperator(@NotNull AbstractButton b, boolean isTemplate, @NotNull PaintingContext pc);
     }
 
     private final @NotNull AbstractButton b;
@@ -62,14 +61,13 @@ public class AquaButtonIcon implements Icon, UIResource, ImageObserver {
     public void paintIcon(Component c, Graphics g, int x, int y) {
         Icon icon = b.getIcon();
         if (icon != null) {
-            Object operator = operatorSupplier.getCurrentImageProcessingOperator(b, isTemplate);
+            PaintingContext pc = PaintingContext.getDefault();
+            Object operator = operatorSupplier.getCurrentImageProcessingOperator(b, isTemplate, pc);
             icon = AquaImageFactory.getProcessedImage(icon, operator);
-            if (icon != null) {
-                // Using the button as the image observer can fail because it aborts drawing the image if the button
-                // does not recognize the image as the proper image for the button in its current state, and its ability
-                // to recognize images is not flexible enough for our usage.
-                icon.paintIcon(c, g, x, y);
-            }
+            // Using the button as the image observer can fail because it aborts drawing the image if the button
+            // does not recognize the image as the proper image for the button in its current state, and its ability
+            // to recognize images is not flexible enough for our usage.
+            icon.paintIcon(c, g, x, y);
         }
     }
 

@@ -1,5 +1,5 @@
 /*
- * Changes Copyright (c) 2015-2025 Alan Snyder.
+ * Changes Copyright (c) 2015-2026 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -91,7 +91,9 @@ public class AquaSegmentedButtonBorder extends AquaButtonBorder implements Focus
     }
 
     @Override
-    public @Nullable GenericButtonConfiguration getConfiguration(@NotNull AbstractButton b, int width, int height) {
+    public @Nullable GenericButtonConfiguration getConfiguration(@NotNull AbstractButton b,
+                                                                 @NotNull PaintingContext pc,
+                                                                 int width, int height) {
         SegmentedButtonLayoutConfiguration g = (SegmentedButtonLayoutConfiguration) getLayoutConfiguration(b);
         if (g == null) {
             // should not happen

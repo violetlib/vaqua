@@ -156,28 +156,29 @@ public class AquaScrollBarUI extends ScrollBarUI implements AquaComponentUI {
         return new ModelListener();
     }
 
-    @Override
-    public void appearanceChanged(@NotNull JComponent c, @NotNull AquaAppearance appearance) {
-    }
-
-    @Override
-    public void activeStateChanged(@NotNull JComponent c, boolean isActive) {
-    }
-
     protected void configureScrollBarColors() {
         LookAndFeel.installColors(fScrollBar, "ScrollBar.background", "ScrollBar.foreground");
     }
 
     @Override
     public void update(Graphics g, JComponent c) {
-        super.update(g, c);
+        paint(g, c);
     }
 
     @Override
     public void paint(Graphics g, JComponent c) {
+        AppearanceManager.withContext(g, c, this::paint);
+    }
+
+    public void paint(Graphics2D g, JComponent c, @NotNull PaintingContext pc) {
 
         if (alpha == 0) {
             return;
+        }
+
+        if (c.isOpaque()) {
+            g.setColor(c.getBackground());
+            g.fillRect(0, 0, c.getWidth(),c.getHeight());
         }
 
         int width = fScrollBar.getWidth();
@@ -186,7 +187,7 @@ public class AquaScrollBarUI extends ScrollBarUI implements AquaComponentUI {
         int x = 0;
         int y = 0;
 
-        if (bg.getWidget() == LEGACY_SIDEBAR && bg.isTrackSuppressed() && AquaPainting.isSidebarVibrant()) {
+        if (bg.getWidget() == LEGACY_SIDEBAR && bg.isTrackSuppressed() && AquaPainting.isSidebarVibrant(fScrollBar)) {
             // The track is part of the sidebar, which means it must reveal the vibrant background.
             AquaUtils.fillRect(g, null, 0, 0, width, height);
         }
@@ -217,9 +218,8 @@ public class AquaScrollBarUI extends ScrollBarUI implements AquaComponentUI {
             }
         }
 
-        AquaUtils.configure(painter, c, width, height);
+        AquaUtils.configure(painter, pc.appearance, c, width, height);
         Painter p = painter.getPainter(bg);
-
         p.paint(g, x, y);
 
         if (gg != null) {
@@ -429,13 +429,13 @@ public class AquaScrollBarUI extends ScrollBarUI implements AquaComponentUI {
         } else if (value > 1) {
             return ScrollBarPart.TRACK_MAX;
         } else {
-            int width = fScrollBar.getWidth();
-            int height = fScrollBar.getHeight();
-            AquaUtils.configure(painter, fScrollBar, width, height);
             ScrollBarConfiguration g = getLayoutConfiguration(false);
             boolean isHorizontal = isHorizontal();
             int c = isHorizontal ? x : y;
             ScrollBarThumbConfiguration tg = new ScrollBarThumbConfiguration(g, c);
+            int width = fScrollBar.getWidth();
+            int height = fScrollBar.getHeight();
+            AquaUtils.configure(painter, null, fScrollBar, width, height);
             int pos = painter.getScrollBarThumbHit(tg);
             switch (pos) {
                 case -1:        return ScrollBarPart.TRACK_MIN;
@@ -462,7 +462,7 @@ public class AquaScrollBarUI extends ScrollBarUI implements AquaComponentUI {
         Orientation o = getScrollBarOrientation();
         float extent = getCurrentThumbExtent();
         ScrollBarThumbLayoutConfiguration g = new ScrollBarThumbLayoutConfiguration(sw, size, o, extent, c);
-        AquaUtils.configure(painter, fScrollBar, width, height);
+        AquaUtils.configure(painter, null, fScrollBar, width, height);
         return painter.getScrollBarThumbPosition(g, false);
     }
 
@@ -684,7 +684,7 @@ public class AquaScrollBarUI extends ScrollBarUI implements AquaComponentUI {
 
             int deltaTrackPosition = coordinate - fHitTrackPosition;
             int newThumbTrackPosition = fFirstThumbTrackPosition + deltaTrackPosition;
-            AquaUtils.configure(painter, fScrollBar, fScrollBar.getWidth(), fScrollBar.getHeight());
+            AquaUtils.configure(painter, null, fScrollBar, fScrollBar.getWidth(), fScrollBar.getHeight());
             ScrollBarThumbLayoutConfiguration g = new ScrollBarThumbLayoutConfiguration(sw, size, o, extent, newThumbTrackPosition);
             float newExtendedThumbPosition = painter.getScrollBarThumbPosition(g, useExtent);
             if (isHoriz && !AquaUtils.isLeftToRight(fScrollBar)) {

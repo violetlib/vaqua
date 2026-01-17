@@ -38,11 +38,9 @@ import java.awt.event.*;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
 import java.beans.PropertyVetoException;
-
 import javax.swing.*;
-import javax.swing.plaf.*;
-
-import org.jetbrains.annotations.NotNull;
+import javax.swing.plaf.ComponentUI;
+import javax.swing.plaf.DesktopIconUI;
 
 /**
  * From MacDockIconUI
@@ -52,7 +50,7 @@ import org.jetbrains.annotations.NotNull;
  * @version
  */
 public class AquaInternalFrameDockIconUI extends DesktopIconUI
-        implements MouseListener, MouseMotionListener, ComponentListener, AquaComponentUI {
+  implements MouseListener, MouseMotionListener, ComponentListener, AquaComponentUI {
     private static final String CACHED_FRAME_ICON_KEY = "apple.laf.internal.frameIcon";
 
     protected JInternalFrame.JDesktopIcon fDesktopIcon;
@@ -100,14 +98,6 @@ public class AquaInternalFrameDockIconUI extends DesktopIconUI
         fFrame.removeComponentListener(this);
         fDesktopIcon.removeMouseMotionListener(this);
         fDesktopIcon.removeMouseListener(this);
-    }
-
-    @Override
-    public void appearanceChanged(@NotNull JComponent c, @NotNull AquaAppearance appearance) {
-    }
-
-    @Override
-    public void activeStateChanged(@NotNull JComponent c, boolean isActive) {
     }
 
     @Override

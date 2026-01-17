@@ -48,7 +48,7 @@ import static org.violetlib.aqua.OSXSystemProperties.macOS11;
  *
  * Original author: Werner Randelshofer
  */
-public class AquaFileChooserUI extends BasicFileChooserUI implements AquaComponentUI {
+public class AquaFileChooserUI extends BasicFileChooserUI implements ActiveSensitiveComponentUI {
     // Implementation derived from MetalFileChooserUI
 
     /*
@@ -1320,11 +1320,6 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements AquaCompone
 
     protected HierarchyListener createHierarchyListener(JFileChooser fc) {
         return new FileChooserHierarchyListener();
-    }
-
-    @Override
-    public void appearanceChanged(@NotNull JComponent c, @NotNull AquaAppearance appearance) {
-        reconfigureChooser();
     }
 
     @Override

@@ -46,8 +46,7 @@ import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableColumn;
 import javax.swing.table.TableColumnModel;
 
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.*;
 import org.violetlib.jnr.aqua.AquaUIPainter;
 
 public class AquaTableHeaderUI extends BasicTableHeaderUI implements AquaComponentUI {
@@ -129,14 +128,6 @@ public class AquaTableHeaderUI extends BasicTableHeaderUI implements AquaCompone
                 }
             }
         }
-    }
-
-    @Override
-    public void appearanceChanged(@NotNull JComponent c, @NotNull AquaAppearance appearance) {
-    }
-
-    @Override
-    public void activeStateChanged(@NotNull JComponent c, boolean isActive) {
     }
 
     protected @NotNull AquaUIPainter.State getState() {
@@ -240,14 +231,14 @@ public class AquaTableHeaderUI extends BasicTableHeaderUI implements AquaCompone
                 // Draw a gray well in place of the moving column.
                 g.setColor(header.getParent().getBackground());
                 g.fillRect(draggedCellRect.x, draggedCellRect.y,
-                        draggedCellRect.width, draggedCellRect.height);
+                  draggedCellRect.width, draggedCellRect.height);
 
                 draggedCellRect.x += header.getDraggedDistance();
 
                 // Fill the background.
                 g.setColor(background);
                 g.fillRect(draggedCellRect.x, draggedCellRect.y,
-                        draggedCellRect.width, draggedCellRect.height);
+                  draggedCellRect.width, draggedCellRect.height);
 
                 paintCell(g, draggedCellRect, draggedColumnIndex);
             }
@@ -264,13 +255,13 @@ public class AquaTableHeaderUI extends BasicTableHeaderUI implements AquaCompone
             }
 
             boolean hasFocus = !header.isPaintingForPrint()
-                    // && (columnIndex == getSelectedColumnIndex())
-                    && header.hasFocus();
+              // && (columnIndex == getSelectedColumnIndex())
+              && header.hasFocus();
 
             Component rendererComponent = renderer.getTableCellRendererComponent(header.getTable(),
-                    aColumn.getHeaderValue(),
-                    false, hasFocus,
-                    -1, columnIndex);
+              aColumn.getHeaderValue(),
+              false, hasFocus,
+              -1, columnIndex);
 
             return rendererComponent;
         }
@@ -299,7 +290,7 @@ public class AquaTableHeaderUI extends BasicTableHeaderUI implements AquaCompone
             }
 
             rendererPane.paintComponent(g, rendererComponent, header, cellRect.x, cellRect.y,
-                    cellRect.width, cellRect.height, true);
+              cellRect.width, cellRect.height, true);
 
             // Setting the foreground or background color of a DefaultTableCellRenderer makes that color the color
             // to use when the cell is not selected. So, if we installed a color, we should also remove it.

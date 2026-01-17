@@ -74,14 +74,6 @@ public class AquaOptionPaneUI extends BasicOptionPaneUI implements AquaComponent
     }
 
     @Override
-    public void appearanceChanged(@NotNull JComponent c, @NotNull AquaAppearance appearance) {
-    }
-
-    @Override
-    public void activeStateChanged(@NotNull JComponent c, boolean isActive) {
-    }
-
-    @Override
     public final void update(Graphics g, JComponent c) {
         paint(g, c);
     }

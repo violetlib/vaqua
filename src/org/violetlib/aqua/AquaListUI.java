@@ -320,14 +320,6 @@ public class AquaListUI extends BasicListUI implements AquaComponentUI, AquaView
         return colors;
     }
 
-    @Override
-    public void appearanceChanged(@NotNull JComponent c, @NotNull AquaAppearance appearance) {
-    }
-
-    @Override
-    public void activeStateChanged(@NotNull JComponent c, boolean isActive) {
-    }
-
     private void updateOpaque() {
         // In some versions of the JDK, JList forces opaque to be true, so LookAndFeel.installProperty cannot be used
         Color background = list.getBackground();
@@ -397,7 +389,7 @@ public class AquaListUI extends BasicListUI implements AquaComponentUI, AquaView
 
     protected void updateVibrantEffects() {
         if (list.isDisplayable()) {
-            if (isSideBar() && AquaPainting.isSidebarVibrant()) {
+            if (isSideBar() && AquaPainting.isSidebarVibrant(list)) {
                 ensureVibrantEffects(AquaVibrantSupport.SIDEBAR_STYLE);
                 return;
             }
@@ -630,6 +622,8 @@ public class AquaListUI extends BasicListUI implements AquaComponentUI, AquaView
     }
 
     public void paint(Graphics2D g, JComponent c, @NotNull PaintingContext pc) {
+
+        updateVibrantEffects();
 
         AquaUIPainter.State state = getState();
         appearanceContext = new AppearanceContext(pc.appearance, state, false, false);

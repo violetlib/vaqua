@@ -1,5 +1,5 @@
 /*
- * Changes Copyright (c) 2015-2025 Alan Snyder.
+ * Changes Copyright (c) 2015-2026 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -104,35 +104,37 @@ public abstract class AquaButtonBorder extends AquaBorder implements FocusRingOu
     protected static final Dimension regularToolbarSize = new Dimension(32, 32);
     protected static final Dimension smallToolbarSize = new Dimension(24, 24);
 
-    protected final AquaButtonIcon.ImageOperatorSupplier keySupplier = new MyImageOperatorSupplier();
+    protected final AquaButtonIcon.ImageOperatorSupplier imageOperatorSupplier = new MyImageOperatorSupplier();
 
     protected AquaButtonBorder() {
     }
 
-    public final void paintBorder(Component c, Graphics g, int x, int y, int width, int height) {
+    @Override
+    protected final void paint(JComponent c, Graphics2D g, int x, int y, int width, int height) {
         // These borders generally paint as backgrounds, unlike normal borders that are painted on top the component.
     }
 
     public void paintButton(@NotNull Graphics2D g,
                             @NotNull AbstractButton b,
                             @Nullable Icon icon,
-                            @NotNull Rectangle viewRect) {
-        GenericButtonConfiguration bg = getConfiguration(b, viewRect.width, viewRect.height);
+                            @NotNull Rectangle viewRect,
+                            @NotNull PaintingContext pc) {
+        GenericButtonConfiguration bg = getConfiguration(b, pc, viewRect.width, viewRect.height);
         if (bg != null) {
             // It is easier to paint the border of a split toolbar item when the compound layout is known
             boolean isSplit = isSplitToolbarItem(b, bg);
             if (!isSplit) {
-                paintBackground(g, b, bg, viewRect);
+                paintBackground(g, b, bg, viewRect, pc);
             }
             if (allowsContent()) {
                 Dimension iconSize = getRequiredIconSizeFromConfiguration(bg, icon);
                 if (iconSize == null && icon != null) {
                     iconSize = new Dimension(icon.getIconWidth(), icon.getIconHeight());
                 }
-                Color textColor = getForegroundColor(b, bg, false);
+                Color textColor = getForegroundColor(b, bg, pc, false);
                 Insets insets = getButtonContentInsets(b);
                 Color iconColor = null;
-                AquaButtonSupport.paintIconAndText(g, b, bg, painter, insets, icon,
+                AquaButtonSupport.paintIconAndText(g, pc, b, bg, painter, insets, icon,
                   textColor, iconColor, viewRect, iconSize, isSplit);
             }
         }
@@ -141,21 +143,21 @@ public abstract class AquaButtonBorder extends AquaBorder implements FocusRingOu
     public void paintBackground(@NotNull Graphics2D g,
                                 @NotNull AbstractButton b,
                                 @NotNull Configuration bg,
-                                @NotNull Rectangle viewRect) {
+                                @NotNull Rectangle viewRect,
+                                @NotNull PaintingContext pc) {
         int x = viewRect.x;
         int y = viewRect.y;
         int width = viewRect.width;
         int height = viewRect.height;
 
         int version = AquaPainting.getVersion();
-        if (bg.getWidget() == BUTTON_TOOLBAR_ITEM && version < 1600)
-        {
+        if (bg.getWidget() == BUTTON_TOOLBAR_ITEM && version < 1600) {
             RoundRectangle2D shape = new RoundRectangle2D.Double(x, y, width - 1, height - 1, 8, 8);
-            AquaButtonSupport.paintToolbarItemBackground(b, (ButtonConfiguration) bg, g, shape);
+            AquaButtonSupport.paintToolbarItemBackground(b, (ButtonConfiguration) bg, pc, g, shape);
             return;
         }
 
-        AquaUtils.configure(painter, b, width, height);
+        AquaUtils.configure(painter, pc.appearance, b, width, height);
         org.violetlib.jnr.Painter p = painter.getPainter(bg);
         p.paint(g, x, y);
 
@@ -204,8 +206,7 @@ public abstract class AquaButtonBorder extends AquaBorder implements FocusRingOu
             AquaUtils.fillAntiAliased(gg, rr);
 
             if (OSVersion >= 1300 && c.getAlpha() != 255) {
-                AquaAppearance a = AppearanceManager.getAppearance(b);
-                gg.setColor(a.isDark() ? new Color(255, 255, 255, 52) : new Color(0, 0, 0, 52));
+                gg.setColor(pc.appearance.isDark() ? new Color(255, 255, 255, 52) : new Color(0, 0, 0, 52));
                 AquaUtils.drawAntiAliased(gg, rr);
             }
 
@@ -289,6 +290,7 @@ public abstract class AquaButtonBorder extends AquaBorder implements FocusRingOu
 
     public @NotNull Color getForegroundColor(@NotNull AbstractButton b,
                                              @NotNull GenericButtonConfiguration g,
+                                             @NotNull PaintingContext pc,
                                              boolean isIcon) {
         State state = g.getState();
         AquaButtonExtendedTypes.WidgetInfo info = getWidgetInfo(b);
@@ -297,7 +299,6 @@ public abstract class AquaButtonBorder extends AquaBorder implements FocusRingOu
         Color existingColor = b.getForeground();
         if (existingColor == null || existingColor instanceof UIResource || !isEnabled || useNonexclusive) {
             AquaUIPainter.ButtonState bs = getButtonState(b);
-            AquaAppearance appearance = AppearanceManager.getAppearance(b);
             // The foreground color of a default button does not change when pressed.
             // Starting with macOS 12, the foreground color of any button does not change.
             if (state == State.PRESSED_DEFAULT) {
@@ -312,7 +313,7 @@ public abstract class AquaButtonBorder extends AquaBorder implements FocusRingOu
                 bs = OFF;
             }
 
-            return info.getForeground(state, bs, appearance, useNonexclusive, isIcon);
+            return info.getForeground(state, bs, pc.appearance, useNonexclusive, isIcon);
         } else {
             return existingColor;
         }
@@ -468,25 +469,27 @@ public abstract class AquaButtonBorder extends AquaBorder implements FocusRingOu
     /**
      * Create a special icon to use for a button. The icon rendering may be context dependent.
      */
-    public @Nullable AquaButtonIcon createSpecialIcon(@NotNull AbstractButton b, boolean isTemplate) {
-        return new AquaButtonIcon(b, isTemplate, keySupplier);
+    public @Nullable AquaButtonIcon createSpecialIcon(@NotNull AbstractButton b,
+                                                      boolean isTemplate,
+                                                      @NotNull PaintingContext pc) {
+        return new AquaButtonIcon(b, isTemplate, imageOperatorSupplier);
     }
 
     private class MyImageOperatorSupplier implements AquaButtonIcon.ImageOperatorSupplier {
         @Override
-        public @Nullable Object getCurrentImageProcessingOperator(@NotNull AbstractButton b, boolean isTemplate) {
-            GenericButtonConfiguration g = getConfiguration(b, b.getWidth(), b.getHeight());
+        public @Nullable Object getCurrentImageProcessingOperator(@NotNull AbstractButton b,
+                                                                  boolean isTemplate,
+                                                                  @NotNull PaintingContext pc) {
+            GenericButtonConfiguration g = getConfiguration(b, pc, b.getWidth(), b.getHeight());
             if (isTemplate && g != null) {
-                return getForegroundColor(b, g, true);
+                return getForegroundColor(b, g, pc, true);
             }
             State state = g != null ? g.getState() : getState(b);
             if (state == State.PRESSED && shouldHighlightPressedIcon(g)) {
-                AquaAppearance appearance = AppearanceManager.getAppearance(b);
-                return appearance.isDark() ? AquaImageFactory.LIGHTEN_FOR_DISABLED : AquaImageFactory.DARKEN_FOR_PRESSED;
+                return pc.appearance.isDark() ? AquaImageFactory.LIGHTEN_FOR_DISABLED : AquaImageFactory.DARKEN_FOR_PRESSED;
             }
             if (shouldUseDisabledIcon(g, state)) {
-                AquaAppearance appearance = AppearanceManager.getAppearance(b);
-                return appearance.isDark() ? AquaImageFactory.DARKEN_FOR_PRESSED : AquaImageFactory.LIGHTEN_FOR_DISABLED;
+                return pc.appearance.isDark() ? AquaImageFactory.DARKEN_FOR_PRESSED : AquaImageFactory.LIGHTEN_FOR_DISABLED;
             }
             return null;
         }
@@ -681,7 +684,9 @@ public abstract class AquaButtonBorder extends AquaBorder implements FocusRingOu
     /**
      * Return the configuration for painting the button. The configuration is based on the current state of the button.
      */
-    public @Nullable GenericButtonConfiguration getConfiguration(@NotNull AbstractButton b, int width, int height) {
+    public @Nullable GenericButtonConfiguration getConfiguration(@NotNull AbstractButton b,
+                                                                 @NotNull PaintingContext pc,
+                                                                 int width, int height) {
 
         LayoutConfiguration g = getLayoutConfiguration(b);
 
@@ -768,8 +773,7 @@ public abstract class AquaButtonBorder extends AquaBorder implements FocusRingOu
         if (g != null) {
             int width = c.getWidth();
             int height = c.getHeight();
-            AppearanceManager.getAppearance(c);
-            AquaUtils.configure(painter, c, width, height);
+            AquaUtils.configure(painter, null, c, width, height);
             return painter.getOutline(g);
         } else {
             return null;  // should not happen

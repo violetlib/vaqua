@@ -90,14 +90,6 @@ public class AquaPanelUI extends BasicPanelUI implements AquaComponentUI {
     }
 
     @Override
-    public void appearanceChanged(@NotNull JComponent c, @NotNull AquaAppearance appearance) {
-    }
-
-    @Override
-    public void activeStateChanged(@NotNull JComponent c, boolean isActive) {
-    }
-
-    @Override
     public final void update(@NotNull Graphics g, @NotNull JComponent c) {
         paint(g, c);
     }
@@ -122,7 +114,7 @@ public class AquaPanelUI extends BasicPanelUI implements AquaComponentUI {
 
         BackgroundPainter p = getBackgroundPainter(c);
         if (p != null) {
-            p.paintBackground(c, g, 0, 0, c.getWidth(), c.getHeight());
+            p.paintBackground(c, g, pc, 0, 0, c.getWidth(), c.getHeight());
         }
     }
 

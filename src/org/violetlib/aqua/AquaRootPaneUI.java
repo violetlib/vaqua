@@ -52,15 +52,12 @@ import static org.violetlib.aqua.AquaVibrantSupport.NO_VIBRANT_STYLE;
 import static org.violetlib.aqua.AquaVibrantSupport.WINDOW_BACKGROUND_STYLE;
 import static org.violetlib.aqua.OSXSystemProperties.OSVersion;
 
-public class AquaRootPaneUI extends BasicRootPaneUI implements AquaComponentUI {
+public class AquaRootPaneUI extends BasicRootPaneUI implements AquaComponentUI, ActiveSensitiveComponentUI {
 
     public final static String AQUA_WINDOW_STYLE_KEY = "Aqua.windowStyle";
     public final static String AQUA_WINDOW_TOP_MARGIN_KEY = "Aqua.windowTopMargin";
     public final static String AQUA_WINDOW_BOTTOM_MARGIN_KEY = "Aqua.windowBottomMargin";
     public final static String AQUA_WINDOW_REPRESENTED_FILENAME_KEY = "Aqua.windowRepresentedFilename";
-
-    // Internally, an appearance is represented by an instance of AquaAppearance.
-    // Externally, the colors are made available as a map from string to color.
 
     static final boolean sUseScreenMenuBar = AquaUtils.getScreenMenuBarProperty();
 
@@ -81,6 +78,9 @@ public class AquaRootPaneUI extends BasicRootPaneUI implements AquaComponentUI {
     protected AquaCustomStyledWindow customStyledWindow;
     protected int vibrantStyle = NO_VIBRANT_STYLE;
     protected boolean vibrantStyleIsExplicitlySet;
+
+    /** The appearance of this window, possibly configured via the root pane. **/
+    protected @Nullable AquaAppearance appearance;
 
     /**
      Set the debugging option to force all windows to display as active. Used to compare a Java window with a native
@@ -121,6 +121,10 @@ public class AquaRootPaneUI extends BasicRootPaneUI implements AquaComponentUI {
             JRootPane root = (JRootPane) c;
             root.addContainerListener(containerListener);
         }
+
+        // The idea that a native window can be configured with an appearance is not supported.
+
+        appearance = AppearanceManager.findAppearanceForComponent(rootPane);
 
         configureWindowIfPossible();
         configureLayeredPane();
@@ -397,26 +401,6 @@ public class AquaRootPaneUI extends BasicRootPaneUI implements AquaComponentUI {
         }
     }
 
-    private void configureSpecifiedWindowAppearance(boolean resetIfNull)
-    {
-        Window w = getWindow();
-        if (w != null && w.isDisplayable()) {
-            String appearanceName = getSpecifiedWindowAppearance();
-            if (appearanceName != null || resetIfNull) {
-                AquaUtils.setWindowAppearance(w, appearanceName);
-            }
-        }
-    }
-
-    private @Nullable String getSpecifiedWindowAppearance()
-    {
-        Object o = rootPane.getClientProperty(AppearanceManager.AQUA_APPEARANCE_NAME_KEY);
-        if (o instanceof String) {
-            return (String) o;
-        }
-        return null;
-    }
-
     private void unconfigure()
     {
         removeVisualEffectView();
@@ -484,22 +468,10 @@ public class AquaRootPaneUI extends BasicRootPaneUI implements AquaComponentUI {
     protected int getDefaultWindowVibrantStyle() {
         // Non-textured windows use a vibrant background in dark mode
         // Textured windows use a vibrant background in dark mode but reveal it only in the title/toolbar
-        AquaAppearance appearance = AppearanceManager.getAppearance(rootPane);
-        if (appearance.isDark()) {
+        if (appearance != null && appearance.isDark()) {
             return WINDOW_BACKGROUND_STYLE;
         }
         return NO_VIBRANT_STYLE;
-    }
-
-    @Override
-    public void appearanceChanged(@NotNull JComponent c, @NotNull AquaAppearance appearance) {
-        // This method is called when the registered appearance of the root pane is changed.
-        Component parent = rootPane.getParent();
-        if (parent instanceof Window) {
-            Window w = (Window) parent;
-            configureWindow(w);
-            rootPane.repaint();
-        }
     }
 
     @Override
@@ -511,6 +483,76 @@ public class AquaRootPaneUI extends BasicRootPaneUI implements AquaComponentUI {
             configureWindow(w);
             rootPane.repaint();
         }
+    }
+
+    public void effectiveAppearanceChanged(@NotNull AquaAppearance appearance)
+    {
+        // A change in the application effective appearance has no effect if this window is using a specified
+        // appearance.
+
+        if (AppearanceManager.getSpecifiedAppearanceName(rootPane) == null) {
+            appearanceChanged(appearance);
+        }
+    }
+
+    private void configureSpecifiedWindowAppearance(boolean resetIfNull)
+    {
+        Window w = getWindow();
+        if (w != null && w.isDisplayable()) {
+            String appearanceName = getSpecifiedWindowAppearance();
+            if (appearanceName != null || resetIfNull) {
+                AquaUtils.setWindowAppearance(w, appearanceName);
+            }
+            if (appearanceName != null) {
+                try {
+                    AquaAppearance appearance = AquaAppearances.get(appearanceName);
+                    appearanceChanged(appearance);
+                } catch (UnsupportedOperationException e) {
+                }
+            }
+        }
+    }
+
+    private @Nullable String getSpecifiedWindowAppearance()
+    {
+        Object o = rootPane.getClientProperty(AppearanceManager.AQUA_APPEARANCE_NAME_KEY);
+        if (o instanceof String) {
+            return (String) o;
+        }
+        return null;
+    }
+
+    private void appearanceChanged(@NotNull AquaAppearance appearance)
+    {
+        // The appearance of this window has changed. That includes changes to appearance settings that might affect the
+        // system colors.
+
+        this.appearance = appearance;
+
+        Window w = getWindow();
+        if (w != null && w.isDisplayable()) {
+
+            // The vibrant style of the window depends upon the appearance.
+            if (OSVersion >= 1014 && !vibrantStyleIsExplicitlySet) {
+                int vibrantStyle = getDefaultWindowVibrantStyle();
+                updateVibrantStyle(vibrantStyle, false);
+            }
+
+            // The background of the root pane depends upon the appearance.
+            if (rootPane.isBackgroundSet() && !AquaColors.isPriority(rootPane.getBackground())) {
+                rootPane.setBackground(null);
+            }
+            Color c = AquaUtils.getWindowBackground(rootPane, appearance);
+            AquaUtils.setBackgroundCarefully(w, c);
+
+            // Make sure that the default window foreground is not considered an application priority.
+            Color fc = w.getForeground();
+            if (!(fc instanceof UIResource)) {
+                w.setForeground(new ColorUIResource(fc));
+            }
+        }
+
+        rootPane.repaint();
     }
 
     protected void updatePopupStyle(JRootPane rp) {

@@ -113,16 +113,6 @@ public class AquaButtonUI extends BasicButtonUI
         }
     }
 
-    @Override
-    public void appearanceChanged(@NotNull JComponent c, @NotNull AquaAppearance appearance) {
-        // Not needed: all requests for colors ensure the component appearance is up-to-date
-    }
-
-    @Override
-    public void activeStateChanged(@NotNull JComponent c, boolean isActive) {
-        // The button will be repainted: its border needs to handle the new state.
-    }
-
     /**
      * Configure a button.
      * @param b The button component to be configured.
@@ -271,12 +261,11 @@ public class AquaButtonUI extends BasicButtonUI
           : AquaUtilControlSize.getFontForSize(base, size);
     }
 
-    protected Color getDefaultForegroundColor(AbstractButton b) {
+    protected Color getDefaultForegroundColor(AbstractButton b, @NotNull AquaAppearance appearance) {
         boolean isEnabled = b.getModel().isEnabled();
         Color existingColor = b.getForeground();
         if (existingColor == null || existingColor instanceof UIResource || !isEnabled) {
             // Most buttons do not display text differently when the window is inactive
-            AquaAppearance appearance = AppearanceManager.getAppearance(b);
             if (useSelectedForeground(b)) {
                 return appearance.getColor("alternateSelectedControlText");
             } else if (useSelectedDisabledForeground(b)) {
@@ -405,22 +394,31 @@ public class AquaButtonUI extends BasicButtonUI
 
     @Override
     public void update(Graphics g, JComponent c) {
-        super.update(g, c);
+        paint(g, c);
     }
 
     @Override
-    public final void paint(Graphics g, JComponent c) {
-        paint((Graphics2D) g, (AbstractButton) c);
+    public void paint(Graphics g, JComponent c) {
+        AppearanceManager.withContext(g, c, this::paint);
     }
 
-    protected void paint(@NotNull Graphics2D g, @NotNull AbstractButton b) {
+    protected void paint(@NotNull Graphics2D g, @NotNull JComponent c, @NotNull PaintingContext pc) {
+        if (c.isOpaque()) {
+            g.setColor(c.getBackground());
+            g.fillRect(0, 0, c.getWidth(),c.getHeight());
+        }
+        paint(g, (AbstractButton) c, pc);
+
+    }
+
+    protected void paint(@NotNull Graphics2D g, @NotNull AbstractButton b, @NotNull PaintingContext pc) {
         Rectangle viewRect = new Rectangle(b.getWidth(), b.getHeight());
         AquaButtonBorder border = b.isBorderPainted() ? getAquaButtonBorder(b) : null;
-        Icon icon = AquaButtonSupport.getIcon(b);
+        Icon icon = AquaButtonSupport.getIcon(b, pc);
         if (border != null) {
-            border.paintButton(g, b, icon, viewRect);
+            border.paintButton(g, b, icon, viewRect, pc);
         } else {
-            paintButtonDefault(g, b, icon, viewRect);
+            paintButtonDefault(g, b, icon, viewRect, pc);
         }
     }
 
@@ -430,7 +428,8 @@ public class AquaButtonUI extends BasicButtonUI
     protected void paintButtonDefault(@NotNull Graphics2D g,
                                       @NotNull AbstractButton b,
                                       @Nullable Icon icon,
-                                      @NotNull Rectangle viewRect) {
+                                      @NotNull Rectangle viewRect,
+                                      @NotNull PaintingContext pc) {
         ButtonModel model = b.getModel();
         boolean isColorWell = AquaButtonSupport.isColorWell(b);
         if (isColorWell) {
@@ -459,8 +458,8 @@ public class AquaButtonUI extends BasicButtonUI
                 g.fillRect(viewRect.x, viewRect.y, viewRect.width, viewRect.height);
             }
         }
-        Color fc = getDefaultForegroundColor(b);
-        AquaButtonSupport.paintIconAndText(g, b, null, null, b.getInsets(), icon, fc, fc, viewRect, null, false);
+        Color fc = getDefaultForegroundColor(b, pc.appearance);
+        AquaButtonSupport.paintIconAndText(g, pc, b, null, null, b.getInsets(), icon, fc, fc, viewRect, null, false);
     }
 
     @Override

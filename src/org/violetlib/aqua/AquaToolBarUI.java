@@ -39,7 +39,6 @@ import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.Serializable;
 import javax.swing.*;
-import javax.swing.border.AbstractBorder;
 import javax.swing.border.Border;
 import javax.swing.event.MouseInputListener;
 import javax.swing.plaf.ComponentUI;
@@ -121,14 +120,6 @@ public class AquaToolBarUI extends BasicToolBarUI implements SwingConstants, Aqu
         super.uninstallListeners();
     }
 
-    @Override
-    public void appearanceChanged(@NotNull JComponent c, @NotNull AquaAppearance appearance) {
-    }
-
-    @Override
-    public void activeStateChanged(@NotNull JComponent c, boolean isActive) {
-    }
-
     protected AquaUIPainter.State getState() {
         return AquaFocusHandler.isActive(toolBar) ? AquaUIPainter.State.ACTIVE : AquaUIPainter.State.INACTIVE;
     }
@@ -145,9 +136,12 @@ public class AquaToolBarUI extends BasicToolBarUI implements SwingConstants, Aqu
 
     /* ToolBarBorder and drag-off handle, based loosely on MetalBumps */
     @SuppressWarnings("serial") // Superclass is not serializable across versions
-    private class ToolBarBorder extends AbstractBorder implements UIResource, javax.swing.SwingConstants {
-
-        public void paintBorder(Component c, Graphics g, int x, int y, int w, int h) {
+    private class ToolBarBorder
+      extends AquaBorder
+    {
+        @Override
+        protected void paint(@NotNull JComponent c, @NotNull Graphics2D g, int x, int y, int w, int h)
+        {
             g.translate(x, y);
 
             if (!isRendering && c.isOpaque()) {
@@ -164,7 +158,8 @@ public class AquaToolBarUI extends BasicToolBarUI implements SwingConstants, Aqu
             g.translate(-x, -y);
         }
 
-        private void paintHandle(JToolBar tb, Graphics g, int w, int h) {
+        private void paintHandle(JToolBar tb, Graphics g, int w, int h)
+        {
             Color oldColor = g.getColor();
             ComponentOrientation orient = tb.getComponentOrientation();
             boolean horizontal = tb.getOrientation() == SwingConstants.HORIZONTAL;
@@ -182,7 +177,8 @@ public class AquaToolBarUI extends BasicToolBarUI implements SwingConstants, Aqu
             g.setColor(oldColor);
         }
 
-        private void fillHandle(Graphics g, int x1, int y1, int x2, int y2, boolean horizontal) {
+        private void fillHandle(Graphics g, int x1, int y1, int x2, int y2, boolean horizontal)
+        {
             g.setColor(UIManager.getColor("ToolBar.borderHandleColor"));
             if (horizontal) {
                 int h = y2 - y1 - 2;
@@ -195,46 +191,36 @@ public class AquaToolBarUI extends BasicToolBarUI implements SwingConstants, Aqu
             }
         }
 
-        public Insets getBorderInsets(Component c) {
-            Insets borderInsets = new Insets(5, 5, 5, 5);
-            return getBorderInsets(c, borderInsets);
-        }
-
-        public Insets getBorderInsets(Component c, Insets borderInsets) {
-
+        public @NotNull Insets getBorderInsets(@NotNull Component c)
+        {
             JToolBar tb = (JToolBar) c;
 
             boolean isTallFormat = isTallFormatToolBar(tb);
             int version = AquaPainting.getVersion();
 
-            borderInsets.left = 4;
-            borderInsets.right = 4;
-            borderInsets.top = 4;
-            borderInsets.bottom = isTallFormat && version < 1500 ? 0 : 4;
+            int left = 4;
+            int right = 4;
+            int top = 4;
+            int bottom = isTallFormat && version < 1500 ? 0 : 4;
 
             if (tb.isFloatable()) {
                 if (tb.getOrientation() == HORIZONTAL) {
-                    borderInsets.left = 12;
+                    left = 12;
                     // We don't have to adjust for right-to-left
                 } else { // vertical
-                    borderInsets.top = 12;
+                    top = 12;
                 }
             }
 
             Insets margin = tb.getMargin();
-
             if (margin != null) {
-                borderInsets.left += margin.left;
-                borderInsets.top += margin.top;
-                borderInsets.right += margin.right;
-                borderInsets.bottom += margin.bottom;
+                left += margin.left;
+                top += margin.top;
+                right += margin.right;
+                bottom += margin.bottom;
             }
 
-            return borderInsets;
-        }
-
-        public boolean isBorderOpaque() {
-            return false;
+            return new Insets(top, left, bottom, right);
         }
     }
 

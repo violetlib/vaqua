@@ -57,14 +57,6 @@ public class AquaToolTipUI extends BasicToolTipUI implements AquaComponentUI {
     }
 
     @Override
-    public void appearanceChanged(@NotNull JComponent c, @NotNull AquaAppearance appearance) {
-    }
-
-    @Override
-    public void activeStateChanged(@NotNull JComponent c, boolean isActive) {
-    }
-
-    @Override
     public void update(Graphics g, JComponent c) {
         paint(g, c);
     }

@@ -1,5 +1,5 @@
 /*
- * Changes Copyright (c) 2015-2025 Alan Snyder.
+ * Changes Copyright (c) 2015-2026 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -103,7 +103,7 @@ public class AquaTextFieldBorder extends AquaTextComponentBorder {
 
         // A rounded border is not opaque.
         TextFieldLayoutConfiguration g = getLayoutConfiguration();
-        AquaUtils.configure(painter, tf, tf.getWidth(), tf.getHeight());
+        AquaUtils.configure(painter, null, tf, tf.getWidth(), tf.getHeight());
         Shape s = painter.getOutline(g);
         return s instanceof Rectangle2D;
     }
@@ -121,7 +121,7 @@ public class AquaTextFieldBorder extends AquaTextComponentBorder {
         JComponent cc = getComponentForFocusRing(c);
         if (cc != null) {
             TextFieldLayoutConfiguration g = getLayoutConfiguration();
-            AquaUtils.configure(painter, tf, cc.getWidth(), cc.getHeight());
+            AquaUtils.configure(painter, null, tf, cc.getWidth(), cc.getHeight());
             return painter.getOutline(g);
         }
         return null;
@@ -217,7 +217,8 @@ public class AquaTextFieldBorder extends AquaTextComponentBorder {
     protected @NotNull Painter getConfiguredPainter(@NotNull Component c) {
         int width = c.getWidth();
         int height = c.getHeight();
-        AquaUtils.configure(painter, tf, width, height);
+        PaintingContext pc = PaintingContext.getDefault();
+        AquaUtils.configure(painter, pc.appearance, tf, width, height);
         TextFieldConfiguration tg = getConfiguration();
         return painter.getPainter(tg);
     }

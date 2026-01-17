@@ -123,14 +123,6 @@ public abstract class AquaTextComponentUIBase
         }
     }
 
-    @Override
-    public void appearanceChanged(@NotNull JComponent c, @NotNull AquaAppearance appearance) {
-    }
-
-    @Override
-    public void activeStateChanged(@NotNull JComponent c, boolean isActive) {
-    }
-
     protected @NotNull AquaUIPainter.State getState() {
         if (editor.isEnabled()) {
             boolean isActive = AquaFocusHandler.isActive(editor);

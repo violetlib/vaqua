@@ -34,12 +34,11 @@
 package org.violetlib.aqua;
 
 import java.awt.*;
-
 import javax.swing.*;
 import javax.swing.plaf.ComponentUI;
 import javax.swing.plaf.basic.BasicSeparatorUI;
 
-import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.*;
 import org.violetlib.aqua.AquaUtils.RecyclableSingletonFromDefaultConstructor;
 
 public class AquaPopupMenuSeparatorUI extends BasicSeparatorUI implements AquaComponentUI {
@@ -49,24 +48,16 @@ public class AquaPopupMenuSeparatorUI extends BasicSeparatorUI implements AquaCo
         return instance.get();
     }
 
-    @Override
-    public void appearanceChanged(@NotNull JComponent c, @NotNull AquaAppearance appearance) {
-    }
-
-    @Override
-    public void activeStateChanged(@NotNull JComponent c, boolean isActive) {
-    }
-
     public void update(Graphics g, JComponent c) {
         paint(g, c);
     }
 
     @Override
-     public void paint(Graphics g, JComponent c) {
-         AppearanceManager.withContext(g, c, this::paint);
-     }
+    public void paint(Graphics g, JComponent c) {
+        AppearanceManager.withContext(g, c, this::paint);
+    }
 
-     public void paint(Graphics2D g, JComponent c, @NotNull PaintingContext pc) {
+    public void paint(Graphics2D g, JComponent c, @NotNull PaintingContext pc) {
         Dimension s = c.getSize();
 
         Color color = pc.appearance.getColor("separator");

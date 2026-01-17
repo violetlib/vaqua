@@ -33,9 +33,9 @@
 
 package org.violetlib.aqua;
 
-import java.awt.event.*;
-
-import javax.swing.JComponent;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
+import javax.swing.*;
 import javax.swing.plaf.ComponentUI;
 import javax.swing.text.JTextComponent;
 
@@ -71,7 +71,7 @@ public class AquaTextFieldFormattedUI extends AquaTextFieldUI implements MouseLi
 
         JTextComponent c = getComponent();
         // apparently, focus has already been granted by the time this mouse listener fires
-    //    if (c.hasFocus()) return;
+        //    if (c.hasFocus()) return;
 
         c.setCaretPosition(viewToModel(c, e.getPoint()));
     }

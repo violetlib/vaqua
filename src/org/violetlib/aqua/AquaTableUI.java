@@ -422,14 +422,6 @@ public class AquaTableUI extends BasicTableUI
         }
     }
 
-    @Override
-    public void appearanceChanged(@NotNull JComponent c, @NotNull AquaAppearance appearance) {
-    }
-
-    @Override
-    public void activeStateChanged(@NotNull JComponent c, boolean isActive) {
-    }
-
     private void updateOpaque() {
         // In some versions of the JDK, JTable forces opaque to be true, so LookAndFeel.installProperty cannot be used
         Color background = table.getBackground();

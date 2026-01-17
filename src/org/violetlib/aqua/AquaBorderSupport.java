@@ -8,7 +8,6 @@
 
 package org.violetlib.aqua;
 
-import java.awt.*;
 import javax.swing.*;
 import javax.swing.border.Border;
 import javax.swing.plaf.basic.BasicSplitPaneDivider;
@@ -26,6 +25,15 @@ public final class AquaBorderSupport
         Border b = jc.getBorder();
         if (b instanceof ContextBorder) {
             return (ContextBorder) b;
+        }
+        return null;
+    }
+
+    public static @Nullable ContextBorderWrapper getContextBorderWrapper(@NotNull JComponent jc)
+    {
+        Border b = jc.getBorder();
+        if (b instanceof ContextBorderWrapper) {
+            return (ContextBorderWrapper) b;
         }
         return null;
     }
@@ -55,8 +63,8 @@ public final class AquaBorderSupport
         if (c.isInstance(b)) {
             return c.cast(b);
         }
-        if (b instanceof ContextBorder) {
-            ContextBorder cb = (ContextBorder) b;
+        if (b instanceof ContextBorderWrapper) {
+            ContextBorderWrapper cb = (ContextBorderWrapper) b;
             return cb.get(c);
         }
         return null;
@@ -109,8 +117,8 @@ public final class AquaBorderSupport
     public static void installBorder(@NotNull JComponent jc, @Nullable Border b)
     {
         Border oldBorder = jc.getBorder();
-        if (oldBorder instanceof ContextBorder) {
-            ContextBorder contextBorder = (ContextBorder) oldBorder;
+        if (oldBorder instanceof ContextBorderWrapper) {
+            ContextBorderWrapper contextBorder = (ContextBorderWrapper) oldBorder;
             contextBorder.setDelegate(b);
             installBorderQuietly(jc, contextBorder);
         } else {
@@ -121,8 +129,8 @@ public final class AquaBorderSupport
     public static void installBorder(@NotNull BasicSplitPaneDivider d, @Nullable Border b)
     {
         Border oldBorder = d.getBorder();
-        if (oldBorder instanceof ContextBorder) {
-            ContextBorder contextBorder = (ContextBorder) oldBorder;
+        if (oldBorder instanceof ContextBorderWrapper) {
+            ContextBorderWrapper contextBorder = (ContextBorderWrapper) oldBorder;
             contextBorder.setDelegate(b);
             installBorderQuietly(d, contextBorder);
         } else {

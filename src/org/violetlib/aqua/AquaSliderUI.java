@@ -148,15 +148,6 @@ public class AquaSliderUI extends BasicSliderUI
     }
 
     @Override
-    public void appearanceChanged(@NotNull JComponent c, @NotNull AquaAppearance appearance) {
-    }
-
-    @Override
-    public void activeStateChanged(@NotNull JComponent c, boolean isActive) {
-        // colors are not active state sensitive
-    }
-
-    @Override
     public void applySizeFor(JComponent c, Size size, boolean isDefaultSize) {
         sizeVariant = size;
         // Avoid setting the font before the component has been fully configured
@@ -245,7 +236,7 @@ public class AquaSliderUI extends BasicSliderUI
         // The focus ring goes around the knob. The outline thus depends upon the thumb position as well as,
         // potentially, the slider style and the component orientation, and whether tick marks are painted.
 
-        SliderPainter p = getConfiguredPainter();
+        SliderPainter p = getConfiguredPainter(null);
         Shape s = p.getThumbOutline();
         return ExpandableOutline.createTranslatedShape(s, trackRect.x, trackRect.y);
     }
@@ -286,7 +277,7 @@ public class AquaSliderUI extends BasicSliderUI
             }
         }
 
-        Painter p = getConfiguredPainter();
+        Painter p = getConfiguredPainter(pc);
         if (isCircular) {
             p.paint(g, 0, 0);
         } else {
@@ -298,8 +289,10 @@ public class AquaSliderUI extends BasicSliderUI
         }
     }
 
-    protected SliderPainter getConfiguredPainter() {
-        AquaUtils.configure(painter, slider, trackRect.width, trackRect.height);
+    protected SliderPainter getConfiguredPainter(@Nullable PaintingContext pc) {
+        // PaintingContext not needed when performing a layout-related inquiry
+        AquaAppearance appearance = pc != null ? pc.appearance : null;
+        AquaUtils.configure(painter, appearance, slider, trackRect.width, trackRect.height);
         SliderConfiguration sg = getConfiguration();
         return (SliderPainter) painter.getPainter(sg);
     }
@@ -418,7 +411,7 @@ public class AquaSliderUI extends BasicSliderUI
     @Override
     protected void calculateThumbLocation() {
         super.calculateThumbLocation(); // needed for its implementation of snapToTicks
-        SliderPainter p = getConfiguredPainter();
+        SliderPainter p = getConfiguredPainter(null);
         thumbRect.setBounds(AquaUtils.toRectangle(p.getThumbBounds()));
         AquaFocusRingManager.focusRingOutlineChanged(slider);
     }
@@ -483,7 +476,7 @@ public class AquaSliderUI extends BasicSliderUI
             trackRect.width = contentRect.width;
             trackRect.height = contentRect.height;
 
-            SliderPainter p = getConfiguredPainter();
+            SliderPainter p = getConfiguredPainter(null);
 
             int lowValue = getLowestValue();
             int highValue = getHighestValue();
@@ -738,12 +731,12 @@ public class AquaSliderUI extends BasicSliderUI
     }
 
     protected void updateSliderFromLocation(int x, int y) {
-        SliderPainter p = getConfiguredPainter();
+        SliderPainter p = getConfiguredPainter(null);
         double thumbPosition = p.getThumbPosition(x - trackRect.x, y - trackRect.y);
         double range = slider.getMaximum() - slider.getMinimum();
         int value = (int) (slider.getMinimum() + thumbPosition * range);
         slider.setValue(value);
-        p = getConfiguredPainter();
+        p = getConfiguredPainter(null);
         thumbRect.setBounds(AquaUtils.toRectangle(p.getThumbBounds()));
         slider.repaint();
         AquaFocusRingManager.focusRingOutlineChanged(slider);
@@ -764,7 +757,7 @@ public class AquaSliderUI extends BasicSliderUI
         Dictionary dictionary = slider.getLabelTable();
         if (dictionary != null) {
 
-            SliderPainter p = getConfiguredPainter();
+            SliderPainter p = getConfiguredPainter(null);
 
             Enumeration keys = dictionary.keys();
             int minValue = slider.getMinimum();
@@ -817,7 +810,7 @@ public class AquaSliderUI extends BasicSliderUI
         if (range > 0) {
             double thumbPosition = (value - slider.getMinimum()) / range;
             Dimension labelSize = label.getPreferredSize();
-            SliderPainter p = getConfiguredPainter();
+            SliderPainter p = getConfiguredPainter(null);
             Rectangle labelBounds = AquaUtils.toRectangle(p.getLabelBounds(thumbPosition, labelSize));
             g.translate(trackRect.x + labelBounds.x, trackRect.y + labelBounds.y - labelRect.y);
             label.paint( g );
@@ -835,7 +828,7 @@ public class AquaSliderUI extends BasicSliderUI
         if (range > 0) {
             double thumbPosition = (value - slider.getMinimum()) / range;
             Dimension labelSize = label.getPreferredSize();
-            SliderPainter p = getConfiguredPainter();
+            SliderPainter p = getConfiguredPainter(null);
             Rectangle labelBounds = AquaUtils.toRectangle(p.getLabelBounds(thumbPosition, labelSize));
             g.translate(trackRect.x + labelBounds.x - labelRect.x, trackRect.y + labelBounds.y);
             label.paint( g );

@@ -1,5 +1,5 @@
 /*
- * Changes Copyright (c) 2015-2025 Alan Snyder.
+ * Changes Copyright (c) 2015-2026 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -65,7 +65,7 @@ public class AquaTextComponentBorder extends AquaBorder implements AquaBackgroun
     }
 
     @Override
-    public void paintBorder(Component c, Graphics g, int x, int y, int width, int height) {
+    protected void paint(JComponent c, Graphics2D g, int x, int y, int width, int height) {
         // The border is a background. It is not painted as a border.
     }
 

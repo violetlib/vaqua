@@ -370,6 +370,7 @@ public class AquaButtonSupport {
     }
 
     public static void paintIconAndText(@NotNull Graphics2D g,
+                                        @NotNull PaintingContext pc,
                                         @NotNull AbstractButton b,
                                         @Nullable GenericButtonConfiguration bg,
                                         @Nullable AquaUIPainter painter,
@@ -391,7 +392,7 @@ public class AquaButtonSupport {
             if (isSplit) {
                 assert bg != null;
                 assert painter != null;
-                paintSplitIconBackground(g, b, bg, painter, info);
+                paintSplitIconBackground(g, pc, b, bg, painter, info);
             }
             paintIcon(g, b, icon, info.iconBounds, iconColor);
         }
@@ -472,6 +473,7 @@ public class AquaButtonSupport {
 //    }
 
     private static void paintSplitIconBackground(@NotNull Graphics2D g,
+                                                 @NotNull PaintingContext pc,
                                                  @NotNull AbstractButton b,
                                                  @NotNull GenericButtonConfiguration gg,
                                                  @NotNull AquaUIPainter painter,
@@ -490,13 +492,13 @@ public class AquaButtonSupport {
                 if (version < 1600) {
                     int d = 1;
                     RoundRectangle2D shape = new RoundRectangle2D.Double(x, y - d, width - 1, height + 2 * d, 8, 8);
-                    paintToolbarItemBackground(b, bg, g, shape);
+                    paintToolbarItemBackground(b, bg, pc, g, shape);
                 } else {
                     AquaUIPainter.Size sz = bg.getSize();
                     AquaUIPainter.ButtonWidget w = AquaUIPainter.ButtonWidget.BUTTON_GLASS;
                     ButtonConfiguration ig = new ButtonConfiguration(w, sz, bg.getState(), bg.isFocused(),
                       bg.getButtonState(), bg.getLayoutDirection());
-                    AquaUtils.configure(painter, b, width, height);
+                    AquaUtils.configure(painter, pc.appearance, b, width, height);
                     org.violetlib.jnr.Painter p = painter.getPainter(ig);
                     p.paint(g, x, y);
                 }
@@ -504,31 +506,33 @@ public class AquaButtonSupport {
         }
     }
 
-    public static void paintToolbarItemBackground(@NotNull AbstractButton b, @NotNull ButtonConfiguration bg,
-                                                  @NotNull Graphics2D g, @NotNull Shape shape)
+    public static void paintToolbarItemBackground(@NotNull AbstractButton b,
+                                                  @NotNull ButtonConfiguration bg,
+                                                  @NotNull PaintingContext pc,
+                                                  @NotNull Graphics2D g,
+                                                  @NotNull Shape shape)
     {
-        AquaAppearance appearance = AppearanceManager.getAppearance(b);
         AquaButtonExtendedTypes.WidgetInfo wi = AquaButtonExtendedTypes.getWidgetInfo(bg.getButtonWidget());
         AquaUIPainter.State state = bg.getState();
         AquaUIPainter.ButtonState bs = bg.getButtonState();
         boolean useNonexclusive = false;
         boolean isIcon = true;
         if (bg.getState() == AquaUIPainter.State.PRESSED) {
-            Color c = AquaColors.getBackground(b, "controlBackground", EffectName.EFFECT_DEEP_PRESSED);
+            Color c = AquaColors.getBackground(b, pc, "controlBackground", EffectName.EFFECT_DEEP_PRESSED);
             g.setColor(c);
             AquaUtils.fillAntiAliased(g, shape);
         }
         if (bg.getState() == AquaUIPainter.State.ROLLOVER) {
-            Color c = AquaColors.getBackground(b, "controlBackground", EffectName.EFFECT_ROLLOVER);
+            Color c = AquaColors.getBackground(b, pc, "controlBackground", EffectName.EFFECT_ROLLOVER);
             g.setColor(c);
             AquaUtils.fillAntiAliased(g, shape);
         } else if (bg.getButtonState() == AquaUIPainter.ButtonState.ON) {
-            Color c = AquaColors.getBackground(b, "controlBackground", EffectName.EFFECT_PRESSED);
+            Color c = AquaColors.getBackground(b, pc, "controlBackground", EffectName.EFFECT_PRESSED);
             g.setColor(c);
             AquaUtils.fillAntiAliased(g, shape);
         }
-        if (appearance.isHighContrast()) {
-            Color c = wi.getForeground(state, bs, appearance, useNonexclusive, isIcon);
+        if (pc.appearance.isHighContrast()) {
+            Color c = wi.getForeground(state, bs, pc.appearance, useNonexclusive, isIcon);
             g.setColor(c);
             AquaUtils.drawAntiAliased(g, shape);
         }
@@ -671,17 +675,17 @@ public class AquaButtonSupport {
      * @param b The button.
      * @return the special icon for the button, or null if the button does not define a default icon.
      */
-    private static @Nullable AquaButtonIcon getSpecialIcon(@NotNull AbstractButton b) {
-        Object o = b.getClientProperty(AquaButtonUI.SPECIAL_ICON_PROPERTY);
-        if (o instanceof AquaButtonIcon) {
-            return (AquaButtonIcon) o;
-        }
+    private static @Nullable AquaButtonIcon getSpecialIcon(@NotNull AbstractButton b, @NotNull PaintingContext pc) {
+//        Object o = b.getClientProperty(AquaButtonUI.SPECIAL_ICON_PROPERTY);
+//        if (o instanceof AquaButtonIcon) {
+//            return (AquaButtonIcon) o;
+//        }
         Border border = b.getBorder();
         AquaButtonBorder bb = AquaBorderSupport.get(border, AquaButtonBorder.class);
         if (bb != null) {
             boolean isTemplate = determineTemplateIconStatus(b);
-            AquaButtonIcon icon = bb.createSpecialIcon(b, isTemplate);
-            b.putClientProperty(AquaButtonUI.SPECIAL_ICON_PROPERTY, icon);
+            AquaButtonIcon icon = bb.createSpecialIcon(b, isTemplate, pc);
+            //b.putClientProperty(AquaButtonUI.SPECIAL_ICON_PROPERTY, icon);
             return icon;
         }
         Icon ic = b.getIcon();
@@ -692,38 +696,38 @@ public class AquaButtonSupport {
         return null;
     }
 
-    /**
-     * This method is called by AbstractButton via the LAF to obtain an icon to use when a button is disabled.
-     * @param b The button.
-     * @param source The button icon.
-     * @return the icon to use.
-     */
-    public static @NotNull Icon createDisabledIcon(AbstractButton b, ImageIcon source) {
-        AquaButtonIcon specialIcon = getSpecialIcon(b);
-        if (specialIcon != null) {
-            return specialIcon;
-        }
-        return createDefaultDisabledIcon(source);
-    }
-
-    /**
-     * This method is called by AbstractButton via the LAF to obtain an icon to use when a button is disabled and
-     * selected.
-     * @param b The button.
-     * @param source The button selected icon.
-     * @return the icon to use.
-     */
-    public static @NotNull Icon createDisabledSelectedIcon(AbstractButton b, ImageIcon source) {
-        AquaButtonIcon specialIcon = getSpecialIcon(b);
-        if (specialIcon != null) {
-            return specialIcon;
-        }
-        return createDefaultDisabledIcon(source);
-    }
-
-    private static @NotNull ImageIcon createDefaultDisabledIcon(ImageIcon source) {
-        return new ImageIconUIResource(AquaImageFactory.getProcessedImage(source.getImage(), AquaImageFactory.LIGHTEN_FOR_DISABLED));
-    }
+//    /**
+//     * This method is called by AbstractButton via the LAF to obtain an icon to use when a button is disabled.
+//     * @param b The button.
+//     * @param source The button icon.
+//     * @return the icon to use.
+//     */
+//    public static @NotNull Icon createDisabledIcon(AbstractButton b, ImageIcon source) {
+//        AquaButtonIcon specialIcon = getSpecialIcon(b);
+//        if (specialIcon != null) {
+//            return specialIcon;
+//        }
+//        return createDefaultDisabledIcon(source);
+//    }
+//
+//    /**
+//     * This method is called by AbstractButton via the LAF to obtain an icon to use when a button is disabled and
+//     * selected.
+//     * @param b The button.
+//     * @param source The button selected icon.
+//     * @return the icon to use.
+//     */
+//    public static @NotNull Icon createDisabledSelectedIcon(AbstractButton b, ImageIcon source) {
+//        AquaButtonIcon specialIcon = getSpecialIcon(b);
+//        if (specialIcon != null) {
+//            return specialIcon;
+//        }
+//        return createDefaultDisabledIcon(source);
+//    }
+//
+//    private static @NotNull ImageIcon createDefaultDisabledIcon(ImageIcon source) {
+//        return new ImageIconUIResource(AquaImageFactory.getProcessedImage(source.getImage(), AquaImageFactory.LIGHTEN_FOR_DISABLED));
+//    }
 
     public static void toggleButtonStateChanged(@NotNull AbstractButton b) {
         JToggleButton leftButton = SegmentedControlModel.getLeftAdjacentButton(b);
@@ -830,27 +834,27 @@ public class AquaButtonSupport {
     /**
      * Obtain the icon to use based on the button state.
      */
-    public static @Nullable Icon getIcon(AbstractButton b) {
+    public static @Nullable Icon getIcon(AbstractButton b, @NotNull PaintingContext pc) {
         AquaButtonUI.ButtonIconState bs = getIconState(b);
         Icon definedIcon = getDefinedIconForState(b, bs);
         if (definedIcon != null) {
             return definedIcon;
         }
         // The special icon creates state specific renderings based on the button default icon.
-        return getSpecialIcon(b);
+        return getSpecialIcon(b, pc);
     }
 
     private static class MyImageOperatorSupplier implements AquaButtonIcon.ImageOperatorSupplier {
         @Override
-        public @Nullable Object getCurrentImageProcessingOperator(@NotNull AbstractButton b, boolean isTemplate) {
+        public @Nullable Object getCurrentImageProcessingOperator(@NotNull AbstractButton b,
+                                                                  boolean isTemplate,
+                                                                  @NotNull PaintingContext pc) {
             AquaUIPainter.State state = getState(b);
             if (state == AquaUIPainter.State.PRESSED) {
-                AquaAppearance appearance = AppearanceManager.getAppearance(b);
-                return appearance.isDark() ? AquaImageFactory.LIGHTEN_FOR_DISABLED : AquaImageFactory.DARKEN_FOR_PRESSED;
+                return pc.appearance.isDark() ? AquaImageFactory.LIGHTEN_FOR_DISABLED : AquaImageFactory.DARKEN_FOR_PRESSED;
             }
             if (shouldUseDisabledIcon(state)) {
-                AquaAppearance appearance = AppearanceManager.getAppearance(b);
-                return appearance.isDark() ? AquaImageFactory.DARKEN_FOR_PRESSED : AquaImageFactory.LIGHTEN_FOR_DISABLED;
+                return pc.appearance.isDark() ? AquaImageFactory.DARKEN_FOR_PRESSED : AquaImageFactory.LIGHTEN_FOR_DISABLED;
             }
             return null;
         }

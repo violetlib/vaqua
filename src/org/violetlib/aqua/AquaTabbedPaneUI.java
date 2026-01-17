@@ -202,14 +202,6 @@ public class AquaTabbedPaneUI extends AquaTabbedPaneCopyFromBasicUI
     }
 
     @Override
-    public void appearanceChanged(@NotNull JComponent c, @NotNull AquaAppearance appearance) {
-    }
-
-    @Override
-    public void activeStateChanged(@NotNull JComponent c, boolean isActive) {
-    }
-
-    @Override
     public void applySizeFor(JComponent c, Size size, boolean isDefaultSize) {
         if (size != sizeVariant) {
             sizeVariant = size;
@@ -352,9 +344,9 @@ public class AquaTabbedPaneUI extends AquaTabbedPaneCopyFromBasicUI
         }
 
         if (visibleTabState.needsScrollTabs()) {
-            paintScrollingTabs(g, clipRect, tabPlacement, selectedIndex);
+            paintScrollingTabs(g, pc, clipRect, tabPlacement, selectedIndex);
         } else {
-            paintAllTabs(g, clipRect, tabPlacement, selectedIndex);
+            paintAllTabs(g, pc, clipRect, tabPlacement, selectedIndex);
         }
 
         if (DEBUG_CUTOUT) {
@@ -362,47 +354,55 @@ public class AquaTabbedPaneUI extends AquaTabbedPaneCopyFromBasicUI
         }
     }
 
-    protected void paintAllTabs(Graphics g, Rectangle clipRect, int tabPlacement, int selectedIndex) {
+    protected void paintAllTabs(Graphics g,
+                                @NotNull PaintingContext pc,
+                                Rectangle clipRect,
+                                int tabPlacement,
+                                int selectedIndex) {
         boolean drawSelectedLast = false;
         for (int i = 0; i < rects.length; i++) {
             if (i == selectedIndex) {
                 drawSelectedLast = true;
             } else {
                 if (rects[i].intersects(clipRect)) {
-                    paintTabNormal(g, tabPlacement, i, false);
+                    paintTabNormal(g, pc, tabPlacement, i, false);
                 }
             }
         }
 
         // paint the selected tab last
         if (drawSelectedLast && rects[selectedIndex].intersects(clipRect)) {
-            paintTabNormal(g, tabPlacement, selectedIndex, true);
+            paintTabNormal(g, pc, tabPlacement, selectedIndex, true);
         }
     }
 
-    protected void paintScrollingTabs(Graphics g, Rectangle clipRect, int tabPlacement, int selectedIndex) {
+    protected void paintScrollingTabs(Graphics g,
+                                      @NotNull PaintingContext pc,
+                                      Rectangle clipRect,
+                                      int tabPlacement,
+                                      int selectedIndex) {
         // for each visible tab, except the selected one
         for (int i = 0; i < visibleTabState.getTotal(); i++) {
             int realIndex = visibleTabState.getIndex(i);
             if (realIndex != selectedIndex) {
                 if (rects[realIndex].intersects(clipRect)) {
-                    paintTabNormal(g, tabPlacement, realIndex, false);
+                    paintTabNormal(g, pc, tabPlacement, realIndex, false);
                 }
             }
         }
 
         Rectangle leftScrollTabRect = visibleTabState.getLeftScrollTabRect();
         if (visibleTabState.needsLeftScrollTab() && leftScrollTabRect.intersects(clipRect)) {
-            paintTabNormalFromRect(g, tabPlacement, leftScrollTabRect, LEFT_SCROLL_TAB, false, fIconRect, fTextRect);
+            paintTabNormalFromRect(g, pc, tabPlacement, leftScrollTabRect, LEFT_SCROLL_TAB, false, fIconRect, fTextRect);
         }
 
         Rectangle rightScrollTabRect = visibleTabState.getRightScrollTabRect();
         if (visibleTabState.needsRightScrollTab() && rightScrollTabRect.intersects(clipRect)) {
-            paintTabNormalFromRect(g, tabPlacement, rightScrollTabRect, RIGHT_SCROLL_TAB, false, fIconRect, fTextRect);
+            paintTabNormalFromRect(g, pc, tabPlacement, rightScrollTabRect, RIGHT_SCROLL_TAB, false, fIconRect, fTextRect);
         }
 
         if (selectedIndex >= 0) { // && rects[selectedIndex].intersects(clipRect)) {
-            paintTabNormal(g, tabPlacement, selectedIndex, true);
+            paintTabNormal(g, pc, tabPlacement, selectedIndex, true);
         }
     }
 
@@ -430,7 +430,7 @@ public class AquaTabbedPaneUI extends AquaTabbedPaneCopyFromBasicUI
         int height = isVertical ? bounds.width : bounds.height;
 
         SegmentedButtonLayoutConfiguration lg = getTabLayoutConfiguration(tabIndex);
-        AquaUtils.configure(painter, tabPane, width, height);
+        AquaUtils.configure(painter, null, tabPane, width, height);
         Shape outline = painter.getOutline(lg);
         AffineTransform tr = new AffineTransform();
 
@@ -504,17 +504,26 @@ public class AquaTabbedPaneUI extends AquaTabbedPaneCopyFromBasicUI
         return new ImageIcon(image);
     }
 
-    protected void paintTabNormal(@NotNull Graphics g, int tabPlacement, int tabIndex, boolean isSelected) {
-        paintTabNormalFromRect(g, tabPlacement, rects[tabIndex], tabIndex, isSelected, fIconRect, fTextRect);
+    protected void paintTabNormal(@NotNull Graphics g,
+                                  @NotNull PaintingContext pc,
+                                  int tabPlacement,
+                                  int tabIndex,
+                                  boolean isSelected) {
+        paintTabNormalFromRect(g, pc, tabPlacement, rects[tabIndex], tabIndex, isSelected, fIconRect, fTextRect);
     }
 
     /**
      * Paint one tab, which may be a scroll arrow tab.
      * @param tab The semantic tab index or the ID of a scroll arrow tab.
      */
-    protected void paintTabNormalFromRect(@NotNull Graphics g, int tabPlacement, Rectangle tabRect,
-                                          int tab, boolean isSelected,
-                                          @NotNull Rectangle iconRect, @NotNull Rectangle textRect) {
+    protected void paintTabNormalFromRect(@NotNull Graphics g,
+                                          @NotNull PaintingContext pc,
+                                          int tabPlacement,
+                                          Rectangle tabRect,
+                                          int tab,
+                                          boolean isSelected,
+                                          @NotNull Rectangle iconRect,
+                                          @NotNull Rectangle textRect) {
 
         AquaTabsView tv = getPaneModel().getView(false, true);
         int visualIndex = tv.find(tab);
@@ -550,7 +559,7 @@ public class AquaTabbedPaneUI extends AquaTabbedPaneCopyFromBasicUI
         }
 
         SegmentedButtonConfiguration bg = getTabConfiguration(tv, visualIndex, isSelected);
-        paintTabBackground(g, tabRect, bg);
+        paintTabBackground(g, pc, tabRect, bg);
         Insets labelInsets = getTabInsets(tabPlacement, tab);
         fContentRect.setBounds(tabRect.x + labelInsets.left, tabRect.y + labelInsets.top,
           tabRect.width - labelInsets.left - labelInsets.right, tabRect.height - labelInsets.top - labelInsets.bottom);
@@ -563,9 +572,10 @@ public class AquaTabbedPaneUI extends AquaTabbedPaneCopyFromBasicUI
     }
 
     protected void paintTabBackground(@NotNull Graphics g,
+                                      @NotNull PaintingContext pc,
                                       @NotNull Rectangle tabRect,
                                       @NotNull SegmentedButtonConfiguration bg) {
-        AquaUtils.configure(painter, tabPane, tabRect.width, tabRect.height);
+        AquaUtils.configure(painter, pc.appearance, tabPane, tabRect.width, tabRect.height);
         Painter p = painter.getPainter(bg);
         p.paint(g, tabRect.x, tabRect.y);
     }

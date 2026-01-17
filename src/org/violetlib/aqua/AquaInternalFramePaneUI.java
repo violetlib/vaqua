@@ -34,15 +34,14 @@
 package org.violetlib.aqua;
 
 import java.awt.*;
-import java.awt.event.*;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
 import java.beans.PropertyVetoException;
-
 import javax.swing.*;
 import javax.swing.border.Border;
-import javax.swing.plaf.*;
+import javax.swing.plaf.ComponentUI;
+import javax.swing.plaf.DesktopPaneUI;
 import javax.swing.plaf.basic.BasicDesktopPaneUI;
-
-import org.jetbrains.annotations.NotNull;
 
 public class AquaInternalFramePaneUI extends BasicDesktopPaneUI implements MouseListener, AquaComponentUI {
 
@@ -77,14 +76,6 @@ public class AquaInternalFramePaneUI extends BasicDesktopPaneUI implements Mouse
             fLayoutMgr = null;
         }
         super.uninstallUI(c);
-    }
-
-    @Override
-    public void appearanceChanged(@NotNull JComponent c, @NotNull AquaAppearance appearance) {
-    }
-
-    @Override
-    public void activeStateChanged(@NotNull JComponent c, boolean isActive) {
     }
 
     // Our superclass hardcodes DefaultDesktopManager - how rude!

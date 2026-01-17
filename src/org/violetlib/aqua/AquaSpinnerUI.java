@@ -148,9 +148,11 @@ public class AquaSpinnerUI extends SpinnerUI implements AquaComponentUI, AquaUti
     protected void installListeners() {
         spinner.addPropertyChangeListener(getPropertyChangeListener());
         AquaUtilControlSize.addSizePropertyListener(spinner);
+        AppearanceManager.install(spinner);
     }
 
     protected void uninstallListeners() {
+        AppearanceManager.uninstall(spinner);
         AquaUtilControlSize.removeSizePropertyListener(spinner);
         spinner.removePropertyChangeListener(getPropertyChangeListener());
     }
@@ -181,14 +183,6 @@ public class AquaSpinnerUI extends SpinnerUI implements AquaComponentUI, AquaUti
     }
 
     @Override
-    public void appearanceChanged(@NotNull JComponent c, @NotNull AquaAppearance appearance) {
-    }
-
-    @Override
-    public void activeStateChanged(@NotNull JComponent c, boolean isActive) {
-    }
-
-    @Override
     public void update(Graphics g, JComponent c) {
         paint(g, c);
     }
@@ -199,7 +193,7 @@ public class AquaSpinnerUI extends SpinnerUI implements AquaComponentUI, AquaUti
     }
 
     public void paint(Graphics2D g, JComponent c, @NotNull PaintingContext pc) {
-        super.paint(g, c);
+        // Does nothing, but the PaintingContext is needed by SpinPainter
     }
 
     protected TransparentButton createPreviousButton() {
@@ -554,9 +548,9 @@ public class AquaSpinnerUI extends SpinnerUI implements AquaComponentUI, AquaUti
                 g.setColor(spinner.getBackground());
                 g.fillRect(0, 0, getWidth(), getHeight());
             }
-
             Rectangle bounds = getBounds();
-            AquaUtils.configure(painter, spinner, bounds.width, bounds.height);
+            PaintingContext pc = PaintingContext.getDefault();
+            AquaUtils.configure(painter, pc.appearance, spinner, bounds.width, bounds.height);
             Configuration cg = getConfiguration();
             painter.getPainter(cg).paint(g, 0, 0);
         }
@@ -606,7 +600,7 @@ public class AquaSpinnerUI extends SpinnerUI implements AquaComponentUI, AquaUti
             Size size = AquaUtilControlSize.getUserSizeFrom(spinner);
             SpinnerArrowsLayoutConfiguration g = new SpinnerArrowsLayoutConfiguration(size);
             Rectangle bounds = c.getBounds();
-            AquaUtils.configure(painter, c, bounds.width, bounds.height);
+            AquaUtils.configure(painter, null, c, bounds.width, bounds.height);
             return painter.getOutline(g);
         }
 

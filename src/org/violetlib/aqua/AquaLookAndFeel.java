@@ -1,5 +1,5 @@
 /*
- * Changes copyright (c) 2015-2025 Alan Snyder.
+ * Changes copyright (c) 2015-2026 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -139,38 +139,40 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
 
     @Override
     public Icon getDisabledIcon(JComponent component, Icon icon) {
-        if (!suppressCreationOfDisabledButtonIcons) {
-            if (icon instanceof ImageIcon) {
-                if (component instanceof AbstractButton) {
-                    AquaButtonUI ui = AquaUtils.getUI(component, AquaButtonUI.class);
-                    if (ui != null) {
-                        return AquaButtonSupport.createDisabledIcon((AbstractButton) component, (ImageIcon) icon);
-                    }
-                }
-            }
-
-            return super.getDisabledIcon(component, icon);
-        } else {
-            return null;
-        }
+//        if (!suppressCreationOfDisabledButtonIcons) {
+//            if (icon instanceof ImageIcon) {
+//                if (component instanceof AbstractButton) {
+//                    AquaButtonUI ui = AquaUtils.getUI(component, AquaButtonUI.class);
+//                    if (ui != null) {
+//                        return AquaButtonSupport.createDisabledIcon((AbstractButton) component, (ImageIcon) icon);
+//                    }
+//                }
+//            }
+//
+//            return super.getDisabledIcon(component, icon);
+//        } else {
+//            return null;
+//        }
+        return null;
     }
 
     @Override
     public Icon getDisabledSelectedIcon(JComponent component, Icon icon) {
-        if (!suppressCreationOfDisabledButtonIcons) {
-            if (icon instanceof ImageIcon) {
-                if (component instanceof AbstractButton) {
-                    AquaButtonUI ui = AquaUtils.getUI(component, AquaButtonUI.class);
-                    if (ui != null) {
-                        return AquaButtonSupport.createDisabledSelectedIcon((AbstractButton) component, (ImageIcon) icon);
-                    }
-                }
-            }
-
-            return super.getDisabledSelectedIcon(component, icon);
-        } else {
-            return null;
-        }
+//        if (!suppressCreationOfDisabledButtonIcons) {
+//            if (icon instanceof ImageIcon) {
+//                if (component instanceof AbstractButton) {
+//                    AquaButtonUI ui = AquaUtils.getUI(component, AquaButtonUI.class);
+//                    if (ui != null) {
+//                        return AquaButtonSupport.createDisabledSelectedIcon((AbstractButton) component, (ImageIcon) icon);
+//                    }
+//                }
+//            }
+//
+//            return super.getDisabledSelectedIcon(component, icon);
+//        } else {
+//            return null;
+//        }
+        return null;
     }
 
     protected class MyUIChangeListener implements PropertyChangeListener {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2025 Alan Snyder.
+ * Copyright (c) 2015-2026 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -35,8 +35,8 @@ package org.violetlib.aqua;
 
 import java.awt.*;
 import javax.swing.*;
-import javax.swing.border.AbstractBorder;
 
+import org.jetbrains.annotations.*;
 import org.violetlib.jnr.Insetter;
 import org.violetlib.jnr.aqua.*;
 import org.violetlib.jnr.aqua.AquaUIPainter.ColumnSortArrowDirection;
@@ -46,96 +46,86 @@ import org.violetlib.jnr.aqua.AquaUIPainter.State;
  * The border installed on table header cell renderers. It paints the divider and the sort arrow.
  */
 @SuppressWarnings("serial") // Superclass is not serializable across versions
-public class AquaTableHeaderBorder extends AbstractBorder {
-
+public final class AquaTableHeaderBorder
+  extends AquaBorder
+{
     private Insets editorInsetsLTR;
     private Insets editorInsetsRTL;
     private Insetter arrowInsetsLTR;    // arrow insets not used, the entire cell is mouse sensitive
     private Insetter arrowInsetsRTL;
 
-    protected final AquaUIPainter painter = AquaPainting.create();
+    private final AquaUIPainter painter = AquaPainting.create();
 
-    protected ColumnSortArrowDirection sortArrowDirection = ColumnSortArrowDirection.NONE;
-    protected JTable owner;
+    private ColumnSortArrowDirection sortArrowDirection = ColumnSortArrowDirection.NONE;
+    private JTable owner;
 
-    protected static AquaTableHeaderBorder getListHeaderBorder() {
+    /* package private */ static AquaTableHeaderBorder getListHeaderBorder()
+    {
         // we don't want to share this, because the .setSelected() state
         // would persist to all other JTable instances
         return new AquaTableHeaderBorder();
     }
 
-    protected AquaTableHeaderBorder() {
-    }
-
     @Override
-    public void paintBorder(Component c, Graphics g, int x, int y, int width, int height) {
-
-        JComponent jc = (JComponent)c;
-
+    protected void paint(@NotNull JComponent c, @NotNull Graphics2D g, int x, int y, int width, int height)
+    {
         // The painter may draw a divider on the left side as well as the right.
         // To compensate, we increase the width and offset the rendering.
         // The divider will either paint over the divider for the cell to the left or get clipped away.
         // Unlike the Aqua Look and Feel painter, our painter should not draw a top or bottom border.
         // Therefore, we do not need to offset the rendering vertically.
 
-        AquaUtils.configure(painter, c, width+1, height);
-        Configuration tg = getConfiguration(jc);
+        PaintingContext pc = PaintingContext.getDefault();
+        AquaUtils.configure(painter, pc.appearance, c, width+1, height);
+        Configuration tg = getConfiguration(c);
         painter.getPainter(tg).paint(g, x-1, y);
     }
 
-    protected Configuration getConfiguration(JComponent jc) {
+    private Configuration getConfiguration(@NotNull JComponent jc)
+    {
         State state = getState(jc);
         boolean isFocused = jc.hasFocus();
         AquaUIPainter.UILayoutDirection ld = AquaUtils.getLayoutDirection(owner);
         return new TableColumnHeaderConfiguration(state, sortArrowDirection, false, isFocused, ld);
     }
 
-    protected State getState(JComponent jc) {
-        if (!jc.isEnabled()) return State.DISABLED;
-
+    private @NotNull State getState(@NotNull JComponent jc)
+    {
+        if (!jc.isEnabled()) {
+            return State.DISABLED;
+        }
         JRootPane rootPane = jc.getRootPane();
-        if (rootPane == null) return State.ACTIVE;
-
-        if (!AquaFocusHandler.isActive(rootPane)) return State.INACTIVE;
-
+        if (rootPane == null) {
+            return State.ACTIVE;
+        }
+        if (!AquaFocusHandler.isActive(rootPane)) {
+            return State.INACTIVE;
+        }
         return State.ACTIVE;
     }
 
     @Override
-    public Insets getBorderInsets(Component c) {
-        // bad to create new one each time. For debugging only.
+    public @NotNull Insets getBorderInsets(@NotNull Component c)
+    {
         configureInsets();
         return AquaUtils.isLeftToRight(owner) ? editorInsetsLTR : editorInsetsRTL;
     }
 
-    @Override
-    public Insets getBorderInsets(Component c, Insets insets) {
-        Insets s = getBorderInsets(c);
-        insets.left = s.left;
-        insets.top = s.top;
-        insets.right = s.right;
-        insets.bottom = s.bottom;
-        return insets;
-    }
-
-    @Override
-    public boolean isBorderOpaque() {
-        return false;
-    }
-
-    public void setSortArrowDirection(ColumnSortArrowDirection d) {
+    public void setSortArrowDirection(@NotNull ColumnSortArrowDirection d)
+    {
         sortArrowDirection = d;
     }
 
-    public void setOwner(JTable t) {
+    public void setOwner(@NotNull JTable t)
+    {
         owner = t;
     }
 
-    private void configureInsets() {
+    private void configureInsets()
+    {
         if (editorInsetsLTR != null) {
             return;
         }
-
         AquaUILayoutInfo layout = painter.getLayoutInfo();
         editorInsetsLTR = layout.getTableColumnHeaderLabelInsets(new TableColumnHeaderLayoutConfiguration(AquaUIPainter.UILayoutDirection.LEFT_TO_RIGHT, true)).asInsets();
         editorInsetsRTL = layout.getTableColumnHeaderLabelInsets(new TableColumnHeaderLayoutConfiguration(AquaUIPainter.UILayoutDirection.RIGHT_TO_LEFT, true)).asInsets();

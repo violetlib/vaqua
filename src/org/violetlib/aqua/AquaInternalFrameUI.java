@@ -228,14 +228,6 @@ public class AquaInternalFrameUI extends BasicInternalFrameUI implements SwingCo
         return map;
     }
 
-    @Override
-    public void appearanceChanged(@NotNull JComponent c, @NotNull AquaAppearance appearance) {
-    }
-
-    @Override
-    public void activeStateChanged(@NotNull JComponent c, boolean isActive) {
-    }
-
     public Dimension getPreferredSize(JComponent x) {
         Dimension preferredSize = super.getPreferredSize(x);
         Dimension minimumSize = frame.getMinimumSize();

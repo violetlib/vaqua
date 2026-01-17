@@ -30,7 +30,7 @@ import static org.violetlib.aqua.AquaFocusHandler.HAS_FOCUS_DELEGATE_KEY;
  * should use inactive colors based on the focus state of the tree table. The table (not the tree) is fully responsible
  * for painting the selection background. The selection background must be repainted when the focus state changes.
  */
-public class AquaTreeTableUI extends BasicTreeTableUI implements AquaComponentUI {
+public class AquaTreeTableUI extends BasicTreeTableUI implements AquaComponentUI, ActiveSensitiveComponentUI {
 
     protected MyHandler handler;
 
@@ -53,10 +53,6 @@ public class AquaTreeTableUI extends BasicTreeTableUI implements AquaComponentUI
     @Override
     protected Handler createHandler() {
         return handler;
-    }
-
-    @Override
-    public void appearanceChanged(@NotNull JComponent c, @NotNull AquaAppearance appearance) {
     }
 
     @Override

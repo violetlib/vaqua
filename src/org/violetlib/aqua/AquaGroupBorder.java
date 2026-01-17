@@ -1,5 +1,5 @@
 /*
- * Changes Copyright (c) 2015-2025 Alan Snyder.
+ * Changes Copyright (c) 2015-2026 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -34,6 +34,7 @@
 package org.violetlib.aqua;
 
 import java.awt.*;
+import javax.swing.*;
 import javax.swing.border.Border;
 
 import org.jetbrains.annotations.*;
@@ -79,15 +80,15 @@ public class AquaGroupBorder extends AquaBorder {
         return (Insets) borderInsets.clone();
     }
 
-    public void paintBorder(Component c, Graphics g, int x, int y, int width, int height) {
+    protected void paint(JComponent c, Graphics2D g, int x, int y, int width, int height) {
         x += boxInsets.left;
         y += boxInsets.top;
         width -= (boxInsets.left + boxInsets.right);
         height -= (boxInsets.top + boxInsets.bottom);
 
         // TBD: state is not currently used, but perhaps someday it will be...
-
-        AquaUtils.configure(painter, c, width, height);
+        PaintingContext pc = PaintingContext.getDefault();
+        AquaUtils.configure(painter, pc.appearance, c, width, height);
         Configuration bg = getConfiguration();
         painter.getPainter(bg).paint(g, x, y);
     }

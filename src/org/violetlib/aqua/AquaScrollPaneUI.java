@@ -234,14 +234,6 @@ public class AquaScrollPaneUI extends BasicScrollPaneUI
         }
     }
 
-    @Override
-    public void appearanceChanged(@NotNull JComponent c, @NotNull AquaAppearance appearance) {
-    }
-
-    @Override
-    public void activeStateChanged(@NotNull JComponent c, boolean isActive) {
-    }
-
     protected @NotNull AquaUIPainter.State getState() {
         if (sidebarContainerSupport != null) {
             if (!AquaFocusHandler.isActive(scrollpane)) {
@@ -301,7 +293,7 @@ public class AquaScrollPaneUI extends BasicScrollPaneUI
                 AquaUtils.fillRect(g, c, AquaUtils.ERASE_ALWAYS);
             }
         } else if (!isVibrant(c)) {
-            Color background = AquaColors.getBackground(c, "controlBackground");
+            Color background = AquaColors.getBackground(c, pc, "controlBackground");
             AquaUtils.fillRect(g, c, background, 0);
         }
 
@@ -316,7 +308,7 @@ public class AquaScrollPaneUI extends BasicScrollPaneUI
     }
 
     private boolean isVibrant(@NotNull JComponent c) {
-        return (isSidebar && AquaPainting.isSidebarVibrant()) || AquaVibrantSupport.isVibrant(c);
+        return (isSidebar && AquaPainting.isSidebarVibrant(c)) || AquaVibrantSupport.isVibrant(c);
     }
 
     private boolean isTrackPainted() {

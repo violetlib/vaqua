@@ -128,14 +128,6 @@ public class AquaProgressBarUI
     }
 
     @Override
-    public void appearanceChanged(@NotNull JComponent c, @NotNull AquaAppearance appearance) {
-    }
-
-    @Override
-    public void activeStateChanged(@NotNull JComponent c, boolean isActive) {
-    }
-
-    @Override
     public void stateChanged(ChangeEvent e) {
         progressBar.repaint();
     }
@@ -222,7 +214,7 @@ public class AquaProgressBarUI
         int x = i.left;
         int y = i.top;
 
-        AquaUtils.configure(painter, progressBar, width, height);
+        AquaUtils.configure(painter, pc.appearance, progressBar, width, height);
         Configuration pg = getConfiguration();
         painter.getPainter(pg).paint(g, x, y);
 
@@ -231,7 +223,7 @@ public class AquaProgressBarUI
         }
 
         if (progressBar.isStringPainted()) {
-            paintString((Graphics2D) g, i.left, i.top, width, height);
+            paintString(g, i.left, i.top, width, height);
         }
     }
 

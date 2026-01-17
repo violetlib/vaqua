@@ -85,15 +85,6 @@ public class AquaLabelUI extends BasicLabelUI implements AquaComponentUI {
     }
 
     @Override
-    public void appearanceChanged(@NotNull JComponent c, @NotNull AquaAppearance appearance) {
-    }
-
-    @Override
-    public void activeStateChanged(@NotNull JComponent c, boolean isActive) {
-        // JLabel is not active state sensitive
-    }
-
-    @Override
     public void update(Graphics g, JComponent c) {
         paint(g, c);
     }

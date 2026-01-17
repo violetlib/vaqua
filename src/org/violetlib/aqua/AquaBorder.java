@@ -1,5 +1,5 @@
 /*
- * Changes Copyright (c) 2015-2018 Alan Snyder.
+ * Changes Copyright (c) 2015-2026 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -34,23 +34,33 @@
 package org.violetlib.aqua;
 
 import java.awt.*;
-
 import javax.swing.*;
 import javax.swing.border.Border;
 import javax.swing.plaf.UIResource;
 
+import org.jetbrains.annotations.*;
 import org.violetlib.jnr.aqua.AquaUIPainter;
 
 /**
  * A common base class for borders.
  */
-public abstract class AquaBorder implements Border, UIResource {
+public abstract class AquaBorder
+  implements Border, ContextBorder, UIResource
+{
     protected final AquaUIPainter painter = AquaPainting.create();
 
     protected AquaBorder() {
     }
 
-    public static void repaintBorder(JComponent c) {
+    @Override
+    public final void paintBorder(@NotNull Component c, @NotNull Graphics g, int x, int y, int width, int height) {
+        JComponent jc = (JComponent) c;
+        paint(jc, (Graphics2D) g, x, y, width, height);
+        PaintingContext.pop(jc);
+    }
+
+    public static void repaintBorder(JComponent c)
+    {
         JComponent borderedComponent = c;
         Border border = c.getBorder();
         if (border == null) {
@@ -82,5 +92,10 @@ public abstract class AquaBorder implements Border, UIResource {
     }
 
     @Override
-    public boolean isBorderOpaque() { return false; }
+    public boolean isBorderOpaque()
+    {
+        return false;
+    }
+
+    protected abstract void paint(@NotNull JComponent c, @NotNull Graphics2D g, int x, int y, int width, int height);
 }

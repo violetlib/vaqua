@@ -103,7 +103,24 @@ public class AquaAppearances {
         resetNativeRendering();
         AquaImageFactory.flushAppearanceDependentImages();
         appearanceColors.clear();
-        // notification is not required, JRootPane gets a direct notification from the native window
+
+        try {
+            VAppearance va = VAppearances.getApplicationEffectiveAppearance();
+            AquaAppearance a = get(va.getName());
+
+            Window[] windows = Window.getWindows();
+            for (Window w : windows) {
+                if (w instanceof RootPaneContainer) {
+                    RootPaneContainer rpc = (RootPaneContainer) w;
+                    JRootPane rp = rpc.getRootPane();
+                    AquaRootPaneUI ui = AquaUtils.getUI(rp, AquaRootPaneUI.class);
+                    if (ui != null) {
+                        ui.effectiveAppearanceChanged(a);
+                    }
+                }
+            }
+        } catch (IOException ignore) {
+        }
     }
 
     private static void resetNativeRendering()

@@ -271,14 +271,6 @@ public class AquaComboBoxUI extends BasicComboBoxUI
         }
     }
 
-    @Override
-    public void appearanceChanged(@NotNull JComponent c, @NotNull AquaAppearance appearance) {
-    }
-
-    @Override
-    public void activeStateChanged(@NotNull JComponent c, boolean isActive) {
-    }
-
     protected void updateFromRenderer() {
         ListCellRenderer customRenderer = getCustomRenderer();
         if (buttonRenderer != null) {
@@ -388,12 +380,12 @@ public class AquaComboBoxUI extends BasicComboBoxUI
 
         // paint the button
         Configuration bg = getConfiguration();
-        AquaUtils.configure(painter, comboBox, width, height);
+        AquaUtils.configure(painter, pc.appearance, comboBox, width, height);
         if (bg != null) {
             painter.getPainter(bg).paint(g, 0, 0);
         }
         if (!comboBox.isEditable()) {
-            paintButtonValue(g);
+            paintButtonValue(g, pc);
         }
     }
 
@@ -437,9 +429,10 @@ public class AquaComboBoxUI extends BasicComboBoxUI
     /**
      * Modify the title icon if necessary based on the combo box (button) style and state.
      * @param icon The supplied icon.
+     * @param pc The painting context, or null if the icon is needed for layout.
      * @return the icon to use.
      */
-    public @NotNull Icon getTitleIcon(@NotNull Icon icon) {
+    private @NotNull Icon getTitleIcon(@NotNull Icon icon, @Nullable PaintingContext pc) {
         State st = getState();
 
         if (icon instanceof ImageIcon) {
@@ -459,8 +452,7 @@ public class AquaComboBoxUI extends BasicComboBoxUI
         }
 
         if (shouldUseDisabledIcon()) {
-            AquaAppearance appearance = AppearanceManager.getAppearance(comboBox);
-            return appearance.isDark()
+            return pc == null || pc.appearance.isDark()
               ? AquaIcon.createPressedDarkIcon(icon)
               : AquaIcon.createDisabledLightIcon(icon);
         }
@@ -486,7 +478,7 @@ public class AquaComboBoxUI extends BasicComboBoxUI
     public @Nullable Shape getFocusRingOutline(@NotNull JComponent c) {
         LayoutConfiguration g = getLayoutConfiguration();
         if (g != null) {
-            AquaUtils.configure(painter, comboBox, c.getWidth(), c.getHeight());
+            AquaUtils.configure(painter, null, comboBox, c.getWidth(), c.getHeight());
             return painter.getOutline(g);
         } else {
             return null;
@@ -513,7 +505,7 @@ public class AquaComboBoxUI extends BasicComboBoxUI
     }
 
     private @NotNull Dimension getActionTitleDisplaySize() {
-        Object value = getActionTitle();
+        Object value = getActionTitle(null);
         ListCellRenderer<Object> renderer = comboBox.getRenderer();
         Component c = renderer.getListCellRendererComponent(listBox, value, -1, false, false);
         Dimension d = getSizeForComponent(c);
@@ -524,23 +516,23 @@ public class AquaComboBoxUI extends BasicComboBoxUI
         return d;
     }
 
-    private @Nullable Object getActionTitle() {
+    private @Nullable Object getActionTitle(@Nullable PaintingContext pc) {
         Object value = comboBox.getClientProperty(TITLE_CLIENT_PROPERTY_KEY);
         if (value != null) {
             if (value instanceof Icon) {
-                return getTitleIcon((Icon) value);
+                return getTitleIcon((Icon) value, pc);
             }
         }
         return value;
     }
 
-    private void paintButtonValue(@NotNull Graphics g) {
+    private void paintButtonValue(@NotNull Graphics2D g, @NotNull PaintingContext pc) {
         ListCellRenderer<Object> renderer = comboBox.getRenderer();
 
         Object displayedItem;
         AquaComboBoxType type = getComboBoxType(comboBox);
         if (type == AquaComboBoxType.PULL_DOWN_MENU_BUTTON) {
-            displayedItem = getActionTitle();
+            displayedItem = getActionTitle(pc);
         } else {
             displayedItem = comboBox.getSelectedItem();
         }
@@ -590,7 +582,7 @@ public class AquaComboBoxUI extends BasicComboBoxUI
     }
 
     protected @Nullable Rectangle getContentBounds(@NotNull LayoutConfiguration g) {
-        AquaUtils.configure(painter, comboBox, comboBox.getWidth(), comboBox.getHeight());
+        AquaUtils.configure(painter, null, comboBox, comboBox.getWidth(), comboBox.getHeight());
         if (g instanceof ComboBoxLayoutConfiguration) {
             return AquaUtils.toMinimumRectangle(painter.getComboBoxEditorBounds((ComboBoxLayoutConfiguration) g));
         } else if (g instanceof PopupButtonLayoutConfiguration) {
@@ -1163,7 +1155,7 @@ public class AquaComboBoxUI extends BasicComboBoxUI
             if (comboBox.isEditable()) {
                 ComboBoxLayoutConfiguration g = (ComboBoxLayoutConfiguration) getLayoutConfiguration();
                 assert g != null;
-                AquaUtils.configure(painter, comboBox, width, height);
+                AquaUtils.configure(painter, null, comboBox, width, height);
                 if (editor != null) {
                     Rectangle editorBounds = AquaUtils.toMinimumRectangle(painter.getComboBoxEditorBounds(g));
                     editor.setBounds(editorBounds);

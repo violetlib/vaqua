@@ -70,7 +70,8 @@ import static org.violetlib.jnr.aqua.AquaUIPainter.State.*;
  * It supports a more compatible mouse behavior. It displays using an inactive style based on focus ownership. It
  * configures cell renderers, as possible, to conform to the tree style.
  */
-public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, AquaComponentUI, AquaViewStyleContainerUI {
+public class AquaTreeUI extends BasicTreeUI
+  implements SelectionRepaintable, AquaComponentUI, AquaViewStyleContainerUI, ActiveSensitiveComponentUI {
 
     public static ComponentUI createUI(JComponent c) {
         return new AquaTreeUI();
@@ -251,10 +252,6 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
     }
 
     @Override
-    public void appearanceChanged(@NotNull JComponent c, @NotNull AquaAppearance appearance) {
-    }
-
-    @Override
     public void activeStateChanged(@NotNull JComponent c, boolean isActive) {
         repaintScrollPane();
     }
@@ -358,7 +355,7 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
 
     protected void updateVibrantEffects() {
         if (tree.isDisplayable()) {
-            if (isSideBar() && AquaPainting.isSidebarVibrant()) {
+            if (isSideBar() && AquaPainting.isSidebarVibrant(tree)) {
                 ensureSidebarVibrantEffects();
                 return;
             }
@@ -956,6 +953,8 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
 
     public void paint(Graphics2D g, JComponent c, @NotNull PaintingContext pc) {
 
+        updateVibrantEffects();
+
         AquaUIPainter.State state = getState();
         appearanceContext = new AppearanceContext(pc.appearance, state, false, false);
         colors.configureForContainer();
@@ -1360,14 +1359,15 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
     }
 
     protected Color getSideBarForeground(boolean isTopLevel, boolean isSelected) {
+        AppearanceContext context = AquaTreeUI.this.appearanceContext;
+        if (context == null) {
+            // configuring the cell renderer for layout, color does not matter
+            return Color.WHITE;
+        }
         if (isTopLevel) {
-            return AquaColors.getSystemColor(tree, "secondaryLabel");
+            PaintingContext pc = PaintingContext.of(context.getAppearance());
+            return AquaColors.getSystemColor(tree, pc, "secondaryLabel");
         } else {
-            AppearanceContext context = AquaTreeUI.this.appearanceContext;
-            if (context == null) {
-                // configuring the cell renderer for layout, color does not matter
-                return Color.WHITE;
-            }
             if (isSelected) {
                 context = context.withSelected(true);
             }
@@ -1577,7 +1577,8 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
             }
             int x = center.x - width / 2;
             int y = center.y - height / 2;
-            AquaUtils.configure(painter, tree, width, height);
+            PaintingContext pc = PaintingContext.getDefault();
+            AquaUtils.configure(painter, pc.appearance, tree, width, height);
             painter.getPainter(tg).paint(g, x, y);
         }
     }
@@ -1711,7 +1712,9 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
     }
 
     protected @NotNull Color getIconColor() {
-        return AquaColors.getSystemColor(tree, "expandControl");
+        assert appearanceContext != null;
+        PaintingContext pc = PaintingContext.of(appearanceContext.getAppearance());
+        return AquaColors.getSystemColor(tree, pc, "expandControl");
     }
 
     private int findCenteredX(int x, int iconWidth) {

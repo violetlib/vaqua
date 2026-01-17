@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014-2025 Alan Snyder.
+ * Copyright (c) 2014-2026 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -47,7 +47,9 @@ public class AquaToggleButtonBorder extends AquaButtonBorder implements FocusRin
     }
 
     @Override
-    public @Nullable GenericButtonConfiguration getConfiguration(@NotNull AbstractButton b, int width, int height) {
+    public @Nullable GenericButtonConfiguration getConfiguration(@NotNull AbstractButton b,
+                                                                 @NotNull PaintingContext pc,
+                                                                 int width, int height) {
 
         LayoutConfiguration g = getLayoutConfiguration(b);
 
@@ -60,6 +62,6 @@ public class AquaToggleButtonBorder extends AquaButtonBorder implements FocusRin
               isFocused, d, SegmentedButtonConfiguration.DividerState.NONE, SegmentedButtonConfiguration.DividerState.NONE);
         }
 
-        return super.getConfiguration(b, width, height);
+        return super.getConfiguration(b, pc, width, height);
     }
 }

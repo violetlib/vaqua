@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2025 Alan Snyder.
+ * Copyright (c) 2015-2026 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -37,8 +37,9 @@ public abstract class AquaLabeledButtonBorder extends AquaNamedButtonBorder {
     public void paintButton(@NotNull Graphics2D g,
                             @NotNull AbstractButton b,
                             @Nullable Icon icon,
-                            @NotNull Rectangle viewRect) {
-        GenericButtonConfiguration c = getConfiguration(b, viewRect.width, viewRect.height);
+                            @NotNull Rectangle viewRect,
+                            @NotNull PaintingContext pc) {
+        GenericButtonConfiguration c = getConfiguration(b, pc, viewRect.width, viewRect.height);
         if (c instanceof ButtonConfiguration) {
             ButtonConfiguration bg = (ButtonConfiguration) c;
             Dimension iconSize = getIconSize(bg);
@@ -52,11 +53,11 @@ public abstract class AquaLabeledButtonBorder extends AquaNamedButtonBorder {
             Insets s = getButtonContentInsets(b);
             ButtonLayoutInfo info = engine.getLayoutInfo(viewRect.width, viewRect.height, s);
             if (info.iconBounds != null) {
-                paintBackground(g, b, bg, info.iconBounds);
+                paintBackground(g, b, bg, info.iconBounds, pc);
             }
             if (info.labelBounds != null) {
                 String text = info.substitutedLabel != null ? info.substitutedLabel : b.getText();
-                Color textColor = getForegroundColor(b, bg, false);
+                Color textColor = getForegroundColor(b, bg, pc, false);
                 AquaButtonSupport.paintText(g, b, info.labelBounds, textColor, text);
             }
         }
@@ -85,7 +86,7 @@ public abstract class AquaLabeledButtonBorder extends AquaNamedButtonBorder {
             Insets s = getButtonContentInsets(b);
             ButtonLayoutInfo info = engine.getLayoutInfo(c.getWidth(), c.getHeight(), s);
             if (info.iconBounds != null) {
-                AquaUtils.configure(painter, b, info.iconBounds.width, info.iconBounds.height);
+                AquaUtils.configure(painter, null, b, info.iconBounds.width, info.iconBounds.height);
                 Shape outline = painter.getOutline(g);
                 if (outline != null) {
                     return ExpandableOutline.createTranslatedShape(outline, info.iconBounds.x, info.iconBounds.y);

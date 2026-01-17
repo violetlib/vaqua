@@ -141,7 +141,7 @@ public class AquaTitleBar {
         assert textColor != null;
         // paint the background and buttons
         Configuration tg = getConfiguration();
-        AquaUtils.configure(titleBarPainter, frame.getRootPane(), width, titleBarHeight);
+        AquaUtils.configure(titleBarPainter, pc.appearance, frame.getRootPane(), width, titleBarHeight);
         titleBarPainter.getPainter(tg).paint(g, 0, 0);
         // now the title and the icon
         paintTitleContents(g, textColor);

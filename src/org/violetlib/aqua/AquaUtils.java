@@ -113,24 +113,24 @@ final public class AquaUtils {
     private AquaUtils() {
     }
 
-    static {
-        registerWindowChangedAppearanceCallback(new WindowAppearanceChangedCallback() {
-            @Override
-            public void windowAppearanceChanged(@NotNull Window w, @NotNull String appearanceName) {
-                if (w instanceof RootPaneContainer) {
-                    RootPaneContainer rpc = (RootPaneContainer) w;
-                    SwingUtilities.invokeLater(() -> {
-                        JRootPane rootPane = rpc.getRootPane();
-                        AquaRootPaneUI ui = getUI(rootPane, AquaRootPaneUI.class);
-                        if (ui != null) {
-                            AquaAppearance a = AquaAppearances.get(appearanceName);
-                            ui.appearanceChanged(rootPane, a);
-                        }
-                    });
-                }
-            }
-        });
-    };
+//    static {
+//        registerWindowChangedAppearanceCallback(new WindowAppearanceChangedCallback() {
+//            @Override
+//            public void windowAppearanceChanged(@NotNull Window w, @NotNull String appearanceName) {
+//                if (w instanceof RootPaneContainer) {
+//                    RootPaneContainer rpc = (RootPaneContainer) w;
+//                    SwingUtilities.invokeLater(() -> {
+//                        JRootPane rootPane = rpc.getRootPane();
+//                        AquaRootPaneUI ui = getUI(rootPane, AquaRootPaneUI.class);
+//                        if (ui != null) {
+//                            AquaAppearance a = AquaAppearances.get(appearanceName);
+//                            ui.appearanceChanged(rootPane, a);
+//                        }
+//                    });
+//                }
+//            }
+//        });
+//    };
 
     /**
      * Return the UI of a component if it satisfies the specified class or interface.
@@ -984,13 +984,20 @@ final public class AquaUtils {
      * @return the color.
      */
     public static @NotNull Color getWindowBackground(@NotNull JComponent c) {
-        EffectName effect = AquaFocusHandler.isActive(c) ? EffectName.EFFECT_NONE : EffectName.EFFECT_DISABLED;
-        String baseColor = "windowBackground";
         JRootPane rp = c.getRootPane();
-        if (rp != null && isTextured(rp)) {
+        AquaAppearance appearance = AppearanceManager.findAppearanceForComponent(rp);
+        return getWindowBackground(rp, appearance);
+    }
+
+    public static @NotNull Color getWindowBackground(@NotNull JRootPane rootPane, @NotNull AquaAppearance appearance)
+    {
+        PaintingContext pc = PaintingContext.of(appearance);
+        EffectName effect = AquaFocusHandler.isActive(rootPane) ? EffectName.EFFECT_NONE : EffectName.EFFECT_DISABLED;
+        String baseColor = "windowBackground";
+        if (isTextured(rootPane)) {
             baseColor = "texturedWindowBackground";
         }
-        return AquaColors.getBackground(c, baseColor, effect);
+        return AquaColors.getBackground(rootPane, pc, baseColor, effect);
     }
 
     /**
@@ -1533,9 +1540,13 @@ final public class AquaUtils {
         return null;
     }
 
-    public static void configure(@NotNull AquaUIPainter painter, @NotNull Component c, int width, int height) {
-        AquaAppearance appearance = AppearanceManager.getAppearance(c);
-        painter.configureAppearance(appearance.getAppearance());
+    public static void configure(@NotNull AquaUIPainter painter,
+                                 @Nullable AquaAppearance appearance,  // null is OK for layout inquiries
+                                 @NotNull Component c,
+                                 int width, int height) {
+        if (appearance != null) {
+            painter.configureAppearance(appearance.getAppearance());
+        }
         painter.configure(width, height);
     }
 

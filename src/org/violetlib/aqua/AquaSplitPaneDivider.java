@@ -144,7 +144,7 @@ public class AquaSplitPaneDivider extends BasicSplitPaneDivider {
             DividerWidget w = ui.getWidget();
             State state = getState();
             AquaUIPainter.Orientation orientation = isVerticalDivider ? AquaUIPainter.Orientation.VERTICAL : AquaUIPainter.Orientation.HORIZONTAL;
-            AquaUtils.configure(painter, splitPane, size.width, size.height);
+            AquaUtils.configure(painter, pc.appearance, splitPane, size.width, size.height);
             SplitPaneDividerConfiguration dg = new SplitPaneDividerConfiguration(w, state, orientation, 0);
             painter.getPainter(dg).paint(g, x, y);
         } else {

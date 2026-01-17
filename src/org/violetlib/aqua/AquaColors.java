@@ -183,24 +183,29 @@ public class AquaColors {
         return OSVersion < 1014 ? LEGACY_COMBO_BOX_MENU_COLORS : MENU_COLORS;
     }
 
-    public static @NotNull Color getForeground(@NotNull JComponent c, @NotNull String colorName) {
-        Color color = c.getForeground();
-        return getDefaultColor(c, color, colorName);
-    }
+//    public static @NotNull Color getForeground(@NotNull JComponent c, @NotNull String colorName) {
+//        Color color = c.getForeground();
+//        return getDefaultColor(c, color, colorName);
+//    }
+//
+//    public static @NotNull Color getForeground(@NotNull JComponent c, @NotNull String colorName, @NotNull EffectName effect) {
+//        Color color = c.getForeground();
+//        return getDefaultColor(c, color, colorName, effect);
+//    }
 
-    public static @NotNull Color getForeground(@NotNull JComponent c, @NotNull String colorName, @NotNull EffectName effect) {
-        Color color = c.getForeground();
-        return getDefaultColor(c, color, colorName, effect);
-    }
-
-    public static @NotNull Color getBackground(@NotNull Component c, @NotNull String colorName) {
+    public static @NotNull Color getBackground(@NotNull Component c,
+                                               @NotNull PaintingContext pc,
+                                               @NotNull String colorName) {
         Color color = c.getBackground();
-        return getDefaultColor(c, color, colorName);
+        return getDefaultColor(c, pc, color, colorName);
     }
 
-    public static @NotNull Color getBackground(@NotNull Component c, @NotNull String colorName, @NotNull EffectName effect) {
+    public static @NotNull Color getBackground(@NotNull Component c,
+                                               @NotNull PaintingContext pc,
+                                               @NotNull String colorName,
+                                               @NotNull EffectName effect) {
         Color color = c.getBackground();
-        return getDefaultColor(c, color, colorName, effect);
+        return getDefaultColor(c, pc, color, colorName, effect);
     }
 
     /**
@@ -227,19 +232,22 @@ public class AquaColors {
     /**
      * Identify the system color to use for a component if the application has not specified a color.
      * @param c The component.
+     * @param pc The painting context.
      * @param color The color obtained from the component.
      * @param colorName The name of system color.
      * @return {@code color} if it is application specified or from a renderer or there is no system color with the
      *  specified name; otherwise, the system color with the specified name according to the effective appearance
      *  of {@code c}.
      */
-    public static @NotNull Color getDefaultColor(@NotNull Component c, @NotNull Color color, @NotNull String colorName) {
+    public static @NotNull Color getDefaultColor(@NotNull Component c,
+                                                 @NotNull PaintingContext pc,
+                                                 @NotNull Color color,
+                                                 @NotNull String colorName) {
         if (isPriority(color)) {
             return color;
         }
 
-        AquaAppearance appearance = AppearanceManager.getAppearance(c);
-        Color appearanceColor = appearance.getColor(colorName);
+        Color appearanceColor = pc.appearance.getColor(colorName);
         if (appearanceColor != null) {
             return appearanceColor;
         }
@@ -250,6 +258,7 @@ public class AquaColors {
     /**
      * Identify the system color to use for a component if the application has not specified a color.
      * @param c The component.
+     * @param pc The painting context.
      * @param color The color obtained from the component.
      * @param colorName The name of system color.
      * @return {@code color} if it is application specified or from a renderer or there is no system color with the
@@ -257,6 +266,7 @@ public class AquaColors {
      *  of {@code c}.
      */
     public static @NotNull Color getDefaultColor(@NotNull Component c,
+                                                 @NotNull PaintingContext pc,
                                                  @NotNull Color color,
                                                  @NotNull String colorName,
                                                  @NotNull EffectName effect) {
@@ -264,8 +274,7 @@ public class AquaColors {
             return color;
         }
 
-        AquaAppearance appearance = AppearanceManager.getAppearance(c);
-        Color appearanceColor = appearance.getColorForOptionalEffect(colorName, effect);
+        Color appearanceColor = pc.appearance.getColorForOptionalEffect(colorName, effect);
         if (appearanceColor != null) {
             return appearanceColor;
         }
@@ -280,13 +289,14 @@ public class AquaColors {
      * @return The system color with the specified name in the effective appearance of {@code c}.
      * @throws UnsupportedOperationException if the specified color is not defined.
      */
-    public static @NotNull Color getSystemColor(@NotNull JComponent c, @NotNull String colorName) {
-        AquaAppearance appearance = AppearanceManager.getAppearance(c);
-        Color appearanceColor = appearance.getColor(colorName);
+    public static @NotNull Color getSystemColor(@NotNull JComponent c,
+                                                @NotNull PaintingContext pc,
+                                                @NotNull String colorName) {
+        Color appearanceColor = pc.appearance.getColor(colorName);
         if (appearanceColor != null) {
             return appearanceColor;
         }
-        throw new UnsupportedOperationException("System color " + colorName + " is not defined in " + appearance.getName());
+        throw new UnsupportedOperationException("System color " + colorName + " is not defined in " + pc.appearance.getName());
     }
 
     /**
@@ -297,14 +307,14 @@ public class AquaColors {
      * @throws UnsupportedOperationException if the specified color is not defined.
      */
     public static @NotNull Color getSystemColor(@NotNull JComponent c,
+                                                @NotNull PaintingContext pc,
                                                 @NotNull String colorName,
                                                 @NotNull EffectName effect) {
-        AquaAppearance appearance = AppearanceManager.getAppearance(c);
-        Color appearanceColor = appearance.getColorForOptionalEffect(colorName, effect);
+        Color appearanceColor = pc.appearance.getColorForOptionalEffect(colorName, effect);
         if (appearanceColor != null) {
             return appearanceColor;
         }
-        throw new UnsupportedOperationException("System color " + colorName + " is not defined in " + appearance.getName());
+        throw new UnsupportedOperationException("System color " + colorName + " is not defined in " + pc.appearance.getName());
     }
 
     private static @NotNull BasicContextualColors createBasicTextColors() {

@@ -14,7 +14,6 @@ import java.awt.event.HierarchyListener;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import javax.swing.*;
-import javax.swing.border.AbstractBorder;
 import javax.swing.border.Border;
 import javax.swing.plaf.UIResource;
 
@@ -608,18 +607,25 @@ public class AquaCustomStyledWindow {
         }
     }
 
-    protected class CustomBorderBase
-      extends AbstractBorder
-      implements UIResource {
+    private static abstract class CustomBorderBase
+      extends AquaBorder
+    {
+        @Override
+        protected void paint(@NotNull JComponent c, @NotNull Graphics2D g, int x, int y, int width, int height)
+        {
+        }
     }
 
-    protected class CustomContentPaneBorder extends CustomBorderBase {
+    private static class CustomContentPaneBorder
+      extends CustomBorderBase
+    {
         private int top;
         private int left;
         private int bottom;
         private int right;
 
-        public CustomContentPaneBorder(int top, int left, int bottom, int right) {
+        public CustomContentPaneBorder(int top, int left, int bottom, int right)
+        {
             this.top = top;
             this.left = left;
             this.bottom = bottom;
@@ -627,36 +633,31 @@ public class AquaCustomStyledWindow {
         }
 
         @Override
-        public Insets getBorderInsets(Component c, Insets insets)
+        public @NotNull Insets getBorderInsets(@NotNull Component c)
         {
-            insets.top = top;
-            insets.left = left;
-            insets.bottom = bottom;
-            insets.right = right;
-            return insets;
+            return new Insets(top, left, bottom, right);
         }
     }
 
-    protected class CustomToolbarBorder extends CustomBorderBase {
+    private static class CustomToolbarBorder
+      extends CustomBorderBase
+    {
         protected int extraTop;
         protected int extraLeft;
         protected int extraBottom;
 
-        public CustomToolbarBorder(int extraLeft, int extraTop, int extraBottom) {
+        public CustomToolbarBorder(int extraLeft, int extraTop, int extraBottom)
+        {
             this.extraLeft = extraLeft;
             this.extraTop = extraTop;
             this.extraBottom = extraBottom;
         }
 
         @Override
-        public Insets getBorderInsets(Component c, Insets insets)
+        public @NotNull Insets getBorderInsets(@NotNull Component c)
         {
             Insets margin = c instanceof JToolBar ? ((JToolBar) c).getMargin() : new Insets(0, 0, 0, 0);
-            insets.left = margin.left + extraLeft;
-            insets.top = margin.top + extraTop;
-            insets.right = margin.right;
-            insets.bottom = margin.bottom + extraBottom + 1;
-            return insets;
+            return new Insets(margin.top + extraTop, margin.left + extraLeft, margin.bottom + extraBottom + 1, margin.right);
         }
     }
 }

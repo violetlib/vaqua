@@ -124,15 +124,6 @@ public class AquaSplitPaneUI extends BasicSplitPaneUI
         super.uninstallListeners();
     }
 
-    @Override
-    public void appearanceChanged(@NotNull JComponent c, @NotNull AquaAppearance appearance) {
-    }
-
-    @Override
-    public void activeStateChanged(@NotNull JComponent c, boolean isActive) {
-        // not active state sensitive
-    }
-
     public void configureAsSidebar(int option) {
         option = validateSidebarOption(option);
         if (option != sidebarOption) {

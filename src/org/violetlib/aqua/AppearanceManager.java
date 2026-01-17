@@ -84,12 +84,8 @@ public class AppearanceManager {
 
     public static final String AQUA_APPEARANCE_NAME_KEY = "Aqua.appearanceName";  // the name of an explicitly chosen appearance
 
-    private static boolean isResponderRegistered;
-    /**
-     * The current appearance. If not null, a paint operation is in progress and the appearance is correct for the
-     * component currently being painted.
-     */
-    private static @Nullable AquaAppearance currentAppearance;
+    //private static boolean isResponderRegistered;
+
     /**
      * The current painting context. If not null, a paint operation is in progress and the painting context is correct
      * for the component currently being painted.
@@ -107,7 +103,6 @@ public class AppearanceManager {
 
     private static final @NotNull PropertyChangeListener myPropertyChangeListener = AppearanceManager::propertyChanged;
 
-
     /* package private */ static void initialize()
     {
 //        if (!isResponderRegistered) {
@@ -121,8 +116,12 @@ public class AppearanceManager {
      */
     public static void install(@NotNull JComponent c)
     {
+        String specifiedAppearance = getSpecifiedAppearanceName(c);
+        if (specifiedAppearance != null) {
+            isSpecifiedAppearanceFeatureEnabled = true;
+        }
         c.addPropertyChangeListener(myPropertyChangeListener);
-        ContextBorder.install(c);
+        ContextBorderWrapper.install(c);
     }
 
     /**
@@ -131,7 +130,7 @@ public class AppearanceManager {
     public static void uninstall(@NotNull JComponent c)
     {
         c.removePropertyChangeListener(myPropertyChangeListener);
-        ContextBorder cb = AquaBorderSupport.getContextBorder(c);
+        ContextBorderWrapper cb = AquaBorderSupport.getContextBorderWrapper(c);
         if (cb != null) {
             cb.uninstall();
         }
@@ -173,8 +172,8 @@ public class AppearanceManager {
         // If the application defines a border to replace a context border, reinstall the context border with the
         // new application border as its delegate.
 
-        if (oldBorder instanceof ContextBorder) {
-            ContextBorder contextBorder = (ContextBorder) oldBorder;
+        if (oldBorder instanceof ContextBorderWrapper) {
+            ContextBorderWrapper contextBorder = (ContextBorderWrapper) oldBorder;
             contextBorder.setDelegate(newBorder);
             installBorderQuietly(jc, contextBorder);
         }
@@ -215,14 +214,18 @@ public class AppearanceManager {
 
     private static void borderPaintedChanged(@NotNull JComponent jc, boolean oldValue, boolean newValue)
     {
-        // If the component has a context border and the application specifies that a border should not be painted, save
-        // that as the value to be restored and force the attribute to be true. The context border must be invoked.
+        // If a context border wrapper has benn installed on the component, then pass the new value of borderPainted
+        // to the wrapper. If the component border is any kind of context border, force the component property to true
+        // so that the context border will be invoked.
+
+        ContextBorderWrapper wrapper = AquaBorderSupport.getContextBorderWrapper(jc);
+        if (wrapper != null) {
+            wrapper.setBorderPainted(newValue);
+        }
 
         if (!newValue) {
-
             ContextBorder cb = AquaBorderSupport.getContextBorder(jc);
             if (cb != null) {
-                cb.setOldIsBorderPainted(true);
                 boolean old = ignoreBorderPaintedChange;
                 ignoreBorderPaintedChange = true;
                 try {
@@ -248,21 +251,22 @@ public class AppearanceManager {
         return AquaAppearances.getDefaultAppearance();
     }
 
-
     /**
      * Return the appearance that should be used by a component for a painting operation in progress. If the component
      * has a registered appearance, that appearance is returned. Otherwise, an appearance is determined based on the
-     * existence of a specified appearance, an appearance obtained from an ancestor, or the application appearance. If
-     * appropriate, the vibrant variant of the specified, inherited, or application appearance will be used. The
-     * component is updated to register the appearance for future use, if it is not a default appearance. Ancestors may
-     * also be updated.
+     * existence of a specified appearance, an appearance obtained from an ancestor, or the application appearance.
      * @param c The component.
      * @return the appearance to use.
      */
-
-    public static @NotNull AquaAppearance getAppearance(@NotNull Component c) {
-
+    public static @NotNull AquaAppearance getAppearance(@NotNull Component c)
+    {
         return findAppearanceForComponent(c);
+    }
+
+    public static @NotNull AquaAppearance getCurrentAppearance()
+    {
+        PaintingContext pc = PaintingContext.get();
+        return pc != null ? pc.appearance : getApplicationAppearance();
     }
 
     /**
@@ -288,8 +292,8 @@ public class AppearanceManager {
      * @param c The component.
      * @return the specified appearance name, or null if none.
      */
-
-    public static @Nullable String getSpecifiedAppearanceName(@NotNull Component c) {
+    public static @Nullable String getSpecifiedAppearanceName(@NotNull Component c)
+    {
         return c instanceof JComponent ? getSpecifiedAppearanceName((JComponent) c) : null;
     }
 
@@ -298,8 +302,8 @@ public class AppearanceManager {
      * @param jc The component.
      * @return the specified appearance name, or null if none.
      */
-
-    public static @Nullable String getSpecifiedAppearanceName(@NotNull JComponent jc) {
+    public static @Nullable String getSpecifiedAppearanceName(@NotNull JComponent jc)
+    {
         Object o = jc.getClientProperty(AQUA_APPEARANCE_NAME_KEY);
         if (o instanceof String) {
             return (String) o;
@@ -312,41 +316,19 @@ public class AppearanceManager {
      * @param jc The component.
      * @param name the appearance name, or null to remove any specified appearance name.
      */
-
-    public static void setSpecifiedAppearanceName(@NotNull JComponent jc, @Nullable String name) {
+    public static void setSpecifiedAppearanceName(@NotNull JComponent jc, @Nullable String name)
+    {
         jc.putClientProperty(AQUA_APPEARANCE_NAME_KEY, name);
     }
 
     /* package private */ static void handleActiveStatusChange(@NotNull JComponent jc, boolean isActive)
     {
-        AquaComponentUI ui = AquaUtils.getUI(jc, AquaComponentUI.class);
+        ActiveSensitiveComponentUI ui = AquaUtils.getUI(jc, ActiveSensitiveComponentUI.class);
         if (ui != null) {
             ui.activeStateChanged(jc, isActive);
             jc.repaint();
         }
     }
-
-//    private static void systemPropertyChanged()
-//    {
-//        notifyAllWindows();
-//    }
-//
-//    private static void notifyAllWindows()
-//    {
-//        Window[] windows = Window.getWindows();
-//        for (Window w : windows) {
-//            if (w instanceof RootPaneContainer) {
-//                RootPaneContainer rpc = (RootPaneContainer) w;
-//                JRootPane rp = rpc.getRootPane();
-//                notifyTree(rp);
-//            }
-//        }
-//    }
-//
-//    private static void notifyTree(@NotNull JRootPane rp)
-//    {
-//        rp.repaint();
-//    }
 
     private static void debug(@NotNull Component c, @NotNull String s)
     {
@@ -371,7 +353,6 @@ public class AppearanceManager {
         return PaintingContext.of(appearance);
     }
 
-
     /**
      * This method must be used to perform the paintComponent operation for a VAqua component.
      */
@@ -384,34 +365,32 @@ public class AppearanceManager {
             Utils.logError("Specified appearance is not supported on component " + jc.getClass());
         }
 
-        AquaAppearance push = null;
-
-        if (currentAppearance != null) {
+        AquaAppearance newAppearance = null;
+        if (currentContext != null) {
             // If a current appearance is defined, then the only possible change is substitution of a different
             // specified appearance.
-            if (specifiedAppearance != null && specifiedAppearance != currentAppearance) {
-                push = specifiedAppearance;
+            if (specifiedAppearance != null && specifiedAppearance != currentContext.appearance) {
+                newAppearance = specifiedAppearance;
+            } else {
+                // Use the current context, which remains valid.
+                painter.paint((Graphics2D) g, jc, currentContext);
             }
         } else {
             // If no current appearance is defined, the appropriate appearance must be identified.
-            push = findAppearanceForComponent(jc);
+            newAppearance = findAppearanceForComponent(jc);
         }
 
-        if (push == null) {
-            // Use the current context, which remains valid.
-            assert currentContext != null;
-            painter.paint((Graphics2D) g, jc, currentContext);
-        } else {
-            // Push a new context onto the "stack". If the component does not have a context border, then there is
-            // no place to stack the old context, so just use it without pushing.
-            PaintingContext pc = PaintingContext.of(push);
+        if (newAppearance != null) {
+            // Push a new context onto the "stack". If the component does not have a context border, then the context
+            // cannot be pushed as it will never be popped, so just use it.
             if (cb != null) {
-                cb.setOldPaintingContext(currentContext);
-                currentContext = pc;
+                PaintingContext pc = PaintingContext.push(jc, newAppearance);
+                painter.paint((Graphics2D) g, jc, pc);
             } else {
                 Utils.logError("Component " + jc.getClass() + " requested a painting context but does not have a context border");
+                PaintingContext pc = PaintingContext.of(newAppearance);
+                painter.paint((Graphics2D) g, jc, pc);
             }
-            painter.paint((Graphics2D) g, jc, pc);
         }
     }
 
