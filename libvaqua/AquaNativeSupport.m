@@ -2,7 +2,7 @@
  * @(#)AquaNativeSupport.m
  *
  * Copyright (c) 2004-2007 Werner Randelshofer, Switzerland.
- * Copyright (c) 2014-2025 Alan Snyder.
+ * Copyright (c) 2014-2026 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this software, except in
@@ -1499,7 +1499,7 @@ static void internalDeliverWindowChangedAppearance(JNIEnv *env, NSWindow *window
 void deliverWindowChangedAppearance(NSWindow *window, NSAppearance *appearance)
 {
     if (windowChangedAppearanceCallback == nil) {
-        NSLog(@"No callback for window changed appearance");
+        //NSLog(@"No callback for window changed appearance");
         return;
     }
 

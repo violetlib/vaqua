@@ -789,7 +789,7 @@ public class AquaColors {
         return new Color(c.getRed(), c.getGreen(), c.getBlue(), c.getAlpha());
     }
 
-    public static @Nullable Color getCellEditorBackground(@NotNull JComponent c) {
+    public static @NotNull Color getCellEditorBackground() {
         return new Color(0, 0, 0, 150);
     }
 

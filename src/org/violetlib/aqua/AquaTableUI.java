@@ -855,14 +855,12 @@ public class AquaTableUI extends BasicTableUI
 
                 if (isSelected && isEditing && editingRow == row && editingColumn >= cMin && editingColumn <= cMax
                   && shouldPaintSpecialEditedCellBackground()) {
-                    Color b = AquaColors.getCellEditorBackground(table);
-                    if (b != null) {
-                        Rectangle editorCellRect = table.getCellRect(row, editingColumn, true);
-                        int x1 = editorCellRect.x;
-                        int x2 = x1 + editorCellRect.width;
-                        g.setColor(b);
-                        g.fillRect(x1, cellRect.y, x2 - x1, cellRect.height);
-                    }
+                    Color b = AquaColors.getCellEditorBackground();
+                    Rectangle editorCellRect = table.getCellRect(row, editingColumn, true);
+                    int x1 = editorCellRect.x;
+                    int x2 = x1 + editorCellRect.width;
+                    g.setColor(b);
+                    g.fillRect(x1, cellRect.y, x2 - x1, cellRect.height);
                 }
 
                 nextRowY = cellRect.y + cellRect.height;

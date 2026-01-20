@@ -258,7 +258,7 @@ public class AquaScrollingPopupMenuWrapper extends JPanel {
 
     @Override
     public void paintComponent(Graphics g) {
-
+        super.paintComponent(g);
         configure(false);
 
         // The following code supports pop up menus with rounded corners. The key requirement is that the popup must
@@ -271,8 +271,6 @@ public class AquaScrollingPopupMenuWrapper extends JPanel {
             Rectangle bounds = getBounds();
             bp.paintBackground(this, g, pc, bounds.x, bounds.y, bounds.width, bounds.height);
         }
-
-        super.paintComponent(g);
     }
 
     protected void configure(boolean forceLayout) {

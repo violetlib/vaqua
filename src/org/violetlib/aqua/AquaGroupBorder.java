@@ -69,9 +69,9 @@ public class AquaGroupBorder extends AquaBorder {
     public AquaGroupBorder(@NotNull Insets boxInsets, @NotNull Insets borderInsets, boolean isFrameOnly) {
         this.boxInsets = boxInsets;
         this.borderInsets = new Insets(boxInsets.top + borderInsets.top,
-                boxInsets.left + borderInsets.left,
-                boxInsets.bottom + borderInsets.bottom,
-                boxInsets.right + borderInsets.right);
+          boxInsets.left + borderInsets.left,
+          boxInsets.bottom + borderInsets.bottom,
+          boxInsets.right + borderInsets.right);
         this.isFrameOnly = isFrameOnly;
     }
 

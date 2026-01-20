@@ -40,7 +40,6 @@ import java.beans.PropertyChangeListener;
 import java.beans.PropertyVetoException;
 import javax.swing.*;
 import javax.swing.border.Border;
-import javax.swing.border.CompoundBorder;
 import javax.swing.event.MouseInputAdapter;
 import javax.swing.plaf.ActionMapUIResource;
 import javax.swing.plaf.ComponentUI;
@@ -298,7 +297,9 @@ public class AquaInternalFrameUI extends BasicInternalFrameUI implements SwingCo
         // We don't get the borders from UIManager, in case someone changes them - this class will not work with
         // different borders.  If they want different ones, they have to make their own InternalFrameUI class
 
-        frame.setBorder(new CompoundUIBorder(isPalette ? paletteWindowShadow.get() : documentWindowShadow.get(), fAquaBorder));
+        Border shadowBorder = isPalette ? paletteWindowShadow.get() : documentWindowShadow.get();
+        assert shadowBorder != null;
+        frame.setBorder(AquaUICompoundBorder.of(shadowBorder, fAquaBorder));
         fIsPallet = isPalette;
     }
 
@@ -839,11 +840,6 @@ public class AquaInternalFrameUI extends BasicInternalFrameUI implements SwingCo
             return getForegroundShadowBorder();
         }
     };
-
-    @SuppressWarnings("serial") // Superclass is not serializable across versions
-    static class CompoundUIBorder extends CompoundBorder implements UIResource {
-        public CompoundUIBorder(Border inside, Border outside) { super(inside, outside); }
-    }
 
     abstract static class InternalFrameShadow extends RecyclableSingleton<Border> {
         abstract Border getForegroundShadowBorder();

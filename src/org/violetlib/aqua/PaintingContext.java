@@ -45,6 +45,14 @@ public final class PaintingContext
 
     private static @Nullable PaintingContext current;
 
+    /**
+     * Return the current painting context.
+     * <p>
+     * This method should not be used by components or component UIs.
+     * Components and component UIs should use getDefault, which most likely will
+     * return an appropriate result.
+     * @return the current painting context, or null if none.
+     */
     public static @Nullable PaintingContext get()
     {
         return current;

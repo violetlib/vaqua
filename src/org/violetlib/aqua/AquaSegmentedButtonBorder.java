@@ -126,7 +126,7 @@ public class AquaSegmentedButtonBorder extends AquaButtonBorder implements Focus
         if (OSVersion == 1014
           && state.isInactive()
           && widget.isTextured()
-          && !AppearanceManager.getAppearance(b).isDark()
+          && !AppearanceManager.findAppearanceForComponent(b).isDark()
           && isExclusive) {
             state = state.toActive();
         }

@@ -582,6 +582,23 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements ActiveSensi
         }
 
         @Override
+        protected void paintComponent(Graphics g) {
+            super.paintComponent(g); // sets up the painting context
+            if (!useGroupBox() && !AquaSheetSupport.isSheet(fc)) {
+                // Paint a background that is appearance-sensitive
+                PaintingContext pc = PaintingContext.getDefault();
+                boolean isSave = fc.getDialogType() == JFileChooser.SAVE_DIALOG;
+                String name = isSave ? "saveOptionsArea" : "openOptionsArea";
+                EffectName effect = AquaFocusHandler.isActive(fc) ? EffectName.EFFECT_NONE : EffectName.EFFECT_DISABLED;
+                Color color = pc.appearance.getColorForEffect(name, effect);
+                if (color != null) {
+                    g.setColor(color);
+                    g.fillRect(0, 0, getWidth(), getHeight());
+                }
+            }
+        }
+
+        @Override
         public void reconfigure() {
             setOpaque(false);
             if (useGroupBox()) {
@@ -591,19 +608,19 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements ActiveSensi
             } else {
                 setBorder(null);
                 optionsSeparator.setVisible(true);
-                // Use a transparent background when displayed in a sheet.
-                if (!AquaSheetSupport.isSheet(fc)) {
-                    AquaAppearance appearance = AppearanceManager.getAppearance(fc);
-                    boolean isSave = fc.getDialogType() == JFileChooser.SAVE_DIALOG;
-                    String name = isSave ? "saveOptionsArea" : "openOptionsArea";
-                    EffectName effect = AquaFocusHandler.isActive(fc) ? EffectName.EFFECT_NONE : EffectName.EFFECT_DISABLED;
-                    Color color = appearance.getColorForEffect(name, effect);
-                    if (color != null) {
-                        // Must not use a UI color, as this color should override a vibrant ancestor.
-                        setOpaque(true);
-                        setBackground(AquaColors.getOrdinaryColor(color));
-                    }
-                }
+//                // Use a transparent background when displayed in a sheet.
+//                if (!AquaSheetSupport.isSheet(fc)) {
+//                    AquaAppearance appearance = AppearanceManager.getAppearance(fc);
+//                    boolean isSave = fc.getDialogType() == JFileChooser.SAVE_DIALOG;
+//                    String name = isSave ? "saveOptionsArea" : "openOptionsArea";
+//                    EffectName effect = AquaFocusHandler.isActive(fc) ? EffectName.EFFECT_NONE : EffectName.EFFECT_DISABLED;
+//                    Color color = appearance.getColorForEffect(name, effect);
+//                    if (color != null) {
+//                        // Must not use a UI color, as this color should override a vibrant ancestor.
+//                        setOpaque(true);
+//                        setBackground(AquaColors.getOrdinaryColor(color));
+//                    }
+//                }
             }
         }
 
@@ -2765,14 +2782,12 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements ActiveSensi
         public Component getTreeCellRendererComponent(JTree tree, Object value,
                                                       boolean isSelected, boolean isExpanded, boolean isLeaf,
                                                       int row, boolean cellHasFocus) {
-            super.getTreeCellRendererComponent(tree, value, isSelected,
-              isExpanded, isLeaf, row, false);
-
+            super.getTreeCellRendererComponent(tree, value, isSelected, isExpanded, isLeaf, row, false);
             if (value instanceof SidebarTreeNode) {
                 SidebarTreeNode info = (SidebarTreeNode) value;
                 setText(info.getUserName());
-                AquaAppearance appearance = AppearanceManager.getAppearance(tree);
-                setIcon(info.getIcon(appearance));
+                PaintingContext pc = PaintingContext.getDefault();
+                setIcon(info.getIcon(pc.appearance));
             }
             return this;
         }
@@ -3668,7 +3683,7 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements ActiveSensi
 
         configureTopPanel();
 
-        AquaAppearance appearance = AppearanceManager.getAppearance(fc);
+        AquaAppearance appearance = AppearanceManager.findAppearanceForComponent(fc);
         if (isStandardDialog) {
             AquaBorderSupport.installBorder(splitPane, null);
         } else {

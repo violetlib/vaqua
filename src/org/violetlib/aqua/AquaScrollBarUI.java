@@ -183,7 +183,7 @@ public class AquaScrollBarUI extends ScrollBarUI implements AquaComponentUI {
 
         int width = fScrollBar.getWidth();
         int height = fScrollBar.getHeight();
-        ScrollBarConfiguration bg = getConfiguration(false);
+        ScrollBarConfiguration bg = getConfiguration(pc);
         int x = 0;
         int y = 0;
 
@@ -227,9 +227,9 @@ public class AquaScrollBarUI extends ScrollBarUI implements AquaComponentUI {
         }
     }
 
-    protected ScrollBarConfiguration getConfiguration(boolean isForLayoutSize) {
-        ScrollBarWidget sw = getScrollBarWidget(isForLayoutSize);
-        ScrollBarKnobWidget kw = getScrollBarKnobWidget(sw);
+    protected ScrollBarConfiguration getConfiguration(@NotNull PaintingContext pc) {
+        ScrollBarWidget sw = getScrollBarWidget(false);
+        ScrollBarKnobWidget kw = getScrollBarKnobWidget(sw, pc);
         Size size = getScrollBarSize();
         State state = getScrollBarState(sw);
         Orientation o = getScrollBarOrientation();
@@ -263,7 +263,7 @@ public class AquaScrollBarUI extends ScrollBarUI implements AquaComponentUI {
      */
     protected ScrollBarConfiguration getLayoutConfiguration(boolean isForLayoutSize) {
         ScrollBarWidget sw = getScrollBarWidget(isForLayoutSize);
-        ScrollBarKnobWidget kw = getScrollBarKnobWidget(sw);
+        ScrollBarKnobWidget kw = getScrollBarKnobWidget(sw, null);
         Size size = getScrollBarSize();
         State state = State.ACTIVE; // a placeholder
 
@@ -328,7 +328,9 @@ public class AquaScrollBarUI extends ScrollBarUI implements AquaComponentUI {
 
     protected boolean isOverlay() {
         String thumbStyle = (String) fScrollBar.getClientProperty(INTERNAL_THUMB_STYLE_CLIENT_PROPERTY_KEY);
-        return Objects.equals(thumbStyle, "overlayDark") || Objects.equals(thumbStyle, "overlayLight");
+        return Objects.equals(thumbStyle, "overlayDark")
+          || Objects.equals(thumbStyle, "overlayLight")
+          || Objects.equals(thumbStyle, "overlay");
     }
 
     protected ScrollBarWidget getScrollBarWidget(boolean isForLayoutSize) {
@@ -353,7 +355,7 @@ public class AquaScrollBarUI extends ScrollBarUI implements AquaComponentUI {
         return fIsDragging;
     }
 
-    protected ScrollBarKnobWidget getScrollBarKnobWidget(ScrollBarWidget sw) {
+    protected ScrollBarKnobWidget getScrollBarKnobWidget(@NotNull ScrollBarWidget sw, @Nullable PaintingContext pc) {
         if (sw == ScrollBarWidget.LEGACY) {
             return ScrollBarKnobWidget.DEFAULT; // default is the only option for legacy scroll bars
         }
@@ -363,6 +365,9 @@ public class AquaScrollBarUI extends ScrollBarUI implements AquaComponentUI {
             String style = (String) o;
             if (style.equals("overlayLight")) {
                 return ScrollBarKnobWidget.LIGHT;
+            }
+            if (style.equals("overlay") && pc != null) {
+                return pc.appearance.isDark() ? ScrollBarKnobWidget.DARK : ScrollBarKnobWidget.LIGHT;
             }
         }
         return ScrollBarKnobWidget.DARK;

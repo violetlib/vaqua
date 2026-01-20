@@ -30,7 +30,6 @@ import org.jetbrains.annotations.*;
  * appearance may not be known at the time the first VAqua component is painted.
  */
 
-
 public class AppearanceManager {
 
     // This implementation supports the concept of a current painting context that includes the appearance that should
@@ -210,6 +209,7 @@ public class AppearanceManager {
         if (!isSpecifiedAppearanceFeatureEnabled && newName != null) {
             isSpecifiedAppearanceFeatureEnabled = true;
         }
+        jc.repaint();
     }
 
     private static void borderPaintedChanged(@NotNull JComponent jc, boolean oldValue, boolean newValue)
@@ -252,26 +252,8 @@ public class AppearanceManager {
     }
 
     /**
-     * Return the appearance that should be used by a component for a painting operation in progress. If the component
-     * has a registered appearance, that appearance is returned. Otherwise, an appearance is determined based on the
-     * existence of a specified appearance, an appearance obtained from an ancestor, or the application appearance.
-     * @param c The component.
-     * @return the appearance to use.
-     */
-    public static @NotNull AquaAppearance getAppearance(@NotNull Component c)
-    {
-        return findAppearanceForComponent(c);
-    }
-
-    public static @NotNull AquaAppearance getCurrentAppearance()
-    {
-        PaintingContext pc = PaintingContext.get();
-        return pc != null ? pc.appearance : getApplicationAppearance();
-    }
-
-    /**
      * Identify the appearance that should be used by the specified component to paint in the current context. The
-     * returned appearance is valid only for a single painting operation. This method does not cache any information.
+     * returned appearance is valid only for a single painting operation.
      */
     public static @NotNull AquaAppearance findAppearanceForComponent(@NotNull Component c)
       throws UnsupportedOperationException
@@ -363,6 +345,7 @@ public class AppearanceManager {
         ContextBorder cb = AquaBorderSupport.getContextBorder(jc);
         if (specifiedAppearance != null && cb == null) {
             Utils.logError("Specified appearance is not supported on component " + jc.getClass());
+            specifiedAppearance = null;
         }
 
         AquaAppearance newAppearance = null;
@@ -371,6 +354,10 @@ public class AppearanceManager {
             // specified appearance.
             if (specifiedAppearance != null && specifiedAppearance != currentContext.appearance) {
                 newAppearance = specifiedAppearance;
+                // Changing appearance generally requires painting a background that imitates the window
+                // background corresponding to the new appearance.
+                Color bc = AquaUtils.getWindowBackground(jc.getRootPane(), newAppearance);
+                AquaUtils.fillRect(g, jc, bc, 0);
             } else {
                 // Use the current context, which remains valid.
                 painter.paint((Graphics2D) g, jc, currentContext);
@@ -378,6 +365,12 @@ public class AppearanceManager {
         } else {
             // If no current appearance is defined, the appropriate appearance must be identified.
             newAppearance = findAppearanceForComponent(jc);
+            if (newAppearance != getApplicationAppearance()) {
+                // Changing appearance generally requires painting a background that imitates the window
+                // background corresponding to the new appearance.
+                Color bc = AquaUtils.getWindowBackground(jc.getRootPane(), newAppearance);
+                AquaUtils.fillRect(g, jc, bc, 0);
+            }
         }
 
         if (newAppearance != null) {
@@ -387,7 +380,13 @@ public class AppearanceManager {
                 PaintingContext pc = PaintingContext.push(jc, newAppearance);
                 painter.paint((Graphics2D) g, jc, pc);
             } else {
-                Utils.logError("Component " + jc.getClass() + " requested a painting context but does not have a context border");
+                // Suppress the logged error message if the component is a cell renderer.
+                // This is an unlikely case, and it is not critical that a cell renderer establish a painting context
+                // if there isn't one because the default painting context is probably appropriate.
+                Container parent = jc.getParent();
+                if (!(parent instanceof CellRendererPane)) {
+                    Utils.logError("Component " + jc.getClass() + " requested a painting context but does not have a context border");
+                }
                 PaintingContext pc = PaintingContext.of(newAppearance);
                 painter.paint((Graphics2D) g, jc, pc);
             }

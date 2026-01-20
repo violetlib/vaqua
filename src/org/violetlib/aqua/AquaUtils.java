@@ -1007,7 +1007,9 @@ final public class AquaUtils {
      * @param isTop True for the top margin, false for the bottom margin.
      * @return the color.
      */
-    public static @NotNull Color getWindowMarginBackground(@NotNull JRootPane rp, boolean isTop) {
+    public static @NotNull Color getWindowMarginBackground(@NotNull JRootPane rp,
+                                                           boolean isTop,
+                                                           @NotNull PaintingContext pc) {
         // In most cases, the margin color when flat matches the content area color.
         // One exception is a non-textured window in light mode.
         // The other is a dark mode non-textured unified title/tool bar (top margin).
@@ -1016,8 +1018,7 @@ final public class AquaUtils {
         String prefix = isTop ? "top" : "bottom";
         String suffix = AquaFocusHandler.isActive(rp) ? "" : "_disabled";
         String colorName = prefix + base + suffix;
-        AquaAppearance appearance = AppearanceManager.getAppearance(rp);
-        Color bc = appearance.getColor(colorName);
+        Color bc = pc.appearance.getColor(colorName);
         if (bc == null) {
             // should not happen
             Utils.logError("Undefined window margin background color: " + colorName);
@@ -1027,13 +1028,14 @@ final public class AquaUtils {
         }
     }
 
-    public static @NotNull Color getWindowMarginDividerColor(@NotNull JRootPane rp, boolean isTop) {
+    public static @NotNull Color getWindowMarginDividerColor(@NotNull JRootPane rp,
+                                                             boolean isTop,
+                                                             @NotNull PaintingContext pc) {
         String base = isTextured(rp) ? "TexturedWindowDivider" : "WindowDivider";
         String prefix = isTop ? "top" : "bottom";
         String suffix = AquaFocusHandler.isActive(rp) ? "" : "_disabled";
         String colorName = prefix + base + suffix;
-        AquaAppearance appearance = AppearanceManager.getAppearance(rp);
-        Color color = appearance.getColor(colorName);
+        Color color = pc.appearance.getColor(colorName);
         if (color == null) {
             // should not happen
             Utils.logError("Undefined window divider color: " + colorName);

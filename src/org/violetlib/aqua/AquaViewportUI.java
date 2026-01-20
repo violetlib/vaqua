@@ -38,6 +38,9 @@ public class AquaViewportUI extends ViewportUI implements AquaComponentUI {
         viewport = (JViewport) c;
         viewport.setOpaque(false);  // needed in JDKs prior to 17 (see JDK-8253266)
         AquaVibrantSupport.installVibrantStyle(c);
+
+        // Cannot support creating a painting context because JViewport does not permit installing a border.
+
         //AppearanceManager.install(c);
     }
 
@@ -66,12 +69,9 @@ public class AquaViewportUI extends ViewportUI implements AquaComponentUI {
 
     @Override
     public void paint(Graphics g, JComponent c) {
-        AppearanceManager.withContext(g, c, this::paint);
-    }
-
-    public void paint(Graphics2D g, JComponent c, @NotNull PaintingContext pc) {
+        AquaAppearance appearance = AppearanceManager.findAppearanceForComponent(c);
         AquaUIPainter.State state = getState();
-        AppearanceContext appearanceContext = new AppearanceContext(pc.appearance, state, false, false);
+        AppearanceContext appearanceContext = new AppearanceContext(appearance, state, false, false);
         AquaColors.installColors(c, appearanceContext, colors);
         if (c.isOpaque() || AquaVibrantSupport.isVibrant(c)) {
             AquaUtils.fillRect(g, c, AquaUtils.ERASE_IF_VIBRANT);

@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2007-2013 Werner Randelshofer, Switzerland.
- * Copyright (c) 2018-2025 Alan Snyder.
+ * Copyright (c) 2018-2026 Alan Snyder.
  * You may not use, copy or modify this file, except in compliance with the
  * accompanying license terms.
  */
@@ -112,11 +112,10 @@ public class FileRenderer extends JLabel implements ListCellRenderer, GenericCel
                                                   int index,
                                                   boolean isSelected,
                                                   boolean cellHasFocus) {
-
         AquaListUI ui = AquaUtils.getUI(list, AquaListUI.class);
-        AquaAppearance appearance = AppearanceManager.getAppearance(list);
+        PaintingContext pc = PaintingContext.getDefault();
         ContainerContextualColors colors = ui != null ? ui.getColors() : AquaColors.CONTAINER_COLORS;
-        return getCellRendererComponent(list, appearance, colors, value, isSelected, cellHasFocus, false);
+        return getCellRendererComponent(list, pc.appearance, colors, value, isSelected, cellHasFocus, false);
     }
 
     @Override
@@ -377,7 +376,7 @@ public class FileRenderer extends JLabel implements ListCellRenderer, GenericCel
             arrowRect.height = arrowHeight;
             arrowRect.x = viewRect.x + viewRect.width - (arrowWidth + s.right);
             contentRect.width -= arrowTotalWidth;
-         }
+        }
 
         int labelTotalWidth = 0;
         if (isUseLabel) {

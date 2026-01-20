@@ -646,9 +646,7 @@ public class AquaScrollPaneUI extends BasicScrollPaneUI
                 } else if (THUMB_STYLE_DARK.equals(o)) {
                     bar.putClientProperty(AquaScrollBarUI.INTERNAL_THUMB_STYLE_CLIENT_PROPERTY_KEY, "overlayDark");
                 } else {
-                    AquaAppearance appearance = AppearanceManager.getAppearance(scrollpane);
-                    String style = appearance.isDark() ? "overlayLight" : "overlayDark";
-                    bar.putClientProperty(AquaScrollBarUI.INTERNAL_THUMB_STYLE_CLIENT_PROPERTY_KEY, style);
+                    bar.putClientProperty(AquaScrollBarUI.INTERNAL_THUMB_STYLE_CLIENT_PROPERTY_KEY, "overlay");
                 }
             } else {
                 bar.putClientProperty(AquaScrollBarUI.INTERNAL_THUMB_STYLE_CLIENT_PROPERTY_KEY, null);

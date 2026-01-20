@@ -359,7 +359,7 @@ public class AquaRootPaneUI extends BasicRootPaneUI implements AquaComponentUI, 
             AquaUtils.fillRect(g, c, eraserMode);
         }
         if (customStyledWindow != null) {
-            customStyledWindow.paintMarginBackgrounds(g);
+            customStyledWindow.paintMarginBackgrounds(g, pc);
         }
 
         super.paint(g, c);

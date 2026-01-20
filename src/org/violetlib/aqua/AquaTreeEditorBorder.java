@@ -38,33 +38,11 @@ public final class AquaTreeEditorBorder
 
     private @Nullable Color getBackground(@NotNull Component c)
     {
-        JTree tree = getTree(c);
-        if (tree != null) {
-            AquaTreeUI ui = AquaUtils.getUI(tree, AquaTreeUI.class);
-            if (ui != null) {
-                AquaAppearance a = AppearanceManager.getAppearance(tree);
-                if (a.isDark()) {
-                    Color b = AquaColors.getCellEditorBackground(tree);
-                    if (b != null) {
-                        return b;
-                    }
-                }
-            }
+        PaintingContext pc = PaintingContext.getDefault();
+        if (pc.appearance.isDark()) {
+            return AquaColors.getCellEditorBackground();
         }
         return c.getBackground();
-    }
-
-    private @Nullable JTree getTree(@NotNull Component c)
-    {
-        Container parent = c.getParent();
-        if (parent instanceof JTree) {
-            return (JTree) parent;
-        }
-        if (parent == null) {
-            return null;
-        }
-        parent = parent.getParent();
-        return parent instanceof JTree ? (JTree) parent : null;
     }
 
     @Override

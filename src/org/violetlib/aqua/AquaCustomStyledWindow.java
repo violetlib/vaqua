@@ -436,7 +436,7 @@ public class AquaCustomStyledWindow {
         tb.addHierarchyListener(toolbarHierarchyListener);
     }
 
-    public void paintMarginBackgrounds(@NotNull Graphics g) {
+    public void paintMarginBackgrounds(@NotNull Graphics g, @NotNull PaintingContext pc) {
         // Update the possibly dynamic margin heights
         topMarginHeight = calculateTopMarginHeight();
         bottomMarginHeight = calculateBottomMarginHeight();
@@ -444,15 +444,16 @@ public class AquaCustomStyledWindow {
         assert rp != null;
 
         if (topMarginHeight > 0) {
-            paintMarginBackground(g, 0, topMarginHeight, true);
+            paintMarginBackground(g, 0, topMarginHeight, true, pc);
         }
         if (bottomMarginHeight > 0) {
             int y = rp.getHeight() - bottomMarginHeight;
-            paintMarginBackground(g, y, bottomMarginHeight, false);
+            paintMarginBackground(g, y, bottomMarginHeight, false, pc);
         }
     }
 
-    protected void paintMarginBackground(@NotNull Graphics g, int y, int height, boolean isTop) {
+    protected void paintMarginBackground(@NotNull Graphics g, int y, int height, boolean isTop,
+                                         @NotNull PaintingContext pc) {
         if (height > 0) {
             Graphics2D gg = (Graphics2D) g.create();
             try {
@@ -464,7 +465,7 @@ public class AquaCustomStyledWindow {
                 if (isSheet) {
                     c = AquaColors.CLEAR;
                 } else {
-                    c = AquaUtils.getWindowMarginBackground(rp, isTop);
+                    c = AquaUtils.getWindowMarginBackground(rp, isTop, pc);
                 }
 
                 AquaUtils.fillRect(g, c, 0, y, rp.getWidth(), height);
@@ -478,7 +479,7 @@ public class AquaCustomStyledWindow {
                 int rootPaneHeight = rp.getHeight();
                 if (dividerY < rootPaneHeight) {
                     int width = rp.getWidth();
-                    paintUnifiedDivider(gg, dividerY, width, isActive, isTop);
+                    paintUnifiedDivider(gg, dividerY, width, isActive, isTop, pc);
                 }
             } finally {
                 gg.dispose();
@@ -486,9 +487,10 @@ public class AquaCustomStyledWindow {
         }
     }
 
-    protected void paintUnifiedDivider(Graphics2D g, int y, int width, boolean isActive, boolean isTop) {
+    protected void paintUnifiedDivider(Graphics2D g, int y, int width, boolean isActive, boolean isTop,
+                                       @NotNull PaintingContext pc) {
         assert rp != null;
-        Color c = AquaUtils.getWindowMarginDividerColor(rp, isTop);
+        Color c = AquaUtils.getWindowMarginDividerColor(rp, isTop, pc);
         AquaUtils.fillRect(g, c, 0, y, width, 1);
     }
 

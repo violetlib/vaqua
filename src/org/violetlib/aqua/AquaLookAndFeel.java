@@ -51,6 +51,7 @@ import javax.swing.plaf.*;
 import javax.swing.plaf.basic.BasicBorders;
 import javax.swing.plaf.basic.BasicLookAndFeel;
 
+import org.jetbrains.annotations.*;
 import org.violetlib.aqua.fc.OSXFile;
 import org.violetlib.jnr.aqua.AquaNativeRendering;
 
@@ -195,6 +196,19 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
                 }
             }
         }
+    }
+
+    /**
+     * Identify the appearance to be used to display the specified component.
+     * The appearance is the application effective appearance unless the component or an
+     * ancestor of the component specifies a different appearance.
+     *
+     * @param c The component.
+     * @return the name of the appearance.
+     */
+    public @NotNull String getComponentAppearance(@NotNull Component c) {
+        AquaAppearance appearance = AppearanceManager.findAppearanceForComponent(c);
+        return appearance.getName();
     }
 
     /**

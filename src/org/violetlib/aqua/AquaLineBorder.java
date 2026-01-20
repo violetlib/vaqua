@@ -39,7 +39,7 @@ import javax.swing.*;
 import org.jetbrains.annotations.*;
 
 /**
- * The class renders a line border using an appearance based color.
+ * The class renders a line border using an appearance-dependent color.
  */
 public final class AquaLineBorder
   extends AquaBorder
@@ -56,7 +56,7 @@ public final class AquaLineBorder
     @Override
     protected void paint(@NotNull JComponent c, @NotNull Graphics2D g, int x, int y, int width, int height)
     {
-        Color color = getColor(c);
+        Color color = getColor();
         if (color == null) {
             color = Color.gray;
         }
@@ -68,10 +68,10 @@ public final class AquaLineBorder
         g.fillRect(x + width - 1, y+1, 1, height-2);
     }
 
-    private @Nullable Color getColor(@NotNull Component c)
+    private @Nullable Color getColor()
     {
-        AquaAppearance appearance = AppearanceManager.getCurrentAppearance();
-        return appearance.getColor(colorName);
+        PaintingContext pc = PaintingContext.getDefault();
+        return pc.appearance.getColor(colorName);
     }
 
     @Override
