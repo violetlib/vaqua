@@ -546,7 +546,7 @@ public class AquaButtonSupport {
                                   @NotNull Icon icon,
                                   @NotNull Rectangle iconRect,
                                   @Nullable Color iconColor) {
-        if (iconColor != null && AquaImageFactory.isTemplateIcon(icon)) {
+        if (iconColor != null && !(icon instanceof AquaButtonIcon) && AquaImageFactory.isTemplateIcon(icon)) {
             icon = AquaImageFactory.getProcessedImage(icon, iconColor);
         }
         Graphics2D gg = null;

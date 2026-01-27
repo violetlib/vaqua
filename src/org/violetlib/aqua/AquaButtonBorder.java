@@ -131,9 +131,9 @@ public abstract class AquaButtonBorder extends AquaBorder implements FocusRingOu
                 if (iconSize == null && icon != null) {
                     iconSize = new Dimension(icon.getIconWidth(), icon.getIconHeight());
                 }
-                Color textColor = getForegroundColor(b, bg, pc, false);
                 Insets insets = getButtonContentInsets(b);
-                Color iconColor = null;
+                Color textColor = getForegroundColor(b, bg, pc, false);
+                Color iconColor = getForegroundColor(b, bg, pc, true);
                 AquaButtonSupport.paintIconAndText(g, pc, b, bg, painter, insets, icon,
                   textColor, iconColor, viewRect, iconSize, isSplit);
             }
@@ -315,6 +315,9 @@ public abstract class AquaButtonBorder extends AquaBorder implements FocusRingOu
 
             return info.getForeground(state, bs, pc.appearance, useNonexclusive, isIcon);
         } else {
+            if (state.isInactive() && isSplitToolbarItem(b, g)) {
+                return info.getForeground(state, OFF, pc.appearance, useNonexclusive, false);
+            }
             return existingColor;
         }
     }
