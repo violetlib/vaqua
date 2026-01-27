@@ -70,6 +70,10 @@ public class AquaToolTipUI extends BasicToolTipUI implements AquaComponentUI {
         AquaUIPainter.State state = AquaUIPainter.State.ACTIVE;
         AppearanceContext context = new AppearanceContext(pc.appearance, state, false, false);
         AquaColors.installColors(c, context, colors);
-        super.update(g, c);
+        if (c.isOpaque()) {
+            g.setColor(c.getBackground());
+            g.fillRect(0, 0, c.getWidth(),c.getHeight());
+        }
+        super.paint(g, c);
     }
 }

@@ -101,16 +101,16 @@ public class AquaPanelUI extends BasicPanelUI implements AquaComponentUI {
 
     public void paint(Graphics2D g, JComponent c, @NotNull PaintingContext pc)
     {
-        if (c.isOpaque() || AquaVibrantSupport.isVibrant(c)) {
-            AquaUtils.fillRect(g, c, AquaUtils.ERASE_IF_TEXTURED | AquaUtils.ERASE_IF_VIBRANT);
-        }
-
         // Although a JPanel is not-opaque by default, it is still important to set appropriate foreground and
         // background colors, as these colors may be inherited by components that use them.
 
         AquaUIPainter.State state = AquaUIPainter.State.ACTIVE;
         AppearanceContext appearanceContext = new AppearanceContext(pc.appearance, state, false, false);
         AquaColors.installColors(c, appearanceContext, colors);
+
+        if (c.isOpaque() || AquaVibrantSupport.isVibrant(c)) {
+            AquaUtils.fillRect(g, c, AquaUtils.ERASE_IF_TEXTURED | AquaUtils.ERASE_IF_VIBRANT);
+        }
 
         BackgroundPainter p = getBackgroundPainter(c);
         if (p != null) {

@@ -61,5 +61,9 @@ public class AquaMenuBarUI extends BasicMenuBarUI implements AquaComponentUI {
         AquaUIPainter.State state = AquaUIPainter.State.ACTIVE;
         AppearanceContext appearanceContext = new AppearanceContext(pc.appearance, state, false, false);
         AquaColors.installColors(menuBar, appearanceContext, colors);
+        if (c.isOpaque()) {
+            g.setColor(c.getBackground());
+            g.fillRect(0, 0, c.getWidth(),c.getHeight());
+        }
     }
 }

@@ -95,6 +95,11 @@ public class AquaLabelUI extends BasicLabelUI implements AquaComponentUI {
     }
 
     public void paint(Graphics2D g, JComponent c, @NotNull PaintingContext pc) {
+        if (c.isOpaque()) {
+            g.setColor(c.getBackground());
+            g.fillRect(0, 0, c.getWidth(),c.getHeight());
+        }
+
         JLabel label = (JLabel)c;
         String text = label.getText();
         Icon icon = (label.isEnabled()) ? label.getIcon() : label.getDisabledIcon();
