@@ -132,9 +132,9 @@ public class AquaPanelUI extends BasicPanelUI implements AquaComponentUI {
     protected void updateStyle(JComponent c) {
         c.repaint();
 
-        Border b = AquaBorderSupport.getBorder(c);
+        Border b = c.getBorder();
         if (b == null || b instanceof UIResource) {
-            AquaBorderSupport.installBorder(c, getDefaultBorder(c));
+            c.setBorder(getDefaultBorder(c));
         }
     }
 

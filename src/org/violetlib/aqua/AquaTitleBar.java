@@ -130,7 +130,7 @@ public class AquaTitleBar {
     }
 
     public void paint(Graphics g) {
-        PaintingContext pc = AppearanceManager.getCurrentPaintingContext();
+        PaintingContext pc = AppearanceManager.getPaintingContext(frame);
         paint((Graphics2D) g, pc);
     }
 

@@ -89,9 +89,9 @@ public class AquaToolBarUI extends BasicToolBarUI implements SwingConstants, Aqu
     }
 
     protected void installBorder() {
-        Border b = AquaBorderSupport.getBorder(toolBar);
+        Border b = toolBar.getBorder();
         if (b == null || b instanceof UIResource) {
-            AquaBorderSupport.installBorder(toolBar, createBorder());
+            toolBar.setBorder(createBorder());
         }
     }
 

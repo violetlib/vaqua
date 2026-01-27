@@ -158,11 +158,11 @@ public class AquaSplitPaneUI extends BasicSplitPaneUI
             }
             int gap = 7;
             if (newOption == SIDEBAR_LEFT) {
-                AquaBorderSupport.installBorder(splitPane, new EmptyBorder(gap, gap, gap, 0));
+                splitPane.setBorder(new EmptyBorder(gap, gap, gap, 0));
             } else if (newOption == SIDEBAR_RIGHT) {
-                AquaBorderSupport.installBorder(splitPane, new EmptyBorder(gap, 0, gap, gap));
+                splitPane.setBorder(new EmptyBorder(gap, 0, gap, gap));
             } else {
-                AquaBorderSupport.installBorder(splitPane, originalBorder);
+                splitPane.setBorder(originalBorder);
             }
         }
     }
@@ -523,9 +523,9 @@ public class AquaSplitPaneUI extends BasicSplitPaneUI
                 Object value = evt.getNewValue();
                 if (value instanceof Border) {
                     Border b = (Border) value;
-                    AquaBorderSupport.installBorder(divider, b);
+                    divider.setBorder(b);
                 } else {
-                    AquaBorderSupport.installBorder(divider, null);
+                    divider.setBorder(null);
                 }
             } else if (isStyleProperty(prop)) {
                 updateStyle();

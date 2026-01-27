@@ -96,7 +96,7 @@ public class AquaOptionPaneUI extends BasicOptionPaneUI implements AquaComponent
      */
     protected Container createMessageArea() {
         JPanel top = new JPanel();
-        AquaBorderSupport.installBorder(top, UIManager.getBorder("OptionPane.messageAreaBorder"));
+        top.setBorder(UIManager.getBorder("OptionPane.messageAreaBorder"));
         top.setLayout(new BorderLayout());
 
         JComponent iconPanel = createIconPanel();

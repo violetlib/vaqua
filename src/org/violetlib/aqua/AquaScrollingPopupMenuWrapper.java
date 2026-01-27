@@ -185,7 +185,7 @@ public class AquaScrollingPopupMenuWrapper extends JPanel {
             }
         }
 
-        AquaBorderSupport.installBorder(viewport, null);
+        viewport.setBorder(null);
         viewport.setOpaque(false);
         viewport.setViewPosition(new Point(0, initialViewPosition));
 

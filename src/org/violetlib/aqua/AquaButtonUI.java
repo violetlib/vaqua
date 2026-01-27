@@ -190,15 +190,15 @@ public class AquaButtonUI extends BasicButtonUI
     protected void installBorder(AbstractButton b, AquaButtonExtendedTypes.TypeSpecifier type, boolean isToolbar) {
         Border customBorder = type != null ? type.getBorder() : null;
         if (customBorder != null) {
-            AquaBorderSupport.installBorder(b, customBorder);
+            b.setBorder(customBorder);
         } else {
-            Border oldBorder = AquaBorderSupport.getBorder(b);
+            Border oldBorder = b.getBorder();
             if (oldBorder == null || oldBorder instanceof UIResource) {
                 Border border = getDefaultBorder(b, isToolbar);
                 if (border == null) {
                     border = new AquaPushButtonBorder();
                 }
-                AquaBorderSupport.installBorder(b, border);
+                b.setBorder(border);
             }
         }
     }

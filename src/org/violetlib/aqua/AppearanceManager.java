@@ -11,9 +11,8 @@ package org.violetlib.aqua;
 import java.awt.*;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
+import java.util.function.Consumer;
 import javax.swing.*;
-import javax.swing.border.Border;
-import javax.swing.plaf.basic.BasicSplitPaneDivider;
 
 import org.jetbrains.annotations.*;
 
@@ -37,31 +36,20 @@ public class AppearanceManager {
     // variable, but as AWT is single threaded, it is actually a global variable. (In a more functional world, the
     // painting context would be a parameter of every painting method.)
 
-    // Conceptually, a painting context is created for the root of a component tree when the tree is painted by the
-    // repaint manager. The painting of a component tree is performed by recursive descent. Each component is called
-    // three times: first to paint the component itself, second to paint the child components, and last to paint the
-    // component border. As a global variable, the context is available to the child components; however, the context
-    // may be superseded during the painting of a subtree whose root component has specified the use of a different
-    // appearance. Effectively, there is a stack of painting contexts. In practice, the component replaces the context
-    // at the start of its paint operation and restores the previous context when its paint operation completes.
+    // There are two kinds of painting contexts.
+    //
+    // A JAppearancePanel (defined by VAquaClient) allows an application to designate the appearance to be used when
+    // painting the panel and its children. It installs a painting context at the beginning of a paint operation and
+    // uninstalls it at the end of the paint operation. A JAppearancePanel is always repainted whenever any subcomponent
+    // needs to be repainted.
+
+    // When there is no active appearance panel context, the painting context is one that uses the appearance of the
+    // window whose components are being painted.
 
     // In actuality, only VAqua components (components with a VAqua UI) know about the painting context, and the root of
-    // the tree being painted may not be a VAqua component. A more accurate description of the process is that any VAqua
-    // component that needs the painting context must create one if there is no current painting context when it is
-    // painted. Unless the component is the root pane, it cannot assume that it should use the application effective
-    // appearance. The ancestors of the component must be examined in case one of them specified a different appearance.
-
-    // The actual implementation is complicated because the repaint manager is not configurable by a look and feel.
-    // Creation of a painting context is actually performed by the component UI, which is called by paintComponent.
-    // Restoration of the previous painting context is performed by a border installed on the component by the UI.
-    // (Between paintComponent and paintBorder, the child components are painted.) This border is called a context
-    // border, to distinguish it from borders that are present to occupy space and possibly to paint.
-
-    // The installation of the context border can be tricky. Many VAqua components already have a border, specified by
-    // VAqua and not reconfigurable. Other VAqua components allow the application to define a border. To support the
-    // latter components, the context border is a wrapper that delegates to the real border (if any). There are
-    // operations in VAqua that examine the component border. These operations are not interested in the context border.
-    // They must use special methods to access the wrapped border.
+    // the tree being painted may not be a VAqua component. A more accurate description of the process is that any
+    // VAqua component that needs the painting context when none must install the window context. The window context
+    // remains valid until the window appearance is changed.
 
     // This class has been converted to use a simple, no-cache implementation. A component UI that is potentially
     // dependent on the appearance and appearance settings is required to obtain an appearance and the system colors
@@ -86,19 +74,11 @@ public class AppearanceManager {
     //private static boolean isResponderRegistered;
 
     /**
-     * The current painting context. If not null, a paint operation is in progress and the painting context is correct
-     * for the component currently being painted.
-     */
-    private static @Nullable PaintingContext currentContext;
-    /**
      * The current component being painted, as derived from requests for a painting context.
      */
     private static @Nullable JComponent currentComponent;
 
     private static boolean isSpecifiedAppearanceFeatureEnabled;
-
-    private static boolean ignoreBorderChange;
-    private static boolean ignoreBorderPaintedChange;
 
     private static final @NotNull PropertyChangeListener myPropertyChangeListener = AppearanceManager::propertyChanged;
 
@@ -120,7 +100,6 @@ public class AppearanceManager {
             isSpecifiedAppearanceFeatureEnabled = true;
         }
         c.addPropertyChangeListener(myPropertyChangeListener);
-        ContextBorderWrapper.install(c);
     }
 
     /**
@@ -129,10 +108,6 @@ public class AppearanceManager {
     public static void uninstall(@NotNull JComponent c)
     {
         c.removePropertyChangeListener(myPropertyChangeListener);
-        ContextBorderWrapper cb = AquaBorderSupport.getContextBorderWrapper(c);
-        if (cb != null) {
-            cb.uninstall();
-        }
     }
 
     private static void propertyChanged(@NotNull PropertyChangeEvent e)
@@ -144,60 +119,13 @@ public class AppearanceManager {
                 JComponent jc = (JComponent) source;
                 Object oldValue = e.getOldValue();
                 Object newValue = e.getNewValue();
-                if (name.equals("border")) {
-                    if (!ignoreBorderChange && (oldValue == null || oldValue instanceof Border)
-                      && (newValue == null || newValue instanceof Border)) {
-                        borderChanged(jc, (Border) oldValue, (Border) newValue);
-                    }
-
-                } else if (name.equals(AQUA_APPEARANCE_NAME_KEY)) {
+                if (name.equals(AQUA_APPEARANCE_NAME_KEY)) {
                     if ((oldValue == null || oldValue instanceof String) && (newValue == null || newValue instanceof String)) {
                         specifiedAppearanceChanged(jc, (String) oldValue, (String) newValue);
                     }
 
-                } else if (name.equals(AbstractButton.BORDER_PAINTED_CHANGED_PROPERTY)) {
-                    if (!ignoreBorderPaintedChange && oldValue instanceof Boolean && newValue instanceof Boolean) {
-                        borderPaintedChanged(jc, (Boolean) oldValue, (Boolean) newValue);
-                    }
                 }
             }
-        }
-    }
-
-    private static void borderChanged(@NotNull JComponent jc,
-                                      @Nullable Border oldBorder,
-                                      @Nullable Border newBorder)
-    {
-        // If the application defines a border to replace a context border, reinstall the context border with the
-        // new application border as its delegate.
-
-        if (oldBorder instanceof ContextBorderWrapper) {
-            ContextBorderWrapper contextBorder = (ContextBorderWrapper) oldBorder;
-            contextBorder.setDelegate(newBorder);
-            installBorderQuietly(jc, contextBorder);
-        }
-    }
-
-    public static void installBorderQuietly(@NotNull JComponent jc, @Nullable Border b)
-    {
-        boolean old = ignoreBorderChange;
-        ignoreBorderChange = true;
-        try {
-            jc.setBorder(b);
-        } finally {
-            ignoreBorderChange = old;
-        }
-    }
-
-    public static void installBorderQuietly(@NotNull BasicSplitPaneDivider d, @Nullable Border b)
-    {
-        // No notification is possible...
-        boolean old = ignoreBorderChange;
-        ignoreBorderChange = true;
-        try {
-            d.setBorder(b);
-        } finally {
-            ignoreBorderChange = old;
         }
     }
 
@@ -205,37 +133,18 @@ public class AppearanceManager {
                                                    @Nullable String oldName,
                                                    @Nullable String newName)
     {
-        // If the application specifies an appearance, then the specified appearance feature must be enabled.
-        if (!isSpecifiedAppearanceFeatureEnabled && newName != null) {
-            isSpecifiedAppearanceFeatureEnabled = true;
-        }
-        jc.repaint();
-    }
-
-    private static void borderPaintedChanged(@NotNull JComponent jc, boolean oldValue, boolean newValue)
-    {
-        // If a context border wrapper has benn installed on the component, then pass the new value of borderPainted
-        // to the wrapper. If the component border is any kind of context border, force the component property to true
-        // so that the context border will be invoked.
-
-        ContextBorderWrapper wrapper = AquaBorderSupport.getContextBorderWrapper(jc);
-        if (wrapper != null) {
-            wrapper.setBorderPainted(newValue);
-        }
-
-        if (!newValue) {
-            ContextBorder cb = AquaBorderSupport.getContextBorder(jc);
-            if (cb != null) {
-                boolean old = ignoreBorderPaintedChange;
-                ignoreBorderPaintedChange = true;
-                try {
-                    AquaBorderSupport.setBorderPainted(jc, true);
-                } finally {
-                    ignoreBorderPaintedChange = old;
-                }
+        AquaAppearancePanelUI ui = AquaUtils.getUI(jc, AquaAppearancePanelUI.class);
+        if (ui == null) {
+            Utils.logError("Custom component appearances are supported only for JAquaAppearancePanel (provided by VAquaClient)");
+        } else {
+            // If the application specifies an appearance, then the specified appearance feature must be enabled.
+            if (!isSpecifiedAppearanceFeatureEnabled && newName != null) {
+                isSpecifiedAppearanceFeatureEnabled = true;
             }
+            jc.repaint();
         }
     }
+
 
     /**
      * Return the current application appearance.
@@ -288,19 +197,12 @@ public class AppearanceManager {
     {
         Object o = jc.getClientProperty(AQUA_APPEARANCE_NAME_KEY);
         if (o instanceof String) {
-            return (String) o;
+            AquaAppearancePanelUI ui = AquaUtils.getUI(jc, AquaAppearancePanelUI.class);
+            if (ui != null) {
+                return (String) o;
+            }
         }
         return null;
-    }
-
-    /**
-     * Set the name of the appearance to be used by a component.
-     * @param jc The component.
-     * @param name the appearance name, or null to remove any specified appearance name.
-     */
-    public static void setSpecifiedAppearanceName(@NotNull JComponent jc, @Nullable String name)
-    {
-        jc.putClientProperty(AQUA_APPEARANCE_NAME_KEY, name);
     }
 
     /* package private */ static void handleActiveStatusChange(@NotNull JComponent jc, boolean isActive)
@@ -324,86 +226,65 @@ public class AppearanceManager {
     }
 
     /**
-     * This method for use by painters not associated with a component.
+     * This method for use by painters not associated with a VAqua component.
      */
-    public static @NotNull PaintingContext getCurrentPaintingContext()
+    public static @NotNull PaintingContext getPaintingContext(@NotNull Component c)
     {
-        if (currentContext != null) {
-            return currentContext;
+        PaintingContext pc = PaintingContext.get();
+        if (pc != null) {
+            return pc;
+        }
+        return getWindowPaintingContext(c);
+    }
+
+    private static @NotNull PaintingContext getWindowPaintingContext(@NotNull Component c)
+    {
+        Window w = SwingUtilities.getWindowAncestor(c);
+        if (w != null) {
+            JRootPane rp = AquaUtils.getRootPane(w);
+            if (rp != null) {
+                AquaRootPaneUI ui = AquaUtils.getUI(rp, AquaRootPaneUI.class);
+                if (ui != null) {
+                    return ui.getPaintingContext();
+                }
+            }
         }
         AquaAppearance appearance = getApplicationAppearance();
         return PaintingContext.of(appearance);
     }
 
+    /* package private */ static void paintAppearancePanel(@NotNull JComponent owner,
+                                                           @NotNull String appearanceName,
+                                                           @NotNull Consumer<Color> r)
+    {
+        PaintingContext pc = getPaintingContext(owner);
+        if (!appearanceName.equals(pc.appearance.getName())) {
+            AquaAppearance appearance = AquaAppearances.getOptional(appearanceName);
+            if (appearance != null) {
+                Color bc = AquaUtils.getWindowBackground(owner.getRootPane(), appearance);
+                PaintingContext.push(owner, appearance);
+                try {
+                    r.accept(bc);
+                } finally {
+                    PaintingContext.pop(owner);
+                }
+                return;
+            }
+        }
+        r.accept(null);
+    }
+
     /**
      * This method must be used to perform the paintComponent operation for a VAqua component.
+     * It provides the appropriate painting context.
      */
     public static void withContext(@NotNull Graphics g, @NotNull JComponent jc, @NotNull ComponentPainter painter)
     {
-        AquaAppearance specifiedAppearance = getSpecifiedAppearance(jc);
-
-        ContextBorder cb = AquaBorderSupport.getContextBorder(jc);
-        if (specifiedAppearance != null && cb == null) {
-            Utils.logError("Specified appearance is not supported on component " + jc.getClass());
-            specifiedAppearance = null;
+        PaintingContext pc = PaintingContext.get();
+        if (pc == null) {
+            pc = getPaintingContext(jc);
         }
-
-        AquaAppearance newAppearance = null;
-        if (currentContext != null) {
-            // If a current appearance is defined, then the only possible change is substitution of a different
-            // specified appearance.
-            if (specifiedAppearance != null && specifiedAppearance != currentContext.appearance) {
-                newAppearance = specifiedAppearance;
-                // Changing appearance generally requires painting a background that imitates the window
-                // background corresponding to the new appearance.
-                Color bc = AquaUtils.getWindowBackground(jc.getRootPane(), newAppearance);
-                AquaUtils.fillRect(g, jc, bc, 0);
-            } else {
-                // Use the current context, which remains valid.
-                painter.paint((Graphics2D) g, jc, currentContext);
-            }
-        } else {
-            // If no current appearance is defined, the appropriate appearance must be identified.
-            newAppearance = findAppearanceForComponent(jc);
-            if (newAppearance != getApplicationAppearance()) {
-                // Changing appearance generally requires painting a background that imitates the window
-                // background corresponding to the new appearance.
-                Color bc = AquaUtils.getWindowBackground(jc.getRootPane(), newAppearance);
-                AquaUtils.fillRect(g, jc, bc, 0);
-            }
-        }
-
-        if (newAppearance != null) {
-            // Push a new context onto the "stack". If the component does not have a context border, then the context
-            // cannot be pushed as it will never be popped, so just use it.
-            if (cb != null) {
-                PaintingContext pc = PaintingContext.push(jc, newAppearance);
-                painter.paint((Graphics2D) g, jc, pc);
-            } else {
-                // Suppress the logged error message if the component is a cell renderer.
-                // This is an unlikely case, and it is not critical that a cell renderer establish a painting context
-                // if there isn't one because the default painting context is probably appropriate.
-                Container parent = jc.getParent();
-                if (!(parent instanceof CellRendererPane)) {
-                    Utils.logError("Component " + jc.getClass() + " requested a painting context but does not have a context border");
-                }
-                PaintingContext pc = PaintingContext.of(newAppearance);
-                painter.paint((Graphics2D) g, jc, pc);
-            }
-        }
-    }
-
-    private static @Nullable AquaAppearance getSpecifiedAppearance(@NotNull Component c)
-    {
-        if (c instanceof JComponent) {
-            JComponent jc = (JComponent) c;
-            String appearanceName = getSpecifiedAppearanceName(jc);
-            if (appearanceName == null) {
-                return null;
-            }
-            return AquaAppearances.get(appearanceName);
-        }
-        return null;
+        painter.paint((Graphics2D) g, jc, pc);
     }
 
     public interface ComponentPainter

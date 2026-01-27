@@ -522,6 +522,17 @@ public class AquaRootPaneUI extends BasicRootPaneUI implements AquaComponentUI, 
         return null;
     }
 
+    public void setAppearance(@NotNull AquaAppearance appearance)
+    {
+        appearanceChanged(appearance);
+    }
+
+    public @NotNull PaintingContext getPaintingContext()
+    {
+        AquaAppearance a = appearance != null ? appearance : AppearanceManager.getApplicationAppearance();
+        return PaintingContext.of(appearance);
+    }
+
     private void appearanceChanged(@NotNull AquaAppearance appearance)
     {
         // The appearance of this window has changed. That includes changes to appearance settings that might affect the

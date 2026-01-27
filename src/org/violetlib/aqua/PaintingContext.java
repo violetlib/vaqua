@@ -43,6 +43,10 @@ public final class PaintingContext
         this.previous = previous;
     }
 
+    /**
+     * The current painting context. If not null, a paint operation is in progress and the painting context is correct
+     * for the component currently being painted.
+     */
     private static @Nullable PaintingContext current;
 
     /**

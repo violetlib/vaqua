@@ -45,7 +45,7 @@ import org.violetlib.jnr.aqua.AquaUIPainter;
  * A common base class for borders.
  */
 public abstract class AquaBorder
-  implements Border, ContextBorder, UIResource
+  implements Border, UIResource
 {
     protected final AquaUIPainter painter = AquaPainting.create();
 

@@ -199,7 +199,7 @@ public class AquaSplitPaneDivider extends BasicSplitPaneDivider {
         button.setFocusPainted(false);
         button.setRequestFocusEnabled(false);
         button.setFocusable(false);
-        AquaBorderSupport.installBorder(button, BorderFactory.createEmptyBorder(1, 1, 1, 1));
+        button.setBorder(BorderFactory.createEmptyBorder(1, 1, 1, 1));
         return button;
     }
 

@@ -311,7 +311,7 @@ public class TreeTable extends JComponent implements Scrollable {
                 Border scrollPaneBorder =
                   UIManager.getBorder("Table.scrollPaneBorder");
                 if (scrollPaneBorder != null) {
-                    AquaBorderSupport.installBorder(scrollPane, scrollPaneBorder);
+                    scrollPane.setBorder(scrollPaneBorder);
                 }
             }
         }

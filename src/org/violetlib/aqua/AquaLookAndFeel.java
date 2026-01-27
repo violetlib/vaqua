@@ -892,6 +892,7 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
                 "ColorChooserUI", basicPackageName + "BasicColorChooserUI",
 
                 "ViewportUI", PKG_PREFIX + "AquaViewportUI",
+                "AppearancePanelUI", PKG_PREFIX + "AquaAppearancePanelUI"
         };
         table.putDefaults(uiDefaults);
     }

@@ -78,7 +78,7 @@ public class ColumnViewImpl extends ColumnView {
 
         browserScrollPane = new JScrollPane();
         browserScrollPane.setViewport(new BrowserViewport());
-        AquaBorderSupport.installBorder(browserScrollPane, BorderFactory.createEmptyBorder(0, 0, 0, 0));
+        browserScrollPane.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 0));
         browserScrollPane.setViewportView(browser);
         browserScrollPane.putClientProperty("Quaqua.Component.visualMargin", new Insets(3, 2, 3, 2));
         //browserScrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_ALWAYS);

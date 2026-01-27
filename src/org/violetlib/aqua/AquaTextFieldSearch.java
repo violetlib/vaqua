@@ -65,7 +65,7 @@ public class AquaTextFieldSearch {
         uninstallSearchField(c);
 
         SearchFieldBorder border = new AquaTextFieldSearch.SearchFieldBorder(c);
-        AquaBorderSupport.installBorder(c, border);
+        c.setBorder(border);
         c.setLayout(border.getCustomLayout());
         c.add(getFindButton(c), BorderLayout.WEST);
         c.add(getCancelButton(c), BorderLayout.EAST);
@@ -75,7 +75,7 @@ public class AquaTextFieldSearch {
     protected static void uninstallSearchField(@NotNull JTextField c) {
         SearchFieldBorder sfb = AquaBorderSupport.get(c, SearchFieldBorder.class);
         if (sfb != null) {
-            AquaBorderSupport.installBorder(c, UIManager.getBorder("TextField.border"));
+            c.setBorder(UIManager.getBorder("TextField.border"));
             c.removeAll();
         }
     }

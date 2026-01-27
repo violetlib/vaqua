@@ -131,12 +131,12 @@ public class AquaTextPaneUIBase extends AquaTextComponentUIBase {
                 installingBorder = true;
                 if (JavaSupport.hasOpaqueBeenExplicitlySet(editor)) {
                     // If the application set the opaque attribute, do not install our border
-                    AquaBorderSupport.installBorder(editor, null);
+                    editor.setBorder(null);
                 } else {
                     AquaBackgroundBorder abb = textComponentBorder != null ? AquaBorderSupport.get(textComponentBorder, AquaBackgroundBorder.class) : null;
                     if (abb == null) {
                         Border b = new AquaTextComponentBorder(editor);
-                        AquaBorderSupport.installBorder(editor, b);
+                        editor.setBorder(b);
                     }
                 }
                 installingBorder = false;
@@ -184,13 +184,13 @@ public class AquaTextPaneUIBase extends AquaTextComponentUIBase {
 
         AquaTextComponentBorder tcb = new AquaTextComponentBorder(editor);
         installingBorder = true;
-        AquaBorderSupport.installBorder(scrollPane, tcb);
+        scrollPane.setBorder(tcb);
         LookAndFeel.installProperty(scrollPane, "opaque", Boolean.FALSE);
 
         JViewport viewport = scrollPane.getViewport();
         viewport.setOpaque(false);
 
-        AquaBorderSupport.installBorder(editor, null);
+        editor.setBorder(null);
         installingBorder = false;
     }
 
@@ -240,7 +240,6 @@ public class AquaTextPaneUIBase extends AquaTextComponentUIBase {
             g.fillRect(0, 0, width, height);
         }
     }
-
 
     protected boolean shouldPaintBackground() {
         return editor.isOpaque() || owningScrollPane != null;

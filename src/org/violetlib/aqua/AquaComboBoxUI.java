@@ -663,7 +663,7 @@ public class AquaComboBoxUI extends BasicComboBoxUI
 
             if (!(editor instanceof AquaCustomComboTextField)) {
                 tf.setUI(new AquaComboBoxEditorUI());
-                AquaBorderSupport.installBorder(tf, null);
+                tf.setBorder(null);
             }
         }
 
@@ -785,9 +785,9 @@ public class AquaComboBoxUI extends BasicComboBoxUI
         protected void installDefaults() {
             super.installDefaults();
             JTextComponent c = getComponent();
-            Border b = AquaBorderSupport.getBorder(c);
+            Border b = c.getBorder();
             if (b == null || b instanceof UIDefaults) {
-                AquaBorderSupport.installBorder(c, null);
+                c.setBorder(null);
             }
         }
 

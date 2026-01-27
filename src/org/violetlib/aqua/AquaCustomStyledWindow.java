@@ -355,7 +355,7 @@ public class AquaCustomStyledWindow {
     }
 
     protected void installToolbarBorder(JComponent tb) {
-        Border b = AquaBorderSupport.getBorder(tb);
+        Border b = tb.getBorder();
         if (b == null || b instanceof UIResource) {
             int version = AquaPainting.getVersion();
             boolean isTall = AquaToolBarUI.isTallFormatToolBar(tb);
@@ -363,29 +363,29 @@ public class AquaCustomStyledWindow {
             int top = 4;
             int bottom = isTall && version < 1500 ? 0 : 4;
             if (style == STYLE_UNIFIED) {
-                AquaBorderSupport.installBorder(tb, new CustomToolbarBorder(left, TITLE_BAR_HEIGHT, bottom));
+                tb.setBorder(new CustomToolbarBorder(left, TITLE_BAR_HEIGHT, bottom));
             } else if (style == STYLE_COMBINED) {
-                AquaBorderSupport.installBorder(tb, new CustomToolbarBorder(TITLE_BAR_BUTTONS_WIDTH, top, bottom));
+                tb.setBorder(new CustomToolbarBorder(TITLE_BAR_BUTTONS_WIDTH, top, bottom));
             } else if (style == STYLE_TEXTURED_HIDDEN){
-                AquaBorderSupport.installBorder(tb, new CustomToolbarBorder(left, top, bottom));
+                tb.setBorder(new CustomToolbarBorder(left, top, bottom));
             }
         }
     }
 
     protected void installContentPaneBorder(JComponent c, int top, int left, int bottom, int right) {
-        Border b = AquaBorderSupport.getBorder(c);
+        Border b = c.getBorder();
         if (b == null || b instanceof UIResource) {
-            AquaBorderSupport.installBorder(c, new CustomContentPaneBorder(top, left, bottom, right));
+            c.setBorder(new CustomContentPaneBorder(top, left, bottom, right));
         }
     }
 
     protected void resetBorder(JComponent c) {
-        Border b = AquaBorderSupport.getBorder(c);
+        Border b = c.getBorder();
         if (b == null || b instanceof UIResource) {
             if (c instanceof JToolBar) {
-                AquaBorderSupport.installBorder(c, AquaToolBarUI.getToolBarBorder((JToolBar) c));
+                c.setBorder(AquaToolBarUI.getToolBarBorder((JToolBar) c));
             } else {
-                AquaBorderSupport.installBorder(c, null);
+               c.setBorder(null);
             }
         }
     }

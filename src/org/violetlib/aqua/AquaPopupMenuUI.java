@@ -244,7 +244,7 @@ public class AquaPopupMenuUI extends BasicPopupMenuUI implements AquaComponentUI
             AquaBasicPopupMenuWrapper wrapper = new AquaBasicPopupMenuWrapper(popup, border);
             wrapper.putClientProperty(AquaVibrantSupport.POPUP_BACKGROUND_STYLE_KEY, "vibrantMenu");
             wrapper.putClientProperty(AquaVibrantSupport.POPUP_CORNER_RADIUS_KEY, 6);
-            AquaBorderSupport.installBorder(popup, null);
+            popup.setBorder(null);
             PopupFactory f = PopupFactory.getSharedInstance();
             y += 2;
             return f.getPopup(owner, wrapper, x, y);

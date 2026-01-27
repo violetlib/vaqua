@@ -75,7 +75,7 @@ public class ListViewImpl extends ListView {
         tree.setOpaque(false);
 
         listViewScrollPane = new JScrollPane();
-        AquaBorderSupport.installBorder(listViewScrollPane, javax.swing.BorderFactory.createEmptyBorder(0, 0, 0, 0));
+        listViewScrollPane.setBorder(javax.swing.BorderFactory.createEmptyBorder(0, 0, 0, 0));
         listViewScrollPane.setViewportView(tree);
         listViewScrollPane.setColumnHeaderView(tree.getTableHeader());
 
@@ -364,9 +364,9 @@ public class ListViewImpl extends ListView {
         @Override
         public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
             JComponent c = (JComponent) super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-            Border border = AquaBorderSupport.getBorder(c);
+            Border border = c.getBorder();
             Border b = border != null ? new CompoundBorder(border, tableHeaderBorder) : tableHeaderBorder;
-            AquaBorderSupport.installBorder(c, b);
+            c.setBorder(b);
 
             if (AquaTableHeaderCellRenderer.getColumnSortOrder(table, column) != null) {
                 // Display sorted column title in bold

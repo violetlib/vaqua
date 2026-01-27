@@ -177,7 +177,7 @@ public class AquaScrollPaneUI extends BasicScrollPaneUI
         super.installDefaults(scrollpane);
         AquaTextComponentBorder tcb = AquaBorderSupport.get(b, AquaTextComponentBorder.class);
         if (tcb != null) {
-            AquaBorderSupport.installBorder(scrollpane, tcb);
+            scrollpane.setBorder(tcb);
         }
 
         originalHorizontalScrollBar = scrollpane.getHorizontalScrollBar();
@@ -631,9 +631,9 @@ public class AquaScrollPaneUI extends BasicScrollPaneUI
 
             boolean isLegacySidebar = isSidebar() && !isOverlayScrollBars;
             Border border = isLegacySidebar ? legacySidebarBorder : null;
-            Border existingBorder = AquaBorderSupport.getBorder(bar);
+            Border existingBorder = bar.getBorder();
             if (!Objects.equals(border, existingBorder)) {
-                AquaBorderSupport.installBorder(bar, border);
+                bar.setBorder(border);
             }
 
             bar.revalidate();

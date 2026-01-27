@@ -81,7 +81,7 @@ public class AquaTextFieldUI extends AquaTextComponentUIBase implements ToolbarS
         AquaTreeEditorBorder eb = b != null ? AquaBorderSupport.get(b, AquaTreeEditorBorder.class) : null;
         if (((b == null) || (b instanceof UIResource)) && eb == null) {
             AquaTextFieldBorder bb = new AquaTextFieldBorder(tf);
-            AquaBorderSupport.installBorder(tf, bb);
+            tf.setBorder(bb);
             if (!bb.isOpaque()) {
                 LookAndFeel.installProperty(editor, "opaque", false);
             }

@@ -130,7 +130,7 @@ public class FilePreview extends JComponent implements BrowserPreviewRenderer {
 
         if (OSVersion < 1010) {
             GrayLine b = new GrayLine();
-            AquaBorderSupport.installBorder(b, new EmptyBorder(5, 25, 5, 25));
+            b.setBorder(new EmptyBorder(5, 25, 5, 25));
             vb.add(b);
         } else {
             nameView = new NameView();

@@ -21,7 +21,7 @@ import org.jetbrains.annotations.*;
  */
 public final class AquaUICompoundBorder
   extends CompoundBorder
-  implements ContextBorder, UIResource
+  implements UIResource
 {
     public static @NotNull AquaUICompoundBorder of(@NotNull Border outside, @NotNull Border inside)
     {

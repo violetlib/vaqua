@@ -109,7 +109,7 @@ public class AquaContextualPopup {
 
         Border existingBorder = content.getBorder();
         if (existingBorder == null || existingBorder instanceof UIResource) {
-            AquaBorderSupport.installBorder(content, null);
+            content.setBorder(null);
         }
 
         int corner = getCornerRadius(size);

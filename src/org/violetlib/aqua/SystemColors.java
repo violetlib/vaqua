@@ -614,6 +614,7 @@ public class SystemColors {
         colors.add("searchFieldPrompt", 255, 63);
 
         // colors related to the unified title and toolbar window style (dark mode)
+        colors.add("windowBackground", 36);
         colors.add("windowBackground_disabled", 45);
         colors.add("texturedWindowBackground", 42);
         colors.add("texturedWindowBackground_disabled", 45);
@@ -965,7 +966,7 @@ public class SystemColors {
     private @NotNull BasicColors createHighContrastDarkColors(int OSVersion) {
         BasicColorsBuilder colors = new BasicColorsBuilder("High Contrast Dark", instrumentation, log);
 
-        colors.add("windowBackground", 50);
+        colors.add("windowBackground", 40);
         colors.add("texturedWindowBackground", 53);
 
         if (OSVersion >= 1600) {

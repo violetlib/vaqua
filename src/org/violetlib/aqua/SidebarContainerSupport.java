@@ -50,8 +50,8 @@ public class SidebarContainerSupport
     public SidebarContainerSupport(@NotNull JComponent container)
     {
         this.container = container;
-        oldBorder = AquaBorderSupport.getBorder(container);
-        AquaBorderSupport.installBorder(container, this);
+        oldBorder = container.getBorder();
+        container.setBorder(this);
         updateSplitPaneParent();
         container.addHierarchyListener(myHierarchyListener);
     }
@@ -90,7 +90,7 @@ public class SidebarContainerSupport
 
     public void uninstall()
     {
-        AquaBorderSupport.installBorder(container, oldBorder);
+        container.setBorder(oldBorder);
         container.removeHierarchyListener(myHierarchyListener);
         if (configuredSplitPaneUI != null) {
             configuredSplitPaneUI.configureAsSidebar(0);
