@@ -529,8 +529,8 @@ public class AquaRootPaneUI extends BasicRootPaneUI implements AquaComponentUI, 
 
     public @NotNull PaintingContext getPaintingContext()
     {
-        AquaAppearance a = appearance != null ? appearance : AppearanceManager.getApplicationAppearance();
-        return PaintingContext.of(appearance);
+        AquaAppearance a = appearance != null ? appearance : AquaAppearances.getApplicationEffectiveAppearance();
+        return PaintingContext.of(a);
     }
 
     private void appearanceChanged(@NotNull AquaAppearance appearance)

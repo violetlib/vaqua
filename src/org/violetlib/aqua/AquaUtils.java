@@ -2164,7 +2164,6 @@ final public class AquaUtils {
     public static native void clearScreenMenuBar(JFrame frame, MenuBarUI menuBarUI);
     private static native int nativeSetWindowAppearance(long w, @Nullable String appearanceName);
     private static native @Nullable String nativeGetWindowEffectiveAppearanceName(long w);
-    public static native @Nullable String nativeGetApplicationAppearanceName();
     private static native void registerWindowChangedAppearanceCallback(@NotNull WindowAppearanceChangedCallback callback);
     public static native void nativeFixPopupWindow(@NotNull Window parent, @NotNull Popup p);
     private static native void nativeFixWindowWithEmbeddedOwner(@NotNull Window w, @NotNull Window embeddedFrame, int windowLevel);

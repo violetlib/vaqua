@@ -63,11 +63,12 @@ public final class PaintingContext
     }
 
     public static @NotNull PaintingContext getDefault()
+      throws UnsupportedOperationException
     {
         if (current != null) {
             return current;
         }
-        return PaintingContext.of(AppearanceManager.getApplicationAppearance());
+        return PaintingContext.of(AquaAppearances.getApplicationEffectiveAppearance());
     }
 
     public static @NotNull PaintingContext push(@NotNull JComponent owner, @NotNull AquaAppearance appearance)

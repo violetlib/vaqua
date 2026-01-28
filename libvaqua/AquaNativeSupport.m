@@ -2957,29 +2957,6 @@ JNIEXPORT jstring JNICALL Java_org_violetlib_aqua_AquaUtils_nativeGetWindowEffec
 
 /*
  * Class:     org_violetlib_aqua_AquaUtils
- * Method:    nativeGetApplicationAppearanceName
- * Signature: ()Ljava/lang/String;
- */
-JNIEXPORT jstring JNICALL Java_org_violetlib_aqua_AquaUtils_nativeGetApplicationAppearanceName
-  (JNIEnv *env, jclass cl)
-{
-    __block jstring result = nil;
-
-    COCOA_ENTER();
-
-    if (@available(macOS 10.14, *)) {
-        NSAppearanceName appearanceName = [NSApp.effectiveAppearance name];
-        if (appearanceName) {
-            result = (*env)->NewStringUTF(env, [appearanceName UTF8String]);
-        }
-    }
-
-    COCOA_EXIT();
-    return result;
-}
-
-/*
- * Class:     org_violetlib_aqua_AquaUtils
  * Method:    nativeDebugWindow
  * Signature: (J)V
  */

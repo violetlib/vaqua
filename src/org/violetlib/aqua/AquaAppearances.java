@@ -36,6 +36,8 @@ public class AquaAppearances {
 
     private static final @NotNull Map<String,Colors> appearanceColors = new HashMap<>();
 
+    private static @Nullable AquaAppearance cachedApplicationEffectiveAppearance;
+
     static {
         VAppearances.addEffectiveAppearanceChangeListener(AquaAppearances::effectiveAppearanceChanged);
     }
@@ -74,6 +76,43 @@ public class AquaAppearances {
     }
 
     /**
+     * Return the application effective appearance.
+     * @throws UnsupportedOperationException if the application effective appearance is not available and the
+     * default appearance is unavailable.
+     */
+
+    public static @NotNull AquaAppearance getApplicationEffectiveAppearance()
+      throws UnsupportedOperationException
+    {
+        if (cachedApplicationEffectiveAppearance == null) {
+            AquaAppearance a = determineApplicationEffectiveAppearance();
+            if (a == null) {
+                a = getDefaultAppearance();
+            }
+            cachedApplicationEffectiveAppearance = a;
+        }
+        return cachedApplicationEffectiveAppearance;
+    }
+
+    private static @Nullable AquaAppearance determineApplicationEffectiveAppearance()
+    {
+        try {
+            VAppearance appearance = VAppearances.getApplicationEffectiveAppearance();
+            String appearanceName = appearance.getName();
+            AquaAppearance a = appearances.get(appearanceName);
+            if (a != null) {
+                return a;
+            }
+            a = new AquaAppearance(appearance, Utils::logDebug);
+            appearances.put(appearanceName, a);
+            return a;
+        } catch (IOException e) {
+            AquaUtils.syslog("Unable to get application effective appearance: " + e.getMessage());
+            return null;
+        }
+    }
+
+    /**
      * Return a default appearance. This appearance is used only in case of an unexpected error.
      * @return the default appearance.
      * @throws UnsupportedOperationException if the default appearance is not available.
@@ -98,16 +137,16 @@ public class AquaAppearances {
         return appearance;
     }
 
-    private static void effectiveAppearanceChanged(@NotNull ChangeEvent ev) {
+    private static void effectiveAppearanceChanged(@NotNull ChangeEvent ev)
+    {
         // invoked by VAppearances on the AWT event thread
         resetNativeRendering();
         AquaImageFactory.flushAppearanceDependentImages();
         appearanceColors.clear();
+        cachedApplicationEffectiveAppearance = null;
 
         try {
-            VAppearance va = VAppearances.getApplicationEffectiveAppearance();
-            AquaAppearance a = get(va.getName());
-
+            AquaAppearance a = getApplicationEffectiveAppearance();
             Window[] windows = Window.getWindows();
             for (Window w : windows) {
                 if (w instanceof RootPaneContainer) {
@@ -119,7 +158,7 @@ public class AquaAppearances {
                     }
                 }
             }
-        } catch (IOException ignore) {
+        } catch (UnsupportedOperationException ignore) {
         }
     }
 

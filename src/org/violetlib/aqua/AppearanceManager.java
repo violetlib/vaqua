@@ -145,21 +145,6 @@ public class AppearanceManager {
         }
     }
 
-
-    /**
-     * Return the current application appearance.
-     * @throws UnsupportedOperationException if the current application appearance is not available.
-     */
-    public static @NotNull AquaAppearance getApplicationAppearance()
-      throws UnsupportedOperationException
-    {
-        String name = AquaUtils.nativeGetApplicationAppearanceName();
-        if (name != null) {
-            return AquaAppearances.get(name);
-        }
-        return AquaAppearances.getDefaultAppearance();
-    }
-
     /**
      * Identify the appearance that should be used by the specified component to paint in the current context. The
      * returned appearance is valid only for a single painting operation.
@@ -173,7 +158,7 @@ public class AppearanceManager {
         }
         Container parent = c.getParent();
         if (parent == null) {
-            return getApplicationAppearance();
+            return AquaAppearances.getApplicationEffectiveAppearance();
         }
         return findAppearanceForComponent(parent);
     }
@@ -238,18 +223,21 @@ public class AppearanceManager {
     }
 
     private static @NotNull PaintingContext getWindowPaintingContext(@NotNull Component c)
+      throws UnsupportedOperationException
     {
-        Window w = SwingUtilities.getWindowAncestor(c);
-        if (w != null) {
-            JRootPane rp = AquaUtils.getRootPane(w);
-            if (rp != null) {
-                AquaRootPaneUI ui = AquaUtils.getUI(rp, AquaRootPaneUI.class);
-                if (ui != null) {
-                    return ui.getPaintingContext();
+        if (isSpecifiedAppearanceFeatureEnabled) {
+            Window w = SwingUtilities.getWindowAncestor(c);
+            if (w != null) {
+                JRootPane rp = AquaUtils.getRootPane(w);
+                if (rp != null) {
+                    AquaRootPaneUI ui = AquaUtils.getUI(rp, AquaRootPaneUI.class);
+                    if (ui != null) {
+                        return ui.getPaintingContext();
+                    }
                 }
             }
         }
-        AquaAppearance appearance = getApplicationAppearance();
+        AquaAppearance appearance = AquaAppearances.getApplicationEffectiveAppearance();
         return PaintingContext.of(appearance);
     }
 
@@ -282,7 +270,7 @@ public class AppearanceManager {
     {
         PaintingContext pc = PaintingContext.get();
         if (pc == null) {
-            pc = getPaintingContext(jc);
+            pc = getWindowPaintingContext(jc);
         }
         painter.paint((Graphics2D) g, jc, pc);
     }
