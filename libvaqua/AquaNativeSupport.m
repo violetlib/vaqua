@@ -1515,6 +1515,25 @@ void deliverWindowChangedAppearance(NSWindow *window, NSAppearance *appearance)
 
 /*
  * Class:     org_violetlib_aqua_AquaUtils
+ * Method:    nativeInitializeWindow
+ * Signature: (J)I
+ */
+JNIEXPORT jint JNICALL Java_org_violetlib_aqua_AquaUtils_nativeInitializeWindow
+    (JNIEnv *env, jclass cl, jlong wptr)
+{
+    COCOA_ENTER();
+
+    NSWindow *w = (NSWindow *) wptr;
+    runOnMainThread(^() {
+        ensureWrapper(w);
+    });
+
+    COCOA_EXIT();
+    return 0;
+}
+
+/*
+ * Class:     org_violetlib_aqua_AquaUtils
  * Method:    registerWindowChangedAppearanceCallback
  * Signature: (Lorg/violetlib/aqua/AquaUtils/WindowChangedAppearanceCallback;)V
  */

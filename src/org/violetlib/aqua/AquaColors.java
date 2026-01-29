@@ -11,6 +11,7 @@ package org.violetlib.aqua;
 import java.awt.*;
 import javax.swing.*;
 import javax.swing.plaf.ColorUIResource;
+import javax.swing.plaf.UIResource;
 import javax.swing.text.JTextComponent;
 
 import org.jetbrains.annotations.*;
@@ -224,6 +225,9 @@ public class AquaColors {
             return false;
         }
         if (c instanceof SystemColor) {
+            return false;
+        }
+        if (c instanceof UIResource) {
             return false;
         }
         return true;

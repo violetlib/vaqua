@@ -94,6 +94,15 @@ public class AquaAppearances {
         return cachedApplicationEffectiveAppearance;
     }
 
+    public static void setApplicationAppearance(@Nullable String appearanceName)
+    {
+        try {
+            VAppearances.setApplicationAppearance(appearanceName);
+            cachedApplicationEffectiveAppearance = null;
+        } catch (IOException ignore) {
+        }
+    }
+
     private static @Nullable AquaAppearance determineApplicationEffectiveAppearance()
     {
         try {
@@ -145,8 +154,10 @@ public class AquaAppearances {
         appearanceColors.clear();
         cachedApplicationEffectiveAppearance = null;
 
+        // Surprisingly, the following is not redundant. The window effective appearance change notification is not
+        // called when the accent color is changed.
+
         try {
-            AquaAppearance a = getApplicationEffectiveAppearance();
             Window[] windows = Window.getWindows();
             for (Window w : windows) {
                 if (w instanceof RootPaneContainer) {
@@ -154,7 +165,7 @@ public class AquaAppearances {
                     JRootPane rp = rpc.getRootPane();
                     AquaRootPaneUI ui = AquaUtils.getUI(rp, AquaRootPaneUI.class);
                     if (ui != null) {
-                        ui.effectiveAppearanceChanged(a);
+                        ui.effectiveAppearanceChanged();
                     }
                 }
             }

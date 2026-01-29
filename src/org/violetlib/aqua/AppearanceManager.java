@@ -71,23 +71,20 @@ public class AppearanceManager {
 
     public static final String AQUA_APPEARANCE_NAME_KEY = "Aqua.appearanceName";  // the name of an explicitly chosen appearance
 
-    //private static boolean isResponderRegistered;
-
-    /**
-     * The current component being painted, as derived from requests for a painting context.
-     */
-    private static @Nullable JComponent currentComponent;
-
     private static boolean isSpecifiedAppearanceFeatureEnabled;
 
     private static final @NotNull PropertyChangeListener myPropertyChangeListener = AppearanceManager::propertyChanged;
 
+    private static boolean isEnabled;
+
     /* package private */ static void initialize()
     {
-//        if (!isResponderRegistered) {
-//            isResponderRegistered = true;
-//            SystemPropertyChangeManager.register(AppearanceManager::systemPropertyChanged);
-//        }
+        isEnabled = true;
+    }
+
+    /* package private */ static void uninitialize()
+    {
+        isEnabled = false;
     }
 
     /**
@@ -112,18 +109,19 @@ public class AppearanceManager {
 
     private static void propertyChanged(@NotNull PropertyChangeEvent e)
     {
-        String name = e.getPropertyName();
-        if (name != null) {
-            Object source = e.getSource();
-            if (source instanceof JComponent) {
-                JComponent jc = (JComponent) source;
-                Object oldValue = e.getOldValue();
-                Object newValue = e.getNewValue();
-                if (name.equals(AQUA_APPEARANCE_NAME_KEY)) {
-                    if ((oldValue == null || oldValue instanceof String) && (newValue == null || newValue instanceof String)) {
-                        specifiedAppearanceChanged(jc, (String) oldValue, (String) newValue);
+        if (isEnabled) {
+            String name = e.getPropertyName();
+            if (name != null) {
+                Object source = e.getSource();
+                if (source instanceof JComponent) {
+                    JComponent jc = (JComponent) source;
+                    Object oldValue = e.getOldValue();
+                    Object newValue = e.getNewValue();
+                    if (name.equals(AQUA_APPEARANCE_NAME_KEY)) {
+                        if ((oldValue == null || oldValue instanceof String) && (newValue == null || newValue instanceof String)) {
+                            specifiedAppearanceChanged(jc, (String) oldValue, (String) newValue);
+                        }
                     }
-
                 }
             }
         }
@@ -133,15 +131,22 @@ public class AppearanceManager {
                                                    @Nullable String oldName,
                                                    @Nullable String newName)
     {
-        AquaAppearancePanelUI ui = AquaUtils.getUI(jc, AquaAppearancePanelUI.class);
-        if (ui == null) {
-            Utils.logError("Custom component appearances are supported only for JAquaAppearancePanel (provided by VAquaClient)");
-        } else {
-            // If the application specifies an appearance, then the specified appearance feature must be enabled.
-            if (!isSpecifiedAppearanceFeatureEnabled && newName != null) {
-                isSpecifiedAppearanceFeatureEnabled = true;
+        if (isEnabled) {
+            AquaAppearancePanelUI ui = AquaUtils.getUI(jc, AquaAppearancePanelUI.class);
+            AquaRootPaneUI rui = AquaUtils.getUI(jc, AquaRootPaneUI.class);
+
+            if (ui == null && rui == null) {
+                Utils.logError("Custom component appearances are supported only for JRootPane and JAquaAppearancePanel (provided by VAquaClient)");
+            } else {
+                // If the application specifies an appearance, then the specified appearance feature must be enabled.
+                if (!isSpecifiedAppearanceFeatureEnabled && newName != null) {
+                    isSpecifiedAppearanceFeatureEnabled = true;
+                }
+                if (rui != null) {
+                    rui.specifiedAppearanceChanged();
+                }
+                jc.repaint();
             }
-            jc.repaint();
         }
     }
 
@@ -152,15 +157,31 @@ public class AppearanceManager {
     public static @NotNull AquaAppearance findAppearanceForComponent(@NotNull Component c)
       throws UnsupportedOperationException
     {
-        String name = getSpecifiedAppearanceName(c);
-        if (name != null) {
-            return AquaAppearances.get(name);
+        if (isEnabled) {
+            String name = getSpecifiedAppearanceName(c);
+            if (name != null) {
+                return AquaAppearances.get(name);
+            }
+            Container parent = c.getParent();
+            if (parent == null) {
+                return AquaAppearances.getApplicationEffectiveAppearance();
+            }
+            return findAppearanceForComponent(parent);
         }
-        Container parent = c.getParent();
-        if (parent == null) {
-            return AquaAppearances.getApplicationEffectiveAppearance();
+        return AquaAppearances.getDefaultAppearance();
+    }
+
+    public static @Nullable AquaAppearance getSpecifiedWindowAppearance(@NotNull JRootPane rp)
+    {
+        Object o = rp.getClientProperty(AQUA_APPEARANCE_NAME_KEY);
+        if (o instanceof String) {
+            String appearanceName = (String) o;
+            AquaAppearance a = AquaAppearances.getOptional(appearanceName);
+            if (a != null) {
+                return a;
+            }
         }
-        return findAppearanceForComponent(parent);
+        return null;
     }
 
     /**
@@ -192,10 +213,12 @@ public class AppearanceManager {
 
     /* package private */ static void handleActiveStatusChange(@NotNull JComponent jc, boolean isActive)
     {
-        ActiveSensitiveComponentUI ui = AquaUtils.getUI(jc, ActiveSensitiveComponentUI.class);
-        if (ui != null) {
-            ui.activeStateChanged(jc, isActive);
-            jc.repaint();
+        if (isEnabled) {
+            ActiveSensitiveComponentUI ui = AquaUtils.getUI(jc, ActiveSensitiveComponentUI.class);
+            if (ui != null) {
+                ui.activeStateChanged(jc, isActive);
+                jc.repaint();
+            }
         }
     }
 
@@ -225,38 +248,43 @@ public class AppearanceManager {
     private static @NotNull PaintingContext getWindowPaintingContext(@NotNull Component c)
       throws UnsupportedOperationException
     {
-        if (isSpecifiedAppearanceFeatureEnabled) {
-            Window w = SwingUtilities.getWindowAncestor(c);
-            if (w != null) {
-                JRootPane rp = AquaUtils.getRootPane(w);
-                if (rp != null) {
-                    AquaRootPaneUI ui = AquaUtils.getUI(rp, AquaRootPaneUI.class);
-                    if (ui != null) {
-                        return ui.getPaintingContext();
+        if (isEnabled) {
+            if (isSpecifiedAppearanceFeatureEnabled) {
+                Window w = SwingUtilities.getWindowAncestor(c);
+                if (w != null) {
+                    JRootPane rp = AquaUtils.getRootPane(w);
+                    if (rp != null) {
+                        AquaRootPaneUI ui = AquaUtils.getUI(rp, AquaRootPaneUI.class);
+                        if (ui != null) {
+                            return ui.getPaintingContext();
+                        }
                     }
                 }
             }
+            AquaAppearance appearance = AquaAppearances.getApplicationEffectiveAppearance();
+            return PaintingContext.of(appearance);
         }
-        AquaAppearance appearance = AquaAppearances.getApplicationEffectiveAppearance();
-        return PaintingContext.of(appearance);
+        return PaintingContext.of(AquaAppearances.getDefaultAppearance());
     }
 
     /* package private */ static void paintAppearancePanel(@NotNull JComponent owner,
                                                            @NotNull String appearanceName,
                                                            @NotNull Consumer<Color> r)
     {
-        PaintingContext pc = getPaintingContext(owner);
-        if (!appearanceName.equals(pc.appearance.getName())) {
-            AquaAppearance appearance = AquaAppearances.getOptional(appearanceName);
-            if (appearance != null) {
-                Color bc = AquaUtils.getWindowBackground(owner.getRootPane(), appearance);
-                PaintingContext.push(owner, appearance);
-                try {
-                    r.accept(bc);
-                } finally {
-                    PaintingContext.pop(owner);
+        if (isEnabled) {
+            PaintingContext pc = getPaintingContext(owner);
+            if (!appearanceName.equals(pc.appearance.getName())) {
+                AquaAppearance appearance = AquaAppearances.getOptional(appearanceName);
+                if (appearance != null) {
+                    Color bc = AquaUtils.getWindowBackground(owner.getRootPane(), appearance);
+                    PaintingContext.push(owner, appearance);
+                    try {
+                        r.accept(bc);
+                    } finally {
+                        PaintingContext.pop(owner);
+                    }
+                    return;
                 }
-                return;
             }
         }
         r.accept(null);

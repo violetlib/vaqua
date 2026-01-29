@@ -113,24 +113,23 @@ final public class AquaUtils {
     private AquaUtils() {
     }
 
-//    static {
-//        registerWindowChangedAppearanceCallback(new WindowAppearanceChangedCallback() {
-//            @Override
-//            public void windowAppearanceChanged(@NotNull Window w, @NotNull String appearanceName) {
-//                if (w instanceof RootPaneContainer) {
-//                    RootPaneContainer rpc = (RootPaneContainer) w;
-//                    SwingUtilities.invokeLater(() -> {
-//                        JRootPane rootPane = rpc.getRootPane();
-//                        AquaRootPaneUI ui = getUI(rootPane, AquaRootPaneUI.class);
-//                        if (ui != null) {
-//                            AquaAppearance a = AquaAppearances.get(appearanceName);
-//                            ui.appearanceChanged(rootPane, a);
-//                        }
-//                    });
-//                }
-//            }
-//        });
-//    };
+    static {
+        registerWindowChangedAppearanceCallback(new WindowAppearanceChangedCallback() {
+            @Override
+            public void windowAppearanceChanged(@NotNull Window w, @NotNull String appearanceName) {
+                if (w instanceof RootPaneContainer) {
+                    RootPaneContainer rpc = (RootPaneContainer) w;
+                    SwingUtilities.invokeLater(() -> {
+                        JRootPane rootPane = rpc.getRootPane();
+                        AquaRootPaneUI ui = getUI(rootPane, AquaRootPaneUI.class);
+                        if (ui != null) {
+                            ui.effectiveAppearanceChanged();
+                        }
+                    });
+                }
+            }
+        });
+    };
 
     /**
      * Return the UI of a component if it satisfies the specified class or interface.
@@ -1979,6 +1978,16 @@ final public class AquaUtils {
         execute(w, ptr -> nativeSetAWTViewVisibility(ptr, isVisible));
     }
 
+    public static void initializeNativeWindow(@NotNull Window w) {
+        if (w.isDisplayable()) {
+            try {
+                execute(w, AquaUtils::nativeInitializeWindow);
+            } catch (UnsupportedOperationException ex) {
+                // native window may no longer exist (esp when called from ShadowMaker)
+            }
+        }
+    }
+
     public static void syncAWTView(Window w) {
         if (w.isDisplayable()) {
             // Both calls appear to be necessary to ensure that the pixels are ready when the window is made visible.
@@ -2011,9 +2020,27 @@ final public class AquaUtils {
 
     /**
      * Identify the effective appearance of the specified window.
+     * @return the appearance, or null if not available.
+     */
+    public static @Nullable AquaAppearance getWindowEffectiveAppearance(@NotNull Window w) {
+        if (w.isDisplayable()) {
+            try {
+                String appearanceName = executeForObject(w, AquaUtils::nativeGetWindowEffectiveAppearanceName);
+                if (appearanceName != null) {
+                    return AquaAppearances.get(appearanceName);
+                }
+
+            } catch (UnsupportedOperationException ex) {
+                // native window may no longer exist, or it could be an embedded view
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Identify the effective appearance of the specified window.
      * @return the appearance name, or null if not available.
      */
-
     public static @Nullable String getWindowEffectiveAppearanceName(@NotNull Window w) {
         if (w.isDisplayable()) {
             try {
@@ -2028,7 +2055,6 @@ final public class AquaUtils {
     /**
      * Perform an action that requires a native pointer and returns a long.
      */
-
     public interface NativeAction {
         long run(long wptr);
     }
@@ -2036,7 +2062,6 @@ final public class AquaUtils {
     /**
      * Perform an action that requires the native NSWindow pointer for a window.
      */
-
     public static long execute(@NotNull Window w, NativeAction action) {
         Object[] data = new Object[1];
         long ptr = nativeGetNativeWindow(w, data);
@@ -2061,7 +2086,6 @@ final public class AquaUtils {
     /**
      * Perform an action that requires a native pointer and returns an object.
      */
-
     public interface NativeObjectAction<T> {
         T run(long wptr);
     }
@@ -2069,7 +2093,6 @@ final public class AquaUtils {
     /**
      * Perform an action that requires the native NSWindow pointer for a window.
      */
-
     public static <T> T executeForObject(Window w, NativeObjectAction<T> action) {
         Object[] data = new Object[1];
         long ptr = nativeGetNativeWindow(w, data);
@@ -2106,7 +2129,6 @@ final public class AquaUtils {
     /**
      * Determine whether a window has an embedded owner.
      */
-
     public static boolean windowHasEmbeddedOwner(@NotNull Window w)
     {
         Window owner = w.getOwner();
@@ -2118,7 +2140,6 @@ final public class AquaUtils {
      * @param w A newly instantiated window.
      * @param windowLevel The window level to be assigned to {@code w}.
      */
-
     public static void fixWindowWithEmbeddedOwner(@NotNull Window w, int windowLevel) {
         if (w.isDisplayable() && windowHasEmbeddedOwner(w)) {
             Window owner = w.getOwner();
@@ -2141,6 +2162,7 @@ final public class AquaUtils {
      */
     private static native long nativeGetNativeWindow(Window w, Object[] data);
 
+    private static native int nativeInitializeWindow(long w);
     private static native void nativeSetTitledWindowStyle(Window w, boolean isDecorated, Insets insets);
     private static native void nativeSetWindowResizable(Window w, boolean isResizable);
     private static native void nativeSetWindowTextured(Window w, boolean isTextured);
