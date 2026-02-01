@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Alan Snyder.
+ * Copyright (c) 2025-2026 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -13,9 +13,12 @@ import javax.swing.*;
 import javax.swing.text.View;
 
 import org.jetbrains.annotations.*;
+import org.violetlib.jnr.Insets2D;
 import org.violetlib.jnr.aqua.AquaUIPainter;
 import org.violetlib.jnr.aqua.ButtonLayoutConfiguration;
 import org.violetlib.jnr.aqua.LayoutConfiguration;
+
+import static org.violetlib.aqua.OSXSystemProperties.macOS26;
 
 /**
  * Allocate space for displaying an icon and a text label in a button-like control.
@@ -75,10 +78,16 @@ public class CompoundLabelLayoutEngine {
      * @param controlHeight The height of the control, including content insets.
      * @param insets The content insets.
      */
-    public @NotNull ButtonLayoutInfo getLayoutInfo(int controlWidth, int controlHeight, @NotNull Insets insets) {
-        int contentWidth = controlWidth - (insets.left + insets.right);
-        int contentHeight = controlHeight - (insets.top + insets.bottom);
-        return getLayoutInfo(contentWidth, contentHeight).extend(insets);
+    public @NotNull ButtonLayoutInfo getLayoutInfo(int controlWidth, int controlHeight, @NotNull Insets2D insets) {
+        int horizontalInsets = (int) Math.ceil((insets.getLeft() + insets.getRight()));
+        int verticalInsets = (int) Math.ceil((insets.getTop() + insets.getBottom()));
+        int top = (int) insets.getTop();
+        int left = (int) insets.getLeft();
+        int extraWidth = top < insets.getTop() ? 1 : 0;
+        int extraHeight = left < insets.getLeft() ? 1 : 0;
+        int contentWidth = Math.max(0, controlWidth - horizontalInsets + extraWidth);
+        int contentHeight = Math.max(0, controlHeight - verticalInsets + extraHeight);
+        return getLayoutInfo(contentWidth, contentHeight).offset(top, left);
     }
 
     /**
@@ -408,7 +417,7 @@ public class CompoundLabelLayoutEngine {
             int height = iconHeight;
 
             int version = AquaPainting.getVersion();
-            if (version < 1600) {
+            if (version < macOS26) {
                 int minimumWidth = 40;
                 if (width < minimumWidth) {
                     width = minimumWidth;

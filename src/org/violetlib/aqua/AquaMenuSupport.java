@@ -36,6 +36,7 @@ package org.violetlib.aqua;
 import java.awt.*;
 import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
+import java.awt.geom.Rectangle2D;
 import javax.swing.*;
 import javax.swing.plaf.basic.BasicHTML;
 import javax.swing.text.View;
@@ -43,6 +44,7 @@ import javax.swing.text.View;
 import org.jetbrains.annotations.*;
 import org.violetlib.aqua.AquaUtils.RecyclableSingleton;
 import org.violetlib.aqua.AquaUtils.RecyclableSingletonFromDefaultConstructor;
+import org.violetlib.jnr.Insets2D;
 import org.violetlib.jnr.aqua.AquaUIPainter;
 
 /**
@@ -491,8 +493,8 @@ public class AquaMenuSupport {
         return text;
     }
 
-    private static @NotNull Rectangle offset(@NotNull Rectangle r, @NotNull Insets s) {
-        return new Rectangle(r.x + s.left, r.y + s.top, r.width, r.height);
+    private static @NotNull Rectangle offset(@NotNull Rectangle2D r, @NotNull Insets s) {
+        return AquaUtils.toRectangle(new Rectangle2D.Double(r.getX() + s.left, r.getY() + s.top, r.getWidth(), r.getHeight()));
     }
 
     /**
@@ -536,6 +538,7 @@ public class AquaMenuSupport {
         if (engine == null) {
             return null;
         }
-        return engine.getLayoutInfo(availableSize.width, availableSize.height, new Insets(0, 0, 0, 0)).toLeftAligned();
+        Insets2D zero = new Insets2D(0, 0, 0, 0);
+        return engine.getLayoutInfo(availableSize.width, availableSize.height, zero).toLeftAligned();
     }
 }

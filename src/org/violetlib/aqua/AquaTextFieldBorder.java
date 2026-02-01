@@ -49,6 +49,8 @@ import org.violetlib.jnr.aqua.AquaUIPainter.TextFieldWidget;
 import org.violetlib.jnr.aqua.TextFieldConfiguration;
 import org.violetlib.jnr.aqua.TextFieldLayoutConfiguration;
 
+import static org.violetlib.aqua.OSXSystemProperties.macOS26;
+
 /**
  * A border that is associated with a text field but can be attached to a text field or the scroll pane that
  * displays the text field. (This code is associated with text components with a natively rendered border or background.
@@ -97,7 +99,7 @@ public class AquaTextFieldBorder extends AquaTextComponentBorder {
 
     public boolean isOpaque() {
         // Prior to macOS 26, text fields are not opaque regardless of their border.
-        if (AquaPainting.getVersion() < 1600) {
+        if (AquaPainting.getVersion() < macOS26) {
             return false;
         }
 

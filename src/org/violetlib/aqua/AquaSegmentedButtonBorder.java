@@ -40,6 +40,7 @@ import org.violetlib.jnr.aqua.*;
 import org.violetlib.jnr.aqua.AquaUIPainter.*;
 
 import static org.violetlib.aqua.OSXSystemProperties.OSVersion;
+import static org.violetlib.aqua.OSXSystemProperties.macOS26;
 import static org.violetlib.jnr.aqua.SegmentedButtonConfiguration.DividerState;
 
 /**
@@ -187,10 +188,10 @@ public class AquaSegmentedButtonBorder extends AquaButtonBorder implements Focus
         // A selected button that paints a background owns the divider on the left side if the left side button
         // is not selected.
         int version = AquaPainting.getVersion();
-        if (version >= 1100 && version < 1600 && w == SegmentedButtonWidget.BUTTON_SEGMENTED && !isExclusive) {
+        if (version >= 1100 && version < macOS26 && w == SegmentedButtonWidget.BUTTON_SEGMENTED && !isExclusive) {
             return true;
         }
-        if (version >= 1100 && version < 1600 && isExclusive && w.isTextured() && !w.isSeparated()) {
+        if (version >= 1100 && version < macOS26 && isExclusive && w.isTextured() && !w.isSeparated()) {
             return true;
         }
         return false;

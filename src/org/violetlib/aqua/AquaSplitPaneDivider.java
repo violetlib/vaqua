@@ -102,11 +102,16 @@ public class AquaSplitPaneDivider extends BasicSplitPaneDivider {
     /**
      * Paints the divider.
      */
-    public void paint(Graphics g, JComponent c) {
-        AppearanceManager.withContext(g, c, this::paint);
+    @Override
+    public void paint(Graphics g) {
+        PaintingContext pc = PaintingContext.get();
+        if (pc == null) {
+            pc = AppearanceManager.getWindowPaintingContext(splitPane);
+        }
+        paint((Graphics2D) g, pc);
     }
 
-    public void paint(Graphics2D g, JComponent c, @NotNull PaintingContext pc) {
+    private void paint(@NotNull Graphics2D g, @NotNull PaintingContext pc) {
 
         Color color = pc.appearance.getColor("separator");
 

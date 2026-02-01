@@ -64,6 +64,8 @@ import org.violetlib.jnr.aqua.Configuration;
 import org.violetlib.jnr.aqua.SpinnerArrowsConfiguration;
 import org.violetlib.jnr.aqua.SpinnerArrowsLayoutConfiguration;
 
+import static org.violetlib.aqua.OSXSystemProperties.macOS26;
+
 /**
  * This is originally derived from BasicSpinnerUI, but they made everything private
  * so we can't subclass!
@@ -624,7 +626,7 @@ public class AquaSpinnerUI extends SpinnerUI implements AquaComponentUI, AquaUti
     private static int getSeparation()
     {
         int version = AquaPainting.getVersion();
-        return version >= 1600 ? 7 : 3;
+        return version >= macOS26 ? 7 : 3;
     }
 
     /**

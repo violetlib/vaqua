@@ -52,6 +52,7 @@ import org.violetlib.jnr.Painter;
 import org.violetlib.jnr.aqua.*;
 import org.violetlib.jnr.aqua.AquaUIPainter.*;
 
+import static org.violetlib.aqua.OSXSystemProperties.macOS26;
 import static org.violetlib.jnr.aqua.AquaUIPainter.ScrollBarWidget.LEGACY_SIDEBAR;
 
 public class AquaScrollBarUI extends ScrollBarUI implements AquaComponentUI {
@@ -246,14 +247,14 @@ public class AquaScrollBarUI extends ScrollBarUI implements AquaComponentUI {
             thumbPosition = 1 - thumbPosition;
         }
 
-        if (AquaPainting.getVersion() >= 1600 && isSidebar() && !isOverlay()) {
+        if (AquaPainting.getVersion() >= macOS26 && isSidebar() && !isOverlay()) {
             if (state != State.DISABLED && state != State.DISABLED_INACTIVE) {
                 // Make the scroll bar wide
                 state = State.ROLLOVER;
             }
         }
 
-        boolean noTrack = isSidebar() && AquaPainting.getVersion() < 1600;
+        boolean noTrack = isSidebar() && AquaPainting.getVersion() < macOS26;
         return new ScrollBarConfiguration(sw, kw, size, state, o, thumbPosition, thumbExtent, noTrack);
     }
 
@@ -279,7 +280,7 @@ public class AquaScrollBarUI extends ScrollBarUI implements AquaComponentUI {
         if (o == Orientation.HORIZONTAL && !AquaUtils.isLeftToRight(fScrollBar)) {
             thumbPosition = 1 - thumbPosition;
         }
-        boolean noTrack = isSidebar() && AquaPainting.getVersion() < 1600;
+        boolean noTrack = isSidebar() && AquaPainting.getVersion() < macOS26;
         return new ScrollBarConfiguration(sw, kw, size, state, o, thumbPosition, thumbExtent, noTrack);
     }
 
@@ -367,7 +368,7 @@ public class AquaScrollBarUI extends ScrollBarUI implements AquaComponentUI {
                 return ScrollBarKnobWidget.LIGHT;
             }
             if (style.equals("overlay") && pc != null) {
-                return pc.appearance.isDark() ? ScrollBarKnobWidget.DARK : ScrollBarKnobWidget.LIGHT;
+                return pc.appearance.isDark() ? ScrollBarKnobWidget.LIGHT : ScrollBarKnobWidget.DARK;
             }
         }
         return ScrollBarKnobWidget.DARK;
@@ -379,7 +380,7 @@ public class AquaScrollBarUI extends ScrollBarUI implements AquaComponentUI {
             return sz;
         }
         int version = AquaPainting.getVersion();
-        if (version >= 1600 && isSidebar() && !isOverlay()) {
+        if (version >= macOS26 && isSidebar() && !isOverlay()) {
             return Size.REGULAR;
         } else {
             return Size.SMALL;

@@ -47,6 +47,7 @@ import org.jetbrains.annotations.*;
 import org.violetlib.jnr.aqua.AquaUIPainter;
 
 import static org.violetlib.aqua.AquaContextualPopup.getContextualMenuBorder;
+import static org.violetlib.aqua.OSXSystemProperties.macOS26;
 
 /**
  * UI for all kinds of pop up menus.
@@ -105,7 +106,7 @@ public class AquaPopupMenuUI extends BasicPopupMenuUI implements AquaComponentUI
         radioIcon = checkIcon;
         indeterminateIcon = AquaImageFactory.getMenuIndeterminateSelectionIcon(popupMenu, selectionIconSize);
         arrowIcon = AquaImageFactory.getSubmenuArrow(popupMenu, arrowIconSize);
-        textItemGap = version >= 1600 ? 8 : 7;
+        textItemGap = version >= macOS26 ? 8 : 7;
         selectionIconSeparation = 4;
         arrowIconSeparation = 25;
         labelFont = computeLabelFont();

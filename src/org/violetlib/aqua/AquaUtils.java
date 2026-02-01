@@ -62,8 +62,7 @@ import org.violetlib.jnr.Insetter;
 import org.violetlib.jnr.aqua.AquaUIPainter;
 
 import static org.violetlib.aqua.JavaSupport.FocusEventCause.*;
-import static org.violetlib.aqua.OSXSystemProperties.OSVersion;
-import static org.violetlib.aqua.OSXSystemProperties.macOS11;
+import static org.violetlib.aqua.OSXSystemProperties.*;
 import static org.violetlib.jnr.aqua.AquaUIPainter.ButtonWidget.BUTTON_GLASS;
 import static org.violetlib.jnr.aqua.AquaUIPainter.Size.EXTRA_LARGE;
 import static org.violetlib.jnr.aqua.AquaUIPainter.Size.REGULAR;
@@ -222,7 +221,16 @@ final public class AquaUtils {
         return new Insets2D(s.top, s.left, s.bottom, s.right);
     }
 
-    public static Rectangle toRectangle(Rectangle2D r) {
+    public static @NotNull Dimension size(@NotNull Rectangle2D r) {
+        if (r instanceof Rectangle) {
+            return ((Rectangle) r).getSize();
+        }
+        int ww = (int) Math.ceil(r.getWidth());
+        int hh = (int) Math.ceil(r.getHeight());
+        return new Dimension(ww, hh);
+    }
+
+    public static @NotNull Rectangle toRectangle(@NotNull Rectangle2D r) {
         if (r instanceof Rectangle) {
             return (Rectangle) r;
         }
@@ -502,7 +510,7 @@ final public class AquaUtils {
     {
         int version = AquaPainting.getVersion();
 
-        if (version >= 1600) {
+        if (version >= macOS26) {
             if (widget == BUTTON_GLASS
               || widget instanceof AquaUIPainter.PopupButtonWidget
               || widget instanceof AquaUIPainter.ComboBoxWidget
@@ -520,7 +528,7 @@ final public class AquaUtils {
         if (widget instanceof AquaUIPainter.TextFieldWidget) {
             AquaUIPainter.TextFieldWidget w = (AquaUIPainter.TextFieldWidget) widget;
             if (w.isSearch()) {
-                if (version >= 1600) {
+                if (version >= macOS26) {
                     return EXTRA_LARGE;
                 }
                 return toolbarSize;
@@ -1128,7 +1136,7 @@ final public class AquaUtils {
     public static boolean isRoundedBorderScrollPane(@NotNull JScrollPane sp) {
         // Note: this code and AquaScrollPaneUI assume that rounded borders are used only by sidebar scroll panes.
         int version = AquaPainting.getVersion();
-        if (version >= 1600) {
+        if (version >= macOS26) {
             AquaScrollPaneUI ui = getUI(sp, AquaScrollPaneUI.class);
             return ui != null && ui.isSidebar();
         }
@@ -1227,7 +1235,7 @@ final public class AquaUtils {
     private static int getInsetCornerRadius()
     {
         int version = AquaPainting.getVersion();
-        return version >= 1600 ? 16 : 10;
+        return version >= macOS26 ? 16 : 10;
     }
 
     /**

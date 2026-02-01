@@ -58,8 +58,7 @@ import org.violetlib.jnr.aqua.AquaUIPainter.*;
 import org.violetlib.jnr.aqua.SegmentedButtonConfiguration;
 import org.violetlib.jnr.aqua.SegmentedButtonLayoutConfiguration;
 
-import static org.violetlib.aqua.OSXSystemProperties.OSVersion;
-import static org.violetlib.aqua.OSXSystemProperties.macOS11;
+import static org.violetlib.aqua.OSXSystemProperties.*;
 import static org.violetlib.jnr.aqua.AquaUIPainter.Position.*;
 import static org.violetlib.jnr.aqua.SegmentedButtonConfiguration.DividerState;
 
@@ -586,7 +585,7 @@ public class AquaTabbedPaneUI extends AquaTabbedPaneCopyFromBasicUI
         // This code is similar to AquaSegmentedButtonBorder.getConfiguration()
 
         int version = AquaPainting.getVersion();
-        boolean isSlider = version >= 1600;
+        boolean isSlider = version >= macOS26;
 
         int tab = tv.identifyTabAtIndex(visualIndex);
 

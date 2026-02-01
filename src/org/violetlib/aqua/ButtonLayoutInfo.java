@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Alan Snyder.
+ * Copyright (c) 2025-2026 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -8,9 +8,10 @@
 
 package org.violetlib.aqua;
 
-import java.awt.*;
+import java.awt.geom.Rectangle2D;
 
 import org.jetbrains.annotations.*;
+import org.violetlib.jnr.Insets2D;
 
 /**
  * Information describing the layout of a button. When computing a preferred size, only the content dimensions
@@ -18,14 +19,14 @@ import org.jetbrains.annotations.*;
  */
 
 public class ButtonLayoutInfo {
-    public final @Nullable Rectangle iconBounds;
-    public final @Nullable Rectangle labelBounds;
-    public final @NotNull Rectangle contentBounds;
+    public final @Nullable Rectangle2D iconBounds;
+    public final @Nullable Rectangle2D labelBounds;
+    public final @NotNull Rectangle2D contentBounds;
     public final @Nullable String substitutedLabel;  // when the label must be clipped
 
-    public ButtonLayoutInfo(@Nullable Rectangle iconBounds,
-                            @Nullable Rectangle labelBounds,
-                            @NotNull Rectangle contentBounds,
+    public ButtonLayoutInfo(@Nullable Rectangle2D iconBounds,
+                            @Nullable Rectangle2D labelBounds,
+                            @NotNull Rectangle2D contentBounds,
                             @Nullable String substitutedLabel) {
         this.iconBounds = iconBounds;
         this.labelBounds = labelBounds;
@@ -40,33 +41,43 @@ public class ButtonLayoutInfo {
         this.substitutedLabel = source.substitutedLabel;
     }
 
-    public @NotNull ButtonLayoutInfo extend(@NotNull Insets s) {
-        return new ButtonLayoutInfo(offset(iconBounds, s.left, s.top),
-          offset(labelBounds, s.left, s.top),
-          offset(contentBounds, s.left, s.top),
+    public @NotNull ButtonLayoutInfo extend(@NotNull Insets2D s) {
+        return new ButtonLayoutInfo(offset(iconBounds, s.getLeft(), s.getTop()),
+          offset(labelBounds, s.getLeft(), s.getTop()),
+          offset(contentBounds, s.getLeft(), s.getTop()),
+          substitutedLabel);
+    }
+
+    public @NotNull ButtonLayoutInfo offset(float top, float left)
+    {
+        return new ButtonLayoutInfo(offset(iconBounds, left, top),
+          offset(labelBounds, left, top),
+          offset(contentBounds, left, top),
           substitutedLabel);
     }
 
     public @NotNull ButtonLayoutInfo toLeftAligned() {
         if (iconBounds != null || labelBounds != null) {
-            int delta = (iconBounds != null ? iconBounds.x : labelBounds.x) - contentBounds.x;
-            Rectangle nIconBounds = null;
-            Rectangle nLabelBounds = null;
+            double delta = (iconBounds != null ? iconBounds.getX() : labelBounds.getX()) - contentBounds.getX();
+            Rectangle2D nIconBounds = null;
+            Rectangle2D nLabelBounds = null;
 
             if (iconBounds != null) {
-                nIconBounds = new Rectangle(contentBounds.x, iconBounds.y, iconBounds.width, iconBounds.height);
+                nIconBounds = new Rectangle2D.Double(contentBounds.getX(), iconBounds.getY(),
+                  iconBounds.getWidth(), iconBounds.getHeight());
             }
             if (labelBounds != null) {
-                nLabelBounds = new Rectangle(labelBounds.x - delta, labelBounds.y, labelBounds.width, labelBounds.height);
+                nLabelBounds = new Rectangle2D.Double(labelBounds.getX() - delta, labelBounds.getY(),
+                  labelBounds.getWidth(), labelBounds.getHeight());
             }
             return new ButtonLayoutInfo(nIconBounds, nLabelBounds, contentBounds, substitutedLabel);
         }
         return this;
     }
 
-    public static @Nullable Rectangle offset(@Nullable Rectangle r, int x, int y) {
+    public static @Nullable Rectangle2D offset(@Nullable Rectangle2D r, double x, double y) {
         if (r != null) {
-            return new Rectangle(r.x + x, r.y + y, r.width, r.height);
+            return new Rectangle2D.Double(r.getX() + x, r.getY() + y, r.getWidth(), r.getHeight());
         }
         return null;
     }

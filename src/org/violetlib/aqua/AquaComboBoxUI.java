@@ -64,6 +64,7 @@ import org.violetlib.jnr.aqua.AquaUIPainter.Size;
 import org.violetlib.jnr.aqua.AquaUIPainter.State;
 
 import static org.violetlib.aqua.OSXSystemProperties.OSVersion;
+import static org.violetlib.aqua.OSXSystemProperties.macOS26;
 import static org.violetlib.jnr.aqua.AquaUIPainter.ComboBoxWidget.*;
 import static org.violetlib.jnr.aqua.AquaUIPainter.PopupButtonWidget.*;
 
@@ -1575,7 +1576,7 @@ public class AquaComboBoxUI extends BasicComboBoxUI
 
         if (isToolbar) {
             int version = AquaPainting.getVersion();
-            return version >= 1600 ? BUTTON_COMBO_BOX : BUTTON_COMBO_BOX_TEXTURED_TOOLBAR;
+            return version >= macOS26 ? BUTTON_COMBO_BOX : BUTTON_COMBO_BOX_TEXTURED_TOOLBAR;
         }
 
         return BUTTON_COMBO_BOX;

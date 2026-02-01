@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2025 Alan Snyder.
+ * Copyright (c) 2015-2026 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -46,8 +46,7 @@ import org.violetlib.jnr.aqua.AquaUIPainter.ButtonWidget;
 import org.violetlib.jnr.aqua.AquaUIPainter.Position;
 import org.violetlib.jnr.aqua.AquaUIPainter.SegmentedButtonWidget;
 
-import static org.violetlib.aqua.OSXSystemProperties.OSVersion;
-import static org.violetlib.aqua.OSXSystemProperties.macOS11;
+import static org.violetlib.aqua.OSXSystemProperties.*;
 import static org.violetlib.jnr.aqua.AquaUIPainter.ButtonWidget.*;
 import static org.violetlib.jnr.aqua.AquaUIPainter.ComboBoxWidget.*;
 import static org.violetlib.jnr.aqua.AquaUIPainter.PopupButtonWidget.*;
@@ -286,13 +285,14 @@ public class AquaButtonExtendedTypes {
     public static float getFontSize(AquaUIPainter.Size size) {
         switch (size) {
             case SMALL:
-                return 11;
+                return 10;
             case MINI:
-                return 9;
+                return 8;
             case LARGE:
-                return 13;
+            case EXTRA_LARGE:
+                return 14;
             default:
-                return 13;
+                return 12;
         }
     }
 
@@ -521,7 +521,7 @@ public class AquaButtonExtendedTypes {
         // Round buttons are like gradient buttons, but white looks better on the blue background
         result.put(BUTTON_ROUND, new WidgetInfo(AquaColors.ROUND_BUTTON_COLORS));
 
-        if (AquaPainting.getVersion() >= 1600) {
+        if (AquaPainting.getVersion() >= macOS26) {
             result.put(BUTTON_TOOLBAR, new WidgetInfo(AquaColors.TOOLBAR_COLORS)
               .withRolloverEnabled());
         } else {
@@ -530,7 +530,7 @@ public class AquaButtonExtendedTypes {
               .withIconTextGap(2));
         }
 
-        if (AquaPainting.getVersion() >= 1600) {
+        if (AquaPainting.getVersion() >= macOS26) {
             result.put(BUTTON_TOOLBAR_ITEM, new WidgetInfo(AquaColors.TOOLBAR_ITEM_COLORS)
               .withRolloverEnabled()
               .withIconTextGap(11)
@@ -572,6 +572,11 @@ public class AquaButtonExtendedTypes {
 
         if (OSVersion >= macOS11) {
             texturedToolbar = texturedToolbar.withRolloverEnabled();
+            // Choosing widgets for default toolbar buttons involves testing font sizes. Although the larger fonts fit
+            // in the bezels, they do not fit in the content areas, which were chosen so that icon sizes match other
+            // toolbar components. Smaller fonts are required.
+            texturedToolbar = texturedToolbar.withFontFinder(
+              (sz) -> UIManager.getFont("Button.font").deriveFont(fontSize(sz, 13, 11, 8, 7)));
         }
 
         result.put(BUTTON_TEXTURED, textured);

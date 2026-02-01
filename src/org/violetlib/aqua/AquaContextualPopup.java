@@ -18,7 +18,7 @@ import javax.swing.plaf.UIResource;
 import org.jetbrains.annotations.*;
 import org.violetlib.jnr.aqua.AquaUIPainter;
 
-import static org.violetlib.jnr.aqua.AquaUIPainter.Size.MINI;
+import static org.violetlib.aqua.OSXSystemProperties.macOS26;
 
 /**
  * A contextual style popup that (if necessary) scrolls without using a scroll bar and scrolls by growing taller when
@@ -127,7 +127,7 @@ public class AquaContextualPopup {
 
     private int getCornerRadius(@NotNull AquaUIPainter.Size size) {
         int version = AquaPainting.getVersion();
-        if (version < 1600) {
+        if (version < macOS26) {
             return 8;
         }
         switch (size) {

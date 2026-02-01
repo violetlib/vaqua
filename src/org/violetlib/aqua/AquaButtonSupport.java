@@ -9,6 +9,7 @@
 package org.violetlib.aqua;
 
 import java.awt.*;
+import java.awt.geom.Rectangle2D;
 import java.awt.geom.RoundRectangle2D;
 import javax.swing.*;
 import javax.swing.border.Border;
@@ -17,11 +18,13 @@ import javax.swing.plaf.basic.BasicHTML;
 import javax.swing.text.View;
 
 import org.jetbrains.annotations.*;
+import org.violetlib.jnr.Insets2D;
 import org.violetlib.jnr.Insetter;
 import org.violetlib.jnr.LayoutInfo;
 import org.violetlib.jnr.aqua.*;
 
 import static org.violetlib.aqua.OSXSystemProperties.macOS11;
+import static org.violetlib.aqua.OSXSystemProperties.macOS26;
 import static org.violetlib.jnr.aqua.AquaUIPainter.ButtonWidget;
 import static org.violetlib.jnr.aqua.AquaUIPainter.ButtonWidget.*;
 import static org.violetlib.jnr.aqua.AquaUIPainter.Size.*;
@@ -151,7 +154,8 @@ public class AquaButtonSupport {
             return null;
         }
         ButtonLayoutInfo info = engine.getLayoutInfo(Short.MAX_VALUE, Short.MAX_VALUE);
-        return AquaUtils.extend(info.contentBounds.getSize(), b.getInsets());
+        Dimension size = AquaUtils.size(info.contentBounds);
+        return AquaUtils.extend(size, b.getInsets());
     }
 
     public static @Nullable CompoundLabelLayoutEngine createCompoundLayoutEngine(@NotNull AbstractButton b,
@@ -217,7 +221,7 @@ public class AquaButtonSupport {
         }
 
         int version = AquaPainting.getVersion();
-        if (version >= 1600) {
+        if (version >= macOS26) {
             AquaUIPainter.Size specifiedSize = AquaUtilControlSize.getOptionalUserSizeFrom(b);
             if (specifiedSize == null) {
                 return new ButtonStyleInfo(BUTTON_TOOLBAR, EXTRA_LARGE);
@@ -306,6 +310,7 @@ public class AquaButtonSupport {
         }
         AquaUIPainter.Size size = AquaUtils.getSize(b, true, widget);
         LayoutConfiguration g = createLTestLayoutConfiguration(widget, size);
+        size = g.getSize();  // actual size may differ
         LayoutInfo layoutInfo = painter.getLayoutInfo().getLayoutInfo(g);
         int fixedHeight = (int) Math.ceil(layoutInfo.getFixedVisualHeight());
         if (fixedHeight == 0) {
@@ -374,7 +379,7 @@ public class AquaButtonSupport {
                                         @NotNull AbstractButton b,
                                         @Nullable GenericButtonConfiguration bg,
                                         @Nullable AquaUIPainter painter,
-                                        @NotNull Insets insets,
+                                        @NotNull Insets2D insets,
                                         @Nullable Icon icon,
                                         @NotNull Color textColor,
                                         @Nullable Color iconColor,
@@ -463,7 +468,7 @@ public class AquaButtonSupport {
 //        CompoundLabelAlignment alignment = getCompoundLabelAlignment(b);
 //
 //        AquaUIPainter.ButtonWidget bw = getButtonWidget(b);
-//        if (bw == AquaUIPainter.ButtonWidget.BUTTON_TOOLBAR_ITEM && AquaPainting.getSystemRenderingVersion() >= 1600) {
+//        if (bw == AquaUIPainter.ButtonWidget.BUTTON_TOOLBAR_ITEM && AquaPainting.getSystemRenderingVersion() >= macOS26) {
 //            alignment = CompoundLabelAlignment.VERTICAL_BOTTOM_TEXT;
 //            iconTextGap = 11; // includes the icon button content bottom inset of 6
 //        }
@@ -483,13 +488,13 @@ public class AquaButtonSupport {
             if (gg instanceof ButtonConfiguration) {
                 ButtonConfiguration bg = (ButtonConfiguration) gg;
 
-                int x = si.iconOutlineBounds.x;
-                int y = si.iconOutlineBounds.y;
-                int width = si.iconOutlineBounds.width;
-                int height = si.iconOutlineBounds.height;
+                double x = si.iconOutlineBounds.getX();
+                double y = si.iconOutlineBounds.getY();
+                double width = si.iconOutlineBounds.getWidth();
+                double height = si.iconOutlineBounds.getHeight();
 
                 int version = AquaPainting.getVersion();
-                if (version < 1600) {
+                if (version < macOS26) {
                     int d = 1;
                     RoundRectangle2D shape = new RoundRectangle2D.Double(x, y - d, width - 1, height + 2 * d, 8, 8);
                     paintToolbarItemBackground(b, bg, pc, g, shape);
@@ -498,9 +503,15 @@ public class AquaButtonSupport {
                     AquaUIPainter.ButtonWidget w = AquaUIPainter.ButtonWidget.BUTTON_GLASS;
                     ButtonConfiguration ig = new ButtonConfiguration(w, sz, bg.getState(), bg.isFocused(),
                       bg.getButtonState(), bg.getLayoutDirection());
-                    AquaUtils.configure(painter, pc.appearance, b, width, height);
-                    org.violetlib.jnr.Painter p = painter.getPainter(ig);
-                    p.paint(g, x, y);
+                    {
+                        int xx = (int) Math.floor(x);
+                        int yy = (int) Math.floor(y);
+                        int ww = (int) Math.ceil(width);
+                        int hh = (int) Math.ceil(height);
+                        AquaUtils.configure(painter, pc.appearance, b, ww, hh);
+                        org.violetlib.jnr.Painter p = painter.getPainter(ig);
+                        p.paint(g, xx, yy);
+                    }
                 }
             }
         }
@@ -544,23 +555,26 @@ public class AquaButtonSupport {
     private static void paintIcon(@NotNull Graphics2D g,
                                   @NotNull AbstractButton b,
                                   @NotNull Icon icon,
-                                  @NotNull Rectangle iconRect,
+                                  @NotNull Rectangle2D iconRect,
                                   @Nullable Color iconColor) {
         if (iconColor != null && !(icon instanceof AquaButtonIcon) && AquaImageFactory.isTemplateIcon(icon)) {
             icon = AquaImageFactory.getProcessedImage(icon, iconColor);
         }
-        Graphics2D gg = null;
-        if (icon.getIconWidth() != iconRect.width || icon.getIconHeight() != iconRect.height) {
-            gg = (Graphics2D) g.create();
-            g = gg;
-            gg.translate(iconRect.x, iconRect.y);
-            gg.scale(iconRect.getWidth() / icon.getIconWidth(), iconRect.getHeight() / icon.getIconHeight());
-            gg.translate(-iconRect.x, -iconRect.y);
+        double x = iconRect.getX();
+        double y = iconRect.getY();
+        double w = iconRect.getWidth();
+        double h = iconRect.getHeight();
+
+        g = (Graphics2D) g.create();
+        if (icon.getIconWidth() != w || icon.getIconHeight() != h) {
+            g.translate(x, y);
+            g.scale(w / icon.getIconWidth(), h / icon.getIconHeight());
+        } else {
+            g.translate(x, y);
         }
-        icon.paintIcon(b, g, iconRect.x, iconRect.y);
-        if (gg != null) {
-            gg.dispose();
-        }
+
+        icon.paintIcon(b, g, 0, 0);
+        g.dispose();
     }
 
     /**
@@ -568,12 +582,12 @@ public class AquaButtonSupport {
      */
     public static void paintText(@NotNull Graphics2D g,
                                  @NotNull AbstractButton b,
-                                 @NotNull Rectangle textRect,
+                                 @NotNull Rectangle2D textRect,
                                  @NotNull Color textColor,
                                  @Nullable String text) {
         if (text != null && !text.isEmpty()) {
-            if (textRect.width == 0) {
-                textRect.width = 50;
+            if (textRect.getWidth() == 0) {
+                textRect = new Rectangle2D.Double(textRect.getX(), textRect.getY(), 50, textRect.getHeight());
             }
             Object o = b.getClientProperty(BasicHTML.propertyKey);
             if (o instanceof View) {
@@ -583,8 +597,8 @@ public class AquaButtonSupport {
                 FontMetrics fm = g.getFontMetrics();
                 int mnemonicIndex = AquaMnemonicHandler.isMnemonicHidden() ? -1 : b.getDisplayedMnemonicIndex();
                 g.setColor(textColor);
-                int x = textRect.x;
-                int y = textRect.y + fm.getAscent();
+                float x = (float) textRect.getX();
+                float y = (float) textRect.getY() + fm.getAscent();
                 JavaSupport.drawStringUnderlineCharAt(b, g, text, mnemonicIndex, x, y);
             }
         }

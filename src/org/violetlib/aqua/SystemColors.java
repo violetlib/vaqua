@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2025 Alan Snyder.
+ * Copyright (c) 2018-2026 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -11,6 +11,7 @@ package org.violetlib.aqua;
 import org.jetbrains.annotations.*;
 
 import static org.violetlib.aqua.OSXSystemProperties.macOS11;
+import static org.violetlib.aqua.OSXSystemProperties.macOS26;
 
 /**
  * A set of color definitions that can be combined to form a complete set of colors for an appearance.
@@ -244,7 +245,7 @@ public class SystemColors {
 
         if (OSVersion >= macOS11) {
             colors.add("recessedText", 0, 140);
-            if (OSVersion < 1600) {
+            if (OSVersion < macOS26) {
                 colors.add("recessedText_rollover", 0);
             }
             colors.add("selectedRecessedText", 0, 206);
@@ -266,7 +267,7 @@ public class SystemColors {
             colors.add("selectedBevelText_inactive", 28);
         }
 
-        if (OSVersion >= 1200 && OSVersion < 1600) {
+        if (OSVersion >= 1200 && OSVersion < macOS26) {
             colors.add("selectedPushButtonText", 0);
             colors.add("selectedPushButtonText_disabled", 0, 64);
             colors.add("selectedPushButtonText_inactive", 0, 128);
@@ -366,7 +367,7 @@ public class SystemColors {
         colors.add("selectedRoundText_inactive", 0);
 
         // colors related to toolbar items
-        if (OSVersion < 1600) {
+        if (OSVersion < macOS26) {
             colors.add("toolbarItemText", 89);
             colors.add("toolbarItemText_disabled", 150);
             colors.add("toolbarItemText_inactive", 172);
@@ -398,7 +399,7 @@ public class SystemColors {
         }
 
         // colors related to glass buttons (simulated)
-        if (OSVersion >= 1600) {
+        if (OSVersion >= macOS26) {
             colors.add("glassButtonText", 0);
             colors.add("glassButtonText_inactive", 204);
             colors.add("glassButtonText_disabled", 186);
@@ -411,7 +412,7 @@ public class SystemColors {
         colors.add("sidebarBorder", 220);
         colors.add("sidebarIcon", 30, 220);
 
-        if (OSVersion >= 1600) {
+        if (OSVersion >= macOS26) {
             colors.add("sidebarBackground", 237);
             colors.add("sidebarBackground_inactive", 243);
         }
@@ -473,7 +474,7 @@ public class SystemColors {
     private @NotNull BasicColors createHighContrastLightColors(int OSVersion) {
         BasicColorsBuilder colors = new BasicColorsBuilder("High Contrast Light", instrumentation, log);
 
-        if (OSVersion >= 1600) {
+        if (OSVersion >= macOS26) {
             int bc = OSVersion >= 2602 ? 251 : 237;
             int sb = OSVersion >= 2602 ? 10 : 73;
             int sbi = OSVersion >= 2602 ? 99 : 138;
@@ -514,7 +515,7 @@ public class SystemColors {
         colors.add("recessedText_disabled", recessed, 128);
         colors.add("recessedText_inactive", recessed, 100);
         colors.add("recessedText_pressed", recessed);
-        colors.add("recessedText_rollover", OSVersion >= 1015 && OSVersion < 1600 ? 255 : recessed);
+        colors.add("recessedText_rollover", OSVersion >= 1015 && OSVersion < macOS26 ? 255 : recessed);
         colors.add("recessedText_inactive_disabled", recessed, 80);
 
         int selectedRecessed = 255;
@@ -526,7 +527,7 @@ public class SystemColors {
         colors.add("selectedRecessedText_inactive", selectedRecessed, 100);
         colors.add("selectedRecessedText_inactive_disabled", selectedRecessedDisabled, 80);
 
-        if (OSVersion >= 1600) {
+        if (OSVersion >= macOS26) {
             colors.add("selectedRoundedRectText", 255);
             colors.add("selectedRoundedRectText_inactive", 0);
             colors.add("selectedBevelText", 255);
@@ -667,7 +668,7 @@ public class SystemColors {
         colors.add("texturedText_inactive", "disabledControlText");
         colors.add("texturedText_inactive_disabled", 255, 32);
 
-        if (OSVersion >= 1600) {
+        if (OSVersion >= macOS26) {
             colors.addAll("selectedTexturedText", "controlText");
         } else if (OSVersion >= macOS11) {
             colors.add("selectedTexturedText", 255);
@@ -836,7 +837,7 @@ public class SystemColors {
             }
         }
 
-        if (OSVersion >= 1600) {
+        if (OSVersion >= macOS26) {
             colors.add("selectedSegmentedText", 0);
             colors.add("selectedSegmentedText_inactive", 0);
         }
@@ -883,7 +884,7 @@ public class SystemColors {
         colors.add("selectedRoundText_disabled", 0, 64);
 
         // colors related to toolbar items (dark mode)
-        if (OSVersion < 1600) {
+        if (OSVersion < macOS26) {
             colors.add("toolbarItemText", "controlText");
             colors.add("toolbarItemText_pressed", "controlText_pressed");
             colors.add("toolbarItemText_inactive", "disabledControlText");
@@ -916,7 +917,7 @@ public class SystemColors {
         }
 
         // colors related to glass buttons (simulated dark mode)
-        if (OSVersion >= 1600) {
+        if (OSVersion >= macOS26) {
             colors.add("glassButtonText", 255);
             colors.add("glassButtonText_inactive", 109);
             colors.add("glassButtonText_disabled", 108);
@@ -929,7 +930,7 @@ public class SystemColors {
         colors.add("sidebarBorder", 0);
         colors.add("sidebarIcon", 255, 160);
 
-        if (OSVersion >= 1600) {
+        if (OSVersion >= macOS26) {
             colors.add("sidebarBackground_inactive", 45);
         }
 
@@ -969,7 +970,7 @@ public class SystemColors {
         colors.add("windowBackground", 40);
         colors.add("texturedWindowBackground", 53);
 
-        if (OSVersion >= 1600) {
+        if (OSVersion >= macOS26) {
             int bc = OSVersion >= 2602 ? 12 : 30;
             int sb = OSVersion >= 2602 ? 168 : 196;
             int sbi = OSVersion >= 2602 ? 133 : 138;

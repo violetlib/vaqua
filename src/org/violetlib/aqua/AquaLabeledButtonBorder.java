@@ -13,6 +13,7 @@ import javax.swing.*;
 
 import org.jetbrains.annotations.*;
 import org.violetlib.geom.ExpandableOutline;
+import org.violetlib.jnr.Insets2D;
 import org.violetlib.jnr.LayoutInfo;
 import org.violetlib.jnr.aqua.AquaUIPainter.ButtonState;
 import org.violetlib.jnr.aqua.AquaUIPainter.ButtonWidget;
@@ -50,7 +51,7 @@ public abstract class AquaLabeledButtonBorder extends AquaNamedButtonBorder {
             if (engine == null) {
                 return;
             }
-            Insets s = getButtonContentInsets(b);
+            Insets2D s = getButtonContentInsets(b);
             ButtonLayoutInfo info = engine.getLayoutInfo(viewRect.width, viewRect.height, s);
             if (info.iconBounds != null) {
                 paintBackground(g, b, bg, info.iconBounds, pc);
@@ -83,13 +84,15 @@ public abstract class AquaLabeledButtonBorder extends AquaNamedButtonBorder {
             if (engine == null) {
                 return null;
             }
-            Insets s = getButtonContentInsets(b);
+            Insets2D s = getButtonContentInsets(b);
             ButtonLayoutInfo info = engine.getLayoutInfo(c.getWidth(), c.getHeight(), s);
             if (info.iconBounds != null) {
-                AquaUtils.configure(painter, null, b, info.iconBounds.width, info.iconBounds.height);
+                int ww = (int) Math.ceil(info.iconBounds.getWidth());
+                int hh = (int) Math.ceil(info.iconBounds.getHeight());
+                AquaUtils.configure(painter, null, b, ww, hh);
                 Shape outline = painter.getOutline(g);
                 if (outline != null) {
-                    return ExpandableOutline.createTranslatedShape(outline, info.iconBounds.x, info.iconBounds.y);
+                    return ExpandableOutline.createTranslatedShape(outline, info.iconBounds.getX(), info.iconBounds.getY());
                 }
             }
         }

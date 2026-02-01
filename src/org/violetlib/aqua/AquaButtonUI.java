@@ -49,6 +49,7 @@ import javax.swing.text.View;
 import org.jetbrains.annotations.*;
 import org.violetlib.aqua.AquaUtils.RecyclableSingleton;
 import org.violetlib.aqua.AquaUtils.RecyclableSingletonFromDefaultConstructor;
+import org.violetlib.jnr.Insets2D;
 import org.violetlib.jnr.aqua.AquaUIPainter.Size;
 import org.violetlib.jnr.aqua.LayoutConfiguration;
 
@@ -459,7 +460,8 @@ public class AquaButtonUI extends BasicButtonUI
             }
         }
         Color fc = getDefaultForegroundColor(b, pc.appearance);
-        AquaButtonSupport.paintIconAndText(g, pc, b, null, null, b.getInsets(), icon, fc, fc, viewRect, null, false);
+        Insets2D insets = AquaUtils.asInsets2D(b.getInsets());
+        AquaButtonSupport.paintIconAndText(g, pc, b, null, null, insets, icon, fc, fc, viewRect, null, false);
     }
 
     @Override

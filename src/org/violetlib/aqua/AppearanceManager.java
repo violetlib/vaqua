@@ -245,7 +245,7 @@ public class AppearanceManager {
         return getWindowPaintingContext(c);
     }
 
-    private static @NotNull PaintingContext getWindowPaintingContext(@NotNull Component c)
+    public static @NotNull PaintingContext getWindowPaintingContext(@NotNull Component c)
       throws UnsupportedOperationException
     {
         if (isEnabled) {

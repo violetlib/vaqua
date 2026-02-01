@@ -51,6 +51,7 @@ import org.jetbrains.annotations.*;
 import static org.violetlib.aqua.AquaVibrantSupport.NO_VIBRANT_STYLE;
 import static org.violetlib.aqua.AquaVibrantSupport.WINDOW_BACKGROUND_STYLE;
 import static org.violetlib.aqua.OSXSystemProperties.OSVersion;
+import static org.violetlib.aqua.OSXSystemProperties.macOS26;
 
 public class AquaRootPaneUI extends BasicRootPaneUI implements AquaComponentUI, ActiveSensitiveComponentUI {
 
@@ -818,7 +819,7 @@ public class AquaRootPaneUI extends BasicRootPaneUI implements AquaComponentUI, 
     }
 
     protected boolean isUndecoratedOptionPane() {
-        if (AquaPainting.getVersion() >= 1600) {
+        if (AquaPainting.getVersion() >= macOS26) {
             Container contentPane = rootPane.getContentPane();
             if (contentPane.getComponentCount() == 1) {
                 Component c = contentPane.getComponent(0);

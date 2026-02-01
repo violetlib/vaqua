@@ -52,8 +52,7 @@ import org.violetlib.jnr.aqua.AquaUIPainter.Size;
 import org.violetlib.jnr.aqua.AquaUIPainter.State;
 
 import static org.violetlib.aqua.AquaButtonSupport.isColorWell;
-import static org.violetlib.aqua.OSXSystemProperties.OSVersion;
-import static org.violetlib.aqua.OSXSystemProperties.macOS11;
+import static org.violetlib.aqua.OSXSystemProperties.*;
 import static org.violetlib.jnr.aqua.AquaUIPainter.ButtonState.OFF;
 import static org.violetlib.jnr.aqua.AquaUIPainter.ButtonState.ON;
 import static org.violetlib.jnr.aqua.AquaUIPainter.ButtonWidget.BUTTON_TOOLBAR_ITEM;
@@ -131,7 +130,7 @@ public abstract class AquaButtonBorder extends AquaBorder implements FocusRingOu
                 if (iconSize == null && icon != null) {
                     iconSize = new Dimension(icon.getIconWidth(), icon.getIconHeight());
                 }
-                Insets insets = getButtonContentInsets(b);
+                Insets2D insets = getButtonContentInsets(b);
                 Color textColor = getForegroundColor(b, bg, pc, false);
                 Color iconColor = getForegroundColor(b, bg, pc, true);
                 AquaButtonSupport.paintIconAndText(g, pc, b, bg, painter, insets, icon,
@@ -143,23 +142,29 @@ public abstract class AquaButtonBorder extends AquaBorder implements FocusRingOu
     public void paintBackground(@NotNull Graphics2D g,
                                 @NotNull AbstractButton b,
                                 @NotNull Configuration bg,
-                                @NotNull Rectangle viewRect,
+                                @NotNull Rectangle2D viewRect,
                                 @NotNull PaintingContext pc) {
-        int x = viewRect.x;
-        int y = viewRect.y;
-        int width = viewRect.width;
-        int height = viewRect.height;
+        double x = viewRect.getX();
+        double y = viewRect.getY();
+        double width = viewRect.getWidth();
+        double height = viewRect.getHeight();
 
         int version = AquaPainting.getVersion();
-        if (bg.getWidget() == BUTTON_TOOLBAR_ITEM && version < 1600) {
+        if (bg.getWidget() == BUTTON_TOOLBAR_ITEM && version < macOS26) {
             RoundRectangle2D shape = new RoundRectangle2D.Double(x, y, width - 1, height - 1, 8, 8);
             AquaButtonSupport.paintToolbarItemBackground(b, (ButtonConfiguration) bg, pc, g, shape);
             return;
         }
 
-        AquaUtils.configure(painter, pc.appearance, b, width, height);
-        org.violetlib.jnr.Painter p = painter.getPainter(bg);
-        p.paint(g, x, y);
+        {
+            int xx = (int) Math.floor(x);
+            int yy = (int) Math.floor(y);
+            int ww = (int) Math.ceil(width);
+            int hh = (int) Math.ceil(height);
+            AquaUtils.configure(painter, pc.appearance, b, ww, hh);
+            org.violetlib.jnr.Painter p = painter.getPainter(bg);
+            p.paint(g, xx, yy);
+        }
 
         // The following code is obsolete, as JNR now does the full rendering of a color well button.
         // It remains here just in case VAqua is used with an older version of JNR.
@@ -169,19 +174,19 @@ public abstract class AquaButtonBorder extends AquaBorder implements FocusRingOu
             Graphics2D gg = (Graphics2D) g.create();
             Shape rr;
 
-            float t = 6;
-            float s = 6;
-            float x1 = x + s;
-            float ww = width - 2 * s;
-            float x2 = x1 + ww;
-            float y1 = y + t;
-            float hh = height - 2 * t;
-            float y2 = y1 + hh;
+            double t = 6;
+            double s = 6;
+            double x1 = x + s;
+            double ww = width - 2 * s;
+            double x2 = x1 + ww;
+            double y1 = y + t;
+            double hh = height - 2 * t;
+            double y2 = y1 + hh;
 
             if (OSVersion >= 1300) {
-                rr = new RoundRectangle2D.Float(x1, y1, ww, hh, 4, 4);
+                rr = new RoundRectangle2D.Double(x1, y1, ww, hh, 4, 4);
             } else {
-                rr = new Rectangle2D.Float(x1, y1, ww, hh);
+                rr = new Rectangle2D.Double(x1, y1, ww, hh);
             }
 
             Color c = b.getBackground();
@@ -455,18 +460,18 @@ public abstract class AquaButtonBorder extends AquaBorder implements FocusRingOu
         return g != null ? painter.getLayoutInfo().getContentInsets(g) : null;
     }
 
-    public @NotNull Insets getButtonContentInsets(@NotNull AbstractButton b) {
+    public @NotNull Insets2D getButtonContentInsets(@NotNull AbstractButton b) {
         LayoutConfiguration g = getLayoutConfiguration(b);
         if (g != null) {
             Insetter s = painter.getLayoutInfo().getContentInsets(g);
             if (s != null) {
-                Insets insets = s.asInsets();
+                Insets2D insets = s.asInsets2D();
                 if (insets != null) {
                     return insets;
                 }
             }
         }
-        return b.getInsets();
+        return AquaUtils.asInsets2D(b.getInsets());
     }
 
     /**
@@ -598,7 +603,7 @@ public abstract class AquaButtonBorder extends AquaBorder implements FocusRingOu
             AquaUIPainter.ButtonWidget widget = bg.getButtonWidget();
             if (widget == BUTTON_TOOLBAR_ITEM) {
                 int version = AquaPainting.getVersion();
-                if (version >= 1600) {
+                if (version >= macOS26) {
                     return smallToolbarSize;
                 }
                 Size size = bg.getSize();

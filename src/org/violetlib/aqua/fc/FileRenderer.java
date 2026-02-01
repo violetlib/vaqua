@@ -17,6 +17,7 @@ import javax.swing.text.View;
 
 import org.jetbrains.annotations.*;
 import org.violetlib.aqua.*;
+import org.violetlib.jnr.Insets2D;
 import org.violetlib.jnr.aqua.AquaUIPainter;
 
 /**
@@ -398,16 +399,16 @@ public class FileRenderer extends JLabel implements ListCellRenderer, GenericCel
 
         CompoundLabelLayoutEngine engine
           = new CompoundLabelLayoutEngine(null, iconSize, v, text, textFM, alignment, textIconGap, null);
-        Insets zero = new Insets(0, 0, 0, 0);
+        Insets2D zero = new Insets2D(0, 0, 0, 0);
         ButtonLayoutInfo info = engine.getLayoutInfo(contentRect.width, contentRect.height, zero).toLeftAligned();
         if (info.labelBounds != null) {
-            textRect.setBounds(info.labelBounds);
+            textRect.setBounds(AquaUtils.toRectangle(info.labelBounds));
             textRect.x += s.left;
         } else {
             textRect.setBounds(0, 0, 0, 0);
         }
         if (info.iconBounds != null) {
-            iconRect.setBounds(info.iconBounds);
+            iconRect.setBounds(AquaUtils.toRectangle(info.iconBounds));
             iconRect.x += s.left;
         } else {
             iconRect.setBounds(0, 0, 0, 0);

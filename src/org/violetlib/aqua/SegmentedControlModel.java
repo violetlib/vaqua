@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020-2025 Alan Snyder.
+ * Copyright (c) 2020-2026 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -19,8 +19,7 @@ import org.jetbrains.annotations.*;
 import org.violetlib.jnr.aqua.AquaUIPainter.SegmentedButtonWidget;
 import org.violetlib.jnr.aqua.LayoutConfiguration;
 
-import static org.violetlib.aqua.OSXSystemProperties.OSVersion;
-import static org.violetlib.aqua.OSXSystemProperties.macOS11;
+import static org.violetlib.aqua.OSXSystemProperties.*;
 import static org.violetlib.jnr.aqua.AquaUIPainter.SegmentedButtonWidget.*;
 
 /**
@@ -354,7 +353,7 @@ public class SegmentedControlModel {
 
     private static @Nullable SegmentedButtonWidget getSpecialWidget(@NotNull SegmentedControlModel m,
                                                                     @NotNull SegmentedButtonWidget standardWidget) {
-        if (standardWidget == BUTTON_SEGMENTED && AquaPainting.getVersion() >= 1600) {
+        if (standardWidget == BUTTON_SEGMENTED && AquaPainting.getVersion() >= macOS26) {
             return BUTTON_SEGMENTED_SLIDER;
         }
 

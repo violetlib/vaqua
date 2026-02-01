@@ -48,6 +48,8 @@ import javax.swing.plaf.basic.BasicScrollPaneUI;
 import org.jetbrains.annotations.*;
 import org.violetlib.jnr.aqua.AquaUIPainter;
 
+import static org.violetlib.aqua.OSXSystemProperties.macOS26;
+
 public class AquaScrollPaneUI extends BasicScrollPaneUI
   implements AquaUtilControlSize.Sizeable, AquaComponentUI, SystemPropertyChangeManager.SystemPropertyChangeListener,
   FocusRingOutlineProvider {
@@ -321,7 +323,7 @@ public class AquaScrollPaneUI extends BasicScrollPaneUI
         if (!isSidebar()) {
             return true;
         }
-        return AquaPainting.getVersion() >= 1600;
+        return AquaPainting.getVersion() >= macOS26;
     }
 
     private void paintCorner(@NotNull Graphics g) {
