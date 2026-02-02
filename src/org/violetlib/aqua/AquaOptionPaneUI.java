@@ -299,7 +299,6 @@ public class AquaOptionPaneUI extends BasicOptionPaneUI implements AquaComponent
             } else {
                 JComponent c = createTextComponent(s, maxll);
                 c.setName("OptionPane.label");
-                configureMessageLabel(c);
                 addMessageComponents(container, cons, c, maxll, true);
             }
         }
@@ -310,6 +309,7 @@ public class AquaOptionPaneUI extends BasicOptionPaneUI implements AquaComponent
             maxll = 80;
         }
         JLabel label = new JLabel(text, JLabel.LEADING);
+        configureMessageLabel(label);
         Dimension preferredSize = label.getPreferredSize();
         int preferredWidth = preferredSize.width;
         int columnWidth = label.getFontMetrics(label.getFont()).charWidth('n');
@@ -338,14 +338,13 @@ public class AquaOptionPaneUI extends BasicOptionPaneUI implements AquaComponent
             textArea.setEditable(false);
             textArea.setOpaque(false);
             textArea.setFocusable(false);
-            //textArea.setBackground(UIManager.getColor("Label.background"));
             textArea.setFont(UIManager.getFont("Label.font"));
             textArea.setWrapStyleWord(true);
             textArea.setLineWrap(true);
             textArea.setText(text);
-            // The following is a pitiful attempt to get JTextArea to compute a plausible
-            // preferred size. It is better than nothing. Do not set columns, it just increases the
-            // preferred width.
+            configureMessageLabel(textArea);
+            // The following is a pitiful attempt to get JTextArea to compute a plausible preferred size. It is better
+            // than nothing. Do not set columns, it just increases the preferred width.
             int columnWidth = textArea.getFontMetrics(textArea.getFont()).charWidth('n');
             textArea.setPreferredWidth(maxll * columnWidth);
             return textArea;
@@ -383,6 +382,6 @@ public class AquaOptionPaneUI extends BasicOptionPaneUI implements AquaComponent
             label.setFont(messageFont);
         }
         label.setOpaque(false);
-        label.setBackground(AquaColors.CLEAR);
+        label.setBackground(new Color(0, 0, 0, 0));  // don't allow the text component UI to override
     }
 }
