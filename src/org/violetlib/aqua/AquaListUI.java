@@ -278,6 +278,7 @@ public class AquaListUI extends BasicListUI implements AquaComponentUI, AquaView
                     if (hasSelection) {
                         list.repaint();
                     }
+                    return;
                 }
                 super.propertyChange(e);
             }
