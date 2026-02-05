@@ -602,9 +602,14 @@ public class AquaButtonExtendedTypes {
         result.put(BUTTON_SEGMENTED_SCURVE, segmentedGradient);
         result.put(BUTTON_SEGMENTED_SMALL_SQUARE, segmentedGradient);
 
-        WidgetInfo segmentedRoundedRect = roundedRect.copy().withSegmented()
-          .withColors(AquaColors.GRADIENT_SEGMENTED_BUTTON_COLORS).withSideMargin(9);
-        result.put(BUTTON_SEGMENTED_INSET, segmentedRoundedRect);
+        {
+            BasicContextualColors colors = AquaColors.GRADIENT_SEGMENTED_BUTTON_COLORS;
+            if (OSVersion < 101100) {
+                colors = AquaColors.SEGMENTED_BUTTON_COLORS;
+            }
+            WidgetInfo segmentedRoundedRect = roundedRect.copy().withSegmented().withColors(colors).withSideMargin(9);
+            result.put(BUTTON_SEGMENTED_INSET, segmentedRoundedRect);
+        }
 
         WidgetInfo pushPopUp = new WidgetInfo(AquaColors.POP_UP_DOWN_BUTTON_COLORS)
           .withSideMargin(5)

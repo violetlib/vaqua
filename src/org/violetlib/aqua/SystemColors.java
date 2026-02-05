@@ -128,7 +128,7 @@ public class SystemColors {
         // they do not have pressed behavior
         colors.addAll("segmentedText", "pushButtonText", BasicColorsBuilder.NO_INACTIVE);
         colors.add("segmentedText_pressed", "segmentedText");
-        colors.add("selectedSegmentedText", "selectedControlText");
+        colors.add("selectedSegmentedText", "alternateSelectedControlText");
         colors.add("selectedSegmentedText_pressed", "selectedSegmentedText");
 
         // textured segmented buttons do not have pressed behavior (unlike push and toggle buttons)
@@ -285,7 +285,7 @@ public class SystemColors {
             colors.addAll("segmentedText", "controlText");
             colors.add("segmentedText_inactive", 0, 240);
             colors.add("segmentedText_inactive_disabled", 0, 78);
-
+            //colors.add("selectedSegmentedText", "alternateSelectedControlText");
             colors.add("selectedSegmentedText_disabled", 0, 78);
             colors.add("selectedSegmentedText_inactive_disabled", 0, 78);
             colors.add("selectedSegmentedText_inactive", 34);
@@ -361,7 +361,7 @@ public class SystemColors {
 
         // colors related to round buttons
         colors.add("roundText", 0, 220);
-        colors.add("selectedRoundText", 255);
+        colors.add("selectedRoundText", "alternateSelectedControlText");
         colors.add("roundText_disabled", 0, 64);
         colors.add("selectedRoundText_disabled", 0, 128);
         colors.add("selectedRoundText_inactive", 0);
@@ -503,14 +503,15 @@ public class SystemColors {
             colors.add("texturedText", 20);
             colors.add("texturedText_disabled", 60);
             colors.add("selectedTexturedText", 200);
-        } else if (OSVersion == 1015) {
-            colors.add("texturedText", "controlText");
         } else {
-            colors.add("texturedText", 240);
-            colors.add("texturedText_disabled", 200);
+            colors.add("texturedText", "controlText");
+            colors.add("selectedTexturedText", 255, 120);
+//        } else {
+//            colors.add("texturedText", 240);
+//            colors.add("texturedText_disabled", 200);
         }
 
-        int recessed = OSVersion >= 1015 ? 0 : 255;
+        int recessed = 0; // OSVersion >= 1015 ? 0 : 255;
         colors.add("recessedText", recessed);
         colors.add("recessedText_disabled", recessed, 128);
         colors.add("recessedText_inactive", recessed, 100);
@@ -816,15 +817,15 @@ public class SystemColors {
             colors.add("segmentedText_disabled", 255, 48);
             colors.add("segmentedText_inactive", "segmentedText");
             colors.add("segmentedText_inactive_disabled", "segmentedText_disabled");
-
+            colors.add("selectedSegmentedText", "alternateSelectedControlText");
             colors.add("selectedSegmentedText_disabled", 255, 78);
             colors.add("selectedSegmentedText_inactive_disabled", 255, 78);
             //colors.add("selectedSegmentedText_inactive", 34);
-            colors.add("selectedSegmentedSeparatedText", 0);
+            //colors.add("selectedSegmentedSeparatedText", 0);
             colors.add("selectedSegmentedSeparatedText_disabled", 0, 140);
             //colors.add("selectedSegmentedSeparatedText_inactive", 34);
             colors.add("selectedSegmentedSeparatedText_inactive_disabled", 255, 78);
-            colors.add("selectedNonexclusiveText", 0);
+            //colors.add("selectedNonexclusiveText", 0);
             colors.add("selectedNonexclusiveText_disabled", 0, 140);
             colors.add("selectedNonexclusiveText_inactive_disabled", 255, 78);
         } else {
@@ -879,7 +880,7 @@ public class SystemColors {
 
         // colors related to round buttons (dark mode)
         colors.add("roundText", "controlText");
-        colors.add("selectedRoundText", 0, 224);
+        colors.add("selectedRoundText", "alternateSelectedControlText");
         colors.add("roundText_disabled", "disabledControlText");
         colors.add("selectedRoundText_disabled", 0, 64);
 

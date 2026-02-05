@@ -46,7 +46,7 @@ public class AquaPainting {
         }
 
         AquaAppearance appearance = AppearanceManager.findAppearanceForComponent(jc);
-        return appearance.isDark() && !appearance.isHighContrast();
+        return !appearance.isHighContrast();
     }
 
     public static boolean useLiquidGlassSidebar()

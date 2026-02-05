@@ -171,6 +171,9 @@ public class AquaAppearances {
             }
         } catch (UnsupportedOperationException ignore) {
         }
+
+        AquaFocusRingManager m = AquaFocusRingManager.getInstance();
+        m.update();
     }
 
     private static void resetNativeRendering()
