@@ -1044,18 +1044,7 @@ public class AquaTreeUI extends BasicTreeUI
         }
 
         colors.configureForContainer();
-
         int width = tree.getWidth();
-        int height = tree.getHeight();
-        Insets insets = tree.getInsets();
-
-        int rwidth = width - insets.left - insets.left;
-        int rheight = tree.getRowHeight();
-        if (rheight <= 0) {
-            // FIXME - Use the cell renderer to determine the height
-            rheight = tree.getFont().getSize() + 4;
-        }
-
         int row = treeState.getRowForPath(initialPath);
         Rectangle paintBounds = g.getClipBounds();
         int endY = paintBounds.y + paintBounds.height;
@@ -1076,9 +1065,7 @@ public class AquaTreeUI extends BasicTreeUI
             if (bc != null) {
                 Graphics2D gg = (Graphics2D) g;
                 gg.setColor(bc);
-                int cx = insets.left;
                 int cy = bounds.y;
-                int cw = rwidth;
                 int ch = bounds.height;
                 if (isInset() && (isRowSelected || isDropTarget)) {
                     boolean isSelectedAbove = row > 0 && tree.isRowSelected(row - 1) && !hasDropOnTarget;
@@ -1087,7 +1074,7 @@ public class AquaTreeUI extends BasicTreeUI
                 } else if (isInset() && isStriped()) {
                     AquaUtils.paintInsetStripedRow(gg, 0, cy, width, ch);
                 } else {
-                    gg.fillRect(cx, cy, cw, ch);
+                    gg.fillRect(0, cy, width, ch);
                 }
             }
 
@@ -1222,7 +1209,7 @@ public class AquaTreeUI extends BasicTreeUI
                 treeCellRenderer.setBackgroundSelectionColor(AquaColors.CLEAR);
                 treeCellRenderer.setBorderSelectionColor(AquaColors.CLEAR);
                 if (false) {
-                    // Not needed, these colors are used when the component obtained
+                    // Not needed, these colors are used when the component is obtained
                     treeCellRenderer.setTextNonSelectionColor(colors.getForeground(appearanceContext.withSelected(false)));
                     treeCellRenderer.setTextSelectionColor(colors.getForeground(appearanceContext.withSelected(true)));
                 }
@@ -1316,22 +1303,18 @@ public class AquaTreeUI extends BasicTreeUI
     }
 
     protected @Nullable Object getOperatorForTemplateIcon(boolean isSelected) {
+        State state = appearanceContext != null
+          ? appearanceContext.getState()
+          : AquaFocusHandler.isActive(tree) ? ACTIVE : INACTIVE;
         AquaAppearance appearance = appearanceContext != null ? appearanceContext.getAppearance() : null;
         if (isSideBar()) {
             if (OSVersion >= macOS11 && appearance != null) {
-                if (AquaFocusHandler.isActive(tree)) {
-                    if (appearance.isDark()) {
-                        return appearance.getColor("controlAccent");
-                    } else {
-                        return appearance.getColor("controlAccent_pressed");
-                    }
-                } else {
-                    return appearance.getColor("controlAccent_disabled");
-                }
+                String colorName = getSidebarIconColorName(isSelected, state);
+                return appearance.getColor(colorName);
             } else {
                 Color iconColor = null;
                 if (appearance != null) {
-                    iconColor = appearance.getColor("sidebarIcon");
+                    iconColor = appearance.getColor(isSelected ? "selectedSidebarText" : "categoryText");
                 }
                 if (iconColor != null) {
                     return iconColor;
@@ -1346,6 +1329,23 @@ public class AquaTreeUI extends BasicTreeUI
             }
             return appearance != null ? appearance.getColor("treeIcon") : null;
         }
+    }
+
+    private @NotNull String getSidebarIconColorName(boolean isSelected, @NotNull State state)
+    {
+        if (isSelected) {
+            if (state == ACTIVE_DEFAULT) {
+                return "selectedSidebarIcon_focused";
+            }
+            if (state == ACTIVE) {
+                return "selectedSidebarIcon";
+            }
+        } else {
+            if (state == ACTIVE_DEFAULT || state == ACTIVE) {
+                return "sidebarIcon";
+            }
+        }
+        return "sidebarIcon_inactive";
     }
 
     protected Font getSideBarFont(boolean isTopLevel, boolean isSelected) {
@@ -1368,9 +1368,6 @@ public class AquaTreeUI extends BasicTreeUI
             PaintingContext pc = PaintingContext.of(context.getAppearance());
             return AquaColors.getSystemColor(tree, pc, "secondaryLabel");
         } else {
-            if (isSelected) {
-                context = context.withSelected(true);
-            }
             return colors.getForeground(context);
         }
     }

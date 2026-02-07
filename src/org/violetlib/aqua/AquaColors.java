@@ -470,9 +470,12 @@ public class AquaColors {
         background.setSelectedName("unemphasizedSelectedTextBackground");
         background.setInactiveName("sidebarBackground_inactive");
 
-        AquaContextualColorImpl foreground = new AquaContextualColorImpl("SidebarContainerColors.foreground", "controlText");
+        AquaContextualColorImpl foreground = new AquaContextualColorImpl("SidebarContainerColors.foreground", "sidebarText");
+        foreground.setSelectedName("selectedSidebarText");
+        foreground.setActiveDefaultSelectedName("selectedSidebarText_focused");
+        foreground.setInactiveSelectedName("selectedSidebarText_inactive");
         if (OSVersion < 1014) {
-            foreground.setInactiveName("controlText");
+            foreground.setInactiveName("sidebarText");
         }
 
         AquaContextualColorImpl grid = new AquaContextualColorImpl("SidebarContainerColors.grid", "separator");

@@ -253,6 +253,9 @@ public class AquaMenuSupport {
     }
 
     private @Nullable Icon getSelectionIcon(@NotNull JMenuItem b, @NotNull MenuDescription md) {
+        if (b instanceof JMenu) {
+            return null;
+        }
         Object value = b.getClientProperty(AquaMenuItemUI.SELECTION_STATE_PROPERTY);
         if ("indeterminate".equals(value)) {
             return md.indeterminateIcon;

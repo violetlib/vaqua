@@ -105,13 +105,13 @@ public class AquaMenuItemUI extends BasicMenuItemUI implements AquaComponentUI {
 
         MenuDescription md = getMenuDescription();
         if (md != null) {
-            if (AquaLookAndFeel.USE_VIBRANT_MENU) {
+            if (AquaLookAndFeel.ENABLE_VIBRANT_MENU) {
                 Object o = getParent().getClientProperty(AquaPopupMenuUI.POP_UP_TRACKER);
                 if (o instanceof MenuSelectionBoundsTracker) {
                     MenuSelectionBoundsTracker tracker = (MenuSelectionBoundsTracker) o;
                     tracker.paintingItem((JMenuItem) c, appearanceContext);
                 }
-            } else if (menuItem.isOpaque()) {
+            } else {
                 Color background = md.colors.getBackground(appearanceContext);
                 g.setColor(background);
                 if (OSXSystemProperties.useInsetViewStyle()) {

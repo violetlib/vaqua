@@ -62,7 +62,7 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
     // for lazy initializers. Following the pattern from metal.
     private static final String PKG_PREFIX = "org.violetlib.aqua.";
 
-    public static boolean USE_VIBRANT_MENU = true;
+    public static boolean ENABLE_VIBRANT_MENU = true;
 
     private AquaFocusRingManager focusRingManager;
     private PropertyChangeListener uiChangeListener;
@@ -464,6 +464,7 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
           "CheckBoxMenuItem.border", menuItemBorder, // for inset calculation
           "CheckBoxMenuItem.margin", menuItemMargin,
           "CheckBoxMenuItem.borderPainted", true,
+          "CheckBoxMenuItem.opaque", false,
           //"CheckBoxMenuItem.checkIcon",(LazyValue) t -> AquaImageFactory.getMenuItemCheckIcon(),
           //"CheckBoxMenuItem.dashIcon",(LazyValue) t -> AquaImageFactory.getMenuItemDashIcon(),
 
@@ -595,6 +596,7 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
           "MenuItem.border", menuItemBorder,
           "MenuItem.margin", menuItemMargin,
           "MenuItem.borderPainted", true,
+          "MenuItem.opaque", false,
           //"MenuItem.checkIcon",(LazyValue) t -> AquaImageFactory.getMenuItemCheckIcon(), // needed for layout
           //"MenuItem.dashIcon",(LazyValue) t -> AquaImageFactory.getMenuItemDashIcon(), // needed for layout
 
@@ -655,6 +657,7 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
           "RadioButtonMenuItem.border", menuItemBorder, // for inset calculation
           "RadioButtonMenuItem.margin", menuItemMargin,
           "RadioButtonMenuItem.borderPainted", true,
+          "RadioButtonMenuItem.opaque", false,
           //"RadioButtonMenuItem.checkIcon",(LazyValue) t -> AquaImageFactory.getMenuItemCheckIcon(),
           //"RadioButtonMenuItem.dashIcon",(LazyValue) t -> AquaImageFactory.getMenuItemDashIcon(),
 

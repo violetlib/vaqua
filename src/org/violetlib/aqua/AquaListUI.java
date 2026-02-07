@@ -394,7 +394,7 @@ public class AquaListUI extends BasicListUI implements AquaComponentUI, AquaView
                 ensureVibrantEffects(AquaVibrantSupport.SIDEBAR_STYLE);
                 return;
             }
-            if (isVibrantMenu && AquaLookAndFeel.USE_VIBRANT_MENU) {
+            if (isVibrantMenu && AquaLookAndFeel.ENABLE_VIBRANT_MENU) {
                 ensureVibrantEffects(AquaVibrantSupport.MENU_STYLE);
                 return;
             }

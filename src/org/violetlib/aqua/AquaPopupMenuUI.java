@@ -232,7 +232,7 @@ public class AquaPopupMenuUI extends BasicPopupMenuUI implements AquaComponentUI
                 }
             }
 
-            boolean installVibrantSelection = AquaLookAndFeel.USE_VIBRANT_MENU && isVibrantSelectionSupportNeeded(owner);
+            boolean installVibrantSelection = AquaLookAndFeel.ENABLE_VIBRANT_MENU && isVibrantSelectionSupportNeeded(owner);
             AquaUIPainter.Size size = getSize(owner);
 
             cp = new AquaContextualPopup(popup, owner, installVibrantSelection,

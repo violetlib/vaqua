@@ -104,6 +104,7 @@ public class SystemColors {
         colors.addAll("toolbarText", "texturedText");
         colors.addAll("glassButtonText", "bevelText");  // maps to bevel prior to macOS 26
         colors.addAll("toolbarItemText", "glassButtonText");
+        colors.addAll("sidebarText", "controlText");
 
         colors.add("toolbarBackground", "clear");
         colors.add("toolbarBackground_rollover", "controlBackground_rollover");
@@ -309,7 +310,7 @@ public class SystemColors {
         }
 
         // colors related to textured segmented buttons
-        if (OSVersion< 1011) {
+        if (OSVersion < 1011) {
             colors.add("selectedNonexclusiveTexturedText", 0, 122, 255);
             colors.add("selectedNonexclusiveTexturedText_disabled", 0, 122, 255, 120);
         } else if (OSVersion < 1014) {
@@ -410,7 +411,10 @@ public class SystemColors {
         colors.add("categoryText", 30, 220);
         colors.add("expandControl", 30, 220);
         colors.add("sidebarBorder", 220);
-        colors.add("sidebarIcon", 30, 220);
+        colors.add("sidebarIcon", "controlAccent_pressed");
+        colors.add("selectedSidebarIcon", "controlAccent_pressed");
+        colors.add("sidebarIcon_inactive", "sidebarText_disabled");
+        colors.add("selectedSidebarText_inactive", 255, 140);
 
         if (OSVersion >= macOS26) {
             colors.add("sidebarBackground", 237);
@@ -498,6 +502,11 @@ public class SystemColors {
         colors.add("texturedSegmentedToolbarBackground_pressed", "controlBackground_pressed");
         colors.add("nonexclusiveTexturedToolbarBackground_rollover", "clear");
         colors.add("nonexclusiveTexturedToolbarBackground_pressed", "controlBackground_pressed");
+        colors.add("selectedSidebarText_focused", "alternateSelectedControlText");
+        colors.add("selectedSidebarText", 0, 140);
+        colors.add("selectedSidebarIcon_focused", "alternateSelectedControlText");
+        colors.add("selectedSidebarIcon", 0, 140);
+        colors.add("selectedSidebarText_inactive", 0, 140);
 
         if (OSVersion >= macOS11) {
             colors.add("texturedText", 20);
@@ -505,7 +514,12 @@ public class SystemColors {
             colors.add("selectedTexturedText", 200);
         } else {
             colors.add("texturedText", "controlText");
-            colors.add("selectedTexturedText", 255, 120);
+            colors.add("selectedTexturedText", 255, 200);
+            colors.add("selectedTexturedText_inactive", 255, 150);
+            colors.add("selectedSegmentedText_disabled", 255, 100);
+            colors.add("selectedTexturedSegmentedText_inactive", 255, 150);
+            colors.add("selectedTexturedSegmentedText_inactive_disabled", 255, 100);
+            colors.add("selectedNonexclusiveTexturedText_inactive", 0, 150);
 //        } else {
 //            colors.add("texturedText", 240);
 //            colors.add("texturedText_disabled", 200);
@@ -516,7 +530,7 @@ public class SystemColors {
         colors.add("recessedText_disabled", recessed, 128);
         colors.add("recessedText_inactive", recessed, 100);
         colors.add("recessedText_pressed", recessed);
-        colors.add("recessedText_rollover", OSVersion >= 1015 && OSVersion < macOS26 ? 255 : recessed);
+        colors.add("recessedText_rollover", 255);
         colors.add("recessedText_inactive_disabled", recessed, 80);
 
         int selectedRecessed = 255;
@@ -929,7 +943,10 @@ public class SystemColors {
         colors.add("categoryText", 255, 160);
         colors.add("expandControl", 255, 160);
         colors.add("sidebarBorder", 0);
-        colors.add("sidebarIcon", 255, 160);
+        colors.add("sidebarIcon", "controlAccent");
+        colors.add("selectedSidebarIcon", "controlAccent");
+        colors.add("sidebarIcon_inactive", "controlAccent_disabled");
+        colors.add("selectedSidebarText_inactive", 255, 64);
 
         if (OSVersion >= macOS26) {
             colors.add("sidebarBackground_inactive", 45);
@@ -1032,6 +1049,12 @@ public class SystemColors {
 
         colors.add("toolbarBackground_rollover", "clear");
         colors.add("toolbarBackground_pressed", "controlBackground_pressed");
+
+        colors.add("selectedSidebarText_focused", "alternateSelectedControlText");
+        colors.add("selectedSidebarText", 255, 140);
+        colors.add("selectedSidebarIcon_focused", "alternateSelectedControlText");
+        colors.add("selectedSidebarIcon", 255, 140);
+        colors.add("selectedSidebarText_inactive", 255, 140);
 
         // file tag colors (dark mode)
         colors.add("tagBlue", 103, 176, 255);
