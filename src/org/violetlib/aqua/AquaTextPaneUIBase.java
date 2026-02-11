@@ -135,7 +135,7 @@ public class AquaTextPaneUIBase extends AquaTextComponentUIBase {
                 } else {
                     AquaBackgroundBorder abb = textComponentBorder != null ? AquaBorderSupport.get(textComponentBorder, AquaBackgroundBorder.class) : null;
                     if (abb == null) {
-                        Border b = new AquaTextComponentBorder(editor);
+                        Border b = new AquaTextComponentBorder(editor, null);
                         editor.setBorder(b);
                     }
                 }
@@ -182,7 +182,7 @@ public class AquaTextPaneUIBase extends AquaTextComponentUIBase {
             watchedParent.addContainerListener(watchedParentContainerListener);
         }
 
-        AquaTextComponentBorder tcb = new AquaTextComponentBorder(editor);
+        AquaTextComponentBorder tcb = new AquaTextComponentBorder(editor, scrollPane);
         installingBorder = true;
         scrollPane.setBorder(tcb);
         LookAndFeel.installProperty(scrollPane, "opaque", Boolean.FALSE);
@@ -232,7 +232,7 @@ public class AquaTextPaneUIBase extends AquaTextComponentUIBase {
         Border b = editor.getBorder();
         AquaBackgroundBorder bb = AquaBorderSupport.get(b, AquaBackgroundBorder.class);
         if (bb != null) {
-            bb.paintBackground(editor, g, background);
+            bb.paintBackground(editor, g, background, null);
         } else if (background != null && background.getAlpha() > 0 && shouldPaintBackground()) {
             int width = editor.getWidth();
             int height = editor.getHeight();

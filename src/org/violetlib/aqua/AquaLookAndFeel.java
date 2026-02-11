@@ -450,12 +450,12 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
           "Button.textIconGap", 4,
           "Button.textShiftOffset", zero, // radar 3308129 - aqua doesn't move images when pressed.
           "Button.focusInputMap", controlFocusInputMap,
-          "Button.margin", new InsetsUIResource(0, 0, 0, 0),
+          "Button.margin", zeroInsets,
           "Button.recessed.font", recessedFont,
           "Button.inline.font", inlineFont,
 
           "CheckBox.font", controlFont,
-          "CheckBox.margin", new InsetsUIResource(1, 1, 0, 1),
+          "CheckBox.margin", zeroInsets,
           "CheckBox.focusInputMap", controlFocusInputMap,
 
           "CheckBoxMenuItem.font", menuFont,
@@ -648,7 +648,7 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
           "ProgressBar.circularRepaintInterval", 70,  // milliseconds
 
           "RadioButton.font", controlFont,
-          "RadioButton.margin", new InsetsUIResource(1, 1, 0, 1),
+          "RadioButton.margin", zeroInsets,
           "RadioButton.focusInputMap", controlFocusInputMap,
 
           "RadioButtonMenuItem.font", menuFont,
@@ -760,7 +760,7 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
           "ToggleButton.textIconGap", 4,
           "ToggleButton.textShiftOffset", zero, // radar 3308129 - aqua doesn't move images when pressed.
           "ToggleButton.focusInputMap", controlFocusInputMap,
-          "ToggleButton.margin", new InsetsUIResource(0, 0, 0, 0),
+          "ToggleButton.margin", zeroInsets,
 
           // *** ToolBar
           "ToolBar.font", controlFont,

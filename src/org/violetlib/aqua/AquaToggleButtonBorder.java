@@ -16,6 +16,8 @@ import org.violetlib.jnr.aqua.AquaUIPainter.ButtonWidget;
 import org.violetlib.jnr.aqua.AquaUIPainter.GenericButtonWidget;
 import org.violetlib.jnr.aqua.AquaUIPainter.SegmentedButtonWidget;
 
+import static org.violetlib.aqua.OSXSystemProperties.macOS11;
+
 /**
  * A border for a toggle button with no client specified button style. A generic button border must adapt to any size
  * text. It can use a fixed height style only if the text fits using that height. Otherwise, an alternate style must be
@@ -32,13 +34,15 @@ public class AquaToggleButtonBorder extends AquaButtonBorder implements FocusRin
             return AquaButtonSupport.getToolbarItemStyleInfo(b, painter);
         }
 
-        GenericButtonWidget preferredWidget = SegmentedButtonWidget.BUTTON_SEGMENTED;
+        int version = AquaPainting.getVersion();
+
+        GenericButtonWidget preferredWidget
+          = version < macOS11 ? SegmentedButtonWidget.BUTTON_SEGMENTED : ButtonWidget.BUTTON_PUSH;
         if (AquaButtonSupport.isButtonWidgetUsable(b, preferredWidget, painter)) {
             return AquaButtonSupport.getButtonStyleInfo(b, preferredWidget);
         }
 
         if (b.getIcon() != null) {
-            int version = AquaPainting.getVersion();
             ButtonWidget w = version < 1500 ? ButtonWidget.BUTTON_GRADIENT : ButtonWidget.BUTTON_BEVEL_ROUND;
             return AquaButtonSupport.getButtonStyleInfo(b, w);
         }

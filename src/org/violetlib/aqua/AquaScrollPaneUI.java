@@ -237,12 +237,7 @@ public class AquaScrollPaneUI extends BasicScrollPaneUI
     }
 
     protected @NotNull AquaUIPainter.State getState() {
-        if (sidebarContainerSupport != null) {
-            if (!AquaFocusHandler.isActive(scrollpane)) {
-                return AquaUIPainter.State.INACTIVE;
-            }
-        }
-        return AquaUIPainter.State.ACTIVE;
+        return AquaFocusHandler.isActive(scrollpane) ? AquaUIPainter.State.ACTIVE : AquaUIPainter.State.INACTIVE;
     }
 
     @Override
@@ -286,7 +281,9 @@ public class AquaScrollPaneUI extends BasicScrollPaneUI
         Border b = c.getBorder();
         AquaTextComponentBorder tcb = AquaBorderSupport.get(b, AquaTextComponentBorder.class);
         if (tcb != null) {
-            tcb.paintBackground(c, g, null);
+            // A border is useful for a scrollable text pane
+            Color borderColor = pc.appearance.getColor("scrollPaneBorder");
+            tcb.paintBackground(c, g, null, borderColor);
             g = (Graphics2D) g.create();
         } else if (sidebarContainerSupport != null) {
             assert appearanceContext != null;
@@ -295,7 +292,8 @@ public class AquaScrollPaneUI extends BasicScrollPaneUI
                 AquaUtils.fillRect(g, c, AquaUtils.ERASE_ALWAYS);
             }
         } else if (!isVibrant(c)) {
-            Color background = AquaColors.getBackground(c, pc, "controlBackground");
+            EffectName effect = state == AquaUIPainter.State.ACTIVE ? EffectName.EFFECT_NONE : EffectName.EFFECT_INACTIVE;
+            Color background = AquaColors.getBackground(c, pc, isSidebar ? "sidebarBackground" : "controlBackground", effect);
             AquaUtils.fillRect(g, c, background, 0);
         }
 

@@ -359,7 +359,7 @@ public class AquaTextFieldUI extends AquaTextComponentUIBase implements ToolbarS
 
         if (abb != null) {
             // using our own border
-            abb.paintBackground(tf, g, background);
+            abb.paintBackground(tf, g, background, null);
         }
     }
 }

@@ -73,7 +73,10 @@ public class AquaTextFieldBorder extends AquaTextComponentBorder {
     }
 
     @Override
-    public void paintBackground(@NotNull Component c, Graphics g, @Nullable Color background) {
+    public void paintBackground(@NotNull Component c,
+                                @NotNull Graphics g,
+                                @Nullable Color background,
+                                @Nullable Color borderColor) {
         if (AquaUtils.isCellComponent(c)) {
             return;
         }

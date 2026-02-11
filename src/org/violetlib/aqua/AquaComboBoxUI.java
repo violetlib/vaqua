@@ -63,8 +63,7 @@ import org.violetlib.jnr.aqua.AquaUIPainter.PopupButtonWidget;
 import org.violetlib.jnr.aqua.AquaUIPainter.Size;
 import org.violetlib.jnr.aqua.AquaUIPainter.State;
 
-import static org.violetlib.aqua.OSXSystemProperties.OSVersion;
-import static org.violetlib.aqua.OSXSystemProperties.macOS26;
+import static org.violetlib.aqua.OSXSystemProperties.*;
 import static org.violetlib.jnr.aqua.AquaUIPainter.ComboBoxWidget.*;
 import static org.violetlib.jnr.aqua.AquaUIPainter.PopupButtonWidget.*;
 
@@ -371,8 +370,22 @@ public class AquaComboBoxUI extends BasicComboBoxUI
             return;
         }
 
+        Configuration bg = getConfiguration();
         AquaUIPainter.State state = getState();
-        AppearanceContext appearanceContext = new AppearanceContext(pc.appearance, state, false, false);
+
+        boolean isSelected = false;
+        // A combo box button uses colors defined for the corresponding button type.
+        // In one special case, the selected text color is the right choice.
+        if (bg != null && state == State.ACTIVE) {
+            Object widget = bg.getWidget();
+            if (widget == BUTTON_POP_UP_RECESSED || widget == BUTTON_POP_DOWN_RECESSED) {
+                if (OSVersion >= macOS11 && OSVersion < macOS26) {
+                    isSelected = true;
+                }
+            }
+        }
+        AppearanceContext appearanceContext = new AppearanceContext(pc.appearance, state, isSelected, false);
+
         // If the combo box is being used as a cell renderer component, it is up to the cell renderer to configure
         // its colors.
         if (cellStatus == null) {
@@ -380,7 +393,6 @@ public class AquaComboBoxUI extends BasicComboBoxUI
         }
 
         // paint the button
-        Configuration bg = getConfiguration();
         AquaUtils.configure(painter, pc.appearance, comboBox, width, height);
         if (bg != null) {
             painter.getPainter(bg).paint(g, 0, 0);
@@ -452,11 +464,11 @@ public class AquaComboBoxUI extends BasicComboBoxUI
             return AquaIcon.createPressedDarkIcon(icon);
         }
 
-        if (shouldUseDisabledIcon()) {
-            return pc == null || pc.appearance.isDark()
-              ? AquaIcon.createPressedDarkIcon(icon)
-              : AquaIcon.createDisabledLightIcon(icon);
-        }
+//        if (shouldUseDisabledIcon()) {
+//            return pc == null || pc.appearance.isDark()
+//              ? AquaIcon.createDisabledLightIcon(icon)
+//              : AquaIcon.createPressedDarkIcon(icon);
+//        }
 
         return icon;
     }

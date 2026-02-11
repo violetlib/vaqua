@@ -52,7 +52,8 @@ import org.violetlib.jnr.Painter;
 import org.violetlib.jnr.aqua.*;
 import org.violetlib.jnr.aqua.AquaUIPainter.*;
 
-import static org.violetlib.aqua.OSXSystemProperties.macOS26;
+import static org.violetlib.aqua.OSXSystemProperties.*;
+import static org.violetlib.jnr.aqua.AquaUIPainter.ScrollBarWidget.LEGACY;
 import static org.violetlib.jnr.aqua.AquaUIPainter.ScrollBarWidget.LEGACY_SIDEBAR;
 
 public class AquaScrollBarUI extends ScrollBarUI implements AquaComponentUI {
@@ -229,7 +230,7 @@ public class AquaScrollBarUI extends ScrollBarUI implements AquaComponentUI {
     }
 
     protected ScrollBarConfiguration getConfiguration(@NotNull PaintingContext pc) {
-        ScrollBarWidget sw = getScrollBarWidget(false);
+        ScrollBarWidget sw = getScrollBarWidget(pc, false);
         ScrollBarKnobWidget kw = getScrollBarKnobWidget(sw, pc);
         Size size = getScrollBarSize();
         State state = getScrollBarState(sw);
@@ -254,8 +255,21 @@ public class AquaScrollBarUI extends ScrollBarUI implements AquaComponentUI {
             }
         }
 
-        boolean noTrack = isSidebar() && AquaPainting.getVersion() < macOS26;
+        boolean noTrack = computeNoTrackOption(pc);
         return new ScrollBarConfiguration(sw, kw, size, state, o, thumbPosition, thumbExtent, noTrack);
+    }
+
+    private boolean computeNoTrackOption(@NotNull PaintingContext pc)
+    {
+        if (isSidebar()) {
+            int version = AquaPainting.getVersion();
+            if (version < macOS11) {
+                // The track is displayed in high contrast mode.
+                return !pc.appearance.isHighContrast();
+            }
+            return version < macOS26;
+        }
+        return false;
     }
 
     /**
@@ -263,7 +277,7 @@ public class AquaScrollBarUI extends ScrollBarUI implements AquaComponentUI {
      * current scroll bar state.
      */
     protected ScrollBarConfiguration getLayoutConfiguration(boolean isForLayoutSize) {
-        ScrollBarWidget sw = getScrollBarWidget(isForLayoutSize);
+        ScrollBarWidget sw = getScrollBarWidget(null, isForLayoutSize);
         ScrollBarKnobWidget kw = getScrollBarKnobWidget(sw, null);
         Size size = getScrollBarSize();
         State state = State.ACTIVE; // a placeholder
@@ -334,13 +348,16 @@ public class AquaScrollBarUI extends ScrollBarUI implements AquaComponentUI {
           || Objects.equals(thumbStyle, "overlay");
     }
 
-    protected ScrollBarWidget getScrollBarWidget(boolean isForLayoutSize) {
+    protected ScrollBarWidget getScrollBarWidget(@Nullable PaintingContext pc, boolean isForLayoutSize) {
         // There are four cases: non-sidebar overlay, non-sidebar legacy, sidebar overlay, sidebar legacy. These map to
         // OVERLAY or OVERLAY_ROLLOVER, LEGACY, OVERLAY_ROLLOVER, LEGACY_SIDEBAR. This is a bit of a cheat.
         // OVERLAY_ROLLOVER is used for both sidebar overlay and for non-sidebar overlay in the rollover state.
 
         boolean isOverlay = isOverlay();
         if (isSidebar() && !isOverlay) {
+            if (OSVersion < macOS11 && pc != null && pc.appearance.isHighContrast()) {
+                return LEGACY;
+            }
             return LEGACY_SIDEBAR;
         }
 
@@ -463,7 +480,7 @@ public class AquaScrollBarUI extends ScrollBarUI implements AquaComponentUI {
         boolean isHorizontal = isHorizontal();
         int c = isHorizontal ? x : y;
 
-        ScrollBarWidget sw = getScrollBarWidget(false);
+        ScrollBarWidget sw = getScrollBarWidget(null, false);
         Size size = getScrollBarSize();
         Orientation o = getScrollBarOrientation();
         float extent = getCurrentThumbExtent();
@@ -681,7 +698,7 @@ public class AquaScrollBarUI extends ScrollBarUI implements AquaComponentUI {
                 return 0;
             }
 
-            ScrollBarWidget sw = getScrollBarWidget(false);
+            ScrollBarWidget sw = getScrollBarWidget(null, false);
             Size size = getScrollBarSize();
             float extent = getCurrentThumbExtent();
             Orientation o = getScrollBarOrientation();

@@ -604,7 +604,7 @@ public class AquaButtonExtendedTypes {
 
         {
             BasicContextualColors colors = AquaColors.GRADIENT_SEGMENTED_BUTTON_COLORS;
-            if (OSVersion < 101100) {
+            if (OSVersion < 1011) {
                 colors = AquaColors.SEGMENTED_BUTTON_COLORS;
             }
             WidgetInfo segmentedRoundedRect = roundedRect.copy().withSegmented().withColors(colors).withSideMargin(9);

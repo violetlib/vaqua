@@ -496,9 +496,9 @@ public abstract class AquaButtonBorder extends AquaBorder implements FocusRingOu
             if (state == State.PRESSED && shouldHighlightPressedIcon(g)) {
                 return pc.appearance.isDark() ? AquaImageFactory.LIGHTEN_FOR_DISABLED : AquaImageFactory.DARKEN_FOR_PRESSED;
             }
-            if (shouldUseDisabledIcon(g, state)) {
-                return pc.appearance.isDark() ? AquaImageFactory.DARKEN_FOR_PRESSED : AquaImageFactory.LIGHTEN_FOR_DISABLED;
-            }
+//            if (shouldUseDisabledIcon(g, state)) {
+//                return pc.appearance.isDark() ? AquaImageFactory.DARKEN_FOR_PRESSED : AquaImageFactory.LIGHTEN_FOR_DISABLED;
+//            }
             return null;
         }
     }

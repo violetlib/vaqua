@@ -268,13 +268,8 @@ public class SystemColors {
             colors.add("selectedBevelText_inactive", 28);
         }
 
-        if (OSVersion >= 1200 && OSVersion < macOS26) {
-            colors.add("selectedPushButtonText", 0);
-            colors.add("selectedPushButtonText_disabled", 0, 64);
-            colors.add("selectedPushButtonText_inactive", 0, 128);
-        } else {
-            colors.add("selectedPushButtonText", "alternateSelectedControlText");
-        }
+        colors.add("selectedPushButtonText", "alternateSelectedControlText");
+        colors.add("selectedPushButtonText_inactive", 0);
 
         // colors related to pop up and pop down push buttons
         colors.add("pushPopText_pressed", 0, 224);
@@ -414,7 +409,13 @@ public class SystemColors {
         colors.add("sidebarIcon", "controlAccent_pressed");
         colors.add("selectedSidebarIcon", "controlAccent_pressed");
         colors.add("sidebarIcon_inactive", "sidebarText_disabled");
-        colors.add("selectedSidebarText_inactive", 255, 140);
+        colors.add("sidebarText", 30, 220);
+
+        if (OSVersion >= macOS11) {
+            colors.add("selectedSidebarText_inactive", 0, 100);
+        } else {
+            colors.add("selectedSidebarText_inactive", 0);
+        }
 
         if (OSVersion >= macOS26) {
             colors.add("sidebarBackground", 237);
@@ -487,10 +488,14 @@ public class SystemColors {
             colors.add("sidebarBorder", sb);
             colors.add("sidebarBorder_inactive", sbi);
         } else if (OSVersion < 1014) {
+            colors.add("sidebarBackground", 240);
+            colors.add("sidebarBackground_inactive", 246);
             colors.add("windowBackground", 246);
             colors.add("windowBackground_disabled", 246);
             colors.add("texturedWindowBackground", 207);
         } else {
+            colors.add("sidebarBackground", 250);
+            colors.add("sidebarBackground_inactive", 236);
             colors.add("windowBackground", 236);
             colors.add("windowBackground_disabled", 236);
             colors.add("texturedWindowBackground", 212);
@@ -503,10 +508,15 @@ public class SystemColors {
         colors.add("nonexclusiveTexturedToolbarBackground_rollover", "clear");
         colors.add("nonexclusiveTexturedToolbarBackground_pressed", "controlBackground_pressed");
         colors.add("selectedSidebarText_focused", "alternateSelectedControlText");
-        colors.add("selectedSidebarText", 0, 140);
+        colors.add("selectedSidebarText_inactive", 0);
+        colors.add("selectedSidebarText", 0);
         colors.add("selectedSidebarIcon_focused", "alternateSelectedControlText");
         colors.add("selectedSidebarIcon", 0, 140);
-        colors.add("selectedSidebarText_inactive", 0, 140);
+        if (OSVersion >= macOS11) {
+            colors.add("selectedSidebarText_inactive", 0, 200);
+        } else {
+            colors.add("selectedSidebarText_inactive", 0);
+        }
 
         if (OSVersion >= macOS11) {
             colors.add("texturedText", 20);
@@ -524,6 +534,7 @@ public class SystemColors {
 //            colors.add("texturedText", 240);
 //            colors.add("texturedText_disabled", 200);
         }
+        colors.add("selectedTexturedText_pressed", 255);
 
         int recessed = 0; // OSVersion >= 1015 ? 0 : 255;
         colors.add("recessedText", recessed);
@@ -542,7 +553,7 @@ public class SystemColors {
         colors.add("selectedRecessedText_inactive", selectedRecessed, 100);
         colors.add("selectedRecessedText_inactive_disabled", selectedRecessedDisabled, 80);
 
-        if (OSVersion >= macOS26) {
+       if (OSVersion >= macOS26) {
             colors.add("selectedRoundedRectText", 255);
             colors.add("selectedRoundedRectText_inactive", 0);
             colors.add("selectedBevelText", 255);
@@ -849,6 +860,7 @@ public class SystemColors {
                 colors.add("selectedTabText_disabled", 0, 96);
                 colors.add("selectedTabText_inactive_disabled", 0, 96);
                 colors.add("selectedSegmentedText_inactive", 0, 192);
+                colors.add("selectedSegmentedText_inactive_disabled", 0, 192);
             }
         }
 
@@ -947,6 +959,7 @@ public class SystemColors {
         colors.add("selectedSidebarIcon", "controlAccent");
         colors.add("sidebarIcon_inactive", "controlAccent_disabled");
         colors.add("selectedSidebarText_inactive", 255, 64);
+        colors.add("selectedSidebarText_focused", 255);
 
         if (OSVersion >= macOS26) {
             colors.add("sidebarBackground_inactive", 45);
@@ -1025,7 +1038,7 @@ public class SystemColors {
             colors.add("selectedTexturedSegmentedToolbarText_disabled", 0, 100);
             colors.add("selectedTexturedSegmentedToolbarText_inactive", 0, 150);
             colors.add("selectedTexturedSegmentedToolbarText_inactive_disabled", 0, 100);
-        } else if (OSVersion >= macOS11) {
+        } else {
             int sbc = OSVersion < 1200 ? 0 : 255;
             int tc = OSVersion >= 1500 ? 255 : 0;
 
@@ -1037,14 +1050,38 @@ public class SystemColors {
             colors.add("selectedTexturedToolbarText", tc);
             colors.add("selectedTexturedText_disabled", tc, 100);
             colors.add("selectedTexturedToolbarText_disabled", tc, 100);
+
             colors.add("selectedGradientText", 255);
+            colors.add("selectedGradientText_disabled", 0, 100);
             colors.add("selectedRoundText", 255);
             colors.add("selectedRecessedText", 0);
             colors.add("selectedRoundedRectText", 255);
-            colors.add("selectedGradientText_disabled", 0, 100);
+
+            colors.add("selectedSegmentedText", 0);
+            colors.add("selectedSegmentedText_inactive", 0, 100);
             colors.add("selectedSegmentedText_disabled", 0, 100);
-            colors.add("selectedNonexclusiveText_inactive_disabled", 0, 100);
-            colors.add("selectedSegmentedSeparatedText_inactive_disabled", 0, 100);
+            colors.add("selectedSegmentedText_inactive_disabled", 0, 100);
+
+            {
+                int base = 255;
+                colors.add("selectedNonexclusiveText", base);
+                colors.add("selectedNonexclusiveText_inactive", base, 100);
+                colors.add("selectedNonexclusiveText_disabled", base, 100);
+                colors.add("selectedNonexclusiveText_inactive_disabled", base, 100);
+
+                colors.add("selectedSegmentedSeparatedText", base);
+                colors.add("selectedSegmentedSeparatedText_inactive", base, 100);
+                colors.add("selectedSegmentedSeparatedText_disabled", base, 100);
+                colors.add("selectedSegmentedSeparatedText_inactive_disabled", base, 100);
+            }
+
+            if (OSVersion < macOS11) {
+                colors.add("selectedNonexclusiveText_inactive_disabled", 0, 40);
+                colors.add("selectedSegmentedText_inactive_disabled", 0, 40);
+                colors.add("selectedSegmentedSeparatedText_inactive_disabled", 0, 40);
+                colors.add("selectedGradientSegmentedText_disabled", 255, 160);
+                colors.add("gradientSegmentedText_disabled", 255, 80);
+            }
         }
 
         colors.add("toolbarBackground_rollover", "clear");
@@ -1101,7 +1138,7 @@ public class SystemColors {
         colors.add("selectedControlText_disabled", 0, 128);
         colors.add("selectedBevelText_disabled", 0, 128);
         colors.add("selectedPushButtonText_disabled", 0, 128);
-        colors.add("selectedPushButtonText_inactive", 0, 128);
+        colors.add("selectedPushButtonText_inactive", 0);
 
         return colors.get();
     }

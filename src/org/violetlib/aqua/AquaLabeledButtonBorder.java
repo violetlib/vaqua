@@ -43,11 +43,11 @@ public abstract class AquaLabeledButtonBorder extends AquaNamedButtonBorder {
         GenericButtonConfiguration c = getConfiguration(b, pc, viewRect.width, viewRect.height);
         if (c instanceof ButtonConfiguration) {
             ButtonConfiguration bg = (ButtonConfiguration) c;
-            Dimension iconSize = getIconSize(bg);
+            Dimension viewSize = getVisualSize(bg);
             LayoutConfiguration lg = bg.getLayoutConfiguration();
 
             CompoundLabelLayoutEngine engine
-              = AquaButtonSupport.createCompoundLayoutEngine(b, iconSize, lg, painter);
+              = AquaButtonSupport.createCompoundLayoutEngine(b, viewSize, lg, painter);
             if (engine == null) {
                 return;
             }
@@ -78,7 +78,7 @@ public abstract class AquaLabeledButtonBorder extends AquaNamedButtonBorder {
         AbstractButton b = (AbstractButton) c;
         ButtonLayoutConfiguration g = getButtonLayoutConfiguration(b);
         if (g != null) {
-            Dimension iconSize = getIconSize(g);
+            Dimension iconSize = getVisualSize(g);
             CompoundLabelLayoutEngine engine
               = AquaButtonSupport.createCompoundLayoutEngine(b, iconSize, g, painter);
             if (engine == null) {
@@ -101,10 +101,10 @@ public abstract class AquaLabeledButtonBorder extends AquaNamedButtonBorder {
 
     @Override
     protected @Nullable Dimension getRequiredIconSize(@NotNull LayoutConfiguration g, @Nullable Icon icon) {
-        return getIconSize(g);
+        return getVisualSize(g);
     }
 
-    private @NotNull Dimension getIconSize(@NotNull LayoutConfiguration g) {
+    private @NotNull Dimension getVisualSize(@NotNull LayoutConfiguration g) {
         LayoutInfo info = painter.getLayoutInfo().getLayoutInfo(g);
         int iconWidth = (int) Math.ceil(info.getFixedVisualWidth());
         int iconHeight = (int) Math.ceil(info.getFixedVisualHeight());

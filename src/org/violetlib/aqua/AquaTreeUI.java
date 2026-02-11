@@ -1308,17 +1308,10 @@ public class AquaTreeUI extends BasicTreeUI
           : AquaFocusHandler.isActive(tree) ? ACTIVE : INACTIVE;
         AquaAppearance appearance = appearanceContext != null ? appearanceContext.getAppearance() : null;
         if (isSideBar()) {
-            if (OSVersion >= macOS11 && appearance != null) {
+            if (appearance != null) {
                 String colorName = getSidebarIconColorName(isSelected, state);
                 return appearance.getColor(colorName);
             } else {
-                Color iconColor = null;
-                if (appearance != null) {
-                    iconColor = appearance.getColor(isSelected ? "selectedSidebarText" : "categoryText");
-                }
-                if (iconColor != null) {
-                    return iconColor;
-                }
                 return AquaFocusHandler.isActive(tree) ? null : LIGHTEN_FOR_DISABLED;
             }
         } else {

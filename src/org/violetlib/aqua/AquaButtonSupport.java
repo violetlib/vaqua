@@ -250,11 +250,8 @@ public class AquaButtonSupport {
         if (size != null) {
             return size;
         }
-        int version = AquaPainting.getVersion();
-        if (version >= macOS11) {
-            // EXTRA_LARGE looks better for ordinary buttons, but LARGE is a better match for EXTRA_LARGE popup buttons
-            return widget instanceof AquaUIPainter.SegmentedButtonWidget ? EXTRA_LARGE : LARGE;
-        }
+
+        // The tallest segmented buttons are regular.
         return REGULAR;
     }
 
@@ -274,14 +271,14 @@ public class AquaButtonSupport {
         boolean isOnToolbar = AquaUtils.isOnToolbar(b);
         AquaUIPainter.Size size;
         if (isOnToolbar && w == AquaUIPainter.SegmentedButtonWidget.BUTTON_SEGMENTED) {
-            if (version >= 160000) {
+            if (version >= AquaUIPainter.macOS26) {
                 w = AquaUIPainter.SegmentedButtonWidget.BUTTON_SEGMENTED_SLIDER_TOOLBAR;
             } else {
                 w = AquaUIPainter.SegmentedButtonWidget.BUTTON_SEGMENTED_TEXTURED_TOOLBAR;
             }
             size = AquaButtonSupport.getPreferredToolbarButtonSize(b, w);
         } else if (isOnToolbar && w == AquaUIPainter.SegmentedButtonWidget.BUTTON_SEGMENTED_SEPARATED) {
-            if (version >= 160000) {
+            if (version >= AquaUIPainter.macOS26) {
                 w = AquaUIPainter.SegmentedButtonWidget.BUTTON_SEGMENTED_SEPARATED;
             } else {
                 w = AquaUIPainter.SegmentedButtonWidget.BUTTON_SEGMENTED_TEXTURED_SEPARATED_TOOLBAR;
@@ -867,9 +864,9 @@ public class AquaButtonSupport {
             if (state == AquaUIPainter.State.PRESSED) {
                 return pc.appearance.isDark() ? AquaImageFactory.LIGHTEN_FOR_DISABLED : AquaImageFactory.DARKEN_FOR_PRESSED;
             }
-            if (shouldUseDisabledIcon(state)) {
-                return pc.appearance.isDark() ? AquaImageFactory.DARKEN_FOR_PRESSED : AquaImageFactory.LIGHTEN_FOR_DISABLED;
-            }
+//            if (shouldUseDisabledIcon(state)) {
+//                return pc.appearance.isDark() ? AquaImageFactory.DARKEN_FOR_PRESSED : AquaImageFactory.LIGHTEN_FOR_DISABLED;
+//            }
             return null;
         }
     }

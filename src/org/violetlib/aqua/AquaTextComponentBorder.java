@@ -56,12 +56,20 @@ public class AquaTextComponentBorder extends AquaBorder implements AquaBackgroun
     // It also provides the insets to the component UI.
 
     protected final @NotNull JTextComponent tc;
+    private final @Nullable JScrollPane scrollPane;
+
+    public AquaTextComponentBorder(@NotNull JTextComponent tc, @NotNull JScrollPane sp)
+    {
+        this.tc = tc;
+        this.scrollPane = sp;
+    }
 
     /**
      * Create a border whose configuration is based on the specified text component.
      */
-    public AquaTextComponentBorder(@NotNull JTextComponent tc) {
+    protected AquaTextComponentBorder(@NotNull JTextComponent tc) {
         this.tc = tc;
+        this.scrollPane = null;
     }
 
     @Override
@@ -70,7 +78,10 @@ public class AquaTextComponentBorder extends AquaBorder implements AquaBackgroun
     }
 
     @Override
-    public void paintBackground(@NotNull Component c, Graphics g, @Nullable Color background) {
+    public void paintBackground(@NotNull Component c,
+                                @NotNull Graphics g,
+                                @Nullable Color background,
+                                @Nullable Color borderColor) {
         boolean isCellComponent = AquaUtils.isCellComponent(c);
         if (background != null
           && (!isCellComponent || !(background instanceof UIResource) || AquaFocusHandler.hasFocus(c))) {
@@ -78,6 +89,17 @@ public class AquaTextComponentBorder extends AquaBorder implements AquaBackgroun
             int width = c.getWidth();
             int height = c.getHeight();
             g.fillRect(0, 0, width, height);
+        }
+        if (borderColor != null && !isCellComponent) {
+            g.setColor(borderColor);
+            int x = 0;
+            int y = 0;
+            int width = c.getWidth();
+            int height = c.getHeight();
+            g.fillRect(x, y, width, 1);
+            g.fillRect(x, y+1, 1, height-2);
+            g.fillRect(x, y + height - 1, width, 1);
+            g.fillRect(x + width - 1, y+1, 1, height-2);
         }
     }
 
@@ -110,6 +132,10 @@ public class AquaTextComponentBorder extends AquaBorder implements AquaBackgroun
 
         if (AquaCellEditorPolicy.getInstance().getCellStatus(tc) != null) {
             return new InsetsUIResource(0, 0, 0, 0);
+        }
+
+        if (scrollPane != null) {
+            return new InsetsUIResource(1, 1, 1, 1);
         }
 
         Insetter s = getTextInsets();

@@ -361,13 +361,14 @@ public class SegmentedControlModel {
             if (standardWidget == BUTTON_SEGMENTED) {
                 // Special case for the default style of exclusive segmented controls starting in macOS 11
                 return BUTTON_SEGMENTED_SLIDER;
-            } else if (standardWidget == BUTTON_SEGMENTED_TEXTURED_TOOLBAR) {
-                // Special case for exclusive textured segmented controls on the toolbar starting in macOS 11
-                if (m.isAllIcon()) {
-                    return BUTTON_SEGMENTED_SLIDER_TOOLBAR_ICONS;
-                } else {
-                    return BUTTON_SEGMENTED_SLIDER_TOOLBAR;
-                }
+//            } else if (standardWidget == BUTTON_SEGMENTED_TEXTURED_TOOLBAR) {
+//                // Special case for exclusive textured segmented controls on the toolbar starting in macOS 11.
+//                // Currently not supported by renderers.
+//                if (m.isAllIcon()) {
+//                    return BUTTON_SEGMENTED_SLIDER_TOOLBAR_ICONS;
+//                } else {
+//                    return BUTTON_SEGMENTED_SLIDER_TOOLBAR;
+//                }
             } else if (standardWidget == BUTTON_SEGMENTED_TEXTURED_SEPARATED_TOOLBAR) {
                 if (m.isAllIcon()) {
                     return BUTTON_SEGMENTED_TEXTURED_SEPARATED_TOOLBAR_ICONS;
