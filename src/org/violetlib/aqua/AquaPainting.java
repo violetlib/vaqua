@@ -15,6 +15,7 @@ import org.violetlib.jnr.aqua.AquaNativeRendering;
 import org.violetlib.jnr.aqua.AquaUIPainter;
 
 import static org.violetlib.aqua.OSXSystemProperties.OSVersion;
+import static org.violetlib.aqua.OSXSystemProperties.macOS26;
 
 /**
  * Provides access to the native painter.
@@ -51,7 +52,7 @@ public class AquaPainting {
 
     public static boolean useLiquidGlassSidebar()
     {
-        return getVersion() >= 1600;
+        return getVersion() >= macOS26;
     }
 
     public static @NotNull AquaUIPainter create() {

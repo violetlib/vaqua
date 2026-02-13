@@ -53,8 +53,7 @@ import org.violetlib.jnr.aqua.*;
 import org.violetlib.jnr.aqua.AquaUIPainter.*;
 
 import static org.violetlib.aqua.OSXSystemProperties.*;
-import static org.violetlib.jnr.aqua.AquaUIPainter.ScrollBarWidget.LEGACY;
-import static org.violetlib.jnr.aqua.AquaUIPainter.ScrollBarWidget.LEGACY_SIDEBAR;
+import static org.violetlib.jnr.aqua.AquaUIPainter.ScrollBarWidget.*;
 
 public class AquaScrollBarUI extends ScrollBarUI implements AquaComponentUI {
 
@@ -255,21 +254,22 @@ public class AquaScrollBarUI extends ScrollBarUI implements AquaComponentUI {
             }
         }
 
-        boolean noTrack = computeNoTrackOption(pc);
+        boolean noTrack = computeNoTrackOption(sw, pc);
         return new ScrollBarConfiguration(sw, kw, size, state, o, thumbPosition, thumbExtent, noTrack);
     }
 
-    private boolean computeNoTrackOption(@NotNull PaintingContext pc)
+    private boolean computeNoTrackOption(@NotNull ScrollBarWidget w, @NotNull PaintingContext pc)
     {
-        if (isSidebar()) {
-            int version = AquaPainting.getVersion();
-            if (version < macOS11) {
-                // The track is displayed in high contrast mode.
-                return !pc.appearance.isHighContrast();
-            }
-            return version < macOS26;
+        boolean isLegacy = w == LEGACY || w == LEGACY_SIDEBAR;
+        int version = AquaPainting.getVersion();
+        if (version >= macOS26) {
+            return !isLegacy;
         }
-        return false;
+        if (version >= macOS11) {
+            return isSidebar();
+        }
+        // The track is displayed in high contrast mode.
+        return isSidebar() && !pc.appearance.isHighContrast();
     }
 
     /**
