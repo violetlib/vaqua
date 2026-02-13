@@ -1178,18 +1178,24 @@ final public class AquaUtils {
     /**
      * Paint the isolated inset style highlight for a striped row.
      */
-    public static void paintInsetStripedRow(@NotNull Graphics2D g, int cx, int cy, int cw, int ch) {
-        int top = 0;
-        int side = 10;
-        int radius = getInsetCornerRadius();
-        RoundRectangle2D r = new RoundRectangle2D.Float(cx + side, cy + top, cw - 2 * side, ch - 2 * top, radius, radius);
-        fillAntiAliased(g, r);
+    public static void paintInsetStripedRow(@NotNull Graphics2D g,
+                                            int cx, int cy, int cw, int ch,
+                                            @NotNull SelectionHighlightDescription d) {
+        int x = cx + d.left;
+        int y = cy + d.top;
+        int w = cw - (d.left + d.right);
+        int h = ch - (d.top + d.bottom);
+        int r = d.cornerRadius;
+        RoundRectangle2D s = new RoundRectangle2D.Float(x, y, w, h, r, r);
+        fillAntiAliased(g, s);
     }
 
     /**
      * Paint the isolated inset style highlight for a selected cell.
      */
-    public static void paintInsetCellSelection(@NotNull Graphics2D g, int cx, int cy, int cw, int ch) {
+    public static void paintInsetCellSelection(@NotNull Graphics2D g,
+                                               int cx, int cy, int cw, int ch,
+                                               @NotNull SelectionHighlightDescription d) {
         int top = 3;
         int side = 10;
         int radius = getInsetCornerRadius();
@@ -1200,23 +1206,25 @@ final public class AquaUtils {
     /**
      * Paint the inset style highlight for a selected cell that might be part of a vertical group.
      */
-    public static void paintInsetCellSelection(@NotNull Graphics2D g, boolean isSelectedAbove, boolean isSelectedBelow,
-                                               int cx, int cy, int cw, int ch) {
-        int top = 0;
-        int side = 10;
-        int r = getInsetCornerRadius();
-        int x = cx + side;
-        int w = cw - 2 * side;
+    public static void paintInsetCellSelection(@NotNull Graphics2D g,
+                                               boolean isSelectedAbove,
+                                               boolean isSelectedBelow,
+                                               int cx, int cy, int cw, int ch,
+                                               @NotNull SelectionHighlightDescription d) {
+        int r = d.cornerRadius;
+        int x = cx + d.left;
+        int w = cw - (d.left + d.right);
+        int h = ch - (d.top + d.bottom);
 
         Shape s;
         if (isSelectedAbove && isSelectedBelow) {
             s = new Rectangle(x, cy, w, ch);
         } else if (isSelectedAbove) {
-            s = new GeneralRoundRectangle(x, cy, w, ch - top, 0, 0, 0, 0, r, r, r, r);
+            s = new GeneralRoundRectangle(x, cy, w, ch - d.top, 0, 0, 0, 0, r, r, r, r);
         } else if (isSelectedBelow) {
-            s = new GeneralRoundRectangle(x, cy + top, w, ch - top, r, r, r, r, 0, 0, 0, 0);
+            s = new GeneralRoundRectangle(x, cy + d.top, w, ch - d.top, r, r, r, r, 0, 0, 0, 0);
         } else {
-            s = new RoundRectangle2D.Float(cx + side, cy + top, cw - 2 * side, ch - 2 * top, r, r);
+            s = new RoundRectangle2D.Float(x, cy + d.top, w, h, r, r);
         }
         fillAntiAliased(g, s);
     }
@@ -1224,15 +1232,35 @@ final public class AquaUtils {
     /**
      * Paint the inset style highlight for a selected menu item.
      */
-    public static void paintInsetMenuItemSelection(@NotNull Graphics2D g, int cx, int cy, int cw, int ch) {
-        int top = 0;
-        int side = 4;
-        int radius = getInsetCornerRadius();
-        RoundRectangle2D r = new RoundRectangle2D.Float(cx + side, cy + top, cw - 2 * side, ch - 2 * top, radius, radius);
-        fillAntiAliased(g, r);
+    public static void paintInsetMenuItemSelection(@NotNull Graphics2D g,
+                                                   int cx, int cy, int cw, int ch,
+                                                   @NotNull SelectionHighlightDescription d) {
+        int r = d.cornerRadius;
+        int x = cx + d.left;
+        int y = cy + d.top;
+        int w = cw - (d.left + d.right);
+        int h = ch - (d.top + d.bottom);
+
+        RoundRectangle2D s = new RoundRectangle2D.Float(x, y, w, h, r, r);
+        fillAntiAliased(g, s);
     }
 
-    private static int getInsetCornerRadius()
+    public static @NotNull SelectionHighlightDescription getSelectionDescription(@NotNull Insets s)
+    {
+        return SelectionHighlightDescription.of(s, getInsetCornerRadius());
+    }
+
+    public static @NotNull SelectionHighlightDescription getMenuSelectionDescription()
+    {
+        return SelectionHighlightDescription.of(0, 4, 0, 4, getInsetCornerRadius());
+    }
+
+    public static @NotNull SelectionHighlightDescription getStripeDescription()
+    {
+        return SelectionHighlightDescription.of(0, 10, 0, 10, getInsetCornerRadius());
+    }
+
+    public static int getInsetCornerRadius()
     {
         int version = AquaPainting.getVersion();
         return version >= macOS26 ? 16 : 10;

@@ -32,7 +32,7 @@ public class AquaTreeBorder
     {
         AquaTreeUI ui = getTreeUI((JComponent) c);
         if (ui != null) {
-            return ui.getInsets();
+            return ui.getSelectionInsets();
         }
         return new Insets(0, 1, 0, 1);
     }

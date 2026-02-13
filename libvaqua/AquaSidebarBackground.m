@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2025 Alan Snyder.
+ * Copyright (c) 2015-2026 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -57,7 +57,62 @@ BOOL DEBUG = NO;
     return self;
 }
 
-- (void) updateSelectionViews: (int*) data {
+- (void) removeSelectionViews {
+    [self updateSelectionViews: NULL leftInset: 0 rightInset: 0];
+}
+
+- (void) configureSelectionsWithOldLeftInset: (jint) oldLeftInset
+                               oldRightInset: (jint) oldRightInset
+                                   leftInset: (jint) leftInset
+                                  rightInset: (jint) rightInset {
+    int count = (int) selectionViews.count;
+    float width = self.bounds.size.width;
+
+    BOOL useInset = NO;
+    if (@available(macOS 10.16, *)) {
+        useInset = YES;
+    }
+
+    if (DEBUG) {
+        NSLog(@"Configuring selection views %@ %f %f %ld %ld",
+            [self description],
+            self.frame.size.width,
+            self.frame.size.height,
+            count,
+            useInset);
+    }
+
+    for (int index = 0; index < count; index++) {
+        NSVisualEffectView *v = [selectionViews objectAtIndex:index];
+        if (v) {
+            if (DEBUG) {
+                NSLog(@"Configuring visual effect view %@", [v description]);
+            }
+            NSRect f = v.frame;
+            CGFloat x = f.origin.x - oldLeftInset;
+            CGFloat y = f.origin.y;
+            CGFloat w = f.size.width + oldLeftInset + oldRightInset;
+            CGFloat h = f.size.height;
+            NSRect frame = NSMakeRect(x, y, w, h);
+            if (useInset) {
+                frame = NSMakeRect(x + leftInset, y, w - (leftInset + rightInset), h);
+            }
+            v.frame = frame;
+            if (useInset) {
+                v.layer.cornerRadius = 4;
+                v.layer.masksToBounds = YES;
+            }
+            [v.layer setNeedsDisplay];
+            v.needsDisplay = YES;
+        }
+    }
+
+    self.needsDisplay = YES;
+}
+
+- (void) updateSelectionViews: (int*) data
+                    leftInset: (jint) leftInset
+                   rightInset: (jint) rightInset {
     int *p = data;
     int count = p ? *p++ : 0;
     int index = 0;
@@ -87,8 +142,7 @@ BOOL DEBUG = NO;
         }
         NSRect frame = NSMakeRect(0, y, width, h);
         if (useInset) {
-            int inset = 5;
-            frame = NSMakeRect(inset, y, width - 2 * inset, h);
+            frame = NSMakeRect(leftInset, y, width - (leftInset + rightInset), h);
         }
         NSVisualEffectView *v = index < currentCount ? [selectionViews objectAtIndex:index] : nil;
         if (v) {

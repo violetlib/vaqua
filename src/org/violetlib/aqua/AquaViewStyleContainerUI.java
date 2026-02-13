@@ -23,10 +23,16 @@ public interface AquaViewStyleContainerUI
     boolean isInset();
 
     /**
-     * Return the additional side insets when using a sidebar border directly (not on a scroll pane).
+     * Return the side insets of the selection highlight.
      */
 
-    @NotNull Insets getInsetViewInsets();
+    @NotNull Insets getSelectionInsets();
+
+    /**
+     * Return the additional side insets for content relative to the selection highlight.
+     */
+
+    @NotNull Insets getContentInsets();
 
     void scrollPaneAncestorChanged(@Nullable JScrollPane sp);
 

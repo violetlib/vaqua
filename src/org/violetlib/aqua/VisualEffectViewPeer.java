@@ -13,6 +13,7 @@ package org.violetlib.aqua;
  */
 public interface VisualEffectViewPeer {
     void setFrame(int x, int y, int width, int height);
+    void configureSelections(int leftInset, int rightInset);
     void updateSelectionBackgrounds(SelectionBoundsDescription sd);
     void dispose();
 }

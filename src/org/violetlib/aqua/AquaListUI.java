@@ -51,6 +51,7 @@ import org.jetbrains.annotations.*;
 import org.violetlib.jnr.aqua.AquaUIPainter;
 
 import static org.violetlib.aqua.OSXSystemProperties.OSVersion;
+import static org.violetlib.aqua.OSXSystemProperties.macOS11;
 import static org.violetlib.jnr.aqua.AquaUIPainter.State.*;
 
 /**
@@ -375,16 +376,16 @@ public class AquaListUI extends BasicListUI implements AquaComponentUI, AquaView
     {
         if (isSideBar()) {
             list.setLayoutOrientation(JList.VERTICAL);
-            updateVibrantEffects();
             // On macOS 11+, the sidebar style implies the inset view style.
             if (AquaUtils.isInsetViewSupported()) {
-                updateInsetConfiguration();
+                updateInset();
             }
-        } else {
             updateVibrantEffects();
+        } else {
             if (AquaUtils.isInsetViewSupported()) {
-                updateInsetConfiguration();
+                updateInset();
             }
+            updateVibrantEffects();
         }
     }
 
@@ -392,14 +393,23 @@ public class AquaListUI extends BasicListUI implements AquaComponentUI, AquaView
         if (list.isDisplayable()) {
             if (isSideBar() && AquaPainting.isSidebarVibrant(list)) {
                 ensureVibrantEffects(AquaVibrantSupport.SIDEBAR_STYLE);
+                configureVibrantEffects();
                 return;
             }
             if (isVibrantMenu && AquaLookAndFeel.ENABLE_VIBRANT_MENU) {
                 ensureVibrantEffects(AquaVibrantSupport.MENU_STYLE);
+                configureVibrantEffects();
                 return;
             }
         }
         disposeVibrantEffects();
+    }
+
+    protected void configureVibrantEffects() {
+        if (vibrantEffects != null) {
+            Insets s = getSelectionInsets();
+            vibrantEffects.configureSelection(s.left, s.right);
+        }
     }
 
     protected void ensureVibrantEffects(int style) {
@@ -409,6 +419,7 @@ public class AquaListUI extends BasicListUI implements AquaComponentUI, AquaView
         }
         if (vibrantEffects == null) {
             vibrantEffects = new ListVibrantEffects(top, style);
+            configureVibrantEffects();
         }
     }
 
@@ -453,6 +464,7 @@ public class AquaListUI extends BasicListUI implements AquaComponentUI, AquaView
         }
 
         public void update() {
+            configureVibrantEffects();
             if (bt != null) {
                 bt.update();
             }
@@ -556,18 +568,6 @@ public class AquaListUI extends BasicListUI implements AquaComponentUI, AquaView
         return style != null && (style.equals("sideBar") || style.equals("sourceList"));
     }
 
-    public @NotNull Insets getInsets() {
-        if (isMenu) {
-            return new Insets(0, 0, 0, 0);
-        }
-        boolean isInset = isInset();
-        boolean isSideBar = isSideBar();
-        boolean isGlass = isSideBar && AquaPainting.useLiquidGlassSidebar();
-        int v = isInset ? isRoundedScrollable ? 10 : 5 : 0;
-        int side = isGlass || isInset ? 5 : 0;
-        return new Insets(v, side, v, side);
-    }
-
     private boolean isBackgroundOKForStriped() {
         Color c = list.getBackground();
         return c == null || c.getAlpha() == 0 || c instanceof ColorUIResource;
@@ -589,11 +589,6 @@ public class AquaListUI extends BasicListUI implements AquaComponentUI, AquaView
     @Override
     public boolean isInset() {
         return isInset || (OSXSystemProperties.useInsetViewStyle() && (isVibrant() || isSideBar()));
-    }
-
-    @Override
-    public @NotNull Insets getInsetViewInsets() {
-        return getInsets();
     }
 
     protected boolean isStyleProperty(String prop) {
@@ -758,7 +753,7 @@ public class AquaListUI extends BasicListUI implements AquaComponentUI, AquaView
                 g.setColor(background);
                 if (isInset()) {
                     if (row % 2 == 1) {
-                        AquaUtils.paintInsetStripedRow(g, 0, y, vs.width, rh);
+                        AquaUtils.paintInsetStripedRow(g, 0, y, vs.width, rh, getStripeDescription());
                     }
                 } else {
                     g.fillRect(0, y, vs.width, rh);
@@ -767,6 +762,58 @@ public class AquaListUI extends BasicListUI implements AquaComponentUI, AquaView
                 y += rh;
             }
         }
+    }
+
+    protected @NotNull SelectionHighlightDescription getSelectionDescription()
+    {
+        Insets s = getSelectionInsets();
+        return AquaUtils.getSelectionDescription(s);
+    }
+
+    protected @NotNull SelectionHighlightDescription getStripeDescription()
+    {
+        return AquaUtils.getStripeDescription();
+    }
+
+    protected @NotNull SelectionHighlightDescription getMenuSelectionDescription()
+    {
+        return AquaUtils.getMenuSelectionDescription();
+    }
+
+    public @NotNull Insets getSelectionInsets() {
+        int top = 0;
+        int bottom = 0;
+        int leading = 9;
+        int trailing = 10;
+
+        if (sidebarContainerSupport != null) {
+            JScrollPane sp = sidebarContainerSupport.getConfiguredScrollPaneAncestor();
+            if (sp != null) {
+                AquaScrollPaneUI ui = AquaUtils.getUI(sp, AquaScrollPaneUI.class);
+                if (ui != null && !ui.isOverlayScrollBars) {
+                    trailing = 20;
+                }
+            }
+        }
+        boolean isLTR = AquaUtils.isLeftToRight(list);
+        if (isLTR) {
+            return new Insets(top, leading, bottom, trailing);
+        } else {
+            return new Insets(top, trailing, bottom, leading);
+        }
+    }
+
+    @Override
+    public @NotNull Insets getContentInsets() {
+        if (isMenu) {
+            return new Insets(0, 0, 0, 0);
+        }
+        boolean isInset = isInset();
+        boolean isSideBar = isSideBar();
+        boolean isGlass = isSideBar && AquaPainting.useLiquidGlassSidebar();
+        int v = isInset ? isRoundedScrollable ? 10 : 5 : 0;
+        int side = isGlass || isInset ? (OSVersion >= macOS11 ? 9 : 5) : 0;
+        return new Insets(v, side, v, side);
     }
 
     @Override
@@ -823,15 +870,16 @@ public class AquaListUI extends BasicListUI implements AquaComponentUI, AquaView
             if (isInset()) {
                 Graphics2D gg = (Graphics2D) g;
                 if (isMenu) {
-                    AquaUtils.paintInsetMenuItemSelection(gg, cx, cy, cw, ch);
+                    AquaUtils.paintInsetMenuItemSelection(gg, cx, cy, cw, ch, getMenuSelectionDescription());
                 } else if (isWrapped) {
-                    AquaUtils.paintInsetCellSelection(gg, 0, cy, list.getWidth(), ch);
+                    AquaUtils.paintInsetCellSelection(gg, 0, cy, list.getWidth(), ch, getSelectionDescription());
                 } else {
                     boolean isSelectedAbove
                       = row > 0 && selModel.isSelectedIndex(row-1) && !hasDropOnTarget;
                     boolean isSelectedBelow
                       = row < list.getModel().getSize()-1 && selModel.isSelectedIndex(row+1) && !hasDropOnTarget;
-                    AquaUtils.paintInsetCellSelection(gg, isSelectedAbove, isSelectedBelow, 0, cy, list.getWidth(), ch);
+                    AquaUtils.paintInsetCellSelection(gg, isSelectedAbove, isSelectedBelow,
+                      0, cy, list.getWidth(), ch, getSelectionDescription());
                 }
             } else if (!isStriped) {
                 g.fillRect(cx, cy, cw, ch);

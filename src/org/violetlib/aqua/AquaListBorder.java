@@ -26,9 +26,9 @@ public class AquaListBorder
 
     @Override
     public Insets getBorderInsets(Component c) {
-        AquaListUI ui = AquaUtils.getUI((JComponent) c, AquaListUI.class);
+        AquaListUI ui = AquaUtils.getUI(c, AquaListUI.class);
         if (ui != null) {
-            return ui.getInsets();
+            return ui.getSelectionInsets();
         }
         return new Insets(0, 1, 0, 1);
     }

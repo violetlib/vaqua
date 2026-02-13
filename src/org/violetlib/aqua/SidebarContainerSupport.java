@@ -120,8 +120,8 @@ public class SidebarContainerSupport
     public Insets getBorderInsets(Component c) {
         AquaViewStyleContainerUI ui = AquaUtils.getUI(c, AquaViewStyleContainerUI.class);
         if (ui != null) {
-            // This border needs to simulate the side insets of the inset view border.
-            Insets insets = ui.getInsetViewInsets();
+            // This border needs to simulate the side insets of the selection highlight.
+            Insets insets = ui.getSelectionInsets();
             return new Insets(inset, inset+insets.left, inset, inset+insets.right);
         }
         return new Insets(inset, inset, inset, inset);

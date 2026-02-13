@@ -2433,11 +2433,41 @@ JNIEXPORT jint JNICALL Java_org_violetlib_aqua_AquaVibrantSupport_setViewFrame
 
 /*
  * Class:     org_violetlib_aqua_AquaVibrantSupport
+ * Method:    nativeRemoveSelectionBackgrounds
+ * Signature: (J)I
+ */
+JNIEXPORT jint JNICALL Java_org_violetlib_aqua_AquaVibrantSupport_nativeRemoveSelectionBackgrounds
+    (JNIEnv *env, jclass cl, jlong ptr)
+{
+    __block jint result = -1;
+
+    COCOA_ENTER();
+
+    NSView *view = (NSView *) ptr;
+
+    //windowDebug(view.window);   // debug
+
+    if ([view isKindOfClass: [AquaSidebarBackground class]]) {
+        AquaSidebarBackground *sbb = (AquaSidebarBackground*) view;
+
+        runOnMainThread(^() {
+            [sbb removeSelectionViews];
+            result = 0;
+        });
+}
+
+    COCOA_EXIT();
+
+    return result;
+}
+
+/*
+ * Class:     org_violetlib_aqua_AquaVibrantSupport
  * Method:    nativeUpdateSelectionBackgrounds
- * Signature: (J[I)I
+ * Signature: (J[III)I
  */
 JNIEXPORT jint JNICALL Java_org_violetlib_aqua_AquaVibrantSupport_nativeUpdateSelectionBackgrounds
-    (JNIEnv *env, jclass cl, jlong ptr, jintArray jdata)
+    (JNIEnv *env, jclass cl, jlong ptr, jintArray jdata, jint leftInset, jint rightInset)
 {
     __block jint result = -1;
 
@@ -2453,17 +2483,44 @@ JNIEXPORT jint JNICALL Java_org_violetlib_aqua_AquaVibrantSupport_nativeUpdateSe
             int *data = (*env)->GetIntArrayElements(env, jdata, NULL);
             if (data != NULL) {
                 runOnMainThread(^() {
-                    [sbb updateSelectionViews: data];
+                    [sbb updateSelectionViews: data leftInset: leftInset rightInset: rightInset];
                     result = 0;
                 });
                 (*env)->ReleaseIntArrayElements(env, jdata, data, JNI_ABORT);
             }
-        } else {
-            runOnMainThread(^() {
-                [sbb updateSelectionViews: NULL];
-                result = 0;
-            });
         }
+    }
+
+    COCOA_EXIT();
+
+    return result;
+}
+
+/*
+ * Class:     org_violetlib_aqua_AquaVibrantSupport
+ * Method:    nativeConfigureSelections
+ * Signature: (JII)I
+ */
+JNIEXPORT jint JNICALL Java_org_violetlib_aqua_AquaVibrantSupport_nativeConfigureSelections
+    (JNIEnv *env, jclass cl, jlong ptr, jint oldLeftInset, jint oldRightInset, jint leftInset, jint rightInset)
+{
+    __block jint result = -1;
+
+    COCOA_ENTER();
+
+    NSView *view = (NSView *) ptr;
+
+    //windowDebug(view.window);   // debug
+
+    if ([view isKindOfClass: [AquaSidebarBackground class]]) {
+        AquaSidebarBackground *sbb = (AquaSidebarBackground*) view;
+        runOnMainThread(^() {
+            [sbb configureSelectionsWithOldLeftInset: oldLeftInset
+                                       oldRightInset: oldRightInset
+                                           leftInset: leftInset
+                                          rightInset: rightInset];
+            result = 0;
+        });
     }
 
     COCOA_EXIT();

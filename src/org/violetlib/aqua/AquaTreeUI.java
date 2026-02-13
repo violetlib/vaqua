@@ -118,7 +118,6 @@ public class AquaTreeUI extends BasicTreeUI
     protected int expandControlWidth = 16;
     protected int trailingExpandControlInset = 13;
     protected int leadingExpandControlSeparation = 6;
-    private static final Insets insetViewInsets = new Insets(0, 18, 0, 18);  // sides only
 
     // state variables for painting, needed because we share painting implementation with the superclass
     protected boolean shouldPaintSelection;
@@ -328,8 +327,6 @@ public class AquaTreeUI extends BasicTreeUI
     @Override
     public void configureSidebarStyle()
     {
-        updateVibrantEffects();
-
         if (isSideBar()) {
             indentationPerLevel = SIDEBAR_INDENTATION;
             if (AquaPainting.useLiquidGlassSidebar()) {
@@ -349,14 +346,16 @@ public class AquaTreeUI extends BasicTreeUI
             tree.revalidate();
             tree.repaint();
             updateCellSizes();
-            updateInsetConfiguration();
+            updateInset();
         }
+        updateVibrantEffects();
     }
 
     protected void updateVibrantEffects() {
         if (tree.isDisplayable()) {
             if (isSideBar() && AquaPainting.isSidebarVibrant(tree)) {
                 ensureSidebarVibrantEffects();
+                configureVibrantEffects();
                 return;
             }
         }
@@ -370,6 +369,7 @@ public class AquaTreeUI extends BasicTreeUI
         }
         if (sidebarVibrantEffects == null) {
             sidebarVibrantEffects = new SidebarVibrantEffects(top);
+            configureVibrantEffects();
         }
     }
 
@@ -411,6 +411,7 @@ public class AquaTreeUI extends BasicTreeUI
         }
 
         public void update() {
+            configureVibrantEffects();
             if (bt != null) {
                 bt.update();
             }
@@ -430,6 +431,13 @@ public class AquaTreeUI extends BasicTreeUI
             if (bt != null) {
                 bt.reset();
             }
+        }
+    }
+
+    protected void configureVibrantEffects() {
+        if (sidebarVibrantEffects != null) {
+            Insets s = getSelectionInsets();
+            sidebarVibrantEffects.configureSelection(s.left, s.right);
         }
     }
 
@@ -569,11 +577,6 @@ public class AquaTreeUI extends BasicTreeUI
     @Override
     public boolean isInset() {
         return _isInset || (isSideBar() && OSXSystemProperties.useInsetViewStyle());
-    }
-
-    @Override
-    public @NotNull Insets getInsetViewInsets() {
-        return insetViewInsets;
     }
 
     private boolean isBackgroundClear() {
@@ -1070,9 +1073,10 @@ public class AquaTreeUI extends BasicTreeUI
                 if (isInset() && (isRowSelected || isDropTarget)) {
                     boolean isSelectedAbove = row > 0 && tree.isRowSelected(row - 1) && !hasDropOnTarget;
                     boolean isSelectedBelow = row < tree.getRowCount() - 1 && tree.isRowSelected(row + 1) && !hasDropOnTarget;
-                    AquaUtils.paintInsetCellSelection(gg, isSelectedAbove, isSelectedBelow, 0, cy, width, ch);
+                    AquaUtils.paintInsetCellSelection(gg, isSelectedAbove, isSelectedBelow, 0, cy, width, ch,
+                      getSelectionDescription());
                 } else if (isInset() && isStriped()) {
-                    AquaUtils.paintInsetStripedRow(gg, 0, cy, width, ch);
+                    AquaUtils.paintInsetStripedRow(gg, 0, cy, width, ch, getStripeDescription());
                 } else {
                     gg.fillRect(0, cy, width, ch);
                 }
@@ -1086,6 +1090,17 @@ public class AquaTreeUI extends BasicTreeUI
         }
 
         colors.configureForContainer();
+    }
+
+    protected @NotNull SelectionHighlightDescription getSelectionDescription()
+    {
+        Insets s = getSelectionInsets();
+        return AquaUtils.getSelectionDescription(s);
+    }
+
+    protected @NotNull SelectionHighlightDescription getStripeDescription()
+    {
+        return AquaUtils.getStripeDescription();
     }
 
     protected @Nullable Color getSpecialBackgroundForRow(int row, boolean isRowSelected, boolean isDropTarget) {
@@ -1133,7 +1148,7 @@ public class AquaTreeUI extends BasicTreeUI
             Color background = colors.getBackground(appearanceContext);
             g.setColor(background);
             if (isInset()) {
-                AquaUtils.paintInsetStripedRow(gg, 0, y, width, rheight);
+                AquaUtils.paintInsetStripedRow(gg, 0, y, width, rheight, getStripeDescription());
             } else {
                 g.fillRect(insets.left, y, rwidth, rheight);
             }
@@ -1200,8 +1215,8 @@ public class AquaTreeUI extends BasicTreeUI
         if (component instanceof DefaultTreeCellRenderer) {
             DefaultTreeCellRenderer treeCellRenderer = (DefaultTreeCellRenderer) component;
             Border existing = treeCellRenderer.getBorder();
-            if (existing instanceof UIResource && existing != AquaLookAndFeel.NOTHING_BORDER) {
-                treeCellRenderer.setBorder(AquaLookAndFeel.NOTHING_BORDER);
+            if (existing instanceof UIResource && !(existing instanceof AquaCellBorder)) {
+                treeCellRenderer.setBorder(new AquaCellBorder());
             }
             if (!isLayout) {
                 assert appearanceContext != null;
@@ -1261,6 +1276,11 @@ public class AquaTreeUI extends BasicTreeUI
 
             if (f != null) {
                 label.setFont(f);
+            }
+
+            Border existing = label.getBorder();
+            if (existing instanceof UIResource && !(existing instanceof AquaCellBorder)) {
+                label.setBorder(new AquaCellBorder());
             }
         }
     }
@@ -1686,13 +1706,37 @@ public class AquaTreeUI extends BasicTreeUI
         icon.paintIcon(c, g, x, y);
     }
 
-    public @NotNull Insets getInsets() {
+    @Override
+    public @NotNull Insets getContentInsets() {
         boolean isInset = isInset();
         boolean isSideBar = isSideBar();
         int top = 0;
         int bottom = 0;
         int leading = isInset ? (isSideBar ? 18 : 10) : (isSideBar ? 9 : 1);
         int trailing = isInset ? 20 : 1;
+        boolean isLTR = AquaUtils.isLeftToRight(tree);
+        if (isLTR) {
+            return new Insets(top, leading, bottom, trailing);
+        } else {
+            return new Insets(top, trailing, bottom, leading);
+        }
+    }
+
+    public @NotNull Insets getSelectionInsets() {
+        int top = 0;
+        int bottom = 0;
+        int leading = 9;
+        int trailing = 10;
+
+        if (sidebarContainerSupport != null) {
+            JScrollPane sp = sidebarContainerSupport.getConfiguredScrollPaneAncestor();
+            if (sp != null) {
+                AquaScrollPaneUI ui = AquaUtils.getUI(sp, AquaScrollPaneUI.class);
+                if (ui != null && !ui.isOverlayScrollBars) {
+                    trailing = 20;
+                }
+            }
+        }
         boolean isLTR = AquaUtils.isLeftToRight(tree);
         if (isLTR) {
             return new Insets(top, leading, bottom, trailing);

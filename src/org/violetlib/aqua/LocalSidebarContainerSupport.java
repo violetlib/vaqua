@@ -92,6 +92,11 @@ public class LocalSidebarContainerSupport
         updateLocalSideBarConfiguration();
     }
 
+    public @Nullable JScrollPane getConfiguredScrollPaneAncestor()
+    {
+        return configuredScrollPaneAncestor;
+    }
+
     private @Nullable JScrollPane getPossibleScrollPaneSidebarContainer()
     {
         JScrollPane sp = AquaUtils.getScrollPaneAncestor(c);

@@ -518,10 +518,25 @@ public class AquaTableUI extends BasicTableUI
         return isInset;
     }
 
+    protected @NotNull SelectionHighlightDescription getSelectionDescription()
+    {
+        int top = 0;
+        int left = 10;
+        int bottom = 0;
+        int right = 10;
+        Insets s = new Insets(top, left, bottom, right);
+        return AquaUtils.getSelectionDescription(s);
+    }
+
     @Override
-    public @NotNull Insets getInsetViewInsets() {
-        // not actually used, as JTable cannot be a sidebar
-        return insetViewInsets;
+    public @NotNull Insets getContentInsets() {
+        // not used
+        return new Insets(1, 1, 1, 1);
+    }
+
+    @Override
+    public @NotNull Insets getSelectionInsets() {
+        return isInset() ? insetViewInsets : new Insets(0, 0, 0, 0);
     }
 
     private boolean isBackgroundClear() {
@@ -842,9 +857,10 @@ public class AquaTableUI extends BasicTableUI
                         int h = cellRect.height;
                         boolean isSelectedAbove = row > 0 && table.isRowSelected(row-1);
                         boolean isSelectedBelow = row < table.getRowCount()-1 && table.isRowSelected(row+1);
-                        AquaUtils.paintInsetCellSelection(gg, isSelectedAbove, isSelectedBelow, 0, y, tableWidth, h);
+                        AquaUtils.paintInsetCellSelection(gg, isSelectedAbove, isSelectedBelow, 0, y, tableWidth, h,
+                          getSelectionDescription());
                     } else {
-                        AquaUtils.paintInsetStripedRow(gg, 0, cellRect.y, tableWidth, cellRect.height);
+                        AquaUtils.paintInsetStripedRow(gg, 0, cellRect.y, tableWidth, cellRect.height, getStripeDescription());
                     }
                 } else {
                     g.fillRect(clip.x, cellRect.y, clip.width, cellRect.height);
@@ -881,7 +897,7 @@ public class AquaTableUI extends BasicTableUI
                             Color bg = colors.getBackground(ac);
                             g.setColor(bg);
                             if (isInset) {
-                                AquaUtils.paintInsetStripedRow(gg, 0, nextRowY, tableWidth, rowHeight);
+                                AquaUtils.paintInsetStripedRow(gg, 0, nextRowY, tableWidth, rowHeight, getStripeDescription());
                             } else {
                                 g.fillRect(clip.x, nextRowY, clip.width, rowHeight);
                             }
@@ -893,6 +909,11 @@ public class AquaTableUI extends BasicTableUI
             }
 
             // TBD: should selected column be painted here or is it OK for just the cells to paint the selection background?
+        }
+
+        protected @NotNull SelectionHighlightDescription getStripeDescription()
+        {
+            return AquaUtils.getStripeDescription();
         }
 
         protected boolean shouldPaintSpecialEditedCellBackground() {

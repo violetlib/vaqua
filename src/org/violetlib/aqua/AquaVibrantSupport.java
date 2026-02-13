@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2021 Alan Snyder.
+ * Copyright (c) 2015-2026 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -327,6 +327,8 @@ public class AquaVibrantSupport {
     private static class VisualEffectViewPeerImpl implements VisualEffectViewPeer {
         private final @NotNull Window w;
         private long nativeNSViewPointer;
+        private int leftInset;
+        private int rightInset;
 
         public VisualEffectViewPeerImpl(@NotNull Window w, long nativeNSViewPointer) {
             this.w = w;
@@ -361,8 +363,25 @@ public class AquaVibrantSupport {
             }
         }
 
-        public void updateSelectionBackgrounds(SelectionBoundsDescription sd) {
-            int rc = nativeUpdateSelectionBackgrounds(nativeNSViewPointer, sd != null ? sd.getData() : null);
+        @Override
+        public void configureSelections(int leftInset, int rightInset) {
+            int oldLeftInset = this.leftInset;
+            int oldRightInset = this.rightInset;
+            this.leftInset = leftInset;
+            this.rightInset = rightInset;
+            int rc = nativeConfigureSelections(nativeNSViewPointer, oldLeftInset, oldRightInset, leftInset, rightInset);
+            if (rc != 0) {
+                Utils.logError("configureSelections failed");
+            }
+        }
+
+        public void updateSelectionBackgrounds(@Nullable SelectionBoundsDescription sd) {
+            int rc;
+            if (sd == null) {
+                rc = nativeRemoveSelectionBackgrounds(nativeNSViewPointer);
+            } else {
+                rc = nativeUpdateSelectionBackgrounds(nativeNSViewPointer, sd.getData(), leftInset, rightInset);
+            }
             if (rc != 0) {
                 Utils.logError("updateSelectionBackgrounds failed");
             }
@@ -379,6 +398,8 @@ public class AquaVibrantSupport {
     private static native int removeVisualEffectWindow(long w);
     private static native long nativeCreateVisualEffectView(long w, int style, boolean supportSelections, boolean forceActive);
     private static native int setViewFrame(long viewPtr, int x, int y, int width, int height, int yflipped);
-    private static native int nativeUpdateSelectionBackgrounds(long viewPtr, int[] data);
+    private static native int nativeRemoveSelectionBackgrounds(long viewPtr);
+    private static native int nativeUpdateSelectionBackgrounds(long viewPtr, int[] data, int leftInset, int rightInset);
+    private static native int nativeConfigureSelections(long viewPtr, int oldLeftInset, int oldRightInset, int leftInset, int rightInset);
     private static native int disposeVisualEffectView(long viewPtr);
 }

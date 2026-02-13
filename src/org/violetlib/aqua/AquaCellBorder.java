@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020-2025 Alan Snyder.
+ * Copyright (c) 2020-2026 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -18,23 +18,20 @@ import org.jetbrains.annotations.*;
 /**
  * A context dependent border for list cells.
  */
+
 @SuppressWarnings("serial")
 public class AquaCellBorder extends AbstractBorder implements UIResource {
 
     public static final @NotNull String RENDERER_CONTAINER_KEY = "JComponent.rendererContainer";
 
     public Insets getBorderInsets(@NotNull Component c, @NotNull Insets insets) {
-        boolean isInset = computeIsInset((JComponent)c);
-        int top = isInset ? 5 : 1;
-        int side = isInset ? 20 : 1;
-        insets.top = insets.bottom = top;
-        insets.left = insets.right = side;
+        AquaViewStyleContainerUI ui = getContainerUI((JComponent) c);
+        if (ui != null) {
+            return ui.getContentInsets();
+        }
+        insets.top = insets.bottom = 1;
+        insets.left = insets.right = 1;
         return insets;
-    }
-
-    private boolean computeIsInset(@NotNull JComponent c) {
-        AquaViewStyleContainerUI ui = getContainerUI(c);
-        return ui != null && ui.isInset();
     }
 
     protected @Nullable AquaViewStyleContainerUI getContainerUI(@NotNull JComponent c)

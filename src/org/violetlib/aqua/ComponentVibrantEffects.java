@@ -38,6 +38,7 @@ public class ComponentVibrantEffects extends VisualEffectView {
      * Recompute the selection bounds (if a selection bounds tracker was provided).
      */
     public void update() {
+        configureSelection(4, 4);
         if (boundsTracker != null) {
             boundsTracker.update();
         }

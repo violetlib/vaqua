@@ -44,6 +44,7 @@ public class MenuVibrantEffects extends VisualEffectView {
     }
 
     public void update() {
+        configureSelection(4, 4);
         if (bt != null) {
             bt.update();
         }
