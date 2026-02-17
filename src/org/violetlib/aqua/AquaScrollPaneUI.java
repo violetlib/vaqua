@@ -428,8 +428,8 @@ public class AquaScrollPaneUI extends BasicScrollPaneUI
     }
 
     @Override
-    public void systemPropertyChanged(JComponent c, Object type) {
-        if (type.equals(OSXSystemProperties.USER_PREFERENCE_CHANGE_TYPE)) {
+    public void systemPropertyChanged(@NotNull JComponent c, @Nullable Object type) {
+        if (OSXSystemProperties.USER_PREFERENCE_CHANGE_TYPE.equals(type)) {
             updateStyle();
         }
     }

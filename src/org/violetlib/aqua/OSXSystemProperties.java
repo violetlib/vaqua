@@ -19,7 +19,7 @@ import org.jetbrains.annotations.Nullable;
  */
 public class OSXSystemProperties {
 
-    public static Object USER_PREFERENCE_CHANGE_TYPE = "UserPreferenceChangeType";
+    public static final Object USER_PREFERENCE_CHANGE_TYPE = "UserPreferenceChangeType";
 
     public static int simulatedOSVersion = 0;  // must come before OSVersion
 

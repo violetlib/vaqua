@@ -41,15 +41,18 @@ import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.util.TooManyListenersException;
 import javax.swing.*;
+import javax.swing.border.Border;
 import javax.swing.event.MouseInputListener;
 import javax.swing.plaf.ColorUIResource;
 import javax.swing.plaf.ComponentUI;
+import javax.swing.plaf.UIResource;
 import javax.swing.plaf.basic.BasicListUI;
 import javax.swing.text.JTextComponent;
 
 import org.jetbrains.annotations.*;
 import org.violetlib.jnr.aqua.AquaUIPainter;
 
+import static org.violetlib.aqua.AquaLookAndFeel.NOTHING_BORDER;
 import static org.violetlib.aqua.OSXSystemProperties.OSVersion;
 import static org.violetlib.aqua.OSXSystemProperties.macOS11;
 import static org.violetlib.jnr.aqua.AquaUIPainter.State.*;
@@ -87,6 +90,8 @@ public class AquaListUI extends BasicListUI implements AquaComponentUI, AquaView
     private final HierarchyListener hierarchyListener = new AquaListHierarchyListener();
     private DropTargetListener dropTargetListener;
     private DropTarget knownDropTarget;
+
+    private boolean inhibitPropertyChangeListener;
 
     public AquaListUI() {
         colors = AquaColors.CONTAINER_COLORS;
@@ -259,6 +264,9 @@ public class AquaListUI extends BasicListUI implements AquaComponentUI, AquaView
 
     class AquaPropertyChangeHandler extends PropertyChangeHandler {
         public void propertyChange(PropertyChangeEvent e) {
+            if (inhibitPropertyChangeListener) {
+                return;
+            }
             String prop = e.getPropertyName();
             if ("enabled".equals(prop)) {
                 list.repaint();
@@ -266,8 +274,20 @@ public class AquaListUI extends BasicListUI implements AquaComponentUI, AquaView
                 list.repaint();
             } else {
                 if (isStyleProperty(prop)) {
+                    if (getSideBarValue() && list.getLayoutOrientation() != JList.VERTICAL && AquaUtils.isInsetViewSupported()) {
+                        // These options are incompatible (because the implementation of wrapped is private)
+                        inhibitPropertyChangeListener = true;
+                        list.setLayoutOrientation(JList.VERTICAL);
+                        inhibitPropertyChangeListener = false;
+                    }
                     updateStyleProperties();
                 } else if ("layoutOrientation".equals(prop)) {
+                    if (list.getLayoutOrientation() != JList.VERTICAL && isSideBar() && AquaUtils.isInsetViewSupported()) {
+                        // These options are incompatible (because the implementation of wrapped is private)
+                        list.setLayoutOrientation(JList.VERTICAL);
+                        return;
+                    }
+                    updateInset();
                     updateStriped();
                 } else if (isViewStyleProperty(prop)) {
                     updateInset();
@@ -551,7 +571,7 @@ public class AquaListUI extends BasicListUI implements AquaComponentUI, AquaView
     }
 
     private boolean getInsetValue() {
-        if (AquaUtils.isInsetViewSupported()) {
+        if (AquaUtils.isInsetViewSupported() && list.getLayoutOrientation() == JList.VERTICAL) {
             String value = getViewStyleProperty();
             if ("inset".equals(value)) {
                 return true;
@@ -753,13 +773,42 @@ public class AquaListUI extends BasicListUI implements AquaComponentUI, AquaView
                 g.setColor(background);
                 if (isInset()) {
                     if (row % 2 == 1) {
-                        AquaUtils.paintInsetStripedRow(g, 0, y, vs.width, rh, getStripeDescription());
+                        SelectionHighlightDescription d = getStripeDescription();
+                        int cx = d.left;
+                        int cy = y + d.top;
+                        int cw = vs.width - (d.left + d.right);
+                        int ch = rh - (d.top + d.bottom);
+                        int r = d.cornerRadius;
+                        AquaUtils.paintInsetStripedRow(g, cx, cy, cw, ch, r);
                     }
                 } else {
                     g.fillRect(0, y, vs.width, rh);
                 }
                 row++;
                 y += rh;
+            }
+        }
+    }
+
+    @Override
+    protected void updateLayoutState() {
+        super.updateLayoutState();
+
+        // The superclass method does not know about our insets.
+
+        if (cellHeights != null) {
+            int fixedCellHeight = list.getFixedCellHeight();
+            if (fixedCellHeight == -1) {
+                int extraHeight = 0;
+                Insets s = getSelectionInsets();
+                extraHeight += (s.top + s.bottom);
+                s = getContentInsets();
+                extraHeight += (s.top + s.bottom);
+                if (extraHeight > 0) {
+                    for (int index = 0; index < cellHeights.length; index++) {
+                        cellHeights[index] += extraHeight;
+                    }
+                }
             }
         }
     }
@@ -830,6 +879,8 @@ public class AquaListUI extends BasicListUI implements AquaComponentUI, AquaView
         int cy = rowBounds.y;
         int cw = rowBounds.width;
         int ch = rowBounds.height;
+        int r = AquaUtils.getInsetCornerRadius();
+        int top = 0;
 
         boolean isSelected = selModel.isSelectedIndex(row);
         boolean isFocused = shouldDisplayAsFocused();
@@ -856,6 +907,16 @@ public class AquaListUI extends BasicListUI implements AquaComponentUI, AquaView
         }
 
         colors.configureForRow(row, isSelected || isDropTarget);
+
+        if (!isWrapped) {
+            SelectionHighlightDescription s = isMenu ? getMenuSelectionDescription() : getSelectionDescription();
+            cx += s.left;
+            cy += s.top;
+            cw -= (s.left + s.right);
+            ch -= (s.top + s.bottom);
+            top = s.top;
+        }
+
         if ((isSelected || isDropTarget) && vibrantEffects == null) {
             if (isDropTarget) {
                 ac = ac.withSelected(true);
@@ -870,19 +931,19 @@ public class AquaListUI extends BasicListUI implements AquaComponentUI, AquaView
             if (isInset()) {
                 Graphics2D gg = (Graphics2D) g;
                 if (isMenu) {
-                    AquaUtils.paintInsetMenuItemSelection(gg, cx, cy, cw, ch, getMenuSelectionDescription());
+                    AquaUtils.paintInsetMenuItemSelection(gg, cx, cy, cw, ch, r);
                 } else if (isWrapped) {
-                    AquaUtils.paintInsetCellSelection(gg, 0, cy, list.getWidth(), ch, getSelectionDescription());
+                    AquaUtils.paintInsetCellSelection(gg, cx, cy, cw, ch, r);
                 } else {
                     boolean isSelectedAbove
                       = row > 0 && selModel.isSelectedIndex(row-1) && !hasDropOnTarget;
                     boolean isSelectedBelow
                       = row < list.getModel().getSize()-1 && selModel.isSelectedIndex(row+1) && !hasDropOnTarget;
                     AquaUtils.paintInsetCellSelection(gg, isSelectedAbove, isSelectedBelow,
-                      0, cy, list.getWidth(), ch, getSelectionDescription());
+                      cx, cy, cw, ch, top, r);
                 }
             } else if (!isStriped) {
-                g.fillRect(cx, cy, cw, ch);
+                g.fillRect(rowBounds.x, cy, rowBounds.width, ch);
             }
         }
 
@@ -903,6 +964,19 @@ public class AquaListUI extends BasicListUI implements AquaComponentUI, AquaView
             AquaUtils.setOpaqueCarefully(jc, false);
         }
 
+        if (rendererComponent instanceof JLabel) {
+            JLabel label = (JLabel) rendererComponent;
+            Border existing = label.getBorder();
+            if (existing instanceof UIResource && existing != NOTHING_BORDER) {
+                label.setBorder(NOTHING_BORDER);
+            }
+        }
+
+        Insets s = getContentInsets();
+        cx += s.left;
+        cy += s.top;
+        cw -= (s.left + s.right);
+        ch -= (s.top + s.bottom);
         rendererPane.paintComponent(g, rendererComponent, list, cx, cy, cw, ch, true);
 
         if (rendererComponent instanceof JTextComponent) {

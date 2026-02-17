@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2025 Alan Snyder.
+ * Copyright (c) 2023-2026 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -23,7 +23,7 @@ import org.jetbrains.annotations.*;
 public class SystemPropertyChangeManager {
 
     public interface SystemPropertyChangeListener {
-        void systemPropertyChanged(JComponent c, Object type);
+        void systemPropertyChanged(@NotNull JComponent c, @Nullable Object type);
     }
 
     private static final WeakHashMap<JComponent,JComponent> components = new WeakHashMap<>();

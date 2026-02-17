@@ -857,10 +857,21 @@ public class AquaTableUI extends BasicTableUI
                         int h = cellRect.height;
                         boolean isSelectedAbove = row > 0 && table.isRowSelected(row-1);
                         boolean isSelectedBelow = row < table.getRowCount()-1 && table.isRowSelected(row+1);
-                        AquaUtils.paintInsetCellSelection(gg, isSelectedAbove, isSelectedBelow, 0, y, tableWidth, h,
-                          getSelectionDescription());
+                        SelectionHighlightDescription s = getSelectionDescription();
+                        int cx = s.left;
+                        int cy = y + s.top;
+                        int cw = tableWidth - (s.left + s.right);
+                        int ch = h - (s.top + s.bottom);
+                        int r = s.cornerRadius;
+                        AquaUtils.paintInsetCellSelection(gg, isSelectedAbove, isSelectedBelow, cx, cy, cw, ch, s.top, r);
                     } else {
-                        AquaUtils.paintInsetStripedRow(gg, 0, cellRect.y, tableWidth, cellRect.height, getStripeDescription());
+                        SelectionHighlightDescription s = getStripeDescription();
+                        int cx = s.left;
+                        int cy = cellRect.y + s.top;
+                        int cw = tableWidth - (s.left + s.right);
+                        int ch = cellRect.height - (s.top + s.bottom);
+                        int r = s.cornerRadius;
+                        AquaUtils.paintInsetStripedRow(gg, cx, cy, cw, ch, r);
                     }
                 } else {
                     g.fillRect(clip.x, cellRect.y, clip.width, cellRect.height);
@@ -897,7 +908,13 @@ public class AquaTableUI extends BasicTableUI
                             Color bg = colors.getBackground(ac);
                             g.setColor(bg);
                             if (isInset) {
-                                AquaUtils.paintInsetStripedRow(gg, 0, nextRowY, tableWidth, rowHeight, getStripeDescription());
+                                SelectionHighlightDescription s = getStripeDescription();
+                                int cx = s.left;
+                                int cy = nextRowY + s.top;
+                                int cw = tableWidth - (s.left + s.right);
+                                int ch = rowHeight - (s.top + s.bottom);
+                                int r = s.cornerRadius;
+                                AquaUtils.paintInsetStripedRow(gg, cx, cy, cw, ch, r);
                             } else {
                                 g.fillRect(clip.x, nextRowY, clip.width, rowHeight);
                             }

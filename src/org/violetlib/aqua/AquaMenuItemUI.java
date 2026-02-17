@@ -115,8 +115,13 @@ public class AquaMenuItemUI extends BasicMenuItemUI implements AquaComponentUI {
                 Color background = md.colors.getBackground(appearanceContext);
                 g.setColor(background);
                 if (OSXSystemProperties.useInsetViewStyle()) {
-                    AquaUtils.paintInsetMenuItemSelection(g, 0, 0, menuItem.getWidth(), menuItem.getHeight(),
-                      getMenuSelectionDescription());
+                    SelectionHighlightDescription s = getMenuSelectionDescription();
+                    int cx = s.left;
+                    int cy = s.top;
+                    int cw = menuItem.getWidth() - (s.left + s.right);
+                    int ch = menuItem.getHeight() - (s.top + s.bottom);
+                    int r = s.cornerRadius;
+                    AquaUtils.paintInsetMenuItemSelection(g, cx, cy, cw, ch, r);
                 } else {
                     g.fillRect(0, 0, menuItem.getWidth(), menuItem.getHeight());
                 }

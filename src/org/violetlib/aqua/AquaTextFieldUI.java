@@ -334,30 +334,20 @@ public class AquaTextFieldUI extends AquaTextComponentUIBase implements ToolbarS
         int width = tf.getWidth();
         int height = tf.getHeight();
 
-        Border b = tf.getBorder();
-        AquaBackgroundBorder abb = AquaBorderSupport.get(b, AquaBackgroundBorder.class);
-        AquaCellBorder cb = AquaBorderSupport.get(b, AquaCellBorder.class);
-        if (abb == null && cb == null) {
+        AquaBackgroundBorder abb = AquaBorderSupport.get(tf.getBorder(), AquaBackgroundBorder.class);
+        if (abb == null) {
             // developer must have set a custom border
 
-            // The effect of this code is to make isOpaque=true the default when a custom border is used.
+            // The effect of this code is to make isOpaque=true the effective default when a custom border is used.
             // This code comes from Aqua LAF.
             // TBD: why is this a good idea?
 
-            boolean isOpaque = tf.isOpaque();
-            if (!isOpaque && JavaSupport.hasOpaqueBeenExplicitlySet(tf)) {
-                return;
-            }
-
-            // must fill whole region with background color if opaque
-            if (background != null) {
+            if ((tf.isOpaque() || !JavaSupport.hasOpaqueBeenExplicitlySet(tf)) && background != null) {
+                // must fill whole region with background color if opaque
                 g.setColor(background);
                 g.fillRect(0, 0, width, height);
             }
-            return;
-        }
-
-        if (abb != null) {
+        } else {
             // using our own border
             abb.paintBackground(tf, g, background, null);
         }

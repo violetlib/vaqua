@@ -383,15 +383,15 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
         Border listHeaderBorder = AquaTableHeaderBorder.getListHeaderBorder();
         Border zeroBorder = new BorderUIResource.EmptyBorderUIResource(0, 0, 0, 0);
         Border scrollPaneBorder = new AquaLineBorder("scrollPaneBorder");
-        Border listBorder = new AquaListBorder();
-        Border treeBorder = new AquaTreeBorder();
+        Border listBorder = NOTHING_BORDER;
+        Border treeBorder = NOTHING_BORDER;
 
         int sidebarRowHeight = OSXSystemProperties.useInsetViewStyle() ? 28 : 24;
 
         Color toolBarDragHandleColor = new ColorUIResource(140, 140, 140);
 
         LazyValue internalFrameBorder = t -> BasicBorders.getInternalFrameBorder();
-        Border cellBorder = new AquaCellBorder();
+        Border cellBorder = NOTHING_BORDER;
 
         Color windowBackgroundColor = new ColorUIResource(237, 237, 237); // needed in macOS 10.13 and earlier
         Color panelBackgroundColor = windowBackgroundColor;
