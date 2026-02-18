@@ -66,6 +66,26 @@ BOOL DEBUG = NO;
     return self;
 }
 
+- (void) setFrame: (NSRect) frameRect {
+    if (DEBUG) {
+        NSLog(@"Updating selection background bounds %@ %f %f %f %f",
+            [self description],
+            frameRect.origin.x,
+            frameRect.origin.y,
+            frameRect.size.width,
+            frameRect.size.height);
+    }
+    [super setFrame:frameRect];
+    float width = frameRect.size.width;
+
+    int count = (int) selectionViews.count;
+    for (int index = 0; index < count; index++) {
+        AquaSelectionView *v = [selectionViews objectAtIndex:index];
+        NSRect oldFrame = v.frame;
+        [v setFullFrame: NSMakeRect(0, oldFrame.origin.y, width, oldFrame.size.height)];
+    }
+}
+
 - (void) removeSelectionViews {
     [self updateSelectionViews: NULL];
 }
@@ -141,7 +161,7 @@ BOOL DEBUG = NO;
         AquaSelectionView *v = index < currentCount ? [selectionViews objectAtIndex:index] : nil;
         if (v) {
             if (DEBUG) {
-                NSLog(@"Reusing selection view %@", [v description]);
+                NSLog(@"Reusing selection view %@ bounds = %f %f %f %f", [v description], 0, y, width, h);
             }
             [v reuseWithFrame:frame emphasized:emphasized forceActive:forceActive];
             if (useInset) {
@@ -149,7 +169,7 @@ BOOL DEBUG = NO;
             }
         } else {
             if (DEBUG) {
-                NSLog(@"Creating selection view");
+                NSLog(@"Creating selection view bounds = %f %f %f %f", 0, y, width, h);
             }
             v = [[AquaSelectionView alloc] initWithFrame:frame
                                               emphasized:emphasized
@@ -232,6 +252,11 @@ BOOL DEBUG = NO;
     CGFloat y = fullFrame.origin.y;
     CGFloat w = fullFrame.size.width - (leftInset + rightInset);
     CGFloat h = fullFrame.size.height;
+
+    if (w < 0) {
+        w = 0;
+    }
+
     self.frame = NSMakeRect(x, y, w, h);
     self.layer.cornerRadius = cornerRadius;
     self.layer.masksToBounds = YES;
@@ -239,11 +264,21 @@ BOOL DEBUG = NO;
     self.needsDisplay = YES;
 }
 
-- (void) updateWithFrame: (NSRect) frameRect
+- (void) setFullFrame: (NSRect) frameRect
 {
+    CGFloat leftInset = self.frame.origin.x - fullFrame.origin.x;
+    CGFloat totalInset = fullFrame.size.width - self.frame.size.width;
     fullFrame = frameRect;
-    self.frame = frameRect;
+    self.frame = NSMakeRect(leftInset, frameRect.origin.y, frameRect.size.width - totalInset, frameRect.size.height);
     self.needsDisplay = YES;
+
+    if (DEBUG) {
+        NSLog(@"Updating selection view bounds %f %f %f %f",
+            self.frame.origin.x,
+            self.frame.origin.y,
+            self.frame.size.width,
+            self.frame.size.height);
+    }
 }
 
 @end

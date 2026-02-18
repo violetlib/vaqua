@@ -13,6 +13,7 @@ import javax.swing.*;
 import javax.swing.plaf.ComponentUI;
 
 import org.jetbrains.annotations.*;
+import org.violetlib.jnr.aqua.AquaUIPainter;
 
 import static org.violetlib.aqua.OSXSystemProperties.macOS26;
 
@@ -34,7 +35,7 @@ public class AquaComboBoxPopupMenuUI extends AquaPopupMenuUI {
     @Override
     public void installUI(JComponent c) {
         super.installUI(c);
-        // When a pop up is shown, the UI is uninstalled and then reinstalled, which removes our border.
+        // When a popup is shown, the UI is uninstalled and then reinstalled, which removes our border.
         if (c instanceof AquaComboBoxPopup) {
             AquaComboBoxPopup p = (AquaComboBoxPopup) c;
             p.updateContents(false);
@@ -77,9 +78,23 @@ public class AquaComboBoxPopupMenuUI extends AquaPopupMenuUI {
         }
         AquaListUI ui = AquaUtils.getUI(list, AquaListUI.class);
         if (ui != null) {
-            ui.configureAsMenu(!cb.isEditable());
+            AquaUIPainter.Size size = AquaUtilControlSize.getUserSizeFrom(cb, AquaUIPainter.Size.REGULAR);
+            AquaComboBoxType t = getComboBoxType(cb);
+            boolean isVibrant = t != AquaComboBoxType.EDITABLE_COMBO_BOX;
+            ui.configureAsMenu(t, size, isVibrant);
             ui.setColors(colorsForList);
             list.putClientProperty(AquaListUI.LIST_VIEW_STYLE_KEY, "inset");
         }
+    }
+
+    private @NotNull AquaComboBoxType getComboBoxType(@NotNull JComboBox<?> cb) {
+        AquaComboBoxUI ui = AquaUtils.getUI(cb, AquaComboBoxUI.class);
+        if (ui != null) {
+            return ui.getComboBoxType();
+        }
+        if (cb.isEditable()) {
+            return AquaComboBoxType.EDITABLE_COMBO_BOX;
+        }
+        return AquaComboBoxType.POP_UP_MENU_BUTTON;
     }
 }

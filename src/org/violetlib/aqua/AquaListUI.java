@@ -73,6 +73,8 @@ public class AquaListUI extends BasicListUI implements AquaComponentUI, AquaView
     private boolean isStriped;
     private boolean isInset;
     private boolean isMenu;
+    private AquaComboBoxType comboBoxType;
+    private AquaUIPainter.Size comboBoxSize;
     private boolean isVibrantMenu;
     private boolean isRoundedScrollable;
 
@@ -97,9 +99,11 @@ public class AquaListUI extends BasicListUI implements AquaComponentUI, AquaView
         colors = AquaColors.CONTAINER_COLORS;
     }
 
-    public void configureAsMenu(boolean isVibrant) {
+    public void configureAsMenu(@NotNull AquaComboBoxType type, @NotNull AquaUIPainter.Size size, boolean isVibrant) {
         isMenu = true;
         isVibrantMenu = isVibrant;
+        comboBoxType = type;
+        comboBoxSize = size;
         updateVibrantEffects();
     }
 
@@ -799,18 +803,42 @@ public class AquaListUI extends BasicListUI implements AquaComponentUI, AquaView
         if (cellHeights != null) {
             int fixedCellHeight = list.getFixedCellHeight();
             if (fixedCellHeight == -1) {
+                int minimumHeight = getMinimumRowHeight();
                 int extraHeight = 0;
                 Insets s = getSelectionInsets();
                 extraHeight += (s.top + s.bottom);
                 s = getContentInsets();
                 extraHeight += (s.top + s.bottom);
-                if (extraHeight > 0) {
+                if (extraHeight > 0 || minimumHeight > 0) {
                     for (int index = 0; index < cellHeights.length; index++) {
                         cellHeights[index] += extraHeight;
+                        if (minimumHeight > 0 && cellHeights[index] < minimumHeight) {
+                            cellHeights[index] = minimumHeight;
+                        }
                     }
                 }
             }
         }
+    }
+
+    public @NotNull Dimension getBestPopupSize(int rowCount) {
+        // fixed height not supported (it is not used for popup menus)
+        ListCellRenderer<Object> renderer = list.getCellRenderer();
+        Dimension popupSize = new Dimension();
+        int minimumHeight = getMinimumRowHeight();
+        SelectionHighlightDescription s = getMenuSelectionDescription();
+        Insets contentInsets = getContentInsets();
+        int extraWidth = s.left + s.right + contentInsets.left + contentInsets.right;
+        int extraHeight = s.top + s.bottom + contentInsets.top + contentInsets.bottom;
+        for (int i = 0; i < rowCount; i++) {
+            Object value = list.getModel().getElementAt(i);
+            Component c = renderer.getListCellRendererComponent(list, value, i, false, false);
+            Dimension prefSize = c.getPreferredSize();
+            int h = Math.max(prefSize.height + extraHeight, minimumHeight);
+            popupSize.height += h;
+            popupSize.width = Math.max(prefSize.width + extraWidth, popupSize.width);
+        }
+        return popupSize;
     }
 
     protected @NotNull SelectionHighlightDescription getSelectionDescription()
@@ -832,8 +860,8 @@ public class AquaListUI extends BasicListUI implements AquaComponentUI, AquaView
     public @NotNull Insets getSelectionInsets() {
         int top = 0;
         int bottom = 0;
-        int leading = 9;
-        int trailing = 10;
+        int leading = isMenu ? 4 : 9;
+        int trailing = isMenu ? 4 : 10;
 
         if (sidebarContainerSupport != null) {
             JScrollPane sp = sidebarContainerSupport.getConfiguredScrollPaneAncestor();
@@ -855,7 +883,8 @@ public class AquaListUI extends BasicListUI implements AquaComponentUI, AquaView
     @Override
     public @NotNull Insets getContentInsets() {
         if (isMenu) {
-            return new Insets(0, 0, 0, 0);
+            int side = comboBoxType == AquaComboBoxType.PULL_DOWN_MENU_BUTTON ? 8 : 4;
+            return new Insets(0, side, 0, side);
         }
         boolean isInset = isInset();
         boolean isSideBar = isSideBar();
@@ -863,6 +892,13 @@ public class AquaListUI extends BasicListUI implements AquaComponentUI, AquaView
         int v = isInset ? isRoundedScrollable ? 10 : 5 : 0;
         int side = isGlass || isInset ? (OSVersion >= macOS11 ? 9 : 5) : 0;
         return new Insets(v, side, v, side);
+    }
+
+    private int getMinimumRowHeight() {
+        if (isMenu) {
+            return AquaUtils.getMinimumMenuRowHeight(comboBoxSize);
+        }
+        return 0;
     }
 
     @Override

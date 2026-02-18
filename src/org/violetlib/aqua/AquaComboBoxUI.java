@@ -214,7 +214,7 @@ public class AquaComboBoxUI extends BasicComboBoxUI
 
     public void rolloverStateChanged(boolean isRollover)
     {
-        configure(null);
+        //configure(null);
     }
 
     private void configureFocusable(JComboBox c) {
@@ -1181,6 +1181,11 @@ public class AquaComboBoxUI extends BasicComboBoxUI
                 arrowButton.setBounds(0, 0, width, height);
             }
         }
+    }
+
+    public @NotNull AquaComboBoxType getComboBoxType()
+    {
+        return getComboBoxType(comboBox);
     }
 
     public static @NotNull AquaComboBoxType getComboBoxType(JComboBox<?> c) {

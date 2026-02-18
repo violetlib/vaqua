@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2025 Alan Snyder.
+ * Copyright (c) 2021-2026 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -27,20 +27,12 @@ import static org.violetlib.jnr.aqua.AquaUIPainter.Size;
  * checkmark, as needed.
  */
 
-
 @SuppressWarnings("serial") // Superclass is not serializable across versions
 public class AquaComboBoxRenderer implements ListCellRenderer<Object>, UIResource {
 
-    protected static int menuLabelLeftInset = OSVersion >= macOS11 ? 25 : 21;
-    protected static int editableMenuLabelLeftInset = OSVersion >= 1015 ? 16 : 5;
-    protected static int menuLabelRightInset = OSVersion >= 1015 ? 19 : 5;
-    protected static int menuLabelTopInset = 2;
-    protected static int menuLabelBottomInset = 3;
     protected static int miniMenuLabelTopInset = 1;
     protected static int miniMenuLabelBottomInset = 0;
-    protected static int checkMarkLeftInset = OSVersion >= macOS11 ? 10 : OSVersion >= 1015 ? 7 : 5;
     protected static int checkMarkTopInset = 3;
-    protected static int pullDownMenuLabelLeftInset = menuLabelRightInset;
 
     protected final @NotNull JComboBox<?> comboBox;
     protected final boolean isList;  // true to render a list cell, false to render the button content
@@ -102,13 +94,14 @@ public class AquaComboBoxRenderer implements ListCellRenderer<Object>, UIResourc
         int left = 0;
         int bottom = 0;
         int right = 0;
-        if (isList) {
-            top = size == Size.MINI ? miniMenuLabelTopInset : menuLabelTopInset;
-            bottom = size == Size.MINI ? miniMenuLabelBottomInset : menuLabelBottomInset;
-            left = comboBox.isEditable()
-              ? editableMenuLabelLeftInset
-              : isPullDown() ? pullDownMenuLabelLeftInset : menuLabelLeftInset;
-            right = menuLabelRightInset;
+
+        if (isList && !comboBox.isEditable() && !isPullDown()) {
+            // leave room for a check mark, and similar on the right side for symmetry
+            left = right = AquaImageFactory.getMenuIconSize(c) + 3; // want 4, but icon has extra space
+            if (size == Size.MINI) {
+                top = miniMenuLabelTopInset;
+                bottom = miniMenuLabelBottomInset;
+            }
         }
         c.setBorder(new EmptyBorder(top, left, bottom, right));
         return c;
@@ -121,7 +114,7 @@ public class AquaComboBoxRenderer implements ListCellRenderer<Object>, UIResourc
             Color color = c.getForeground();
             Icon ic = AquaImageFactory.getProcessedImage(checkMark, color);
             int height = c.getHeight();
-            int left = checkMarkLeftInset;
+            int left = 0;
             int top = Math.max(checkMarkTopInset, (height - ic.getIconHeight() - 1) / 2);
             ic.paintIcon(c, g, left, top);
         }

@@ -32,5 +32,5 @@
 - (void) configureWithLeftInset: (jint) leftInset
                      rightInset: (jint) rightInset
                    cornerRadius: (jint) cornerRadius;
-- (void) updateWithFrame: (NSRect) frameRect;
+- (void) setFullFrame: (NSRect) frameRect;
 @end

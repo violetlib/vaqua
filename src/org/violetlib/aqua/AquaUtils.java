@@ -1251,6 +1251,18 @@ final public class AquaUtils {
         return version >= macOS26 ? 6 : 4;
     }
 
+    public static int getMinimumMenuRowHeight(@Nullable AquaUIPainter.Size size) {
+        if (size == null) {
+            return 0;
+        }
+        switch (size) {
+            case MINI: return 18;
+            case SMALL: return 20;
+            default:
+                return 22;
+        }
+    }
+
     /**
      * Fill shape using anti-aliasing.
      */
