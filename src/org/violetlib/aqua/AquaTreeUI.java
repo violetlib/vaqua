@@ -450,8 +450,8 @@ public class AquaTreeUI extends BasicTreeUI
 
     protected void configureVibrantEffects() {
         if (sidebarVibrantEffects != null) {
-            Insets s = getSelectionInsets();
-            sidebarVibrantEffects.configureSelection(s.left, s.right);
+            SelectionHighlightDescription s = getSelectionDescription();
+            sidebarVibrantEffects.configureSelection(s.left, s.right, s.cornerRadius);
         }
     }
 

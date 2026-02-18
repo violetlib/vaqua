@@ -327,8 +327,6 @@ public class AquaVibrantSupport {
     private static class VisualEffectViewPeerImpl implements VisualEffectViewPeer {
         private final @NotNull Window w;
         private long nativeNSViewPointer;
-        private int leftInset;
-        private int rightInset;
 
         public VisualEffectViewPeerImpl(@NotNull Window w, long nativeNSViewPointer) {
             this.w = w;
@@ -364,12 +362,8 @@ public class AquaVibrantSupport {
         }
 
         @Override
-        public void configureSelections(int leftInset, int rightInset) {
-            int oldLeftInset = this.leftInset;
-            int oldRightInset = this.rightInset;
-            this.leftInset = leftInset;
-            this.rightInset = rightInset;
-            int rc = nativeConfigureSelections(nativeNSViewPointer, oldLeftInset, oldRightInset, leftInset, rightInset);
+        public void configureSelections(int leftInset, int rightInset, int cornerRadius) {
+            int rc = nativeConfigureSelections(nativeNSViewPointer, leftInset, rightInset, cornerRadius);
             if (rc != 0) {
                 Utils.logError("configureSelections failed");
             }
@@ -380,7 +374,7 @@ public class AquaVibrantSupport {
             if (sd == null) {
                 rc = nativeRemoveSelectionBackgrounds(nativeNSViewPointer);
             } else {
-                rc = nativeUpdateSelectionBackgrounds(nativeNSViewPointer, sd.getData(), leftInset, rightInset);
+                rc = nativeUpdateSelectionBackgrounds(nativeNSViewPointer, sd.getData());
             }
             if (rc != 0) {
                 Utils.logError("updateSelectionBackgrounds failed");
@@ -399,7 +393,7 @@ public class AquaVibrantSupport {
     private static native long nativeCreateVisualEffectView(long w, int style, boolean supportSelections, boolean forceActive);
     private static native int setViewFrame(long viewPtr, int x, int y, int width, int height, int yflipped);
     private static native int nativeRemoveSelectionBackgrounds(long viewPtr);
-    private static native int nativeUpdateSelectionBackgrounds(long viewPtr, int[] data, int leftInset, int rightInset);
-    private static native int nativeConfigureSelections(long viewPtr, int oldLeftInset, int oldRightInset, int leftInset, int rightInset);
+    private static native int nativeUpdateSelectionBackgrounds(long viewPtr, int[] data);
+    private static native int nativeConfigureSelections(long viewPtr, int leftInset, int rightInset, int cornerRadius);
     private static native int disposeVisualEffectView(long viewPtr);
 }

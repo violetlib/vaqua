@@ -105,8 +105,6 @@ NSString *createFrameDescription(NSRect frame)
 NSString *createLayerDescription(CALayer *layer)
 {
     if (layer) {
-        NSString *description = [layer debugDescription];
-        NSRect frame = layer.frame;
         NSString *od = layer.opaque ? @" Opaque" : @"";
         NSString *md = layer.masksToBounds ? @" Masks" : @"";
         NSString *rd = layer.cornerRadius > 0 ? [NSString stringWithFormat: @"Corner=%.2f", layer.cornerRadius] : @"";
@@ -2464,10 +2462,10 @@ JNIEXPORT jint JNICALL Java_org_violetlib_aqua_AquaVibrantSupport_nativeRemoveSe
 /*
  * Class:     org_violetlib_aqua_AquaVibrantSupport
  * Method:    nativeUpdateSelectionBackgrounds
- * Signature: (J[III)I
+ * Signature: (J[I)I
  */
 JNIEXPORT jint JNICALL Java_org_violetlib_aqua_AquaVibrantSupport_nativeUpdateSelectionBackgrounds
-    (JNIEnv *env, jclass cl, jlong ptr, jintArray jdata, jint leftInset, jint rightInset)
+    (JNIEnv *env, jclass cl, jlong ptr, jintArray jdata)
 {
     __block jint result = -1;
 
@@ -2483,7 +2481,7 @@ JNIEXPORT jint JNICALL Java_org_violetlib_aqua_AquaVibrantSupport_nativeUpdateSe
             int *data = (*env)->GetIntArrayElements(env, jdata, NULL);
             if (data != NULL) {
                 runOnMainThread(^() {
-                    [sbb updateSelectionViews: data leftInset: leftInset rightInset: rightInset];
+                    [sbb updateSelectionViews: data];
                     result = 0;
                 });
                 (*env)->ReleaseIntArrayElements(env, jdata, data, JNI_ABORT);
@@ -2499,10 +2497,10 @@ JNIEXPORT jint JNICALL Java_org_violetlib_aqua_AquaVibrantSupport_nativeUpdateSe
 /*
  * Class:     org_violetlib_aqua_AquaVibrantSupport
  * Method:    nativeConfigureSelections
- * Signature: (JII)I
+ * Signature: (JIII)I
  */
 JNIEXPORT jint JNICALL Java_org_violetlib_aqua_AquaVibrantSupport_nativeConfigureSelections
-    (JNIEnv *env, jclass cl, jlong ptr, jint oldLeftInset, jint oldRightInset, jint leftInset, jint rightInset)
+    (JNIEnv *env, jclass cl, jlong ptr, jint leftInset, jint rightInset, jint cornerRadius)
 {
     __block jint result = -1;
 
@@ -2515,10 +2513,9 @@ JNIEXPORT jint JNICALL Java_org_violetlib_aqua_AquaVibrantSupport_nativeConfigur
     if ([view isKindOfClass: [AquaSidebarBackground class]]) {
         AquaSidebarBackground *sbb = (AquaSidebarBackground*) view;
         runOnMainThread(^() {
-            [sbb configureSelectionsWithOldLeftInset: oldLeftInset
-                                       oldRightInset: oldRightInset
-                                           leftInset: leftInset
-                                          rightInset: rightInset];
+            [sbb configureSelectionsWithLeftInset:leftInset
+                                       rightInset:rightInset
+                                     cornerRadius:cornerRadius];
             result = 0;
         });
     }

@@ -11,13 +11,26 @@
 #import <jni.h>
 
 @interface AquaSidebarBackground : AquaVisualEffectView
-- (AquaSidebarBackground *) initWithFrame: (NSRect) frameRect style: (UInt16) style forceActive: (BOOL) forceActive;
+- (AquaSidebarBackground *) initWithFrame: (NSRect) frameRect
+                                    style: (UInt16) style
+                              forceActive: (BOOL) forceActive;
 - (void) removeSelectionViews;
-- (void) configureSelectionsWithOldLeftInset: (jint) oldLeftInset
-                               oldRightInset: (jint) oldRightInset
-                                   leftInset: (jint) leftInset
-                                  rightInset: (jint) rightInset;
-- (void) updateSelectionViews: (int*) data
-                    leftInset: (jint) leftInset
-                   rightInset: (jint) rightInset;
+- (void) configureSelectionsWithLeftInset: (jint) leftInset
+                               rightInset: (jint) rightInset
+                             cornerRadius: (jint) cornerRadius;
+- (void) updateSelectionViews: (int*) data;
+@end
+
+@interface AquaSelectionView : AquaVisualEffectView
+- (AquaSelectionView *) initWithFrame: (NSRect) frameRect
+                           emphasized: (BOOL) emphasized
+                          forceActive: (BOOL) forceActive
+                             material: (NSVisualEffectMaterial) material;
+- (void) reuseWithFrame: (NSRect) frameRect
+           emphasized: (BOOL) emphasized
+          forceActive: (BOOL) forceActive;
+- (void) configureWithLeftInset: (jint) leftInset
+                     rightInset: (jint) rightInset
+                   cornerRadius: (jint) cornerRadius;
+- (void) updateWithFrame: (NSRect) frameRect;
 @end

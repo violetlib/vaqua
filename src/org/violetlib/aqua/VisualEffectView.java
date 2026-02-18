@@ -58,9 +58,9 @@ public class VisualEffectView {
         }
     }
 
-    public void configureSelection(int leftInset, int rightInset) {
+    public void configureSelection(int leftInset, int rightInset, int cornerRadius) {
         if (peer != null && supportSelections) {
-            peer.configureSelections(leftInset, rightInset);
+            peer.configureSelections(leftInset, rightInset, cornerRadius);
         }
     }
 

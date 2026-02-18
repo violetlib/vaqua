@@ -427,8 +427,8 @@ public class AquaListUI extends BasicListUI implements AquaComponentUI, AquaView
 
     protected void configureVibrantEffects() {
         if (vibrantEffects != null) {
-            Insets s = getSelectionInsets();
-            vibrantEffects.configureSelection(s.left, s.right);
+            SelectionHighlightDescription s = getSelectionDescription();
+            vibrantEffects.configureSelection(s.left, s.right, s.cornerRadius);
         }
     }
 

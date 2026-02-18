@@ -15,13 +15,16 @@ BOOL DEBUG = NO;
 // This background is used for sidebars and optionally for menus
 
 @implementation AquaSidebarBackground {
-    NSMutableArray<NSVisualEffectView*> *selectionViews;
+    NSMutableArray<AquaSelectionView*> *selectionViews;
     NSVisualEffectMaterial selectionMaterial;
     BOOL forceActive;
+    BOOL useInset;
+    float selectionLeftInset;
+    float selectionRightInset;
+    float selectionCornerRadius;
 }
 
 - (void) dealloc {
-
     if (selectionViews) {
         [selectionViews release];
         selectionViews = nil;
@@ -30,7 +33,9 @@ BOOL DEBUG = NO;
     [super dealloc];
 }
 
-- (AquaSidebarBackground *) initWithFrame: (NSRect) frameRect style: (UInt16) style forceActive: (BOOL) shouldForceActive {
+- (AquaSidebarBackground *) initWithFrame: (NSRect) frameRect
+                                    style: (UInt16) style
+                              forceActive: (BOOL) shouldForceActive {
     self = [super initWithFrame: frameRect];
 
     if (self) {
@@ -52,85 +57,75 @@ BOOL DEBUG = NO;
         if (shouldForceActive) {
             self.state = NSVisualEffectStateActive;
         }
+        useInset = NO;
+        if (@available(macOS 10.16, *)) {
+            useInset = YES;
+        }
     }
 
     return self;
 }
 
 - (void) removeSelectionViews {
-    [self updateSelectionViews: NULL leftInset: 0 rightInset: 0];
+    [self updateSelectionViews: NULL];
 }
 
-- (void) configureSelectionsWithOldLeftInset: (jint) oldLeftInset
-                               oldRightInset: (jint) oldRightInset
-                                   leftInset: (jint) leftInset
-                                  rightInset: (jint) rightInset {
+- (void) configureSelectionViews {
     int count = (int) selectionViews.count;
-    float width = self.bounds.size.width;
-
-    BOOL useInset = NO;
-    if (@available(macOS 10.16, *)) {
-        useInset = YES;
-    }
 
     if (DEBUG) {
-        NSLog(@"Configuring selection views %@ %f %f %ld %ld",
+        NSLog(@"Configuring selection views %@ %d %f %f %f",
             [self description],
-            self.frame.size.width,
-            self.frame.size.height,
             count,
-            useInset);
+            selectionLeftInset,
+            selectionRightInset,
+            selectionCornerRadius);
     }
 
     for (int index = 0; index < count; index++) {
-        NSVisualEffectView *v = [selectionViews objectAtIndex:index];
+        AquaSelectionView *v = [selectionViews objectAtIndex:index];
         if (v) {
-            if (DEBUG) {
-                NSLog(@"Configuring visual effect view %@", [v description]);
-            }
-            NSRect f = v.frame;
-            CGFloat x = f.origin.x - oldLeftInset;
-            CGFloat y = f.origin.y;
-            CGFloat w = f.size.width + oldLeftInset + oldRightInset;
-            CGFloat h = f.size.height;
-            NSRect frame = NSMakeRect(x, y, w, h);
-            if (useInset) {
-                frame = NSMakeRect(x + leftInset, y, w - (leftInset + rightInset), h);
-            }
-            v.frame = frame;
-            if (useInset) {
-                v.layer.cornerRadius = 4;
-                v.layer.masksToBounds = YES;
-            }
-            [v.layer setNeedsDisplay];
-            v.needsDisplay = YES;
+            [v configureWithLeftInset:selectionLeftInset
+                           rightInset:selectionRightInset
+                         cornerRadius:selectionCornerRadius];
         }
     }
-
     self.needsDisplay = YES;
 }
 
-- (void) updateSelectionViews: (int*) data
-                    leftInset: (jint) leftInset
-                   rightInset: (jint) rightInset {
+- (void) configureSelectionsWithLeftInset: (jint) leftInset
+                               rightInset: (jint) rightInset
+                             cornerRadius: (jint) cornerRadius {
+    selectionLeftInset = leftInset;
+    selectionRightInset = rightInset;
+    selectionCornerRadius = cornerRadius;
+
+    if (DEBUG) {
+        NSLog(@"Setting selection view configuration parameters %f %f %f",
+            selectionLeftInset,
+            selectionRightInset,
+            selectionCornerRadius);
+    }
+
+    if (useInset) {
+        [self configureSelectionViews];
+    }
+}
+
+// Update the bounds of the selection views
+- (void) updateSelectionViews: (int*) data {
     int *p = data;
     int count = p ? *p++ : 0;
     int index = 0;
     int currentCount = (int) selectionViews.count;
     float width = self.bounds.size.width;
 
-    BOOL useInset = NO;
-    if (@available(macOS 10.16, *)) {
-        useInset = YES;
-    }
-
     if (DEBUG) {
-        NSLog(@"Updating selection views %@ %f %f %ld %ld",
+        NSLog(@"Updating selection views %@ %f %f %d",
             [self description],
             self.frame.size.width,
             self.frame.size.height,
-            count,
-            useInset);
+            count);
     }
 
     for (index = 0; index < count; index++) {
@@ -141,44 +136,30 @@ BOOL DEBUG = NO;
             h = -h;
         }
         NSRect frame = NSMakeRect(0, y, width, h);
-        if (useInset) {
-            frame = NSMakeRect(leftInset, y, width - (leftInset + rightInset), h);
-        }
-        NSVisualEffectView *v = index < currentCount ? [selectionViews objectAtIndex:index] : nil;
+        BOOL emphasized = (self.style != SIDEBAR_STYLE) || useEmphasized;
+
+        AquaSelectionView *v = index < currentCount ? [selectionViews objectAtIndex:index] : nil;
         if (v) {
             if (DEBUG) {
-                NSLog(@"Reusing visual effect view %@", [v description]);
+                NSLog(@"Reusing selection view %@", [v description]);
             }
-            v.frame = frame;
-            v.emphasized = (self.style != SIDEBAR_STYLE) || useEmphasized;
+            [v reuseWithFrame:frame emphasized:emphasized forceActive:forceActive];
             if (useInset) {
-                v.layer.cornerRadius = 4;
-                v.layer.masksToBounds = YES;
+                [v configureWithLeftInset:selectionLeftInset rightInset:selectionRightInset cornerRadius:selectionCornerRadius];
             }
-            if (forceActive) {
-                v.state = NSVisualEffectStateActive;
-            }
-            [v.layer setNeedsDisplay];
-            v.needsDisplay = YES;
         } else {
             if (DEBUG) {
-                NSLog(@"Creating visual effect view");
+                NSLog(@"Creating selection view");
             }
-            v = [[NSVisualEffectView alloc] initWithFrame: frame];
-            v.wantsLayer = YES;
-            v.autoresizingMask = NSViewWidthSizable;
-            v.blendingMode = NSVisualEffectBlendingModeBehindWindow;
-            v.emphasized = (self.style != SIDEBAR_STYLE) || useEmphasized;
-            v.material = selectionMaterial;
-            if (useInset) {
-                v.layer.cornerRadius = 4;
-                v.layer.masksToBounds = YES;
-            }
-            if (forceActive) {
-                v.state = NSVisualEffectStateActive;
-            }
-            [v.layer setNeedsDisplay];
-            v.needsDisplay = YES;
+            v = [[AquaSelectionView alloc] initWithFrame:frame
+                                              emphasized:emphasized
+                                             forceActive:forceActive
+                                                material:selectionMaterial];
+            [v configureWithLeftInset:selectionLeftInset
+                           rightInset:selectionRightInset
+                         cornerRadius:selectionCornerRadius];
+            //[v.layer setNeedsDisplay];
+            //v.needsDisplay = YES;
             [selectionViews addObject: v];
             [self addSubview: v];
         }
@@ -193,16 +174,76 @@ BOOL DEBUG = NO;
     self.needsDisplay = YES;
 }
 
-- (NSVisualEffectView *) createVisualEffectViewWithFrame: (NSRect) frame {
-    NSVisualEffectView *v = [[NSVisualEffectView alloc] initWithFrame: frame];
-    v.blendingMode = NSVisualEffectBlendingModeBehindWindow;
-    v.wantsLayer = YES;
-    v.material = self.material;
-    return v;
-}
-
 - (BOOL) isFlipped {
     return YES;
+}
+
+@end
+
+@implementation AquaSelectionView {
+    NSRect fullFrame;  // frame to which insets are applied
+}
+
+- (AquaSelectionView *) initWithFrame: (NSRect) frameRect
+                           emphasized: (BOOL) emphasized
+                          forceActive: (BOOL) forceActive
+                             material: (NSVisualEffectMaterial) material
+{
+    self = [super initWithFrame: frameRect];
+    if (self) {
+        fullFrame = frameRect;
+        self.emphasized = emphasized;
+        if (forceActive) {
+            self.state = NSVisualEffectStateActive;
+        }
+        self.wantsLayer = YES;
+        self.autoresizingMask = NSViewWidthSizable;
+        self.blendingMode = NSVisualEffectBlendingModeBehindWindow;
+        self.material = material;
+    }
+    return self;
+}
+
+- (void) reuseWithFrame: (NSRect) frameRect
+             emphasized: (BOOL) emphasized
+            forceActive: (BOOL) forceActive
+{
+    self.frame = frameRect;
+    fullFrame = frameRect;
+    self.emphasized = emphasized;
+    if (forceActive) {
+        self.state = NSVisualEffectStateActive;
+    } else {
+        // TBD
+    }
+    [self.layer setNeedsDisplay];
+    self.needsDisplay = YES;
+}
+
+- (void) configureWithLeftInset: (jint) leftInset
+                     rightInset: (jint) rightInset
+                   cornerRadius: (jint) cornerRadius
+{
+    if (DEBUG) {
+        NSLog(@"Configuring selection view %@", [self description]);
+    }
+
+    CGFloat x = fullFrame.origin.x + leftInset;
+    CGFloat y = fullFrame.origin.y;
+    CGFloat w = fullFrame.size.width - (leftInset + rightInset);
+    CGFloat h = fullFrame.size.height;
+    self.frame = NSMakeRect(x, y, w, h);
+    self.layer.cornerRadius = cornerRadius;
+    self.layer.masksToBounds = YES;
+    [self.layer setNeedsDisplay];
+    self.needsDisplay = YES;
+}
+
+- (void) updateWithFrame: (NSRect) frameRect
+{
+    fullFrame = frameRect;
+    self.frame = frameRect;
+    self.needsDisplay = YES;
 }
 
 @end

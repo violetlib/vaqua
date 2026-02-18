@@ -1248,7 +1248,7 @@ final public class AquaUtils {
     public static int getInsetCornerRadius()
     {
         int version = AquaPainting.getVersion();
-        return version >= macOS26 ? 16 : 10;
+        return version >= macOS26 ? 6 : 4;
     }
 
     /**
