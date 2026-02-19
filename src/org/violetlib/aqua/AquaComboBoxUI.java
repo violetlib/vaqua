@@ -380,7 +380,9 @@ public class AquaComboBoxUI extends BasicComboBoxUI
             Object widget = bg.getWidget();
             if (widget == BUTTON_POP_UP_RECESSED || widget == BUTTON_POP_DOWN_RECESSED) {
                 if (OSVersion >= macOS11 && OSVersion < macOS26) {
-                    isSelected = true;
+                    if (!pc.appearance.isDark() && pc.appearance.isHighContrast()) {
+                        isSelected = true;
+                    }
                 }
             }
         }
