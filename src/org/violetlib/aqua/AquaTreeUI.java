@@ -114,7 +114,7 @@ public class AquaTreeUI extends BasicTreeUI
     protected @Nullable Boolean _isShallowSideBar;
     private @Nullable LocalSidebarContainerSupport sidebarContainerSupport;
     protected int indentationPerLevel = 16;
-    private final @NotNull Insets SIDEBAR_CONTENT_INSETS = new Insets(1, 5, 1, 5);
+    private final @NotNull Insets SIDEBAR_CONTENT_INSETS = new Insets(1, 6, 1, 6);
     private final @NotNull Insets CONTENT_INSETS = new Insets(1, 1, 1, 1);
     private final @NotNull Insets NO_INSETS = new Insets(0, 0, 0, 0);
 
@@ -451,8 +451,32 @@ public class AquaTreeUI extends BasicTreeUI
     protected void configureVibrantEffects() {
         if (sidebarVibrantEffects != null) {
             SelectionHighlightDescription s = getSelectionDescription();
-            sidebarVibrantEffects.configureSelection(s.left, s.right, s.cornerRadius);
+            int left = s.left;
+            int right = s.right;
+            AquaScrollPaneUI ui = getSidebarScrollPaneUI();
+            if (ui != null) {
+                // Vibrant effects are relative to the scroll pane, which may be wider than the tree.
+                if (!ui.isOverlayScrollBars) {
+                    boolean isLTR = AquaUtils.isLeftToRight(tree);
+                    if (isLTR) {
+                        right += 14;
+                    } else {
+                        left += 14;
+                    }
+                }
+            }
+            sidebarVibrantEffects.configureSelection(left, right, s.cornerRadius);
         }
+    }
+
+    private @Nullable AquaScrollPaneUI getSidebarScrollPaneUI() {
+        if (sidebarContainerSupport != null) {
+            JScrollPane sp = sidebarContainerSupport.getConfiguredScrollPaneAncestor();
+            if (sp != null) {
+                return AquaUtils.getUI(sp, AquaScrollPaneUI.class);
+            }
+        }
+        return null;
     }
 
     private void updateCellFilled() {
@@ -1776,26 +1800,9 @@ public class AquaTreeUI extends BasicTreeUI
             return NO_INSETS;
         }
 
-        int top = 0;
-        int bottom = 0;
-        int leading = 10;
-        int trailing = 10;
-
-        if (sidebarContainerSupport != null) {
-            JScrollPane sp = sidebarContainerSupport.getConfiguredScrollPaneAncestor();
-            if (sp != null) {
-                AquaScrollPaneUI ui = AquaUtils.getUI(sp, AquaScrollPaneUI.class);
-                if (ui != null && !ui.isOverlayScrollBars) {
-                    trailing = 20;
-                }
-            }
-        }
-        boolean isLTR = AquaUtils.isLeftToRight(tree);
-        if (isLTR) {
-            return new Insets(top, leading, bottom, trailing);
-        } else {
-            return new Insets(top, trailing, bottom, leading);
-        }
+        int v = 0;
+        int h = 10;
+        return new Insets(v, h, v, h);
     }
 
     protected @NotNull Color getIconColor() {

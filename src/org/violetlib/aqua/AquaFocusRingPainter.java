@@ -148,7 +148,8 @@ public class AquaFocusRingPainter {
         if (createRoundRectOuter) {
             innerShape = s;
             Rectangle2D r = s.getBounds2D();
-            Shape ss = new RoundRectangle2D.Double(r.getX(), r.getY(), r.getWidth(), r.getHeight(), DEFAULT_CORNER, DEFAULT_CORNER);
+            Shape ss = new RoundRectangle2D.Double(r.getX(), r.getY(), r.getWidth(), r.getHeight(),
+              DEFAULT_CORNER, DEFAULT_CORNER);
             outline = ExpandableOutline.fromShape(ss);
             outerShape = outline.getShape(currentOuterOffset);
         } else {

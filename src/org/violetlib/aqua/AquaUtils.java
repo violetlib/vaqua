@@ -1180,20 +1180,16 @@ final public class AquaUtils {
      */
     public static void paintInsetStripedRow(@NotNull Graphics2D g,
                                             int x, int y, int w, int h, int cornerRadius) {
-        int r = cornerRadius;
-        RoundRectangle2D s = new RoundRectangle2D.Float(x, y, w, h, r, r);
-        fillAntiAliased(g, s);
+        fillRoundRectAntiAliased(g, x, y, w, h, cornerRadius);
     }
 
     /**
      * Paint the isolated inset style highlight for a selected cell.
      */
     public static void paintInsetCellSelection(@NotNull Graphics2D g,
-                                               int cx, int cy, int cw, int ch,
+                                               int x, int y, int w, int h,
                                                int cornerRadius) {
-        int r = cornerRadius;
-        RoundRectangle2D s = new RoundRectangle2D.Float(cx, cy, cw, ch, r, r);
-        fillAntiAliased(g, s);
+        fillRoundRectAntiAliased(g, x, y, w, h, cornerRadius);
     }
 
     /**
@@ -1204,17 +1200,16 @@ final public class AquaUtils {
                                                boolean isSelectedBelow,
                                                int x, int y, int w, int h, int top,
                                                int cornerRadius) {
-        int r = cornerRadius;
-
+        int d = 2 * cornerRadius;
         Shape s;
         if (isSelectedAbove && isSelectedBelow) {
             s = new Rectangle(x, y, w, h);
         } else if (isSelectedAbove) {
-            s = new GeneralRoundRectangle(x, y, w, h - top, 0, 0, 0, 0, r, r, r, r);
+            s = new GeneralRoundRectangle(x, y, w, h - top, 0, 0, 0, 0, d, d, d, d);
         } else if (isSelectedBelow) {
-            s = new GeneralRoundRectangle(x, y + top, w, h - top, r, r, r, r, 0, 0, 0, 0);
+            s = new GeneralRoundRectangle(x, y + top, w, h - top, d, d, d, d, 0, 0, 0, 0);
         } else {
-            s = new RoundRectangle2D.Float(x, y + top, w, h, r, r);
+            s = new RoundRectangle2D.Float(x, y + top, w, h, d, d);
         }
         fillAntiAliased(g, s);
     }
@@ -1225,9 +1220,7 @@ final public class AquaUtils {
     public static void paintInsetMenuItemSelection(@NotNull Graphics2D g,
                                                    int x, int y, int w, int h,
                                                    int cornerRadius) {
-        int r = cornerRadius;
-        RoundRectangle2D s = new RoundRectangle2D.Float(x, y, w, h, r, r);
-        fillAntiAliased(g, s);
+        fillRoundRectAntiAliased(g, x, y, w, h, cornerRadius);
     }
 
     public static @NotNull SelectionHighlightDescription getSelectionDescription(@NotNull Insets s)
@@ -1247,8 +1240,7 @@ final public class AquaUtils {
 
     public static int getInsetCornerRadius()
     {
-        int version = AquaPainting.getVersion();
-        return version >= macOS26 ? 6 : 4;
+        return 6;
     }
 
     public static int getMinimumMenuRowHeight(@Nullable AquaUIPainter.Size size) {
@@ -1261,6 +1253,22 @@ final public class AquaUtils {
             default:
                 return 22;
         }
+    }
+
+    public static void fillRoundRectAntiAliased(@NotNull Graphics2D g, int x, int y, int w, int h, int cornerRadius) {
+        int d = 2 * cornerRadius;
+        Object preserveAntiAliasingRenderingHint = g.getRenderingHint(RenderingHints.KEY_ANTIALIASING);
+        g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        g.fillRoundRect(x, y, w, h, d, d);
+        g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, preserveAntiAliasingRenderingHint);
+    }
+
+    public static void drawRoundRectAntiAliased(@NotNull Graphics2D g, int x, int y, int w, int h, int cornerRadius) {
+        int d = 2 * cornerRadius;
+        Object preserveAntiAliasingRenderingHint = g.getRenderingHint(RenderingHints.KEY_ANTIALIASING);
+        g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        g.drawRoundRect(x, y, w, h, d, d);
+        g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, preserveAntiAliasingRenderingHint);
     }
 
     /**

@@ -238,7 +238,8 @@ public class AquaButtonUI extends BasicButtonUI
         }
         int width = c.getWidth();
         int height = c.getHeight();
-        return new RoundRectangle2D.Double(OUTLINE_OFFSET, OUTLINE_OFFSET, width-2*OUTLINE_OFFSET, height-2*OUTLINE_OFFSET, OUTLINE_CORNER, OUTLINE_CORNER);
+        return new RoundRectangle2D.Double(OUTLINE_OFFSET, OUTLINE_OFFSET,
+          width-2*OUTLINE_OFFSET, height-2*OUTLINE_OFFSET, OUTLINE_CORNER, OUTLINE_CORNER);
     }
 
     @Override

@@ -52,6 +52,7 @@ import javax.swing.text.JTextComponent;
 import org.jetbrains.annotations.*;
 import org.violetlib.jnr.aqua.AquaUIPainter;
 
+import static org.violetlib.aqua.AquaLookAndFeel.ENABLE_VIBRANT_MENU;
 import static org.violetlib.aqua.AquaLookAndFeel.NOTHING_BORDER;
 import static org.violetlib.aqua.OSXSystemProperties.OSVersion;
 import static org.violetlib.aqua.OSXSystemProperties.macOS11;
@@ -101,7 +102,7 @@ public class AquaListUI extends BasicListUI implements AquaComponentUI, AquaView
 
     public void configureAsMenu(@NotNull AquaComboBoxType type, @NotNull AquaUIPainter.Size size, boolean isVibrant) {
         isMenu = true;
-        isVibrantMenu = isVibrant;
+        isVibrantMenu = isVibrant && ENABLE_VIBRANT_MENU;
         comboBoxType = type;
         comboBoxSize = size;
         updateVibrantEffects();
@@ -420,7 +421,7 @@ public class AquaListUI extends BasicListUI implements AquaComponentUI, AquaView
                 configureVibrantEffects();
                 return;
             }
-            if (isVibrantMenu && AquaLookAndFeel.ENABLE_VIBRANT_MENU) {
+            if (isVibrantMenu) {
                 ensureVibrantEffects(AquaVibrantSupport.MENU_STYLE);
                 configureVibrantEffects();
                 return;
@@ -432,8 +433,32 @@ public class AquaListUI extends BasicListUI implements AquaComponentUI, AquaView
     protected void configureVibrantEffects() {
         if (vibrantEffects != null) {
             SelectionHighlightDescription s = getSelectionDescription();
-            vibrantEffects.configureSelection(s.left, s.right, s.cornerRadius);
+            int left = s.left;
+            int right = s.right;
+            AquaScrollPaneUI ui = getSidebarScrollPaneUI();
+            if (ui != null) {
+                // Vibrant effects are relative to the scroll pane, which may be wider than the list.
+                if (!ui.isOverlayScrollBars) {
+                    boolean isLTR = AquaUtils.isLeftToRight(list);
+                    if (isLTR) {
+                        right += 14;
+                    } else {
+                        left += 14;
+                    }
+                }
+            }
+            vibrantEffects.configureSelection(left, right, s.cornerRadius);
         }
+    }
+
+    private @Nullable AquaScrollPaneUI getSidebarScrollPaneUI() {
+        if (sidebarContainerSupport != null) {
+            JScrollPane sp = sidebarContainerSupport.getConfiguredScrollPaneAncestor();
+            if (sp != null) {
+                return AquaUtils.getUI(sp, AquaScrollPaneUI.class);
+            }
+        }
+        return null;
     }
 
     protected void ensureVibrantEffects(int style) {
@@ -862,16 +887,6 @@ public class AquaListUI extends BasicListUI implements AquaComponentUI, AquaView
         int bottom = 0;
         int leading = isMenu ? 4 : 9;
         int trailing = isMenu ? 4 : 10;
-
-        if (sidebarContainerSupport != null) {
-            JScrollPane sp = sidebarContainerSupport.getConfiguredScrollPaneAncestor();
-            if (sp != null) {
-                AquaScrollPaneUI ui = AquaUtils.getUI(sp, AquaScrollPaneUI.class);
-                if (ui != null && !ui.isOverlayScrollBars) {
-                    trailing = 20;
-                }
-            }
-        }
         boolean isLTR = AquaUtils.isLeftToRight(list);
         if (isLTR) {
             return new Insets(top, leading, bottom, trailing);
