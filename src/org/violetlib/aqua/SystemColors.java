@@ -1039,6 +1039,10 @@ public class SystemColors {
             colors.add("selectedTexturedSegmentedToolbarText_inactive", 0, 150);
             colors.add("selectedTexturedSegmentedToolbarText_inactive_disabled", 0, 100);
         } else {
+            if (OSVersion >= macOS11 && OSVersion < 1500) {
+                colors.add("segmentedText_pressed", 0);
+            }
+
             int sbc = OSVersion < 1200 ? 0 : 255;
             int tc = OSVersion >= 1500 ? 255 : 0;
 
