@@ -177,6 +177,9 @@ public class AquaScrollPaneUI extends BasicScrollPaneUI
     protected void installDefaults(JScrollPane scrollpane) {
         Border b = scrollpane.getBorder();
         super.installDefaults(scrollpane);
+
+        LookAndFeel.installProperty(scrollpane, "opaque", Boolean.FALSE);
+
         AquaTextComponentBorder tcb = AquaBorderSupport.get(b, AquaTextComponentBorder.class);
         if (tcb != null) {
             scrollpane.setBorder(tcb);
