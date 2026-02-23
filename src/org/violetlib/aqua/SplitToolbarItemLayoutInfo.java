@@ -43,6 +43,18 @@ public class SplitToolbarItemLayoutInfo extends ButtonLayoutInfo {
 
     @Override
     public @NotNull SplitToolbarItemLayoutInfo extend(@NotNull Insets2D s) {
-        return new SplitToolbarItemLayoutInfo(super.extend(s), offset(iconOutlineBounds, s.getLeft(), s.getTop()), contentInsets);
+        return new SplitToolbarItemLayoutInfo(super.extend(s),
+          offset(iconOutlineBounds, s.getLeft(), s.getTop()), contentInsets);
+    }
+
+    @Override
+    public @NotNull ButtonLayoutInfo offset(float top, float left) {
+        return new SplitToolbarItemLayoutInfo(super.offset(top, left),
+          offset(iconOutlineBounds, left, top), contentInsets);
+    }
+
+    @Override
+    public @NotNull ButtonLayoutInfo toLeftAligned() {
+        return new SplitToolbarItemLayoutInfo(super.toLeftAligned(), iconOutlineBounds, contentInsets);
     }
 }

@@ -23,52 +23,53 @@ import org.jetbrains.annotations.*;
 public class AquaButtonIcon implements Icon, UIResource, ImageObserver {
 
     public interface ImageOperatorSupplier {
-        @Nullable Object getCurrentImageProcessingOperator(@NotNull AbstractButton b, boolean isTemplate, @NotNull PaintingContext pc);
+        @Nullable Object getCurrentImageProcessingOperator(@NotNull AbstractButton b,
+                                                           boolean isTemplate,
+                                                           @NotNull PaintingContext pc);
     }
 
     private final @NotNull AbstractButton b;
+    private final @NotNull Icon basicIcon;
     private final boolean isTemplate;
     private final @NotNull ImageOperatorSupplier operatorSupplier;
 
     /**
      * Create a context-sensitive button icon.
      * @param b The button.
+     * @param basicIcon The basic button icon.
      * @param isTemplate True if the source image is a template image and it should be treated as such.
      * @param operatorSupplier Determines the image processing operator to apply to the source image when the icon is
      *                         painted.
      */
     public AquaButtonIcon(@NotNull AbstractButton b,
+                          @NotNull Icon basicIcon,
                           boolean isTemplate,
                           @NotNull ImageOperatorSupplier operatorSupplier) {
         this.b = b;
+        this.basicIcon = basicIcon;
         this.isTemplate = isTemplate;
         this.operatorSupplier = operatorSupplier;
     }
 
     @Override
     public int getIconWidth() {
-        Icon icon = b.getIcon();
-        return icon != null ? icon.getIconWidth() : 0;
+        return basicIcon.getIconWidth();
     }
 
     @Override
     public int getIconHeight() {
-        Icon icon = b.getIcon();
-        return icon != null ? icon.getIconHeight() : 0;
+        return basicIcon.getIconHeight();
     }
 
     @Override
     public void paintIcon(Component c, Graphics g, int x, int y) {
-        Icon icon = b.getIcon();
-        if (icon != null) {
-            PaintingContext pc = PaintingContext.getDefault();
-            Object operator = operatorSupplier.getCurrentImageProcessingOperator(b, isTemplate, pc);
-            icon = AquaImageFactory.getProcessedImage(icon, operator);
-            // Using the button as the image observer can fail because it aborts drawing the image if the button
-            // does not recognize the image as the proper image for the button in its current state, and its ability
-            // to recognize images is not flexible enough for our usage.
-            icon.paintIcon(c, g, x, y);
-        }
+        PaintingContext pc = PaintingContext.getDefault();
+        Object operator = operatorSupplier.getCurrentImageProcessingOperator(b, isTemplate, pc);
+        Icon icon = AquaImageFactory.getProcessedImage(basicIcon, operator);
+        // Using the button as the image observer can fail because it aborts drawing the image if the button
+        // does not recognize the image as the proper image for the button in its current state, and its ability
+        // to recognize images is not flexible enough for our usage.
+        icon.paintIcon(c, g, x, y);
     }
 
     public boolean isTemplate() {

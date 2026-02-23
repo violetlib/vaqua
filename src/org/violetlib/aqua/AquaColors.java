@@ -74,10 +74,6 @@ public class AquaColors {
     public static final BasicContextualColors RECESSED_BUTTON_COLORS
       = createButtonColors("RecessedButton", "recessedText");
 
-    /** For the toolbar item style of buttons **/
-    public static final BasicContextualColors TOOLBAR_ITEM_COLORS
-      = createButtonColors("ToolbarItem", "toolbarItemText");
-
     /** For buttons in a toolbar **/
     public static final BasicContextualColors TOOLBAR_COLORS
       = createToolbarButtonColors("ToolbarButton", "toolbarBackground", "toolbarText");

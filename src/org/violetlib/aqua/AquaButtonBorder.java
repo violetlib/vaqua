@@ -100,8 +100,8 @@ public abstract class AquaButtonBorder extends AquaBorder implements FocusRingOu
       = new RecyclableSingletonFromDefaultConstructor<>(AquaDisclosureButtonBorder.class);
     public static AquaButtonBorder getDisclosureButtonBorder() { return fDisclosure.get(); }
 
-    protected static final Dimension regularToolbarSize = new Dimension(32, 32);
-    protected static final Dimension smallToolbarSize = new Dimension(24, 24);
+    protected static final Dimension regularToolbarIconSize = new Dimension(32, 32);
+    protected static final Dimension smallToolbarIconSize = new Dimension(24, 24);
 
     protected final AquaButtonIcon.ImageOperatorSupplier imageOperatorSupplier = new MyImageOperatorSupplier();
 
@@ -152,7 +152,7 @@ public abstract class AquaButtonBorder extends AquaBorder implements FocusRingOu
         int version = AquaPainting.getVersion();
         if (bg.getWidget() == BUTTON_TOOLBAR_ITEM && version < macOS26) {
             RoundRectangle2D shape = new RoundRectangle2D.Double(x, y, width - 1, height - 1, 8, 8);
-            AquaButtonSupport.paintToolbarItemBackground(b, (ButtonConfiguration) bg, pc, g, shape);
+            AquaButtonSupport.paintToolbarItemBackground((ButtonConfiguration) bg, pc, g, shape);
             return;
         }
 
@@ -314,10 +314,14 @@ public abstract class AquaButtonBorder extends AquaBorder implements FocusRingOu
 
             // Special case for the text color of a split button, which may be different than the icon color
             // when the icon background is the accent color.
-            if (isSplitToolbarItem(b, g) && !isIcon && state == State.ACTIVE && getButtonState(b) == ON) {
-                bs = OFF;
+            if (isSplitToolbarItem(b, g) && !isIcon) {
+                if (state == State.ROLLOVER) {
+                    state = State.ACTIVE;
+                }
+                if (state == State.ACTIVE && getButtonState(b) == ON) {
+                    bs = OFF;
+                }
             }
-
             return info.getForeground(state, bs, pc.appearance, useNonexclusive, isIcon);
         } else {
             if (state.isInactive() && isSplitToolbarItem(b, g)) {
@@ -350,11 +354,12 @@ public abstract class AquaButtonBorder extends AquaBorder implements FocusRingOu
 
     /**
      * Indicate whether the border for a toolbar item is drawn around the icon only, instead of around the entire
-     * content (icon and label).
+     * content (icon and label). A toolbar item with only an icon is not a split item. A toolbar item with no
+     * icon is probably a mistake, but for consistency it is rendered as if it had an invisible icon.
      */
 
     protected boolean isSplitToolbarItem(@NotNull AbstractButton b, @NotNull GenericButtonConfiguration g) {
-        if (g.getWidget() == BUTTON_TOOLBAR_ITEM && b.getIcon() != null) {
+        if (g.getWidget() == BUTTON_TOOLBAR_ITEM && b.getText() != null) {
             int version = AquaPainting.getVersion();
             return version >= 1500;
         }
@@ -480,7 +485,7 @@ public abstract class AquaButtonBorder extends AquaBorder implements FocusRingOu
     public @Nullable AquaButtonIcon createSpecialIcon(@NotNull AbstractButton b,
                                                       boolean isTemplate,
                                                       @NotNull PaintingContext pc) {
-        return new AquaButtonIcon(b, isTemplate, imageOperatorSupplier);
+        return b.getIcon() != null ? new AquaButtonIcon(b, b.getIcon(), isTemplate, imageOperatorSupplier) : null;
     }
 
     private class MyImageOperatorSupplier implements AquaButtonIcon.ImageOperatorSupplier {
@@ -587,43 +592,41 @@ public abstract class AquaButtonBorder extends AquaBorder implements FocusRingOu
     }
 
     protected @Nullable Dimension getRequiredIconSizeFromConfiguration(@NotNull Configuration g, @Nullable Icon icon) {
-        if (icon != null && g instanceof LayoutConfiguration) {
+        if (g instanceof LayoutConfiguration) {
             return getRequiredIconSize((LayoutConfiguration) g, icon);
         }
         return null;
     }
 
     protected @Nullable Dimension getRequiredIconSize(@NotNull LayoutConfiguration g, @Nullable Icon icon) {
-        if (icon == null) {
-            return null;
-        }
-
         if (g instanceof ButtonLayoutConfiguration) {
             ButtonLayoutConfiguration bg = (ButtonLayoutConfiguration) g;
             AquaUIPainter.ButtonWidget widget = bg.getButtonWidget();
             if (widget == BUTTON_TOOLBAR_ITEM) {
                 int version = AquaPainting.getVersion();
                 if (version >= macOS26) {
-                    return smallToolbarSize;
+                    return smallToolbarIconSize;
                 }
                 Size size = bg.getSize();
                 switch (size) {
                     case SMALL:
                     case MINI:
-                        return smallToolbarSize;
+                        return smallToolbarIconSize;
                     default:
-                        return regularToolbarSize;
+                        return regularToolbarIconSize;
                 }
             }
         }
 
-        int maximumHeight = getButtonIconMaximumHeight(g);
-        if (maximumHeight > 0) {
-            int iconHeight = icon.getIconHeight();
-            if (iconHeight > maximumHeight) {
-                float scaleFactor = maximumHeight / (float) iconHeight;
-                int width = (int) Math.round(Math.ceil(icon.getIconWidth() * scaleFactor));
-                return new Dimension(width, maximumHeight);
+        if (icon != null) {
+            int maximumHeight = getButtonIconMaximumHeight(g);
+            if (maximumHeight > 0) {
+                int iconHeight = icon.getIconHeight();
+                if (iconHeight > maximumHeight) {
+                    float scaleFactor = maximumHeight / (float) iconHeight;
+                    int width = (int) Math.round(Math.ceil(icon.getIconWidth() * scaleFactor));
+                    return new Dimension(width, maximumHeight);
+                }
             }
         }
 

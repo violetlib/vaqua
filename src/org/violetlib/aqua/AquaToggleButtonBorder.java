@@ -31,7 +31,7 @@ public class AquaToggleButtonBorder extends AquaButtonBorder implements FocusRin
     public final @NotNull ButtonStyleInfo getButtonStyleInfo(@NotNull AbstractButton b) {
         boolean isOnToolbar = AquaUtils.isOnToolbar(b);
         if (isOnToolbar) {
-            return AquaButtonSupport.getToolbarItemStyleInfo(b, painter);
+            return AquaButtonSupport.getToolbarButtonStyleInfo(b, painter);
         }
 
         int version = AquaPainting.getVersion();

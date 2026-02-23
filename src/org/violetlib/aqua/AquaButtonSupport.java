@@ -23,7 +23,6 @@ import org.violetlib.jnr.Insetter;
 import org.violetlib.jnr.LayoutInfo;
 import org.violetlib.jnr.aqua.*;
 
-import static org.violetlib.aqua.OSXSystemProperties.macOS11;
 import static org.violetlib.aqua.OSXSystemProperties.macOS26;
 import static org.violetlib.jnr.aqua.AquaUIPainter.ButtonWidget;
 import static org.violetlib.jnr.aqua.AquaUIPainter.ButtonWidget.*;
@@ -207,16 +206,19 @@ public class AquaButtonSupport {
         return null;
     }
 
-    public static @NotNull ButtonStyleInfo getToolbarItemStyleInfo(@NotNull AbstractButton b,
-                                                                   @NotNull AquaUIPainter painter)
-    {
+    /**
+     * Select a button style for a button on a toolbar.
+     */
+    public static @NotNull ButtonStyleInfo getToolbarButtonStyleInfo(@NotNull AbstractButton b,
+                                                                     @NotNull AquaUIPainter painter) {
         // The preference is to use a fixed height style that is compatible with the native toolbar height. For backward
         // compatibility, a variable height style is used on older systems when the text of a text-only button is or may
         // be too tall for the preferred fixed height style.
 
         String text = b.getText();
         Icon icon = b.getIcon();
-        if (icon != null && text != null && !text.isEmpty()) {
+        if (text != null && !text.isEmpty() && (icon != null || getButtonWidget(b) == BUTTON_TOOLBAR_ITEM)) {
+            // If the application specifies a toolbar item, then that style is used even if there is no icon.
             return createToolbarItemStyleInfo(b, BUTTON_TOOLBAR_ITEM);
         }
 
@@ -390,13 +392,15 @@ public class AquaButtonSupport {
             return;
         }
         ButtonLayoutInfo info = engine.getLayoutInfo(viewRect.width, viewRect.height, insets);
-        if (icon != null && info.iconBounds != null) {
+        if (info.iconBounds != null) {
             if (isSplit) {
                 assert bg != null;
                 assert painter != null;
                 paintSplitIconBackground(g, pc, b, bg, painter, info);
             }
-            paintIcon(g, b, icon, info.iconBounds, iconColor);
+            if (icon != null) {
+                paintIcon(g, b, icon, info.iconBounds, iconColor);
+            }
         }
         if (info.labelBounds != null) {
             String text = info.substitutedLabel != null ? info.substitutedLabel : b.getText();
@@ -494,7 +498,7 @@ public class AquaButtonSupport {
                 if (version < macOS26) {
                     int d = 1;
                     RoundRectangle2D shape = new RoundRectangle2D.Double(x, y - d, width - 1, height + 2 * d, 8, 8);
-                    paintToolbarItemBackground(b, bg, pc, g, shape);
+                    paintToolbarItemBackground(bg, pc, g, shape);
                 } else {
                     AquaUIPainter.Size sz = bg.getSize();
                     AquaUIPainter.ButtonWidget w = AquaUIPainter.ButtonWidget.BUTTON_GLASS;
@@ -514,33 +518,22 @@ public class AquaButtonSupport {
         }
     }
 
-    public static void paintToolbarItemBackground(@NotNull AbstractButton b,
-                                                  @NotNull ButtonConfiguration bg,
+    public static void paintToolbarItemBackground(@NotNull ButtonConfiguration bg,
                                                   @NotNull PaintingContext pc,
                                                   @NotNull Graphics2D g,
                                                   @NotNull Shape shape)
     {
-        AquaButtonExtendedTypes.WidgetInfo wi = AquaButtonExtendedTypes.getWidgetInfo(bg.getButtonWidget());
         AquaUIPainter.State state = bg.getState();
         AquaUIPainter.ButtonState bs = bg.getButtonState();
-        boolean useNonexclusive = false;
         boolean isIcon = true;
-        if (bg.getState() == AquaUIPainter.State.PRESSED) {
-            Color c = AquaColors.getBackground(b, pc, "controlBackground", EffectName.EFFECT_DEEP_PRESSED);
-            g.setColor(c);
-            AquaUtils.fillAntiAliased(g, shape);
-        }
-        if (bg.getState() == AquaUIPainter.State.ROLLOVER) {
-            Color c = AquaColors.getBackground(b, pc, "controlBackground", EffectName.EFFECT_ROLLOVER);
-            g.setColor(c);
-            AquaUtils.fillAntiAliased(g, shape);
-        } else if (bg.getButtonState() == AquaUIPainter.ButtonState.ON) {
-            Color c = AquaColors.getBackground(b, pc, "controlBackground", EffectName.EFFECT_PRESSED);
-            g.setColor(c);
-            AquaUtils.fillAntiAliased(g, shape);
-        }
-        if (pc.appearance.isHighContrast()) {
-            Color c = wi.getForeground(state, bs, pc.appearance, useNonexclusive, isIcon);
+        BasicContextualColors colors = AquaColors.TOOLBAR_COLORS;
+        AppearanceContext ac = new AppearanceContext(pc.appearance, state, bs.equals(AquaUIPainter.ButtonState.ON), isIcon);
+        Color c = colors.getBackground(ac);
+        g.setColor(c);
+        AquaUtils.fillAntiAliased(g, shape);
+
+        if (pc.appearance.isHighContrast() && !ac.isSelected()) {
+            c = colors.getForeground(ac);
             g.setColor(c);
             AquaUtils.drawAntiAliased(g, shape);
         }
@@ -614,7 +607,7 @@ public class AquaButtonSupport {
         return null;
     }
 
-    private static @Nullable AquaUIPainter.ButtonWidget getButtonWidget(AbstractButton b) {
+    private static @Nullable AquaUIPainter.ButtonWidget getButtonWidget(@NotNull AbstractButton b) {
         ButtonLayoutConfiguration g = getLayoutConfiguration(b);
         if (g != null) {
             return g.getButtonWidget();
@@ -702,7 +695,7 @@ public class AquaButtonSupport {
         Icon ic = b.getIcon();
         if (ic != null) {
             boolean isTemplate = determineTemplateIconStatus(b);
-            return new AquaButtonIcon(b, isTemplate, keySupplier);
+            return new AquaButtonIcon(b, ic, isTemplate, keySupplier);
         }
         return null;
     }
