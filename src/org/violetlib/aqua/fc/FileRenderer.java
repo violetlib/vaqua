@@ -11,7 +11,6 @@ import java.awt.*;
 import java.awt.geom.Ellipse2D;
 import javax.swing.*;
 import javax.swing.border.Border;
-import javax.swing.border.EmptyBorder;
 import javax.swing.plaf.basic.BasicHTML;
 import javax.swing.text.View;
 
@@ -50,17 +49,7 @@ public class FileRenderer extends JLabel implements ListCellRenderer, GenericCel
         this.textArrowIconGap = UIManager.getInt("FileChooser.browserCellTextArrowIconGap");
         aliasBadgeIcon = UIManager.getIcon("FileView.aliasBadgeIcon");
         arrowIcon = AquaIcon.getBrowserExpandArrowTemplate();
-        border = createBorder();
         setOpaque(true);
-    }
-
-    private static @NotNull Border createBorder() {
-        if (OSXSystemProperties.useInsetViewStyle()) {
-            // Margins are needed to work with the inset view style
-            return new EmptyBorder(2, 18, 2, 18);
-        } else {
-            return new EmptyBorder(0, 4, 2, 0);
-        }
     }
 
     // Overridden for performance reasons.

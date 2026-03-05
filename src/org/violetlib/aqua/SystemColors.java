@@ -224,7 +224,7 @@ public class SystemColors {
         colors.add("texturedText_pressed", 34);
         colors.add("texturedText_inactive_disabled", 211);
 
-        if (OSVersion >= 1500) {
+        if (OSVersion >= macOS11) {
             colors.add("selectedTexturedText", 0);
             colors.add("selectedTexturedText_inactive", 120);
         }
@@ -376,7 +376,7 @@ public class SystemColors {
             colors.add("selectedToolbarText_inactive", 153);
             colors.add("selectedToolbarText_inactive_disabled", 198);
 
-            if (OSVersion >= 1500) {
+            if (OSVersion >= macOS11) {
                 colors.add("selectedToolbarBackground_inactive", 234);
                 colors.add("selectedToolbarText_inactive", 175);
             }
@@ -509,7 +509,7 @@ public class SystemColors {
 
         colors.add("toolbarBackground_rollover", "clear");
         colors.add("toolbarBackground_pressed", "controlBackground_pressed");
-        if (OSVersion >= 1500) {
+        if (OSVersion >= macOS11) {
             colors.add("selectedToolbarBackground", 86);
             colors.add("selectedToolbarBackground_rollover", "selectedToolbarBackground");
             colors.add("selectedToolbarBackground_inactive", 172);
@@ -940,7 +940,7 @@ public class SystemColors {
             colors.add("selectedToolbarText_inactive", "alternateSelectedControlText_disabled");
             colors.add("selectedToolbarText_inactive_disabled", "alternateSelectedControlText_disabled");
 
-            if (OSVersion >= 1500) {
+            if (OSVersion >= macOS11) {
                 colors.add("selectedToolbarBackground_inactive", 39);
                 colors.add("selectedToolbarText_inactive", 93);
             }
@@ -1113,7 +1113,7 @@ public class SystemColors {
 
         colors.add("toolbarBackground_rollover", "clear");
         colors.add("toolbarBackground_pressed", "controlBackground_pressed");
-        if (OSVersion >= 1500) {
+        if (OSVersion >= macOS11) {
             colors.add("selectedToolbarBackground", 171);
             colors.add("selectedToolbarBackground_rollover", "selectedToolbarBackground");
             colors.add("selectedToolbarBackground_inactive", 87);

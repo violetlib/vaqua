@@ -188,7 +188,8 @@ public class AquaScrollBarUI extends ScrollBarUI implements AquaComponentUI {
         int x = 0;
         int y = 0;
 
-        if (bg.getWidget() == LEGACY_SIDEBAR && bg.isTrackSuppressed() && AquaPainting.isSidebarVibrant(fScrollBar)) {
+        ScrollBarWidget w = bg.getWidget();
+        if (w == LEGACY_SIDEBAR && bg.isTrackSuppressed() && AquaPainting.isSidebarVibrant(fScrollBar)) {
             // The track is part of the sidebar, which means it must reveal the vibrant background.
             AquaUtils.fillRect(g, null, 0, 0, width, height);
         }
@@ -206,7 +207,7 @@ public class AquaScrollBarUI extends ScrollBarUI implements AquaComponentUI {
         // If the scroll bar is an overlay scroll bar in non-rollover mode, we may need to offset the rendering to abut
         // the outer edge of the scroll bar
 
-        if (bg.getWidget() == ScrollBarWidget.OVERLAY) {
+        if (w == ScrollBarWidget.OVERLAY) {
             int thickness = getScrollBarThickness(bg);
             if (bg.getOrientation() == Orientation.HORIZONTAL) {
                 y = height - thickness;

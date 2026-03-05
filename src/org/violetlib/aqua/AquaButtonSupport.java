@@ -217,8 +217,9 @@ public class AquaButtonSupport {
 
         String text = b.getText();
         Icon icon = b.getIcon();
-        if (text != null && !text.isEmpty() && (icon != null || getButtonWidget(b) == BUTTON_TOOLBAR_ITEM)) {
+        if (text != null && !text.isEmpty() && (icon != null || AquaButtonExtendedTypes.isToolbarItemStyleSpecified(b))) {
             // If the application specifies a toolbar item, then that style is used even if there is no icon.
+            // The client property must be used, as this method is involved in choosing a widget.
             return createToolbarItemStyleInfo(b, BUTTON_TOOLBAR_ITEM);
         }
 

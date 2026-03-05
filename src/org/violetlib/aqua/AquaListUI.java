@@ -89,7 +89,6 @@ public class AquaListUI extends BasicListUI implements AquaComponentUI, AquaView
     private @Nullable LocalSidebarContainerSupport sidebarContainerSupport;
     protected @NotNull ContainerContextualColors colors;
     protected @Nullable AppearanceContext appearanceContext;
-    private static final Insets insetViewInsets = new Insets(0, 0, 0, 0);  // sides only
     private final HierarchyListener hierarchyListener = new AquaListHierarchyListener();
     private DropTargetListener dropTargetListener;
     private DropTarget knownDropTarget;
@@ -825,25 +824,37 @@ public class AquaListUI extends BasicListUI implements AquaComponentUI, AquaView
 
         // The superclass method does not know about our insets.
 
-        if (cellHeights != null) {
-            int fixedCellHeight = list.getFixedCellHeight();
-            if (fixedCellHeight == -1) {
-                int minimumHeight = getMinimumRowHeight();
-                int extraHeight = 0;
-                Insets s = getSelectionInsets();
-                extraHeight += (s.top + s.bottom);
-                s = getContentInsets();
-                extraHeight += (s.top + s.bottom);
-                if (extraHeight > 0 || minimumHeight > 0) {
-                    for (int index = 0; index < cellHeights.length; index++) {
-                        cellHeights[index] += extraHeight;
-                        if (minimumHeight > 0 && cellHeights[index] < minimumHeight) {
-                            cellHeights[index] = minimumHeight;
-                        }
-                    }
+        int minimumHeight = getMinimumRowHeight();
+        int extraHeight = 0;
+        int extraWidth = 0;
+
+        Insets s = getSelectionInsets();
+        extraHeight += (s.top + s.bottom);
+        extraWidth += (s.left + s.right);
+        s = getContentInsets();
+        extraHeight += (s.top + s.bottom);
+        extraWidth += (s.left + s.right);
+
+        if (extraHeight > 0 || minimumHeight > 0) {
+            if (cellHeights != null) {
+                for (int index = 0; index < cellHeights.length; index++) {
+                    cellHeights[index] = extendCellHeight(cellHeights[index], minimumHeight, extraHeight);
                 }
+            } else {
+                cellHeight = extendCellHeight(cellHeight, minimumHeight, extraHeight);
             }
         }
+        if (extraWidth > 0) {
+            cellWidth += extraWidth;
+        }
+    }
+
+    private int extendCellHeight(int h, int minimumHeight, int extraHeight) {
+        h += extraHeight;
+        if (minimumHeight > 0 && h < minimumHeight) {
+            h = minimumHeight;
+        }
+        return h;
     }
 
     public @NotNull Dimension getBestPopupSize(int rowCount) {
@@ -909,7 +920,7 @@ public class AquaListUI extends BasicListUI implements AquaComponentUI, AquaView
         return new Insets(v, side, v, side);
     }
 
-    private int getMinimumRowHeight() {
+    protected int getMinimumRowHeight() {
         if (isMenu) {
             return AquaUtils.getMinimumMenuRowHeight(comboBoxSize);
         }

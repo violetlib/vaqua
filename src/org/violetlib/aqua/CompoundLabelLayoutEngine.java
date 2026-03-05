@@ -301,10 +301,10 @@ public class CompoundLabelLayoutEngine {
 
     private static int maxHeight(@Nullable Rectangle r1, @Nullable Rectangle r2) {
         int height = 0;
-        if (r1 != null && r1.width > height) {
+        if (r1 != null && r1.height > height) {
             height = r1.height;
         }
-        if (r2 != null && r2.width > height) {
+        if (r2 != null && r2.height > height) {
             height = r2.height;
         }
         return height;

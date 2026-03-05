@@ -94,7 +94,7 @@ public class JBrowser extends JComponent implements Scrollable {
     /**
      * The fixed width of the list column cells.
      */
-    private int fixedCellWidth = 175;
+    private int fixedCellWidth = 154;
 
     /**
      * The minimum column width.

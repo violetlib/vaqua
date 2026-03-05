@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2025 Alan Snyder.
+ * Copyright (c) 2015-2026 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -291,10 +291,12 @@ public class AquaScrollPaneLayout extends ScrollPaneLayout implements UIResource
         isVerticalScrollBarNeeded = false;
         isHorizontalScrollBarNeeded = false;
         if (vsb != null && !isEmpty && vsbPolicy != VERTICAL_SCROLLBAR_NEVER) {
-            isVerticalScrollBarNeeded = !viewTracksViewportHeight && (viewPrefSize.height > extentSize.height);
+            isVerticalScrollBarNeeded = vsbPolicy == VERTICAL_SCROLLBAR_ALWAYS
+              || !viewTracksViewportHeight && (viewPrefSize.height > extentSize.height);
         }
         if (hsb != null && !isEmpty && hsbPolicy != HORIZONTAL_SCROLLBAR_NEVER) {
-            isHorizontalScrollBarNeeded = !viewTracksViewportWidth && (viewPrefSize.width > extentSize.width);
+            isHorizontalScrollBarNeeded = hsbPolicy == HORIZONTAL_SCROLLBAR_ALWAYS
+              || !viewTracksViewportWidth && (viewPrefSize.width > extentSize.width);
         }
     }
 }

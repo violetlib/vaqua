@@ -158,6 +158,13 @@ public class AquaButtonExtendedTypes {
         return null;
     }
 
+    public static boolean isToolbarItemStyleSpecified(@NotNull AbstractButton b) {
+        Object buttonTypeProperty = b.getClientProperty(AquaButtonUI.BUTTON_TYPE);
+        return "toolbarItem".equals(buttonTypeProperty)
+          || "well".equals(buttonTypeProperty)
+          || "icon".equals(buttonTypeProperty);
+    }
+
     public static WidgetInfo getTabWidgetInfo(@NotNull SegmentedButtonWidget widget,
                                               AquaUIPainter.Size sz,
                                               Position pos) {
@@ -572,11 +579,6 @@ public class AquaButtonExtendedTypes {
 
         if (OSVersion >= macOS11) {
             texturedToolbar = texturedToolbar.withRolloverEnabled();
-            // Choosing widgets for default toolbar buttons involves testing font sizes. Although the larger fonts fit
-            // in the bezels, they do not fit in the content areas, which were chosen so that icon sizes match other
-            // toolbar components. Smaller fonts are required.
-            texturedToolbar = texturedToolbar.withFontFinder(
-              (sz) -> UIManager.getFont("Button.font").deriveFont(fontSize(sz, 13, 11, 8, 7)));
         }
 
         result.put(BUTTON_TEXTURED, textured);

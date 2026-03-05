@@ -142,6 +142,8 @@ public class AquaButtonUI extends BasicButtonUI
             // variant as part of its configuration of the button. The border performs all of the configuration based on
             // a defined button type.
 
+            b.putClientProperty(LAYOUT_CONFIGURATION_PROPERTY, null);
+
             boolean isToolbar = AquaButtonSupport.isToolbar(b);
             AquaButtonExtendedTypes.TypeSpecifier type = AquaButtonExtendedTypes.getTypeSpecifier(b, isToolbar);
             installBorder(b, type, isToolbar);
