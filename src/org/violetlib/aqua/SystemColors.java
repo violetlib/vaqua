@@ -77,7 +77,7 @@ public class SystemColors {
         colors.add("bottomTexturedWindowDivider", "separator");
         colors.add("bottomTexturedWindowDivider_disabled", "separator_disabled");
 
-        colors.add("text_inactive", "text");
+        colors.add("text_inactive", "text_disabled");
         colors.add("selectedText_inactive", "unemphasizedSelectedText");
         colors.add("textBackground_inactive", "textBackground");
         colors.add("searchFieldPrompt", "text_disabled");

@@ -129,7 +129,7 @@ public abstract class AquaTextComponentUIBase
             boolean hasFocus = AquaFocusHandler.hasFocus(editor);
             return isActive
               ? (hasFocus ? AquaUIPainter.State.ACTIVE_DEFAULT : AquaUIPainter.State.ACTIVE)
-              : AquaUIPainter.State.INACTIVE;
+              : AquaUtils.isOnToolbar(editor) ? AquaUIPainter.State.INACTIVE : AquaUIPainter.State.ACTIVE;
         } else {
             return AquaUIPainter.State.DISABLED;
         }
