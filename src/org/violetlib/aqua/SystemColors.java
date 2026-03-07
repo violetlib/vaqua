@@ -238,24 +238,18 @@ public class SystemColors {
         }
 
         // colors related to recessed buttons
-        colors.add("recessedText", 0, 160);
-        colors.add("recessedText_disabled", 0, 64);
-        colors.add("recessedText_inactive", 0, 64);
+        colors.defineTextInactiveDisabled("recessedText", 0, 160, 64, 32);
         colors.add("recessedText_pressed", 255);
         colors.add("recessedText_rollover", 255);
-        colors.add("recessedText_inactive_disabled", 0, 32);
 
         if (OSVersion >= macOS11) {
             colors.add("recessedText", 0, 140);
             if (OSVersion < macOS26) {
                 colors.add("recessedText_rollover", 0);
             }
-            colors.add("selectedRecessedText", 0, 206);
-            colors.add("selectedRecessedText_disabled", 0, 64);
+            colors.defineTextInactiveDisabled("selectedRecessedText", 0, 206, 64, 32);
             colors.add("selectedRecessedText_pressed", 0, 140);
             colors.add("selectedRecessedText_rollover", 0, 140);
-            colors.add("selectedRecessedText_inactive", 0, 64);
-            colors.add("selectedRecessedText_inactive_disabled", 0, 32);
         }
 
         // colors related to push buttons
@@ -313,10 +307,7 @@ public class SystemColors {
             colors.add("selectedNonexclusiveTexturedText", 37, 125, 252);
             colors.add("selectedNonexclusiveTexturedText_disabled", 37, 125, 252, 120);
         } else {
-            colors.add("selectedNonexclusiveTexturedText", "controlAccent");
-            colors.add("selectedNonexclusiveTexturedText_rollover", "controlAccent");
-            colors.add("selectedNonexclusiveTexturedText_disabled", "controlAccent_disabled");
-            colors.add("selectedNonexclusiveTexturedText_inactive", "segmentedText_disabled");
+            colors.defineText("selectedNonexclusiveTexturedText", "controlAccent");
         }
 
         if (OSVersion >= macOS11) {
@@ -337,10 +328,7 @@ public class SystemColors {
             colors.add("selectedTexturedSegmentedToolbarText_inactive_disabled", 0, 20);
             colors.add("texturedSegmentedToolbarText_inactive_disabled", 0, 36);
         } else {
-            colors.add("texturedSegmentedText", 0, 150);
-            colors.add("texturedSegmentedText_disabled", 0, 64);
-            colors.add("texturedSegmentedText_inactive", 0, 64);
-            colors.add("texturedSegmentedText_inactive_disabled", 0, 32);
+            colors.defineTextInactiveDisabled("texturedSegmentedText", 0, 150, 64, 32);
             colors.add("selectedTexturedSegmentedText_disabled", 255, 144);
             colors.add("selectedTexturedSegmentedText_inactive_disabled", 0, 32);
         }
@@ -715,15 +703,9 @@ public class SystemColors {
         if (OSVersion >= macOS26) {
             colors.addAll("selectedTexturedText", "controlText");
         } else if (OSVersion >= macOS11) {
-            colors.add("selectedTexturedText", 255);
-            colors.add("selectedTexturedText_disabled", 255, 64);
-            colors.add("selectedTexturedText_inactive", 255, 128);
-            colors.add("selectedTexturedText_inactive_disabled", 255, 64);
+            colors.defineTextInactiveDisabled("selectedTexturedText", 255, 128, 64);
         } else {
-            colors.add("selectedTexturedText", 0, 192);
-            colors.add("selectedTexturedText_disabled", 0, 64);
-            colors.add("selectedTexturedText_inactive", 0, 128);
-            colors.add("selectedTexturedText_inactive_disabled", 0, 64);
+            colors.defineTextInactiveDisabled("selectedTexturedText", 0, 192, 128, 64);
         }
 
         colors.add("texturedToolbarText", "controlText");
@@ -732,11 +714,8 @@ public class SystemColors {
         colors.add("texturedToolbarText_inactive_disabled", 255, 32);
 
         if (OSVersion < macOS11) {
-            colors.add("selectedTexturedToolbarText", 0, 128);
-            colors.add("selectedTexturedToolbarText_inactive", "selectedTexturedText_inactive");
-            colors.add("selectedTexturedToolbarText_disabled", 0, 32);
-            colors.add("selectedTexturedToolbarText_inactive_disabled", "selectedTexturedText_inactive_disabled");
-        } else {
+            colors.defineTextInactiveDisabled("selectedTexturedToolbarText", 0, 128, 64, 32);
+       } else {
             colors.addAll("selectedTexturedToolbarText", "controlText");
             colors.add("selectedTexturedToolbarText_inactive", "selectedTexturedText_inactive");
             colors.add("texturedToolbarText", 255, 134);
@@ -793,10 +772,7 @@ public class SystemColors {
 
             colors.add("texturedSegmentedText", "controlText");
 
-            colors.add("texturedSegmentedToolbarText", "texturedText");
-            colors.add("texturedSegmentedToolbarText_disabled", "texturedText_disabled");
-            colors.add("texturedSegmentedToolbarText_inactive", "texturedText_inactive");
-            colors.add("texturedSegmentedToolbarText_inactive_disabled", "texturedText_inactive_disabled");
+            colors.defineText("texturedSegmentedToolbarText", "texturedText");
 
             colors.add("selectedTexturedSegmentedToolbarText", "controlText");
             colors.add("selectedTexturedSegmentedToolbarText_disabled", "selectedTexturedText_disabled");
@@ -935,10 +911,7 @@ public class SystemColors {
             colors.add("toolbarText_inactive", "disabledControlText");
             colors.add("toolbarText_disabled", "disabledControlText");
             colors.add("toolbarText_focused", "alternateSelectedControlText");
-            colors.add("selectedToolbarText", "alternateSelectedControlText");
-            colors.add("selectedToolbarText_disabled", "alternateSelectedControlText_disabled");
-            colors.add("selectedToolbarText_inactive", "alternateSelectedControlText_disabled");
-            colors.add("selectedToolbarText_inactive_disabled", "alternateSelectedControlText_disabled");
+            colors.defineText("selectedToolbarText", "alternateSelectedControlText");
 
             if (OSVersion >= macOS11) {
                 colors.add("selectedToolbarBackground_inactive", 39);
@@ -1073,33 +1046,22 @@ public class SystemColors {
             colors.add("selectedBevelText_rollover", sbc);
             colors.add("selectedBevelText_inactive", 0);
 
-            colors.add("selectedTexturedText", tc);
-            colors.add("selectedTexturedToolbarText", tc);
-            colors.add("selectedTexturedText_disabled", tc, 100);
-            colors.add("selectedTexturedToolbarText_disabled", tc, 100);
+            colors.defineText("selectedTexturedText", tc, 100);
+            colors.defineText("selectedTexturedToolbarText", "selectedTexturedText");
+            colors.defineText("selectedSegmentedText", "selectedTexturedText");
+            colors.defineText("selectedTexturedSegmentedToolbarText", "selectedSegmentedText");
 
             colors.add("selectedGradientText", 255);
             colors.add("selectedGradientText_disabled", 0, 100);
             colors.add("selectedRoundText", 255);
+            colors.add("selectedRoundText_inactive", 255);
             colors.add("selectedRecessedText", 0);
             colors.add("selectedRoundedRectText", 255);
 
-            colors.add("selectedSegmentedText", 0);
-            colors.add("selectedSegmentedText_inactive", 0, 100);
-            colors.add("selectedSegmentedText_disabled", 0, 100);
-            colors.add("selectedSegmentedText_inactive_disabled", 0, 100);
-
             {
                 int base = 255;
-                colors.add("selectedNonexclusiveText", base);
-                colors.add("selectedNonexclusiveText_inactive", 0);
-                colors.add("selectedNonexclusiveText_disabled", 0, 100);
-                colors.add("selectedNonexclusiveText_inactive_disabled", 0, 100);
-
-                colors.add("selectedSegmentedSeparatedText", base);
-                colors.add("selectedSegmentedSeparatedText_inactive", 0);
-                colors.add("selectedSegmentedSeparatedText_disabled", 0, 100);
-                colors.add("selectedSegmentedSeparatedText_inactive_disabled", 0, 100);
+                colors.defineText("selectedNonexclusiveText", base, 0, 100);
+                colors.defineText("selectedSegmentedSeparatedText", "selectedNonexclusiveText");
             }
 
             if (OSVersion < macOS11) {
