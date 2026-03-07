@@ -61,6 +61,7 @@ public class MenuVibrantEffects extends VisualEffectView {
     @Override
     protected void windowChanged(Window newWindow) {
         super.windowChanged(newWindow);
+        configureSelection(4, 4, 4);
         if (bt != null) {
             bt.reset();
         }
