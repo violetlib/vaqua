@@ -253,9 +253,8 @@ public class AquaButtonSupport {
         if (size != null) {
             return size;
         }
-
-        // The tallest segmented buttons are regular.
-        return REGULAR;
+        size = AquaUtils.getToolbarSize(widget);
+        return size != null ? size : REGULAR;
     }
 
     public static @NotNull ButtonStyleInfo getButtonStyleInfo(@NotNull AbstractButton b,
@@ -263,7 +262,8 @@ public class AquaButtonSupport {
         if (w instanceof AquaUIPainter.SegmentedButtonWidget) {
             return getSegmentedButtonStyleInfo(b, (AquaUIPainter.SegmentedButtonWidget) w);
         }
-        AquaUIPainter.Size size = AquaUtils.getSize(b, false, w);
+        boolean isToolbar = AquaButtonSupport.isToolbar(b);
+        AquaUIPainter.Size size = AquaUtils.getSize(b, isToolbar, w);
         return new ButtonStyleInfo(w, size);
     }
 
@@ -308,7 +308,8 @@ public class AquaButtonSupport {
         if (text == null || text.isEmpty()) {
             return true;
         }
-        AquaUIPainter.Size size = AquaUtils.getSize(b, true, widget);
+        boolean isToolbar = AquaButtonSupport.isToolbar(b);
+        AquaUIPainter.Size size = AquaUtils.getSize(b, isToolbar, widget);
         LayoutConfiguration g = createLTestLayoutConfiguration(widget, size);
         size = g.getSize();  // actual size may differ
         LayoutInfo layoutInfo = painter.getLayoutInfo().getLayoutInfo(g);

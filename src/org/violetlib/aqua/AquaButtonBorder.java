@@ -668,10 +668,6 @@ public abstract class AquaButtonBorder extends AquaBorder implements FocusRingOu
         return AquaButtonExtendedTypes.getWidgetInfo(widget);
     }
 
-    protected boolean shouldUseIconicWidget(@NotNull AbstractButton b) {
-        return OSVersion >= macOS11 && isIconOnly(b);
-    }
-
     public static boolean isIconOnly(@NotNull AbstractButton b)
     {
         Icon ic = b.getIcon();
@@ -683,13 +679,6 @@ public abstract class AquaButtonBorder extends AquaBorder implements FocusRingOu
             return false;
         }
         return true;
-    }
-
-    protected @NotNull AquaUIPainter.ButtonWidget getIconicWidget(@NotNull AquaUIPainter.ButtonWidget bw) {
-        if (bw == AquaUIPainter.ButtonWidget.BUTTON_TEXTURED_TOOLBAR) {
-            return AquaUIPainter.ButtonWidget.BUTTON_TEXTURED_TOOLBAR_ICONS;
-        }
-        return bw;
     }
 
     /**
@@ -764,9 +753,6 @@ public abstract class AquaButtonBorder extends AquaBorder implements FocusRingOu
         if (widget instanceof AquaUIPainter.ButtonWidget) {
             AquaUIPainter.ButtonWidget bw = (AquaUIPainter.ButtonWidget) widget;
             AquaUIPainter.UILayoutDirection ld = AquaUtils.getLayoutDirection(b);
-            if (shouldUseIconicWidget(b)) {
-                bw = getIconicWidget(bw);
-            }
             return new ButtonLayoutConfiguration(bw, si.size, ld);
         }
         if (widget instanceof AquaUIPainter.SegmentedButtonWidget) {
