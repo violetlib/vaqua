@@ -518,7 +518,6 @@ public class AquaButtonExtendedTypes {
         result.put(BUTTON_TAB, segmentedRounded);
         result.put(SegmentedButtonWidget.BUTTON_SEGMENTED_SLIDER, segmentedRounded);
         result.put(SegmentedButtonWidget.BUTTON_SEGMENTED_SLIDER_TOOLBAR , segmentedRounded);
-        result.put(SegmentedButtonWidget.BUTTON_SEGMENTED_TEXTURED_SEPARATED_TOOLBAR_ICONS, segmentedRounded);
         result.put(BUTTON_SEGMENTED_SEPARATED, segmentedSeparated);
 
         WidgetInfo gradient = new WidgetInfo(AquaColors.GRADIENT_BUTTON_COLORS);
@@ -606,9 +605,7 @@ public class AquaButtonExtendedTypes {
         result.put(BUTTON_SEGMENTED_TEXTURED, segmentedTextured);
         result.put(BUTTON_SEGMENTED_TEXTURED_SEPARATED, segmentedTextured);
         result.put(BUTTON_SEGMENTED_TEXTURED_TOOLBAR, segmentedTexturedToolbar);
-        result.put(BUTTON_SEGMENTED_TEXTURED_TOOLBAR_ICONS, segmentedTexturedToolbar);
         result.put(BUTTON_SEGMENTED_TEXTURED_SEPARATED_TOOLBAR, segmentedTexturedToolbar);
-        result.put(BUTTON_SEGMENTED_TEXTURED_SEPARATED_TOOLBAR_ICONS, segmentedTexturedToolbar);
 
         WidgetInfo segmentedGradient = gradient.copy().withSegmented()
           .withColors(AquaColors.GRADIENT_SEGMENTED_BUTTON_COLORS).withSideMargin(9);

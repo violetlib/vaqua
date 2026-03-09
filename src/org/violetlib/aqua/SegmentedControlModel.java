@@ -335,18 +335,6 @@ public class SegmentedControlModel {
         SegmentedControlModel m = SegmentedControlModel.getSegmentedControlModel(b);
         if (m != null) {
             return getSpecialWidget(m, standardWidget);
-        } else if ("only".equals(AquaButtonExtendedTypes.getValidSegmentPosition(b))) {
-//            if (standardWidget == BUTTON_SEGMENTED && OSXSystemProperties.OSVersion > 1015) {
-//                return BUTTON_SEGMENTED_SLIDER;
-//            }
-            if (AquaButtonBorder.isIconOnly(b)) {
-                // A solo segmented button must be "select any"
-                if (standardWidget == BUTTON_SEGMENTED_TEXTURED_TOOLBAR) {
-                    return BUTTON_SEGMENTED_TEXTURED_TOOLBAR_ICONS;
-                } else if (standardWidget == BUTTON_SEGMENTED_TEXTURED_SEPARATED_TOOLBAR) {
-                    return BUTTON_SEGMENTED_TEXTURED_SEPARATED_TOOLBAR_ICONS;
-                }
-            }
         }
         return null;
     }
@@ -356,33 +344,12 @@ public class SegmentedControlModel {
         if (standardWidget == BUTTON_SEGMENTED && AquaPainting.getVersion() >= macOS26) {
             return BUTTON_SEGMENTED_SLIDER;
         }
-
         if (m.isExclusive()) {
             if (standardWidget == BUTTON_SEGMENTED) {
                 // Special case for the default style of exclusive segmented controls starting in macOS 11
                 return BUTTON_SEGMENTED_SLIDER;
-//            } else if (standardWidget == BUTTON_SEGMENTED_TEXTURED_TOOLBAR) {
-//                // Special case for exclusive textured segmented controls on the toolbar starting in macOS 11.
-//                // Currently not supported by renderers.
-//                if (m.isAllIcon()) {
-//                    return BUTTON_SEGMENTED_SLIDER_TOOLBAR_ICONS;
-//                } else {
-//                    return BUTTON_SEGMENTED_SLIDER_TOOLBAR;
-//                }
-            } else if (standardWidget == BUTTON_SEGMENTED_TEXTURED_SEPARATED_TOOLBAR) {
-                if (m.isAllIcon()) {
-                    return BUTTON_SEGMENTED_TEXTURED_SEPARATED_TOOLBAR_ICONS;
-                }
-            }
-        } else if (m.isAllIcon()) {
-            // Special case for non-exclusive textured segmented controls on the toolbar starting in macOS 11
-            if (standardWidget == BUTTON_SEGMENTED_TEXTURED_TOOLBAR) {
-                return BUTTON_SEGMENTED_TEXTURED_TOOLBAR_ICONS;
-            } else if (standardWidget == BUTTON_SEGMENTED_TEXTURED_SEPARATED_TOOLBAR) {
-                return BUTTON_SEGMENTED_TEXTURED_SEPARATED_TOOLBAR_ICONS;
             }
         }
-
         return null;
     }
 
