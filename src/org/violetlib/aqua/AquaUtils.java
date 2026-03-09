@@ -63,9 +63,8 @@ import org.violetlib.jnr.aqua.AquaUIPainter;
 
 import static org.violetlib.aqua.JavaSupport.FocusEventCause.*;
 import static org.violetlib.aqua.OSXSystemProperties.*;
-import static org.violetlib.jnr.aqua.AquaUIPainter.ButtonWidget.BUTTON_GLASS;
-import static org.violetlib.jnr.aqua.AquaUIPainter.Size.EXTRA_LARGE;
-import static org.violetlib.jnr.aqua.AquaUIPainter.Size.REGULAR;
+import static org.violetlib.jnr.aqua.AquaUIPainter.ButtonWidget.*;
+import static org.violetlib.jnr.aqua.AquaUIPainter.Size.*;
 
 final public class AquaUtils {
 
@@ -506,7 +505,7 @@ final public class AquaUtils {
         return AquaUtilControlSize.getUserSizeFrom(c); // returns a default size
     }
 
-    private static @Nullable AquaUIPainter.Size getToolbarSize(@NotNull Object widget)
+    public static @Nullable AquaUIPainter.Size getToolbarSize(@NotNull Object widget)
     {
         int version = AquaPainting.getVersion();
 
@@ -517,37 +516,10 @@ final public class AquaUtils {
               || widget instanceof AquaUIPainter.SegmentedButtonWidget) {
                 return EXTRA_LARGE;
             }
+            return LARGE;
         }
 
-        if (version < macOS11) {
-            return null;
-        }
-
-        AquaUIPainter.Size toolbarSize = REGULAR;
-
-        if (widget instanceof AquaUIPainter.TextFieldWidget) {
-            AquaUIPainter.TextFieldWidget w = (AquaUIPainter.TextFieldWidget) widget;
-            if (w.isSearch()) {
-                if (version >= macOS26) {
-                    return EXTRA_LARGE;
-                }
-                return toolbarSize;
-            }
-            return null;
-        }
-
-        if (widget instanceof AquaUIPainter.SegmentedButtonWidget) {
-            return toolbarSize;
-        }
-        if (widget instanceof AquaUIPainter.ButtonWidget) {
-            AquaUIPainter.ButtonWidget w = (AquaUIPainter.ButtonWidget) widget;
-            return w.isToolbar() ? toolbarSize : null;
-        }
-        if (widget instanceof AquaUIPainter.PopupButtonWidget) {
-            AquaUIPainter.PopupButtonWidget w = (AquaUIPainter.PopupButtonWidget) widget;
-            return w.isToolbar() ? toolbarSize : null;
-        }
-        return null;
+        return version >= macOS11 ? LARGE : null;
     }
 
     public static boolean isAutoSelectOnFocusAppropriate(@NotNull FocusEvent e) {

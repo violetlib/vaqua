@@ -253,7 +253,7 @@ public class AquaTextFieldBorder extends AquaTextComponentBorder {
         return null;
     }
 
-    protected @NotNull TextFieldWidget getWidget() {
+    public @NotNull TextFieldWidget getWidget() {
         Object o = tf.getClientProperty(AquaTextFieldUI.TEXT_FIELD_STYLE_KEY);
         if ("round".equals(o)) {
             return AquaUtils.isOnToolbar(tf) ? TextFieldWidget.TEXT_FIELD_ROUND_TOOLBAR : TextFieldWidget.TEXT_FIELD_ROUND;

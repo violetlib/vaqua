@@ -47,6 +47,7 @@ import javax.swing.text.*;
 import org.jetbrains.annotations.*;
 import org.violetlib.jnr.Insetter;
 import org.violetlib.jnr.LayoutInfo;
+import org.violetlib.jnr.aqua.AquaUIPainter;
 
 public class AquaTextFieldUI extends AquaTextComponentUIBase implements ToolbarSensitiveUI {
 
@@ -140,7 +141,7 @@ public class AquaTextFieldUI extends AquaTextComponentUIBase implements ToolbarS
     protected class AquaHierarchyListener implements HierarchyListener {
         @Override
         public void hierarchyChanged(HierarchyEvent e) {
-            // A change in the hierarchy may change the "cell editor" status of the text field.
+            // A change in the hierarchy may change the "cell editor" status or the "on toolbar" status of the text field.
             if ((e.getChangeFlags() & HierarchyEvent.PARENT_CHANGED) != 0) {
                 updateStyle();
             }
@@ -152,8 +153,30 @@ public class AquaTextFieldUI extends AquaTextComponentUIBase implements ToolbarS
         boolean b = AquaUtils.isOnToolbar(c);
         if (b != isToolbar) {
             isToolbar = b;
+            updateFontSize();
             c.revalidate();
             c.repaint();
+        }
+    }
+
+    /**
+     * If no size has been specified and no font has been specified, reconfigure to use the default font for the default
+     * size, based on the toolbar status.
+     */
+    private void updateFontSize() {
+        Font f = tf.getFont();
+        if (f != null && !(f instanceof UIResource)) {
+            return;
+        }
+        AquaUIPainter.Size sz = AquaUtilControlSize.getOptionalUserSizeFrom(tf);
+        if (sz != null) {
+            return;
+        }
+        AquaTextFieldBorder bb = AquaBorderSupport.get(tf, AquaTextFieldBorder.class);
+        if (bb != null) {
+            AquaUIPainter.TextFieldWidget w = bb.getWidget();
+            sz = AquaUtils.getSize(tf, isToolbar, w);
+            AquaUtilControlSize.configureFontFromSize(tf, sz);
         }
     }
 

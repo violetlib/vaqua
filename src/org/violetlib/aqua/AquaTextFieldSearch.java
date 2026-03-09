@@ -307,7 +307,7 @@ public class AquaTextFieldSearch {
 //        }
 
         @Override
-        protected @NotNull TextFieldWidget getWidget() {
+        public @NotNull TextFieldWidget getWidget() {
             boolean hasFocus = AquaFocusHandler.hasFocus(tf);
             String text = tf.getText();
             boolean hasMenu = hasPopupMenu(tf) && (hasFocus || OSVersion >= 1014);
