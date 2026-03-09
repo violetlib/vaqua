@@ -41,6 +41,7 @@ import javax.swing.border.Border;
 
 import org.jetbrains.annotations.*;
 import org.violetlib.aqua.AquaUtils.RecyclableSingleton;
+import org.violetlib.jnr.aqua.AquaNativeRendering;
 import org.violetlib.jnr.aqua.AquaUIPainter;
 import org.violetlib.jnr.aqua.AquaUIPainter.ButtonWidget;
 import org.violetlib.jnr.aqua.AquaUIPainter.Position;
@@ -58,7 +59,7 @@ import static org.violetlib.jnr.aqua.AquaUIPainter.SegmentedButtonWidget.*;
 public class AquaButtonExtendedTypes {
 
     /**
-     * Identify the basic type of a button from its client properties and its UI.
+     * Identify the basic button type from the button client properties and its UI.
      * @param b The button.
      * @param isToolbar True if and only if the button should be configured for use on a toolbar.
      * @return the button type name, or null if the button has not been configured with a recognized button type or
@@ -77,21 +78,31 @@ public class AquaButtonExtendedTypes {
 
         if (buttonTypeProperty instanceof String) {
             String buttonType = (String) buttonTypeProperty;
-            if (buttonType.equals("segmented")) {
-                if (isToolbar) {
-                    buttonType = "segmentedTextured";
-                }
-            } else if (buttonType.equals("segmentedSeparated")) {
-                if (isToolbar) {
-                    buttonType = "segmentedTexturedSeparated";
-                }
-            } else if (buttonType.equals("round") && isToolbar) {
-                buttonType = "roundTextured";
+            if (isToolbar) {
+                buttonType = mapToolbarButtonType(buttonType);
             }
             return buttonType;
         }
 
         return null;
+    }
+
+    private static @NotNull String mapToolbarButtonType(@NotNull String buttonType) {
+        if (AquaNativeRendering.getSystemRenderingVersion() >= AquaUIPainter.macOS26) {
+            if (buttonType.equals("segmentedTextured") || buttonType.equals("segmentedTexturedSeparated")) {
+                return "segmented";
+            }
+        } else {
+            if (buttonType.equals("segmentedTextured")) {
+                return "segmented";
+            } else if (buttonType.equals("segmentedTexturedSeparated")) {
+                return "segmentedSeparated";
+            }
+        }
+        if (buttonType.equals("roundTextured")) {
+            return "round";
+        }
+        return buttonType;
     }
 
     /**
