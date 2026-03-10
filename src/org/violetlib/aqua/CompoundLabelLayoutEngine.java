@@ -428,12 +428,16 @@ public class CompoundLabelLayoutEngine {
                 return new SplitButtonInfo(new Dimension(width, height), s);
             } else {
 
-                // Although the virtual buttons look like glass buttons, it is not clear that they have the same
-                // layout parameters. To get the right look, special parameters appear to be necessary.
+                // Although the virtual buttons look like glass buttons, it is not clear that they have the same layout
+                // parameters. To get the right look, special parameters appear to be necessary.
 
-                int sideInsets = 14;
-                height = 36;
-                Insets s = new Insets(9, 14, 9, 14);
+                // The button has a fixed height of 37 and a minimum width of 37 (the smallest size is a circle).
+                // The content side insets are 7. The side insets determine when to increase the button width.
+                // Top and bottom insets of 9 are needed to force the selection of an appropriate size for a template
+                // icon.
+
+                height = 37;
+                Insets s = new Insets(9, 7, 9, 7);
                 width += s.left + s.right;
                 return new SplitButtonInfo(new Dimension(width, height), s);
 

@@ -550,7 +550,7 @@ public class AquaButtonExtendedTypes {
         if (AquaPainting.getVersion() >= macOS26) {
             result.put(BUTTON_TOOLBAR_ITEM, new WidgetInfo(AquaColors.TOOLBAR_COLORS)
               .withRolloverEnabled()
-              .withIconTextGap(11)
+              .withIconTextGap(5)
               .withFontFinder((sz) -> UIManager.getFont("Button.font").deriveFont(12f))
             );
         } else {

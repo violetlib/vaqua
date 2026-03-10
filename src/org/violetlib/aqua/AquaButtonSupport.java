@@ -502,7 +502,8 @@ public class AquaButtonSupport {
                     RoundRectangle2D shape = new RoundRectangle2D.Double(x, y - d, width - 1, height + 2 * d, 8, 8);
                     paintToolbarItemBackground(bg, pc, g, shape);
                 } else {
-                    AquaUIPainter.Size sz = bg.getSize();
+                    // The Size determines the corner radius. Only one size is used.
+                    AquaUIPainter.Size sz = EXTRA_LARGE;
                     AquaUIPainter.ButtonWidget w = AquaUIPainter.ButtonWidget.BUTTON_GLASS;
                     ButtonConfiguration ig = new ButtonConfiguration(w, sz, bg.getState(), bg.isFocused(),
                       bg.getButtonState(), bg.getLayoutDirection());

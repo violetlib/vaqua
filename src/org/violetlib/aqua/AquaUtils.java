@@ -511,6 +511,7 @@ final public class AquaUtils {
 
         if (version >= macOS26) {
             if (widget == BUTTON_GLASS
+              || widget == BUTTON_TOOLBAR_ITEM
               || widget instanceof AquaUIPainter.PopupButtonWidget
               || widget instanceof AquaUIPainter.ComboBoxWidget
               || widget instanceof AquaUIPainter.SegmentedButtonWidget) {
