@@ -68,6 +68,9 @@ import static org.violetlib.jnr.aqua.AquaUIPainter.Size.*;
 
 final public class AquaUtils {
 
+    /** A number representing an unlimited size */
+    public static final int INFINITY = 1000000;
+
     public static final String TOOLBAR_PANEL_PROPERTY = "Aqua.isToolBarPanel";
     public static final String IS_CELL_COMPONENT_KEY = "JComponent.isCellComponent";
 
@@ -84,6 +87,21 @@ final public class AquaUtils {
     };
 
     private static final HierarchyListener viewStyleHierarchyListener = new ViewStyleHierarchyListener();
+
+    public static int limitSize(int n)
+    {
+        return Math.min(n, INFINITY);
+    }
+
+    public static long limitSize(long n)
+    {
+        return Math.min(n, INFINITY);
+    }
+
+    public static boolean isUnlimitedSize(int n)
+    {
+        return n >= INFINITY;
+    }
 
     public static @NotNull String capitalize(@NotNull String s)
     {

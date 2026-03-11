@@ -52,7 +52,8 @@ import org.violetlib.jnr.aqua.AquaUIPainter.Size;
 import org.violetlib.jnr.aqua.AquaUIPainter.State;
 
 import static org.violetlib.aqua.AquaButtonSupport.isColorWell;
-import static org.violetlib.aqua.OSXSystemProperties.*;
+import static org.violetlib.aqua.OSXSystemProperties.OSVersion;
+import static org.violetlib.aqua.OSXSystemProperties.macOS26;
 import static org.violetlib.jnr.aqua.AquaUIPainter.ButtonState.OFF;
 import static org.violetlib.jnr.aqua.AquaUIPainter.ButtonState.ON;
 import static org.violetlib.jnr.aqua.AquaUIPainter.ButtonWidget.BUTTON_TOOLBAR_ITEM;

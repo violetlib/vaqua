@@ -366,9 +366,7 @@ public class AquaTableHeaderUI extends BasicTableHeaderUI implements AquaCompone
 
     private Dimension createHeaderSizeAqua(long width) {
         // None of the callers include the intercell spacing, do it here.
-        if (width > Integer.MAX_VALUE) {
-            width = Integer.MAX_VALUE;
-        }
+        width = AquaUtils.limitSize(width);
         return new Dimension((int)width, getHeaderHeightAqua());
     }
 

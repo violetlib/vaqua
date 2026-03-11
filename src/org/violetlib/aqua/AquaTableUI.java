@@ -587,14 +587,8 @@ public class AquaTableUI extends BasicTableUI
     }
 
     private @NotNull Dimension expand(@NotNull Dimension d) {
-        long expandedWidth = (long) d.width + 2 * insetSideMargin;
-        if (expandedWidth > Integer.MAX_VALUE) {
-            expandedWidth = Integer.MAX_VALUE;
-        }
-        long expandedHeight = (long) d.height + 2 * insetVerticalMargin;
-        if (expandedHeight > Integer.MAX_VALUE) {
-            expandedHeight = Integer.MAX_VALUE;
-        }
+        long expandedWidth = AquaUtils.limitSize((long) d.width + 2 * insetSideMargin);
+        long expandedHeight = AquaUtils.limitSize((long) d.height + 2 * insetVerticalMargin);
         return new Dimension((int) expandedWidth, (int) expandedHeight);
     }
 

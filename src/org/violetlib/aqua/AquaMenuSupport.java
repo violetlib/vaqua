@@ -360,7 +360,7 @@ public class AquaMenuSupport {
         Rectangle acceleratorRect = new Rectangle();
         Rectangle checkIconRect = new Rectangle();
         Rectangle arrowIconRect = new Rectangle();
-        Rectangle viewRect = new Rectangle(Short.MAX_VALUE, Short.MAX_VALUE);
+        Rectangle viewRect = new Rectangle(AquaUtils.INFINITY, AquaUtils.INFINITY);
         Rectangle contentRect = new Rectangle();
 
         layoutMenuItem(b, text, keyString, modifiersString, info,
@@ -507,7 +507,7 @@ public class AquaMenuSupport {
                                                                     @NotNull Dimension controlAvailableSpace,
                                                                     int acceleratorWidth,
                                                                     @NotNull MenuLayoutInfo info) {
-        if (controlAvailableSpace.width >= Short.MAX_VALUE) {
+        if (AquaUtils.isUnlimitedSize(controlAvailableSpace.width)) {
             return controlAvailableSpace;
         }
         int width = controlAvailableSpace.width;

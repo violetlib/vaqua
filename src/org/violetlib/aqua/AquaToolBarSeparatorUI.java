@@ -79,8 +79,8 @@ public class AquaToolBarSeparatorUI extends BasicToolBarSeparatorUI implements A
     public Dimension getMaximumSize(JComponent c) {
         JToolBar.Separator sep = (JToolBar.Separator)c;
         if (sep.getOrientation() == SwingConstants.HORIZONTAL) {
-            return new Dimension(Integer.MAX_VALUE, 11);
+            return new Dimension(AquaUtils.INFINITY, 11);
         }
-        return new Dimension(11, Integer.MAX_VALUE);
+        return new Dimension(11, AquaUtils.INFINITY);
     }
 }

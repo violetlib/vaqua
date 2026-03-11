@@ -100,7 +100,7 @@ public class AquaTitleBar {
 
     protected TitleBarLayout createTitleBarLayout() {
         TitleBarLayout result = new TitleBarLayout();
-        result.buttonAreaLeft = Integer.MAX_VALUE;
+        result.buttonAreaLeft = AquaUtils.INFINITY;
         result.buttonAreaRight = 0;
 
         AquaUILayoutInfo uiLayoutInfo = titleBarPainter.getLayoutInfo();

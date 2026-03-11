@@ -890,12 +890,12 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements ActiveSensi
 
         layout.setVerticalGroup(layout.createSequentialGroup()
           .addComponent(topPanel, GroupLayout.PREFERRED_SIZE, GroupLayout.PREFERRED_SIZE, GroupLayout.PREFERRED_SIZE)
-          .addComponent(splitPane, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE, Short.MAX_VALUE)
+          .addComponent(splitPane, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE, AquaUtils.INFINITY)
           .addComponent(controlsPanel, GroupLayout.PREFERRED_SIZE, GroupLayout.PREFERRED_SIZE, GroupLayout.PREFERRED_SIZE));
         layout.setHorizontalGroup(layout.createParallelGroup()
-          .addComponent(topPanel, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE, Short.MAX_VALUE)
-          .addComponent(splitPane, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE, Short.MAX_VALUE)
-          .addComponent(controlsPanel, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE, Short.MAX_VALUE));
+          .addComponent(topPanel, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE, AquaUtils.INFINITY)
+          .addComponent(splitPane, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE, AquaUtils.INFINITY)
+          .addComponent(controlsPanel, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE, AquaUtils.INFINITY));
 
         separator.putClientProperty("Quaqua.Component.visualMargin", new Insets(3, 0, 3, 0));
 

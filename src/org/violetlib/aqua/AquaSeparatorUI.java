@@ -108,9 +108,9 @@ public class AquaSeparatorUI extends SeparatorUI implements AquaComponentUI {
     public Dimension getMaximumSize(JComponent c) {
         Dimension d = getPreferredSize(c);
         if (((JSeparator) c).getOrientation() == JSeparator.VERTICAL)
-            d.height = Integer.MAX_VALUE;
+            d.height = AquaUtils.INFINITY;
         else {
-            d.width = Integer.MAX_VALUE;
+            d.width = AquaUtils.INFINITY;
         }
         return d;
     }

@@ -98,7 +98,8 @@ public class CompoundLabelLayoutEngine {
      * size.
      */
     public @NotNull ButtonLayoutInfo getLayoutInfo(int availableWidth, int availableHeight) {
-        boolean isPreferredSizeCalculation = availableWidth >= Short.MAX_VALUE || availableHeight >= Short.MAX_VALUE;
+        boolean isPreferredSizeCalculation
+          = AquaUtils.isUnlimitedSize(availableWidth) || AquaUtils.isUnlimitedSize(availableHeight);
         Rectangle iconRect = null;
         Rectangle textRect = null;
         Rectangle outlineRect = null;
@@ -366,7 +367,7 @@ public class CompoundLabelLayoutEngine {
                                      @Nullable TextLayoutInfo textLayoutInfo,
                                      int iconTextGap,
                                      int clipWidth) {
-        if (availableWidth < Short.MAX_VALUE && availableHeight < Short.MAX_VALUE && iconSize.width > 0 && iconSize.height > 0) {
+        if (!AquaUtils.isUnlimitedSize(availableWidth) && AquaUtils.isUnlimitedSize(availableHeight) && iconSize.width > 0 && iconSize.height > 0) {
             if (alignment.isVerticalArrangement()) {
                 // In a vertical arrangement, the icon height is limited by the available height, the gap, and the text
                 // height.

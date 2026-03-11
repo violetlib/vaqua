@@ -309,7 +309,7 @@ public class AquaTextFieldUI extends AquaTextComponentUIBase implements ToolbarS
                 Dimension size = tf.getSize();
                 if (size.width == 0 && size.height == 0) {
                     // Probably haven't been layed out yet, force some sort of initial sizing.
-                    topView.setSize(Integer.MAX_VALUE, Integer.MAX_VALUE);
+                    topView.setSize(AquaUtils.INFINITY, AquaUtils.INFINITY);
                 } else {
                     Insets s = tf.getInsets();
                     if ((size.width > (s.left + s.right)) && (size.height > (s.top + s.bottom))) {

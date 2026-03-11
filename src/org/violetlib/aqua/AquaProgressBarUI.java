@@ -418,9 +418,9 @@ public class AquaProgressBarUI
         Dimension pref = getPreferredSize(progressBar);
 
         if (isHorizontal()) {
-            pref.width = Short.MAX_VALUE;
+            pref.width = AquaUtils.INFINITY;
         } else {
-            pref.height = Short.MAX_VALUE;
+            pref.height = AquaUtils.INFINITY;
         }
 
         return pref;

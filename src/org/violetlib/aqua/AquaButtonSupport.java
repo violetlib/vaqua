@@ -152,7 +152,7 @@ public class AquaButtonSupport {
         if (engine == null) {
             return null;
         }
-        ButtonLayoutInfo info = engine.getLayoutInfo(Short.MAX_VALUE, Short.MAX_VALUE);
+        ButtonLayoutInfo info = engine.getLayoutInfo(AquaUtils.INFINITY, AquaUtils.INFINITY);
         Dimension size = AquaUtils.size(info.contentBounds);
         return AquaUtils.extend(size, b.getInsets());
     }

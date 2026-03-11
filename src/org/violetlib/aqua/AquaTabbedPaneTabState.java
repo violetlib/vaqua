@@ -262,8 +262,8 @@ class AquaTabbedPaneTabState {
         for (int i = 0; i < tabCount; i++) {
             if (i < firstTabIndex || i > lastTabIndex) {
                 Rectangle rect = rects[i];
-                rect.x = Short.MAX_VALUE;
-                rect.y = Short.MAX_VALUE;
+                rect.x = AquaUtils.INFINITY;
+                rect.y = AquaUtils.INFINITY;
             }
         }
     }
