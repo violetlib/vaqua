@@ -1125,7 +1125,7 @@ JNIEXPORT jlong JNICALL Java_org_violetlib_aqua_fc_OSXFile_nativeGetLastUsedDate
     // Do the API calls
     NSURL *u = [NSURL fileURLWithPath:pathNS];
     if (u != nil) {
-        MDItemRef item = MDItemCreateWithURL(NULL, CFBridgingRetain(u));
+        MDItemRef item = MDItemCreateWithURL(NULL, (__bridge CFURLRef)u);
         if (item != NULL) {
             CFDateRef date = (CFDateRef) MDItemCopyAttribute(item, kMDItemLastUsedDate);
             if (date != NULL) {
@@ -1134,7 +1134,9 @@ JNIEXPORT jlong JNICALL Java_org_violetlib_aqua_fc_OSXFile_nativeGetLastUsedDate
                 jtime += (60 * 60 * 24) * (31 * 365 + 8);
                 jtime *= 1000;
                 result = (jlong) jtime;
+                CFRelease(date);
             }
+            CFRelease(item);
         }
     }
 
