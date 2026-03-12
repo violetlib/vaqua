@@ -611,6 +611,7 @@ JNIEXPORT jint JNICALL Java_org_violetlib_aqua_fc_OSXFile_nativeGetLabel
         Boolean success = CFURLCopyResourcePropertyForKey((CFURLRef) u, kCFURLLabelNumberKey, &fileLabel, &error);
         if (success) {
             CFNumberGetValue(fileLabel, kCFNumberSInt32Type, &result);
+            CFRelease(fileLabel);
         }
     }
 
@@ -1182,10 +1183,10 @@ JNIEXPORT jobjectArray JNICALL Java_org_violetlib_aqua_fc_OSXFile_nativeExecuteS
             if (queryString != nil && searchCriteria != nil) {
                 NSArray *scopeDirectories = (NSArray *) [searchCriteria objectForKey:@"FXScopeArrayOfPaths"];
                 if (scopeDirectories != nil) {
-                    MDQueryRef query = MDQueryCreate(NULL, CFBridgingRetain(queryString), NULL, NULL);
+                    MDQueryRef query = MDQueryCreate(NULL, (__bridge CFStringRef)queryString, NULL, NULL);
                     if (query != NULL) {
                         OptionBits scopeOptions = 0;
-                        MDQuerySetSearchScope(query, CFBridgingRetain(scopeDirectories), scopeOptions);
+                        MDQuerySetSearchScope(query, (__bridge CFArrayRef)scopeDirectories, scopeOptions);
                         CFOptionFlags optionFlags = kMDQuerySynchronous;
                         Boolean b = MDQueryExecute(query, optionFlags);
                         if (b) {
@@ -1198,8 +1199,10 @@ JNIEXPORT jobjectArray JNICALL Java_org_violetlib_aqua_fc_OSXFile_nativeExecuteS
                                 NSString *pathNS = (NSString *) path;
                                 jstring pathJ = (*env)->NewStringUTF(env, [pathNS UTF8String]);
                                 (*env)->SetObjectArrayElement(env, result, i, pathJ);
+                                CFRelease(path);
                             }
                         }
+                        CFRelease(query);
                     }
                 }
             }
