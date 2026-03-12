@@ -909,6 +909,6 @@ public class AquaScrollPaneUI extends BasicScrollPaneUI
     }
 
     public static double getUnitsToScroll(@NotNull MouseWheelEvent e, boolean isSmooth) {
-        return isSmooth ? e.getUnitsToScroll() * e.getPreciseWheelRotation() : e.getUnitsToScroll();
+        return isSmooth ? e.getScrollAmount() * e.getPreciseWheelRotation() : e.getUnitsToScroll();
     }
 }
