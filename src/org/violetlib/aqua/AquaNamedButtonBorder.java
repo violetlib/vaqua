@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2025 Alan Snyder.
+ * Copyright (c) 2015-2026 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -40,6 +40,11 @@ public class AquaNamedButtonBorder extends AquaButtonBorder {
         ButtonLayoutConfiguration g = new ButtonLayoutConfiguration(w, Size.REGULAR, AquaUIPainter.UILayoutDirection.LEFT_TO_RIGHT);
         Insetter s = painter.getLayoutInfo().getButtonLabelInsets(g);
         return s != null;
+    }
+
+    @Override
+    public boolean isToolbarStyle(@NotNull AbstractButton b) {
+        return false;
     }
 
     @Override

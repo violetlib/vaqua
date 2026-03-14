@@ -20,9 +20,16 @@ import static org.violetlib.jnr.aqua.AquaUIPainter.ButtonState.ON;
 /**
  * A border for a disclosure triangle button.
  */
-public class AquaDisclosureTriangleButtonBorder extends AquaButtonBorder implements FocusRingOutlineProvider {
+public class AquaDisclosureTriangleButtonBorder
+  extends AquaButtonBorder
+  implements FocusRingOutlineProvider {
 
     public AquaDisclosureTriangleButtonBorder() {
+    }
+
+    @Override
+    public boolean isToolbarStyle(@NotNull AbstractButton b) {
+        return false;
     }
 
     @Override

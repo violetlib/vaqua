@@ -184,6 +184,20 @@ final public class AquaUtils {
         return name;
     }
 
+    public static int ceil(float f) {
+        // Round up unless very close to the lower integer
+        int r = (int) Math.ceil(f);
+        float d = f - (r - 1);
+        return d > 0.01 ? r : r-1;
+    }
+
+    public static int ceil(double f) {
+        // Round up unless very close to the lower integer
+        int r = (int) Math.ceil(f);
+        double d = f - (r - 1);
+        return d > 0.01 ? r : r-1;
+    }
+
     public static @NotNull Dimension extend(@NotNull Dimension d, @NotNull Insets s) {
         return new Dimension(d.width + s.left + s.right, d.height + s.top + s.bottom);
     }
@@ -538,7 +552,14 @@ final public class AquaUtils {
             return LARGE;
         }
 
-        return version >= macOS11 ? LARGE : null;
+        if (version >= macOS11) {
+            if (widget == BUTTON_TOOLBAR) {
+                return SMALL;
+            }
+            return LARGE;
+        }
+
+        return null;
     }
 
     public static boolean isAutoSelectOnFocusAppropriate(@NotNull FocusEvent e) {
@@ -1576,6 +1597,12 @@ final public class AquaUtils {
     public static void configure(@NotNull AquaUIPainter painter,
                                  @Nullable AquaAppearance appearance,  // null is OK for layout inquiries
                                  @NotNull Component c,
+                                 int width, int height) {
+        configure(painter, appearance, width, height);
+    }
+
+    public static void configure(@NotNull AquaUIPainter painter,
+                                 @Nullable AquaAppearance appearance,  // null is OK for layout inquiries
                                  int width, int height) {
         if (appearance != null) {
             painter.configureAppearance(appearance.getAppearance());

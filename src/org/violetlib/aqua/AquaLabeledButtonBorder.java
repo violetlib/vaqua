@@ -43,11 +43,11 @@ public abstract class AquaLabeledButtonBorder extends AquaNamedButtonBorder {
         GenericButtonConfiguration c = getConfiguration(b, pc, viewRect.width, viewRect.height);
         if (c instanceof ButtonConfiguration) {
             ButtonConfiguration bg = (ButtonConfiguration) c;
-            Dimension viewSize = getVisualSize(bg);
+            Dimension iconSize = getIconVisualSize(bg);
             LayoutConfiguration lg = bg.getLayoutConfiguration();
 
             CompoundLabelLayoutEngine engine
-              = AquaButtonSupport.createCompoundLayoutEngine(b, viewSize, lg, painter);
+              = AquaButtonSupport.createCompoundLayoutEngine(b, iconSize, lg);
             if (engine == null) {
                 return;
             }
@@ -78,9 +78,9 @@ public abstract class AquaLabeledButtonBorder extends AquaNamedButtonBorder {
         AbstractButton b = (AbstractButton) c;
         ButtonLayoutConfiguration g = getButtonLayoutConfiguration(b);
         if (g != null) {
-            Dimension iconSize = getVisualSize(g);
+            Dimension iconSize = getIconVisualSize(g);
             CompoundLabelLayoutEngine engine
-              = AquaButtonSupport.createCompoundLayoutEngine(b, iconSize, g, painter);
+              = AquaButtonSupport.createCompoundLayoutEngine(b, iconSize, g);
             if (engine == null) {
                 return null;
             }
@@ -100,14 +100,20 @@ public abstract class AquaLabeledButtonBorder extends AquaNamedButtonBorder {
     }
 
     @Override
-    protected @Nullable Dimension getRequiredIconSize(@NotNull LayoutConfiguration g, @Nullable Icon icon) {
-        return getVisualSize(g);
+    protected @Nullable Dimension getPreferredIconSize(@NotNull AbstractButton b, @Nullable LayoutConfiguration g) {
+        if (g == null) {
+            // should not happen
+            return null;
+        }
+        return getIconVisualSize(g);
     }
 
-    private @NotNull Dimension getVisualSize(@NotNull LayoutConfiguration g) {
+    private @NotNull Dimension getIconVisualSize(@NotNull LayoutConfiguration g) {
         LayoutInfo info = painter.getLayoutInfo().getLayoutInfo(g);
         int iconWidth = (int) Math.ceil(info.getFixedVisualWidth());
         int iconHeight = (int) Math.ceil(info.getFixedVisualHeight());
+        assert iconWidth > 0;
+        assert iconHeight > 0;
         return new Dimension(iconWidth, iconHeight);
     }
 

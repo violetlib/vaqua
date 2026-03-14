@@ -276,12 +276,10 @@ public class SegmentedControlModel {
      * @return the adjacent button, or null if none or not supported.
      */
     public static @Nullable JToggleButton getLeftAdjacentButton(@NotNull AbstractButton b) {
-        if (isPotentialSegmentedControlMember(b)) {
-            SegmentedControlModel m = getSegmentedControlModel(b);
-            if (m != null) {
-                JToggleButton tb = (JToggleButton) b;
-                return m.getLeftAdjacentButton(tb);
-            }
+        SegmentedControlModel m = getSegmentedControlModel(b);
+        if (m != null) {
+            JToggleButton tb = (JToggleButton) b;
+            return m.getLeftAdjacentButton(tb);
         }
         return null;
     }
@@ -293,17 +291,15 @@ public class SegmentedControlModel {
      * @return the adjacent button, or null if none or not supported.
      */
     public static @Nullable JToggleButton getRightAdjacentButton(@NotNull AbstractButton b) {
-        if (isPotentialSegmentedControlMember(b)) {
-            SegmentedControlModel m = getSegmentedControlModel(b);
-            if (m != null) {
-                JToggleButton tb = (JToggleButton) b;
-                return m.getRightAdjacentButton(tb);
-            }
+        SegmentedControlModel m = getSegmentedControlModel(b);
+        if (m != null) {
+            JToggleButton tb = (JToggleButton) b;
+            return m.getRightAdjacentButton(tb);
         }
         return null;
     }
 
-    public static boolean isPotentialSegmentedControlMember(@NotNull AbstractButton b) {
+    private static boolean isPotentialSegmentedControlMember(@NotNull AbstractButton b) {
         if (OSVersion < macOS11) {
             return false;
         }
@@ -354,11 +350,9 @@ public class SegmentedControlModel {
     }
 
     public static boolean isRollover(@NotNull AbstractButton b) {
-        if (isPotentialSegmentedControlMember(b)) {
-            SegmentedControlModel m = getSegmentedControlModel(b);
-            if (m != null) {
-                return m.isRollover();
-            }
+        SegmentedControlModel m = getSegmentedControlModel(b);
+        if (m != null) {
+            return m.isRollover();
         }
         ButtonModel model = b.getModel();
         return model.isRollover();
@@ -374,6 +368,9 @@ public class SegmentedControlModel {
      * @return the valid segmented control model for the button, or null if none.
      */
     public static @Nullable SegmentedControlModel getSegmentedControlModel(@NotNull AbstractButton button) {
+        if (!isPotentialSegmentedControlMember(button)) {
+            return null;
+        }
         Set<JToggleButton> buttonsNeedingReconfiguration = new HashSet<>();
         SegmentedControlModel m = getCachedSegmentedControlModel(button);
         if (m != null) {

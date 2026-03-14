@@ -14,31 +14,24 @@ import javax.swing.text.View;
 
 import org.jetbrains.annotations.*;
 import org.violetlib.jnr.Insets2D;
-import org.violetlib.jnr.aqua.AquaUIPainter;
-import org.violetlib.jnr.aqua.ButtonLayoutConfiguration;
-import org.violetlib.jnr.aqua.LayoutConfiguration;
-
-import static org.violetlib.aqua.OSXSystemProperties.macOS26;
 
 /**
  * Allocate space for displaying an icon and a text label in a button-like control.
  * The icon and text are centered in the available space.
  */
 public class CompoundLabelLayoutEngine {
-    private final @Nullable LayoutConfiguration g;
-    private @Nullable Dimension iconSize;
+    private final @Nullable Dimension iconSize;
     private final @Nullable View view;
     private final @Nullable String text;
     private final int iconTextGap;
     private final @Nullable FontMetrics fm;
     private final @NotNull CompoundLabelAlignment alignment;
-    private final @Nullable AquaUIPainter painter;
     private final @NotNull String clipString = "...";
 
     /**
-     * Create a layout engine that arranges the label and icon of a button-line control, with an optional icon outline
-     * @param g The button configuration.
-     * @param iconSize The icon size, may be null if no icon is to be displayed.
+     * Create a layout engine that arranges the label and icon of a button-like control, with an optional icon outline
+     * @param iconSize The preferred icon size. This parameter may be null if no icon is to be displayed. If the
+     *                 button is a split toolbar item, this parameter specifies the size of the virtual button.
      * @param v An optional source of rendered (HTML) text to display.
      * @param text Optional text to be displayed, if {@code v} is not supplied. If {@code v} and {@code text} are both
      *             null, no space will be allocated for the display of text. Otherwise, space is allocated for text
@@ -47,29 +40,24 @@ public class CompoundLabelLayoutEngine {
      *           {@code text} is not null and not empty.
      * @param alignment The requested alignment when space is allocated both for an icon and for text.
      * @param iconTextGap The gap between the spaces allocated for an icon and for text.
-     * @param painter The native painter, used to determine the size of a split button outline.
      */
-    public CompoundLabelLayoutEngine(@Nullable LayoutConfiguration g,
-                                     @Nullable Dimension iconSize,
+    public CompoundLabelLayoutEngine(@Nullable Dimension iconSize,
                                      @Nullable View v,
                                      @Nullable String text,
                                      @Nullable FontMetrics fm,  // required if text is not empty
                                      @NotNull CompoundLabelAlignment alignment,
-                                     int iconTextGap,
-                                     @Nullable AquaUIPainter painter)
+                                     int iconTextGap)
     {
+        // No space needed for an icon
         if (iconSize != null && (iconSize.width == 0 || iconSize.height == 0)) {
             iconSize = null;
         }
         this.iconSize = iconSize;
-
-        this.g = g;
         this.iconTextGap = text == null || iconSize == null ? 0 : iconTextGap;
         this.view = v;
         this.text = v != null ? null : text;
         this.fm = fm;
         this.alignment = alignment;
-        this.painter = painter;
     }
 
     /**
@@ -95,14 +83,13 @@ public class CompoundLabelLayoutEngine {
      * @param availableWidth The width of the available space for content. Can be very large to compute a preferred
      * size.
      * @param availableHeight The height of the available space for content. Can be very large to compute a preferred
-     * size.
+     * size or to compute an actual size where the width is not limited.
      */
     public @NotNull ButtonLayoutInfo getLayoutInfo(int availableWidth, int availableHeight) {
         boolean isPreferredSizeCalculation
           = AquaUtils.isUnlimitedSize(availableWidth) || AquaUtils.isUnlimitedSize(availableHeight);
         Rectangle iconRect = null;
         Rectangle textRect = null;
-        Rectangle outlineRect = null;
         String clippedText = null;
         Rectangle contentRect;
 
@@ -122,17 +109,12 @@ public class CompoundLabelLayoutEngine {
             textLayoutInfo = null;
         }
 
-        // Check to see if the icon will need to be reduced in size.
+        // Check to see if the icon should be reduced in size.
         if (iconSize != null) {
             int clipStringWidth = SwingUtilities.computeStringWidth(fm, clipString);
-            float scalingFactor = getIconScaleFactor(availableWidth, availableHeight, iconSize, alignment,
+            Dimension adjustedIconSize = getAdjustedIconSize(availableWidth, availableHeight, iconSize, alignment,
               textLayoutInfo, iconTextGap, clipStringWidth);
-            if (scalingFactor < 1) {
-                int scaledWidth = (int) Math.floor(scalingFactor * iconSize.width);
-                int scaledHeight = (int) Math.floor(scalingFactor * iconSize.height);
-                iconSize = new Dimension(scaledWidth, scaledHeight);
-            }
-            iconRect = new Rectangle(0, 0, iconSize.width, iconSize.height);
+            iconRect = new Rectangle(0, 0, adjustedIconSize.width, adjustedIconSize.height);
         }
 
         // Assign space for text. Check to see if the text will need to be clipped.
@@ -150,25 +132,12 @@ public class CompoundLabelLayoutEngine {
             }
         }
 
-        // Determine if a space is needed for a split toolbar item outline
-        int iconWidth = iconSize != null ? iconSize.width : 0;
-        int iconHeight = iconSize != null ? iconSize.height : 0;
-        SplitButtonInfo outlineInfo = getSplitButtonInfo(iconWidth, iconHeight);
-        Dimension outlineSize = null;
-        Insets outlineInsets = null;
-
-        if (outlineInfo != null) {
-            outlineSize = new Dimension(outlineInfo.buttonSize.width, outlineInfo.buttonSize.height);
-            outlineRect = new Rectangle(0, 0, outlineInfo.buttonSize.width, outlineInfo.buttonSize.height);
-            outlineInsets = outlineInfo.contentInsets;
-        }
-
         // Compute the overall content size.
         int contentWidth = 0;
         int contentHeight = 0;
         if (alignment.isVerticalArrangement()) {
-            contentWidth = maxWidth(iconRect, textRect, outlineSize);
-            contentHeight = sumHeight(iconRect, textRect, outlineSize, iconTextGap);
+            contentWidth = maxWidth(iconRect, textRect);
+            contentHeight = sumHeight(iconRect, textRect, iconTextGap);
         } else {
             contentHeight = maxHeight(iconRect, textRect);
             contentWidth = sumWidth(iconRect, textRect, iconTextGap);
@@ -181,12 +150,9 @@ public class CompoundLabelLayoutEngine {
             //   vertical arrangement, text on top or bottom (horizontally centered)
             //   horizontal arrangement, text on left or right (vertically centered)
 
-            // Outline takes precedence. Icon is centered in outline.
-            Rectangle effectiveIconRect = outlineRect != null ? outlineRect : iconRect;
-
             if (alignment.isVerticalArrangement()) {
-                if (effectiveIconRect != null) {
-                    effectiveIconRect.x = (availableWidth - effectiveIconRect.width) / 2;
+                if (iconRect != null) {
+                    iconRect.x = (availableWidth - iconRect.width) / 2;
                 }
                 if (textRect != null) {
                     textRect.x = (availableWidth - textRect.width) / 2;
@@ -197,12 +163,12 @@ public class CompoundLabelLayoutEngine {
                     if (textRect != null) {
                         textRect.y = top;
                     }
-                    if (effectiveIconRect != null) {
-                        effectiveIconRect.y = availableHeight - effectiveIconRect.height - bottom;
+                    if (iconRect != null) {
+                        iconRect.y = availableHeight - iconRect.height - bottom;
                     }
                 } else {
-                    if (effectiveIconRect != null) {
-                        effectiveIconRect.y = top;
+                    if (iconRect != null) {
+                        iconRect.y = top;
                     }
                     if (textRect != null) {
                         textRect.y = availableHeight - textLayoutInfo.height - bottom;
@@ -210,8 +176,8 @@ public class CompoundLabelLayoutEngine {
                 }
 
             } else {
-                if (effectiveIconRect != null) {
-                    effectiveIconRect.y = (availableHeight - effectiveIconRect.height) / 2;
+                if (iconRect != null) {
+                    iconRect.y = (availableHeight - iconRect.height) / 2;
                 }
                 if (textRect != null) {
                     textRect.y = (availableHeight - textRect.height) / 2;
@@ -222,22 +188,17 @@ public class CompoundLabelLayoutEngine {
                     if (textRect != null) {
                         textRect.x = left;
                     }
-                    if (effectiveIconRect != null) {
-                        effectiveIconRect.x = availableWidth - effectiveIconRect.width - right;
+                    if (iconRect != null) {
+                        iconRect.x = availableWidth - iconRect.width - right;
                     }
                 } else {
-                    if (effectiveIconRect != null) {
-                        effectiveIconRect.x = left;
+                    if (iconRect != null) {
+                        iconRect.x = left;
                     }
                     if (textRect != null) {
                         textRect.x = availableWidth - textRect.width - right;
                     }
                 }
-            }
-
-            if (effectiveIconRect != iconRect && iconRect != null) {
-                iconRect.x = effectiveIconRect.x + (effectiveIconRect.width - iconRect.width) / 2;
-                iconRect.y = effectiveIconRect.y + (effectiveIconRect.height - iconRect.height) / 2;
             }
         }
 
@@ -246,11 +207,7 @@ public class CompoundLabelLayoutEngine {
             textRect.x -= textLayoutInfo.leftSideBearing;
         }
 
-        ButtonLayoutInfo basic = new ButtonLayoutInfo(iconRect, textRect, contentRect, clippedText);
-        if (outlineRect != null) {
-            return new SplitToolbarItemLayoutInfo(basic, outlineRect, outlineInsets);
-        }
-        return basic;
+        return new ButtonLayoutInfo(iconRect, textRect, contentRect, clippedText);
     }
 
     private int getTop(int extraVertical) {
@@ -269,7 +226,7 @@ public class CompoundLabelLayoutEngine {
         return extraHorizontal / 2;
     }
 
-    private static int maxWidth(@Nullable Rectangle r1, @Nullable Rectangle r2, @Nullable Dimension d) {
+    private static int maxWidth(@Nullable Rectangle r1, @Nullable Rectangle r2) {
         int width = 0;
         if (r1 != null && r1.width > width) {
             width = r1.width;
@@ -277,18 +234,12 @@ public class CompoundLabelLayoutEngine {
         if (r2 != null && r2.width > width) {
             width = r2.width;
         }
-        if (d != null && d.width > width) {
-            width = d.width;
-        }
         return width;
     }
 
-    private static int sumHeight(@Nullable Rectangle iconRect, @Nullable Rectangle textRect, @Nullable Dimension outline, int iconTextGap) {
+    private static int sumHeight(@Nullable Rectangle iconRect, @Nullable Rectangle textRect, int iconTextGap) {
         int height = 0;
-        if (outline != null) {
-            // the outline is presumed to be larger than the icon
-            height = outline.height;
-        } else if (iconRect != null) {
+        if (iconRect != null) {
             height = iconRect.height;
         }
         if (textRect != null) {
@@ -350,10 +301,42 @@ public class CompoundLabelLayoutEngine {
     }
 
     /**
+     * Adjust the icon size as needed, if there is not enough space for the full size. The only supported adjustment
+     * is to decrease the size preserving the aspect ratio.
+     * @param availableWidth The total available width for the button.
+     * @param availableHeight The total available height for the button.
+     * @param iconSize The preferred icon size.
+     * @param alignment The compound layout alignment parameters.
+     * @param textLayoutInfo The text layout information, or null if there is no text.
+     * @param iconTextGap The icon text gap, ignored if there is no text.
+     * @param clipWidth The width of the text that will be displayed if the text does not fit.
+     * @return the adjusted icon size.
+     */
+
+    private @NotNull Dimension getAdjustedIconSize(int availableWidth,
+                                                   int availableHeight,
+                                                   @NotNull Dimension iconSize,
+                                                   @NotNull CompoundLabelAlignment alignment,
+                                                   @Nullable TextLayoutInfo textLayoutInfo,
+                                                   int iconTextGap,
+                                                   int clipWidth) {
+        if (iconSize.width == 0 || iconSize.height == 0) {
+            return new Dimension(0, 0);
+        }
+        if (AquaUtils.isUnlimitedSize(availableWidth) && AquaUtils.isUnlimitedSize(availableHeight)) {
+            return iconSize;
+        }
+        float scaleFactor = getIconScaleFactor(availableWidth, availableHeight, iconSize, alignment, textLayoutInfo, iconTextGap, clipWidth);
+        int revisedWidth = Math.round(iconSize.width * scaleFactor);
+        int revisedHeight = Math.round(iconSize.height * scaleFactor);
+        return new Dimension(revisedWidth, revisedHeight);
+    }
+
+    /**
      * Determine if the icon needs to be reduced in size to fit in the available space.
-     * @param availableWidth The total available width.
-     * @param availableHeight The total available height.
-     * @param iconSize The icon size.
+     * @param availableWidth The total available width for the content.
+     * @param availableHeight The total available height for the content.
+     * @param iconSize The icon size (possibly adjusted to satisfy other constraints).
      * @param alignment The compound layout alignment parameters.
      * @param textLayoutInfo The text layout information, or null if there is no text.
      * @param iconTextGap The icon text gap, ignored if there is no text.
@@ -381,7 +364,6 @@ public class CompoundLabelLayoutEngine {
                     availableWidth -= (iconTextGap + clipWidth);
                 }
             }
-
             int revisedHeight = Math.min(iconSize.height, availableHeight);
             int revisedWidth = Math.min(iconSize.width, availableWidth);
             if (revisedHeight < iconSize.height || revisedWidth < iconSize.width) {
@@ -392,96 +374,5 @@ public class CompoundLabelLayoutEngine {
             }
         }
         return 1;
-    }
-
-    /**
-     * Information about a "virtual" button that encloses the icon in a toolbar item.
-     */
-    private static class SplitButtonInfo {
-        public final @NotNull Dimension buttonSize;  // the layout size of the virtual button
-        public final @NotNull Insets contentInsets;  // the content insets of the virtual button
-
-        public SplitButtonInfo(@NotNull Dimension buttonSize, @NotNull Insets contentInsets) {
-            this.buttonSize = buttonSize;
-            this.contentInsets = contentInsets;
-        }
-    }
-
-    private @Nullable SplitButtonInfo getSplitButtonInfo(int iconWidth, int iconHeight) {
-        if (g instanceof ButtonLayoutConfiguration) {
-            ButtonLayoutConfiguration bg = (ButtonLayoutConfiguration) g;
-            if (bg.getWidget() != AquaUIPainter.ButtonWidget.BUTTON_TOOLBAR_ITEM) {
-                return null;
-            }
-
-            int width = iconWidth;
-            int height = iconHeight;
-
-            int version = AquaPainting.getVersion();
-            if (version < macOS26) {
-                int minimumWidth = 40;
-                if (width < minimumWidth) {
-                    width = minimumWidth;
-                }
-                Insets s = new Insets(2, 2, 2, 2);
-                width = width + s.left + s.right;
-                height = height + s.top + s.bottom;
-                return new SplitButtonInfo(new Dimension(width, height), s);
-            } else {
-
-                // Although the virtual buttons look like glass buttons, it is not clear that they have the same layout
-                // parameters. To get the right look, special parameters appear to be necessary.
-
-                // The button has a fixed height of 37 and a minimum width of 37 (the smallest size is a circle).
-                // The content side insets are 7. The side insets determine when to increase the button width.
-                // Top and bottom insets of 9 are needed to force the selection of an appropriate size for a template
-                // icon.
-
-                height = 37;
-                Insets s = new Insets(9, 7, 9, 7);
-                width += s.left + s.right;
-                return new SplitButtonInfo(new Dimension(width, height), s);
-
-//                AquaUIPainter.Size sz = bg.getSize();
-//                AquaUIPainter.ButtonWidget w = AquaUIPainter.ButtonWidget.BUTTON_GLASS;
-//                ButtonLayoutConfiguration ig = new ButtonLayoutConfiguration(w, sz, bg.getLayoutDirection(), bg.getContent());
-//                Insets s = new Insets(0, 0, 0, 0);
-//
-//                if (painter != null) {
-//                    AquaUILayoutInfo uiLayoutInfo = painter.getLayoutInfo();
-//                    LayoutInfo info = uiLayoutInfo.getLayoutInfo(ig);
-//                    Insetter insetter = uiLayoutInfo.getButtonLabelInsets(ig);
-//
-//                    int minimumWidth = (int) Math.ceil(info.getMinimumVisualWidth());
-//                    int fixedHeight = (int) Math.ceil(info.getFixedVisualHeight());
-//                    // fixed height is expected
-//                    int minimumHeight = (int) Math.ceil(info.getMinimumVisualHeight());
-//
-//                    Insetter ins = uiLayoutInfo.getContentInsets(bg);
-//                    if (ins != null && ins.isInvertible()) {
-//                        Dimension d = ins.expand(new Dimension(width, height));
-//                        minimumWidth = Math.max(minimumWidth, d.width);
-//                        minimumHeight = Math.max(minimumHeight, d.height);
-//                    }
-//
-//                    if (fixedHeight > 0) {
-//                        minimumHeight = fixedHeight;
-//                    }
-//
-//                    if (width < minimumWidth) {
-//                        width = minimumWidth;
-//                    }
-//                    if (height < minimumHeight) {
-//                        height = minimumHeight;
-//                    }
-//                    if (insetter != null) {
-//                        Dimension d = new Dimension(width, height);
-//                        s = insetter.asInsets(d);
-//                    }
-//                }
-//                return new SplitButtonInfo(new Dimension(width, height), s);
-            }
-        }
-        return null;
     }
 }

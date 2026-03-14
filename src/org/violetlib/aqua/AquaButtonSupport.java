@@ -10,7 +10,6 @@ package org.violetlib.aqua;
 
 import java.awt.*;
 import java.awt.geom.Rectangle2D;
-import java.awt.geom.RoundRectangle2D;
 import javax.swing.*;
 import javax.swing.border.Border;
 import javax.swing.plaf.UIResource;
@@ -26,7 +25,8 @@ import org.violetlib.jnr.aqua.*;
 import static org.violetlib.aqua.OSXSystemProperties.macOS26;
 import static org.violetlib.jnr.aqua.AquaUIPainter.ButtonWidget;
 import static org.violetlib.jnr.aqua.AquaUIPainter.ButtonWidget.*;
-import static org.violetlib.jnr.aqua.AquaUIPainter.Size.*;
+import static org.violetlib.jnr.aqua.AquaUIPainter.Size.EXTRA_LARGE;
+import static org.violetlib.jnr.aqua.AquaUIPainter.Size.REGULAR;
 
 /**
  * Generic support for buttons.
@@ -35,30 +35,7 @@ public class AquaButtonSupport {
 
     private static final AquaButtonIcon.ImageOperatorSupplier keySupplier = new MyImageOperatorSupplier();
 
-    /**
-     * Identify the button state.
-     */
-    public static @NotNull AquaUIPainter.State getState(@NotNull AbstractButton b) {
-        boolean isActive = AquaFocusHandler.isActive(b);
-
-        if (!b.isEnabled()) {
-            return isActive ? AquaUIPainter.State.DISABLED : AquaUIPainter.State.DISABLED_INACTIVE;
-        }
-
-        if (!isActive) {
-            return AquaUIPainter.State.INACTIVE;
-        }
-
-        ButtonModel model = b.getModel();
-        if (model.isArmed() && model.isPressed()) {
-            return getPressedState(b);
-        }
-
-        if (b.isRolloverEnabled() && isRollover(b)) {
-            return AquaUIPainter.State.ROLLOVER;
-        }
-
-        return getActiveState(b);
+    public AquaButtonSupport() {
     }
 
     public static @NotNull AquaUIPainter.State getActiveState(@NotNull AbstractButton b) {
@@ -69,12 +46,6 @@ public class AquaButtonSupport {
     public static @NotNull AquaUIPainter.State getPressedState(@NotNull AbstractButton b) {
         return (b instanceof JButton) && ((JButton)b).isDefaultButton()
           ? AquaUIPainter.State.PRESSED_DEFAULT : AquaUIPainter.State.PRESSED;
-    }
-
-    private static boolean isRollover(@NotNull AbstractButton b)
-    {
-        ButtonModel model = b.getModel();
-        return model.isRollover();
     }
 
     /**
@@ -145,10 +116,9 @@ public class AquaButtonSupport {
      * Return the basic preferred size of a button, without regard to any minimums associated with the widget.
      */
     public static @Nullable Dimension getBasicPreferredButtonSize(@NotNull AbstractButton b,
-                                                                  @Nullable Dimension iconSize,
-                                                                  @Nullable LayoutConfiguration g,
-                                                                  @Nullable AquaUIPainter painter) {
-        CompoundLabelLayoutEngine engine = createCompoundLayoutEngine(b, iconSize, g, painter);
+                                                                  @Nullable Dimension preferredIconSize,
+                                                                  @Nullable LayoutConfiguration g) {
+        CompoundLabelLayoutEngine engine = createCompoundLayoutEngine(b, preferredIconSize, g);
         if (engine == null) {
             return null;
         }
@@ -159,15 +129,13 @@ public class AquaButtonSupport {
 
     public static @Nullable CompoundLabelLayoutEngine createCompoundLayoutEngine(@NotNull AbstractButton b,
                                                                                  @Nullable Dimension iconSize,
-                                                                                 @Nullable LayoutConfiguration g,
-                                                                                 @Nullable AquaUIPainter painter) {
-        return createCompoundLayoutEngine(b, iconSize, g, painter, null);
+                                                                                 @Nullable LayoutConfiguration g) {
+        return createCompoundLayoutEngine(b, iconSize, g, null);
     }
 
     public static @Nullable CompoundLabelLayoutEngine createCompoundLayoutEngine(@NotNull AbstractButton b,
                                                                                  @Nullable Dimension iconSize,
                                                                                  @Nullable LayoutConfiguration g,
-                                                                                 @Nullable AquaUIPainter painter,
                                                                                  @Nullable CompoundLabelAlignment alignment) {
         if (b.getComponentCount() > 0) {
             return null;
@@ -195,7 +163,7 @@ public class AquaButtonSupport {
             alignment = getCompoundLabelAlignment(b, g);
         }
         int iconTextGap = b.getIconTextGap();
-        return new CompoundLabelLayoutEngine(g, iconSize, v, text, fm, alignment, iconTextGap, painter);
+        return new CompoundLabelLayoutEngine(iconSize, v, text, fm, alignment, iconTextGap);
     }
 
     public static @Nullable Font getDefaultFontPropertyValue(@NotNull AbstractButton b) {
@@ -264,6 +232,16 @@ public class AquaButtonSupport {
         }
         boolean isToolbar = AquaButtonSupport.isToolbar(b);
         AquaUIPainter.Size size = AquaUtils.getSize(b, isToolbar, w);
+
+        if (!isToolbar && w == BUTTON_TOOLBAR_ITEM) {
+            String text = b.getText();
+            if (text == null || text.isEmpty()) {
+                w = BUTTON_TOOLBAR;
+                if (AquaNativeRendering.getSystemRenderingVersion() > AquaNativeRendering.macOS26) {
+                    size = EXTRA_LARGE;
+                }
+            }
+        }
         return new ButtonStyleInfo(w, size);
     }
 
@@ -376,75 +354,31 @@ public class AquaButtonSupport {
     }
 
     public static void paintIconAndText(@NotNull Graphics2D g,
-                                        @NotNull PaintingContext pc,
                                         @NotNull AbstractButton b,
                                         @Nullable GenericButtonConfiguration bg,
-                                        @Nullable AquaUIPainter painter,
                                         @NotNull Insets2D insets,
-                                        @Nullable Icon icon,
+                                        @Nullable Icon2D icon,
                                         @NotNull Color textColor,
                                         @Nullable Color iconColor,
                                         @NotNull Rectangle viewRect,
-                                        @Nullable Dimension iconSize,
-                                        boolean isSplit) {
+                                        @Nullable Dimension iconSize) {
 
         LayoutConfiguration lg = bg != null ? bg.getLayoutConfiguration() : null;
-        CompoundLabelLayoutEngine engine = createCompoundLayoutEngine(b, iconSize, lg, painter);
+        CompoundLabelLayoutEngine engine = createCompoundLayoutEngine(b, iconSize, lg);
         if (engine == null) {
             return;
         }
         ButtonLayoutInfo info = engine.getLayoutInfo(viewRect.width, viewRect.height, insets);
-        if (info.iconBounds != null) {
-            if (isSplit) {
-                assert bg != null;
-                assert painter != null;
-                paintSplitIconBackground(g, pc, b, bg, painter, info);
-            }
-            if (icon != null) {
-                paintIcon(g, b, icon, info.iconBounds, iconColor);
-            }
+        Rectangle2D iconBounds = info.iconBounds;
+        if (iconBounds != null && icon != null) {
+            icon = Icons.scale(icon, iconBounds.getWidth(), iconBounds.getHeight());
+            icon.paintIcon(g, iconBounds.getX(), iconBounds.getY(), iconColor);
         }
         if (info.labelBounds != null) {
             String text = info.substitutedLabel != null ? info.substitutedLabel : b.getText();
             paintText(g, b, info.labelBounds, textColor, text);
         }
     }
-
-//    public static @NotNull String layoutAndGetText(@Nullable Graphics2D g,
-//                                                   @NotNull AbstractButton b,
-//                                                   @NotNull Insets i,
-//                                                   @NotNull Rectangle viewRect,
-//                                                   @NotNull Rectangle iconRect,
-//                                                   @NotNull Rectangle textRect,
-//                                                   @Nullable Dimension iconSize) {
-//        // re-initialize the view rect to the selected insets
-//        viewRect.x = i.left;
-//        viewRect.y = i.top;
-//        viewRect.width = b.getWidth() - (i.right + viewRect.x);
-//        viewRect.height = b.getHeight() - (i.bottom + viewRect.y);
-//
-//        // reset the text and icon rects
-//        textRect.x = textRect.y = textRect.width = textRect.height = 0;
-//        iconRect.x = iconRect.y = iconRect.width = iconRect.height = 0;
-//
-//        // set up the font metrics
-//        // If no graphics context is provided, the request is to determine the icon location under the
-//        // assumption that the text does not matter.
-//        FontMetrics fm = null;
-//        if (g != null) {
-//            g.setFont(b.getFont());
-//            fm = g.getFontMetrics();
-//        }
-//
-//        if (iconSize == null) {
-//            Icon icon = b.getIcon();
-//            if (icon != null) {
-//                iconSize = new Dimension(icon.getIconWidth(), icon.getIconHeight());
-//            }
-//        }
-//
-//        return layoutCompoundLabel(b, fm, iconSize, viewRect, iconRect, textRect, b.getIconTextGap());
-//    }
 
     private static @NotNull CompoundLabelAlignment getCompoundLabelAlignment(@NotNull AbstractButton b,
                                                                              @Nullable LayoutConfiguration g) {
@@ -456,69 +390,6 @@ public class AquaButtonSupport {
         int horizontalTextPosition = b.getHorizontalTextPosition();
         boolean isLTR = b.getComponentOrientation().isLeftToRight();
         return CompoundLabelAlignment.create(horizontalTextPosition, verticalTextPosition, isLTR);
-    }
-
-//    private static @NotNull String layoutCompoundLabel(@NotNull AbstractButton b,
-//                                                       @Nullable FontMetrics fm,
-//                                                       @Nullable Dimension iconSize,
-//                                                       @NotNull Rectangle viewRect,
-//                                                       @NotNull Rectangle iconRect,
-//                                                       @NotNull Rectangle textRect,
-//                                                       int iconTextGap) {
-//
-//        String text = b.getText();
-//
-//        CompoundLabelAlignment alignment = getCompoundLabelAlignment(b);
-//
-//        AquaUIPainter.ButtonWidget bw = getButtonWidget(b);
-//        if (bw == AquaUIPainter.ButtonWidget.BUTTON_TOOLBAR_ITEM && AquaPainting.getSystemRenderingVersion() >= macOS26) {
-//            alignment = CompoundLabelAlignment.VERTICAL_BOTTOM_TEXT;
-//            iconTextGap = 11; // includes the icon button content bottom inset of 6
-//        }
-//
-//        return AquaUtils.layoutCompoundLabel(b, fm, text, iconSize, alignment,
-//          viewRect, iconRect, textRect, text == null ? 0 : iconTextGap);
-//    }
-
-    private static void paintSplitIconBackground(@NotNull Graphics2D g,
-                                                 @NotNull PaintingContext pc,
-                                                 @NotNull AbstractButton b,
-                                                 @NotNull GenericButtonConfiguration gg,
-                                                 @NotNull AquaUIPainter painter,
-                                                 @NotNull ButtonLayoutInfo info) {
-        if (info instanceof SplitToolbarItemLayoutInfo) {
-            SplitToolbarItemLayoutInfo si = (SplitToolbarItemLayoutInfo) info;
-            if (gg instanceof ButtonConfiguration) {
-                ButtonConfiguration bg = (ButtonConfiguration) gg;
-
-                double x = si.iconOutlineBounds.getX();
-                double y = si.iconOutlineBounds.getY();
-                double width = si.iconOutlineBounds.getWidth();
-                double height = si.iconOutlineBounds.getHeight();
-
-                int version = AquaPainting.getVersion();
-                if (version < macOS26) {
-                    int d = 1;
-                    RoundRectangle2D shape = new RoundRectangle2D.Double(x, y - d, width - 1, height + 2 * d, 8, 8);
-                    paintToolbarItemBackground(bg, pc, g, shape);
-                } else {
-                    // The Size determines the corner radius. Only one size is used.
-                    AquaUIPainter.Size sz = EXTRA_LARGE;
-                    AquaUIPainter.ButtonWidget w = AquaUIPainter.ButtonWidget.BUTTON_GLASS;
-                    ButtonConfiguration ig = new ButtonConfiguration(w, sz, bg.getState(), bg.isFocused(),
-                      bg.getButtonState(), bg.getLayoutDirection());
-                    {
-                        int xx = (int) Math.floor(x);
-                        int yy = (int) Math.floor(y);
-                        int ww = (int) Math.ceil(width);
-                        int hh = (int) Math.ceil(height);
-                        AquaUtils.configure(painter, pc.appearance, b, ww, hh);
-                        org.violetlib.jnr.Painter p = painter.getPainter(ig);
-                        p.paint(g, xx, yy);
-                    }
-                }
-            }
-        }
     }
 
     public static void paintToolbarItemBackground(@NotNull ButtonConfiguration bg,
@@ -540,34 +411,6 @@ public class AquaButtonSupport {
             g.setColor(c);
             AquaUtils.drawAntiAliased(g, shape);
         }
-    }
-
-    /**
-     * Paint the icon.
-     */
-    private static void paintIcon(@NotNull Graphics2D g,
-                                  @NotNull AbstractButton b,
-                                  @NotNull Icon icon,
-                                  @NotNull Rectangle2D iconRect,
-                                  @Nullable Color iconColor) {
-        if (iconColor != null && !(icon instanceof AquaButtonIcon) && AquaImageFactory.isTemplateIcon(icon)) {
-            icon = AquaImageFactory.getProcessedImage(icon, iconColor);
-        }
-        double x = iconRect.getX();
-        double y = iconRect.getY();
-        double w = iconRect.getWidth();
-        double h = iconRect.getHeight();
-
-        g = (Graphics2D) g.create();
-        if (icon.getIconWidth() != w || icon.getIconHeight() != h) {
-            g.translate(x, y);
-            g.scale(w / icon.getIconWidth(), h / icon.getIconHeight());
-        } else {
-            g.translate(x, y);
-        }
-
-        icon.paintIcon(b, g, 0, 0);
-        g.dispose();
     }
 
     /**
@@ -683,16 +526,11 @@ public class AquaButtonSupport {
      * @return the special icon for the button, or null if the button does not define a default icon.
      */
     private static @Nullable AquaButtonIcon getSpecialIcon(@NotNull AbstractButton b, @NotNull PaintingContext pc) {
-//        Object o = b.getClientProperty(AquaButtonUI.SPECIAL_ICON_PROPERTY);
-//        if (o instanceof AquaButtonIcon) {
-//            return (AquaButtonIcon) o;
-//        }
         Border border = b.getBorder();
         AquaButtonBorder bb = AquaBorderSupport.get(border, AquaButtonBorder.class);
         if (bb != null) {
             boolean isTemplate = determineTemplateIconStatus(b);
             AquaButtonIcon icon = bb.createSpecialIcon(b, isTemplate, pc);
-            //b.putClientProperty(AquaButtonUI.SPECIAL_ICON_PROPERTY, icon);
             return icon;
         }
         Icon ic = b.getIcon();
@@ -703,39 +541,6 @@ public class AquaButtonSupport {
         return null;
     }
 
-//    /**
-//     * This method is called by AbstractButton via the LAF to obtain an icon to use when a button is disabled.
-//     * @param b The button.
-//     * @param source The button icon.
-//     * @return the icon to use.
-//     */
-//    public static @NotNull Icon createDisabledIcon(AbstractButton b, ImageIcon source) {
-//        AquaButtonIcon specialIcon = getSpecialIcon(b);
-//        if (specialIcon != null) {
-//            return specialIcon;
-//        }
-//        return createDefaultDisabledIcon(source);
-//    }
-//
-//    /**
-//     * This method is called by AbstractButton via the LAF to obtain an icon to use when a button is disabled and
-//     * selected.
-//     * @param b The button.
-//     * @param source The button selected icon.
-//     * @return the icon to use.
-//     */
-//    public static @NotNull Icon createDisabledSelectedIcon(AbstractButton b, ImageIcon source) {
-//        AquaButtonIcon specialIcon = getSpecialIcon(b);
-//        if (specialIcon != null) {
-//            return specialIcon;
-//        }
-//        return createDefaultDisabledIcon(source);
-//    }
-//
-//    private static @NotNull ImageIcon createDefaultDisabledIcon(ImageIcon source) {
-//        return new ImageIconUIResource(AquaImageFactory.getProcessedImage(source.getImage(), AquaImageFactory.LIGHTEN_FOR_DISABLED));
-//    }
-
     public static void toggleButtonStateChanged(@NotNull AbstractButton b) {
         JToggleButton leftButton = SegmentedControlModel.getLeftAdjacentButton(b);
         if (leftButton != null) {
@@ -745,6 +550,14 @@ public class AquaButtonSupport {
 
     public static boolean isToolbar(@NotNull AbstractButton b) {
         return Boolean.TRUE.equals(b.getClientProperty(AquaButtonUI.CACHED_TOOLBAR_STATUS_PROPERTY));
+    }
+
+    public static boolean isToolbarStyle(@NotNull AbstractButton b) {
+        if (isToolbar(b)) {
+            return true;
+        }
+        AquaButtonBorder bb = AquaBorderSupport.get(b.getBorder(), AquaButtonBorder.class);
+        return bb != null && bb.isToolbarStyle(b);
     }
 
     public static boolean isToolbarSensitive(@NotNull AbstractButton b) {
@@ -794,21 +607,6 @@ public class AquaButtonSupport {
         }
     }
 
-    /**
-     * Invalidate the cached special icon if the template icon status has changed.
-     */
-    public static void updateTemplateIconStatus(AbstractButton b) {
-        Object o = b.getClientProperty(AquaButtonUI.SPECIAL_ICON_PROPERTY);
-        if (o instanceof AquaButtonIcon) {
-            AquaButtonIcon icon = (AquaButtonIcon) o;
-            boolean isTemplate = determineTemplateIconStatus(b);
-            if (icon.isTemplate() != isTemplate) {
-                // Force a new icon to be created with the new status
-                removeCachedIcons(b);
-            }
-        }
-    }
-
     public static void removeCachedIcons(AbstractButton b) {
 
         if (b.getSelectedIcon() instanceof UIResource) {
@@ -834,8 +632,6 @@ public class AquaButtonSupport {
         if (b.getRolloverSelectedIcon() instanceof UIResource) {
             b.setRolloverSelectedIcon(null);
         }
-
-        b.putClientProperty(AquaButtonUI.SPECIAL_ICON_PROPERTY, null);
     }
 
     /**
@@ -860,15 +656,52 @@ public class AquaButtonSupport {
             if (state == AquaUIPainter.State.PRESSED) {
                 return pc.appearance.isDark() ? AquaImageFactory.LIGHTEN_FOR_DISABLED : AquaImageFactory.DARKEN_FOR_PRESSED;
             }
-//            if (shouldUseDisabledIcon(state)) {
-//                return pc.appearance.isDark() ? AquaImageFactory.DARKEN_FOR_PRESSED : AquaImageFactory.LIGHTEN_FOR_DISABLED;
-//            }
             return null;
         }
     }
 
-    private static boolean shouldUseDisabledIcon(@NotNull AquaUIPainter.State state)
-    {
-        return state == AquaUIPainter.State.DISABLED || state == AquaUIPainter.State.DISABLED_INACTIVE;
+    /**
+     * Identify the button state.
+     */
+    public static @NotNull AquaUIPainter.State getState(@NotNull AbstractButton b) {
+        boolean isActive = AquaFocusHandler.isActive(b);
+
+        if (!b.isEnabled()) {
+            return isActive ? AquaUIPainter.State.DISABLED : AquaUIPainter.State.DISABLED_INACTIVE;
+        }
+
+        // on macOS26, toolbar buttons exhibit rollover behavior even in an inactive window
+        int version = AquaNativeRendering.getSystemRenderingVersion();
+        if (version >= AquaNativeRendering.macOS26) {
+            if (isToolbarStyle(b)) {
+                ButtonModel model = b.getModel();
+                if (model.isArmed() && model.isPressed()) {
+                    return getPressedState(b);
+                }
+                if (isRollover(b)) {
+                    return AquaUIPainter.State.ROLLOVER;
+                }
+            }
+        }
+
+        if (!isActive) {
+            return AquaUIPainter.State.INACTIVE;
+        }
+        ButtonModel model = b.getModel();
+        if (model.isArmed() && model.isPressed()) {
+            return getPressedState(b);
+        }
+        if (isRollover(b)) {
+            return AquaUIPainter.State.ROLLOVER;
+        }
+        return getActiveState(b);
+    }
+
+    private static boolean isRollover(@NotNull AbstractButton b) {
+        AquaButtonBorder bb = AquaBorderSupport.get(b.getBorder(), AquaButtonBorder.class);
+        if (bb != null) {
+            return bb.isRollover(b);
+        }
+        return b.isRolloverEnabled() && b.getModel().isRollover();
     }
 }

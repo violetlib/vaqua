@@ -537,7 +537,7 @@ public class AquaMenuSupport {
         Dimension iconSize = icon != null ? new Dimension(icon.getIconWidth(), icon.getIconHeight()) : null;
         CompoundLabelAlignment alignment = CompoundLabelAlignment.HORIZONTAL_RIGHT_TEXT;
         CompoundLabelLayoutEngine engine
-          = AquaButtonSupport.createCompoundLayoutEngine(menuItem, iconSize, null, null, alignment);
+          = AquaButtonSupport.createCompoundLayoutEngine(menuItem, iconSize, null, alignment);
         if (engine == null) {
             return null;
         }

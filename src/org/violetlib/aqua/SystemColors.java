@@ -104,6 +104,7 @@ public class SystemColors {
         colors.addAll("toolbarText", "texturedText");
         colors.addAll("glassButtonText", "bevelText");  // maps to bevel prior to macOS 26
         colors.addAll("sidebarText", "controlText");
+        colors.addAll("toolbarItemText", "toolbarText");
 
         colors.add("toolbarBackground", "clear");
         colors.add("selectedToolbarBackground", "controlBackground_pressed");
@@ -351,7 +352,7 @@ public class SystemColors {
         colors.add("selectedRoundText_disabled", 0, 128);
         colors.add("selectedRoundText_inactive", 0);
 
-        // colors related to toolbar items
+        // colors related to toolbar buttons and toolbar items
         if (OSVersion < macOS26) {
             colors.add("toolbarText", 89);
             colors.add("toolbarText_disabled", 150);
@@ -502,10 +503,9 @@ public class SystemColors {
             colors.add("selectedToolbarBackground_rollover", "selectedToolbarBackground");
             colors.add("selectedToolbarBackground_inactive", 172);
 
-            colors.add("selectedToolbarText", 255);
+            colors.add("selectedToolbarText", 251);
             colors.add("selectedToolbarText_rollover", "selectedToolbarText");
-            colors.add("selectedToolbarText_inactive", 255);
-
+            colors.add("selectedToolbarText_inactive", "selectedToolbarText");
         }
 
         colors.add("texturedSegmentedToolbarBackground_rollover", "clear");
@@ -915,6 +915,8 @@ public class SystemColors {
 
             if (OSVersion >= macOS11) {
                 colors.add("selectedToolbarBackground_inactive", 39);
+                colors.add("selectedToolbarText", 190);
+                colors.add("selectedToolbarText_rollover", 236);
                 colors.add("selectedToolbarText_inactive", 93);
             }
         }

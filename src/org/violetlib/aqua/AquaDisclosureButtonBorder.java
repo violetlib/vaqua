@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2025 Alan Snyder.
+ * Copyright (c) 2015-2026 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -10,8 +10,7 @@ package org.violetlib.aqua;
 
 import javax.swing.*;
 
-import org.jetbrains.annotations.NotNull;
-import org.violetlib.jnr.aqua.AquaUIPainter;
+import org.jetbrains.annotations.*;
 import org.violetlib.jnr.aqua.AquaUIPainter.ButtonState;
 import org.violetlib.jnr.aqua.AquaUIPainter.ButtonWidget;
 
@@ -24,6 +23,11 @@ import static org.violetlib.jnr.aqua.AquaUIPainter.ButtonState.ON;
 public class AquaDisclosureButtonBorder extends AquaButtonBorder implements FocusRingOutlineProvider {
 
     public AquaDisclosureButtonBorder() {
+    }
+
+    @Override
+    public boolean isToolbarStyle(@NotNull AbstractButton b) {
+        return false;
     }
 
     @Override

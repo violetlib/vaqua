@@ -52,8 +52,7 @@ import org.violetlib.jnr.aqua.AquaUIPainter.Size;
 import org.violetlib.jnr.aqua.AquaUIPainter.State;
 
 import static org.violetlib.aqua.AquaButtonSupport.isColorWell;
-import static org.violetlib.aqua.OSXSystemProperties.OSVersion;
-import static org.violetlib.aqua.OSXSystemProperties.macOS26;
+import static org.violetlib.aqua.OSXSystemProperties.*;
 import static org.violetlib.jnr.aqua.AquaUIPainter.ButtonState.OFF;
 import static org.violetlib.jnr.aqua.AquaUIPainter.ButtonState.ON;
 import static org.violetlib.jnr.aqua.AquaUIPainter.ButtonWidget.BUTTON_TOOLBAR_ITEM;
@@ -101,9 +100,6 @@ public abstract class AquaButtonBorder extends AquaBorder implements FocusRingOu
       = new RecyclableSingletonFromDefaultConstructor<>(AquaDisclosureButtonBorder.class);
     public static AquaButtonBorder getDisclosureButtonBorder() { return fDisclosure.get(); }
 
-    protected static final Dimension regularToolbarIconSize = new Dimension(32, 32);
-    protected static final Dimension smallToolbarIconSize = new Dimension(24, 24);
-
     protected final AquaButtonIcon.ImageOperatorSupplier imageOperatorSupplier = new MyImageOperatorSupplier();
 
     protected AquaButtonBorder() {
@@ -122,20 +118,20 @@ public abstract class AquaButtonBorder extends AquaBorder implements FocusRingOu
         GenericButtonConfiguration bg = getConfiguration(b, pc, viewRect.width, viewRect.height);
         if (bg != null) {
             // It is easier to paint the border of a split toolbar item when the compound layout is known
-            boolean isSplit = isSplitToolbarItem(b, bg);
+            boolean isSplit = isSplitToolbarItem(b, bg.getLayoutConfiguration());
             if (!isSplit) {
                 paintBackground(g, b, bg, viewRect, pc);
             }
             if (allowsContent()) {
-                Dimension iconSize = getRequiredIconSizeFromConfiguration(bg, icon);
-                if (iconSize == null && icon != null) {
-                    iconSize = new Dimension(icon.getIconWidth(), icon.getIconHeight());
-                }
+                VirtualComponent virtualButton = getVirtualButton(b, bg, pc.appearance);
+                Icon2D theIcon = virtualButton != null ? virtualButton : Icon2D.optional(icon);
+                Dimension iconSize = virtualButton != null
+                  ? virtualButton.size() : getPreferredIconSize(b, bg.getLayoutConfiguration());
                 Insets2D insets = getButtonContentInsets(b);
                 Color textColor = getForegroundColor(b, bg, pc, false);
                 Color iconColor = getForegroundColor(b, bg, pc, true);
-                AquaButtonSupport.paintIconAndText(g, pc, b, bg, painter, insets, icon,
-                  textColor, iconColor, viewRect, iconSize, isSplit);
+                AquaButtonSupport.paintIconAndText(g, b, bg, insets, theIcon,
+                  textColor, iconColor, viewRect, iconSize);
             }
         }
     }
@@ -151,7 +147,7 @@ public abstract class AquaButtonBorder extends AquaBorder implements FocusRingOu
         double height = viewRect.getHeight();
 
         int version = AquaPainting.getVersion();
-        if (bg.getWidget() == BUTTON_TOOLBAR_ITEM && version < macOS26) {
+        if (bg.getWidget() == BUTTON_TOOLBAR_ITEM && version < macOS11) {
             RoundRectangle2D shape = new RoundRectangle2D.Double(x, y, width - 1, height - 1, 8, 8);
             AquaButtonSupport.paintToolbarItemBackground((ButtonConfiguration) bg, pc, g, shape);
             return;
@@ -220,57 +216,17 @@ public abstract class AquaButtonBorder extends AquaBorder implements FocusRingOu
         }
     }
 
-    protected @NotNull State getState(@NotNull Configuration g) {
-        if (g instanceof ButtonConfiguration) {
-            ButtonConfiguration bg = (ButtonConfiguration) g;
-            return bg.getState();
-        }
-
-        if (g instanceof SegmentedButtonConfiguration) {
-            SegmentedButtonConfiguration bg = (SegmentedButtonConfiguration) g;
-            return bg.getState();
-        }
-
-        // should not happen
-        return State.ACTIVE;
-    }
-
-    protected @NotNull State getState(@NotNull AbstractButton b) {
-        boolean isActive = AquaFocusHandler.isActive(b);
-
-        if (!b.isEnabled()) {
-            return isActive ? State.DISABLED : State.DISABLED_INACTIVE;
-        }
-
-        if (!isActive) {
-            return State.INACTIVE;
-        }
-
-        ButtonModel model = b.getModel();
-        if (model.isArmed() && model.isPressed()) {
-            return AquaButtonSupport.getPressedState(b);
-        }
-
-        if (b.isRolloverEnabled() && isRollover(b)) {
-            return State.ROLLOVER;
-        }
-
-        return AquaButtonSupport.getActiveState(b);
-    }
-
-    protected boolean isRollover(@NotNull AbstractButton b)
-    {
-        ButtonModel model = b.getModel();
-        return model.isRollover();
-    }
-
-    public boolean allowsContent() {
-        return true;
+    public boolean isRollover(@NotNull AbstractButton b) {
+        return isRolloverEnabled(b) && b.getModel().isRollover();
     }
 
     public boolean isRolloverEnabled(AbstractButton b) {
         AquaButtonExtendedTypes.WidgetInfo info = getWidgetInfo(b);
         return info.isRolloverEnabled();
+    }
+
+    public boolean allowsContent() {
+        return true;
     }
 
     /**
@@ -313,19 +269,17 @@ public abstract class AquaButtonBorder extends AquaBorder implements FocusRingOu
                 state = State.ACTIVE;
             }
 
-            // Special case for the text color of a split button, which may be different than the icon color
-            // when the icon background is the accent color.
-            if (isSplitToolbarItem(b, g) && !isIcon) {
+            // Special case for the text of a split toolbar item, which is a label. It does not display a selection
+            // state or rollover.
+            if (isSplitToolbarItem(b, g.getLayoutConfiguration()) && !isIcon) {
                 if (state == State.ROLLOVER) {
                     state = State.ACTIVE;
                 }
-                if (state == State.ACTIVE && getButtonState(b) == ON) {
-                    bs = OFF;
-                }
+                bs = OFF;
             }
             return info.getForeground(state, bs, pc.appearance, useNonexclusive, isIcon);
         } else {
-            if (state.isInactive() && isSplitToolbarItem(b, g)) {
+            if (state.isInactive() && isSplitToolbarItem(b, g.getLayoutConfiguration())) {
                 return info.getForeground(state, OFF, pc.appearance, useNonexclusive, false);
             }
             return existingColor;
@@ -358,11 +312,10 @@ public abstract class AquaButtonBorder extends AquaBorder implements FocusRingOu
      * content (icon and label). A toolbar item with only an icon is not a split item. A toolbar item with no
      * icon is probably a mistake, but for consistency it is rendered as if it had an invisible icon.
      */
-
-    protected boolean isSplitToolbarItem(@NotNull AbstractButton b, @NotNull GenericButtonConfiguration g) {
-        if (g.getWidget() == BUTTON_TOOLBAR_ITEM && b.getText() != null) {
+    protected boolean isSplitToolbarItem(@NotNull AbstractButton b, @NotNull LayoutConfiguration g) {
+        if (g.getWidget() == BUTTON_TOOLBAR_ITEM && b.getText() != null && !b.getText().isEmpty()) {
             int version = AquaPainting.getVersion();
-            return version >= 1500;
+            return version >= macOS11;
         }
         return false;
     }
@@ -498,7 +451,7 @@ public abstract class AquaButtonBorder extends AquaBorder implements FocusRingOu
             if (isTemplate && g != null) {
                 return getForegroundColor(b, g, pc, true);
             }
-            State state = g != null ? g.getState() : getState(b);
+            State state = g != null ? g.getState() : AquaButtonSupport.getState(b);
             if (state == State.PRESSED && shouldHighlightPressedIcon(g)) {
                 return pc.appearance.isDark() ? AquaImageFactory.LIGHTEN_FOR_DISABLED : AquaImageFactory.DARKEN_FOR_PRESSED;
             }
@@ -539,11 +492,9 @@ public abstract class AquaButtonBorder extends AquaBorder implements FocusRingOu
     public @NotNull Dimension getPreferredButtonSize(@NotNull AbstractButton b) {
         LayoutConfiguration g = getLayoutConfiguration(b);
         Dimension d = getMinimumButtonSize(g);
-        Dimension iconSize = null;
-        if (g != null) {
-            iconSize = getRequiredIconSize(g, b.getIcon());
-        }
-        Dimension p = AquaButtonSupport.getBasicPreferredButtonSize(b, iconSize, g, painter);
+        VirtualComponent vb = getVirtualButtonForLayout(b, g);
+        Dimension preferredIconSize = vb != null ? vb.size() : getPreferredIconSize(b, g);
+        Dimension p = AquaButtonSupport.getBasicPreferredButtonSize(b, preferredIconSize, g);
         if (p != null) {
             if (p.width > d.width) {
                 d.width = p.width;
@@ -592,94 +543,178 @@ public abstract class AquaButtonBorder extends AquaBorder implements FocusRingOu
         return null;
     }
 
-    protected @Nullable Dimension getRequiredIconSizeFromConfiguration(@NotNull Configuration g, @Nullable Icon icon) {
-        if (g instanceof LayoutConfiguration) {
-            return getRequiredIconSize((LayoutConfiguration) g, icon);
+    private @Nullable VirtualComponent getVirtualButtonForLayout(@NotNull AbstractButton b,
+                                                                 @NotNull LayoutConfiguration g) {
+        if (!isSplitToolbarItem(b, g)) {
+            return null;
         }
-        return null;
+        ButtonLayoutConfiguration lg = (ButtonLayoutConfiguration) g;
+        // The additional configuration parameters do not matter for layout
+        ButtonConfiguration bg = new ButtonConfiguration(lg, State.ACTIVE, false, OFF);
+        // The appearance does not matter for layout
+        return getVirtualButton(b, bg, AquaAppearances.getDefaultAppearance());
     }
 
-    protected @Nullable Dimension getRequiredIconSize(@NotNull LayoutConfiguration g, @Nullable Icon icon) {
-        if (g instanceof ButtonLayoutConfiguration) {
-            ButtonLayoutConfiguration bg = (ButtonLayoutConfiguration) g;
-            AquaUIPainter.ButtonWidget widget = bg.getButtonWidget();
-            if (widget == BUTTON_TOOLBAR_ITEM) {
-                int version = AquaPainting.getVersion();
-                if (version >= macOS26) {
-                    return smallToolbarIconSize;
-                }
-                Size size = bg.getSize();
-                switch (size) {
-                    case SMALL:
-                    case MINI:
-                        return smallToolbarIconSize;
-                    default:
-                        return regularToolbarIconSize;
-                }
-            }
+    private @Nullable VirtualComponent getVirtualButton(@NotNull AbstractButton b,
+                                                        @NotNull GenericButtonConfiguration g,
+                                                        @NotNull AquaAppearance appearance) {
+        if (!isSplitToolbarItem(b, g.getLayoutConfiguration())) {
+            return null;
         }
+        ButtonConfiguration bg = (ButtonConfiguration) g;
+        Icon icon = b.getIcon();
+        Dimension iconSize = icon != null
+          ? new Dimension(icon.getIconWidth(), icon.getIconHeight()) : new Dimension(0, 0);
 
+        Dimension buttonSize = getVirtualButtonSize(bg.getSize(), iconSize);
+        Size buttonSizeOption = getToolbarItemVirtualButtonSize(bg.getSize());
+
+        ButtonConfiguration vbc = new ButtonConfiguration(AquaUIPainter.ButtonWidget.BUTTON_TOOLBAR,
+          buttonSizeOption, bg.getState(), bg.isFocused(), bg.getButtonState(), bg.getLayoutDirection());
+
+        Icon2D icon2d = Icon2D.optional(icon);
+        Insetter iconInsets = painter.getLayoutInfo().getContentInsets(vbc);
+        return new VirtualComponent(vbc, painter, appearance, icon2d, iconInsets, buttonSize.width, buttonSize.height);
+    }
+
+    /**
+     * Return the preferred icon size, which may be smaller or larger than the actual icon, subject to the constraints
+     * of the button layout.
+     * @param b The button.
+     * @param g The button layout configuration, or null for an unstyled button.
+     * @return the preferred icon size, or null if the button has no icon and the button style does not simulate an
+     * empty icon.
+     */
+    protected @Nullable Dimension getPreferredIconSize(@NotNull AbstractButton b, @Nullable LayoutConfiguration g) {
+        Icon icon = b.getIcon();
+        Dimension iconSize = getVirtualIconSize(icon, g);
+        if (iconSize == null) {
+            return null;
+        }
+        if (g == null) {
+            return iconSize;
+        }
+        // Fixed width is not supported
+        AquaUILayoutInfo layoutInfo = painter.getLayoutInfo();
+        LayoutInfo info = layoutInfo.getLayoutInfo(g);
+        int fixedHeight = (int) info.getFixedVisualHeight();
+        Insetter s = layoutInfo.getContentInsets(g);
+        if (s != null) {
+            fixedHeight = s.apply(100, fixedHeight).height;
+        }
+        if (fixedHeight > 0) {
+            int width = Icons.getIconWidthInFixedHeight(iconSize, fixedHeight);
+            return new Dimension(width, fixedHeight);
+        }
+        int width = Math.max(iconSize.width, (int) info.getMinimumVisualWidth());
+        int height = Math.max(iconSize.height, (int) info.getMinimumVisualHeight());
+        return new Dimension(width, height);
+    }
+
+    /**
+     * Return the size of the specified icon.
+     * @param icon An optional icon.
+     * @param g An optional button layout configuration.
+     * @return the icon size, if the icon is specified, or a zero size if the button style simulates an empty icon.
+     */
+    private @Nullable Dimension getVirtualIconSize(@Nullable Icon icon, @Nullable LayoutConfiguration g) {
         if (icon != null) {
-            int maximumHeight = getButtonIconMaximumHeight(g);
-            if (maximumHeight > 0) {
-                int iconHeight = icon.getIconHeight();
-                if (iconHeight > maximumHeight) {
-                    float scaleFactor = maximumHeight / (float) iconHeight;
-                    int width = (int) Math.round(Math.ceil(icon.getIconWidth() * scaleFactor));
-                    return new Dimension(width, maximumHeight);
-                }
-            }
+            return new Dimension(icon.getIconWidth(), icon.getIconHeight());
         }
-
+        if (g != null && g.getWidget() == BUTTON_TOOLBAR_ITEM) {
+            // Simulate an empty icon
+            return new Dimension(0, 0);
+        }
         return null;
     }
 
     /**
-     * Return the maximum supported icon height for the given configuration.
-     * @return the maximum height, or zero if the icon height is unrestricted.
+     * Return the size of the virtual button of a split toolbar item.
+     * @param itemSize The size variant of the toolbar item.
+     * @param iconSize The size of the icon.
+     * @return the virtual button size.
      */
-    private int getButtonIconMaximumHeight(@NotNull LayoutConfiguration g)
+    private @NotNull Dimension getVirtualButtonSize(@NotNull Size itemSize, @NotNull Dimension iconSize) {
+        Size buttonSize = getToolbarItemVirtualButtonSize(itemSize);
+        AquaUIPainter.UILayoutDirection ld = AquaUIPainter.UILayoutDirection.LEFT_TO_RIGHT;  // does not matter
+        ButtonLayoutConfiguration g
+          = new ButtonLayoutConfiguration(AquaUIPainter.ButtonWidget.BUTTON_TOOLBAR, buttonSize, ld);
+        AquaUILayoutInfo uiLayoutInfo = painter.getLayoutInfo();
+        LayoutInfo info = uiLayoutInfo.getLayoutInfo(g);
+
+        // The virtual button size depends upon the icon width, after any required scaling. The required scaling depends
+        // upon the available height for the icon, which is defined only if the virtual button has a fixed height.
+
+        Insetter s = uiLayoutInfo.getButtonLabelInsets(g);
+        float fixedHeight = info.getFixedVisualHeight();
+        float effectiveIconWidth = fixedHeight == 0 ? iconSize.width :
+          Icons.getIconWidthInFixedHeight(iconSize, toContentHeight(fixedHeight, s));
+        float buttonWidth = Math.max(info.getMinimumVisualWidth(), toContainerWidth(effectiveIconWidth, s));
+        float buttonHeight = fixedHeight > 0 ? fixedHeight :
+          Math.max(info.getMinimumVisualHeight(), toContainerHeight(iconSize.height, s));
+        int bw = (int) Math.round(Math.ceil(buttonWidth));
+        int bh = (int) Math.round(Math.ceil(buttonHeight));
+        return new Dimension(bw, bh);
+    }
+
+    private static float toContentHeight(float componentHeight, @Nullable Insetter contentInsetter)
     {
-        AquaUILayoutInfo layoutInfo = painter.getLayoutInfo();
-        LayoutInfo info = layoutInfo.getLayoutInfo(g);
-        int h = (int) info.getFixedVisualHeight();
-        if (h == 0) {
-            return 0;
+        if (contentInsetter != null) {
+            Rectangle2D r = contentInsetter.apply2D(100, componentHeight);
+            return (float) r.getHeight();
         }
-        Insetter s = layoutInfo.getContentInsets(g);
-        if (s != null) {
-            Rectangle bounds = s.apply(100, h);
-            return bounds.height;
+        return componentHeight;
+    }
+
+    private static float toContainerWidth(float contentWidth, @Nullable Insetter contentInsetter)
+    {
+        if (contentInsetter != null) {
+            return (float) contentInsetter.expand2D(new Dimension2DImpl(contentWidth, 100)).getWidth();
         }
-        return h;
+        return contentWidth;
+    }
+
+    private static float toContainerHeight(float contentHeight, @Nullable Insetter contentInsetter)
+    {
+        if (contentInsetter != null) {
+            return (float) contentInsetter.expand2D(new Dimension2DImpl(100, contentHeight)).getWidth();
+        }
+        return contentHeight;
+    }
+
+    private @NotNull Size getToolbarItemVirtualButtonSize(@NotNull Size itemSize) {
+        int version = AquaPainting.getVersion();
+        if (version >= macOS26) {
+            return Size.LARGE;
+        }
+        switch (itemSize) {
+            case SMALL:
+            case MINI:
+                return Size.SMALL;
+            default:
+                return Size.REGULAR;
+        }
     }
 
     protected @NotNull AquaButtonExtendedTypes.WidgetInfo getWidgetInfo(@NotNull AbstractButton b) {
         Object widget = null;
-
         LayoutConfiguration g = getLayoutConfiguration(b);
         if (g instanceof ButtonLayoutConfiguration) {
             widget = ((ButtonLayoutConfiguration) g).getButtonWidget();
         }
-
         if (g instanceof SegmentedButtonLayoutConfiguration) {
             widget = ((SegmentedButtonLayoutConfiguration) g).getWidget();
         }
-
         return AquaButtonExtendedTypes.getWidgetInfo(widget);
     }
 
-    public static boolean isIconOnly(@NotNull AbstractButton b)
-    {
+    public static boolean isIconOnly(@NotNull AbstractButton b) {
         Icon ic = b.getIcon();
         if (ic == null) {
             return false;
         }
         String text = b.getText();
-        if (text != null && !text.isEmpty()) {
-            return false;
-        }
-        return true;
+        return text == null || text.isEmpty();
     }
 
     /**
@@ -688,11 +723,9 @@ public abstract class AquaButtonBorder extends AquaBorder implements FocusRingOu
     public @Nullable GenericButtonConfiguration getConfiguration(@NotNull AbstractButton b,
                                                                  @NotNull PaintingContext pc,
                                                                  int width, int height) {
-
         LayoutConfiguration g = getLayoutConfiguration(b);
-
         if (g instanceof ButtonLayoutConfiguration) {
-            AquaUIPainter.State state = getState(b);
+            AquaUIPainter.State state = AquaButtonSupport.getState(b);
             boolean isFocused = computeIsFocused(state, b);
             AquaUIPainter.ButtonState bs = getButtonState(b);
             ButtonConfiguration bg = new ButtonConfiguration((ButtonLayoutConfiguration) g, state, isFocused, bs);
@@ -705,7 +738,6 @@ public abstract class AquaButtonBorder extends AquaBorder implements FocusRingOu
             }
             return bg;
         }
-
         return null;
     }
 
@@ -727,7 +759,7 @@ public abstract class AquaButtonBorder extends AquaBorder implements FocusRingOu
         LayoutConfiguration g = getLayoutConfiguration(b);
         if (b instanceof JToggleButton) {
             if (g instanceof ButtonLayoutConfiguration) {
-                AquaUIPainter.State state = getState(b);
+                AquaUIPainter.State state = AquaButtonSupport.getState(b);
                 boolean isFocused = computeIsFocused(state, b);
                 AquaUIPainter.ButtonState bs = getButtonState(b);
                 return new ButtonConfiguration((ButtonLayoutConfiguration) g, state, isFocused, bs);
@@ -763,6 +795,22 @@ public abstract class AquaButtonBorder extends AquaBorder implements FocusRingOu
         return null;
     }
 
+    public boolean isToolbarStyle(@NotNull AbstractButton b) {
+        LayoutConfiguration g = getLayoutConfiguration(b);
+        if (g != null) {
+            Object widget = g.getWidget();
+            if (widget instanceof AquaUIPainter.ButtonWidget) {
+                AquaUIPainter.ButtonWidget w = (AquaUIPainter.ButtonWidget) widget;
+                return w.isToolbar();
+            }
+            if (widget instanceof AquaUIPainter.SegmentedButtonWidget) {
+                AquaUIPainter.SegmentedButtonWidget w = (AquaUIPainter.SegmentedButtonWidget) widget;
+                return w.isToolbar();
+            }
+        }
+        return false;
+    }
+
     public abstract @NotNull ButtonStyleInfo getButtonStyleInfo(@NotNull AbstractButton b);
 
     @Override
@@ -776,65 +824,6 @@ public abstract class AquaButtonBorder extends AquaBorder implements FocusRingOu
         } else {
             return null;  // should not happen
         }
-    }
-
-    /**
-     * Determine if a proposed button widget is usable for a button based on the fixed height (if any) imposed by the
-     * widget.
-     */
-    protected boolean isProposedButtonWidgetUsable(@NotNull AbstractButton b,
-                                                   boolean isOnToolbar,
-                                                   @NotNull Object widget) {
-
-        // If the button has no text, then any widget is usable because icons are scaled as needed.
-        String text = b.getText();
-        if (text == null || text.isEmpty()) {
-            return true;
-        }
-
-        LayoutConfiguration g;
-
-        Size size = AquaUtils.getSize(b, isOnToolbar, widget);
-        if (widget instanceof AquaUIPainter.ButtonWidget) {
-            AquaUIPainter.ButtonWidget w = (AquaUIPainter.ButtonWidget) widget;
-            AquaUIPainter.UILayoutDirection ld = AquaUtils.getLayoutDirection(b);
-            g = new ButtonLayoutConfiguration(w, size, ld);
-        } else if (widget instanceof AquaUIPainter.SegmentedButtonWidget) {
-            AquaUIPainter.SegmentedButtonWidget w = (AquaUIPainter.SegmentedButtonWidget) widget;
-            g = new SegmentedButtonLayoutConfiguration(w, size, AquaUIPainter.Position.MIDDLE);
-        } else {
-            return false;
-        }
-
-        LayoutInfo layoutInfo = painter.getLayoutInfo().getLayoutInfo(g);
-        int fixedHeight = (int) Math.ceil(layoutInfo.getFixedVisualHeight());
-        if (fixedHeight == 0) {
-            return true;
-        }
-
-        Insetter insetter = painter.getLayoutInfo().getContentInsets(g);
-        if (insetter == null || !insetter.isInvertible()) {
-            return true;
-        }
-
-        // We need to predict the required size of the button to see if a fixed height widget can be used. That requires
-        // knowing the font that would be used if the widget were chosen. This determination cannot rely on the current
-        // configuration of the button, which we may be in the process of replacing.
-
-        Font font = AquaUtilControlSize.isOKToInstallDefaultFont(b)
-          ? AquaButtonExtendedTypes.getFont(widget, size, AquaButtonSupport.getGenericDefaultFont(b))
-          : b.getFont();
-
-        // If the font cannot be determined, a fixed height widget is not usable.
-        if (font == null) {
-            return false;
-        }
-
-        FontMetrics fm = b.getFontMetrics(font);
-        int requiredHeight = AquaUtils.getTextHeight(b, fm);
-        Dimension d = new Dimension(1000, requiredHeight); // width does not matter
-        Dimension requiredSize = insetter.expand(d);
-        return requiredSize.height <= fixedHeight;
     }
 
     protected @NotNull AquaUIPainter.ButtonState getButtonState(@NotNull AbstractButton b) {

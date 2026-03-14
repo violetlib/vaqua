@@ -387,7 +387,7 @@ public class FileRenderer extends JLabel implements ListCellRenderer, GenericCel
         }
 
         CompoundLabelLayoutEngine engine
-          = new CompoundLabelLayoutEngine(null, iconSize, v, text, textFM, alignment, textIconGap, null);
+          = new CompoundLabelLayoutEngine(iconSize, v, text, textFM, alignment, textIconGap);
         Insets2D zero = new Insets2D(0, 0, 0, 0);
         ButtonLayoutInfo info = engine.getLayoutInfo(contentRect.width, contentRect.height, zero).toLeftAligned();
         if (info.labelBounds != null) {

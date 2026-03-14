@@ -58,7 +58,7 @@ public class AquaToggleButtonBorder extends AquaButtonBorder implements FocusRin
         LayoutConfiguration g = getLayoutConfiguration(b);
 
         if (g instanceof SegmentedButtonLayoutConfiguration) {
-            AquaUIPainter.State state = getState(b);
+            AquaUIPainter.State state = AquaButtonSupport.getState(b);
             boolean isFocused = computeIsFocused(state, b);
             boolean isSelected = b.getModel().isSelected();
             AquaUIPainter.Direction d = AquaUIPainter.Direction.NONE;

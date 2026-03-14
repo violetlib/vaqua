@@ -548,13 +548,13 @@ public class AquaButtonExtendedTypes {
         }
 
         if (AquaPainting.getVersion() >= macOS26) {
-            result.put(BUTTON_TOOLBAR_ITEM, new WidgetInfo(AquaColors.TOOLBAR_COLORS)
+            result.put(BUTTON_TOOLBAR_ITEM, new WidgetInfo(AquaColors.TOOLBAR_ITEM_COLORS)
               .withRolloverEnabled()
               .withIconTextGap(5)
               .withFontFinder((sz) -> UIManager.getFont("Button.font").deriveFont(12f))
             );
         } else {
-            result.put(BUTTON_TOOLBAR_ITEM, new WidgetInfo(AquaColors.TOOLBAR_COLORS)
+            result.put(BUTTON_TOOLBAR_ITEM, new WidgetInfo(AquaColors.TOOLBAR_ITEM_COLORS)
               .withRolloverEnabled()
               .withIconTextGap(2));
         }

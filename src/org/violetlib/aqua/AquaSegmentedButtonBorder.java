@@ -102,7 +102,7 @@ public class AquaSegmentedButtonBorder extends AquaButtonBorder implements Focus
         }
 
         ButtonModel model = b.getModel();
-        State state = getState(b);
+        State state = AquaButtonSupport.getState(b);
         boolean isFocused = (state != State.DISABLED && state != State.INACTIVE && state != State.DISABLED_INACTIVE)
           && b.isFocusPainted() && b.hasFocus();
         boolean isSelected = model.isSelected();
@@ -209,8 +209,8 @@ public class AquaSegmentedButtonBorder extends AquaButtonBorder implements Focus
     }
 
     @Override
-    protected boolean isRollover(@NotNull AbstractButton b) {
-        return SegmentedControlModel.isRollover(b);
+    public boolean isRollover(@NotNull AbstractButton b) {
+        return isRolloverEnabled(b) && SegmentedControlModel.isRollover(b);
     }
 
     public static SegmentedButtonConfiguration.DividerState getDividerState(boolean isPainted, boolean isSelected) {

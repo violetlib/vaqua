@@ -78,6 +78,10 @@ public class AquaColors {
     public static final BasicContextualColors TOOLBAR_COLORS
       = createToolbarButtonColors("ToolbarButton", "toolbarBackground", "toolbarText");
 
+    /** For toolbar items **/
+    public static final BasicContextualColors TOOLBAR_ITEM_COLORS
+      = createToolbarButtonColors("ToolbarItem", "toolbarBackground", "toolbarItemText");
+
     /** Colors for pop up and pull down buttons **/
     public static final BasicContextualColors POP_UP_DOWN_BUTTON_COLORS
       = createButtonColors("PopUpDown", "pushPopText");

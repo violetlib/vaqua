@@ -172,8 +172,6 @@ public class AquaButtonUI extends BasicButtonUI
                 b.setFont(df);
             }
 
-            AquaButtonSupport.updateTemplateIconStatus(b);
-
             if (!AquaButtonSupport.isColorWell(b)) {
                 AquaButtonSupport.disconnectColorChooser(b);
             }
@@ -412,7 +410,6 @@ public class AquaButtonUI extends BasicButtonUI
             g.fillRect(0, 0, c.getWidth(),c.getHeight());
         }
         paint(g, (AbstractButton) c, pc);
-
     }
 
     protected void paint(@NotNull Graphics2D g, @NotNull AbstractButton b, @NotNull PaintingContext pc) {
@@ -464,7 +461,8 @@ public class AquaButtonUI extends BasicButtonUI
         }
         Color fc = getDefaultForegroundColor(b, pc.appearance);
         Insets2D insets = AquaUtils.asInsets2D(b.getInsets());
-        AquaButtonSupport.paintIconAndText(g, pc, b, null, null, insets, icon, fc, fc, viewRect, null, false);
+        Icon2D icon2d = Icon2D.optional(icon);
+        AquaButtonSupport.paintIconAndText(g, b, null, insets, icon2d, fc, fc, viewRect, null);
     }
 
     @Override
@@ -514,7 +512,7 @@ public class AquaButtonUI extends BasicButtonUI
         } else {
             Icon ic = b.getIcon();
             Dimension iconSize = ic != null ? new Dimension(ic.getIconWidth(), ic.getIconHeight()) : null;
-            return AquaButtonSupport.getBasicPreferredButtonSize(b, iconSize, null, null);
+            return AquaButtonSupport.getBasicPreferredButtonSize(b, iconSize, null);
         }
     }
 
@@ -575,11 +573,6 @@ public class AquaButtonUI extends BasicButtonUI
 
             if ("icon".equals(propertyName) || "text".equals(propertyName)) {
                 configure(b);
-                return;
-            }
-
-            if (propertyName != null && !propertyName.contains(".") && propertyName.endsWith("Icon")) {
-                AquaButtonSupport.updateTemplateIconStatus(b);
                 return;
             }
 
