@@ -611,6 +611,7 @@ JNIEXPORT jint JNICALL Java_org_violetlib_aqua_fc_OSXFile_nativeGetLabel
         Boolean success = CFURLCopyResourcePropertyForKey((CFURLRef) u, kCFURLLabelNumberKey, &fileLabel, &error);
         if (success) {
             CFNumberGetValue(fileLabel, kCFNumberSInt32Type, &result);
+            CFRelease(fileLabel);
         }
     }
 
@@ -1125,7 +1126,7 @@ JNIEXPORT jlong JNICALL Java_org_violetlib_aqua_fc_OSXFile_nativeGetLastUsedDate
     // Do the API calls
     NSURL *u = [NSURL fileURLWithPath:pathNS];
     if (u != nil) {
-        MDItemRef item = MDItemCreateWithURL(NULL, CFBridgingRetain(u));
+        MDItemRef item = MDItemCreateWithURL(NULL, (__bridge CFURLRef)u);
         if (item != NULL) {
             CFDateRef date = (CFDateRef) MDItemCopyAttribute(item, kMDItemLastUsedDate);
             if (date != NULL) {
@@ -1134,7 +1135,9 @@ JNIEXPORT jlong JNICALL Java_org_violetlib_aqua_fc_OSXFile_nativeGetLastUsedDate
                 jtime += (60 * 60 * 24) * (31 * 365 + 8);
                 jtime *= 1000;
                 result = (jlong) jtime;
+                CFRelease(date);
             }
+            CFRelease(item);
         }
     }
 
@@ -1180,10 +1183,10 @@ JNIEXPORT jobjectArray JNICALL Java_org_violetlib_aqua_fc_OSXFile_nativeExecuteS
             if (queryString != nil && searchCriteria != nil) {
                 NSArray *scopeDirectories = (NSArray *) [searchCriteria objectForKey:@"FXScopeArrayOfPaths"];
                 if (scopeDirectories != nil) {
-                    MDQueryRef query = MDQueryCreate(NULL, CFBridgingRetain(queryString), NULL, NULL);
+                    MDQueryRef query = MDQueryCreate(NULL, (__bridge CFStringRef)queryString, NULL, NULL);
                     if (query != NULL) {
                         OptionBits scopeOptions = 0;
-                        MDQuerySetSearchScope(query, CFBridgingRetain(scopeDirectories), scopeOptions);
+                        MDQuerySetSearchScope(query, (__bridge CFArrayRef)scopeDirectories, scopeOptions);
                         CFOptionFlags optionFlags = kMDQuerySynchronous;
                         Boolean b = MDQueryExecute(query, optionFlags);
                         if (b) {
@@ -1196,8 +1199,10 @@ JNIEXPORT jobjectArray JNICALL Java_org_violetlib_aqua_fc_OSXFile_nativeExecuteS
                                 NSString *pathNS = (NSString *) path;
                                 jstring pathJ = (*env)->NewStringUTF(env, [pathNS UTF8String]);
                                 (*env)->SetObjectArrayElement(env, result, i, pathJ);
+                                CFRelease(path);
                             }
                         }
+                        CFRelease(query);
                     }
                 }
             }
