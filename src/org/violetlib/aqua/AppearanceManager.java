@@ -100,7 +100,7 @@ public class AppearanceManager {
     public static void uninstallListeners(@NotNull Component c) {
         c.removeHierarchyListener(hierarchyListener);
         c.removePropertyChangeListener(FRAME_ACTIVE_PROPERTY, activeStateListener);
-        c.addPropertyChangeListener(AQUA_APPEARANCE_NAME_KEY, appearanceNamePropertyListener);
+        c.removePropertyChangeListener(AQUA_APPEARANCE_NAME_KEY, appearanceNamePropertyListener);
     }
 
     public static void setRootPaneRegisteredAppearance(@NotNull JRootPane rp, @NotNull AquaAppearance appearance) {
