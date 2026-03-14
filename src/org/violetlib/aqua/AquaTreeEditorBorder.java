@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Alan Snyder.
+ * Copyright (c) 2021-2026 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -10,21 +10,26 @@ package org.violetlib.aqua;
 
 import java.awt.*;
 import javax.swing.*;
-import javax.swing.plaf.UIResource;
 
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.*;
 
 /**
  * The default border for a tree cell editor.
  */
-public class AquaTreeEditorBorder implements AquaBackgroundBorder, UIResource {
-
-    public AquaTreeEditorBorder() {
+public final class AquaTreeEditorBorder
+  extends AquaBorder
+  implements AquaBackgroundBorder
+{
+    public AquaTreeEditorBorder()
+    {
     }
 
     @Override
-    public void paintBackground(@NotNull Component c, Graphics g, @Nullable Color background) {
+    public void paintBackground(@NotNull Component c,
+                                @NotNull Graphics g,
+                                @Nullable Color background,
+                                @Nullable Color borderColor)
+    {
         Color bc = getBackground(c);
         if (bc != null) {
             int width = c.getWidth();
@@ -34,47 +39,23 @@ public class AquaTreeEditorBorder implements AquaBackgroundBorder, UIResource {
         }
     }
 
-    private @Nullable Color getBackground(@NotNull Component c) {
-        JTree tree = getTree(c);
-        if (tree != null) {
-            AquaTreeUI ui = AquaUtils.getUI(tree, AquaTreeUI.class);
-            if (ui != null) {
-                AquaAppearance a = AppearanceManager.getAppearance(tree);
-                if (a.isDark()) {
-                    Color b = AquaColors.getCellEditorBackground(tree);
-                    if (b != null) {
-                        return b;
-                    }
-                }
-            }
+    private @Nullable Color getBackground(@NotNull Component c)
+    {
+        PaintingContext pc = PaintingContext.getDefault();
+        if (pc.appearance.isDark()) {
+            return AquaColors.getCellEditorBackground();
         }
         return c.getBackground();
     }
 
-    private @Nullable JTree getTree(@NotNull Component c) {
-        Container parent = c.getParent();
-        if (parent instanceof JTree) {
-            return (JTree) parent;
-        }
-        if (parent == null) {
-            return null;
-        }
-        parent = parent.getParent();
-        return parent instanceof JTree ? (JTree) parent : null;
+    @Override
+    protected void paint(@NotNull JComponent c, @NotNull Graphics2D g, int x, int y, int width, int height)
+    {
     }
 
     @Override
-    public void paintBorder(Component c, Graphics g, int x, int y, int width, int height) {
-        // Not used
-    }
-
-    @Override
-    public Insets getBorderInsets(Component c) {
+    public @NotNull Insets getBorderInsets(@NotNull Component c)
+    {
         return new Insets(0, 0, 0, 0);
-    }
-
-    @Override
-    public boolean isBorderOpaque() {
-        return true;
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2018 Alan Snyder.
+ * Copyright (c) 2015-2026 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -13,6 +13,7 @@ import javax.swing.*;
 import javax.swing.border.Border;
 import javax.swing.plaf.BorderUIResource;
 
+import org.jetbrains.annotations.*;
 import org.violetlib.jnr.aqua.AquaUIPainter;
 import org.violetlib.jnr.aqua.Configuration;
 import org.violetlib.jnr.aqua.GroupBoxConfiguration;
@@ -56,7 +57,7 @@ public class AquaBoxPainter implements BackgroundPainter {
     }
 
     @Override
-    public void paintBackground(JComponent c, Graphics g, int x, int y, int width, int height) {
+    public void paintBackground(JComponent c, Graphics g, @NotNull PaintingContext pc, int x, int y, int width, int height) {
 
         // Paint the box background to surround the content area, which is defined by the insets.
 
@@ -65,7 +66,7 @@ public class AquaBoxPainter implements BackgroundPainter {
         int boxTop = Math.max(0, s.top - topInset);
         int boxWidth = Math.max(0, width - boxLeft - Math.max(0, s.right - sideInset));
         int boxHeight = Math.max(0, height - boxTop - Math.max(0, s.bottom - topInset));
-        AquaUtils.configure(painter, c, boxWidth, boxHeight);
+        AquaUtils.configure(painter, pc.appearance, c, boxWidth, boxHeight);
         Configuration bg = getConfiguration();
         painter.getPainter(bg).paint(g, boxLeft, boxTop);
 

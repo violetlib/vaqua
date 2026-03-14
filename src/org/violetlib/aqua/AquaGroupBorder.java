@@ -1,5 +1,5 @@
 /*
- * Changes Copyright (c) 2015-2020 Alan Snyder.
+ * Changes Copyright (c) 2015-2026 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -34,9 +34,10 @@
 package org.violetlib.aqua;
 
 import java.awt.*;
+import javax.swing.*;
 import javax.swing.border.Border;
 
-import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.*;
 import org.violetlib.aqua.AquaUtils.RecyclableSingletonFromDefaultConstructor;
 import org.violetlib.jnr.aqua.AquaUIPainter;
 import org.violetlib.jnr.aqua.Configuration;
@@ -68,9 +69,9 @@ public class AquaGroupBorder extends AquaBorder {
     public AquaGroupBorder(@NotNull Insets boxInsets, @NotNull Insets borderInsets, boolean isFrameOnly) {
         this.boxInsets = boxInsets;
         this.borderInsets = new Insets(boxInsets.top + borderInsets.top,
-                boxInsets.left + borderInsets.left,
-                boxInsets.bottom + borderInsets.bottom,
-                boxInsets.right + borderInsets.right);
+          boxInsets.left + borderInsets.left,
+          boxInsets.bottom + borderInsets.bottom,
+          boxInsets.right + borderInsets.right);
         this.isFrameOnly = isFrameOnly;
     }
 
@@ -79,22 +80,27 @@ public class AquaGroupBorder extends AquaBorder {
         return (Insets) borderInsets.clone();
     }
 
-    public void paintBorder(Component c, Graphics g, int x, int y, int width, int height) {
+    protected void paint(JComponent c, Graphics2D g, int x, int y, int width, int height) {
         x += boxInsets.left;
         y += boxInsets.top;
         width -= (boxInsets.left + boxInsets.right);
         height -= (boxInsets.top + boxInsets.bottom);
 
         // TBD: state is not currently used, but perhaps someday it will be...
-
-        AppearanceManager.ensureAppearance(c);
-        AquaUtils.configure(painter, c, width, height);
+        PaintingContext pc = PaintingContext.getDefault();
+        AquaUtils.configure(painter, pc.appearance, c, width, height);
         Configuration bg = getConfiguration();
         painter.getPainter(bg).paint(g, x, y);
     }
 
     protected Configuration getConfiguration() {
         return new GroupBoxConfiguration(AquaUIPainter.State.ACTIVE, isFrameOnly);
+    }
+
+    public static @NotNull AquaGroupBorder createTabbedPaneBorder(@Nullable Color contentBackground) {
+        // TBD: work in progress
+        boolean isClear = contentBackground != null && contentBackground.getAlpha() == 0;
+        return new AquaGroupBorder(new Insets(5, 5, 5, 5), new Insets(3, 7, 3, 7), isClear);
     }
 
     protected static class TabbedPane extends AquaGroupBorder {

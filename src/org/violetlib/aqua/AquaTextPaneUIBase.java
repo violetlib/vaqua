@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2021 Alan Snyder.
+ * Copyright (c) 2018-2026 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -19,8 +19,7 @@ import javax.swing.*;
 import javax.swing.border.Border;
 import javax.swing.plaf.UIResource;
 
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.*;
 
 /**
  * A base class for multiple-line text component UIs.
@@ -63,6 +62,9 @@ public class AquaTextPaneUIBase extends AquaTextComponentUIBase {
     @Override
     protected void installDefaults() {
         super.installDefaults();
+        // A disabled text pane uses a translucent background
+        LookAndFeel.installProperty(editor, "opaque", false);
+        installBorder();
         updateBorderOwner();
     }
 
@@ -131,8 +133,9 @@ public class AquaTextPaneUIBase extends AquaTextComponentUIBase {
                     // If the application set the opaque attribute, do not install our border
                     editor.setBorder(null);
                 } else {
-                    if (!(textComponentBorder instanceof AquaBackgroundBorder)) {
-                        Border b = new AquaTextComponentBorder(editor);
+                    AquaBackgroundBorder abb = textComponentBorder != null ? AquaBorderSupport.get(textComponentBorder, AquaBackgroundBorder.class) : null;
+                    if (abb == null) {
+                        Border b = new AquaTextComponentBorder(editor, null);
                         editor.setBorder(b);
                     }
                 }
@@ -179,7 +182,7 @@ public class AquaTextPaneUIBase extends AquaTextComponentUIBase {
             watchedParent.addContainerListener(watchedParentContainerListener);
         }
 
-        AquaTextComponentBorder tcb = new AquaTextComponentBorder(editor);
+        AquaTextComponentBorder tcb = new AquaTextComponentBorder(editor, scrollPane);
         installingBorder = true;
         scrollPane.setBorder(tcb);
         LookAndFeel.installProperty(scrollPane, "opaque", Boolean.FALSE);
@@ -222,5 +225,23 @@ public class AquaTextPaneUIBase extends AquaTextComponentUIBase {
                 updateBorderOwner();
             }
         }
+    }
+
+    @Override
+    protected void paintBackgroundSafely(@NotNull Graphics g, @Nullable Color background) {
+        Border b = editor.getBorder();
+        AquaBackgroundBorder bb = AquaBorderSupport.get(b, AquaBackgroundBorder.class);
+        if (bb != null) {
+            bb.paintBackground(editor, g, background, null);
+        } else if (background != null && background.getAlpha() > 0 && shouldPaintBackground()) {
+            int width = editor.getWidth();
+            int height = editor.getHeight();
+            g.setColor(background);
+            g.fillRect(0, 0, width, height);
+        }
+    }
+
+    protected boolean shouldPaintBackground() {
+        return editor.isOpaque() || owningScrollPane != null;
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Changes Copyright (c) 2015-2021 Alan Snyder.
+ * Changes Copyright (c) 2015-2026 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -47,8 +47,7 @@ import javax.swing.event.ChangeListener;
 import javax.swing.plaf.ComponentUI;
 import javax.swing.plaf.ProgressBarUI;
 
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.*;
 import org.violetlib.aqua.AquaUtilControlSize.Sizeable;
 import org.violetlib.jnr.LayoutInfo;
 import org.violetlib.jnr.aqua.*;
@@ -58,10 +57,11 @@ import org.violetlib.jnr.aqua.AquaUIPainter.Size;
 import org.violetlib.jnr.aqua.AquaUIPainter.State;
 
 import static org.violetlib.aqua.OSXSystemProperties.OSVersion;
+import static org.violetlib.aqua.OSXSystemProperties.macOS11;
 
 public class AquaProgressBarUI
-        extends ProgressBarUI
-        implements ChangeListener, PropertyChangeListener, AncestorListener, Sizeable, AquaComponentUI {
+  extends ProgressBarUI
+  implements ChangeListener, PropertyChangeListener, AncestorListener, Sizeable, AquaComponentUI {
 
     public static final String PROGRESS_BAR_STYLE_KEY = "JProgressBar.style";
 
@@ -105,7 +105,6 @@ public class AquaProgressBarUI
         LookAndFeel.installProperty(progressBar, "opaque", false);
         LookAndFeel.installBorder(progressBar, "ProgressBar.border");
         AquaUtils.installFont(progressBar, "ProgressBar.font");
-        configureAppearanceContext(null);
     }
 
     protected void uninstallDefaults() {
@@ -117,25 +116,15 @@ public class AquaProgressBarUI
         progressBar.addPropertyChangeListener(this); // Listen for changes between determinate and indeterminate state
         progressBar.addAncestorListener(this);
         AquaUtilControlSize.addSizePropertyListener(progressBar);
-        AppearanceManager.installListeners(progressBar);
+        AppearanceManager.install(progressBar);
     }
 
     protected void uninstallListeners() {
-        AppearanceManager.uninstallListeners(progressBar);
+        AppearanceManager.uninstall(progressBar);
         AquaUtilControlSize.removeSizePropertyListener(progressBar);
         progressBar.removeAncestorListener(this);
         progressBar.removePropertyChangeListener(this);
         progressBar.removeChangeListener(this);
-    }
-
-    @Override
-    public void appearanceChanged(@NotNull JComponent c, @NotNull AquaAppearance appearance) {
-        configureAppearanceContext(appearance);
-    }
-
-    @Override
-    public void activeStateChanged(@NotNull JComponent c, boolean isActive) {
-        configureAppearanceContext(null);
     }
 
     @Override
@@ -191,16 +180,6 @@ public class AquaProgressBarUI
     public void ancestorMoved(AncestorEvent e) {
     }
 
-    protected void configureAppearanceContext(@Nullable AquaAppearance appearance) {
-        if (appearance == null) {
-            appearance = AppearanceManager.ensureAppearance(progressBar);
-        }
-        AquaUIPainter.State state = getState();
-        AppearanceContext appearanceContext = new AppearanceContext(appearance, state, false, false);
-        AquaColors.installColors(progressBar, appearanceContext, colors);
-        progressBar.repaint();
-    }
-
     protected @NotNull AquaUIPainter.State getState() {
         if (!progressBar.isEnabled()) {
             return State.INACTIVE;
@@ -213,14 +192,20 @@ public class AquaProgressBarUI
 
     @Override
     public void update(Graphics g, JComponent c) {
-        AppearanceManager.registerCurrentAppearance(c);
-        super.update(g, c);
+        paint(g, c);
     }
 
     @Override
     public void paint(Graphics g, JComponent c) {
+        AppearanceManager.withContext(g, c, this::paint);
+    }
 
+    public void paint(Graphics2D g, JComponent c, @NotNull PaintingContext pc) {
         revalidateAnimationTimers(); // revalidate to turn on/off timers when values change
+
+        AquaUIPainter.State state = getState();
+        AppearanceContext appearanceContext = new AppearanceContext(pc.appearance, state, false, false);
+        AquaColors.installColors(progressBar, appearanceContext, colors);
 
         // this is questionable. We may want the insets to mean something different.
         Insets i = progressBar.getInsets();
@@ -229,7 +214,7 @@ public class AquaProgressBarUI
         int x = i.left;
         int y = i.top;
 
-        AquaUtils.configure(painter, progressBar, width, height);
+        AquaUtils.configure(painter, pc.appearance, progressBar, width, height);
         Configuration pg = getConfiguration();
         painter.getPainter(pg).paint(g, x, y);
 
@@ -238,7 +223,7 @@ public class AquaProgressBarUI
         }
 
         if (progressBar.isStringPainted()) {
-            paintString((Graphics2D) g, i.left, i.top, width, height);
+            paintString(g, i.left, i.top, width, height);
         }
     }
 
@@ -257,9 +242,9 @@ public class AquaProgressBarUI
         State state = getState();
         Orientation orientation = isHorizontal() ? Orientation.HORIZONTAL : Orientation.VERTICAL;
         if (progressBar.isIndeterminate()) {
-            int frameCount = isCircular ? (OSVersion >= 1016 ? 24 : 15) : 90;
+            int frameCount = isCircular ? (OSVersion >= macOS11 ? 24 : 15) : 90;
             long intervals = System.currentTimeMillis() / (repaintInterval > 0 ? repaintInterval : 100);
-            int speed = isCircular ? (OSVersion >= 1016 ? 3 : 1) : 4;
+            int speed = isCircular ? (OSVersion >= macOS11 ? 3 : 1) : 4;
             int animationFrame = (int) (speed * intervals % frameCount);
             AquaUIPainter.ProgressWidget w = isCircular ? ProgressWidget.INDETERMINATE_SPINNER : ProgressWidget.INDETERMINATE_BAR;
             return new IndeterminateProgressIndicatorConfiguration(w, sizeVariant, state, orientation, animationFrame);
@@ -433,9 +418,9 @@ public class AquaProgressBarUI
         Dimension pref = getPreferredSize(progressBar);
 
         if (isHorizontal()) {
-            pref.width = Short.MAX_VALUE;
+            pref.width = AquaUtils.INFINITY;
         } else {
-            pref.height = Short.MAX_VALUE;
+            pref.height = AquaUtils.INFINITY;
         }
 
         return pref;

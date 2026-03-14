@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015 Alan Snyder.
+ * Copyright (c) 2015-2026 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -13,6 +13,7 @@ package org.violetlib.aqua;
  */
 public interface VisualEffectViewPeer {
     void setFrame(int x, int y, int width, int height);
+    void configureSelections(int leftInset, int rightInset, int cornerRadius);
     void updateSelectionBackgrounds(SelectionBoundsDescription sd);
     void dispose();
 }

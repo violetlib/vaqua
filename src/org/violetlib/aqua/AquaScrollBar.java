@@ -1,5 +1,5 @@
 /*
- * Changes copyright (c) 2021 Alan Snyder.
+ * Changes copyright (c) 2021-2025 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -102,7 +102,7 @@ public class AquaScrollBar extends JScrollBar implements UIResource {
 
     private @Nullable JScrollPane getScrollPane() {
         Container parent = getParent();
-        if (parent instanceof OverlayScrollPaneHack.AquaOverlayViewportHolder) {
+        if (parent instanceof ScrollPaneInterposedContainer.AquaOverlayViewportHolder) {
             parent = parent.getParent();
         }
         if (parent instanceof JScrollPane) {

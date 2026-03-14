@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2023 Alan Snyder.
+ * Copyright (c) 2015-2026 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -28,7 +28,7 @@ public abstract class AquaPopupFactory extends PopupFactory {
 
     @Override
     public Popup getPopup(Component owner, Component contents, int x, int y)
-            throws IllegalArgumentException {
+      throws IllegalArgumentException {
         if (isActive) {
             Popup p = getHeavyweightPopup(owner, contents, x, y);
             return configure(owner, p, contents);
@@ -69,8 +69,10 @@ public abstract class AquaPopupFactory extends PopupFactory {
         }
 
         if (ui != null) {
-            String appearanceName = AppearanceManager.getSpecifiedAppearanceName(owner);
-            AppearanceManager.setSpecifiedAppearanceName(rp, appearanceName);
+            // Ensure that the popup is displayable, so that it can be configured.
+            p.show();
+            AquaAppearance appearance = AppearanceManager.findAppearanceForComponent(owner);
+            ui.setAppearance(appearance);
         }
 
         // Workaround for JDK bug when popup owner is an embedded component

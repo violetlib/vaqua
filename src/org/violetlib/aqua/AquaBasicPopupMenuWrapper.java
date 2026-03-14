@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2018 Alan Snyder.
+ * Copyright (c) 2015-2026 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -29,17 +29,16 @@ public class AquaBasicPopupMenuWrapper extends JPanel {
 
     @Override
     public void paintComponent(Graphics g) {
+        super.paintComponent(g);
 
         // The following code supports pop up menus with rounded corners. The key requirement is that the popup must
         // not paint near the corners.
 
-        Border border = getBorder();
-        if (border instanceof BackgroundPainter) {
-            BackgroundPainter p = (BackgroundPainter) border;
+        BackgroundPainter p = AquaBorderSupport.get(this, BackgroundPainter.class);
+        if (p != null) {
+            PaintingContext pc = PaintingContext.getDefault();
             Rectangle bounds = getBounds();
-            p.paintBackground(this, g, bounds.x, bounds.y, bounds.width, bounds.height);
+            p.paintBackground(this, g, pc, bounds.x, bounds.y, bounds.width, bounds.height);
         }
-
-        super.paintComponent(g);
     }
 }

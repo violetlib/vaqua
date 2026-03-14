@@ -1,5 +1,5 @@
 /*
- * Changes Copyright (c) 2015-2021 Alan Snyder.
+ * Changes Copyright (c) 2015-2026 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -38,23 +38,31 @@ import java.awt.event.*;
 import java.awt.geom.Rectangle2D;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
+import java.util.Objects;
 import javax.swing.*;
+import javax.swing.border.Border;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import javax.swing.plaf.ComponentUI;
 import javax.swing.plaf.ScrollBarUI;
 
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.*;
 import org.violetlib.jnr.LayoutInfo;
 import org.violetlib.jnr.Painter;
 import org.violetlib.jnr.aqua.*;
 import org.violetlib.jnr.aqua.AquaUIPainter.*;
 
+import static org.violetlib.aqua.OSXSystemProperties.*;
+import static org.violetlib.jnr.aqua.AquaUIPainter.ScrollBarWidget.*;
+
 public class AquaScrollBarUI extends ScrollBarUI implements AquaComponentUI {
 
     public static final String INTERNAL_STYLE_CLIENT_PROPERTY_KEY = "JScrollBar.style";
     public static final String INTERNAL_THUMB_STYLE_CLIENT_PROPERTY_KEY = "JScrollBar.thumbStyle";
+
+    // The possible internal style values are "sideBar" and null.
+    // The possible internal thumb style values are "overlayLight", "overlayDark", and null. Null implies a legacy
+    // type scrollbar, which means the track is permanent.
 
     // As arrows were removed in 10.7, I'm not sure if it is worth keeping code to support them.
 
@@ -125,7 +133,7 @@ public class AquaScrollBarUI extends ScrollBarUI implements AquaComponentUI {
         fScrollBar.addMouseMotionListener(fTrackListener);
         fScrollBar.getModel().addChangeListener(fModelListener);
         fScrollBar.addPropertyChangeListener(fPropertyChangeListener);
-        AppearanceManager.installListeners(fScrollBar);
+        AppearanceManager.install(fScrollBar);
         fScrollListener = createScrollListener();
         fScrollTimer = new Timer(kNormalDelay, fScrollListener);
         fScrollTimer.setInitialDelay(kInitialDelay); // default InitialDelay?
@@ -134,7 +142,7 @@ public class AquaScrollBarUI extends ScrollBarUI implements AquaComponentUI {
     protected void uninstallListeners() {
         fScrollTimer.stop();
         fScrollTimer = null;
-        AppearanceManager.uninstallListeners(fScrollBar);
+        AppearanceManager.uninstall(fScrollBar);
         fScrollBar.getModel().removeChangeListener(fModelListener);
         fScrollBar.removeMouseListener(fTrackListener);
         fScrollBar.removeMouseMotionListener(fTrackListener);
@@ -149,29 +157,41 @@ public class AquaScrollBarUI extends ScrollBarUI implements AquaComponentUI {
         return new ModelListener();
     }
 
-    @Override
-    public void appearanceChanged(@NotNull JComponent c, @NotNull AquaAppearance appearance) {
-    }
-
-    @Override
-    public void activeStateChanged(@NotNull JComponent c, boolean isActive) {
-    }
-
     protected void configureScrollBarColors() {
         LookAndFeel.installColors(fScrollBar, "ScrollBar.background", "ScrollBar.foreground");
     }
 
     @Override
     public void update(Graphics g, JComponent c) {
-        AppearanceManager.registerCurrentAppearance(c);
-        super.update(g, c);
+        paint(g, c);
     }
 
     @Override
     public void paint(Graphics g, JComponent c) {
+        AppearanceManager.withContext(g, c, this::paint);
+    }
+
+    public void paint(Graphics2D g, JComponent c, @NotNull PaintingContext pc) {
 
         if (alpha == 0) {
             return;
+        }
+
+        if (c.isOpaque()) {
+            g.setColor(c.getBackground());
+            g.fillRect(0, 0, c.getWidth(),c.getHeight());
+        }
+
+        int width = fScrollBar.getWidth();
+        int height = fScrollBar.getHeight();
+        ScrollBarConfiguration bg = getConfiguration(pc);
+        int x = 0;
+        int y = 0;
+
+        ScrollBarWidget w = bg.getWidget();
+        if (w == LEGACY_SIDEBAR && bg.isTrackSuppressed() && AquaPainting.isSidebarVibrant(fScrollBar)) {
+            // The track is part of the sidebar, which means it must reveal the vibrant background.
+            AquaUtils.fillRect(g, null, 0, 0, width, height);
         }
 
         Graphics2D gg = null;
@@ -184,16 +204,10 @@ public class AquaScrollBarUI extends ScrollBarUI implements AquaComponentUI {
 
         // Since 10.7, there are no arrow buttons, just a thumb in a track.
 
-        int width = fScrollBar.getWidth();
-        int height = fScrollBar.getHeight();
-        ScrollBarConfiguration bg = getConfiguration(false);
-        int x = 0;
-        int y = 0;
-
         // If the scroll bar is an overlay scroll bar in non-rollover mode, we may need to offset the rendering to abut
         // the outer edge of the scroll bar
 
-        if (bg.getWidget() == ScrollBarWidget.OVERLAY) {
+        if (w == ScrollBarWidget.OVERLAY) {
             int thickness = getScrollBarThickness(bg);
             if (bg.getOrientation() == Orientation.HORIZONTAL) {
                 y = height - thickness;
@@ -206,9 +220,8 @@ public class AquaScrollBarUI extends ScrollBarUI implements AquaComponentUI {
             }
         }
 
-        AquaUtils.configure(painter, c, width, height);
+        AquaUtils.configure(painter, pc.appearance, c, width, height);
         Painter p = painter.getPainter(bg);
-
         p.paint(g, x, y);
 
         if (gg != null) {
@@ -216,9 +229,9 @@ public class AquaScrollBarUI extends ScrollBarUI implements AquaComponentUI {
         }
     }
 
-    protected ScrollBarConfiguration getConfiguration(boolean isForLayoutSize) {
-        ScrollBarWidget sw = getScrollBarWidget(isForLayoutSize);
-        ScrollBarKnobWidget kw = getScrollBarKnobWidget(sw);
+    protected ScrollBarConfiguration getConfiguration(@NotNull PaintingContext pc) {
+        ScrollBarWidget sw = getScrollBarWidget(pc, false);
+        ScrollBarKnobWidget kw = getScrollBarKnobWidget(sw, pc);
         Size size = getScrollBarSize();
         State state = getScrollBarState(sw);
         Orientation o = getScrollBarOrientation();
@@ -231,8 +244,58 @@ public class AquaScrollBarUI extends ScrollBarUI implements AquaComponentUI {
             kw = ScrollBarKnobWidget.NONE;
         }
 
-        Object styleProperty = fScrollBar.getClientProperty(INTERNAL_STYLE_CLIENT_PROPERTY_KEY);
-        boolean noTrack = "sidebar".equals(styleProperty);
+        if (o == Orientation.HORIZONTAL && !AquaUtils.isLeftToRight(fScrollBar)) {
+            thumbPosition = 1 - thumbPosition;
+        }
+
+        if (AquaPainting.getVersion() >= macOS26 && isSidebar() && !isOverlay()) {
+            if (state != State.DISABLED && state != State.DISABLED_INACTIVE) {
+                // Make the scroll bar wide
+                state = State.ROLLOVER;
+            }
+        }
+
+        boolean noTrack = computeNoTrackOption(sw, pc);
+        return new ScrollBarConfiguration(sw, kw, size, state, o, thumbPosition, thumbExtent, noTrack);
+    }
+
+    private boolean computeNoTrackOption(@NotNull ScrollBarWidget w, @NotNull PaintingContext pc)
+    {
+        boolean isLegacy = w == LEGACY || w == LEGACY_SIDEBAR;
+        int version = AquaPainting.getVersion();
+        if (version >= macOS26) {
+            return !isLegacy;
+        }
+        if (version >= macOS11) {
+            return isSidebar();
+        }
+        // The track is displayed in high contrast mode.
+        return isSidebar() && !pc.appearance.isHighContrast();
+    }
+
+    /**
+     * Return an extended layout configuration that includes thumb location information, but does not include the
+     * current scroll bar state.
+     */
+    protected ScrollBarConfiguration getLayoutConfiguration(boolean isForLayoutSize) {
+        ScrollBarWidget sw = getScrollBarWidget(null, isForLayoutSize);
+        ScrollBarKnobWidget kw = getScrollBarKnobWidget(sw, null);
+        Size size = getScrollBarSize();
+        State state = State.ACTIVE; // a placeholder
+
+        Orientation o = getScrollBarOrientation();
+        float thumbPosition = getCurrentThumbPosition();
+        float thumbExtent = getCurrentThumbExtent();
+
+        // Do not display a thumb if scrolling is not possible
+        if (thumbExtent >= 0.999) {
+            kw = ScrollBarKnobWidget.NONE;
+        }
+
+        if (o == Orientation.HORIZONTAL && !AquaUtils.isLeftToRight(fScrollBar)) {
+            thumbPosition = 1 - thumbPosition;
+        }
+        boolean noTrack = isSidebar() && AquaPainting.getVersion() < macOS26;
         return new ScrollBarConfiguration(sw, kw, size, state, o, thumbPosition, thumbExtent, noTrack);
     }
 
@@ -274,8 +337,32 @@ public class AquaScrollBarUI extends ScrollBarUI implements AquaComponentUI {
         }
     }
 
-    protected ScrollBarWidget getScrollBarWidget(boolean isForLayoutSize) {
-        if (isOverlayStyle()) {
+    protected boolean isSidebar() {
+        String style = (String) fScrollBar.getClientProperty(INTERNAL_STYLE_CLIENT_PROPERTY_KEY);
+        return Objects.equals(style, "sideBar");
+    }
+
+    protected boolean isOverlay() {
+        String thumbStyle = (String) fScrollBar.getClientProperty(INTERNAL_THUMB_STYLE_CLIENT_PROPERTY_KEY);
+        return Objects.equals(thumbStyle, "overlayDark")
+          || Objects.equals(thumbStyle, "overlayLight")
+          || Objects.equals(thumbStyle, "overlay");
+    }
+
+    protected ScrollBarWidget getScrollBarWidget(@Nullable PaintingContext pc, boolean isForLayoutSize) {
+        // There are four cases: non-sidebar overlay, non-sidebar legacy, sidebar overlay, sidebar legacy. These map to
+        // OVERLAY or OVERLAY_ROLLOVER, LEGACY, OVERLAY_ROLLOVER, LEGACY_SIDEBAR. This is a bit of a cheat.
+        // OVERLAY_ROLLOVER is used for both sidebar overlay and for non-sidebar overlay in the rollover state.
+
+        boolean isOverlay = isOverlay();
+        if (isSidebar() && !isOverlay) {
+            if (OSVersion < macOS11 && pc != null && pc.appearance.isHighContrast()) {
+                return LEGACY;
+            }
+            return LEGACY_SIDEBAR;
+        }
+
+        if (isOverlay) {
             // Use OVERLAY_ROLLOVER for layout because it is wider
             return fisRolloverDisplay || isForLayoutSize ? ScrollBarWidget.OVERLAY_ROLLOVER : ScrollBarWidget.OVERLAY;
         }
@@ -283,20 +370,11 @@ public class AquaScrollBarUI extends ScrollBarUI implements AquaComponentUI {
         return ScrollBarWidget.LEGACY;
     }
 
-    protected boolean isOverlayStyle() {
-        Object o = fScrollBar.getClientProperty(INTERNAL_THUMB_STYLE_CLIENT_PROPERTY_KEY);
-        if (o instanceof String) {
-            String style = (String) o;
-            return style.equals("overlayDark") || style.equals("overlayLight");
-        }
-        return false;
-    }
-
     public boolean isDragging() {
         return fIsDragging;
     }
 
-    protected ScrollBarKnobWidget getScrollBarKnobWidget(ScrollBarWidget sw) {
+    protected ScrollBarKnobWidget getScrollBarKnobWidget(@NotNull ScrollBarWidget sw, @Nullable PaintingContext pc) {
         if (sw == ScrollBarWidget.LEGACY) {
             return ScrollBarKnobWidget.DEFAULT; // default is the only option for legacy scroll bars
         }
@@ -307,13 +385,24 @@ public class AquaScrollBarUI extends ScrollBarUI implements AquaComponentUI {
             if (style.equals("overlayLight")) {
                 return ScrollBarKnobWidget.LIGHT;
             }
+            if (style.equals("overlay") && pc != null) {
+                return pc.appearance.isDark() ? ScrollBarKnobWidget.LIGHT : ScrollBarKnobWidget.DARK;
+            }
         }
         return ScrollBarKnobWidget.DARK;
     }
 
     protected Size getScrollBarSize() {
-        Size sz = AquaUtilControlSize.getUserSizeFrom(fScrollBar);
-        return sz == Size.REGULAR ? Size.REGULAR : Size.SMALL;
+        Size sz = AquaUtilControlSize.getOptionalUserSizeFrom(fScrollBar);
+        if (sz != null) {
+            return sz;
+        }
+        int version = AquaPainting.getVersion();
+        if (version >= macOS26 && isSidebar() && !isOverlay()) {
+            return Size.REGULAR;
+        } else {
+            return Size.SMALL;
+        }
     }
 
     protected State getScrollBarState(@NotNull ScrollBarWidget w) {
@@ -346,7 +435,7 @@ public class AquaScrollBarUI extends ScrollBarUI implements AquaComponentUI {
     protected int getThumbTrackPosition() {
         int width = fScrollBar.getWidth();
         int height = fScrollBar.getHeight();
-        ScrollBarConfiguration g = getConfiguration(false);
+        ScrollBarConfiguration g = getLayoutConfiguration(false);
         Rectangle bounds = new Rectangle(0, 0, width, height);
         AquaUILayoutInfo uiLayout = painter.getLayoutInfo();
         Rectangle2D thumbBounds = uiLayout.getScrollBarThumbBounds(bounds, g);
@@ -364,13 +453,13 @@ public class AquaScrollBarUI extends ScrollBarUI implements AquaComponentUI {
         } else if (value > 1) {
             return ScrollBarPart.TRACK_MAX;
         } else {
-            int width = fScrollBar.getWidth();
-            int height = fScrollBar.getHeight();
-            AquaUtils.configure(painter, fScrollBar, width, height);
-            ScrollBarConfiguration g = getConfiguration(false);
+            ScrollBarConfiguration g = getLayoutConfiguration(false);
             boolean isHorizontal = isHorizontal();
             int c = isHorizontal ? x : y;
             ScrollBarThumbConfiguration tg = new ScrollBarThumbConfiguration(g, c);
+            int width = fScrollBar.getWidth();
+            int height = fScrollBar.getHeight();
+            AquaUtils.configure(painter, null, fScrollBar, width, height);
             int pos = painter.getScrollBarThumbHit(tg);
             switch (pos) {
                 case -1:        return ScrollBarPart.TRACK_MIN;
@@ -392,12 +481,12 @@ public class AquaScrollBarUI extends ScrollBarUI implements AquaComponentUI {
         boolean isHorizontal = isHorizontal();
         int c = isHorizontal ? x : y;
 
-        ScrollBarWidget sw = getScrollBarWidget(false);
+        ScrollBarWidget sw = getScrollBarWidget(null, false);
         Size size = getScrollBarSize();
         Orientation o = getScrollBarOrientation();
         float extent = getCurrentThumbExtent();
         ScrollBarThumbLayoutConfiguration g = new ScrollBarThumbLayoutConfiguration(sw, size, o, extent, c);
-        AquaUtils.configure(painter, fScrollBar, width, height);
+        AquaUtils.configure(painter, null, fScrollBar, width, height);
         return painter.getScrollBarThumbPosition(g, false);
     }
 
@@ -462,9 +551,12 @@ public class AquaScrollBarUI extends ScrollBarUI implements AquaComponentUI {
                 newModel.addChangeListener(fModelListener);
                 fScrollBar.repaint();
                 fScrollBar.revalidate();
+                fScrollBar.repaint();
             } else if (AquaFocusHandler.FRAME_ACTIVE_PROPERTY.equals(propertyName)) {
                 fScrollBar.repaint();
             } else if (INTERNAL_THUMB_STYLE_CLIENT_PROPERTY_KEY.equals(propertyName)) {
+                fScrollBar.repaint();
+            } else if (INTERNAL_STYLE_CLIENT_PROPERTY_KEY.equals(propertyName)) {
                 fScrollBar.repaint();
             }
         }
@@ -578,6 +670,20 @@ public class AquaScrollBarUI extends ScrollBarUI implements AquaComponentUI {
         }
 
         /**
+         * Map a mouse coordinate to scroll bar model value.
+         * @param x The X mouse coordinate.
+         * @param y The Y mouse coordinate.
+         * @param useExtent If true, the coordinate is interpreted as the location of the leading edge of the thumb,
+         *                  for the purpose of repositioning the thumb. If false, the coordinate is interpreted as
+         *                  a fraction of the full track, for the purpose of scroll-to-here.
+         * @return the scroll bar model value.
+         */
+        int getDragValue(int x, int y, boolean useExtent) {
+            float newExtendedThumbPosition = getExtendedThumbPosition(x, y, useExtent);
+            return getValueFromThumbPosition(newExtendedThumbPosition);
+        }
+
+        /**
          * Map a mouse coordinate to an extended thumb position.
          * @param x The X mouse coordinate.
          * @param y The Y mouse coordinate.
@@ -587,15 +693,14 @@ public class AquaScrollBarUI extends ScrollBarUI implements AquaComponentUI {
          * @return the extended thumb position (values outside the 0 to 1 range indicate that the coordinate is
          *         outside the normal range)
          */
-        int getDragValue(int x, int y, boolean useExtent) {
-
+        float getExtendedThumbPosition(int x, int y, boolean useExtent) {
             float valueRange = Math.max(0, fScrollBar.getMaximum() - fScrollBar.getMinimum());
             float scrollingRange = valueRange - fScrollBar.getModel().getExtent();
             if (scrollingRange <= 0) {
-                return fScrollBar.getMinimum();
+                return 0;
             }
 
-            ScrollBarWidget sw = getScrollBarWidget(false);
+            ScrollBarWidget sw = getScrollBarWidget(null, false);
             Size size = getScrollBarSize();
             float extent = getCurrentThumbExtent();
             Orientation o = getScrollBarOrientation();
@@ -604,10 +709,13 @@ public class AquaScrollBarUI extends ScrollBarUI implements AquaComponentUI {
 
             int deltaTrackPosition = coordinate - fHitTrackPosition;
             int newThumbTrackPosition = fFirstThumbTrackPosition + deltaTrackPosition;
-            AquaUtils.configure(painter, fScrollBar, fScrollBar.getWidth(), fScrollBar.getHeight());
+            AquaUtils.configure(painter, null, fScrollBar, fScrollBar.getWidth(), fScrollBar.getHeight());
             ScrollBarThumbLayoutConfiguration g = new ScrollBarThumbLayoutConfiguration(sw, size, o, extent, newThumbTrackPosition);
             float newExtendedThumbPosition = painter.getScrollBarThumbPosition(g, useExtent);
-            return getValueFromThumbPosition(newExtendedThumbPosition);
+            if (isHoriz && !AquaUtils.isLeftToRight(fScrollBar)) {
+                return 1 - newExtendedThumbPosition;
+            }
+            return newExtendedThumbPosition;
         }
 
         /**
@@ -814,7 +922,7 @@ public class AquaScrollBarUI extends ScrollBarUI implements AquaComponentUI {
     }
 
     public int getScrollBarThickness() {
-        LayoutConfiguration g = getConfiguration(true);
+        LayoutConfiguration g = getLayoutConfiguration(true);
         return getScrollBarThickness(g);
     }
 
@@ -822,7 +930,13 @@ public class AquaScrollBarUI extends ScrollBarUI implements AquaComponentUI {
         AquaUILayoutInfo uiLayout = painter.getLayoutInfo();
         LayoutInfo layoutInfo = uiLayout.getLayoutInfo(g);
         float f = isHorizontal() ? layoutInfo.getMinimumVisualHeight() : layoutInfo.getMinimumVisualWidth();
-        return (int) Math.ceil(f);
+        int basic = (int) Math.ceil(f);
+        Border b = fScrollBar.getBorder();
+        if (b != null) {
+            Insets s = b.getBorderInsets(fScrollBar);
+            return basic + s.left + s.right;
+        }
+        return basic;
     }
 
     public void setRolloverDisplayState(boolean b) {

@@ -1,5 +1,5 @@
 /*
- * Changes Copyright (c) 2015-2023 Alan Snyder.
+ * Changes Copyright (c) 2015-2026 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -46,22 +46,19 @@ import javax.swing.plaf.MenuBarUI;
 import javax.swing.plaf.UIResource;
 import javax.swing.plaf.basic.BasicRootPaneUI;
 
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.*;
 
 import static org.violetlib.aqua.AquaVibrantSupport.NO_VIBRANT_STYLE;
 import static org.violetlib.aqua.AquaVibrantSupport.WINDOW_BACKGROUND_STYLE;
+import static org.violetlib.aqua.OSXSystemProperties.OSVersion;
+import static org.violetlib.aqua.OSXSystemProperties.macOS26;
 
-public class AquaRootPaneUI extends BasicRootPaneUI implements AquaComponentUI,
-        SystemPropertyChangeManager.SystemPropertyChangeListener {
+public class AquaRootPaneUI extends BasicRootPaneUI implements AquaComponentUI, ActiveSensitiveComponentUI {
 
     public final static String AQUA_WINDOW_STYLE_KEY = "Aqua.windowStyle";
     public final static String AQUA_WINDOW_TOP_MARGIN_KEY = "Aqua.windowTopMargin";
     public final static String AQUA_WINDOW_BOTTOM_MARGIN_KEY = "Aqua.windowBottomMargin";
     public final static String AQUA_WINDOW_REPRESENTED_FILENAME_KEY = "Aqua.windowRepresentedFilename";
-
-    // Internally, an appearance is represented by an instance of AquaAppearance.
-    // Externally, the colors are made available as a map from string to color.
 
     static final boolean sUseScreenMenuBar = AquaUtils.getScreenMenuBarProperty();
 
@@ -73,15 +70,19 @@ public class AquaRootPaneUI extends BasicRootPaneUI implements AquaComponentUI,
     private static boolean forceActiveWindowDisplay;
 
     protected JRootPane rootPane;
+    protected boolean isInstalled;
     protected WindowHierarchyListener hierarchyListener;
     protected AncestorListener ancestorListener;
     protected PropertyChangeListener windowStylePropertyChangeListener;
     protected WindowListener windowListener;
     protected ContainerListener containerListener;
-    protected boolean isInitialized;
+    /** the native window cannot be configured until it exists */
+    protected boolean isNativeWindowConfigured;
     protected AquaCustomStyledWindow customStyledWindow;
     protected int vibrantStyle = NO_VIBRANT_STYLE;
     protected boolean vibrantStyleIsExplicitlySet;
+
+    protected @Nullable AquaAppearance cachedWindowEffectiveAppearance;
 
     /**
      Set the debugging option to force all windows to display as active. Used to compare a Java window with a native
@@ -98,7 +99,7 @@ public class AquaRootPaneUI extends BasicRootPaneUI implements AquaComponentUI,
                     AquaRootPaneUI ui = AquaUtils.getUI(rp, AquaRootPaneUI.class);
                     if (ui != null) {
                         boolean shouldBeActive = b || w.isActive();
-                        boolean isActiveStyle = Boolean.TRUE.equals(rp.getClientProperty(AquaFocusHandler.FRAME_ACTIVE_PROPERTY));
+                        boolean isActiveStyle = AquaFocusHandler.isActive(rp);
                         if (shouldBeActive != isActiveStyle) {
                             rp.repaint();
                             AquaFocusHandler.updateComponentTreeUIActivation(rp, shouldBeActive);
@@ -113,39 +114,44 @@ public class AquaRootPaneUI extends BasicRootPaneUI implements AquaComponentUI,
     {
         rootPane = (JRootPane) c;
 
-        super.installUI(c);
-
-        // for <rdar://problem/3750909> OutOfMemoryError swapping menus.
-        // Listen for layered pane/JMenuBar updates if the screen menu bar is active.
-        if (sUseScreenMenuBar) {
-            containerListener = new MyContainerListener();
-            JRootPane root = (JRootPane) c;
-            root.addContainerListener(containerListener);
-        }
-
-        configureWindowIfPossible();
-        configureLayeredPane();
-        configure();
+        installDefaults(rootPane);
+        installComponents(rootPane);
+        installListeners(rootPane);
+        installKeyboardActions(rootPane);
+        isInstalled = true;
     }
 
     public void uninstallUI(JComponent c)
     {
-        c.removeAncestorListener(ancestorListener);
+        isInstalled = false;
+        uninstallKeyboardActions(rootPane);
+        uninstallListeners(rootPane);
+        uninstallComponents(rootPane);
+        uninstallDefaults(rootPane);
+    }
+
+    @Override
+    protected void installDefaults(JRootPane c)
+    {
+        super.installDefaults(c);
+        configureInitialAppearance();
+        configureWindow();
+        configureLayeredPane();
+        configure();
+    }
+
+    @Override
+    protected void uninstallDefaults(JRootPane root)
+    {
         disposeCustomWindowStyle();
         removeVisualEffectView();
         unconfigureLayeredPane();
-
-        if (sUseScreenMenuBar) {
-            JRootPane root = (JRootPane) c;
-            root.removeContainerListener(containerListener);
-            containerListener = null;
-        }
-
-        isInitialized = false;
+        cachedWindowEffectiveAppearance = null;
+        isNativeWindowConfigured = false;
         vibrantStyle = NO_VIBRANT_STYLE;
         vibrantStyleIsExplicitlySet = false;
-
-        super.uninstallUI(c);
+        unconfigureAppearance();
+        super.uninstallDefaults(root);
     }
 
     @Override
@@ -154,18 +160,24 @@ public class AquaRootPaneUI extends BasicRootPaneUI implements AquaComponentUI,
         super.installListeners(root);
         hierarchyListener = new WindowHierarchyListener();
         root.addHierarchyListener(hierarchyListener);
-        AquaAppearances.register(root);
         ancestorListener = new MyAncestorListener();
         root.addAncestorListener(ancestorListener);
         windowListener = new MyWindowListener();
-        AppearanceManager.installListeners(root);
+
+        // for <rdar://problem/3750909> OutOfMemoryError swapping menus.
+        // Listen for layered pane/JMenuBar updates if the screen menu bar is active.
+        if (sUseScreenMenuBar) {
+            containerListener = new MyContainerListener();
+            rootPane.addContainerListener(containerListener);
+        }
+
+        AppearanceManager.install(root);
     }
 
     @Override
     protected void uninstallListeners(JRootPane root)
     {
-        AppearanceManager.uninstallListeners(root);
-        AquaAppearances.unregister(root);
+        AppearanceManager.uninstall(root);
         root.removeHierarchyListener(hierarchyListener);
         hierarchyListener = null;
         root.removeAncestorListener(ancestorListener);
@@ -176,27 +188,25 @@ public class AquaRootPaneUI extends BasicRootPaneUI implements AquaComponentUI,
         }
         windowListener = null;
         super.uninstallListeners(root);
+
+        if (sUseScreenMenuBar) {
+            rootPane.removeContainerListener(containerListener);
+            containerListener = null;
+        }
+
         if (windowStylePropertyChangeListener != null) {
             root.removePropertyChangeListener(windowStylePropertyChangeListener);
             windowStylePropertyChangeListener = null;
         }
     }
 
-    @Override
-    public void systemPropertyChanged(JComponent c, Object type) {
-        if (type.equals(AquaAppearances.APPEARANCE_CHANGE_TYPE)) {
-            updateAppearances(null, false);
-        }
-    }
-
     private class MyContainerListener
-            implements ContainerListener
+      implements ContainerListener
     {
-
         /**
-         If the screen menu bar is active we need to listen to the layered pane of the root pane
-         because it holds the JMenuBar.  So, if a new layered pane was added, listen to it.
-         If a new JMenuBar was added, tell the menu bar UI, because it will need to update the menu bar.
+         * If the screen menu bar is active we need to listen to the layered pane of the root pane because it holds the
+         * JMenuBar. So, if a new layered pane was added, listen to it. If a new JMenuBar was added, tell the menu bar
+         * UI, because it will need to update the menu bar.
          */
         public void componentAdded(ContainerEvent e)
         {
@@ -224,8 +234,8 @@ public class AquaRootPaneUI extends BasicRootPaneUI implements AquaComponentUI,
         }
 
         /**
-         Likewise, when the layered pane is removed from the root pane, stop listening to it.
-         If the JMenuBar is removed, tell the menu bar UI to clear the menu bar.
+         * Likewise, when the layered pane is removed from the root pane, stop listening to it. If the JMenuBar is
+         * removed, tell the menu bar UI to clear the menu bar.
          */
         public void componentRemoved(ContainerEvent e)
         {
@@ -254,7 +264,7 @@ public class AquaRootPaneUI extends BasicRootPaneUI implements AquaComponentUI,
     }
 
     /**
-     Invoked when a property changes on the root pane.
+     * Invoked when a property changes on the root pane.
      */
     public void propertyChange(PropertyChangeEvent e)
     {
@@ -274,20 +284,16 @@ public class AquaRootPaneUI extends BasicRootPaneUI implements AquaComponentUI,
                 Window w = (Window) parent;
                 KeyWindowPatch.applyPatchIfNeeded(w);
             }
-        } else if (AppearanceManager.AQUA_APPEARANCE_NAME_KEY.equals(prop)) {
-            configureSpecifiedWindowAppearance(true);
         }
     }
 
     protected class MyAncestorListener
-            implements AncestorListener
+      implements AncestorListener
     {
         /**
-         This is sort of like viewDidMoveToWindow:.  When the root pane is put into a window
-         this method gets called for the notification.
-         We need to set up the listener relationship so we can pick up activation events.
-         And, if a JMenuBar was added before the root pane was added to the window, we now need
-         to notify the menu bar UI.
+         * This is sort of like viewDidMoveToWindow:. When the root pane is put into a window this method gets called
+         * for the notification. We need to set up the listener relationship so we can pick up activation events. And,
+         * if a JMenuBar was added before the root pane was added to the window, we now need to notify the menu bar UI.
          */
         public void ancestorAdded(AncestorEvent event)
         {
@@ -304,11 +310,10 @@ public class AquaRootPaneUI extends BasicRootPaneUI implements AquaComponentUI,
         }
 
         /**
-         If the JRootPane was removed from the window we should clear the screen menu bar.
-         That's a non-trivial problem, because you need to know which window the JRootPane was in
-         before it was removed.  By the time ancestorRemoved was called, the JRootPane has already been removed
+         * If the JRootPane was removed from the window we should clear the screen menu bar. That's a non-trivial
+         * problem, because you need to know which window the JRootPane was in before it was removed. By the time
+         * ancestorRemoved was called, the JRootPane has already been removed
          */
-
         public void ancestorRemoved(AncestorEvent event)
         {
         }
@@ -319,9 +324,8 @@ public class AquaRootPaneUI extends BasicRootPaneUI implements AquaComponentUI,
     }
 
     private class MyWindowListener
-            extends WindowAdapter
+      extends WindowAdapter
     {
-
         public void windowActivated(WindowEvent e)
         {
             updateWindowActivation(e, true);
@@ -346,37 +350,42 @@ public class AquaRootPaneUI extends BasicRootPaneUI implements AquaComponentUI,
     @Override
     public final void update(Graphics g, JComponent c)
     {
-
-        if (!isInitialized) {
+        if (!isNativeWindowConfigured) {
             configure();
         }
 
-        AquaAppearance appearance = AppearanceManager.registerCurrentAppearance(c);
+        AppearanceManager.withContext(g, c, this::paint);
+    }
+
+    public void paint(Graphics2D g, JComponent c, @NotNull PaintingContext pc)
+    {
         if (c.isOpaque() || vibrantStyle >= 0) {
             // Need a special case here. A dark mode textured window has a vibrant background (needed for a unified
             // title/toolbar), but the content area is opaque.
             int eraserMode = AquaUtils.ERASE_IF_TEXTURED | AquaUtils.ERASE_IF_VIBRANT;
-            if (appearance.isDark() && customStyledWindow != null && customStyledWindow.isTextured()) {
+            if (pc.appearance.isDark() && customStyledWindow != null && customStyledWindow.isTextured()) {
                 eraserMode = 0;
             }
             AquaUtils.fillRect(g, c, eraserMode);
         }
         if (customStyledWindow != null) {
-            customStyledWindow.paintMarginBackgrounds(g);
+            customStyledWindow.paintMarginBackgrounds(g, pc);
         }
-        paint(g, c);
+
+        super.paint(g, c);
     }
 
     protected class WindowHierarchyListener
-            implements HierarchyListener
+      implements HierarchyListener
     {
         @Override
         public void hierarchyChanged(HierarchyEvent e)
         {
             long flags = e.getChangeFlags();
             if ((flags & HierarchyEvent.DISPLAYABILITY_CHANGED) != 0) {
-                if (rootPane.getParent() != null && rootPane.getParent().isDisplayable()) {
-                    configureWindowIfPossible();
+                Window w = getDisplayableWindow();
+                if (w != null) {
+                    configureWindow();
                     configure();
                 } else {
                     unconfigure();
@@ -386,15 +395,19 @@ public class AquaRootPaneUI extends BasicRootPaneUI implements AquaComponentUI,
     }
 
     /**
-     Configure or reconfigure the window based on root pane client properties and popup client properties, if
-     appropriate. This method has no effect if the root pane parent is not displayable.
+     * Configure or reconfigure the window based on root pane client properties and popup client properties, if
+     * appropriate. This method has no effect if the window is not displayable.
      */
     public void configure()
     {
-        if (rootPane.getParent() != null && rootPane.getParent().isDisplayable()) {
-            isInitialized = true;
-            configureSpecifiedWindowAppearance(false);
-            updateAppearances(null, false);
+        Window w = getDisplayableWindow();
+        if (w != null) {
+            isNativeWindowConfigured = true;
+            AquaUtils.initializeNativeWindow(w);
+            AquaAppearance appearance = getWindowEffectiveAppearance();
+            if (appearance != null) {
+                configureWindowFromAppearance(appearance);
+            }
             updatePopupStyle(rootPane);
             reconfigureCustomWindowStyle();
             updateVisualEffectView();
@@ -404,123 +417,29 @@ public class AquaRootPaneUI extends BasicRootPaneUI implements AquaComponentUI,
         }
     }
 
-    private void configureSpecifiedWindowAppearance(boolean resetIfNull)
-    {
-        Window w = getWindow();
-        if (w != null && w.isDisplayable()) {
-            String appearanceName = getSpecifiedWindowAppearance();
-            if (appearanceName != null || resetIfNull) {
-                AquaUtils.setWindowAppearance(w, appearanceName);
-            }
-        }
-    }
-
-    private @Nullable String getSpecifiedWindowAppearance()
-    {
-        Object o = rootPane.getClientProperty(AppearanceManager.AQUA_APPEARANCE_NAME_KEY);
-        if (o instanceof String) {
-            return (String) o;
-        }
-        return null;
-    }
-
     private void unconfigure()
     {
         removeVisualEffectView();
-        Window w = getWindow();
+        Window w = getDisplayableWindow();
         if (w != null) {
             configureEmbeddedDialogPatchIfNeeded(w);
         }
     }
 
-    /**
-     This method is called when the native window discovers that it has been assigned a different appearance,
-     meaning an appearance with a different appearance name.
-
-     @param appearanceName The new appearance name.
-     */
-    public void windowAppearanceChanged(@NotNull String appearanceName)
+    protected void configureWindow()
     {
-        updateAppearances(appearanceName, false);
-    }
-
-    /**
-     Update the appearances in the component tree based on the most current information.
-     */
-
-    protected void updateAppearances(@Nullable String appearanceName, boolean forceInitialization)
-    {
-        Window w = getWindow();
+        Window w = getDisplayableWindow();
         if (w != null) {
-            updateWindowAppearances(w, appearanceName, forceInitialization);
-        }
-    }
-
-    protected void updateWindowAppearances(@NotNull Window w,
-                                           @Nullable String appearanceName,
-                                           boolean forceInitialization)
-    {
-        if (appearanceName == null) {
-            appearanceName = AquaUtils.getWindowEffectiveAppearanceName(w);
-        }
-        if (appearanceName != null) {
-            AquaAppearance appearance = AquaAppearances.get(appearanceName);
-            AquaAppearance oldAppearance = (AquaAppearance) rootPane.getClientProperty(AppearanceManager.AQUA_APPEARANCE_KEY);
-            if (appearance != oldAppearance) {
-                if (false) {
-                    // debug
-                    String windowName = AquaUtils.getWindowNameForDebugging(w);
-                    String message = "Updating appearances for window " + windowName + ": ";
-                    if (oldAppearance == null) {
-                        message += "initial appearance " + appearanceName;
-                    } else {
-                        String oldAppearanceName = oldAppearance.getName();
-                        if (appearanceName.equals(oldAppearanceName)) {
-                            message += "updated appearance " + appearanceName;
-                        } else {
-                            message += oldAppearanceName + " -> " + appearanceName;
-                        }
-                    }
-                    Utils.logDebug(message);
+            configureEmbeddedDialogPatchIfNeeded(w);
+            AquaAppearance appearance = getWindowEffectiveAppearance();
+            if (appearance != null) {
+                boolean vibrantStyleChanged = configureWindowFromAppearance(appearance);
+                if (vibrantStyleChanged) {
+                    updateVibrantStyle();
                 }
-                rootPane.repaint();
-                AppearanceManager.setRootPaneRegisteredAppearance(rootPane, appearance);  // a callback will be invoked
-            } else if (forceInitialization) {
-                configureWindow(w);
-                appearanceHasChanged();
             }
-        }
-    }
-
-    private void configureWindowIfPossible() {
-        Component parent = rootPane.getParent();
-        if (parent instanceof Window) {
-            Window w = (Window) parent;
-            configureWindow(w);
-        }
-    }
-
-    protected void configureWindow(@NotNull Window w) {
-
-        configureEmbeddedDialogPatchIfNeeded(w);
-
-        if (w.isDisplayable()) {
-            if (OSXSystemProperties.OSVersion >= 1014 && !vibrantStyleIsExplicitlySet) {
-                int vibrantStyle = getDefaultWindowVibrantStyle();
-                updateVibrantStyle(vibrantStyle, false);
-            }
-
-            if (!AquaColors.isPriority(rootPane.getBackground())) {
-                rootPane.setBackground(null);
-            }
-
-            Color c = AquaUtils.getWindowBackground(rootPane);
-            AquaUtils.setBackgroundCarefully(w, c);
-
-            // Make sure that the default window foreground is not considered an application priority.
-            Color fc = w.getForeground();
-            if (!(fc instanceof UIResource)) {
-                w.setForeground(new ColorUIResource(fc));
+            if (customStyledWindow != null && isUndecoratedOptionPane()) {
+                customStyledWindow.setupWindowDragging();
             }
         }
     }
@@ -529,16 +448,14 @@ public class AquaRootPaneUI extends BasicRootPaneUI implements AquaComponentUI,
     {
         // Workaround for dialogs created by embedded components.
         // See related issue JDK-8320438.
-
-        if (w instanceof Dialog) {
+        assert w.isDisplayable();
+        if (w.isVisible() && w instanceof Dialog) {
             Dialog d = (Dialog) w;
             if (AquaUtils.windowHasEmbeddedOwner(w)) {
                 String s = d.isModal() ? " modal" : "";
                 Utils.logDebug("Configuring" + s + " dialog with embedded owner");
                 // Note: a dialog may be disposed and later reanimated, which requires updating the fix.
-                if (d.isVisible() && d.isDisplayable()) {
-                    AquaUtils.fixWindowWithEmbeddedOwner(w, AquaUtils.NSModalPanelWindowLevel);
-                }
+                AquaUtils.fixWindowWithEmbeddedOwner(w, AquaUtils.NSModalPanelWindowLevel);
             }
         }
     }
@@ -546,36 +463,138 @@ public class AquaRootPaneUI extends BasicRootPaneUI implements AquaComponentUI,
     protected int getDefaultWindowVibrantStyle() {
         // Non-textured windows use a vibrant background in dark mode
         // Textured windows use a vibrant background in dark mode but reveal it only in the title/toolbar
-        AquaAppearance appearance = AppearanceManager.getAppearance(rootPane);
-        if (appearance.isDark()) {
+        AquaAppearance a = getWindowEffectiveAppearance();
+        if (a != null && a.isDark()) {
             return WINDOW_BACKGROUND_STYLE;
         }
         return NO_VIBRANT_STYLE;
     }
 
-    protected void appearanceHasChanged() {
-        rootPane.repaint();
-    }
-
-    @Override
-    public void appearanceChanged(@NotNull JComponent c, @NotNull AquaAppearance appearance) {
-        // This method is called when the registered appearance of the root pane is changed.
-        Component parent = rootPane.getParent();
-        if (parent instanceof Window) {
-            Window w = (Window) parent;
-            configureWindow(w);
-        }
-        appearanceHasChanged();
-    }
-
     @Override
     public void activeStateChanged(@NotNull JComponent c, boolean isActive) {
         // This method is called when the active frame client property changes.
-        Component parent = rootPane.getParent();
-        if (parent instanceof Window) {
-            Window w = (Window) parent;
-            configureWindow(w);
+        Window w = getWindow();
+        if (w != null) {
+            configureWindow();
+            rootPane.repaint();
         }
+    }
+
+    /**
+     * This method is called when the window effective appearance may have changed or an appearance setting may have
+     * changed.
+     */
+    public void effectiveAppearanceChanged()
+    {
+        cachedWindowEffectiveAppearance = null;
+        if (isInstalled) {
+            AquaAppearance a = getWindowEffectiveAppearance();
+            if (a != null) {
+                configureWindowFromAppearance(a);
+            }
+        }
+    }
+
+    public void specifiedAppearanceChanged()
+    {
+        Window w = getDisplayableWindow();
+        if (w != null) {
+            AquaAppearance a = AppearanceManager.getSpecifiedWindowAppearance(rootPane);
+            String name = a != null ? a.getName() : null;
+            AquaUtils.setWindowAppearance(w, name);
+        }
+    }
+
+    private void configureInitialAppearance()
+    {
+        AquaAppearance a = AppearanceManager.getSpecifiedWindowAppearance(rootPane);
+        if (a != null) {
+            Window w = getDisplayableWindow();
+            if (w != null) {
+                AquaUtils.setWindowAppearance(w, a.getName());
+            }
+        }
+    }
+
+    private void unconfigureAppearance()
+    {
+        Window w = getDisplayableWindow();
+        if (w != null) {
+            String name = AppearanceManager.getSpecifiedAppearanceName(rootPane);
+            if (name != null) {
+                AquaUtils.setWindowAppearance(w, null);
+            }
+        }
+    }
+
+    private @Nullable AquaAppearance getWindowEffectiveAppearance()
+    {
+        if (cachedWindowEffectiveAppearance != null) {
+            return cachedWindowEffectiveAppearance;
+        }
+        Window w = getDisplayableWindow();
+        if (w != null) {
+            AquaAppearance ea = AquaUtils.getWindowEffectiveAppearance(w);
+            if (ea != null) {
+                cachedWindowEffectiveAppearance = ea;
+                return ea;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Configure the aspects of the window that depend upon the appearance and appearance settings.
+     * @return true if the vibrant style changed.
+     */
+    private boolean configureWindowFromAppearance(@NotNull AquaAppearance appearance)
+    {
+        boolean vibrantStyleUpdated = false;
+        Window w = getDisplayableWindow();
+        if (w != null) {
+            try {
+
+                // The vibrant style of the window depends upon the appearance.
+                if (OSVersion >= 1014 && !vibrantStyleIsExplicitlySet) {
+                    int vibrantStyle = getDefaultWindowVibrantStyle();
+                    vibrantStyleUpdated = updateVibrantStyle(vibrantStyle, false);
+                }
+                // The background of the root pane depends upon the appearance.
+                if (rootPane.isBackgroundSet() && !AquaColors.isPriority(rootPane.getBackground())) {
+                    rootPane.setBackground(null);
+                }
+                Color c = AquaUtils.getWindowBackground(rootPane, appearance);
+                AquaUtils.setBackgroundCarefully(w, c);
+                // Make sure that the default window foreground is not considered an application priority.
+                Color fc = w.getForeground();
+                if (!(fc instanceof UIResource)) {
+                    w.setForeground(new ColorUIResource(fc));
+                }
+                rootPane.repaint();
+            } catch (UnsupportedOperationException ignore) {
+            }
+        }
+        return vibrantStyleUpdated;
+    }
+
+    /**
+     * Specify the appearance of a popup window. The window should be displayable.
+     */
+    public void setAppearance(@NotNull AquaAppearance a)
+    {
+        Window w = getDisplayableWindow();
+        if (w != null) {
+            AquaUtils.setWindowAppearance(w, a.getName());
+        }
+    }
+
+    public @NotNull PaintingContext getPaintingContext()
+    {
+        AquaAppearance a = getWindowEffectiveAppearance();
+        if (a == null) {
+            a = AquaAppearances.getDefaultAppearance();
+        }
+        return PaintingContext.of(a);
     }
 
     protected void updatePopupStyle(JRootPane rp) {
@@ -599,8 +618,8 @@ public class AquaRootPaneUI extends BasicRootPaneUI implements AquaComponentUI,
     }
 
     protected void configureRepresentedFilename() {
-        Window w = getWindow();
-        if (w != null && w.isDisplayable()) {
+        Window w = getDisplayableWindow();
+        if (w != null) {
             Object o = rootPane.getClientProperty(AQUA_WINDOW_REPRESENTED_FILENAME_KEY);
             String filename = "";
             if (o instanceof String) {
@@ -613,7 +632,7 @@ public class AquaRootPaneUI extends BasicRootPaneUI implements AquaComponentUI,
     protected void configureLayeredPane()
     {
         JLayeredPane layeredPane = rootPane.getLayeredPane();
-        AppearanceManager.installListeners(layeredPane);
+        AppearanceManager.install(layeredPane);
         if (sUseScreenMenuBar) {
             layeredPane.addContainerListener(containerListener);
         }
@@ -622,25 +641,38 @@ public class AquaRootPaneUI extends BasicRootPaneUI implements AquaComponentUI,
     protected void unconfigureLayeredPane()
     {
         JLayeredPane layeredPane = rootPane.getLayeredPane();
-        AppearanceManager.uninstallListeners(layeredPane);
+        AppearanceManager.uninstall(layeredPane);
         if (sUseScreenMenuBar) {
             layeredPane.removeContainerListener(containerListener);
         }
     }
 
-    protected void updateVibrantStyleFromProperty(Object o) {
-        int style = AquaVibrantSupport.parseVibrantStyle(o, false);
-        updateVibrantStyle(style, style != NO_VIBRANT_STYLE);
+    protected void updateVibrantStyle()
+    {
+        Object o = rootPane.getClientProperty(AquaVibrantSupport.BACKGROUND_STYLE_KEY);
+        updateVibrantStyleFromProperty(o);
     }
 
-    protected void updateVibrantStyle(int style, boolean isSet)
+    protected void updateVibrantStyleFromProperty(@Nullable Object o)
+    {
+        int style = AquaVibrantSupport.parseVibrantStyle(o, false);
+        if (updateVibrantStyle(style, style != NO_VIBRANT_STYLE)) {
+            updateVisualEffectView();
+        }
+    }
+
+    /**
+     * Update the vibrant style.
+     * @param style The vibrant style.
+     * @param isSet True if the vibrant style was explicitly set.
+     * @return true if the vibrant style changed.
+     */
+    protected boolean updateVibrantStyle(int style, boolean isSet)
     {
         int oldVibrantStyle = vibrantStyle;
         vibrantStyle = style;
         vibrantStyleIsExplicitlySet = isSet;
-        if (vibrantStyle != oldVibrantStyle && isInitialized) {
-            updateVisualEffectView();
-        }
+        return vibrantStyle != oldVibrantStyle && isNativeWindowConfigured;
     }
 
     protected void configurePopup(Object o) {
@@ -658,12 +690,23 @@ public class AquaRootPaneUI extends BasicRootPaneUI implements AquaComponentUI,
                 radius = 0;
             }
         }
-        Window w = SwingUtilities.getWindowAncestor(rootPane);
-        AquaUtils.configurePopup(w, radius);
+        Window w = getDisplayableWindow();
+        if (w != null) {
+            AquaUtils.configurePopup(w, radius);
+        }
     }
 
     protected @Nullable Window getWindow() {
         return SwingUtilities.getWindowAncestor(rootPane);
+    }
+
+    protected @Nullable Window getDisplayableWindow()
+    {
+        Window w = getWindow();
+        if (w != null && w.isDisplayable()) {
+            return w;
+        }
+        return null;
     }
 
     protected void updateVisualEffectView() {
@@ -703,18 +746,18 @@ public class AquaRootPaneUI extends BasicRootPaneUI implements AquaComponentUI,
         if (style < 0 || w == null) {
             disposeCustomWindowStyle();
             if (w != null) {
-                configureWindow(w);
+                configureWindow();
             }
         } else if (w.isDisplayable()) {
             int topMarginHeight = getTopMarginHeight();
             int bottomMarginHeight = getBottomMarginHeight();
             if (customStyledWindow != null && !customStyledWindow.isValid(style, topMarginHeight, bottomMarginHeight)) {
                 customStyledWindow = customStyledWindow.reconfigure(style, topMarginHeight, bottomMarginHeight);
-                configureWindow(w);
+                configureWindow();
             } else if (customStyledWindow == null) {
                 try {
                     customStyledWindow = new AquaCustomStyledWindow(w, style, topMarginHeight, bottomMarginHeight);
-                    configureWindow(w);
+                    configureWindow();
                 } catch (AquaCustomStyledWindow.RequiredToolBarNotFoundException ex) {
                     // This exception would be thrown if the window style is set before adding the tool bar to the
                     // content pane, which would not be an error.
@@ -768,8 +811,22 @@ public class AquaRootPaneUI extends BasicRootPaneUI implements AquaComponentUI,
                 return AquaCustomStyledWindow.STYLE_UNDECORATED;
             }
         }
+        if (isUndecoratedOptionPane()) {
+            return AquaCustomStyledWindow.STYLE_HIDDEN;
+        }
 
         return -1;
+    }
+
+    protected boolean isUndecoratedOptionPane() {
+        if (AquaPainting.getVersion() >= macOS26) {
+            Container contentPane = rootPane.getContentPane();
+            if (contentPane.getComponentCount() == 1) {
+                Component c = contentPane.getComponent(0);
+                return c instanceof JOptionPane;
+            }
+        }
+        return false;
     }
 
     protected int getTopMarginHeight() {

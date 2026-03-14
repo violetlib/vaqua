@@ -11,13 +11,14 @@ package org.violetlib.aqua;
 import java.awt.*;
 import javax.swing.*;
 import javax.swing.plaf.ColorUIResource;
+import javax.swing.plaf.UIResource;
 import javax.swing.text.JTextComponent;
 
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.*;
 import org.violetlib.jnr.aqua.AquaUIPainter;
 
 import static org.violetlib.aqua.OSXSystemProperties.OSVersion;
+import static org.violetlib.aqua.OSXSystemProperties.macOS11;
 
 /**
 
@@ -35,87 +36,95 @@ public class AquaColors {
 
     /** For the default style of buttons **/
     public static final BasicContextualColors PUSH_BUTTON_COLORS
-            = createButtonColors("PushButton", "pushButtonText");
+      = createButtonColors("PushButton", "pushButtonText");
 
     /** For the textured style of buttons, not in a tool bar **/
     public static final BasicContextualColors TEXTURED_COLORS
-            = createButtonColors("TexturedButton", "texturedText");
+      = createButtonColors("TexturedButton", "texturedText");
 
-    /** For the textured style of buttons, in a tool bar **/
+    /** For the textured style of buttons, in a toolbar **/
     public static final BasicContextualColors TEXTURED_TOOLBAR_COLORS
-            = createButtonColors("TexturedToolbarButton", "texturedToolbarText");
+      = createButtonColors("TexturedToolbarButton", "texturedToolbarText");
 
     /** For the gradient style of buttons **/
     public static final BasicContextualColors GRADIENT_BUTTON_COLORS
-            = createButtonColors("GradientButton", "gradientText");
+      = createButtonColors("GradientButton", "gradientText");
 
     /** For the rounded rect style of buttons **/
     public static final BasicContextualColors ROUNDED_RECT_BUTTON_COLORS
-            = createButtonColors("RoundedRectButton", "roundedRectText");
+      = createButtonColors("RoundedRectButton", "roundedRectText");
 
     /** For the bevel style of buttons **/
     public static final BasicContextualColors BEVEL_BUTTON_COLORS
-            = createButtonColors("BevelButton", "bevelText");
+      = createButtonColors("BevelButton", "bevelText");
+
+    /** For the glass style of buttons **/
+    public static final BasicContextualColors GLASS_BUTTON_COLORS
+      = createButtonColors("GlassButton", "glassButtonText");
 
     /** For the round style of buttons **/
     public static final BasicContextualColors ROUND_BUTTON_COLORS
-            = createButtonColors("RoundButton", "roundText");
+      = createButtonColors("RoundButton", "roundText");
 
     /** For the inline style of buttons **/
     public static final BasicContextualColors INLINE_BUTTON_COLORS
-            = createButtonColors("InlineButton", "inlineButtonText");
+      = createButtonColors("InlineButton", "inlineButtonText");
 
     /** For the recessed style of buttons **/
     public static final BasicContextualColors RECESSED_BUTTON_COLORS
-            = createButtonColors("RecessedButton", "recessedText");
+      = createButtonColors("RecessedButton", "recessedText");
 
-    /** For the toolbar item style of buttons **/
+    /** For buttons in a toolbar **/
+    public static final BasicContextualColors TOOLBAR_COLORS
+      = createToolbarButtonColors("ToolbarButton", "toolbarBackground", "toolbarText");
+
+    /** For toolbar items **/
     public static final BasicContextualColors TOOLBAR_ITEM_COLORS
-            = createButtonColors("ToolbarItem", "toolbarItemText");
+      = createToolbarButtonColors("ToolbarItem", "toolbarBackground", "toolbarItemText");
 
     /** Colors for pop up and pull down buttons **/
     public static final BasicContextualColors POP_UP_DOWN_BUTTON_COLORS
-            = createButtonColors("PopUpDown", "pushPopText");
+      = createButtonColors("PopUpDown", "pushPopText");
 
-    /** For the default style of segmented buttons, with select one behavior and not in a tool bar **/
+    /** For the default style of segmented buttons, with select one behavior and not in a toolbar **/
     public static final BasicContextualColors SEGMENTED_BUTTON_COLORS
-            = createButtonColors("SegmentedButton", "segmentedText");
+      = createButtonColors("SegmentedButton", "segmentedText");
 
     /** For the buttons in a tabbed pane **/
     public static final BasicContextualColors TAB_COLORS
-            = createButtonColors("TabButton", "tabText");
+      = createButtonColors("TabButton", "tabText");
 
     /** For the default style of segmented buttons, with select any behavior **/
     public static final BasicContextualColors SEGMENTED_NONEXCLUSIVE_BUTTON_COLORS
-            = createButtonColors("NonexclusiveSegmentedButton", "nonexclusiveText");
+      = createButtonColors("NonexclusiveSegmentedButton", "nonexclusiveText");
 
     /** For the separated style of segmented buttons, with select one behavior **/
     public static final BasicContextualColors SEGMENTED_SEPARATED_BUTTON_COLORS
-            = createButtonColors("SegmentedSeparatedButton", "segmentedSeparatedText");
+      = createButtonColors("SegmentedSeparatedButton", "segmentedSeparatedText");
 
     /** For the separated style of segmented buttons, with select any behavior **/
     public static final BasicContextualColors SEGMENTED_SEPARATED_NONEXCLUSIVE_BUTTON_COLORS
-            = createButtonColors("NonexclusiveSegmentedSeparatedButton", "nonexclusiveSeparatedText");
+      = createButtonColors("NonexclusiveSegmentedSeparatedButton", "nonexclusiveSeparatedText");
 
-    /** For the textured style of segmented buttons, with select one behavior and not in a tool bar **/
+    /** For the textured style of segmented buttons, with select one behavior and not in a toolbar **/
     public static final BasicContextualColors TEXTURED_SEGMENTED_BUTTON_COLORS
-            = createButtonColors("TexturedSegmentedButton", "texturedSegmentedText");
+      = createButtonColors("TexturedSegmentedButton", "texturedSegmentedText");
 
-    /** For the textured style of segmented buttons, with select one behavior and in a tool bar **/
+    /** For the textured style of segmented buttons, with select one behavior and in a toolbar **/
     public static final BasicContextualColors TEXTURED_SEGMENTED_TOOLBAR_BUTTON_COLORS
-            = createButtonColors("TexturedSegmentedToolbarButton", "texturedSegmentedToolbarText");
+      = createToolbarButtonColors("TexturedSegmentedToolbarButton", "texturedSegmentedToolbarBackground", "texturedSegmentedToolbarText");
 
-    /** For the textured style of segmented buttons, with select any behavior and not in a tool bar **/
+    /** For the textured style of segmented buttons, with select any behavior and not in a toolbar **/
     public static final BasicContextualColors TEXTURED_NONEXCLUSIVE_COLORS
-            = createButtonColors("NonexclusiveTextured", "nonexclusiveTexturedText");
+      = createButtonColors("NonexclusiveTextured", "nonexclusiveTexturedText");
 
-    /** For the textured style of segmented buttons, with select any behavior and in a tool bar **/
+    /** For the textured style of segmented buttons, with select any behavior and in a toolbar **/
     public static final BasicContextualColors TEXTURED_TOOLBAR_NONEXCLUSIVE_COLORS
-            = createButtonColors("NonexclusiveTexturedToolbar", "nonexclusiveTexturedToolbarText");
+      = createToolbarButtonColors("NonexclusiveTexturedToolbar", "nonexclusiveTexturedToolbarBackground", "nonexclusiveTexturedToolbarText");
 
     /** For the gradient style of segmented buttons **/
     public static final BasicContextualColors GRADIENT_SEGMENTED_BUTTON_COLORS
-            = createButtonColors("GradientSegmentedButton", "gradientSegmentedText");
+      = createButtonColors("GradientSegmentedButton", "gradientSegmentedText");
 
     public static final BasicContextualColors CELL_TEXT_COLORS = createCellTextColors();
     public static final BasicContextualColors CONTROL_COLORS = createBasicControlColors();
@@ -130,22 +139,23 @@ public class AquaColors {
     public static final ContainerContextualColors STRIPED_CONTAINER_COLORS = createStripedContainerColors();
     public static final ContainerContextualColors SIDEBAR_CONTAINER_COLORS = createSidebarContainerColors();
 
-    public static final Color CLEAR = new ColorUIResource(new Color(0, 0, 0, 0));
+    public static final Color CLEAR = new javax.swing.plaf.ColorUIResource(new Color(0, 0, 0, 0));
 
     /**
      * This specific color object may have a special interpretation, to be replaced by the magic eraser effect.
      */
-    public static final Color MAGIC_ERASER = new ColorUIResource(new Color(0, 0, 0, 0));
+    public static final Color MAGIC_ERASER = new javax.swing.plaf.ColorUIResource(new Color(0, 0, 0, 0));
 
     private static boolean COLORS_DEBUG = false;
-    private static @Nullable BasicContextualColors COLORS_DEBUG_CHOICE = TEXTURED_SEGMENTED_BUTTON_COLORS;
+    private static @Nullable BasicContextualColors COLORS_DEBUG_CHOICE = null;
+
     private static boolean currentColorsDebugFlag;
 
-    public static void setupDebugging(@Nullable BasicContextualColors colors) {
+    /* package private */ static void setupDebugging(@Nullable BasicContextualColors colors) {
         currentColorsDebugFlag = COLORS_DEBUG && (COLORS_DEBUG_CHOICE == null || COLORS_DEBUG_CHOICE == colors);
     }
 
-    public static void clearDebugging() {
+    /* package private */ static void clearDebugging() {
         currentColorsDebugFlag = false;
     }
 
@@ -174,24 +184,29 @@ public class AquaColors {
         return OSVersion < 1014 ? LEGACY_COMBO_BOX_MENU_COLORS : MENU_COLORS;
     }
 
-    public static @NotNull Color getForeground(@NotNull JComponent c, @NotNull String colorName) {
-        Color color = c.getForeground();
-        return getDefaultColor(c, color, colorName);
-    }
+//    public static @NotNull Color getForeground(@NotNull JComponent c, @NotNull String colorName) {
+//        Color color = c.getForeground();
+//        return getDefaultColor(c, color, colorName);
+//    }
+//
+//    public static @NotNull Color getForeground(@NotNull JComponent c, @NotNull String colorName, @NotNull EffectName effect) {
+//        Color color = c.getForeground();
+//        return getDefaultColor(c, color, colorName, effect);
+//    }
 
-    public static @NotNull Color getForeground(@NotNull JComponent c, @NotNull String colorName, @NotNull EffectName effect) {
-        Color color = c.getForeground();
-        return getDefaultColor(c, color, colorName, effect);
-    }
-
-    public static @NotNull Color getBackground(@NotNull Component c, @NotNull String colorName) {
+    public static @NotNull Color getBackground(@NotNull Component c,
+                                               @NotNull PaintingContext pc,
+                                               @NotNull String colorName) {
         Color color = c.getBackground();
-        return getDefaultColor(c, color, colorName);
+        return getDefaultColor(c, pc, color, colorName);
     }
 
-    public static @NotNull Color getBackground(@NotNull Component c, @NotNull String colorName, @NotNull EffectName effect) {
+    public static @NotNull Color getBackground(@NotNull Component c,
+                                               @NotNull PaintingContext pc,
+                                               @NotNull String colorName,
+                                               @NotNull EffectName effect) {
         Color color = c.getBackground();
-        return getDefaultColor(c, color, colorName, effect);
+        return getDefaultColor(c, pc, color, colorName, effect);
     }
 
     /**
@@ -212,35 +227,16 @@ public class AquaColors {
         if (c instanceof SystemColor) {
             return false;
         }
+        if (c instanceof UIResource) {
+            return false;
+        }
         return true;
     }
 
     /**
      * Identify the system color to use for a component if the application has not specified a color.
      * @param c The component.
-     * @param color The color obtained from the component.
-     * @param colorName The name of system color.
-     * @return {@code color} if it is application specified or from a renderer or there is no system color with the
-     *  specified name; otherwise, the system color with the specified name according to the effective appearance
-     *  of {@code c}.
-     */
-    public static @NotNull Color getDefaultColor(@NotNull Component c, @NotNull Color color, @NotNull String colorName) {
-        if (isPriority(color)) {
-            return color;
-        }
-
-        AquaAppearance appearance = AppearanceManager.ensureAppearance(c);
-        Color appearanceColor = appearance.getColor(colorName);
-        if (appearanceColor != null) {
-            return appearanceColor;
-        }
-
-        return color;
-    }
-
-    /**
-     * Identify the system color to use for a component if the application has not specified a color.
-     * @param c The component.
+     * @param pc The painting context.
      * @param color The color obtained from the component.
      * @param colorName The name of system color.
      * @return {@code color} if it is application specified or from a renderer or there is no system color with the
@@ -248,15 +244,14 @@ public class AquaColors {
      *  of {@code c}.
      */
     public static @NotNull Color getDefaultColor(@NotNull Component c,
+                                                 @NotNull PaintingContext pc,
                                                  @NotNull Color color,
-                                                 @NotNull String colorName,
-                                                 @NotNull EffectName effect) {
+                                                 @NotNull String colorName) {
         if (isPriority(color)) {
             return color;
         }
 
-        AquaAppearance appearance = AppearanceManager.ensureAppearance(c);
-        Color appearanceColor = appearance.getColorForOptionalEffect(colorName, effect);
+        Color appearanceColor = pc.appearance.getColor(colorName);
         if (appearanceColor != null) {
             return appearanceColor;
         }
@@ -265,19 +260,30 @@ public class AquaColors {
     }
 
     /**
-     * Identify a system color based on the effective appearance of a component.
+     * Identify the system color to use for a component if the application has not specified a color.
      * @param c The component.
+     * @param pc The painting context.
+     * @param color The color obtained from the component.
      * @param colorName The name of system color.
-     * @return The system color with the specified name in the effective appearance of {@code c}.
-     * @throws UnsupportedOperationException if the specified color is not defined.
+     * @return {@code color} if it is application specified or from a renderer or there is no system color with the
+     *  specified name; otherwise, the system color with the specified name according to the effective appearance
+     *  of {@code c}.
      */
-    public static @NotNull Color getSystemColor(@NotNull JComponent c, @NotNull String colorName) {
-        AquaAppearance appearance = AppearanceManager.ensureAppearance(c);
-        Color appearanceColor = appearance.getColor(colorName);
+    public static @NotNull Color getDefaultColor(@NotNull Component c,
+                                                 @NotNull PaintingContext pc,
+                                                 @NotNull Color color,
+                                                 @NotNull String colorName,
+                                                 @NotNull EffectName effect) {
+        if (isPriority(color)) {
+            return color;
+        }
+
+        Color appearanceColor = pc.appearance.getColorForOptionalEffect(colorName, effect);
         if (appearanceColor != null) {
             return appearanceColor;
         }
-        throw new UnsupportedOperationException("System color " + colorName + " is not defined in " + appearance.getName());
+
+        return color;
     }
 
     /**
@@ -288,14 +294,31 @@ public class AquaColors {
      * @throws UnsupportedOperationException if the specified color is not defined.
      */
     public static @NotNull Color getSystemColor(@NotNull JComponent c,
-                                                @NotNull String colorName,
-                                                @NotNull EffectName effect) {
-        AquaAppearance appearance = AppearanceManager.ensureAppearance(c);
-        Color appearanceColor = appearance.getColorForOptionalEffect(colorName, effect);
+                                                @NotNull PaintingContext pc,
+                                                @NotNull String colorName) {
+        Color appearanceColor = pc.appearance.getColor(colorName);
         if (appearanceColor != null) {
             return appearanceColor;
         }
-        throw new UnsupportedOperationException("System color " + colorName + " is not defined in " + appearance.getName());
+        throw new UnsupportedOperationException("System color " + colorName + " is not defined in " + pc.appearance.getName());
+    }
+
+    /**
+     * Identify a system color based on the effective appearance of a component.
+     * @param c The component.
+     * @param colorName The name of system color.
+     * @return The system color with the specified name in the effective appearance of {@code c}.
+     * @throws UnsupportedOperationException if the specified color is not defined.
+     */
+    public static @NotNull Color getSystemColor(@NotNull JComponent c,
+                                                @NotNull PaintingContext pc,
+                                                @NotNull String colorName,
+                                                @NotNull EffectName effect) {
+        Color appearanceColor = pc.appearance.getColorForOptionalEffect(colorName, effect);
+        if (appearanceColor != null) {
+            return appearanceColor;
+        }
+        throw new UnsupportedOperationException("System color " + colorName + " is not defined in " + pc.appearance.getName());
     }
 
     private static @NotNull BasicContextualColors createBasicTextColors() {
@@ -329,6 +352,19 @@ public class AquaColors {
 
         String foregroundName = name + ".foreground";
         AquaContextualColorImpl foreground = new AquaContextualColorImpl(foregroundName, basicColorName);
+        foreground.setAllNames();
+        return new BasicContextualColorsImpl(background, foreground);
+    }
+
+    private static @NotNull BasicContextualColors
+    createToolbarButtonColors(@NotNull String name, @NotNull String basicBackgroundName, @NotNull String basicForegroundName) {
+
+        String backgroundName = name + ".background";
+        AquaContextualColorImpl background = new AquaContextualColorImpl(backgroundName, basicBackgroundName);
+        background.setAllNames();
+
+        String foregroundName = name + ".foreground";
+        AquaContextualColorImpl foreground = new AquaContextualColorImpl(foregroundName, basicForegroundName);
         foreground.setAllNames();
         return new BasicContextualColorsImpl(background, foreground);
     }
@@ -429,13 +465,17 @@ public class AquaColors {
     }
 
     private static @NotNull ContainerContextualColors createSidebarContainerColors() {
-        AquaContextualColorImpl background = new AquaContextualColorImpl("SidebarContainerColors.background", "controlBackground");
+        AquaContextualColorImpl background = new AquaContextualColorImpl("SidebarContainerColors.background", "sidebarBackground");
         background.setActiveDefaultSelectedName("selectedContentBackground");
         background.setSelectedName("unemphasizedSelectedTextBackground");
+        background.setInactiveName("sidebarBackground_inactive");
 
-        AquaContextualColorImpl foreground = new AquaContextualColorImpl("SidebarContainerColors.foreground", "controlText");
+        AquaContextualColorImpl foreground = new AquaContextualColorImpl("SidebarContainerColors.foreground", "sidebarText");
+        foreground.setSelectedName("selectedSidebarText");
+        foreground.setActiveDefaultSelectedName("selectedSidebarText_focused");
+        foreground.setInactiveSelectedName("selectedSidebarText_inactive");
         if (OSVersion < 1014) {
-            foreground.setInactiveName("controlText");
+            foreground.setInactiveName("sidebarText");
         }
 
         AquaContextualColorImpl grid = new AquaContextualColorImpl("SidebarContainerColors.grid", "separator");
@@ -452,7 +492,7 @@ public class AquaColors {
         AquaContextualColorImpl oddRowBackground;
 
         /* Before macOS 11 striped tables row are grey first; since macOS 11 striped tables rows are white first */
-        if (OSXSystemProperties.OSVersion >= 1016) {
+        if (OSVersion >= macOS11) {
             evenRowBackground = new AquaContextualColorImpl("StripedContainerColors.background 0", "alternatingContentBackground_0");
             oddRowBackground = new AquaContextualColorImpl("StripedContainerColors.background 1", "alternatingContentBackground_1");
         } else {
@@ -490,52 +530,62 @@ public class AquaColors {
             installTextColors(tc, context, colors);
         } else if (c instanceof JTable) {
             JTable table = (JTable) c;
-            boolean isStriped = getTableStriped(table);
-            boolean isInset = getTableInset(table);
-            installTableColors(table, context, colors, isStriped, isInset);
+            boolean suppressBackground = getTableSuppressBackground(table);
+            boolean suppressSelectionBackground = getTableSuppressSelectionBackground(table);
+            installTableColors(table, context, colors, suppressBackground, suppressSelectionBackground);
         } else if (c instanceof JList) {
             JList list = (JList) c;
-            boolean isStriped = getListStriped(list);
-            boolean isInset = getListInset(list);
-            installListColors(list, context, colors, isStriped, isInset);
+            boolean suppressBackground = getListSuppressBackground(list);
+            boolean suppressSelectionBackground = getListSuppressSelectionBackground(list);
+            installListColors(list, context, colors, suppressBackground, suppressSelectionBackground);
         } else if (c instanceof JTree) {
             JTree tree = (JTree) c;
-            boolean isStriped = getTreeStriped(tree);
-            boolean isInset = getTreeInset(tree);
-            installTreeColors(tree, context, colors, isStriped, isInset);
+            boolean suppressBackground = getTreeSuppressBackground(tree);
+            boolean suppressSelectionBackground = getTreeSuppressSelectionBackground(tree);
+            installTreeColors(tree, context, colors, suppressBackground, suppressSelectionBackground);
+        } else if (c instanceof JViewport) {
+            JViewport viewport = (JViewport) c;
+            boolean suppressBackground = getViewportSuppressBackground(viewport);
+            installBasicColors(c, context, colors, suppressBackground);
         } else {
             installBasicColors(c, context, colors);
         }
     }
 
-    private static boolean getListStriped(@NotNull JList list) {
+    private static boolean getViewportSuppressBackground(@NotNull JViewport viewport)
+    {
+        AquaViewportUI ui = AquaUtils.getUI(viewport, AquaViewportUI.class);
+        return ui != null && ui.shouldSuppressBackground();
+    }
+
+    private static boolean getListSuppressBackground(@NotNull JList list) {
         AquaListUI ui = AquaUtils.getUI(list, AquaListUI.class);
-        return ui != null && ui.isStriped();
+        return ui != null && ui.shouldSuppressBackground();
     }
 
-    private static boolean getTableStriped(@NotNull JTable table) {
-        AquaTableUI ui = AquaUtils.getUI(table, AquaTableUI.class);
-        return ui != null && ui.isStriped();
-    }
-
-    private static boolean getTreeStriped(@NotNull JTree tree) {
+    private static boolean getTreeSuppressBackground(@NotNull JTree tree) {
         AquaTreeUI ui = AquaUtils.getUI(tree, AquaTreeUI.class);
-        return ui != null && ui.isStriped();
+        return ui != null && ui.shouldSuppressBackground();
     }
 
-    private static boolean getListInset(@NotNull JList list) {
+    private static boolean getTableSuppressBackground(@NotNull JTable table) {
+        AquaTableUI ui = AquaUtils.getUI(table, AquaTableUI.class);
+        return ui != null && ui.shouldSuppressBackground();
+    }
+
+    private static boolean getListSuppressSelectionBackground(@NotNull JList list) {
         AquaListUI ui = AquaUtils.getUI(list, AquaListUI.class);
-        return ui != null && ui.isInset();
+        return ui != null && ui.shouldSuppressSelectionBackground();
     }
 
-    private static boolean getTableInset(@NotNull JTable table) {
-        AquaTableUI ui = AquaUtils.getUI(table, AquaTableUI.class);
-        return ui != null && ui.isInset();
-    }
-
-    private static boolean getTreeInset(@NotNull JTree tree) {
+    private static boolean getTreeSuppressSelectionBackground(@NotNull JTree tree) {
         AquaTreeUI ui = AquaUtils.getUI(tree, AquaTreeUI.class);
-        return ui != null && ui.isInset();
+        return ui != null && ui.shouldSuppressSelectionBackground();
+    }
+
+    private static boolean getTableSuppressSelectionBackground(@NotNull JTable table) {
+        AquaTableUI ui = AquaUtils.getUI(table, AquaTableUI.class);
+        return ui != null && ui.shouldSuppressSelectionBackground();
     }
 
     private static void installBasicColors(@NotNull Component c,
@@ -544,6 +594,25 @@ public class AquaColors {
         Color bg = c.getBackground();
         if (!isPriority(bg)) {
             c.setBackground(colors.getBackground(context));
+        }
+
+        Color fg = c.getForeground();
+        if (!isPriority(fg)) {
+            c.setForeground(colors.getForeground(context));
+        }
+    }
+
+    private static void installBasicColors(@NotNull Component c,
+                                           @NotNull AppearanceContext context,
+                                           @NotNull BasicContextualColors colors,
+                                           boolean noBackground) {
+        if (noBackground) {
+            c.setBackground(AquaColors.CLEAR);
+        } else {
+            Color bg = c.getBackground();
+            if (!isPriority(bg)) {
+                c.setBackground(colors.getBackground(context));
+            }
         }
 
         Color fg = c.getForeground();
@@ -593,14 +662,14 @@ public class AquaColors {
     private static void installTableColors(@NotNull JTable c,
                                            @NotNull AppearanceContext context,
                                            @NotNull BasicContextualColors colors,
-                                           boolean isStriped,
-                                           boolean isInset) {
+                                           boolean noBackground,
+                                           boolean noSelectionBackground) {
 
         // A striped table must have a clear background, so that a well-behaved table cell renderer will paint a clear
         // background and preserve the stripes. The reason is that table cell renderers are supposed to obtain their
         // colors from the table. There is no generic interface that the table UI can use to configure a renderer.
 
-        if (isStriped) {
+        if (noBackground) {
             c.setBackground(AquaColors.CLEAR);
         } else if (!AquaColors.isPriority(c.getBackground())) {
             c.setBackground(colors.getBackground(context));
@@ -619,7 +688,7 @@ public class AquaColors {
 
         AppearanceContext selectedContext = context.withSelected(true);
 
-        if (isInset && c.getRowSelectionAllowed() && !c.getColumnSelectionAllowed()) {
+        if (noSelectionBackground) {
             setSelectionBackground(c, AquaColors.CLEAR);
         } else if (!AquaColors.isPriority(c.getSelectionBackground())) {
             setSelectionBackground(c, colors.getBackground(selectedContext));
@@ -657,14 +726,14 @@ public class AquaColors {
     private static void installListColors(@NotNull JList c,
                                           @NotNull AppearanceContext context,
                                           @NotNull BasicContextualColors colors,
-                                          boolean isStriped,
-                                          boolean isInset) {
+                                          boolean noBackground,
+                                          boolean noSelectionBackground) {
 
         // A striped list must have a clear background, so that a well-behaved list cell renderer will paint a clear
         // background and preserve the stripes. The reason is that list cell renderers are supposed to obtain their
         // colors from the list. There is no generic interface that the list UI can use to configure a renderer.
 
-        if (isStriped) {
+        if (noBackground) {
             c.setBackground(AquaColors.CLEAR);
         } else if (!AquaColors.isPriority(c.getBackground())) {
             c.setBackground(colors.getBackground(context));
@@ -676,7 +745,7 @@ public class AquaColors {
 
         AppearanceContext selectedContext = context.withSelected(true);
 
-        if (isInset) {
+        if (noSelectionBackground) {
             c.setSelectionBackground(AquaColors.CLEAR);
         } else if (!AquaColors.isPriority(c.getSelectionBackground())) {
             c.setSelectionBackground(colors.getBackground(selectedContext));
@@ -690,14 +759,14 @@ public class AquaColors {
     private static void installTreeColors(@NotNull JTree c,
                                           @NotNull AppearanceContext context,
                                           @NotNull BasicContextualColors colors,
-                                          boolean isStriped,
-                                          boolean isInset) {
+                                          boolean noBackground,
+                                          boolean noSelectionBackground) {
 
         // A striped tree must have a clear background, so that a well-behaved tree cell renderer will paint a clear
         // background and preserve the stripes. The reason is that tree cell renderers are supposed to obtain their
         // colors from the tree. There is no generic interface that the tree UI can use to configure a renderer.
 
-        if (isStriped) {
+        if (noBackground) {
             c.setBackground(AquaColors.CLEAR);
         } else if (!AquaColors.isPriority(c.getBackground())) {
             c.setBackground(colors.getBackground(context));
@@ -727,7 +796,7 @@ public class AquaColors {
         return new Color(c.getRed(), c.getGreen(), c.getBlue(), c.getAlpha());
     }
 
-    public static @Nullable Color getCellEditorBackground(@NotNull JComponent c) {
+    public static @NotNull Color getCellEditorBackground() {
         return new Color(0, 0, 0, 150);
     }
 

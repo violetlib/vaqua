@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2021 Alan Snyder.
+ * Copyright (c) 2015-2026 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -15,7 +15,10 @@ import javax.swing.border.Border;
 import javax.swing.border.EmptyBorder;
 import javax.swing.plaf.UIResource;
 
-import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.*;
+import org.violetlib.jnr.aqua.AquaUIPainter;
+
+import static org.violetlib.aqua.OSXSystemProperties.macOS26;
 
 /**
  * A contextual style popup that (if necessary) scrolls without using a scroll bar and scrolls by growing taller when
@@ -47,7 +50,8 @@ public class AquaContextualPopup {
                                boolean installVibrantSelection,
                                Rectangle selectedRegion,
                                Point selectedRegionLocation,
-                               int x, int y, int width, int height) {
+                               int x, int y, int width, int height,
+                               @NotNull AquaUIPainter.Size size) {
 
         Border border = getContextualMenuBorder();
         Insets s = border.getBorderInsets(null);
@@ -108,8 +112,9 @@ public class AquaContextualPopup {
             content.setBorder(null);
         }
 
+        int corner = getCornerRadius(size);
         wrapper.putClientProperty(AquaVibrantSupport.POPUP_BACKGROUND_STYLE_KEY, "vibrantMenu");
-        wrapper.putClientProperty(AquaVibrantSupport.POPUP_CORNER_RADIUS_KEY, 6);
+        wrapper.putClientProperty(AquaVibrantSupport.POPUP_CORNER_RADIUS_KEY, corner);
 
         if (installVibrantSelection && content instanceof JPopupMenu) {
             JPopupMenu menu = (JPopupMenu) content;
@@ -118,6 +123,18 @@ public class AquaContextualPopup {
 
         PopupFactory f = PopupFactory.getSharedInstance();
         p = f.getPopup(owner, wrapper, x, y);
+    }
+
+    private int getCornerRadius(@NotNull AquaUIPainter.Size size) {
+        int version = AquaPainting.getVersion();
+        if (version < macOS26) {
+            return 8;
+        }
+        switch (size) {
+            case MINI: return 10;
+            case SMALL: return 11;
+            default: return 12;
+        }
     }
 
     public Popup getPopup() {

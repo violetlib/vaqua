@@ -2,7 +2,7 @@
  * @(#)AquaNativeSupport.m
  *
  * Copyright (c) 2004-2007 Werner Randelshofer, Switzerland.
- * Copyright (c) 2014-2025 Alan Snyder.
+ * Copyright (c) 2014-2026 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this software, except in
@@ -105,8 +105,6 @@ NSString *createFrameDescription(NSRect frame)
 NSString *createLayerDescription(CALayer *layer)
 {
     if (layer) {
-        NSString *description = [layer debugDescription];
-        NSRect frame = layer.frame;
         NSString *od = layer.opaque ? @" Opaque" : @"";
         NSString *md = layer.masksToBounds ? @" Masks" : @"";
         NSString *rd = layer.cornerRadius > 0 ? [NSString stringWithFormat: @"Corner=%.2f", layer.cornerRadius] : @"";
@@ -1499,7 +1497,7 @@ static void internalDeliverWindowChangedAppearance(JNIEnv *env, NSWindow *window
 void deliverWindowChangedAppearance(NSWindow *window, NSAppearance *appearance)
 {
     if (windowChangedAppearanceCallback == nil) {
-        NSLog(@"No callback for window changed appearance");
+        //NSLog(@"No callback for window changed appearance");
         return;
     }
 
@@ -1511,6 +1509,25 @@ void deliverWindowChangedAppearance(NSWindow *window, NSAppearance *appearance)
         internalDeliverWindowChangedAppearance(env, window, appearance);
         [appearance release];
     });
+}
+
+/*
+ * Class:     org_violetlib_aqua_AquaUtils
+ * Method:    nativeInitializeWindow
+ * Signature: (J)I
+ */
+JNIEXPORT jint JNICALL Java_org_violetlib_aqua_AquaUtils_nativeInitializeWindow
+    (JNIEnv *env, jclass cl, jlong wptr)
+{
+    COCOA_ENTER();
+
+    NSWindow *w = (NSWindow *) wptr;
+    runOnMainThread(^() {
+        ensureWrapper(w);
+    });
+
+    COCOA_EXIT();
+    return 0;
 }
 
 /*
@@ -2414,6 +2431,36 @@ JNIEXPORT jint JNICALL Java_org_violetlib_aqua_AquaVibrantSupport_setViewFrame
 
 /*
  * Class:     org_violetlib_aqua_AquaVibrantSupport
+ * Method:    nativeRemoveSelectionBackgrounds
+ * Signature: (J)I
+ */
+JNIEXPORT jint JNICALL Java_org_violetlib_aqua_AquaVibrantSupport_nativeRemoveSelectionBackgrounds
+    (JNIEnv *env, jclass cl, jlong ptr)
+{
+    __block jint result = -1;
+
+    COCOA_ENTER();
+
+    NSView *view = (NSView *) ptr;
+
+    //windowDebug(view.window);   // debug
+
+    if ([view isKindOfClass: [AquaSidebarBackground class]]) {
+        AquaSidebarBackground *sbb = (AquaSidebarBackground*) view;
+
+        runOnMainThread(^() {
+            [sbb removeSelectionViews];
+            result = 0;
+        });
+}
+
+    COCOA_EXIT();
+
+    return result;
+}
+
+/*
+ * Class:     org_violetlib_aqua_AquaVibrantSupport
  * Method:    nativeUpdateSelectionBackgrounds
  * Signature: (J[I)I
  */
@@ -2439,12 +2486,38 @@ JNIEXPORT jint JNICALL Java_org_violetlib_aqua_AquaVibrantSupport_nativeUpdateSe
                 });
                 (*env)->ReleaseIntArrayElements(env, jdata, data, JNI_ABORT);
             }
-        } else {
-            runOnMainThread(^() {
-                [sbb updateSelectionViews: NULL];
-                result = 0;
-            });
         }
+    }
+
+    COCOA_EXIT();
+
+    return result;
+}
+
+/*
+ * Class:     org_violetlib_aqua_AquaVibrantSupport
+ * Method:    nativeConfigureSelections
+ * Signature: (JIII)I
+ */
+JNIEXPORT jint JNICALL Java_org_violetlib_aqua_AquaVibrantSupport_nativeConfigureSelections
+    (JNIEnv *env, jclass cl, jlong ptr, jint leftInset, jint rightInset, jint cornerRadius)
+{
+    __block jint result = -1;
+
+    COCOA_ENTER();
+
+    NSView *view = (NSView *) ptr;
+
+    //windowDebug(view.window);   // debug
+
+    if ([view isKindOfClass: [AquaSidebarBackground class]]) {
+        AquaSidebarBackground *sbb = (AquaSidebarBackground*) view;
+        runOnMainThread(^() {
+            [sbb configureSelectionsWithLeftInset:leftInset
+                                       rightInset:rightInset
+                                     cornerRadius:cornerRadius];
+            result = 0;
+        });
     }
 
     COCOA_EXIT();
@@ -2949,29 +3022,6 @@ JNIEXPORT jstring JNICALL Java_org_violetlib_aqua_AquaUtils_nativeGetWindowEffec
 
     if (appearanceName) {
         result = (*env)->NewStringUTF(env, [appearanceName UTF8String]);
-    }
-
-    COCOA_EXIT();
-    return result;
-}
-
-/*
- * Class:     org_violetlib_aqua_AquaUtils
- * Method:    nativeGetApplicationAppearanceName
- * Signature: ()Ljava/lang/String;
- */
-JNIEXPORT jstring JNICALL Java_org_violetlib_aqua_AquaUtils_nativeGetApplicationAppearanceName
-  (JNIEnv *env, jclass cl)
-{
-    __block jstring result = nil;
-
-    COCOA_ENTER();
-
-    if (@available(macOS 10.14, *)) {
-        NSAppearanceName appearanceName = [NSApp.effectiveAppearance name];
-        if (appearanceName) {
-            result = (*env)->NewStringUTF(env, [appearanceName UTF8String]);
-        }
     }
 
     COCOA_EXIT();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014-2015 Alan Snyder.
+ * Copyright (c) 2014-2026 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -8,11 +8,17 @@
 
 package org.violetlib.aqua.fc;
 
+import java.awt.*;
+
+import org.jetbrains.annotations.*;
 import org.violetlib.aqua.AquaListUI;
 import org.violetlib.aqua.JListModel;
 
 import javax.swing.*;
 import javax.swing.event.MouseInputListener;
+
+import static org.violetlib.aqua.OSXSystemProperties.OSVersion;
+import static org.violetlib.aqua.OSXSystemProperties.macOS11;
 
 /**
  * A UI for the lists in a file chooser browser.
@@ -57,5 +63,13 @@ public class AquaFileChooserBrowserListUI extends AquaListUI implements Abstract
             mouseBehavior.setFileSelectionHandler(fileSelectionHandler);
         }
         return mouseBehavior;
+    }
+
+    @Override
+    public @NotNull Insets getContentInsets() {
+        boolean isInset = isInset();
+        int v = isInset ? 2 : 0;
+        int side = isInset ? (OSVersion >= macOS11 ? 9 : 5) : 0;
+        return new Insets(v, side, v, side);
     }
 }

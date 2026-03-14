@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014-2024 Alan Snyder.
+ * Copyright (c) 2014-2026 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -27,7 +27,7 @@ import javax.swing.tree.TreeModel;
 import javax.swing.tree.TreePath;
 import javax.swing.tree.TreeSelectionModel;
 
-import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.*;
 import org.violetlib.aqua.*;
 import org.violetlib.treetable.*;
 
@@ -66,8 +66,8 @@ public class ListViewImpl extends ListView {
         tree = new MyTreeTable(fakeTreeModel, new MyTreeColumnModel(), tableColumnModel);
         tree.setUI(new MyTreeTableUI(fc, tree));
         tree.setRootVisible(false);
-        tree.setAlternateRowColor(tree.getBackground());
-        tree.setBackground(UIManager.getColor("List.alternateBackground.0"));
+        //tree.setAlternateRowColor(tree.getBackground());
+        //tree.setBackground(UIManager.getColor("List.alternateBackground.0"));
         tree.setNodeSortingEnabled(true);
         tree.setRowMargin(0);
         tree.setRowHeight(18);
@@ -262,7 +262,8 @@ public class ListViewImpl extends ListView {
         }
 
         @Override
-        public Component getTreeTableCellRendererComponent(TreeTable treeTable, Object value, boolean selected, boolean hasFocus, int row, int column) {
+        public Component getTreeTableCellRendererComponent(TreeTable treeTable, Object value, boolean selected,
+                                                           boolean hasFocus, int row, int column) {
             hasFocus = false;   // avoid special display of focused cell
             value = getCellValue(value);
             Component c = super.getTreeTableCellRendererComponent(treeTable, value, selected, hasFocus, row, column);
@@ -270,7 +271,8 @@ public class ListViewImpl extends ListView {
         }
 
         @Override
-        public Component getTreeTableCellRendererComponent(TreeTable treeTable, Object value, boolean selected, boolean hasFocus, int row, int column, boolean expanded, boolean leaf) {
+        public Component getTreeTableCellRendererComponent(TreeTable treeTable, Object value, boolean selected,
+                                                           boolean hasFocus, int row, int column, boolean expanded, boolean leaf) {
             value = getCellValue(value);
             Component c = super.getTreeTableCellRendererComponent(treeTable, value, selected, hasFocus, row, column, expanded, leaf);
             return fix(c, selected);
@@ -281,8 +283,8 @@ public class ListViewImpl extends ListView {
         }
 
         protected Component fix(Component c, boolean selected) {
-            AquaAppearance appearance = AppearanceManager.ensureAppearance(c);
-            Color fg = appearance.getColor(selected ? "alternateSelectedControlText" : textColorName);
+            PaintingContext pc = PaintingContext.getDefault();
+            Color fg = pc.appearance.getColor(selected ? "alternateSelectedControlText" : textColorName);
             if (fg == null) {
                 fg = Color.BLACK;
             }
@@ -297,10 +299,12 @@ public class ListViewImpl extends ListView {
         }
 
         @Override
-        public Component getTreeTableCellRendererComponent(TreeTable treeTable, Object value, boolean selected, boolean hasFocus, int row, int column, boolean expanded, boolean leaf) {
-            AquaAppearance appearance = AppearanceManager.ensureAppearance(treeTable);
+        public Component getTreeTableCellRendererComponent(TreeTable treeTable, Object value, boolean selected,
+                                                           boolean hasFocus, int row, int column, boolean expanded,
+                                                           boolean leaf) {
+            PaintingContext pc = PaintingContext.getDefault();
             ContainerContextualColors colors = AquaColors.STRIPED_CONTAINER_COLORS;
-            Component c = fileRenderer.getCellRendererComponent(treeTable, appearance, colors, value, selected, hasFocus);
+            Component c = fileRenderer.getCellRendererComponent(treeTable, pc.appearance, colors, value, selected, hasFocus);
             if (c == null) {
                 c = super.getTreeTableCellRendererComponent(treeTable, value, selected, hasFocus, row, column, expanded, leaf);
             }

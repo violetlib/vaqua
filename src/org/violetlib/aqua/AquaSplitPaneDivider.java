@@ -1,5 +1,5 @@
 /*
- * Changes copyright (c) 2015-2018 Alan Snyder.
+ * Changes copyright (c) 2015-2026 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -38,7 +38,7 @@ import java.beans.PropertyChangeEvent;
 import javax.swing.*;
 import javax.swing.plaf.basic.BasicSplitPaneDivider;
 
-import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.*;
 import org.violetlib.aqua.AquaUtils.LazyKeyedSingleton;
 import org.violetlib.jnr.aqua.AquaUIPainter;
 import org.violetlib.jnr.aqua.AquaUIPainter.DividerWidget;
@@ -102,10 +102,18 @@ public class AquaSplitPaneDivider extends BasicSplitPaneDivider {
     /**
      * Paints the divider.
      */
+    @Override
     public void paint(Graphics g) {
+        PaintingContext pc = PaintingContext.get();
+        if (pc == null) {
+            pc = AppearanceManager.getWindowPaintingContext(splitPane);
+        }
+        paint((Graphics2D) g, pc);
+    }
 
-        AquaAppearance appearance = AppearanceManager.ensureAppearance(splitPane);
-        Color c = appearance.getColor("separator");
+    private void paint(@NotNull Graphics2D g, @NotNull PaintingContext pc) {
+
+        Color color = pc.appearance.getColor("separator");
 
         Dimension size = getSize();
         int x = 0;
@@ -141,11 +149,11 @@ public class AquaSplitPaneDivider extends BasicSplitPaneDivider {
             DividerWidget w = ui.getWidget();
             State state = getState();
             AquaUIPainter.Orientation orientation = isVerticalDivider ? AquaUIPainter.Orientation.VERTICAL : AquaUIPainter.Orientation.HORIZONTAL;
-            AquaUtils.configure(painter, splitPane, size.width, size.height);
+            AquaUtils.configure(painter, pc.appearance, splitPane, size.width, size.height);
             SplitPaneDividerConfiguration dg = new SplitPaneDividerConfiguration(w, state, orientation, 0);
             painter.getPainter(dg).paint(g, x, y);
         } else {
-            AquaUtils.fillRect(g, c, x, y, size.width, size.height);
+            AquaUtils.fillRect(g, color, x, y, size.width, size.height);
         }
 
         super.paint(g); // Ends up at Container.paint, which paints our JButton children

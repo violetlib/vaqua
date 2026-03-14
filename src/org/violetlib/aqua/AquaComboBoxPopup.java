@@ -1,5 +1,5 @@
 /*
- * Changes Copyright (c) 2015-2023 Alan Snyder.
+ * Changes Copyright (c) 2015-2026 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -51,7 +51,7 @@ class AquaComboBoxPopup extends BasicComboPopup implements AquaExtendedPopup, Li
     public enum PopupDisplayType {
         EDITABLE_NO_SCROLL,     // an editable combo box pop up menu with no scroll pane
         EDITABLE_SCROLL,        // an editable combo box pop up menu with a scroll pane
-        CONTEXTUAL              // a non editable combo box pop up menu (similar to a contextual menu)
+        CONTEXTUAL              // a non-editable combo box pop up menu (similar to a contextual menu)
     }
 
     protected PopupDisplayType currentDisplayType;
@@ -134,7 +134,7 @@ class AquaComboBoxPopup extends BasicComboPopup implements AquaExtendedPopup, Li
     // An editable combo box uses a list. The list has a maximum number of displayed rows. If there are more elements,
     // then a scroll bar is used.
     //
-    // A pop up or pull down button simulates a standard pop up menu. A pop up menu will expand to fill the screen if
+    // A popup or pull down button simulates a standard popup menu. A popup menu will expand to fill the screen if
     // necessary. If there are items not visible, an upward or downward arrow will be displayed. The menu scrolls by
     // moving the mouse over (or beyond) the arrow. Scroll bars are never used.
 
@@ -185,11 +185,19 @@ class AquaComboBoxPopup extends BasicComboPopup implements AquaExtendedPopup, Li
     protected Dimension getBestPopupSizeForRowCount(int maxRowCount) {
         int currentElementCount = comboBox.getModel().getSize();
         int rowCount = currentDisplayType == PopupDisplayType.EDITABLE_SCROLL
-                ? Math.min(maxRowCount, currentElementCount) : currentElementCount;
+          ? Math.min(maxRowCount, currentElementCount) : currentElementCount;
+        AquaListUI listUI = AquaUtils.getUI(list, AquaListUI.class);
+        if (listUI != null) {
+            return listUI.getBestPopupSize(rowCount);
+        } else {
+            return getBestPopupSize(rowCount);
+        }
+    }
 
-        Dimension popupSize = new Dimension();
+    // For non-VAqua lists (should not happen)
+    private @NotNull Dimension getBestPopupSize(int rowCount) {
         ListCellRenderer<Object> renderer = list.getCellRenderer();
-
+        Dimension popupSize = new Dimension();
         for (int i = 0; i < rowCount; i++) {
             Object value = list.getModel().getElementAt(i);
             Component c = renderer.getListCellRendererComponent(list, value, i, false, false);
@@ -197,10 +205,7 @@ class AquaComboBoxPopup extends BasicComboPopup implements AquaExtendedPopup, Li
             popupSize.height += prefSize.height;
             popupSize.width = Math.max(prefSize.width, popupSize.width);
         }
-
-        //popupSize.width += 10;
-
-        return popupSize;
+       return popupSize;
     }
 
     protected @NotNull PopupDisplayType computePopupDisplayType() {
@@ -294,14 +299,17 @@ class AquaComboBoxPopup extends BasicComboPopup implements AquaExtendedPopup, Li
             updateContents(true);
         }
 
-        Dimension popupSize = getBestPopupSizeForRowCount(comboBox.getMaximumRowCount());
-        Rectangle popupBounds = computePopupBounds(0, comboBox.getBounds().height, popupSize.width, popupSize.height);
+        Dimension basicPopupSize = getBestPopupSizeForRowCount(comboBox.getMaximumRowCount());
+        Rectangle popupBounds = computePopupBounds(0, comboBox.getBounds().height, basicPopupSize.width, basicPopupSize.height);
 
         Dimension realPopupSize = popupBounds.getSize();
         if (currentDisplayType == PopupDisplayType.EDITABLE_SCROLL) {
-            scroller.setMaximumSize(realPopupSize);
-            scroller.setPreferredSize(realPopupSize);
-            scroller.setMinimumSize(realPopupSize);
+            // The fudge of 20 provides space for a permanent scroll bar
+            Dimension size = new Dimension(realPopupSize.width + 20, realPopupSize.height);
+            // This code does not handle a border on the scroll pane
+            scroller.setMaximumSize(size);
+            scroller.setPreferredSize(size);
+            scroller.setMinimumSize(size);
             list.setMaximumSize(null);
             list.setPreferredSize(null);
             list.setMinimumSize(null);
@@ -347,7 +355,7 @@ class AquaComboBoxPopup extends BasicComboPopup implements AquaExtendedPopup, Li
         // The width and height represent the preferred size of the popup.
 
         // The preferred location of the popup is based on the display type. If there is not enough room below the
-        // combo box, we will locate the pop up at a higher position. This method does not attempt to fit the pop up
+        // combo box, we will locate the popup at a higher position. This method does not attempt to fit the popup
         // horizontally on the screen. That adjustment is performed by AquaPopupMenuUI, which supports external
         // scrolling, except for editable combo box menus, which support internal scrolling.
 
@@ -357,11 +365,6 @@ class AquaComboBoxPopup extends BasicComboPopup implements AquaExtendedPopup, Li
 
         // Get the available bounds of the screen where the popup should appear.
         Rectangle scrBounds = AquaUtils.getScreenBounds(p, comboBox);
-
-        if (currentDisplayType == PopupDisplayType.EDITABLE_SCROLL) {
-            pw += 15;
-        }
-
         Insets comboBoxInsets = comboBox.getInsets();
         Dimension comboBoxSize = comboBox.getSize();
         int minWidth = comboBoxSize.width - (comboBoxInsets.left + comboBoxInsets.right);
@@ -376,7 +379,7 @@ class AquaComboBoxPopup extends BasicComboPopup implements AquaExtendedPopup, Li
         int yOffset = getNominalPopupYOffset();
         int y = p.y + yOffset;
 
-        // For a pop up menu, the goal is for the menu item label to exactly overlay the combo box button label, at
+        // For a pop-up menu, the goal is for the menu item label to exactly overlay the combo box button label, at
         // least in the case where our default renderer is used.
 
         int labelYOffset = 0;
@@ -406,7 +409,7 @@ class AquaComboBoxPopup extends BasicComboPopup implements AquaExtendedPopup, Li
             popupHeight = ybottom - y;
         }
 
-        // If the combo box is a pop up menu button, make sure the selected item is visible and try to position it
+        // If the combo box is a popup menu button, make sure the selected item is visible and try to position it
         // so that the selected menu item label is over the combo box button label.
         if (list != null && type == AquaComboBoxType.POP_UP_MENU_BUTTON) {
             int selectedIndex = comboBox.getSelectedIndex();
@@ -424,7 +427,7 @@ class AquaComboBoxPopup extends BasicComboPopup implements AquaExtendedPopup, Li
             list.clearSelection();
         }
 
-        // Unfortunately, the path by which the pop up location is transmitted from the popup to the popup menu UI is
+        // Unfortunately, the path by which the popup location is transmitted from the popup to the popup menu UI is
         // interrupted by code in JPopupMenu that thinks it knows more than we do about where popup menus should appear
         // on the screen. The following is a workaround. It also allows us to force the popup height to be different
         // than the popup content height.
@@ -539,8 +542,7 @@ class AquaComboBoxPopup extends BasicComboPopup implements AquaExtendedPopup, Li
                 comboBox.setPopupVisible(false);
                 // workaround for cancelling an edited item (bug 4530953)
                 if (comboBox.isEditable() && comboBox.getEditor() != null) {
-                    comboBox.configureEditor(comboBox.getEditor(),
-                                             comboBox.getSelectedItem());
+                    comboBox.configureEditor(comboBox.getEditor(), comboBox.getSelectedItem());
                 }
                 return;
             }

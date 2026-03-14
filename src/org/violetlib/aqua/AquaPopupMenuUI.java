@@ -1,5 +1,5 @@
 /*
- * Changes Copyright (c) 2015-2021 Alan Snyder.
+ * Changes Copyright (c) 2015-2026 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -35,16 +35,19 @@ package org.violetlib.aqua;
 
 import java.awt.*;
 import java.awt.event.*;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import javax.swing.*;
 import javax.swing.border.Border;
 import javax.swing.plaf.ComponentUI;
+import javax.swing.plaf.FontUIResource;
 import javax.swing.plaf.basic.BasicPopupMenuUI;
 
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.*;
 import org.violetlib.jnr.aqua.AquaUIPainter;
 
 import static org.violetlib.aqua.AquaContextualPopup.getContextualMenuBorder;
+import static org.violetlib.aqua.OSXSystemProperties.macOS26;
 
 /**
  * UI for all kinds of pop up menus.
@@ -68,16 +71,84 @@ public class AquaPopupMenuUI extends BasicPopupMenuUI implements AquaComponentUI
 
     private AquaContextualPopup cp;
     private ScrollingMouseListener scrollingMouseListener = new ScrollingMouseListener();
-    protected @Nullable AppearanceContext appearanceContext;
+    private PropertyChangeListener componentOrientationListener = new MyComponentOrientationListener();
+    protected @Nullable MenuDescription menuDescription;
+
+    private final @NotNull BasicContextualColors colors;
+    private @Nullable Dimension selectionIconSize;
+    private @Nullable Dimension arrowIconSize;
+
+    private @Nullable Icon checkIcon;
+    private @Nullable Icon radioIcon;
+    private @Nullable Icon indeterminateIcon;
+    private @Nullable Icon arrowIcon;
+    private int textItemGap;
+    private int selectionIconSeparation;
+    private int arrowIconSeparation;
+    private Font labelFont;
+    private Font acceleratorFont;
 
     public AquaPopupMenuUI() {
+        colors = AquaColors.getMenuColors();
     }
 
     @Override
     public void installDefaults() {
         super.installDefaults();
         LookAndFeel.installProperty(popupMenu, "opaque", false);
-        configureAppearanceContext(null);
+
+        int version = AquaPainting.getVersion();
+
+        selectionIconSize = computeSelectionIconSize();
+        arrowIconSize = computeArrowIconSize();
+
+        checkIcon = AquaImageFactory.getMenuSelectionIcon(popupMenu, selectionIconSize);
+        radioIcon = checkIcon;
+        indeterminateIcon = AquaImageFactory.getMenuIndeterminateSelectionIcon(popupMenu, selectionIconSize);
+        arrowIcon = AquaImageFactory.getSubmenuArrow(popupMenu, arrowIconSize);
+        textItemGap = version >= macOS26 ? 8 : 7;
+        selectionIconSeparation = 4;
+        arrowIconSeparation = 25;
+        labelFont = computeLabelFont();
+        acceleratorFont = computeAcceleratorFont(labelFont);
+    }
+
+    private @NotNull Dimension computeSelectionIconSize() {
+        return new Dimension(10, 10);
+    }
+
+    private @NotNull Dimension computeArrowIconSize() {
+        return new Dimension(10, 10);
+    }
+
+//    private @NotNull Dimension computePotentialIconSize() {
+//        int width = checkIcon != null ? checkIcon.getIconWidth() : 0;
+//        int height = checkIcon != null ? checkIcon.getIconHeight() : 0;
+//        if (radioIcon != null) {
+//            width = Math.max(width, radioIcon.getIconWidth());
+//            height = Math.max(height, radioIcon.getIconHeight());
+//        }
+//        if (indeterminateIcon != null) {
+//            width = Math.max(width, indeterminateIcon.getIconWidth());
+//            height = Math.max(height, indeterminateIcon.getIconHeight());
+//        }
+//        return new Dimension(width, height);
+//    }
+
+    private @NotNull Font computeLabelFont() {
+        Font f = UIManager.getFont("MenuItem.font");
+        if (f != null) {
+            return f;
+        }
+        return new FontUIResource(null, Font.PLAIN, 13);
+    }
+
+    private @NotNull Font computeAcceleratorFont(@NotNull Font labelFont) {
+        Font f = UIManager.getFont("MenuItem.font");
+        if (f != null) {
+            return f;
+        }
+        return labelFont;
     }
 
     @Override
@@ -86,12 +157,14 @@ public class AquaPopupMenuUI extends BasicPopupMenuUI implements AquaComponentUI
         popupMenu.addMouseListener(scrollingMouseListener);
         popupMenu.addMouseMotionListener(scrollingMouseListener);
         popupMenu.addMouseWheelListener(scrollingMouseListener);
-        AppearanceManager.installListeners(popupMenu);
+        popupMenu.addPropertyChangeListener("componentOrientation", componentOrientationListener);
+        AppearanceManager.install(popupMenu);
     }
 
     @Override
     protected void uninstallListeners() {
-        AppearanceManager.uninstallListeners(popupMenu);
+        AppearanceManager.uninstall(popupMenu);
+        popupMenu.removePropertyChangeListener("componentOrientation", componentOrientationListener);
         popupMenu.removeMouseListener(scrollingMouseListener);
         popupMenu.removeMouseMotionListener(scrollingMouseListener);
         popupMenu.removeMouseWheelListener(scrollingMouseListener);
@@ -99,30 +172,21 @@ public class AquaPopupMenuUI extends BasicPopupMenuUI implements AquaComponentUI
     }
 
     @Override
-    public void appearanceChanged(@NotNull JComponent c, @NotNull AquaAppearance appearance) {
-        configureAppearanceContext(appearance);
+    public void update(Graphics g, JComponent c) {
+        paint(g, c);
     }
 
     @Override
-    public void activeStateChanged(@NotNull JComponent c, boolean isActive) {
-        configureAppearanceContext(null);
+    public void paint(Graphics g, JComponent c) {
+        AppearanceManager.withContext(g, c, this::paint);
     }
 
-    protected void configureAppearanceContext(@Nullable AquaAppearance appearance) {
-        if (appearance == null) {
-            appearance = AppearanceManager.ensureAppearance(popupMenu);
-        }
+    public void paint(Graphics2D g, JComponent c, @NotNull PaintingContext pc) {
         AquaUIPainter.State state = AquaUIPainter.State.ACTIVE;
-        appearanceContext = new AppearanceContext(appearance, state, false, false);
+        AppearanceContext appearanceContext = new AppearanceContext(pc.appearance, state, false, false);
         BasicContextualColors colors = getMenuColors(popupMenu.getInvoker());
         AquaColors.installColors(popupMenu, appearanceContext, colors);
-        popupMenu.repaint();
-    }
-
-    @Override
-    public void update(Graphics g, JComponent c) {
-        AppearanceManager.registerCurrentAppearance(c);
-        super.update(g, c);
+        super.paint(g, c);
     }
 
     public boolean isPopupTrigger(MouseEvent e) {
@@ -133,7 +197,7 @@ public class AquaPopupMenuUI extends BasicPopupMenuUI implements AquaComponentUI
     @Override
     public Popup getPopup(JPopupMenu popup, int x, int y) {
 
-        // Unfortunately, the path by which the pop up location is transmitted from the popup to the popup menu UI is
+        // Unfortunately, the path by which the popup location is transmitted from the popup to the popup menu UI is
         // interrupted by code in JPopupMenu that thinks it knows more than we do about where popup menus should appear
         // on the screen. The following is a workaround.
 
@@ -168,10 +232,11 @@ public class AquaPopupMenuUI extends BasicPopupMenuUI implements AquaComponentUI
                 }
             }
 
-            boolean installVibrantSelection = AquaLookAndFeel.USE_VIBRANT_MENU && isVibrantSelectionSupportNeeded(owner);
+            boolean installVibrantSelection = AquaLookAndFeel.ENABLE_VIBRANT_MENU && isVibrantSelectionSupportNeeded(owner);
+            AquaUIPainter.Size size = getSize(owner);
 
             cp = new AquaContextualPopup(popup, owner, installVibrantSelection,
-              selectedRegion, selectedRegionLocation, x, y, width, height);
+              selectedRegion, selectedRegionLocation, x, y, width, height, size);
             return cp.getPopup();
 
         } else if (menuStyle == SIMPLE_CONTEXTUAL_MENU_STYLE) {
@@ -204,12 +269,73 @@ public class AquaPopupMenuUI extends BasicPopupMenuUI implements AquaComponentUI
         return FANCY_CONTEXTUAL_MENU_STYLE;
     }
 
+    protected @NotNull AquaUIPainter.Size getSize(@NotNull Component owner) {
+
+        return AquaUtils.getSize(owner, false, null);
+    }
+
+    public @NotNull MenuDescription getMenuDescription() {
+        if (menuDescription == null) {
+            menuDescription = computeMenuDescription();
+        }
+        return menuDescription;
+    }
+
+    private @NotNull MenuDescription computeMenuDescription() {
+        MenuLayoutInfo layoutInfo = computeMenuLayoutInfo();
+        return new MenuDescription(layoutInfo, checkIcon, radioIcon, arrowIcon, indeterminateIcon,
+          labelFont, acceleratorFont, colors);
+    }
+
+    protected @NotNull MenuLayoutInfo computeMenuLayoutInfo() {
+        boolean isSelectionIconNeeded = false;
+        boolean isArrowIconNeeded = false;
+        int count = popupMenu.getComponentCount();
+        for (int i = 0; i < count; i++) {
+            Component c = popupMenu.getComponent(i);
+            if (c instanceof JMenuItem) {
+                JMenuItem item = (JMenuItem) c;
+                AquaMenuItemUI ui = AquaUtils.getUI(item, AquaMenuItemUI.class);
+                if (ui != null && ui.isSelectable()) {
+                    isSelectionIconNeeded = true;
+                }
+                if (item instanceof JMenu) {
+                    isArrowIconNeeded = true;
+                }
+            }
+        }
+
+        assert selectionIconSize != null;
+        Dimension selectionIconSize = isSelectionIconNeeded ? this.selectionIconSize : new Dimension(0, 0);
+        Dimension arrowIconSize = isArrowIconNeeded && arrowIcon != null
+          ? new Dimension(arrowIcon.getIconWidth(), arrowIcon.getIconHeight())
+          : new Dimension(0, 0);
+        FontMetrics labelFM = popupMenu.getFontMetrics(labelFont);
+        FontMetrics accelFM = popupMenu.getFontMetrics(acceleratorFont);
+        Insets menuItemInsets = isSelectionIconNeeded ? new Insets(1, 10, 1, 14) : new Insets(1, 14, 1, 14);
+
+        return new MenuLayoutInfo(menuItemInsets, selectionIconSize, arrowIconSize, labelFM, accelFM,
+          textItemGap, selectionIconSeparation, arrowIconSeparation);
+    }
+
     public static Object getHidePopupKey() {
         if (HIDE_POPUP_KEY == null) {
             JComboBox cb = new JComboBox();
             HIDE_POPUP_KEY = cb.getClientProperty("doNotCancelPopup");
         }
         return HIDE_POPUP_KEY;
+    }
+
+    private class MyComponentOrientationListener
+      implements PropertyChangeListener
+    {
+        @Override
+        public void propertyChange(PropertyChangeEvent e) {
+            if (arrowIconSize != null) {  // should not be null
+                arrowIcon = AquaImageFactory.getSubmenuArrow(popupMenu, arrowIconSize);
+                menuDescription = null; // force recomputation when needed
+            }
+        }
     }
 
     private class ScrollingMouseListener implements MouseListener, MouseMotionListener, MouseWheelListener {
@@ -254,7 +380,7 @@ public class AquaPopupMenuUI extends BasicPopupMenuUI implements AquaComponentUI
         }
 
         @Override
-         public void mouseWheelMoved(MouseWheelEvent e) {
+        public void mouseWheelMoved(MouseWheelEvent e) {
             if (cp != null) {
                 cp.dispatchEvent(e);
             }

@@ -1,5 +1,5 @@
 /*
- * Changes copyright (c) 2015-2024 Alan Snyder.
+ * Changes copyright (c) 2015-2026 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -51,6 +51,7 @@ import javax.swing.plaf.*;
 import javax.swing.plaf.basic.BasicBorders;
 import javax.swing.plaf.basic.BasicLookAndFeel;
 
+import org.jetbrains.annotations.*;
 import org.violetlib.aqua.fc.OSXFile;
 import org.violetlib.jnr.aqua.AquaNativeRendering;
 
@@ -61,7 +62,7 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
     // for lazy initializers. Following the pattern from metal.
     private static final String PKG_PREFIX = "org.violetlib.aqua.";
 
-    public static boolean USE_VIBRANT_MENU = true;
+    public static boolean ENABLE_VIBRANT_MENU = true;
 
     private AquaFocusRingManager focusRingManager;
     private PropertyChangeListener uiChangeListener;
@@ -98,6 +99,13 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
     public void initialize() {
         super.initialize();
 
+        String appearance = System.getProperty("apple.awt.application.appearance");
+        if (appearance == null || appearance.equals("system")) {
+            // A specific appearance was not requested.
+            // Undo the default selection of NSAppearanceNameAqua made by NSApplicationAWT or VAqua when uninstalled.
+            AquaAppearances.setApplicationAppearance(null);
+        }
+
         // Popups must be heavy to use the vibrant background
         if (popupFactory == null) {
             popupFactory = JavaSupport.createPopupFactory();
@@ -119,9 +127,13 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
         }
 
         UIManager.addPropertyChangeListener(uiChangeListener);
+
+        AppearanceManager.initialize();
     }
 
     public void uninitialize() {
+        AppearanceManager.uninitialize();
+
         KeyboardFocusManager.getCurrentKeyboardFocusManager().removeKeyEventPostProcessor(AquaMnemonicHandler.getInstance());
         UIManager.removePropertyChangeListener(uiChangeListener);
 
@@ -132,43 +144,52 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
 
         popupFactory.setActive(false);
 
+        String appearance = System.getProperty("apple.awt.application.appearance");
+        if (appearance == null || appearance.equals("system")) {
+            // A specific appearance was not requested.
+            // Restore the default selection of NSAppearanceNameAqua made by NSApplicationAWT.
+            AquaAppearances.setApplicationAppearance("NSAppearanceNameAqua");
+        }
+
         super.uninitialize();
     }
 
     @Override
     public Icon getDisabledIcon(JComponent component, Icon icon) {
-        if (!suppressCreationOfDisabledButtonIcons) {
-            if (icon instanceof ImageIcon) {
-                if (component instanceof AbstractButton) {
-                    AquaButtonUI ui = AquaUtils.getUI(component, AquaButtonUI.class);
-                    if (ui != null) {
-                        return ui.createDisabledIcon((AbstractButton) component, (ImageIcon) icon);
-                    }
-                }
-            }
-
-            return super.getDisabledIcon(component, icon);
-        } else {
-            return null;
-        }
+//        if (!suppressCreationOfDisabledButtonIcons) {
+//            if (icon instanceof ImageIcon) {
+//                if (component instanceof AbstractButton) {
+//                    AquaButtonUI ui = AquaUtils.getUI(component, AquaButtonUI.class);
+//                    if (ui != null) {
+//                        return AquaButtonSupport.createDisabledIcon((AbstractButton) component, (ImageIcon) icon);
+//                    }
+//                }
+//            }
+//
+//            return super.getDisabledIcon(component, icon);
+//        } else {
+//            return null;
+//        }
+        return null;
     }
 
     @Override
     public Icon getDisabledSelectedIcon(JComponent component, Icon icon) {
-        if (!suppressCreationOfDisabledButtonIcons) {
-            if (icon instanceof ImageIcon) {
-                if (component instanceof AbstractButton) {
-                    AquaButtonUI ui = AquaUtils.getUI(component, AquaButtonUI.class);
-                    if (ui != null) {
-                        return ui.createDisabledSelectedIcon((AbstractButton) component, (ImageIcon) icon);
-                    }
-                }
-            }
-
-            return super.getDisabledSelectedIcon(component, icon);
-        } else {
-            return null;
-        }
+//        if (!suppressCreationOfDisabledButtonIcons) {
+//            if (icon instanceof ImageIcon) {
+//                if (component instanceof AbstractButton) {
+//                    AquaButtonUI ui = AquaUtils.getUI(component, AquaButtonUI.class);
+//                    if (ui != null) {
+//                        return AquaButtonSupport.createDisabledSelectedIcon((AbstractButton) component, (ImageIcon) icon);
+//                    }
+//                }
+//            }
+//
+//            return super.getDisabledSelectedIcon(component, icon);
+//        } else {
+//            return null;
+//        }
+        return null;
     }
 
     protected class MyUIChangeListener implements PropertyChangeListener {
@@ -191,6 +212,19 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
                 }
             }
         }
+    }
+
+    /**
+     * Identify the appearance to be used to display the specified component.
+     * The appearance is the application effective appearance unless the component or an
+     * ancestor of the component specifies a different appearance.
+     *
+     * @param c The component.
+     * @return the name of the appearance.
+     */
+    public @NotNull String getComponentAppearance(@NotNull Component c) {
+        AquaAppearance appearance = AppearanceManager.findAppearanceForComponent(c);
+        return appearance.getName();
     }
 
     /**
@@ -349,14 +383,15 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
         Border listHeaderBorder = AquaTableHeaderBorder.getListHeaderBorder();
         Border zeroBorder = new BorderUIResource.EmptyBorderUIResource(0, 0, 0, 0);
         Border scrollPaneBorder = new AquaLineBorder("scrollPaneBorder");
-        Border treeBorder = new AquaTreeBorder();
+        Border listBorder = NOTHING_BORDER;
+        Border treeBorder = NOTHING_BORDER;
 
         int sidebarRowHeight = OSXSystemProperties.useInsetViewStyle() ? 28 : 24;
 
         Color toolBarDragHandleColor = new ColorUIResource(140, 140, 140);
 
         LazyValue internalFrameBorder = t -> BasicBorders.getInternalFrameBorder();
-        Border cellBorder = new AquaCellBorder();
+        Border cellBorder = NOTHING_BORDER;
 
         Color windowBackgroundColor = new ColorUIResource(237, 237, 237); // needed in macOS 10.13 and earlier
         Color panelBackgroundColor = windowBackgroundColor;
@@ -380,387 +415,394 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
         LazyValue recessedFont = t -> AquaFonts.getRecessedButtonFont();
         LazyValue inlineFont = t -> AquaFonts.getInlineButtonFont();
 
-        Border menuItemBorder = new AquaMenuItemBorder();
+        Border menuItemBorder = new BorderUIResource.EmptyBorderUIResource(0, 0, 0, 0);
         Border popupMenuBorder = new BorderUIResource.EmptyBorderUIResource(0, 0, 0, 0);
 
         UIDefaults.LazyInputMap controlFocusInputMap = new UIDefaults.LazyInputMap(new Object[]{
-                "SPACE", "pressed",
-                "released SPACE", "released"
+          "SPACE", "pressed",
+          "released SPACE", "released"
         });
 
         UIDefaults.LazyInputMap fileChooserInputMap = new UIDefaults.LazyInputMap(new Object[]{
-                "ESCAPE", "cancelSelection",
-                "meta PERIOD", "cancelSelection",
-                "F5", "refresh",});
+          "ESCAPE", "cancelSelection",
+          "meta PERIOD", "cancelSelection",
+          "F5", "refresh",});
 
         // sja testing
         LazyValue confirmIcon = t ->
-                AquaImageFactory.getConfirmImageIcon();
+          AquaImageFactory.getConfirmImageIcon();
         LazyValue cautionIcon = t ->
-                AquaImageFactory.getCautionImageIcon();
+          AquaImageFactory.getCautionImageIcon();
         LazyValue stopIcon = t ->
-                AquaImageFactory.getStopImageIcon();
+          AquaImageFactory.getStopImageIcon();
         LazyValue securityIcon = t ->
-                AquaImageFactory.getLockImageIcon();
+          AquaImageFactory.getLockImageIcon();
 
         AquaKeyBindings aquaKeyBindings = AquaKeyBindings.instance();
 
         Object[] defaults = {
-                // "control" is used by JFrame, cannot be transparent
-                "control", windowBackgroundColor, /* Default color for controls (buttons, sliders, etc) */
+          // "control" is used by JFrame, cannot be transparent
+          "control", windowBackgroundColor, /* Default color for controls (buttons, sliders, etc) */
 
-                // Buttons
-                "Button.border",(LazyValue) t -> AquaButtonBorder.getPushButtonBorder(),
-                "Button.font", controlFont,
-                "Button.textIconGap", 4,
-                "Button.textShiftOffset", zero, // radar 3308129 - aqua doesn't move images when pressed.
-                "Button.focusInputMap", controlFocusInputMap,
-                "Button.margin", new InsetsUIResource(0, 0, 0, 0),
-                "Button.recessed.font", recessedFont,
-                "Button.inline.font", inlineFont,
+          // Buttons
+          "Button.border",(LazyValue) t -> AquaButtonBorder.getPushButtonBorder(),
+          "Button.font", controlFont,
+          "Button.textIconGap", 4,
+          "Button.textShiftOffset", zero, // radar 3308129 - aqua doesn't move images when pressed.
+          "Button.focusInputMap", controlFocusInputMap,
+          "Button.margin", zeroInsets,
+          "Button.recessed.font", recessedFont,
+          "Button.inline.font", inlineFont,
 
-                "CheckBox.font", controlFont,
-                "CheckBox.margin", new InsetsUIResource(1, 1, 0, 1),
-                "CheckBox.focusInputMap", controlFocusInputMap,
+          "CheckBox.font", controlFont,
+          "CheckBox.margin", zeroInsets,
+          "CheckBox.focusInputMap", controlFocusInputMap,
 
-                "CheckBoxMenuItem.font", menuFont,
-                "CheckBoxMenuItem.acceleratorFont", menuFont,
-                "CheckBoxMenuItem.acceleratorDelimiter", "",
-                "CheckBoxMenuItem.border", menuItemBorder, // for inset calculation
-                "CheckBoxMenuItem.margin", menuItemMargin,
-                "CheckBoxMenuItem.borderPainted", true,
-                "CheckBoxMenuItem.checkIcon",(LazyValue) t -> AquaImageFactory.getMenuItemCheckIcon(),
-                "CheckBoxMenuItem.dashIcon",(LazyValue) t -> AquaImageFactory.getMenuItemDashIcon(),
+          "CheckBoxMenuItem.font", menuFont,
+          "CheckBoxMenuItem.acceleratorFont", menuFont,
+          "CheckBoxMenuItem.acceleratorDelimiter", "",
+          "CheckBoxMenuItem.border", menuItemBorder, // for inset calculation
+          "CheckBoxMenuItem.margin", menuItemMargin,
+          "CheckBoxMenuItem.borderPainted", true,
+          "CheckBoxMenuItem.opaque", false,
+          //"CheckBoxMenuItem.checkIcon",(LazyValue) t -> AquaImageFactory.getMenuItemCheckIcon(),
+          //"CheckBoxMenuItem.dashIcon",(LazyValue) t -> AquaImageFactory.getMenuItemDashIcon(),
 
-                "ColorChooser.background", panelBackgroundColor,
+          "ColorChooser.background", panelBackgroundColor,
 
-                // *** ComboBox
-                "ComboBox.font", controlFont,
-                "ComboBox.ancestorInputMap", aquaKeyBindings.getComboBoxInputMap(),
-                "ComboBox.padding", new InsetsUIResource(1, 4, 1, 4),   // affects only non-editable combo boxes
-                "ComboBox.maximumRowCount", 5,
+          // *** ComboBox
+          "ComboBox.font", controlFont,
+          "ComboBox.ancestorInputMap", aquaKeyBindings.getComboBoxInputMap(),
+          "ComboBox.padding", new InsetsUIResource(0, 4, 0, 4),   // affects only non-editable combo boxes
+          "ComboBox.maximumRowCount", 5,
 
-                "DesktopIcon.border", internalFrameBorder,
-                "DesktopIcon.borderColor", smokyGlass,
-                "DesktopIcon.borderRimColor", dockIconRim,
-                "DesktopIcon.labelBackground", mediumTranslucentBlack,
+          "DesktopIcon.border", internalFrameBorder,
+          "DesktopIcon.borderColor", smokyGlass,
+          "DesktopIcon.borderRimColor", dockIconRim,
+          "DesktopIcon.labelBackground", mediumTranslucentBlack,
 
-                "EditorPane.focusInputMap", aquaKeyBindings.getMultiLineTextInputMap(),
-                "EditorPane.font", controlFont,
-                "EditorPane.caretBlinkRate", textCaretBlinkRate,
-                "EditorPane.border", textAreaBorder,
-                "EditorPane.margin", editorMargin,
+          "EditorPane.focusInputMap", aquaKeyBindings.getMultiLineTextInputMap(),
+          "EditorPane.font", controlFont,
+          "EditorPane.caretBlinkRate", textCaretBlinkRate,
+          "EditorPane.border", textAreaBorder,
+          "EditorPane.margin", editorMargin,
 
-                "FileChooser.ancestorInputMap", fileChooserInputMap,
+          "FileChooser.ancestorInputMap", fileChooserInputMap,
 
-                "FileChooser.cellTipOrigin", new Point(18, 1),
+          "FileChooser.cellTipOrigin", new Point(18, 1),
 
-                "FileChooser.previewNameFont", previewNameFont,
-                "FileChooser.previewTypeSizeFont", previewTypeSizeFont,
-                "FileChooser.previewLabelFont", previewLabelFont,
-                "FileChooser.previewValueFont", previewValueFont,
-                "FileChooser.previewLabelInsets", new InsetsUIResource(1, 0, 0, 4),
-                "FileChooser.previewLabelDelimiter", "",
+          "FileChooser.previewNameFont", previewNameFont,
+          "FileChooser.previewTypeSizeFont", previewTypeSizeFont,
+          "FileChooser.previewLabelFont", previewLabelFont,
+          "FileChooser.previewValueFont", previewValueFont,
+          "FileChooser.previewLabelInsets", new InsetsUIResource(1, 0, 0, 4),
+          "FileChooser.previewLabelDelimiter", "",
 
-                "FileChooser.autovalidate", true,
-                "FileChooser.quickLookEnabled", true,
-                "FileChooser.orderByType", false,
+          "FileChooser.autovalidate", true,
+          "FileChooser.quickLookEnabled", true,
+          "FileChooser.orderByType", false,
 
-                "FileChooser.browserCellTextIconGap", 6,
-                "FileChooser.browserCellTextArrowIconGap", 5,
+          "FileChooser.browserCellTextIconGap", 6,
+          "FileChooser.browserCellTextArrowIconGap", 5,
 
-                "FileChooser.cancelButtonMnemonic", zero,
-                "FileChooser.saveButtonMnemonic", zero,
-                "FileChooser.openButtonMnemonic", zero,
-                "FileChooser.updateButtonMnemonic", zero,
-                "FileChooser.helpButtonMnemonic", zero,
-                "FileChooser.directoryOpenButtonMnemonic", zero,
+          "FileChooser.cancelButtonMnemonic", zero,
+          "FileChooser.saveButtonMnemonic", zero,
+          "FileChooser.openButtonMnemonic", zero,
+          "FileChooser.updateButtonMnemonic", zero,
+          "FileChooser.helpButtonMnemonic", zero,
+          "FileChooser.directoryOpenButtonMnemonic", zero,
 
-                "FileChooser.lookInLabelMnemonic", zero,
-                "FileChooser.fileNameLabelMnemonic", zero,
-                "FileChooser.filesOfTypeLabelMnemonic", zero,
+          "FileChooser.lookInLabelMnemonic", zero,
+          "FileChooser.fileNameLabelMnemonic", zero,
+          "FileChooser.filesOfTypeLabelMnemonic", zero,
 
-                "FileChooser.sideBarRowHeight", sidebarRowHeight,
+          "FileChooser.sideBarRowHeight", sidebarRowHeight,
 
-                "FileView.aliasBadgeIcon", OSXFile.getAliasBadgeIcon(),
-                "FileView.computerIcon", AquaImageFactory.getComputerIcon(),
-                "FileView.directoryIcon", OSXFile.getDirectoryIcon(),
-                "FileView.fileIcon", OSXFile.getFileIcon(),
-                "FileView.networkIcon", OSXFile.getNetworkIcon(),
+          "FileView.aliasBadgeIcon", OSXFile.getAliasBadgeIcon(),
+          "FileView.computerIcon", AquaImageFactory.getComputerIcon(),
+          "FileView.directoryIcon", OSXFile.getDirectoryIcon(),
+          "FileView.fileIcon", OSXFile.getFileIcon(),
+          "FileView.networkIcon", OSXFile.getNetworkIcon(),
 
-                "FormattedTextField.focusInputMap", aquaKeyBindings.getFormattedTextFieldInputMap(),
-                "FormattedTextField.font", controlFont,
-                "FormattedTextField.caretBlinkRate", textCaretBlinkRate,
-                "FormattedTextField.border", textFieldBorder,
-                "FormattedTextField.margin", zeroInsets,
+          "FormattedTextField.focusInputMap", aquaKeyBindings.getFormattedTextFieldInputMap(),
+          "FormattedTextField.font", controlFont,
+          "FormattedTextField.caretBlinkRate", textCaretBlinkRate,
+          "FormattedTextField.border", textFieldBorder,
+          "FormattedTextField.margin", zeroInsets,
 
-                "InternalFrame.titleFont", controlFont,
-                "InternalFrame.background", windowBackgroundColor,
-                "InternalFrame.borderColor", windowBackgroundColor,
-                "InternalFrame.borderShadow", Color.red,
-                "InternalFrame.borderDarkShadow", Color.green,
-                "InternalFrame.borderHighlight", Color.blue,
-                "InternalFrame.borderLight", Color.yellow,
-                "InternalFrame.border", null, //internalFrameBorder,
-                "InternalFrame.icon", null,
+          "InternalFrame.titleFont", controlFont,
+          "InternalFrame.background", windowBackgroundColor,
+          "InternalFrame.borderColor", windowBackgroundColor,
+          "InternalFrame.borderShadow", Color.red,
+          "InternalFrame.borderDarkShadow", Color.green,
+          "InternalFrame.borderHighlight", Color.blue,
+          "InternalFrame.borderLight", Color.yellow,
+          "InternalFrame.border", null, //internalFrameBorder,
+          "InternalFrame.icon", null,
 
-                "InternalFrame.paletteBorder", null,//internalFrameBorder,
-                "InternalFrame.paletteTitleFont", controlSmallFont,
-                "InternalFrame.paletteBackground", windowBackgroundColor,
+          "InternalFrame.paletteBorder", null,//internalFrameBorder,
+          "InternalFrame.paletteTitleFont", controlSmallFont,
+          "InternalFrame.paletteBackground", windowBackgroundColor,
 
-                "InternalFrame.optionDialogBorder", null,//internalFrameBorder,
-                "InternalFrame.optionDialogTitleFont", menuFont,
-                "InternalFrame.optionDialogBackground", windowBackgroundColor,
+          "InternalFrame.optionDialogBorder", null,//internalFrameBorder,
+          "InternalFrame.optionDialogTitleFont", menuFont,
+          "InternalFrame.optionDialogBackground", windowBackgroundColor,
 
-                // InternalFrame Auditory Cue Mappings
-                "InternalFrame.closeSound", null,
-                "InternalFrame.maximizeSound", null,
-                "InternalFrame.minimizeSound", null,
-                "InternalFrame.restoreDownSound", null,
-                "InternalFrame.restoreUpSound", null,
+          // InternalFrame Auditory Cue Mappings
+          "InternalFrame.closeSound", null,
+          "InternalFrame.maximizeSound", null,
+          "InternalFrame.minimizeSound", null,
+          "InternalFrame.restoreDownSound", null,
+          "InternalFrame.restoreUpSound", null,
 
-                "InternalFrame.windowBindings",
-                new Object[]{
-                        "shift ESCAPE", "showSystemMenu",
-                        "ctrl SPACE", "showSystemMenu",
-                        "ESCAPE", "hideSystemMenu"
-                },
+          "InternalFrame.windowBindings",
+          new Object[]{
+            "shift ESCAPE", "showSystemMenu",
+            "ctrl SPACE", "showSystemMenu",
+            "ESCAPE", "hideSystemMenu"
+          },
 
-                // *** Label
-                "Label.font", controlFont, // themeLabelFont is for small things like ToolbarButtons
-                "Label.border", null,
+          // *** Label
+          "Label.font", controlFont, // themeLabelFont is for small things like ToolbarButtons
+          "Label.border", null,
 
-                "List.font", viewFont, // [3577901] Aqua HIG says "default font of text in lists and tables" should be 12 point (vm).
-                "List.focusCellHighlightBorder", cellBorder,
-                "List.focusSelectedCellHighlightBorder", cellBorder,
-                "List.cellNoFocusBorder", cellBorder,
-                "List.border", null,
-                "List.cellRenderer", listCellRendererActiveValue,
-                "List.focusInputMap", aquaKeyBindings.getListInputMap(),
+          "List.font", viewFont, // [3577901] Aqua HIG says "default font of text in lists and tables" should be 12 point (vm).
+          "List.focusCellHighlightBorder", cellBorder,
+          "List.focusSelectedCellHighlightBorder", cellBorder,
+          "List.cellNoFocusBorder", cellBorder,
+          "List.border", listBorder,
+          "List.cellRenderer", listCellRendererActiveValue,
+          "List.focusInputMap", aquaKeyBindings.getListInputMap(),
 
-                // *** Menus
-                "Menu.font", menuFont,
-                "Menu.acceleratorFont", menuFont,
-                "Menu.border", menuItemBorder,
-                "Menu.borderPainted", false,
-                "Menu.margin", menuItemMargin,
-                "Menu.arrowIcon",(LazyValue) t -> AquaImageFactory.getMenuArrowIcon(),
-                "Menu.consumesTabs", true,
-                "Menu.menuPopupOffsetY", 1,
-                "Menu.submenuPopupOffsetY", -4,
-                "Menu.opaque", false,
+          // *** Menus
+          "Menu.font", menuFont,
+          "Menu.acceleratorFont", menuFont,
+          "Menu.border", menuItemBorder,
+          "Menu.borderPainted", false,
+          "Menu.margin", menuItemMargin,
+          //"Menu.arrowIcon",(LazyValue) t -> AquaImageFactory.getMenuArrowIcon(),
+          "Menu.consumesTabs", true,
+          "Menu.menuPopupOffsetY", 1,
+          "Menu.submenuPopupOffsetY", -4,
+          "Menu.opaque", false,
 
-                "MenuBar.font", menuFont,
-                "MenuBar.border", new AquaMenuBarBorder(), // sja make lazy!
-                "MenuBar.margin", new InsetsUIResource(0, 8, 0, 8),
+          "MenuBar.font", menuFont,
+          "MenuBar.border", new AquaMenuBarBorder(), // sja make lazy!
+          "MenuBar.margin", new InsetsUIResource(0, 8, 0, 8),
 
-                "MenuItem.font", menuFont,
-                "MenuItem.acceleratorFont", menuFont,
-                "MenuItem.acceleratorDelimiter", "",
-                "MenuItem.border", menuItemBorder,
-                "MenuItem.margin", menuItemMargin,
-                "MenuItem.borderPainted", true,
+          "MenuItem.font", menuFont,
+          "MenuItem.acceleratorFont", menuFont,
+          "MenuItem.acceleratorDelimiter", "",
+          "MenuItem.border", menuItemBorder,
+          "MenuItem.margin", menuItemMargin,
+          "MenuItem.borderPainted", true,
+          "MenuItem.opaque", false,
+          //"MenuItem.checkIcon",(LazyValue) t -> AquaImageFactory.getMenuItemCheckIcon(), // needed for layout
+          //"MenuItem.dashIcon",(LazyValue) t -> AquaImageFactory.getMenuItemDashIcon(), // needed for layout
 
-                // *** OptionPane
-                // You can additionally define OptionPane.messageFont which will
-                // dictate the fonts used for the message, and
-                // OptionPane.buttonFont, which defines the font for the buttons.
-                "OptionPane.font", alertHeaderFont,
-                "OptionPane.messageFont", controlFont,
-                "OptionPane.buttonFont", controlFont,
-                "OptionPane.border", new BorderUIResource.EmptyBorderUIResource(12, 21, 17, 21),
-                "OptionPane.messageAreaBorder", zeroBorder,
-                "OptionPane.buttonAreaBorder", new BorderUIResource.EmptyBorderUIResource(13, 0, 0, 0),
-                "OptionPane.minimumSize", new DimensionUIResource(262, 90),
+          // *** OptionPane
+          // You can additionally define OptionPane.messageFont which will
+          // dictate the fonts used for the message, and
+          // OptionPane.buttonFont, which defines the font for the buttons.
+          "OptionPane.font", alertHeaderFont,
+          "OptionPane.messageFont", controlFont,
+          "OptionPane.buttonFont", controlFont,
+          "OptionPane.border", new BorderUIResource.EmptyBorderUIResource(12, 21, 17, 21),
+          "OptionPane.messageAreaBorder", zeroBorder,
+          "OptionPane.buttonAreaBorder", new BorderUIResource.EmptyBorderUIResource(13, 0, 0, 0),
+          "OptionPane.minimumSize", new DimensionUIResource(262, 90),
 
-                "OptionPane.errorIcon", stopIcon,
-                "OptionPane.informationIcon", confirmIcon,
-                "OptionPane.warningIcon", cautionIcon,
-                "OptionPane.questionIcon", confirmIcon,
-                "_SecurityDecisionIcon", securityIcon,
-                "OptionPane.windowBindings", new Object[]{"ESCAPE", "close"},
-                // OptionPane Auditory Cue Mappings
-                "OptionPane.errorSound", null,
-                "OptionPane.informationSound", null, // Info and Plain
-                "OptionPane.questionSound", null,
-                "OptionPane.warningSound", null,
-                "OptionPane.buttonClickThreshhold", 500,
-                "OptionPane.yesButtonMnemonic", "",
-                "OptionPane.noButtonMnemonic", "",
-                "OptionPane.okButtonMnemonic", "",
-                "OptionPane.cancelButtonMnemonic", "",
+          "OptionPane.errorIcon", stopIcon,
+          "OptionPane.informationIcon", confirmIcon,
+          "OptionPane.warningIcon", cautionIcon,
+          "OptionPane.questionIcon", confirmIcon,
+          "_SecurityDecisionIcon", securityIcon,
+          "OptionPane.windowBindings", new Object[]{"ESCAPE", "close"},
+          // OptionPane Auditory Cue Mappings
+          "OptionPane.errorSound", null,
+          "OptionPane.informationSound", null, // Info and Plain
+          "OptionPane.questionSound", null,
+          "OptionPane.warningSound", null,
+          "OptionPane.buttonClickThreshhold", 500,
+          "OptionPane.yesButtonMnemonic", "",
+          "OptionPane.noButtonMnemonic", "",
+          "OptionPane.okButtonMnemonic", "",
+          "OptionPane.cancelButtonMnemonic", "",
 
-                "Panel.font", controlFont,
-                "Panel.background", panelBackgroundColor,   // needed because content panes can be forced to be opaque
+          "Panel.font", controlFont,
+          "Panel.background", panelBackgroundColor,   // needed because content panes can be forced to be opaque
 
-                "PasswordField.focusInputMap", aquaKeyBindings.getPasswordFieldInputMap(),
-                "PasswordField.font", controlFont,
-                "PasswordField.caretBlinkRate", textCaretBlinkRate,
-                "PasswordField.border", textFieldBorder,
-                "PasswordField.margin", zeroInsets,
-                "PasswordField.echoChar", (char) 0x25CF,
+          "PasswordField.focusInputMap", aquaKeyBindings.getPasswordFieldInputMap(),
+          "PasswordField.font", controlFont,
+          "PasswordField.caretBlinkRate", textCaretBlinkRate,
+          "PasswordField.border", textFieldBorder,
+          "PasswordField.margin", zeroInsets,
+          "PasswordField.echoChar", (char) 0x25CF,
 
-                "PopupMenu.font", menuFont,
-                "PopupMenu.border", popupMenuBorder,
+          "PopupMenu.font", menuFont,
+          "PopupMenu.border", popupMenuBorder,
 
-                "ProgressBar.font", controlFont,
-                "ProgressBar.border", new BorderUIResource(BorderFactory.createEmptyBorder()),
-                "ProgressBar.repaintInterval", 30,  // milliseconds
-                "ProgressBar.circularRepaintInterval", 70,  // milliseconds
+          "ProgressBar.font", controlFont,
+          "ProgressBar.border", new BorderUIResource(BorderFactory.createEmptyBorder()),
+          "ProgressBar.repaintInterval", 30,  // milliseconds
+          "ProgressBar.circularRepaintInterval", 70,  // milliseconds
 
-                "RadioButton.font", controlFont,
-                "RadioButton.margin", new InsetsUIResource(1, 1, 0, 1),
-                "RadioButton.focusInputMap", controlFocusInputMap,
+          "RadioButton.font", controlFont,
+          "RadioButton.margin", zeroInsets,
+          "RadioButton.focusInputMap", controlFocusInputMap,
 
-                "RadioButtonMenuItem.font", menuFont,
-                "RadioButtonMenuItem.acceleratorFont", menuFont,
-                "RadioButtonMenuItem.acceleratorDelimiter", "",
-                "RadioButtonMenuItem.border", menuItemBorder, // for inset calculation
-                "RadioButtonMenuItem.margin", menuItemMargin,
-                "RadioButtonMenuItem.borderPainted", true,
-                "RadioButtonMenuItem.checkIcon",(LazyValue) t -> AquaImageFactory.getMenuItemCheckIcon(),
-                "RadioButtonMenuItem.dashIcon",(LazyValue) t -> AquaImageFactory.getMenuItemDashIcon(),
+          "RadioButtonMenuItem.font", menuFont,
+          "RadioButtonMenuItem.acceleratorFont", menuFont,
+          "RadioButtonMenuItem.acceleratorDelimiter", "",
+          "RadioButtonMenuItem.border", menuItemBorder, // for inset calculation
+          "RadioButtonMenuItem.margin", menuItemMargin,
+          "RadioButtonMenuItem.borderPainted", true,
+          "RadioButtonMenuItem.opaque", false,
+          //"RadioButtonMenuItem.checkIcon",(LazyValue) t -> AquaImageFactory.getMenuItemCheckIcon(),
+          //"RadioButtonMenuItem.dashIcon",(LazyValue) t -> AquaImageFactory.getMenuItemDashIcon(),
 
-                "Separator.width", 1,
+          "Separator.width", 1,
 
-                "ScrollBar.border", null,
-                "ScrollBar.focusInputMap", aquaKeyBindings.getScrollBarInputMap(),
-                "ScrollBar.focusInputMap.RightToLeft", aquaKeyBindings.getScrollBarRightToLeftInputMap(),
-                "ScrollBar.width", 16,
+          "ScrollBar.border", null,
+          "ScrollBar.focusInputMap", aquaKeyBindings.getScrollBarInputMap(),
+          "ScrollBar.focusInputMap.RightToLeft", aquaKeyBindings.getScrollBarRightToLeftInputMap(),
+          "ScrollBar.width", 16,
 
-                "ScrollPane.font", controlFont,
-                "ScrollPane.border", scrollPaneBorder,
-                "ScrollPane.viewportBorder", null,
+          "ScrollPane.font", controlFont,
+          "ScrollPane.border", scrollPaneBorder,
+          "ScrollPane.viewportBorder", null,
 
-                "ScrollPane.ancestorInputMap", aquaKeyBindings.getScrollPaneInputMap(),
-                "ScrollPane.ancestorInputMap.RightToLeft", new UIDefaults.LazyInputMap(new Object[]{}),
+          "ScrollPane.ancestorInputMap", aquaKeyBindings.getScrollPaneInputMap(),
+          "ScrollPane.ancestorInputMap.RightToLeft", new UIDefaults.LazyInputMap(new Object[]{}),
 
-                "Viewport.font", controlFont,
+          "Viewport.font", controlFont,
 
-                // *** Slider
-                "Slider.font", controlSmallFont,
-                "Slider.border", null,
-                "Slider.focusInsets", new InsetsUIResource(0, 0, 0, 0),
-                "Slider.focusInputMap", aquaKeyBindings.getSliderInputMap(),
-                "Slider.focusInputMap.RightToLeft", aquaKeyBindings.getSliderRightToLeftInputMap(),
+          // *** Slider
+          "Slider.font", controlSmallFont,
+          "Slider.border", null,
+          "Slider.focusInsets", new InsetsUIResource(0, 0, 0, 0),
+          "Slider.focusInputMap", aquaKeyBindings.getSliderInputMap(),
+          "Slider.focusInputMap.RightToLeft", aquaKeyBindings.getSliderRightToLeftInputMap(),
 
-                // *** Spinner
-                "Spinner.font", controlFont,
-                "Spinner.border", null,
-                "Spinner.arrowButtonSize", new Dimension(16, 5),
-                "Spinner.ancestorInputMap", aquaKeyBindings.getSpinnerInputMap(),
-                "Spinner.editorBorderPainted", true,
-                "Spinner.editorAlignment", SwingConstants.TRAILING,
+          // *** Spinner
+          "Spinner.font", controlFont,
+          "Spinner.border", null,
+          "Spinner.arrowButtonSize", new Dimension(16, 5),
+          "Spinner.ancestorInputMap", aquaKeyBindings.getSpinnerInputMap(),
+          "Spinner.editorBorderPainted", true,
+          "Spinner.editorAlignment", SwingConstants.TRAILING,
 
-                // *** SplitPane
-                "SplitPane.border", null,
-                "SplitPane.continuousLayout", true,
-                "SplitPane.dividerSize", 1, // will be replaced by AquaSplitPaneUI
-                "SplitPaneDivider.border", null, // AquaSplitPaneDividerUI draws it
+          // *** SplitPane
+          "SplitPane.border", null,
+          "SplitPane.continuousLayout", true,
+          "SplitPane.dividerSize", 1, // will be replaced by AquaSplitPaneUI
+          "SplitPaneDivider.border", null, // AquaSplitPaneDividerUI draws it
 
-                // *** TabbedPane
-                "TabbedPane.font", controlFont,
-                "TabbedPane.smallFont", controlSmallFont,
-                "TabbedPane.useSmallLayout", false,//sSmallTabs ? true : false,
-                "TabbedPane.textIconGap", 4,
-                "TabbedPane.tabInsets", new InsetsUIResource(0, 10, 3, 10), // Label within tab (top, left, bottom, right)
-                "TabbedPane.tabAreaInsets", new InsetsUIResource(3, 9, -1, 9), // Tabs relative to edge of pane (negative value for overlapping)
-                // (top = side opposite pane, left = edge || to pane, bottom = side adjacent to pane, right = left) - see rotateInsets
-                "TabbedPane.contentBorderInsets", new InsetsUIResource(8, 0, 0, 0), // width of border
-                "TabbedPane.selectedTabPadInsets", new InsetsUIResource(0, 0, 0, 0), // Really outsets, this is where we allow for overlap
-                "TabbedPane.tabsOverlapBorder", true,
-                "TabbedPane.selectedLabelShift", -1,
-                "TabbedPane.labelShift", 1,
-                "TabbedPane.selectionFollowsFocus", true,
+          // *** TabbedPane
+          "TabbedPane.font", controlFont,
+          "TabbedPane.smallFont", controlSmallFont,
+          "TabbedPane.useSmallLayout", false,//sSmallTabs ? true : false,
+          "TabbedPane.textIconGap", 4,
+          "TabbedPane.tabInsets", new InsetsUIResource(0, 10, 3, 10), // Label within tab (top, left, bottom, right)
+          "TabbedPane.tabAreaInsets", new InsetsUIResource(3, 9, -1, 9), // Tabs relative to edge of pane (negative value for overlapping)
+          // (top = side opposite pane, left = edge || to pane, bottom = side adjacent to pane, right = left) - see rotateInsets
+          "TabbedPane.contentBorderInsets", new InsetsUIResource(8, 0, 0, 0), // width of border
+          "TabbedPane.selectedTabPadInsets", new InsetsUIResource(0, 0, 0, 0), // Really outsets, this is where we allow for overlap
+          "TabbedPane.tabsOverlapBorder", true,
+          "TabbedPane.selectedLabelShift", -1,
+          "TabbedPane.labelShift", 1,
+          "TabbedPane.selectionFollowsFocus", true,
 
-                // *** Table
-                "Table.font", viewFont, // [3577901] Aqua HIG says "default font of text in lists and tables" should be 12 point (vm).
-                "Table.cellNoFocusBorder", zeroBorder,
-                "Table.focusCellHighlightBorder", zeroBorder,
-                "Table.focusSelectedCellHighlightBorder", zeroBorder,
-                "Table.focusCellBackground", AquaColors.CLEAR, // used when table is focused, cell is clicked but selection is disabled
-                "Table.scrollPaneBorder", scrollPaneBorder,
-                "Table.scrollPaneCornerComponent",
-                (UIDefaults.ActiveValue) table1 -> new AquaTableScrollPaneCorner(),
+          // *** Table
+          "Table.font", viewFont, // [3577901] Aqua HIG says "default font of text in lists and tables" should be 12 point (vm).
+          "Table.cellNoFocusBorder", zeroBorder,
+          "Table.focusCellHighlightBorder", zeroBorder,
+          "Table.focusSelectedCellHighlightBorder", zeroBorder,
+          "Table.focusCellBackground", AquaColors.CLEAR, // used when table is focused, cell is clicked but selection is disabled
+          "Table.scrollPaneBorder", scrollPaneBorder,
+          "Table.scrollPaneCornerComponent",
+          (UIDefaults.ActiveValue) table1 -> new AquaTableScrollPaneCorner(),
 
-                "Table.ancestorInputMap", aquaKeyBindings.getTableInputMap(),
-                "Table.ancestorInputMap.RightToLeft", aquaKeyBindings.getTableRightToLeftInputMap(),
+          "Table.ancestorInputMap", aquaKeyBindings.getTableInputMap(),
+          "Table.ancestorInputMap.RightToLeft", aquaKeyBindings.getTableRightToLeftInputMap(),
 
-                "TableHeader.font", controlSmallFont,
-                "TableHeader.cellBorder", listHeaderBorder,
-                "TableHeader.borderHeight", 1,
+          "TableHeader.font", controlSmallFont,
+          "TableHeader.cellBorder", listHeaderBorder,
+          "TableHeader.borderHeight", 1,
 
-                // *** Text
-                "TextArea.focusInputMap", aquaKeyBindings.getMultiLineTextInputMap(),
-                "TextArea.font", controlFont,
-                "TextArea.caretBlinkRate", textCaretBlinkRate,
-                "TextArea.border", textAreaBorder,
-                "TextArea.margin", zeroInsets,
+          // *** Text
+          "TextArea.focusInputMap", aquaKeyBindings.getMultiLineTextInputMap(),
+          "TextArea.font", controlFont,
+          "TextArea.caretBlinkRate", textCaretBlinkRate,
+          "TextArea.border", textAreaBorder,
+          "TextArea.margin", zeroInsets,
 
-                "TextField.focusInputMap", aquaKeyBindings.getTextFieldInputMap(),
-                "TextField.font", controlFont,
-                "TextField.caretBlinkRate", textCaretBlinkRate,
-                "TextField.border", textFieldBorder,
-                "TextField.margin", zeroInsets,
+          "TextField.focusInputMap", aquaKeyBindings.getTextFieldInputMap(),
+          "TextField.font", controlFont,
+          "TextField.caretBlinkRate", textCaretBlinkRate,
+          "TextField.border", textFieldBorder,
+          "TextField.margin", zeroInsets,
 
-                "TextPane.focusInputMap", aquaKeyBindings.getMultiLineTextInputMap(),
-                "TextPane.font", controlFont,
-                "TextPane.caretBlinkRate", textCaretBlinkRate,
-                "TextPane.border", textAreaBorder,
-                "TextPane.margin", editorMargin,
+          "TextPane.focusInputMap", aquaKeyBindings.getMultiLineTextInputMap(),
+          "TextPane.font", controlFont,
+          "TextPane.caretBlinkRate", textCaretBlinkRate,
+          "TextPane.border", textAreaBorder,
+          "TextPane.margin", editorMargin,
 
-                "TitledBorder.font", controlSmallFont,
-                "TitledBorder.border", aquaTitledBorder,
-                "TitledBorder.position", TitledBorder.ABOVE_TOP,
+          "TitledBorder.font", controlSmallFont,
+          "TitledBorder.border", aquaTitledBorder,
+          "TitledBorder.position", TitledBorder.ABOVE_TOP,
 
-                // *** ToggleButton
-                // For best toolbar results should match Button
-                "ToggleButton.border",(LazyValue) t -> AquaButtonBorder.getToggleButtonBorder(),
-                "ToggleButton.font", controlFont,
-                "ToggleButton.textIconGap", 4,
-                "ToggleButton.textShiftOffset", zero, // radar 3308129 - aqua doesn't move images when pressed.
-                "ToggleButton.focusInputMap", controlFocusInputMap,
-                "ToggleButton.margin", new InsetsUIResource(0, 0, 0, 0),
+          // *** ToggleButton
+          // For best toolbar results should match Button
+          "ToggleButton.border",(LazyValue) t -> AquaButtonBorder.getToggleButtonBorder(),
+          "ToggleButton.font", controlFont,
+          "ToggleButton.textIconGap", 4,
+          "ToggleButton.textShiftOffset", zero, // radar 3308129 - aqua doesn't move images when pressed.
+          "ToggleButton.focusInputMap", controlFocusInputMap,
+          "ToggleButton.margin", zeroInsets,
 
-                // *** ToolBar
-                "ToolBar.font", controlFont,
-                "ToolBar.dockingBackground", panelBackgroundColor,
-                "ToolBar.dockingForeground", new ColorUIResource(Color.darkGray),
-                "ToolBar.floatingBackground", panelBackgroundColor,
-                "ToolBar.floatingForeground", new ColorUIResource(Color.darkGray),
-                "ToolBar.borderHandleColor", toolBarDragHandleColor,
-                "ToolBar.separatorSize", null,
+          // *** ToolBar
+          "ToolBar.font", controlFont,
+          "ToolBar.dockingBackground", panelBackgroundColor,
+          "ToolBar.dockingForeground", new ColorUIResource(Color.darkGray),
+          "ToolBar.floatingBackground", panelBackgroundColor,
+          "ToolBar.floatingForeground", new ColorUIResource(Color.darkGray),
+          "ToolBar.borderHandleColor", toolBarDragHandleColor,
+          "ToolBar.separatorSize", null,
 
-                // *** ToolTips
-                "ToolTip.font", controlSmallFont,
-                "ToolTip.border", toolTipBorder,
+          // *** ToolTips
+          "ToolTip.font", controlSmallFont,
+          "ToolTip.border", toolTipBorder,
 
-                // *** ToolTipManager
-                "ToolTipManager.enableToolTipMode", "activeApplication",
+          // *** ToolTipManager
+          "ToolTipManager.enableToolTipMode", "activeApplication",
 
-                // *** Tree
-                "Tree.border", treeBorder,
-                "Tree.font", viewFont, // [3577901] Aqua HIG says "default font of text in lists and tables" should be 12 point (vm).
-                "Tree.editorBorder", (LazyValue) t -> new AquaTreeEditorBorder(),
-                "Tree.leftChildIndent", 8,
-                "Tree.rightChildIndent", 12,
-                "Tree.rowHeight", 0,   // The default row height depends upon style
-                "Tree.scrollsOnExpand", false,
-                "Tree.openIcon",(LazyValue) t -> AquaImageFactory.getTreeOpenFolderIcon(), // Open folder icon
-                "Tree.closedIcon",(LazyValue) t -> AquaImageFactory.getTreeFolderIcon(), // Closed folder icon
-                "Tree.leafIcon", OSXFile.getGenericFileSidebarIcon(),
-                // no expand or collapse icons
-                "Tree.changeSelectionWithFocus", true,
-                "Tree.drawsFocusBorderAroundIcon", false,
+          // *** Tree
+          "Tree.border", treeBorder,
+          "Tree.cellBorder", cellBorder,
+          "Tree.font", viewFont, // [3577901] Aqua HIG says "default font of text in lists and tables" should be 12 point (vm).
+          "Tree.editorBorder", (LazyValue) t -> new AquaTreeEditorBorder(),
+          "Tree.leftChildIndent", 8,
+          "Tree.rightChildIndent", 12,
+          "Tree.rowHeight", 0,   // The default row height depends upon style
+          "Tree.scrollsOnExpand", false,
+          "Tree.openIcon",(LazyValue) t -> AquaImageFactory.getTreeOpenFolderIcon(), // Open folder icon
+          "Tree.closedIcon",(LazyValue) t -> AquaImageFactory.getTreeFolderIcon(), // Closed folder icon
+          "Tree.leafIcon", OSXFile.getGenericFileSidebarIcon(),
+          "Tree.repaintWholeRow", true,
+          // no expand or collapse icons
+          "Tree.changeSelectionWithFocus", true,
+          "Tree.drawsFocusBorderAroundIcon", false,
 
-                "Tree.sideBar.font", sideBarFont,
-                "Tree.sideBar.selectionFont", sideBarSelectionFont,
-                "Tree.sideBarCategory.font", sideBarCategoryFont,
-                "Tree.sideBarCategory.selectionFont", sideBarCategorySelectionFont,
+          "Tree.sideBar.font", sideBarFont,
+          "Tree.sideBar.selectionFont", sideBarSelectionFont,
+          "Tree.sideBarCategory.font", sideBarCategoryFont,
+          "Tree.sideBarCategory.selectionFont", sideBarCategorySelectionFont,
 
-                "Tree.focusInputMap", aquaKeyBindings.getTreeInputMap(),
-                "Tree.focusInputMap.RightToLeft", aquaKeyBindings.getTreeRightToLeftInputMap(),
-                "Tree.ancestorInputMap", new UIDefaults.LazyInputMap(new Object[]{"ESCAPE", "cancel"}),
+          "Tree.focusInputMap", aquaKeyBindings.getTreeInputMap(),
+          "Tree.focusInputMap.RightToLeft", aquaKeyBindings.getTreeRightToLeftInputMap(),
+          "Tree.ancestorInputMap", new UIDefaults.LazyInputMap(new Object[]{"ESCAPE", "cancel"}),
 
         };
 
@@ -777,17 +819,17 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
         final Color menuDisabledForegroundColor = new ColorUIResource(0.5f, 0.5f, 0.5f);
 
         Object[] menuBarDefaults = {
-                "MenuBar.font", menuFont,
-                "MenuBar.background", menuBackgroundColor, // not a menu item, not selected
-                "MenuBar.foreground", menuForegroundColor,
-                "MenuBar.border", new AquaMenuBarBorder(),
-                "MenuBar.margin", new InsetsUIResource(0, 8, 0, 8), // sja make lazy!
-                "MenuBar.selectionBackground", menuSelectedBackgroundColor, // not a menu item, is selected
-                "MenuBar.selectionForeground", menuSelectedForegroundColor,
-                "MenuBar.disabledBackground", menuDisabledBackgroundColor, //ThemeBrush.GetThemeBrushForMenu(false, false), // not a menu item, not selected
-                "MenuBar.disabledForeground", menuDisabledForegroundColor,
-                "MenuBar.backgroundPainter", NOTHING_BORDER,
-                "MenuBar.selectedBackgroundPainter", NOTHING_BORDER,
+          "MenuBar.font", menuFont,
+          "MenuBar.background", menuBackgroundColor, // not a menu item, not selected
+          "MenuBar.foreground", menuForegroundColor,
+          "MenuBar.border", new AquaMenuBarBorder(),
+          "MenuBar.margin", new InsetsUIResource(0, 8, 0, 8), // sja make lazy!
+          "MenuBar.selectionBackground", menuSelectedBackgroundColor, // not a menu item, is selected
+          "MenuBar.selectionForeground", menuSelectedForegroundColor,
+          "MenuBar.disabledBackground", menuDisabledBackgroundColor, //ThemeBrush.GetThemeBrushForMenu(false, false), // not a menu item, not selected
+          "MenuBar.disabledForeground", menuDisabledForegroundColor,
+          "MenuBar.backgroundPainter", NOTHING_BORDER,
+          "MenuBar.selectedBackgroundPainter", NOTHING_BORDER,
         };
         table.putDefaults(menuBarDefaults);
 
@@ -815,60 +857,61 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
         int version = Utils.getJavaVersion();
 
         Object[] uiDefaults = {
-                "ButtonUI", PKG_PREFIX + "AquaButtonUI",
-                "CheckBoxUI", PKG_PREFIX + "AquaButtonCheckBoxUI",
-                "CheckBoxMenuItemUI", PKG_PREFIX + "AquaMenuItemUI",
-                "LabelUI", PKG_PREFIX + "AquaLabelUI",
-                "ListUI", PKG_PREFIX + "AquaListUI",
-                "MenuUI", PKG_PREFIX + "AquaMenuUI",
-                "MenuItemUI", PKG_PREFIX + "AquaMenuItemUI",
-                "OptionPaneUI", PKG_PREFIX + "AquaOptionPaneUI",
-                "PanelUI", PKG_PREFIX + "AquaPanelUI",
-                "RadioButtonMenuItemUI", PKG_PREFIX + "AquaMenuItemUI",
-                "RadioButtonUI", PKG_PREFIX + "AquaButtonRadioUI",
-                "ProgressBarUI", PKG_PREFIX + "AquaProgressBarUI",
-                "RootPaneUI", PKG_PREFIX + "AquaRootPaneUI",
-                "SliderUI", PKG_PREFIX + "AquaSliderUI",
-                "ScrollBarUI", PKG_PREFIX + "AquaScrollBarUI",
-                "TabbedPaneUI", PKG_PREFIX + "AquaTabbedPaneUI",
-                "TableUI", PKG_PREFIX + "AquaTableUI",
-                "ToggleButtonUI", PKG_PREFIX + "AquaButtonToggleUI",
-                "ToolBarUI", PKG_PREFIX + "AquaToolBarUI",
-                "ToolTipUI", PKG_PREFIX + "AquaToolTipUI",
-                "TreeUI", PKG_PREFIX + "AquaTreeUI",
+          "ButtonUI", PKG_PREFIX + "AquaButtonUI",
+          "CheckBoxUI", PKG_PREFIX + "AquaButtonCheckBoxUI",
+          "CheckBoxMenuItemUI", PKG_PREFIX + "AquaMenuItemUI",
+          "LabelUI", PKG_PREFIX + "AquaLabelUI",
+          "ListUI", PKG_PREFIX + "AquaListUI",
+          "MenuUI", PKG_PREFIX + "AquaMenuUI",
+          "MenuItemUI", PKG_PREFIX + "AquaMenuItemUI",
+          "OptionPaneUI", PKG_PREFIX + "AquaOptionPaneUI",
+          "PanelUI", PKG_PREFIX + "AquaPanelUI",
+          "RadioButtonMenuItemUI", PKG_PREFIX + "AquaMenuItemUI",
+          "RadioButtonUI", PKG_PREFIX + "AquaButtonRadioUI",
+          "ProgressBarUI", PKG_PREFIX + "AquaProgressBarUI",
+          "RootPaneUI", PKG_PREFIX + "AquaRootPaneUI",
+          "SliderUI", PKG_PREFIX + "AquaSliderUI",
+          "ScrollBarUI", PKG_PREFIX + "AquaScrollBarUI",
+          "TabbedPaneUI", PKG_PREFIX + "AquaTabbedPaneUI",
+          "TableUI", PKG_PREFIX + "AquaTableUI",
+          "ToggleButtonUI", PKG_PREFIX + "AquaButtonToggleUI",
+          "ToolBarUI", PKG_PREFIX + "AquaToolBarUI",
+          "ToolTipUI", PKG_PREFIX + "AquaToolTipUI",
+          "TreeUI", PKG_PREFIX + "AquaTreeUI",
 
-                "InternalFrameUI", PKG_PREFIX + "AquaInternalFrameUI",
-                "DesktopIconUI", PKG_PREFIX + "AquaInternalFrameDockIconUI",
-                "DesktopPaneUI", PKG_PREFIX + "AquaInternalFramePaneUI",
-                "EditorPaneUI", PKG_PREFIX + "AquaEditorPaneUI",
-                "TextFieldUI", PKG_PREFIX + "AquaTextFieldUI",
-                "TextPaneUI", PKG_PREFIX + "AquaTextPaneUI",
-                "ComboBoxUI", PKG_PREFIX + "AquaComboBoxUI",
-                "ComboBoxPopupMenuUI", PKG_PREFIX + "AquaComboBoxPopupMenuUI",
-                "PopupMenuUI", PKG_PREFIX + "AquaPopupMenuUI",
-                "TextAreaUI", PKG_PREFIX + "AquaTextAreaUI",
-                // prior to Java 9, the platform UI is needed to support the screen menu bar
-                "MenuBarUI", version >= 900000 ? PKG_PREFIX + "AquaMenuBarUI" : "com.apple.laf.AquaMenuBarUI",
-                "FileChooserUI", PKG_PREFIX + "fc.AquaFileChooserUI",
-                "PasswordFieldUI", PKG_PREFIX + "AquaTextPasswordFieldUI",
-                "TableHeaderUI", PKG_PREFIX + "AquaTableHeaderUI",
+          "InternalFrameUI", PKG_PREFIX + "AquaInternalFrameUI",
+          "DesktopIconUI", PKG_PREFIX + "AquaInternalFrameDockIconUI",
+          "DesktopPaneUI", PKG_PREFIX + "AquaInternalFramePaneUI",
+          "EditorPaneUI", PKG_PREFIX + "AquaEditorPaneUI",
+          "TextFieldUI", PKG_PREFIX + "AquaTextFieldUI",
+          "TextPaneUI", PKG_PREFIX + "AquaTextPaneUI",
+          "ComboBoxUI", PKG_PREFIX + "AquaComboBoxUI",
+          "ComboBoxPopupMenuUI", PKG_PREFIX + "AquaComboBoxPopupMenuUI",
+          "PopupMenuUI", PKG_PREFIX + "AquaPopupMenuUI",
+          "TextAreaUI", PKG_PREFIX + "AquaTextAreaUI",
+          // prior to Java 9, the platform UI is needed to support the screen menu bar
+          "MenuBarUI", version >= 900000 ? PKG_PREFIX + "AquaMenuBarUI" : "com.apple.laf.AquaMenuBarUI",
+          "FileChooserUI", PKG_PREFIX + "fc.AquaFileChooserUI",
+          "PasswordFieldUI", PKG_PREFIX + "AquaTextPasswordFieldUI",
+          "TableHeaderUI", PKG_PREFIX + "AquaTableHeaderUI",
 
-                "FormattedTextFieldUI", PKG_PREFIX + "AquaTextFieldFormattedUI",
+          "FormattedTextFieldUI", PKG_PREFIX + "AquaTextFieldFormattedUI",
 
-                "SpinnerUI", PKG_PREFIX + "AquaSpinnerUI",
-                "SplitPaneUI", PKG_PREFIX + "AquaSplitPaneUI",
-                "ScrollPaneUI", PKG_PREFIX + "AquaScrollPaneUI",
+          "SpinnerUI", PKG_PREFIX + "AquaSpinnerUI",
+          "SplitPaneUI", PKG_PREFIX + "AquaSplitPaneUI",
+          "ScrollPaneUI", PKG_PREFIX + "AquaScrollPaneUI",
 
-                "PopupMenuSeparatorUI", PKG_PREFIX + "AquaPopupMenuSeparatorUI",
-                "SeparatorUI", PKG_PREFIX + "AquaSeparatorUI",
-                "ToolBarSeparatorUI", PKG_PREFIX + "AquaToolBarSeparatorUI",
+          "PopupMenuSeparatorUI", PKG_PREFIX + "AquaPopupMenuSeparatorUI",
+          "SeparatorUI", PKG_PREFIX + "AquaSeparatorUI",
+          "ToolBarSeparatorUI", PKG_PREFIX + "AquaToolBarSeparatorUI",
 
-                // as we implement aqua versions of the swing elements
-                // we will add the corresponding Aqua UI classes to this table.
+          // as we implement aqua versions of the swing elements
+          // we will add the corresponding Aqua UI classes to this table.
 
-                "ColorChooserUI", basicPackageName + "BasicColorChooserUI",
+          "ColorChooserUI", basicPackageName + "BasicColorChooserUI",
 
-                "ViewportUI", PKG_PREFIX + "AquaViewportUI",
+          "ViewportUI", PKG_PREFIX + "AquaViewportUI",
+          "AppearancePanelUI", PKG_PREFIX + "AquaAppearancePanelUI"
         };
         table.putDefaults(uiDefaults);
     }
@@ -892,7 +935,17 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
 
     public static String getVersion() {
         return "VAqua look and feel release " + getReleaseName() + ", build " + getBuildID()
-                + " using VAquaRendering release " + AquaNativeRendering.getReleaseName() + ", build " + AquaNativeRendering.getBuildID();
+          + " using VAquaRendering release " + AquaNativeRendering.getReleaseName() + ", build " + AquaNativeRendering.getBuildID();
+    }
+
+    /**
+     * Identify the UI version. The UI version normally matches the OS release, except where macOS is supporting
+     * backward compatibility.
+     * @return an integer version with the decimal form MMmm, where MM is the major release number and mm is the minor
+     * release number. For example, 2600 represents the first release of macOS 26 (Tahoe).
+     */
+    public static int getUIVersion() {
+        return AquaPainting.getVersion();
     }
 
     public static void showVersion() {
@@ -915,7 +968,7 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
                     sb.append((char) ch);
                 }
                 return sb.toString();
-            } catch (IOException ex) {
+            } catch (IOException ignore) {
             }
         }
 

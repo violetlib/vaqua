@@ -1,5 +1,5 @@
 /*
- * Changes copyright (c) 2015-2024 Alan Snyder.
+ * Changes copyright (c) 2015-2025 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -41,16 +41,20 @@ import java.awt.image.RGBImageFilter;
 import java.io.File;
 import java.net.URL;
 import java.security.PrivilegedAction;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Objects;
 import java.util.function.Function;
 import javax.swing.*;
 import javax.swing.plaf.IconUIResource;
 
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.*;
 import org.violetlib.aqua.AquaUtils.RecyclableSingleton;
 import org.violetlib.aqua.fc.OSXFile;
 import org.violetlib.jnr.aqua.AquaUIPainter.Size;
+
+import static java.awt.MediaTracker.COMPLETE;
+import static org.violetlib.aqua.OSXSystemProperties.OSVersion;
 
 public class AquaImageFactory {
 
@@ -67,7 +71,7 @@ public class AquaImageFactory {
 
     // Template images are used with a variety of colors depending upon context.
     // They also need to be identified as such.
-    // To avoid recomputation, we soft cache this information.
+    // To avoid recomputation, we soft-cache this information.
 
     private static final AquaImageCache imageCache = new AquaImageCache();
 
@@ -88,9 +92,12 @@ public class AquaImageFactory {
         }
     }
 
-    private static ImageIcon regularPopupMenuCheckIcon;
-    private static ImageIcon smallPopupMenuCheckIcon;
-    private static ImageIcon miniPopupMenuCheckIcon;
+    /**
+     * Flush cached images whose processing may be appearance dependent.
+     */
+    public static void flushAppearanceDependentImages() {
+        imageCache.flushAppearanceDependentImages();
+    }
 
     public static IconUIResource getComputerIcon() {
         return new IconUIResource(new AquaIcon.CachingScalingIcon(16, 16) {
@@ -155,21 +162,21 @@ public class AquaImageFactory {
         int kAlertSubIconSize = (int) (scaledAlertIconSize * 0.5);
         int kAlertSubIconInset = scaledAlertIconSize - kAlertSubIconSize;
         Icon smallAppIconScaled = new AquaIcon.CachingScalingIcon(
-                kAlertSubIconSize, kAlertSubIconSize) {
+          kAlertSubIconSize, kAlertSubIconSize) {
             Image createImage() {
                 return getGenericJavaIcon();
             }
         };
 
         BufferedImage image = new BufferedImage(scaledAlertIconSize,
-                scaledAlertIconSize, BufferedImage.TYPE_INT_ARGB_PRE);
+          scaledAlertIconSize, BufferedImage.TYPE_INT_ARGB_PRE);
         Graphics g = image.getGraphics();
         g.drawImage(background, 0, 0,
-                scaledAlertIconSize, scaledAlertIconSize, null);
+          scaledAlertIconSize, scaledAlertIconSize, null);
         if (g instanceof Graphics2D) {
             // improves icon rendering quality in Quartz
             ((Graphics2D) g).setRenderingHint(RenderingHints.KEY_RENDERING,
-                    RenderingHints.VALUE_RENDER_QUALITY);
+              RenderingHints.VALUE_RENDER_QUALITY);
         }
 
         smallAppIconScaled.paintIcon(null, g, kAlertSubIconInset, kAlertSubIconInset);
@@ -299,9 +306,7 @@ public class AquaImageFactory {
     protected static final NamedImageSingleton southArrow = new NamedImageSingleton("NSMenuScrollDown");
     protected static final IconUIResourceSingleton southArrowIcon = new IconUIResourceSingleton(southArrow);
     protected static final NamedImageSingleton westArrow = new NamedImageSingleton("NSMenuSubmenuLeft");
-    protected static final IconUIResourceSingleton westArrowIcon = new IconUIResourceSingleton(westArrow);
     protected static final NamedImageSingleton eastArrow = new NamedImageSingleton("NSMenuSubmenu");
-    protected static final IconUIResourceSingleton eastArrowIcon = new IconUIResourceSingleton(eastArrow);
 
     public static @Nullable Image getArrowImageForDirection(int direction) {
         switch(direction) {
@@ -313,6 +318,90 @@ public class AquaImageFactory {
         return null;
     }
 
+    private static final Map<Object,Icon> iconCache = new HashMap<>();
+
+    public static @NotNull Icon getMenuSelectionIcon(@NotNull JComponent c, @NotNull Dimension size) {
+        String cacheKey = "MenuCheckmark" + getSizeCacheKeySuffix(size);
+        return getMenuSelectionIcon(c, size, cacheKey);
+    }
+
+    private static @NotNull Icon getMenuSelectionIcon(@NotNull JComponent c, @NotNull Dimension size, @NotNull Object cacheKey) {
+        Icon ic = iconCache.get(cacheKey);
+        if (ic != null) {
+            return ic;
+        }
+        String name = getMenuCheckName(c);
+        Image image = getNSIcon(name);
+        ic = AquaIcon.createIcon(image, size);
+        iconCache.put(cacheKey, ic);
+        return ic;
+    }
+
+    private static @NotNull String getMenuCheckName(@NotNull JComponent c) {
+        return OSVersion >= 1500 ? "NSMenuOnStateTemplate" : "NSMenuCheckmark";
+    }
+
+    public static @NotNull Icon getMenuIndeterminateSelectionIcon(@NotNull JComponent c, @NotNull Dimension size) {
+        String cacheKey = "MenuDash" + getSizeCacheKeySuffix(size);
+        return getMenuIndeterminateSelectionIcon(c, size, cacheKey);
+    }
+
+    private static @NotNull Icon getMenuIndeterminateSelectionIcon(@NotNull JComponent c, @NotNull Dimension size, @NotNull Object cacheKey) {
+        Icon ic = iconCache.get(cacheKey);
+        if (ic != null) {
+            return ic;
+        }
+        String name = getMenuIndeterminateName(c);
+        Image image = getNSIcon(name);
+        ic = AquaIcon.createIcon(image, size);
+        iconCache.put(cacheKey, ic);
+        return ic;
+    }
+
+    private static @NotNull String getMenuIndeterminateName(@NotNull JComponent c) {
+        return OSVersion >= 1500 ? "NSMenuMixedStateTemplate" : "NSMenuMixedState";
+    }
+
+    public static @NotNull Icon getSubmenuArrow(@NotNull JComponent c, @NotNull Dimension size) {
+        boolean isLTR = c.getComponentOrientation().isLeftToRight();
+        String suffix = isLTR ? "" : "RTL";
+        String cacheKey = "Submenu" + suffix + getSizeCacheKeySuffix(size);
+        return getSubmenuArrow(c, size, cacheKey);
+    }
+
+    public static @NotNull Icon getSubmenuArrow(@NotNull JComponent c, @NotNull Dimension size, @NotNull Object cacheKey) {
+        Icon ic = iconCache.get(cacheKey);
+        if (ic != null) {
+            return ic;
+        }
+        String name = getSubmenuArrowName(c);
+        Image image = getNSIcon(name);
+        ic = AquaIcon.createIcon(image, size);
+        iconCache.put(cacheKey, ic);
+        return ic;
+    }
+
+    private static @NotNull String getSubmenuArrowName(@NotNull JComponent c) {
+        if (c.getComponentOrientation().isLeftToRight()) {
+            return OSVersion >= 1500 ? "NSGoRightTemplate" : "NSMenuSubmenu";
+        } else {
+            return OSVersion >= 1500 ? "NSGoLeftTemplate" : "NSMenuSubmenuLeft";
+        }
+    }
+
+    private static @NotNull String getSizeCacheKeySuffix(@NotNull Dimension size) {
+        return "." + size.width + "." + size.height;
+    }
+
+    public static int getMenuIconSize(@NotNull JComponent c) {
+        Size sz = AquaUtilControlSize.getUserSizeFrom(c, Size.REGULAR);
+        switch (sz) {
+            case MINI: return 6;
+            case SMALL: return 8;
+            default: return 10;
+        }
+    }
+
     public static Icon getMenuUpArrowIcon() {
         return northArrowIcon.get();
     }
@@ -321,61 +410,32 @@ public class AquaImageFactory {
         return southArrowIcon.get();
     }
 
-    public static Icon getMenuArrowIcon() {
-        return eastArrowIcon.get();
-    }
-
-    public static Icon getPopupMenuItemCheckIcon(Size sizeVariant) {
-        if (sizeVariant == Size.SMALL) {
-            return getSmallPopupMenuItemCheckIcon();
-        } else if (sizeVariant == Size.MINI) {
-            return getMiniPopupMenuItemCheckIcon();
-        } else {
-            return getRegularPopupMenuItemCheckIcon();
-        }
-    }
-
-    private static Icon getRegularPopupMenuItemCheckIcon() {
-        if (regularPopupMenuCheckIcon == null) {
-            regularPopupMenuCheckIcon = getPopupMenuItemCheckIcon(10);
-        }
-        return regularPopupMenuCheckIcon;
-    }
-
-    private static Icon getSmallPopupMenuItemCheckIcon() {
-        if (smallPopupMenuCheckIcon == null) {
-            smallPopupMenuCheckIcon = getPopupMenuItemCheckIcon(8);
-        }
-        return smallPopupMenuCheckIcon;
-    }
-
-    private static Icon getMiniPopupMenuItemCheckIcon() {
-        if (miniPopupMenuCheckIcon == null) {
-            miniPopupMenuCheckIcon = getPopupMenuItemCheckIcon(6);
-        }
-        return miniPopupMenuCheckIcon;
-    }
-
-    private static ImageIcon getPopupMenuItemCheckIcon(int size) {
-        Image im = getNSImage("NSMenuCheckmark", size, size);
-        return new ImageIcon(im);
-    }
-
-    public static Icon getMenuItemCheckIcon() {
-        return new ImageIcon(getNSIcon("NSMenuCheckmark"));
-    }
-
-    public static Icon getMenuItemDashIcon() {
-        return new ImageIcon(getNSIcon("NSMenuMixedState"));
-    }
-
-    private static @Nullable Image getNSImage(@NotNull String imageName, int width, int height) {
-        return getNativeImage(imageName, width, height);
-    }
+//    private static @Nullable Image getNSImage(@NotNull String imageName, int width, int height) {
+//        return getNativeImage(imageName, width, height);
+//    }
 
     private static Image getNSIcon(String imageName) {
-        Image icon = Toolkit.getDefaultToolkit().getImage("NSImage://" + imageName);
-        return icon;
+
+        Image im = Toolkit.getDefaultToolkit().getImage("NSImage://" + imageName);
+        // The new code below creates a bad image on older macOS releases
+        if (OSVersion < 1500) {
+            return im;
+        }
+        ImageIcon ic = new ImageIcon(im);
+        if (ic.getImageLoadStatus() == COMPLETE) {
+            int width = ic.getIconWidth();
+            int height = ic.getIconHeight();
+            // Try to get a 2x version
+            Image im2 = getNativeImage(imageName, width * 2, height * 2);
+            ImageIcon ic2 = new ImageIcon(im2);
+            if (ic2.getImageLoadStatus() == COMPLETE) {
+                BufferedImage b1 = Images.toBufferedImage(ic);
+                BufferedImage b2 = Images.toBufferedImage(ic2);
+                return JavaSupport.createMultiResolutionImage(b1, b2);
+            }
+            return Images.toBufferedImage(ic);
+        }
+        return ic.getImage();
     }
 
     public static class NineSliceMetrics {
@@ -524,7 +584,8 @@ public class AquaImageFactory {
     }
 
     /**
-     * Obtain a native image with a specified logical size.
+     * Obtain a native image with a specified size in points.
+     * The returned image will be a multi-resolution image, if appropriate.
      */
     private static native @Nullable Image getNativeImage(String name, int width, int height);
 
@@ -718,10 +779,10 @@ public class AquaImageFactory {
     /**
      * Return the processed version of the specified icon image.
      * @param icon The source icon.
-     * @param operator The operation to be performed on the icon image, or null to return the actual icon image.
-     * @return the processed version of {@code icon}, or null if the icon is not valid.
+     * @param operator The operation to be performed on the icon image, or null to return the original icon.
+     * @return the processed version of {@code icon}.
      */
-    public static @Nullable Image getProcessedImage(@NotNull Icon icon, @Nullable Object operator) {
+    public static @NotNull Icon getProcessedImage(@NotNull Icon icon, @Nullable Object operator) {
         return imageCache.getProcessedImage(icon, operator);
     }
 
@@ -732,7 +793,7 @@ public class AquaImageFactory {
      * @param replacementColor The replacement color.
      * @return the new image, or null if the source image is not a template image.
      */
-    private static Image createImageFromTemplate(Image image, Color replacementColor) {
+    private static @Nullable Image createImageFromTemplate(Image image, Color replacementColor) {
         return JavaSupport.applyMapper(image, (Function) new TemplateApplicator(replacementColor));
     }
 
@@ -855,7 +916,7 @@ public class AquaImageFactory {
         boolean[] mutex = new boolean[] { false };
         ImageObserver observer = (Image img, int infoflags, int x, int y, int width, int height) -> {
             if ((width != -1 && height != -1 && (infoflags & ImageObserver.ALLBITS) != 0)
-                    || (infoflags & (ImageObserver.ERROR | ImageObserver.ABORT | ImageObserver.FRAMEBITS)) != 0) {
+              || (infoflags & (ImageObserver.ERROR | ImageObserver.ABORT | ImageObserver.FRAMEBITS)) != 0) {
                 synchronized (mutex) {
                     mutex[0] = true;
                     mutex.notify();

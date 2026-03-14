@@ -147,7 +147,7 @@ public class AquaTextFieldUIDelegate implements AquaTextComponentUIDelegate {
         }
 
         public int getFlowSpan(int index) {
-            return Integer.MAX_VALUE;
+            return AquaUtils.INFINITY;
         }
 
         protected void setJustification(int j) {

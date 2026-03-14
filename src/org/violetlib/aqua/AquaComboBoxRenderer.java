@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Alan Snyder.
+ * Copyright (c) 2021-2026 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -13,12 +13,12 @@ import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.plaf.UIResource;
 
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.*;
 import org.violetlib.jnr.aqua.PopupButtonLayoutConfiguration;
 
+import static org.violetlib.aqua.OSXSystemProperties.OSVersion;
+import static org.violetlib.aqua.OSXSystemProperties.macOS11;
 import static org.violetlib.jnr.aqua.AquaUIPainter.Size;
-import static org.violetlib.aqua.OSXSystemProperties.*;
 
 /**
  * The list cell renderer used by AquaComboBoxUI for the combo box button content and the cells in the list menu.
@@ -27,20 +27,12 @@ import static org.violetlib.aqua.OSXSystemProperties.*;
  * checkmark, as needed.
  */
 
-
 @SuppressWarnings("serial") // Superclass is not serializable across versions
 public class AquaComboBoxRenderer implements ListCellRenderer<Object>, UIResource {
 
-    protected static int menuLabelLeftInset = OSVersion >= 1016 ? 25 : 21;
-    protected static int editableMenuLabelLeftInset = OSVersion >= 1015 ? 16 : 5;
-    protected static int menuLabelRightInset = OSVersion >= 1015 ? 19 : 5;
-    protected static int menuLabelTopInset = 2;
-    protected static int menuLabelBottomInset = 3;
     protected static int miniMenuLabelTopInset = 1;
     protected static int miniMenuLabelBottomInset = 0;
-    protected static int checkMarkLeftInset = OSVersion >= 1016 ? 10 : OSVersion >= 1015 ? 7 : 5;
     protected static int checkMarkTopInset = 3;
-    protected static int pullDownMenuLabelLeftInset = menuLabelRightInset;
 
     protected final @NotNull JComboBox<?> comboBox;
     protected final boolean isList;  // true to render a list cell, false to render the button content
@@ -102,13 +94,14 @@ public class AquaComboBoxRenderer implements ListCellRenderer<Object>, UIResourc
         int left = 0;
         int bottom = 0;
         int right = 0;
-        if (isList) {
-            top = size == Size.MINI ? miniMenuLabelTopInset : menuLabelTopInset;
-            bottom = size == Size.MINI ? miniMenuLabelBottomInset : menuLabelBottomInset;
-            left = comboBox.isEditable()
-                    ? editableMenuLabelLeftInset
-                    : isPullDown() ? pullDownMenuLabelLeftInset : menuLabelLeftInset;
-            right = menuLabelRightInset;
+
+        if (isList && !comboBox.isEditable() && !isPullDown()) {
+            // leave room for a check mark, and similar on the right side for symmetry
+            left = right = AquaImageFactory.getMenuIconSize(c) + 3; // want 4, but icon has extra space
+            if (size == Size.MINI) {
+                top = miniMenuLabelTopInset;
+                bottom = miniMenuLabelBottomInset;
+            }
         }
         c.setBorder(new EmptyBorder(top, left, bottom, right));
         return c;
@@ -116,13 +109,14 @@ public class AquaComboBoxRenderer implements ListCellRenderer<Object>, UIResourc
 
     protected void paintMark(@NotNull Graphics g, @NotNull JComponent c) {
         if (shouldDisplayCheckMark) {
-            Icon checkMark = AquaImageFactory.getPopupMenuItemCheckIcon(size);
+            int size = AquaImageFactory.getMenuIconSize(c);
+            Icon checkMark = AquaImageFactory.getMenuSelectionIcon(c, new Dimension(size, size));
             Color color = c.getForeground();
-            Image im = AquaImageFactory.getProcessedImage(checkMark, color);
+            Icon ic = AquaImageFactory.getProcessedImage(checkMark, color);
             int height = c.getHeight();
-            int left = checkMarkLeftInset;
-            int top = Math.max(checkMarkTopInset, (height - checkMark.getIconHeight() - 1) / 2);
-            g.drawImage(im, left, top, null);
+            int left = 0;
+            int top = Math.max(checkMarkTopInset, (height - ic.getIconHeight() - 1) / 2);
+            ic.paintIcon(c, g, left, top);
         }
     }
 
@@ -147,7 +141,7 @@ public class AquaComboBoxRenderer implements ListCellRenderer<Object>, UIResourc
     }
 
     private class Wrapper
-            extends JComponent {
+      extends JComponent {
         public Wrapper() {
             setLayout(new BorderLayout());
         }
@@ -165,9 +159,17 @@ public class AquaComboBoxRenderer implements ListCellRenderer<Object>, UIResourc
     }
 
     private class MyDefaultComponent
-            extends JLabel {
+      extends JLabel {
         @Override
         public @NotNull Dimension getPreferredSize() {
+
+            // The code below adds space when there is no text.
+            // Is it to leave room for the mark?
+
+            if (!shouldDisplayCheckMark) {
+                return super.getPreferredSize();
+            }
+
             Dimension size;
             String text = getText();
             if (text == null || text.isEmpty()) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Alan Snyder.
+ * Copyright (c) 2018-2026 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -34,16 +34,21 @@
 package org.violetlib.aqua;
 
 import java.awt.*;
-import java.awt.event.*;
-import java.awt.geom.*;
-
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
+import java.awt.geom.GeneralPath;
+import java.awt.geom.Path2D;
+import java.awt.geom.RoundRectangle2D;
 import javax.swing.*;
 import javax.swing.border.Border;
-import javax.swing.plaf.*;
-import javax.swing.text.*;
+import javax.swing.plaf.ComponentUI;
+import javax.swing.plaf.UIResource;
+import javax.swing.text.Element;
+import javax.swing.text.JTextComponent;
+import javax.swing.text.PasswordView;
+import javax.swing.text.View;
 
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.*;
 import org.violetlib.aqua.AquaUtils.RecyclableSingleton;
 import org.violetlib.aqua.AquaUtils.RecyclableSingletonFromDefaultConstructor;
 
@@ -58,7 +63,7 @@ public class AquaTextPasswordFieldUI extends AquaTextFieldUI {
     }
 
     @Override
-    protected String getPropertyPrefix() {
+    protected @NotNull String getPropertyPrefix() {
         return "PasswordField";
     }
 
@@ -150,10 +155,8 @@ public class AquaTextPasswordFieldUI extends AquaTextFieldUI {
 
         @Override
         public void paintBorder(Component c, Graphics g, int x, int y, int width, int height) {
-
-            AquaAppearance appearance = AppearanceManager.ensureAppearance(c);
-            Color color = appearance.getColor("capsLockIcon");
-
+            PaintingContext pc = PaintingContext.getDefault();
+            Color color = pc.appearance.getColor("capsLockIcon");
             g = g.create(width - 23, height / 2 - 8, 18, 18);
             g.setColor(color);
             ((Graphics2D)g).setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);

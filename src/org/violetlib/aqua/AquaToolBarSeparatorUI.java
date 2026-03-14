@@ -1,5 +1,5 @@
 /*
- * Changes Copyright (c) 2016-2021 Alan Snyder.
+ * Changes Copyright (c) 2016-2026 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -34,12 +34,10 @@
 package org.violetlib.aqua;
 
 import java.awt.*;
-
 import javax.swing.*;
 import javax.swing.plaf.ComponentUI;
 import javax.swing.plaf.basic.BasicToolBarSeparatorUI;
 
-import org.jetbrains.annotations.NotNull;
 import org.violetlib.aqua.AquaUtils.RecyclableSingleton;
 import org.violetlib.aqua.AquaUtils.RecyclableSingletonFromDefaultConstructor;
 
@@ -54,16 +52,7 @@ public class AquaToolBarSeparatorUI extends BasicToolBarSeparatorUI implements A
     }
 
     @Override
-    public void appearanceChanged(@NotNull JComponent c, @NotNull AquaAppearance appearance) {
-    }
-
-    @Override
-    public void activeStateChanged(@NotNull JComponent c, boolean isActive) {
-    }
-
-    @Override
     public void update(Graphics g, JComponent c) {
-        AppearanceManager.registerCurrentAppearance(c);
         super.update(g, c);
     }
 
@@ -90,8 +79,8 @@ public class AquaToolBarSeparatorUI extends BasicToolBarSeparatorUI implements A
     public Dimension getMaximumSize(JComponent c) {
         JToolBar.Separator sep = (JToolBar.Separator)c;
         if (sep.getOrientation() == SwingConstants.HORIZONTAL) {
-            return new Dimension(Integer.MAX_VALUE, 11);
+            return new Dimension(AquaUtils.INFINITY, 11);
         }
-        return new Dimension(11, Integer.MAX_VALUE);
+        return new Dimension(11, AquaUtils.INFINITY);
     }
 }

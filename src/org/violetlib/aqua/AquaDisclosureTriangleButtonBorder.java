@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2020 Alan Snyder.
+ * Copyright (c) 2015-2026 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -10,7 +10,7 @@ package org.violetlib.aqua;
 
 import javax.swing.*;
 
-import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.*;
 import org.violetlib.jnr.aqua.AquaUIPainter.ButtonState;
 import org.violetlib.jnr.aqua.AquaUIPainter.ButtonWidget;
 
@@ -20,18 +20,25 @@ import static org.violetlib.jnr.aqua.AquaUIPainter.ButtonState.ON;
 /**
  * A border for a disclosure triangle button.
  */
-public class AquaDisclosureTriangleButtonBorder extends AquaButtonBorder implements FocusRingOutlineProvider {
+public class AquaDisclosureTriangleButtonBorder
+  extends AquaButtonBorder
+  implements FocusRingOutlineProvider {
 
     public AquaDisclosureTriangleButtonBorder() {
     }
 
     @Override
-    public @NotNull ButtonWidget getButtonWidget(@NotNull AbstractButton b) {
-        return ButtonWidget.BUTTON_DISCLOSURE_TRIANGLE;
+    public boolean isToolbarStyle(@NotNull AbstractButton b) {
+        return false;
     }
 
     @Override
-    protected @NotNull ButtonState getButtonState(AbstractButton b) {
+    public @NotNull ButtonStyleInfo getButtonStyleInfo(@NotNull AbstractButton b) {
+        return AquaButtonSupport.getButtonStyleInfo(b, ButtonWidget.BUTTON_DISCLOSURE_TRIANGLE);
+    }
+
+    @Override
+    protected @NotNull ButtonState getButtonState(@NotNull AbstractButton b) {
         return b.getModel().isSelected() ? ON : OFF;
     }
 

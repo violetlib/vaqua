@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2021 Alan Snyder.
+ * Copyright (c) 2018-2026 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -34,15 +34,14 @@
 package org.violetlib.aqua;
 
 import java.awt.*;
-import java.awt.event.*;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
 import java.beans.PropertyVetoException;
-
 import javax.swing.*;
 import javax.swing.border.Border;
-import javax.swing.plaf.*;
+import javax.swing.plaf.ComponentUI;
+import javax.swing.plaf.DesktopPaneUI;
 import javax.swing.plaf.basic.BasicDesktopPaneUI;
-
-import org.jetbrains.annotations.NotNull;
 
 public class AquaInternalFramePaneUI extends BasicDesktopPaneUI implements MouseListener, AquaComponentUI {
 
@@ -54,7 +53,6 @@ public class AquaInternalFramePaneUI extends BasicDesktopPaneUI implements Mouse
     }
 
     public void update(Graphics g, JComponent c) {
-        AppearanceManager.registerCurrentAppearance(c);
         super.update(g, c);
     }
 
@@ -78,14 +76,6 @@ public class AquaInternalFramePaneUI extends BasicDesktopPaneUI implements Mouse
             fLayoutMgr = null;
         }
         super.uninstallUI(c);
-    }
-
-    @Override
-    public void appearanceChanged(@NotNull JComponent c, @NotNull AquaAppearance appearance) {
-    }
-
-    @Override
-    public void activeStateChanged(@NotNull JComponent c, boolean isActive) {
     }
 
     // Our superclass hardcodes DefaultDesktopManager - how rude!

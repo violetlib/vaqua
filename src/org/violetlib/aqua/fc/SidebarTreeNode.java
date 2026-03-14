@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014-2018 Alan Snyder.
+ * Copyright (c) 2014-2025 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -8,21 +8,20 @@
 
 package org.violetlib.aqua.fc;
 
-import java.awt.*;
 import java.io.File;
 import javax.swing.*;
 import javax.swing.tree.DefaultMutableTreeNode;
 
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.*;
 import org.violetlib.aqua.AquaAppearance;
+import org.violetlib.aqua.AquaIcon;
 import org.violetlib.aqua.AquaImageFactory;
 
 /**
  * A node in the sidebar tree model.
  */
 public class SidebarTreeNode
-    extends DefaultMutableTreeNode {
+  extends DefaultMutableTreeNode {
 
     /*
      * Note: SidebarTreeNode must not implement Comparable and must not override equals()/hashCode(), because this
@@ -72,16 +71,15 @@ public class SidebarTreeNode
     @NotNull Icon getIcon(@NotNull AquaAppearance appearance) {
         if (appearance.isDark()) {
             if (darkIcon == null) {
-                Image im = AquaImageFactory.getProcessedImage(icon, AquaImageFactory.INVERT_FOR_DARK_MODE);
-                if (im != null) {
-                    darkIcon = new ImageIcon(im);
+                Icon ic = AquaImageFactory.getProcessedImage(icon, AquaImageFactory.INVERT_FOR_DARK_MODE);
+                if (!AquaIcon.isDummy(ic)) {
+                    darkIcon = ic;
                 }
             }
             if (darkIcon != null) {
                 return darkIcon;
             }
         }
-
         return icon;
     }
 

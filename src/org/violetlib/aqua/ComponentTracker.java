@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2019 Alan Snyder.
+ * Copyright (c) 2015-2025 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -43,7 +43,7 @@ public abstract class ComponentTracker
             long flags = e.getChangeFlags();
 
             if ((flags & (HierarchyEvent.PARENT_CHANGED)) != 0) {
-                Window w = SwingUtilities.getWindowAncestor(tracked);
+                Window w = getTrackedWindowAncestor();
                 if (!Objects.equals(window, w)) {
                     Window oldWindow = window;
                     window = w;
@@ -59,7 +59,7 @@ public abstract class ComponentTracker
                 // These events are redundant with parent changed.
                 // The only time we want to call windowChanged() with identical arguments is when the
                 // window is not null and its displayability has changed.
-                Window w = SwingUtilities.getWindowAncestor(tracked);
+                Window w = getTrackedWindowAncestor();
                 if (w != null && w == window) {
                     boolean isDisplayable = w.isDisplayable();
                     if (isDisplayable != windowIsDisplayable) {
@@ -101,6 +101,11 @@ public abstract class ComponentTracker
                 visibleBoundsChanged(window);
             }
         };
+    }
+
+    private @Nullable Window getTrackedWindowAncestor()
+    {
+        return tracked != null ? SwingUtilities.getWindowAncestor(tracked) : null;
     }
 
     /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2021 Alan Snyder.
+ * Copyright (c) 2015-2026 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -14,13 +14,11 @@ import java.awt.geom.RoundRectangle2D;
 import java.beans.PropertyChangeListener;
 import javax.swing.*;
 
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.*;
 import org.violetlib.geom.ExpandableOutline;
-import org.violetlib.geom.GeneralRoundRectangle;
 
 /**
- * Manages a overlay focus ring for the current focus owner.
+ * Manages an overlay focus ring for the current focus owner.
  */
 public class AquaFocusRingPainter {
     protected static final int ANIMATION_DURATION = 100;
@@ -64,7 +62,10 @@ public class AquaFocusRingPainter {
                     JScrollPane sp = AquaUtils.getScrollPaneAncestor(c);
                     if (sp != null) {
                         currentFocusRingOwner = sp;
-                        currentFocusRingProvider = defaultFocusRingProvider;
+                        currentFocusRingProvider = AquaUtils.getUI(sp, FocusRingOutlineProvider.class);
+                        if (currentFocusRingProvider == null) {
+                            currentFocusRingProvider = defaultFocusRingProvider;
+                        }
                     }
                 } else {
                     currentFocusRingProvider = null;
@@ -108,7 +109,9 @@ public class AquaFocusRingPainter {
             if (currentFocusRingOwner != null && AquaFocusHandler.isActive(currentFocusRingOwner) && currentFocusRingProvider != null) {
                 Shape s = currentFocusRingProvider.getFocusRingOutline(currentFocusRingOwner);
                 if (s != null) {
-                    Color focusColor = AquaColors.getSystemColor(currentFocusRingOwner, "keyboardFocusIndicator");
+                    AquaAppearance appearance = AppearanceManager.findAppearanceForComponent(currentFocusRingOwner);
+                    PaintingContext pc = PaintingContext.of(appearance);
+                    Color focusColor = AquaColors.getSystemColor(currentFocusRingOwner, pc, "keyboardFocusIndicator");
                     FocusRingPainter p = getFocusRingPainter(s);
                     p.paint(g, focusColor);
                 }
@@ -145,7 +148,8 @@ public class AquaFocusRingPainter {
         if (createRoundRectOuter) {
             innerShape = s;
             Rectangle2D r = s.getBounds2D();
-            Shape ss = new RoundRectangle2D.Double(r.getX(), r.getY(), r.getWidth(), r.getHeight(), DEFAULT_CORNER, DEFAULT_CORNER);
+            Shape ss = new RoundRectangle2D.Double(r.getX(), r.getY(), r.getWidth(), r.getHeight(),
+              DEFAULT_CORNER, DEFAULT_CORNER);
             outline = ExpandableOutline.fromShape(ss);
             outerShape = outline.getShape(currentOuterOffset);
         } else {

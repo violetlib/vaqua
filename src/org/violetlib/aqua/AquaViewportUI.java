@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2021 Alan Snyder.
+ * Copyright (c) 2015-2026 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -13,8 +13,7 @@ import javax.swing.*;
 import javax.swing.plaf.ComponentUI;
 import javax.swing.plaf.ViewportUI;
 
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.*;
 import org.violetlib.jnr.aqua.AquaUIPainter;
 
 /**
@@ -28,7 +27,6 @@ public class AquaViewportUI extends ViewportUI implements AquaComponentUI {
 
     protected @Nullable JViewport viewport;
     protected final @NotNull BasicContextualColors colors;
-    protected @Nullable AppearanceContext appearanceContext;
 
     public AquaViewportUI() {
         colors = AquaColors.CONTROL_COLORS;
@@ -38,38 +36,26 @@ public class AquaViewportUI extends ViewportUI implements AquaComponentUI {
     public void installUI(JComponent c) {
         super.installUI(c);
         viewport = (JViewport) c;
+        viewport.setOpaque(false);  // needed in JDKs prior to 17 (see JDK-8253266)
         AquaVibrantSupport.installVibrantStyle(c);
-        AppearanceManager.installListeners(c);
-        configureAppearanceContext(null);
+
+        // Cannot support creating a painting context because JViewport does not permit installing a border.
+
+        //AppearanceManager.install(c);
     }
 
     @Override
     public void uninstallUI(JComponent c) {
-        AppearanceManager.uninstallListeners(c);
+        //AppearanceManager.uninstall(c);
         AquaVibrantSupport.uninstallVibrantStyle(c);
         viewport = null;
         super.uninstallUI(c);
     }
 
-    @Override
-    public void appearanceChanged(@NotNull JComponent c, @NotNull AquaAppearance appearance) {
-        configureAppearanceContext(appearance);
-    }
-
-    @Override
-    public void activeStateChanged(@NotNull JComponent c, boolean isActive) {
-        configureAppearanceContext(null);
-    }
-
-    protected void configureAppearanceContext(@Nullable AquaAppearance appearance) {
-        assert viewport != null;
-        if (appearance == null) {
-            appearance = AppearanceManager.ensureAppearance(viewport);
-        }
-        AquaUIPainter.State state = getState();
-        appearanceContext = new AppearanceContext(appearance, state, false, false);
-        AquaColors.installColors(viewport, appearanceContext, colors);
-        viewport.repaint();
+    public boolean shouldSuppressBackground()
+    {
+        JComponent view = viewport != null ? (JComponent) viewport.getView() : null;
+        return view != null && AquaVibrantSupport.isVibrant(view);
     }
 
     protected AquaUIPainter.State getState() {
@@ -77,11 +63,18 @@ public class AquaViewportUI extends ViewportUI implements AquaComponentUI {
     }
 
     @Override
-    public final void update(@NotNull Graphics g, @NotNull JComponent c) {
-        AppearanceManager.registerCurrentAppearance(c);
+    public void update(Graphics g, JComponent c) {
+        paint(g, c);
+    }
+
+    @Override
+    public void paint(Graphics g, JComponent c) {
+        AquaAppearance appearance = AppearanceManager.findAppearanceForComponent(c);
+        AquaUIPainter.State state = getState();
+        AppearanceContext appearanceContext = new AppearanceContext(appearance, state, false, false);
+        AquaColors.installColors(c, appearanceContext, colors);
         if (c.isOpaque() || AquaVibrantSupport.isVibrant(c)) {
             AquaUtils.fillRect(g, c, AquaUtils.ERASE_IF_VIBRANT);
         }
-        paint(g, c);
     }
 }

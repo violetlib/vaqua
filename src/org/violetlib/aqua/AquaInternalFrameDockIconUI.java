@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2021 Alan Snyder.
+ * Copyright (c) 2018-2026 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -38,11 +38,9 @@ import java.awt.event.*;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
 import java.beans.PropertyVetoException;
-
 import javax.swing.*;
-import javax.swing.plaf.*;
-
-import org.jetbrains.annotations.NotNull;
+import javax.swing.plaf.ComponentUI;
+import javax.swing.plaf.DesktopIconUI;
 
 /**
  * From MacDockIconUI
@@ -52,7 +50,7 @@ import org.jetbrains.annotations.NotNull;
  * @version
  */
 public class AquaInternalFrameDockIconUI extends DesktopIconUI
-        implements MouseListener, MouseMotionListener, ComponentListener, AquaComponentUI {
+  implements MouseListener, MouseMotionListener, ComponentListener, AquaComponentUI {
     private static final String CACHED_FRAME_ICON_KEY = "apple.laf.internal.frameIcon";
 
     protected JInternalFrame.JDesktopIcon fDesktopIcon;
@@ -103,16 +101,7 @@ public class AquaInternalFrameDockIconUI extends DesktopIconUI
     }
 
     @Override
-    public void appearanceChanged(@NotNull JComponent c, @NotNull AquaAppearance appearance) {
-    }
-
-    @Override
-    public void activeStateChanged(@NotNull JComponent c, boolean isActive) {
-    }
-
-    @Override
     public void update(Graphics g, JComponent c) {
-        AppearanceManager.registerCurrentAppearance(c);
         super.update(g, c);
     }
 

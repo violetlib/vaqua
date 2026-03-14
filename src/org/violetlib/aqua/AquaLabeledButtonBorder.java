@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2020 Alan Snyder.
+ * Copyright (c) 2015-2026 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -11,13 +11,16 @@ package org.violetlib.aqua;
 import java.awt.*;
 import javax.swing.*;
 
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.*;
 import org.violetlib.geom.ExpandableOutline;
+import org.violetlib.jnr.Insets2D;
 import org.violetlib.jnr.LayoutInfo;
-import org.violetlib.jnr.aqua.*;
 import org.violetlib.jnr.aqua.AquaUIPainter.ButtonState;
 import org.violetlib.jnr.aqua.AquaUIPainter.ButtonWidget;
+import org.violetlib.jnr.aqua.ButtonConfiguration;
+import org.violetlib.jnr.aqua.ButtonLayoutConfiguration;
+import org.violetlib.jnr.aqua.GenericButtonConfiguration;
+import org.violetlib.jnr.aqua.LayoutConfiguration;
 
 import static org.violetlib.jnr.aqua.AquaUIPainter.ButtonState.*;
 
@@ -35,18 +38,29 @@ public abstract class AquaLabeledButtonBorder extends AquaNamedButtonBorder {
     public void paintButton(@NotNull Graphics2D g,
                             @NotNull AbstractButton b,
                             @Nullable Icon icon,
-                            @NotNull Rectangle viewRect) {
-        GenericButtonConfiguration c = getConfiguration(b, viewRect.width, viewRect.height);
+                            @NotNull Rectangle viewRect,
+                            @NotNull PaintingContext pc) {
+        GenericButtonConfiguration c = getConfiguration(b, pc, viewRect.width, viewRect.height);
         if (c instanceof ButtonConfiguration) {
             ButtonConfiguration bg = (ButtonConfiguration) c;
-            Insets insets = new Insets(0, 0, 0, 0);
-            Rectangle iconRect = new Rectangle();
-            Rectangle textRect = new Rectangle();
-            Dimension iconSize = getIconSize((ButtonLayoutConfiguration) bg);
-            String text = AquaButtonUI.layoutAndGetText(g, b, insets, viewRect, iconRect, textRect, iconSize);
-            paintBackground(g, b, bg, iconRect);
-            Color textColor = getForegroundColor(b, bg, false);
-            AquaButtonUI.paintText(g, b, textRect, textColor, text);
+            Dimension iconSize = getIconVisualSize(bg);
+            LayoutConfiguration lg = bg.getLayoutConfiguration();
+
+            CompoundLabelLayoutEngine engine
+              = AquaButtonSupport.createCompoundLayoutEngine(b, iconSize, lg);
+            if (engine == null) {
+                return;
+            }
+            Insets2D s = getButtonContentInsets(b);
+            ButtonLayoutInfo info = engine.getLayoutInfo(viewRect.width, viewRect.height, s);
+            if (info.iconBounds != null) {
+                paintBackground(g, b, bg, info.iconBounds, pc);
+            }
+            if (info.labelBounds != null) {
+                String text = info.substitutedLabel != null ? info.substitutedLabel : b.getText();
+                Color textColor = getForegroundColor(b, bg, pc, false);
+                AquaButtonSupport.paintText(g, b, info.labelBounds, textColor, text);
+            }
         }
     }
 
@@ -64,29 +78,48 @@ public abstract class AquaLabeledButtonBorder extends AquaNamedButtonBorder {
         AbstractButton b = (AbstractButton) c;
         ButtonLayoutConfiguration g = getButtonLayoutConfiguration(b);
         if (g != null) {
-            Insets insets = new Insets(0, 0, 0, 0);
-            Rectangle viewRect = new Rectangle(0, 0, c.getWidth(), c.getHeight());
-            Rectangle iconRect = new Rectangle();
-            Rectangle textRect = new Rectangle();
-            Dimension iconSize = getIconSize(g);
-            // Assuming that the location of the icon does not depend upon the text
-            AquaButtonUI.layoutAndGetText(null, b, insets, viewRect, iconRect, textRect, iconSize);
-            AppearanceManager.ensureAppearance(b);
-            AquaUtils.configure(painter, b, iconRect.width, iconRect.height);
-            Shape s = painter.getOutline(g);
-            if (s != null) {
-                return ExpandableOutline.createTranslatedShape(s, iconRect.x, iconRect.y);
+            Dimension iconSize = getIconVisualSize(g);
+            CompoundLabelLayoutEngine engine
+              = AquaButtonSupport.createCompoundLayoutEngine(b, iconSize, g);
+            if (engine == null) {
+                return null;
+            }
+            Insets2D s = getButtonContentInsets(b);
+            ButtonLayoutInfo info = engine.getLayoutInfo(c.getWidth(), c.getHeight(), s);
+            if (info.iconBounds != null) {
+                int ww = (int) Math.ceil(info.iconBounds.getWidth());
+                int hh = (int) Math.ceil(info.iconBounds.getHeight());
+                AquaUtils.configure(painter, null, b, ww, hh);
+                Shape outline = painter.getOutline(g);
+                if (outline != null) {
+                    return ExpandableOutline.createTranslatedShape(outline, info.iconBounds.getX(), info.iconBounds.getY());
+                }
             }
         }
         return null;
     }
 
     @Override
-    protected @Nullable Dimension getIconSize(@NotNull LayoutConfiguration g) {
+    protected @Nullable Dimension getPreferredIconSize(@NotNull AbstractButton b, @Nullable LayoutConfiguration g) {
+        if (g == null) {
+            // should not happen
+            return null;
+        }
+        return getIconVisualSize(g);
+    }
+
+    private @NotNull Dimension getIconVisualSize(@NotNull LayoutConfiguration g) {
         LayoutInfo info = painter.getLayoutInfo().getLayoutInfo(g);
         int iconWidth = (int) Math.ceil(info.getFixedVisualWidth());
         int iconHeight = (int) Math.ceil(info.getFixedVisualHeight());
+        assert iconWidth > 0;
+        assert iconHeight > 0;
         return new Dimension(iconWidth, iconHeight);
+    }
+
+    @Override
+    protected @Nullable Dimension getMaximumButtonSize(@Nullable LayoutConfiguration g) {
+        return null;
     }
 
     @Override

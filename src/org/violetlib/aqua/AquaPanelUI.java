@@ -1,5 +1,5 @@
 /*
- * Changes Copyright (c) 2015-2021 Alan Snyder.
+ * Changes Copyright (c) 2015-2026 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -42,8 +42,7 @@ import javax.swing.plaf.ComponentUI;
 import javax.swing.plaf.UIResource;
 import javax.swing.plaf.basic.BasicPanelUI;
 
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.*;
 import org.violetlib.aqua.AquaUtils.RecyclableSingleton;
 import org.violetlib.aqua.AquaUtils.RecyclableSingletonFromDefaultConstructor;
 import org.violetlib.jnr.aqua.AquaUIPainter;
@@ -56,7 +55,7 @@ public class AquaPanelUI extends BasicPanelUI implements AquaComponentUI {
 
     static RecyclableSingleton<AquaPanelUI> instance = new RecyclableSingletonFromDefaultConstructor<AquaPanelUI>(AquaPanelUI.class);
 
-    private PropertyChangeListener propertyChangeListener = AquaPanelUI.this::propertyChange;
+    private final @NotNull PropertyChangeListener propertyChangeListener = AquaPanelUI.this::propertyChange;
     protected @NotNull BasicContextualColors colors;
 
     public static ComponentUI createUI(JComponent c) {
@@ -73,13 +72,12 @@ public class AquaPanelUI extends BasicPanelUI implements AquaComponentUI {
         AquaVibrantSupport.installVibrantStyle(c);
         c.addPropertyChangeListener(propertyChangeListener);
         updateStyle(c);
-        AppearanceManager.installListeners(c);
-        configureAppearanceContext(c, null);
+        AppearanceManager.install(c);
     }
 
     @Override
     public void uninstallUI(JComponent c) {
-        AppearanceManager.uninstallListeners(c);
+        AppearanceManager.uninstall(c);
         c.removePropertyChangeListener(propertyChangeListener);
         AquaVibrantSupport.uninstallVibrantStyle(c);
         super.uninstallUI(c);
@@ -89,45 +87,34 @@ public class AquaPanelUI extends BasicPanelUI implements AquaComponentUI {
     protected void installDefaults(JPanel p) {
         super.installDefaults(p);
         LookAndFeel.installProperty(p, "opaque", false);
-        configureAppearanceContext(p, null);
-    }
-
-    @Override
-    public void appearanceChanged(@NotNull JComponent c, @NotNull AquaAppearance appearance) {
-        configureAppearanceContext(c, appearance);
-    }
-
-    @Override
-    public void activeStateChanged(@NotNull JComponent c, boolean isActive) {
-    }
-
-    protected void configureAppearanceContext(@NotNull JComponent c, @Nullable AquaAppearance appearance) {
-        if (appearance == null) {
-            appearance = AppearanceManager.ensureAppearance(c);
-        }
-
-        // Although a JPanel is not-opaque by default, it is still important to set appropriate foreground and
-        // background colors, as these colors may be inherited by components that use them.
-
-        AquaUIPainter.State state = AquaUIPainter.State.ACTIVE;
-        AppearanceContext appearanceContext = new AppearanceContext(appearance, state, false, false);
-        AquaColors.installColors(c, appearanceContext, colors);
     }
 
     @Override
     public final void update(@NotNull Graphics g, @NotNull JComponent c) {
-        AppearanceManager.registerCurrentAppearance(c);
-        if (c.isOpaque() || AquaVibrantSupport.isVibrant(c)) {
-            AquaUtils.fillRect(g, c, AquaUtils.ERASE_IF_TEXTURED | AquaUtils.ERASE_IF_VIBRANT);
-        }
         paint(g, c);
     }
 
     @Override
     public void paint(@NotNull Graphics g, @NotNull JComponent c) {
+        AppearanceManager.withContext(g, c, this::paint);
+    }
+
+    public void paint(Graphics2D g, JComponent c, @NotNull PaintingContext pc)
+    {
+        // Although a JPanel is not-opaque by default, it is still important to set appropriate foreground and
+        // background colors, as these colors may be inherited by components that use them.
+
+        AquaUIPainter.State state = AquaUIPainter.State.ACTIVE;
+        AppearanceContext appearanceContext = new AppearanceContext(pc.appearance, state, false, false);
+        AquaColors.installColors(c, appearanceContext, colors);
+
+        if (c.isOpaque() || AquaVibrantSupport.isVibrant(c)) {
+            AquaUtils.fillRect(g, c, AquaUtils.ERASE_IF_TEXTURED | AquaUtils.ERASE_IF_VIBRANT);
+        }
+
         BackgroundPainter p = getBackgroundPainter(c);
         if (p != null) {
-            p.paintBackground(c, g, 0, 0, c.getWidth(), c.getHeight());
+            p.paintBackground(c, g, pc, 0, 0, c.getWidth(), c.getHeight());
         }
     }
 

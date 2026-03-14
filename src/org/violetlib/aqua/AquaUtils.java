@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2023 Alan Snyder.
+ * Copyright (c) 2015-2026 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -54,18 +54,22 @@ import javax.swing.plaf.MenuBarUI;
 import javax.swing.plaf.UIResource;
 import javax.swing.text.View;
 
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.*;
 import org.violetlib.aqua.AquaImageFactory.SlicedImageControl;
 import org.violetlib.geom.GeneralRoundRectangle;
 import org.violetlib.jnr.Insets2D;
 import org.violetlib.jnr.Insetter;
 import org.violetlib.jnr.aqua.AquaUIPainter;
 
-import static javax.swing.SwingConstants.*;
 import static org.violetlib.aqua.JavaSupport.FocusEventCause.*;
+import static org.violetlib.aqua.OSXSystemProperties.*;
+import static org.violetlib.jnr.aqua.AquaUIPainter.ButtonWidget.*;
+import static org.violetlib.jnr.aqua.AquaUIPainter.Size.*;
 
 final public class AquaUtils {
+
+    /** A number representing an unlimited size */
+    public static final int INFINITY = 1000000;
 
     public static final String TOOLBAR_PANEL_PROPERTY = "Aqua.isToolBarPanel";
     public static final String IS_CELL_COMPONENT_KEY = "JComponent.isCellComponent";
@@ -75,8 +79,6 @@ final public class AquaUtils {
 
     private static final String ANIMATIONS_PROPERTY = "swing.enableAnimations";
 
-    private static final int INSET_CORNER_RADIUS = 10;
-
     private static final HierarchyListener toolbarStatusListener = new HierarchyListener() {
         @Override
         public void hierarchyChanged(HierarchyEvent e) {
@@ -84,7 +86,22 @@ final public class AquaUtils {
         }
     };
 
-    private static final HierarchyListener insetViewHierarchyListener = new InsetViewHierarchyListener();
+    private static final HierarchyListener viewStyleHierarchyListener = new ViewStyleHierarchyListener();
+
+    public static int limitSize(int n)
+    {
+        return Math.min(n, INFINITY);
+    }
+
+    public static long limitSize(long n)
+    {
+        return Math.min(n, INFINITY);
+    }
+
+    public static boolean isUnlimitedSize(int n)
+    {
+        return n >= INFINITY;
+    }
 
     public static @NotNull String capitalize(@NotNull String s)
     {
@@ -95,6 +112,11 @@ final public class AquaUtils {
             }
         }
         return s;
+    }
+
+    static void configureFocusable(JComponent c) {
+        boolean isFocusable = OSXSystemProperties.isFullKeyboardAccessEnabled();
+        c.setFocusable(isFocusable);
     }
 
     private interface WindowAppearanceChangedCallback {
@@ -117,7 +139,7 @@ final public class AquaUtils {
                         JRootPane rootPane = rpc.getRootPane();
                         AquaRootPaneUI ui = getUI(rootPane, AquaRootPaneUI.class);
                         if (ui != null) {
-                            ui.windowAppearanceChanged(appearanceName);
+                            ui.effectiveAppearanceChanged();
                         }
                     });
                 }
@@ -128,16 +150,20 @@ final public class AquaUtils {
     /**
      * Return the UI of a component if it satisfies the specified class or interface.
      */
-    public static @Nullable <T> T getUI(@NotNull JComponent c, Class<T> requestedClass) {
-        // The getUI() method is public as of Java 9
-        try {
-            Class<? extends JComponent> clazz = c.getClass();
-            Method getUIMethod = clazz.getMethod("getUI");
-            Object ui = getUIMethod.invoke(c);
-            return requestedClass.cast(ui);
-        } catch (Throwable th) {
-            return null;
+    public static @Nullable <T> T getUI(@Nullable Component c, Class<T> requestedClass) {
+        if (c instanceof JComponent) {
+            JComponent jc = (JComponent) c;
+            // The getUI() method is public as of Java 9
+            try {
+                Class<? extends JComponent> clazz = jc.getClass();
+                Method getUIMethod = clazz.getMethod("getUI");
+                Object ui = getUIMethod.invoke(jc);
+                return requestedClass.cast(ui);
+            } catch (Throwable th) {
+                return null;
+            }
         }
+        return null;
     }
 
     public static @NotNull String getWindowNameForDebugging(@NotNull Window w) {
@@ -156,6 +182,24 @@ final public class AquaUtils {
             }
         }
         return name;
+    }
+
+    public static int ceil(float f) {
+        // Round up unless very close to the lower integer
+        int r = (int) Math.ceil(f);
+        float d = f - (r - 1);
+        return d > 0.01 ? r : r-1;
+    }
+
+    public static int ceil(double f) {
+        // Round up unless very close to the lower integer
+        int r = (int) Math.ceil(f);
+        double d = f - (r - 1);
+        return d > 0.01 ? r : r-1;
+    }
+
+    public static @NotNull Dimension extend(@NotNull Dimension d, @NotNull Insets s) {
+        return new Dimension(d.width + s.left + s.right, d.height + s.top + s.bottom);
     }
 
     public static Insets combineAsInsets(Insetter s, Insets adjustments) {
@@ -208,7 +252,16 @@ final public class AquaUtils {
         return new Insets2D(s.top, s.left, s.bottom, s.right);
     }
 
-    public static Rectangle toRectangle(Rectangle2D r) {
+    public static @NotNull Dimension size(@NotNull Rectangle2D r) {
+        if (r instanceof Rectangle) {
+            return ((Rectangle) r).getSize();
+        }
+        int ww = (int) Math.ceil(r.getWidth());
+        int hh = (int) Math.ceil(r.getHeight());
+        return new Dimension(ww, hh);
+    }
+
+    public static @NotNull Rectangle toRectangle(@NotNull Rectangle2D r) {
         if (r instanceof Rectangle) {
             return (Rectangle) r;
         }
@@ -280,7 +333,7 @@ final public class AquaUtils {
         int left = insets.left;
         int right = insets.right;
         return new Rectangle(bounds.x + left, bounds.y + top, bounds.width - left - right,
-                bounds.height - top - bottom);
+          bounds.height - top - bottom);
     }
 
     /**
@@ -455,16 +508,58 @@ final public class AquaUtils {
     }
 
     public static boolean isInsetViewSupported() {
-        return OSXSystemProperties.OSVersion >= 1016;
+        return OSVersion >= macOS11;
     }
 
-    public static boolean isCellComponent(@NotNull Component c)
-    {
+    public static boolean isCellComponent(@NotNull Component c) {
         if (c instanceof JComponent) {
             JComponent jc = (JComponent) c;
             return Boolean.TRUE.equals(jc.getClientProperty(IS_CELL_COMPONENT_KEY));
         }
         return false;
+    }
+
+    public static @NotNull AquaUIPainter.Size getSize(@NotNull Component c,
+                                                      boolean isOnToolbar,
+                                                      @Nullable Object widget) {
+        AquaUIPainter.Size size = AquaUtilControlSize.getOptionalUserSizeFrom(c);
+        if (size != null) {
+            return size;
+        }
+
+        if (isOnToolbar && widget != null) {
+            AquaUIPainter.Size sz = getToolbarSize(widget);
+            if (sz != null) {
+                return sz;
+            }
+        }
+
+        return AquaUtilControlSize.getUserSizeFrom(c); // returns a default size
+    }
+
+    public static @Nullable AquaUIPainter.Size getToolbarSize(@NotNull Object widget)
+    {
+        int version = AquaPainting.getVersion();
+
+        if (version >= macOS26) {
+            if (widget == BUTTON_GLASS
+              || widget == BUTTON_TOOLBAR_ITEM
+              || widget instanceof AquaUIPainter.PopupButtonWidget
+              || widget instanceof AquaUIPainter.ComboBoxWidget
+              || widget instanceof AquaUIPainter.SegmentedButtonWidget) {
+                return EXTRA_LARGE;
+            }
+            return LARGE;
+        }
+
+        if (version >= macOS11) {
+            if (widget == BUTTON_TOOLBAR) {
+                return SMALL;
+            }
+            return LARGE;
+        }
+
+        return null;
     }
 
     public static boolean isAutoSelectOnFocusAppropriate(@NotNull FocusEvent e) {
@@ -481,293 +576,48 @@ final public class AquaUtils {
         return false;
     }
 
-    // The following are copied from SwingUtilities, with modification.
-
     /**
-     * Compute and return the location of the icons origin, the
-     * location of origin of the text baseline, and a possibly clipped
-     * version of the compound labels string.  Locations are computed
-     * relative to the viewR rectangle.
-     * The JComponents orientation (LEADING/TRAILING) will also be taken
-     * into account and translated into LEFT/RIGHT values accordingly.
-     *
-     * @param c the component
-     * @param fm the instance of {@code FontMetrics}, may be null if the text does not matter
-     * @param text the text
-     * @param iconSize the size of the icon, or null if there is no icon
-     * @param verticalAlignment the vertical alignment
-     * @param horizontalAlignment the horizontal alignment
-     * @param verticalTextPosition the vertical text position
-     * @param horizontalTextPosition the horizontal text position
-     * @param viewR the available rectangle
-     * @param iconR the rectangle for the icon
-     * @param textR the rectangle for the text
-     * @param textIconGap the gap between text and icon
-     *
-     * @return the possibly clipped version of the compound labels string
+     * Get information for laying out text.
+     * @param v An optional source of HTML text to display.
+     * @param text Optional text to be displayed, if {@code v} is not supplied.
+     * @param fm The font metrics to use.
      */
-    public static String layoutCompoundLabel(JComponent c,
-                                             @Nullable FontMetrics fm,
-                                             String text,
-                                             @Nullable Dimension iconSize,
-                                             int verticalAlignment,
-                                             int horizontalAlignment,
-                                             int verticalTextPosition,
-                                             int horizontalTextPosition,
-                                             Rectangle viewR,
-                                             Rectangle iconR,
-                                             Rectangle textR,
-                                             int textIconGap)
-    {
-        boolean orientationIsLeftToRight = true;
-        int hAlign = horizontalAlignment;
-        int hTextPos = horizontalTextPosition;
 
-        if (c != null) {
-            if (!(c.getComponentOrientation().isLeftToRight())) {
-                orientationIsLeftToRight = false;
-            }
-        }
-
-        // Translate LEADING/TRAILING values in horizontalAlignment
-        // to LEFT/RIGHT values depending on the components orientation
-        switch (horizontalAlignment) {
-            case LEADING:
-                hAlign = (orientationIsLeftToRight) ? LEFT : RIGHT;
-                break;
-            case TRAILING:
-                hAlign = (orientationIsLeftToRight) ? RIGHT : LEFT;
-                break;
-        }
-
-        // Translate LEADING/TRAILING values in horizontalTextPosition
-        // to LEFT/RIGHT values depending on the components orientation
-        switch (horizontalTextPosition) {
-            case LEADING:
-                hTextPos = (orientationIsLeftToRight) ? LEFT : RIGHT;
-                break;
-            case TRAILING:
-                hTextPos = (orientationIsLeftToRight) ? RIGHT : LEFT;
-                break;
-        }
-
-        return layoutCompoundLabelImpl(c,
-                fm,
-                text,
-                iconSize,
-                verticalAlignment,
-                hAlign,
-                verticalTextPosition,
-                hTextPos,
-                viewR,
-                iconR,
-                textR,
-                textIconGap);
-    }
-
-    /**
-     * Compute and return the location of the icons origin, the
-     * location of origin of the text baseline, and a possibly clipped
-     * version of the compound labels string.  Locations are computed
-     * relative to the viewR rectangle.
-     * This layoutCompoundLabel() does not know how to handle LEADING/TRAILING
-     * values in horizontalTextPosition (they will default to RIGHT) and in
-     * horizontalAlignment (they will default to CENTER).
-     * Use the other version of layoutCompoundLabel() instead.
-     *
-     * This is the same as SwingUtilities.layoutCompoundLabelImpl, except:
-     * An icon size is provided instead of the actual icon.
-     * The algorithm for clipping the text is different. If a text is too long, "..." is
-     * inserted at the middle of the text instead of at the end.
-     */
-    private static String layoutCompoundLabelImpl(
-            JComponent c,
-            @Nullable FontMetrics fm,
-            String text,
-            @Nullable Dimension iconSize,  // null if no icon
-            int verticalAlignment,
-            int horizontalAlignment,
-            int verticalTextPosition,
-            int horizontalTextPosition,
-            Rectangle viewR,
-            Rectangle iconR,
-            Rectangle textR,
-            int textIconGap)
-    {
-        /* Initialize the icon bounds rectangle iconR.
-         */
-
-        if (iconSize != null) {
-            iconR.width = iconSize.width;
-            iconR.height = iconSize.height;
-        } else {
-            iconR.width = iconR.height = 0;
-        }
-
-        /* Initialize the text bounds rectangle textR.  If a null
-         * or and empty String was specified we substitute "" here
-         * and use 0,0,0,0 for textR.
-         */
-
-        boolean textIsEmpty = (text == null) || text.equals("");
+    public static @NotNull TextLayoutInfo getTextLayoutInfo(@Nullable View v,
+                                                            @Nullable String text,
+                                                            @NotNull FontMetrics fm) {
+        int width = 0;
+        int height = 0;
         int lsb = 0;
 
-        View v = null;
-        if (textIsEmpty) {
-            textR.width = textR.height = 0;
-            text = "";
-        } else {
-            v = (c != null) ? (View) c.getClientProperty("html") : null;
-            if (v != null) {
-                textR.width = (int) v.getPreferredSpan(View.X_AXIS);
-                textR.height = (int) v.getPreferredSpan(View.Y_AXIS);
-            } else if (fm != null) {
-                textR.width = SwingUtilities.computeStringWidth(fm, text);
-                lsb = getLeftSideBearing(c, fm, text);
-                if (lsb < 0) {
-                    // If lsb is negative, add it to the width, the
-                    // text bounds will later be adjusted accordingly.
-                    textR.width -= lsb;
-                }
-                textR.height = fm.getHeight();
+        if (v != null) {
+            width = (int) v.getPreferredSpan(View.X_AXIS);
+            height = (int) v.getPreferredSpan(View.Y_AXIS);
+        } else if (text != null && !text.isEmpty()) {
+            width = SwingUtilities.computeStringWidth(fm, text);
+            lsb = getLeftSideBearing(null, fm, text);
+            if (lsb < 0) {
+                // If lsb is negative, add it to the width, the
+                // text bounds will later be adjusted accordingly.
+                width -= lsb;
             }
+            height = fm.getHeight();
+
         }
-
-        /* Unless both text and icon are non-null, we effectively ignore
-         * the value of textIconGap.  The code that follows uses the
-         * value of gap instead of textIconGap.
-         */
-
-        int gap = (textIsEmpty || (iconSize == null)) ? 0 : textIconGap;
-
-        if (!textIsEmpty) {
-
-            /* If the label text string is too wide to fit within the available
-             * space "..." and as many characters as will fit will be
-             * displayed instead.
-             */
-
-            int availTextWidth;
-
-            if (horizontalTextPosition == CENTER) {
-                availTextWidth = viewR.width;
-            } else {
-                availTextWidth = viewR.width - (iconR.width + gap);
-            }
-
-            if (textR.width > availTextWidth) {
-                if (v != null || fm == null) {
-                    textR.width = availTextWidth;
-                } else {
-                    String clipString = "...";
-                    int totalWidth = SwingUtilities.computeStringWidth(fm, clipString);
-                    int nChars;
-                    int len = text.length();
-                    for (nChars = 0; nChars < len; nChars++) {
-                        int charIndex = (nChars % 2 == 0) ? nChars / 2 : len - 1 - nChars / 2;
-                        totalWidth += fm.charWidth(text.charAt(charIndex));
-                        if (totalWidth > availTextWidth) {
-                            break;
-                        }
-                    }
-                    text = text.substring(0, nChars / 2) + clipString + text.substring(len - nChars / 2);
-                    textR.width = SwingUtilities.computeStringWidth(fm, text);
-                }
-            }
-        }
-
-        /* Compute textR.x,y given the verticalTextPosition and
-         * horizontalTextPosition properties
-         */
-
-        if (verticalTextPosition == TOP) {
-            if (horizontalTextPosition != CENTER) {
-                textR.y = 0;
-            } else {
-                textR.y = -(textR.height + gap);
-            }
-        } else if (verticalTextPosition == CENTER) {
-            textR.y = (iconR.height / 2) - (textR.height / 2);
-        } else { // (verticalTextPosition == BOTTOM)
-
-            if (horizontalTextPosition != CENTER) {
-                textR.y = iconR.height - textR.height;
-            } else {
-                textR.y = (iconR.height + gap);
-            }
-        }
-
-        if (horizontalTextPosition == LEFT) {
-            textR.x = -(textR.width + gap);
-        } else if (horizontalTextPosition == CENTER) {
-            textR.x = (iconR.width / 2) - (textR.width / 2);
-        } else { // (horizontalTextPosition == RIGHT)
-
-            textR.x = (iconR.width + gap);
-        }
-
-        /* labelR is the rectangle that contains iconR and textR.
-         * Move it to its proper position given the labelAlignment
-         * properties.
-         *
-         * To avoid actually allocating a Rectangle, Rectangle.union
-         * has been inlined below.
-         */
-        int labelR_x = Math.min(iconR.x, textR.x);
-        int labelR_width = Math.max(iconR.x + iconR.width,
-                textR.x + textR.width) - labelR_x;
-        int labelR_y = Math.min(iconR.y, textR.y);
-        int labelR_height = Math.max(iconR.y + iconR.height,
-                textR.y + textR.height) - labelR_y;
-
-        int dx, dy;
-
-        if (verticalAlignment == TOP) {
-            dy = viewR.y - labelR_y;
-        } else if (verticalAlignment == CENTER) {
-            dy = (viewR.y + (viewR.height / 2)) - (labelR_y + (labelR_height / 2));
-        } else { // (verticalAlignment == BOTTOM)
-
-            dy = (viewR.y + viewR.height) - (labelR_y + labelR_height);
-        }
-
-        if (horizontalAlignment == LEFT) {
-            dx = viewR.x - labelR_x;
-        } else if (horizontalAlignment == RIGHT) {
-            dx = (viewR.x + viewR.width) - (labelR_x + labelR_width);
-        } else { // (horizontalAlignment == CENTER)
-
-            dx = (viewR.x + (viewR.width / 2))
-                    - (labelR_x + (labelR_width / 2));
-        }
-
-        /* Translate textR and glypyR by dx,dy.
-         */
-
-        textR.x += dx;
-        textR.y += dy;
-
-        iconR.x += dx;
-        iconR.y += dy;
-
-        if (lsb < 0) {
-            // lsb is negative. We previously adjusted the bounds by lsb,
-            // we now need to shift the x location so that the text is
-            // drawn at the right location. The result is textR does not
-            // line up with the actual bounds (on the left side), but we will
-            // have provided enough space for the text.
-            textR.width += lsb;
-            textR.x -= lsb;
-        }
-
-        return text;
+        return new TextLayoutInfo(width, height, lsb, v != null);
     }
 
-    private static int getLeftSideBearing(JComponent c, FontMetrics fm, String string) {
-        if ((string == null) || (string.length() == 0)) {
-            return 0;
-        }
+    private static int getLeftSideBearing(@Nullable JComponent c, @NotNull FontMetrics fm, @NotNull String string) {
         return nativeGetLeftSideBearing(c, fm, string.charAt(0));
+    }
+
+    public static int getTextHeight(@NotNull JComponent c, @NotNull FontMetrics fm) {
+        View v = (View) c.getClientProperty("html");
+        if (v != null) {
+            return (int) Math.ceil(v.getPreferredSpan(View.Y_AXIS));
+        } else {
+            return fm.getHeight();
+        }
     }
 
     public static void paintImmediately(Window w, JComponent c) {
@@ -832,7 +682,7 @@ final public class AquaUtils {
         @Override
         protected Boolean getInstance() {
             String sizeProperty = (String) AccessController.doPrivileged((PrivilegedAction<String>) () -> System.getProperty(
-                    ANIMATIONS_PROPERTY));
+              ANIMATIONS_PROPERTY));
             return !"false".equals(sizeProperty); // should be true by default
         }
     };
@@ -957,7 +807,7 @@ final public class AquaUtils {
     // options for when to use a magic eraser
     public final static int ERASE_IF_TEXTURED = 1<<0;   // erase if the window is natively textured
     public final static int ERASE_IF_VIBRANT = 1<<1;    // erase if the window is vibrant
-    public final static int ERASE_ALWLAYS = 1<<2;
+    public final static int ERASE_ALWAYS = 1<<2;
 
     /**
      * Fill the component bounds with the appropriate fill color or magic eraser.
@@ -982,7 +832,7 @@ final public class AquaUtils {
      * @return the fill color, or null to use the magic eraser.
      */
     private static Color getFillColor(Component c, int eraserMode) {
-        if ((eraserMode & ERASE_ALWLAYS) != 0) {
+        if ((eraserMode & ERASE_ALWAYS) != 0) {
             return null;
         }
 
@@ -1017,7 +867,7 @@ final public class AquaUtils {
      * @return the fill color, or null to use the magic eraser.
      */
     private static Color getFillColor(Component c, @NotNull Color color, int eraserMode) {
-        if ((eraserMode & ERASE_ALWLAYS) != 0) {
+        if ((eraserMode & ERASE_ALWAYS) != 0) {
             return null;
         }
 
@@ -1153,13 +1003,20 @@ final public class AquaUtils {
      * @return the color.
      */
     public static @NotNull Color getWindowBackground(@NotNull JComponent c) {
-        EffectName effect = AquaFocusHandler.isActive(c) ? EffectName.EFFECT_NONE : EffectName.EFFECT_DISABLED;
-        String baseColor = "windowBackground";
         JRootPane rp = c.getRootPane();
-        if (rp != null && isTextured(rp)) {
+        AquaAppearance appearance = AppearanceManager.findAppearanceForComponent(rp);
+        return getWindowBackground(rp, appearance);
+    }
+
+    public static @NotNull Color getWindowBackground(@NotNull JRootPane rootPane, @NotNull AquaAppearance appearance)
+    {
+        PaintingContext pc = PaintingContext.of(appearance);
+        EffectName effect = AquaFocusHandler.isActive(rootPane) ? EffectName.EFFECT_NONE : EffectName.EFFECT_DISABLED;
+        String baseColor = "windowBackground";
+        if (isTextured(rootPane)) {
             baseColor = "texturedWindowBackground";
         }
-        return AquaColors.getBackground(c, baseColor, effect);
+        return AquaColors.getBackground(rootPane, pc, baseColor, effect);
     }
 
     /**
@@ -1169,7 +1026,9 @@ final public class AquaUtils {
      * @param isTop True for the top margin, false for the bottom margin.
      * @return the color.
      */
-    public static @NotNull Color getWindowMarginBackground(@NotNull JRootPane rp, boolean isTop) {
+    public static @NotNull Color getWindowMarginBackground(@NotNull JRootPane rp,
+                                                           boolean isTop,
+                                                           @NotNull PaintingContext pc) {
         // In most cases, the margin color when flat matches the content area color.
         // One exception is a non-textured window in light mode.
         // The other is a dark mode non-textured unified title/tool bar (top margin).
@@ -1178,8 +1037,7 @@ final public class AquaUtils {
         String prefix = isTop ? "top" : "bottom";
         String suffix = AquaFocusHandler.isActive(rp) ? "" : "_disabled";
         String colorName = prefix + base + suffix;
-        AquaAppearance appearance = AppearanceManager.getAppearance(rp);
-        Color bc = appearance.getColor(colorName);
+        Color bc = pc.appearance.getColor(colorName);
         if (bc == null) {
             // should not happen
             Utils.logError("Undefined window margin background color: " + colorName);
@@ -1189,13 +1047,14 @@ final public class AquaUtils {
         }
     }
 
-    public static @NotNull Color getWindowMarginDividerColor(@NotNull JRootPane rp, boolean isTop) {
+    public static @NotNull Color getWindowMarginDividerColor(@NotNull JRootPane rp,
+                                                             boolean isTop,
+                                                             @NotNull PaintingContext pc) {
         String base = isTextured(rp) ? "TexturedWindowDivider" : "WindowDivider";
         String prefix = isTop ? "top" : "bottom";
         String suffix = AquaFocusHandler.isActive(rp) ? "" : "_disabled";
         String colorName = prefix + base + suffix;
-        AquaAppearance appearance = AppearanceManager.getAppearance(rp);
-        Color color = appearance.getColor(colorName);
+        Color color = pc.appearance.getColor(colorName);
         if (color == null) {
             // should not happen
             Utils.logError("Undefined window divider color: " + colorName);
@@ -1248,14 +1107,17 @@ final public class AquaUtils {
         return false;
     }
 
-    private static class InsetViewHierarchyListener implements HierarchyListener {
+    private static class ViewStyleHierarchyListener implements HierarchyListener {
         @Override
         public void hierarchyChanged(@NotNull HierarchyEvent e) {
             JComponent c = (JComponent) e.getComponent();
             AquaViewStyleContainerUI ui = AquaUtils.getUI(c, AquaViewStyleContainerUI.class);
             if (ui != null) {
-                JScrollPane sp = findScrollPaneAncestor(c);
-                ui.scrollPaneAncestorChanged(sp);
+                // Ignore events generated while setting up the viewport holder
+                if (!ScrollPaneInterposedContainer.isRearrangingHolder) {
+                    JScrollPane sp = findScrollPaneAncestor(c);
+                    SwingUtilities.invokeLater(() -> ui.scrollPaneAncestorChanged(sp));
+                }
             }
         }
     }
@@ -1264,7 +1126,7 @@ final public class AquaUtils {
         Container parent = c.getParent();
         if (parent instanceof JViewport) {
             parent = parent.getParent();
-            if (parent instanceof OverlayScrollPaneHack.AquaOverlayViewportHolder) {
+            if (parent instanceof ScrollPaneInterposedContainer.AquaOverlayViewportHolder) {
                 parent = parent.getParent();
             }
             if (parent instanceof JScrollPane) {
@@ -1272,6 +1134,25 @@ final public class AquaUtils {
             }
         }
         return null;
+    }
+
+    public static boolean isRoundedScrollable(@NotNull JComponent c) {
+        JScrollPane sp = getScrollPaneContainer(c);
+        return sp != null && isRoundedBorderScrollPane(sp);
+    }
+
+    /**
+     * Return true if the scroll pane is known to have a border with rounded corners that argues for larger top and
+     * bottom view insets.
+     */
+    public static boolean isRoundedBorderScrollPane(@NotNull JScrollPane sp) {
+        // Note: this code and AquaScrollPaneUI assume that rounded borders are used only by sidebar scroll panes.
+        int version = AquaPainting.getVersion();
+        if (version >= macOS26) {
+            AquaScrollPaneUI ui = getUI(sp, AquaScrollPaneUI.class);
+            return ui != null && ui.isSidebar();
+        }
+        return false;
     }
 
     /**
@@ -1282,7 +1163,7 @@ final public class AquaUtils {
     public static void installInsetViewListener(@NotNull JComponent c) {
         AquaViewStyleContainerUI ui = AquaUtils.getUI(c, AquaViewStyleContainerUI.class);
         if (ui != null) {
-            c.addHierarchyListener(insetViewHierarchyListener);
+            c.addHierarchyListener(viewStyleHierarchyListener);
         } else {
             throw new IllegalArgumentException("Component must support AquaViewStyleContainerUI");
         }
@@ -1293,7 +1174,7 @@ final public class AquaUtils {
      * @param c The component.
      */
     public static void uninstallInsetViewListener(@NotNull Component c) {
-        c.removeHierarchyListener(insetViewHierarchyListener);
+        c.removeHierarchyListener(viewStyleHierarchyListener);
     }
 
     /**
@@ -1309,45 +1190,38 @@ final public class AquaUtils {
     /**
      * Paint the isolated inset style highlight for a striped row.
      */
-    public static void paintInsetStripedRow(@NotNull Graphics2D g, int cx, int cy, int cw, int ch) {
-        int top = 0;
-        int side = 10;
-        int radius = INSET_CORNER_RADIUS;
-        RoundRectangle2D r = new RoundRectangle2D.Float(cx + side, cy + top, cw - 2 * side, ch - 2 * top, radius, radius);
-        fillAntiAliased(g, r);
+    public static void paintInsetStripedRow(@NotNull Graphics2D g,
+                                            int x, int y, int w, int h, int cornerRadius) {
+        fillRoundRectAntiAliased(g, x, y, w, h, cornerRadius);
     }
 
     /**
      * Paint the isolated inset style highlight for a selected cell.
      */
-    public static void paintInsetCellSelection(@NotNull Graphics2D g, int cx, int cy, int cw, int ch) {
-        int top = 3;
-        int side = 10;
-        int radius = INSET_CORNER_RADIUS;
-        RoundRectangle2D r = new RoundRectangle2D.Float(cx + side, cy + top, cw - 2 * side, ch - 2 * top, radius, radius);
-        fillAntiAliased(g, r);
+    public static void paintInsetCellSelection(@NotNull Graphics2D g,
+                                               int x, int y, int w, int h,
+                                               int cornerRadius) {
+        fillRoundRectAntiAliased(g, x, y, w, h, cornerRadius);
     }
 
     /**
      * Paint the inset style highlight for a selected cell that might be part of a vertical group.
      */
-    public static void paintInsetCellSelection(@NotNull Graphics2D g, boolean isSelectedAbove, boolean isSelectedBelow,
-                                               int cx, int cy, int cw, int ch) {
-        int top = 0;
-        int side = 10;
-        int r = INSET_CORNER_RADIUS;
-        int x = cx + side;
-        int w = cw - 2 * side;
-
+    public static void paintInsetCellSelection(@NotNull Graphics2D g,
+                                               boolean isSelectedAbove,
+                                               boolean isSelectedBelow,
+                                               int x, int y, int w, int h, int top,
+                                               int cornerRadius) {
+        int d = 2 * cornerRadius;
         Shape s;
         if (isSelectedAbove && isSelectedBelow) {
-            s = new Rectangle(x, cy, w, ch);
+            s = new Rectangle(x, y, w, h);
         } else if (isSelectedAbove) {
-            s = new GeneralRoundRectangle(x, cy, w, ch - top, 0, 0, 0, 0, r, r, r, r);
+            s = new GeneralRoundRectangle(x, y, w, h - top, 0, 0, 0, 0, d, d, d, d);
         } else if (isSelectedBelow) {
-            s = new GeneralRoundRectangle(x, cy + top, w, ch - top, r, r, r, r, 0, 0, 0, 0);
+            s = new GeneralRoundRectangle(x, y + top, w, h - top, d, d, d, d, 0, 0, 0, 0);
         } else {
-            s = new RoundRectangle2D.Float(cx + side, cy + top, cw - 2 * side, ch - 2 * top, r, r);
+            s = new RoundRectangle2D.Float(x, y + top, w, h, d, d);
         }
         fillAntiAliased(g, s);
     }
@@ -1355,12 +1229,58 @@ final public class AquaUtils {
     /**
      * Paint the inset style highlight for a selected menu item.
      */
-    public static void paintInsetMenuItemSelection(@NotNull Graphics2D g, int cx, int cy, int cw, int ch) {
-        int top = 0;
-        int side = 4;
-        int radius = INSET_CORNER_RADIUS;
-        RoundRectangle2D r = new RoundRectangle2D.Float(cx + side, cy + top, cw - 2 * side, ch - 2 * top, radius, radius);
-        fillAntiAliased(g, r);
+    public static void paintInsetMenuItemSelection(@NotNull Graphics2D g,
+                                                   int x, int y, int w, int h,
+                                                   int cornerRadius) {
+        fillRoundRectAntiAliased(g, x, y, w, h, cornerRadius);
+    }
+
+    public static @NotNull SelectionHighlightDescription getSelectionDescription(@NotNull Insets s)
+    {
+        return SelectionHighlightDescription.of(s, getInsetCornerRadius());
+    }
+
+    public static @NotNull SelectionHighlightDescription getMenuSelectionDescription()
+    {
+        return SelectionHighlightDescription.of(0, 4, 0, 4, getInsetCornerRadius());
+    }
+
+    public static @NotNull SelectionHighlightDescription getStripeDescription()
+    {
+        return SelectionHighlightDescription.of(0, 10, 0, 10, getInsetCornerRadius());
+    }
+
+    public static int getInsetCornerRadius()
+    {
+        return 6;
+    }
+
+    public static int getMinimumMenuRowHeight(@Nullable AquaUIPainter.Size size) {
+        if (size == null) {
+            return 0;
+        }
+        switch (size) {
+            case MINI: return 18;
+            case SMALL: return 20;
+            default:
+                return 22;
+        }
+    }
+
+    public static void fillRoundRectAntiAliased(@NotNull Graphics2D g, int x, int y, int w, int h, int cornerRadius) {
+        int d = 2 * cornerRadius;
+        Object preserveAntiAliasingRenderingHint = g.getRenderingHint(RenderingHints.KEY_ANTIALIASING);
+        g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        g.fillRoundRect(x, y, w, h, d, d);
+        g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, preserveAntiAliasingRenderingHint);
+    }
+
+    public static void drawRoundRectAntiAliased(@NotNull Graphics2D g, int x, int y, int w, int h, int cornerRadius) {
+        int d = 2 * cornerRadius;
+        Object preserveAntiAliasingRenderingHint = g.getRenderingHint(RenderingHints.KEY_ANTIALIASING);
+        g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        g.drawRoundRect(x, y, w, h, d, d);
+        g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, preserveAntiAliasingRenderingHint);
     }
 
     /**
@@ -1389,41 +1309,42 @@ final public class AquaUtils {
      * @param color The color to fill, or null to erase
      */
     public static void fillRect(Graphics g, @Nullable Color color, int x, int y, int w, int h) {
-        Graphics cg = g.create();
+        Graphics2D cg = (Graphics2D) g.create();
 
         try {
-            if (color instanceof GradientColor && cg instanceof Graphics2D) {
+            if (color instanceof GradientColor) {
                 GradientColor gradientColor = (GradientColor) color;
-                Graphics2D gg = (Graphics2D) cg;
                 if (gradientColor.useMagicEraser()) {
-                    gg.setComposite(AlphaComposite.Src);
-                    gg.setColor(AquaColors.CLEAR);
-                    gg.fillRect(x, y, w, h);
+                    erase(cg, x, y, w, h);
                 }
                 Color start = gradientColor.getStart();
                 Color finish = gradientColor.getFinish();
                 GradientPaint gp = new GradientPaint(0, y, start, 0, y + h, finish);
-                gg.setPaint(gp);
-                gg.fillRect(x, y, w, h);
-            } else if (color instanceof TintedEraser && cg instanceof Graphics2D) {
+                cg.setPaint(gp);
+                cg.fillRect(x, y, w, h);
+            } else if (color instanceof TintedEraser) {
                 TintedEraser tintedEraser = (TintedEraser) color;
-                Graphics2D gg = (Graphics2D) cg;
-                gg.setComposite(AlphaComposite.Src);
-                gg.setColor(AquaColors.CLEAR);
-                gg.fillRect(x, y, w, h);
+                erase(cg, x, y, w, h);
                 cg.setColor(tintedEraser);
                 cg.fillRect(x, y, w, h);
             } else if (color != null && color != AquaColors.MAGIC_ERASER) {
                 cg.setColor(color);
                 cg.fillRect(x, y, w, h);
-            } else if (cg instanceof Graphics2D) {
-                ((Graphics2D) cg).setComposite(AlphaComposite.Src);
-                cg.setColor(AquaColors.CLEAR);
-                cg.fillRect(x, y, w, h);
+            } else {
+                erase(cg, x, y, w, h);
             }
         } finally {
             cg.dispose();
         }
+    }
+
+    public static void erase(@NotNull Graphics g, int x, int y, int w, int h)
+    {
+        Graphics2D e = (Graphics2D) g.create();
+        e.setComposite(AlphaComposite.Src);
+        e.setColor(AquaColors.CLEAR);
+        e.fillRect(x, y, w, h);
+        e.dispose();
     }
 
     public static Graphics2D toGraphics2D(Graphics g) {
@@ -1565,9 +1486,9 @@ final public class AquaUtils {
     public static Object beginGraphics(Graphics2D graphics2d) {
         Object object = graphics2d.getRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING);
         graphics2d.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING,
-                RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+          RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
         graphics2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
-                RenderingHints.VALUE_ANTIALIAS_ON);
+          RenderingHints.VALUE_ANTIALIAS_ON);
         return object;
     }
 
@@ -1575,7 +1496,7 @@ final public class AquaUtils {
     public static void endGraphics(Graphics2D graphics2d, Object oldHints) {
         if (oldHints != null) {
             graphics2d.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING,
-                    oldHints);
+              oldHints);
         }
     }
 
@@ -1662,7 +1583,7 @@ final public class AquaUtils {
         if (parent instanceof JViewport) {
             if (parent.getComponentCount() == 1) {
                 Container viewportParent = parent.getParent();
-                if (viewportParent instanceof OverlayScrollPaneHack.AquaOverlayViewportHolder) {
+                if (viewportParent instanceof ScrollPaneInterposedContainer.AquaOverlayViewportHolder) {
                     viewportParent = viewportParent.getParent();
                 }
                 if (viewportParent instanceof JScrollPane) {
@@ -1673,9 +1594,19 @@ final public class AquaUtils {
         return null;
     }
 
-    public static void configure(@NotNull AquaUIPainter painter, @NotNull Component c, int width, int height) {
-        AquaAppearance appearance = AppearanceManager.getAppearance(c);
-        painter.configureAppearance(appearance);
+    public static void configure(@NotNull AquaUIPainter painter,
+                                 @Nullable AquaAppearance appearance,  // null is OK for layout inquiries
+                                 @NotNull Component c,
+                                 int width, int height) {
+        configure(painter, appearance, width, height);
+    }
+
+    public static void configure(@NotNull AquaUIPainter painter,
+                                 @Nullable AquaAppearance appearance,  // null is OK for layout inquiries
+                                 int width, int height) {
+        if (appearance != null) {
+            painter.configureAppearance(appearance.getAppearance());
+        }
         painter.configure(width, height);
     }
 
@@ -1762,7 +1693,7 @@ final public class AquaUtils {
                 case TITLE_BAR_HIDDEN:
                     isFullWindowContent = true;
                     isTransparentTitleBar = true;
-                    isMovable = OSXSystemProperties.OSVersion < 1011;
+                    isMovable = OSVersion < 1011;
                     isMovableByBackground = false;
                     isFixNeeded = true;
                     isHidden = true;
@@ -2106,6 +2037,16 @@ final public class AquaUtils {
         execute(w, ptr -> nativeSetAWTViewVisibility(ptr, isVisible));
     }
 
+    public static void initializeNativeWindow(@NotNull Window w) {
+        if (w.isDisplayable()) {
+            try {
+                execute(w, AquaUtils::nativeInitializeWindow);
+            } catch (UnsupportedOperationException ex) {
+                // native window may no longer exist (esp when called from ShadowMaker)
+            }
+        }
+    }
+
     public static void syncAWTView(Window w) {
         if (w.isDisplayable()) {
             // Both calls appear to be necessary to ensure that the pixels are ready when the window is made visible.
@@ -2138,9 +2079,27 @@ final public class AquaUtils {
 
     /**
      * Identify the effective appearance of the specified window.
+     * @return the appearance, or null if not available.
+     */
+    public static @Nullable AquaAppearance getWindowEffectiveAppearance(@NotNull Window w) {
+        if (w.isDisplayable()) {
+            try {
+                String appearanceName = executeForObject(w, AquaUtils::nativeGetWindowEffectiveAppearanceName);
+                if (appearanceName != null) {
+                    return AquaAppearances.get(appearanceName);
+                }
+
+            } catch (UnsupportedOperationException ex) {
+                // native window may no longer exist, or it could be an embedded view
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Identify the effective appearance of the specified window.
      * @return the appearance name, or null if not available.
      */
-
     public static @Nullable String getWindowEffectiveAppearanceName(@NotNull Window w) {
         if (w.isDisplayable()) {
             try {
@@ -2155,7 +2114,6 @@ final public class AquaUtils {
     /**
      * Perform an action that requires a native pointer and returns a long.
      */
-
     public interface NativeAction {
         long run(long wptr);
     }
@@ -2163,7 +2121,6 @@ final public class AquaUtils {
     /**
      * Perform an action that requires the native NSWindow pointer for a window.
      */
-
     public static long execute(@NotNull Window w, NativeAction action) {
         Object[] data = new Object[1];
         long ptr = nativeGetNativeWindow(w, data);
@@ -2188,7 +2145,6 @@ final public class AquaUtils {
     /**
      * Perform an action that requires a native pointer and returns an object.
      */
-
     public interface NativeObjectAction<T> {
         T run(long wptr);
     }
@@ -2196,7 +2152,6 @@ final public class AquaUtils {
     /**
      * Perform an action that requires the native NSWindow pointer for a window.
      */
-
     public static <T> T executeForObject(Window w, NativeObjectAction<T> action) {
         Object[] data = new Object[1];
         long ptr = nativeGetNativeWindow(w, data);
@@ -2233,7 +2188,6 @@ final public class AquaUtils {
     /**
      * Determine whether a window has an embedded owner.
      */
-
     public static boolean windowHasEmbeddedOwner(@NotNull Window w)
     {
         Window owner = w.getOwner();
@@ -2245,7 +2199,6 @@ final public class AquaUtils {
      * @param w A newly instantiated window.
      * @param windowLevel The window level to be assigned to {@code w}.
      */
-
     public static void fixWindowWithEmbeddedOwner(@NotNull Window w, int windowLevel) {
         if (w.isDisplayable() && windowHasEmbeddedOwner(w)) {
             Window owner = w.getOwner();
@@ -2268,6 +2221,7 @@ final public class AquaUtils {
      */
     private static native long nativeGetNativeWindow(Window w, Object[] data);
 
+    private static native int nativeInitializeWindow(long w);
     private static native void nativeSetTitledWindowStyle(Window w, boolean isDecorated, Insets insets);
     private static native void nativeSetWindowResizable(Window w, boolean isResizable);
     private static native void nativeSetWindowTextured(Window w, boolean isTextured);
@@ -2291,7 +2245,6 @@ final public class AquaUtils {
     public static native void clearScreenMenuBar(JFrame frame, MenuBarUI menuBarUI);
     private static native int nativeSetWindowAppearance(long w, @Nullable String appearanceName);
     private static native @Nullable String nativeGetWindowEffectiveAppearanceName(long w);
-    public static native @Nullable String nativeGetApplicationAppearanceName();
     private static native void registerWindowChangedAppearanceCallback(@NotNull WindowAppearanceChangedCallback callback);
     public static native void nativeFixPopupWindow(@NotNull Window parent, @NotNull Popup p);
     private static native void nativeFixWindowWithEmbeddedOwner(@NotNull Window w, @NotNull Window embeddedFrame, int windowLevel);

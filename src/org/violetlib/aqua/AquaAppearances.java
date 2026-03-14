@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2023 Alan Snyder.
+ * Copyright (c) 2018-2026 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -15,13 +15,10 @@ import java.util.Map;
 import javax.swing.*;
 import javax.swing.event.ChangeEvent;
 
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.*;
 import org.violetlib.jnr.aqua.AquaNativeRendering;
 import org.violetlib.vappearances.VAppearance;
 import org.violetlib.vappearances.VAppearances;
-
-import static org.violetlib.aqua.OSXSystemProperties.OSVersion;
 
 /**
  * All methods must be called on the UI event thread.
@@ -30,14 +27,23 @@ import static org.violetlib.aqua.OSXSystemProperties.OSVersion;
 public class AquaAppearances {
     private static final @NotNull Map<String,AquaAppearance> appearances = new HashMap<>();
     private static final @NotNull String defaultAppearanceName = "NSAppearanceNameAqua";
-    public static final Object APPEARANCE_CHANGE_TYPE = "AppearanceChange";
+
+    /**
+     * There can be at most one set of colors for each native appearance. Currently, that means one set of colors for
+     * the light appearance and one set of colors for the dark appearance. When appearance settings change, all cached
+     * colors become invalid.
+     */
+
+    private static final @NotNull Map<String,Colors> appearanceColors = new HashMap<>();
+
+    private static @Nullable AquaAppearance cachedApplicationEffectiveAppearance;
 
     static {
-        VAppearances.addChangeListener(AquaAppearances::appearanceChanged);
+        VAppearances.addEffectiveAppearanceChangeListener(AquaAppearances::effectiveAppearanceChanged);
     }
 
     /**
-     * Return the current appearance with the specified name.
+     * Return the appearance with the specified name.
      * @param appearanceName The appearance name.
      * @return the appearance, or the default appearance if an appearance with this name is not available.
      * @throws UnsupportedOperationException if this appearance and the default appearance are not available.
@@ -49,7 +55,7 @@ public class AquaAppearances {
     }
 
     /**
-     * Return the current appearance with the specified name, if available.
+     * Return the appearance with the specified name, if available.
      * @param appearanceName The appearance name.
      * @return the appearance, or null if an appearance with this name is not available.
      */
@@ -59,7 +65,9 @@ public class AquaAppearances {
         if (appearance == null) {
             try {
                 VAppearance a = VAppearances.getAppearance(appearanceName);
-                return getAquaAppearance(a);
+                AquaAppearance aa = new AquaAppearance(a, Utils::logDebug);
+                appearances.put(appearanceName, aa);
+                return aa;
             } catch (IOException ex) {
                 AquaUtils.syslog("Unable to get " + appearanceName + ": " + ex.getMessage());
             }
@@ -68,17 +76,67 @@ public class AquaAppearances {
     }
 
     /**
+     * Return the application effective appearance.
+     * @throws UnsupportedOperationException if the application effective appearance is not available and the
+     * default appearance is unavailable.
+     */
+
+    public static @NotNull AquaAppearance getApplicationEffectiveAppearance()
+      throws UnsupportedOperationException
+    {
+        if (cachedApplicationEffectiveAppearance == null) {
+            AquaAppearance a = determineApplicationEffectiveAppearance();
+            if (a == null) {
+                a = getDefaultAppearance();
+            }
+            cachedApplicationEffectiveAppearance = a;
+        }
+        return cachedApplicationEffectiveAppearance;
+    }
+
+    public static void setApplicationAppearance(@Nullable String appearanceName)
+    {
+        try {
+            VAppearances.setApplicationAppearance(appearanceName);
+            cachedApplicationEffectiveAppearance = null;
+        } catch (IOException ignore) {
+        }
+    }
+
+    private static @Nullable AquaAppearance determineApplicationEffectiveAppearance()
+    {
+        try {
+            VAppearance appearance = VAppearances.getApplicationEffectiveAppearance();
+            String appearanceName = appearance.getName();
+            AquaAppearance a = appearances.get(appearanceName);
+            if (a != null) {
+                return a;
+            }
+            a = new AquaAppearance(appearance, Utils::logDebug);
+            appearances.put(appearanceName, a);
+            return a;
+        } catch (IOException e) {
+            AquaUtils.syslog("Unable to get application effective appearance: " + e.getMessage());
+            return null;
+        }
+    }
+
+    /**
      * Return a default appearance. This appearance is used only in case of an unexpected error.
      * @return the default appearance.
      * @throws UnsupportedOperationException if the default appearance is not available.
      */
 
-    public static @NotNull AquaAppearance getDefaultAppearance() throws UnsupportedOperationException {
+    public static @NotNull AquaAppearance getDefaultAppearance()
+      throws UnsupportedOperationException
+    {
         AquaAppearance appearance = appearances.get(defaultAppearanceName);
         if (appearance == null) {
             try {
                 VAppearance a = VAppearances.getAppearance(defaultAppearanceName);
-                appearance = getAquaAppearance(a);
+                AquaAppearance aa = new AquaAppearance(a, Utils::logDebug);
+                appearances.put(defaultAppearanceName, aa);
+                return aa;
             } catch (IOException ex) {
                 AquaUtils.syslog("Unable to get " + defaultAppearanceName + ": " + ex.getMessage());
                 ex.printStackTrace();
@@ -88,63 +146,61 @@ public class AquaAppearances {
         return appearance;
     }
 
-    /**
-     * Return the vibrant appearance corresponding to the specified appearance.
-     * @param a The specified appearance.
-     * @return the vibrant appearance corresponding to {@code a}.
-     */
+    private static void effectiveAppearanceChanged(@NotNull ChangeEvent ev)
+    {
+        // invoked by VAppearances on the AWT event thread
+        resetNativeRendering();
+        AquaImageFactory.flushAppearanceDependentImages();
+        appearanceColors.clear();
+        cachedApplicationEffectiveAppearance = null;
 
-    public static @NotNull AquaAppearance getVibrantAppearance(@NotNull AquaAppearance a) {
-        String name = a.getName();
-        if (name.contains("Vibrant")) {
-            return a;
-        }
-        if (name.contains("Dark")) {
-            return get(VAppearances.vibrantDarkAppearance);
-        }
-        return get(VAppearances.vibrantLightAppearance);
-    }
+        // Surprisingly, the following is not redundant. The window effective appearance change notification is not
+        // called when the accent color is changed.
 
-    /**
-     * Register a component whose UI is to be notified when the system appearance has changed or the colors associated
-     * with the existing system appearance may have changed.
-     */
-
-    public static void register(@NotNull JComponent jc) {
-        SystemPropertyChangeManager.register(jc);
-    }
-
-    public static void unregister(@NotNull JComponent jc) {
-        SystemPropertyChangeManager.unregister(jc);
-    }
-
-    private static void appearanceChanged(@NotNull ChangeEvent ev) {
-        if (ev instanceof VAppearances.AppearanceChangeEvent) {
-            VAppearances.AppearanceChangeEvent ace = (VAppearances.AppearanceChangeEvent) ev;
-            VAppearance a = ace.getAppearance();
-            String name = a.getName();
-            if (false) {
-                Utils.logDebug("AquaAppearances: appearance " + name + " updated");
+        try {
+            Window[] windows = Window.getWindows();
+            for (Window w : windows) {
+                if (w instanceof RootPaneContainer) {
+                    RootPaneContainer rpc = (RootPaneContainer) w;
+                    JRootPane rp = rpc.getRootPane();
+                    AquaRootPaneUI ui = AquaUtils.getUI(rp, AquaRootPaneUI.class);
+                    if (ui != null) {
+                        ui.effectiveAppearanceChanged();
+                    }
+                }
             }
-            try {
-                AquaNativeRendering.invalidateAppearances();
-            } catch (Throwable ex) {
-                // Must be an older release
-            }
-            AquaAppearance appearance = getAquaAppearance(a);
-            SwingUtilities.invokeLater(() -> {
-                SystemPropertyChangeManager.notifyChange(APPEARANCE_CHANGE_TYPE);
-            });
-        } else {
-            throw new RuntimeException("Unexpected change event: " + ev);
+        } catch (UnsupportedOperationException ignore) {
+        }
+
+        AquaFocusRingManager m = AquaFocusRingManager.getInstance();
+        m.update();
+    }
+
+    private static void resetNativeRendering()
+    {
+        AquaNativeRendering.clearCache();
+        try {
+            AquaNativeRendering.invalidateAppearances();
+        } catch (Throwable ex) {
+            // Must be an older release
         }
     }
 
-    private static @NotNull AquaAppearance getAquaAppearance(@NotNull VAppearance a) {
-        Map<String,Color> nativeColors = AquaNativeRendering.createPainter().getColors(a);
-        Colors colors = new AppearanceColorsBuilder(a, OSVersion, nativeColors, null, Utils::logDebug).getResult();
-        AquaAppearance appearance = new AquaAppearance(a, colors, Utils::logDebug);
-        appearances.put(a.getName(), appearance);
-        return appearance;
+    public static @NotNull Colors getColorsForAppearance(@NotNull VAppearance appearance)
+    {
+        String name = appearance.getName();
+        Colors colors = appearanceColors.get(name);
+        if (colors == null) {
+            colors = createColorsForAppearance(appearance);
+            appearanceColors.put(name, colors);
+        }
+        return colors;
+    }
+
+    private static @NotNull Colors createColorsForAppearance(@NotNull VAppearance appearance)
+    {
+        int OSVersion = AquaPainting.getVersion();
+        Map<String,Color> nativeColors = AquaNativeRendering.createPainter().getColors(appearance);
+        return new AppearanceColorsBuilder(appearance, OSVersion, nativeColors, null, Utils::logDebug).getResult();
     }
 }

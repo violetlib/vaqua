@@ -1,5 +1,5 @@
 /*
- * Changes Copyright (c) 2015-2021 Alan Snyder.
+ * Changes Copyright (c) 2015-2026 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -33,23 +33,27 @@
 
 package org.violetlib.aqua;
 
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import java.awt.*;
+import java.awt.event.ContainerEvent;
+import java.awt.event.ContainerListener;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
+import javax.swing.*;
+import javax.swing.border.Border;
+import javax.swing.border.EmptyBorder;
+import javax.swing.plaf.ComponentUI;
+import javax.swing.plaf.basic.BasicSplitPaneDivider;
+import javax.swing.plaf.basic.BasicSplitPaneUI;
+
+import org.jetbrains.annotations.*;
 import org.violetlib.jnr.LayoutInfo;
 import org.violetlib.jnr.aqua.AquaUIPainter;
 import org.violetlib.jnr.aqua.SplitPaneDividerLayoutConfiguration;
 
-import java.awt.*;
-import java.awt.event.*;
-import java.beans.*;
-
-import javax.swing.*;
-import javax.swing.border.Border;
-import javax.swing.plaf.ComponentUI;
-import javax.swing.plaf.basic.*;
-
 public class AquaSplitPaneUI extends BasicSplitPaneUI
-        implements MouseListener, ContainerListener, PropertyChangeListener, AquaComponentUI {
+  implements MouseListener, ContainerListener, PropertyChangeListener, AquaComponentUI {
 
     public static ComponentUI createUI(JComponent x) {
         return new AquaSplitPaneUI();
@@ -60,20 +64,25 @@ public class AquaSplitPaneUI extends BasicSplitPaneUI
     public static final String SPLIT_PANE_STYLE_KEY = "JSplitPane.style";
     public static final String QUAQUA_SPLIT_PANE_STYLE_KEY = "Quaqua.SplitPane.style";
 
-    public enum SplitPaneStyle { THIN, THICK, PANE_SPLITTER }
+    public enum SplitPaneStyle { THIN, THICK, PANE_SPLITTER, TRANSPARENT }
 
     private final AquaUIPainter painter = AquaPainting.create();
 
     protected static SplitPaneStyle defaultStyle = SplitPaneStyle.THIN;
     protected SplitPaneStyle style = defaultStyle;
 
+    public static final int SIDEBAR_LEFT = 1;
+    public static final int SIDEBAR_RIGHT = 2;
+
+    protected int sidebarOption;
+    protected @Nullable Border originalBorder;
+
     private boolean isReorderingComponents;
     private boolean initialDividerUpdatePerformed;
     private boolean ignoreDividerLocationChange;
     private boolean isInLayout;
 
-    protected @NotNull BasicContextualColors colors;
-    protected @Nullable AppearanceContext appearanceContext;
+    private @NotNull BasicContextualColors colors;
 
     public AquaSplitPaneUI() {
         colors = AquaColors.CLEAR_CONTROL_COLORS;
@@ -93,20 +102,21 @@ public class AquaSplitPaneUI extends BasicSplitPaneUI
             style = specifiedStyle;
         }
         updateDividerSize();
-        configureAppearanceContext(null, splitPane);
     }
 
+    @Override
     protected void installListeners() {
         super.installListeners();
         splitPane.addPropertyChangeListener(DIVIDER_PAINTER_KEY, this);
         splitPane.addPropertyChangeListener(SPLIT_PANE_STYLE_KEY, this);
         splitPane.addPropertyChangeListener(QUAQUA_SPLIT_PANE_STYLE_KEY, this);
         splitPane.addContainerListener(this);
-        AppearanceManager.installListeners(splitPane);
+        AppearanceManager.install(splitPane);
     }
 
+    @Override
     protected void uninstallListeners() {
-        AppearanceManager.uninstallListeners(splitPane);
+        AppearanceManager.uninstall(splitPane);
         splitPane.removeContainerListener(this);
         splitPane.removePropertyChangeListener(DIVIDER_PAINTER_KEY, this);
         splitPane.removePropertyChangeListener(SPLIT_PANE_STYLE_KEY, this);
@@ -114,32 +124,51 @@ public class AquaSplitPaneUI extends BasicSplitPaneUI
         super.uninstallListeners();
     }
 
-    @Override
-    public void appearanceChanged(@NotNull JComponent c, @NotNull AquaAppearance appearance) {
-        configureAppearanceContext(appearance, (JSplitPane)c);
-    }
-
-    @Override
-    public void activeStateChanged(@NotNull JComponent c, boolean isActive) {
-        // not active state sensitive
-    }
-
-    protected void configureAppearanceContext(@Nullable AquaAppearance appearance, @NotNull JSplitPane s) {
-        if (appearance == null) {
-            appearance = AppearanceManager.ensureAppearance(s);
+    public void configureAsSidebar(int option) {
+        option = validateSidebarOption(option);
+        if (option != sidebarOption) {
+            int oldOption = sidebarOption;
+            sidebarOption = option;
+            configureSidebarOption(oldOption);
         }
-        AquaUIPainter.State state = AquaUIPainter.State.ACTIVE;
-        appearanceContext = new AppearanceContext(appearance, state, false, false);
-        AquaColors.installColors(s, appearanceContext, colors);
-        s.repaint();
     }
 
-    protected void updateStyle() {
-        SplitPaneStyle newStyle = getClientSpecifiedStyle();
-        if (newStyle == null) {
-            newStyle = defaultStyle;
+    private int validateSidebarOption(int option) {
+        if (option == 0 || option == SIDEBAR_LEFT || option == SIDEBAR_RIGHT) {
+            return option;
         }
+        Utils.logDebug("Unexpected split pane sidebar option: " + option);
+        return 0;
+    }
 
+    private void configureSidebarOption(int oldOption) {
+        Utils.logDebug("Configuring split pane as sidebar container: " + sidebarOption);
+        // The sidebar option affects the divider style and the layout (implemented by changing the split pane border)
+        updateStyle();
+        updateBorder(oldOption);
+        splitPane.revalidate();
+        splitPane.repaint();
+    }
+
+    private void updateBorder(int oldOption) {
+        int newOption = getOrientation() == JSplitPane.HORIZONTAL_SPLIT ? sidebarOption : 0;
+        if (oldOption != newOption) {
+            if (oldOption == 0) {
+                originalBorder = splitPane.getBorder();
+            }
+            int gap = 7;
+            if (newOption == SIDEBAR_LEFT) {
+                splitPane.setBorder(new EmptyBorder(gap, gap, gap, 0));
+            } else if (newOption == SIDEBAR_RIGHT) {
+                splitPane.setBorder(new EmptyBorder(gap, 0, gap, gap));
+            } else {
+                splitPane.setBorder(originalBorder);
+            }
+        }
+    }
+
+    private void updateStyle() {
+        SplitPaneStyle newStyle = getNewStyle();
         if (style != newStyle) {
             style = newStyle;
             updateDividerSize();
@@ -147,7 +176,16 @@ public class AquaSplitPaneUI extends BasicSplitPaneUI
         }
     }
 
-    protected void updateDividerSize() {
+    private @NotNull SplitPaneStyle getNewStyle()
+    {
+        if (sidebarOption > 0 && getOrientation() == JSplitPane.HORIZONTAL_SPLIT) {
+            return SplitPaneStyle.TRANSPARENT;
+        }
+        SplitPaneStyle newStyle = getClientSpecifiedStyle();
+        return newStyle != null ? newStyle : defaultStyle;
+    }
+
+    private void updateDividerSize() {
         int size = getFixedDividerSize();
         if (size > 0) {
             LookAndFeel.installProperty(splitPane, "dividerSize", size);
@@ -158,6 +196,8 @@ public class AquaSplitPaneUI extends BasicSplitPaneUI
 
     public AquaUIPainter.DividerWidget getWidget() {
         switch (style) {
+            case TRANSPARENT:
+                return AquaUIPainter.DividerWidget.TRANSPARENT_DIVIDER;
             case PANE_SPLITTER:
                 return AquaUIPainter.DividerWidget.PANE_SPLITTER;
             case THICK:
@@ -183,7 +223,7 @@ public class AquaSplitPaneUI extends BasicSplitPaneUI
      */
     public int getDividerExtension() {
         AquaUIPainter.DividerWidget w = getWidget();
-        if (w == AquaUIPainter.DividerWidget.THIN_DIVIDER) {
+        if (w == AquaUIPainter.DividerWidget.THIN_DIVIDER || w == AquaUIPainter.DividerWidget.TRANSPARENT_DIVIDER) {
             return 2;
         }
         return 0;
@@ -193,7 +233,7 @@ public class AquaSplitPaneUI extends BasicSplitPaneUI
      * Return the style specified by the client via client properties.
      * @return the specified style, or null if no valid style was specified.
      */
-    protected SplitPaneStyle getClientSpecifiedStyle() {
+    private SplitPaneStyle getClientSpecifiedStyle() {
         Object o = splitPane.getClientProperty(SPLIT_PANE_STYLE_KEY);
         if (o != null) {
             if (o instanceof String) {
@@ -204,6 +244,8 @@ public class AquaSplitPaneUI extends BasicSplitPaneUI
                     return SplitPaneStyle.THICK;
                 } else if (s.equals("paneSplitter")) {
                     return SplitPaneStyle.PANE_SPLITTER;
+                } else if (s.equals("transparent")) {
+                    return SplitPaneStyle.TRANSPARENT;
                 }
             }
         } else {
@@ -220,7 +262,7 @@ public class AquaSplitPaneUI extends BasicSplitPaneUI
         return null;
     }
 
-    protected boolean isStyleProperty(String prop) {
+    private boolean isStyleProperty(String prop) {
         return AquaUtils.isProperty(prop, SPLIT_PANE_STYLE_KEY, QUAQUA_SPLIT_PANE_STYLE_KEY);
     }
 
@@ -249,7 +291,7 @@ public class AquaSplitPaneUI extends BasicSplitPaneUI
      * Ensure that the divider is on top of the other components. The divider may have transparent areas that make it
      * easier to grab.
      */
-    protected void ensureComponentOrder() {
+    private void ensureComponentOrder() {
         if (!isReorderingComponents) {
             isReorderingComponents = true;
             try {
@@ -277,6 +319,7 @@ public class AquaSplitPaneUI extends BasicSplitPaneUI
      * Resets the layout manager based on orientation and messages it
      * with invalidateLayout to pull in appropriate Components.
      */
+    @Override
     protected void resetLayoutManager() {
         super.resetLayoutManager();
 
@@ -288,7 +331,7 @@ public class AquaSplitPaneUI extends BasicSplitPaneUI
     /**
      * The only thing we need to do in our custom layout manager is extend the "width" of the divider as appropriate.
      */
-    protected class MyLayoutManager implements LayoutManager2 {
+    private class MyLayoutManager implements LayoutManager2 {
         LayoutManager2 delegate;
 
         public MyLayoutManager(LayoutManager2 delegate) {
@@ -365,7 +408,7 @@ public class AquaSplitPaneUI extends BasicSplitPaneUI
     /**
      * Assuming that the divider is in its nominal state (no extension has been added), add the extension.
      */
-    protected void updateDividerBounds() {
+    private void updateDividerBounds() {
         if (divider != null) {
             initialDividerUpdatePerformed = true;
             int extension = getDividerExtension();
@@ -411,15 +454,23 @@ public class AquaSplitPaneUI extends BasicSplitPaneUI
 
     @Override
     public void update(Graphics g, JComponent c) {
-        AppearanceManager.registerCurrentAppearance(c);
-        if (c.isOpaque()) {
-            AquaUtils.fillRect(g, c, AquaUtils.ERASE_IF_VIBRANT);
-        }
         paint(g, c);
     }
 
     @Override
-    public void paint(Graphics g, JComponent jc) {
+    public void paint(Graphics g, JComponent c) {
+        AppearanceManager.withContext(g, c, this::paint);
+    }
+
+    public void paint(Graphics2D g, JComponent c, @NotNull PaintingContext pc) {
+        AquaUIPainter.State state = AquaUIPainter.State.ACTIVE;
+        AppearanceContext appearanceContext = new AppearanceContext(pc.appearance, state, false, false);
+        AquaColors.installColors(c, appearanceContext, colors);
+
+        if (c.isOpaque()) {
+            AquaUtils.fillRect(g, c, AquaUtils.ERASE_IF_VIBRANT);
+        }
+
         if (!initialDividerUpdatePerformed) {
             updateDividerBounds();
             ignoreDividerLocationChange = true;
@@ -427,7 +478,7 @@ public class AquaSplitPaneUI extends BasicSplitPaneUI
             ignoreDividerLocationChange = false;
         }
 
-        super.paint(g, jc);
+        super.paint(g, c);
     }
 
     public void mouseClicked(MouseEvent e) {
@@ -471,7 +522,8 @@ public class AquaSplitPaneUI extends BasicSplitPaneUI
             if (prop.equals(DIVIDER_PAINTER_KEY)) {
                 Object value = evt.getNewValue();
                 if (value instanceof Border) {
-                    divider.setBorder((Border)value);
+                    Border b = (Border) value;
+                    divider.setBorder(b);
                 } else {
                     divider.setBorder(null);
                 }

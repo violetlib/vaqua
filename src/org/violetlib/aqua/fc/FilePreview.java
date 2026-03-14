@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2009-2010 Werner Randelshofer, Switzerland.
- * Copyright (c) 2014-2024 Alan Snyder.
+ * Copyright (c) 2014-2026 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the
@@ -28,7 +28,13 @@ import javax.swing.plaf.basic.BasicHTML;
 import javax.swing.table.*;
 import javax.swing.tree.TreePath;
 
-import org.violetlib.aqua.*;
+import org.jetbrains.annotations.*;
+import org.violetlib.aqua.AppearanceManager;
+import org.violetlib.aqua.AquaBorderSupport;
+import org.violetlib.aqua.AquaColors;
+import org.violetlib.aqua.PaintingContext;
+
+import static org.violetlib.aqua.OSXSystemProperties.OSVersion;
 
 /**
  * The FilePreview is used to render the preview column in the file chooser browser view.
@@ -55,9 +61,8 @@ public class FilePreview extends JComponent implements BrowserPreviewRenderer {
       throws UnsupportedOperationException {
         this.fileChooser = fileChooser;
 
-        int version = OSXSystemProperties.OSVersion;
         int minWidth = 210;
-        int prefWidth = version >= 1014 ? 240 : minWidth;
+        int prefWidth = OSVersion >= 1014 ? 240 : minWidth;
         int minHeight = 335;
 
         setMinimumSize(new Dimension(minWidth, minHeight));
@@ -123,7 +128,7 @@ public class FilePreview extends JComponent implements BrowserPreviewRenderer {
         Box vb = new Box(BoxLayout.Y_AXIS);
         add(vb, BorderLayout.SOUTH);
 
-        if (OSXSystemProperties.OSVersion < 1010) {
+        if (OSVersion < 1010) {
             GrayLine b = new GrayLine();
             b.setBorder(new EmptyBorder(5, 25, 5, 25));
             vb.add(b);
@@ -131,7 +136,7 @@ public class FilePreview extends JComponent implements BrowserPreviewRenderer {
             nameView = new NameView();
             nameView.setAlignmentX(0.5f);
 
-            if (OSXSystemProperties.OSVersion >= 1014) {
+            if (OSVersion >= 1014) {
                 typeSizeView = new JLabel();
                 typeSizeView.setFont(typeSizeFont);
                 typeSizeView.setAlignmentX(0.5f);
@@ -141,7 +146,7 @@ public class FilePreview extends JComponent implements BrowserPreviewRenderer {
 
             vb.add(Box.createVerticalStrut(5));
             vb.add(nameView);
-            if (OSXSystemProperties.OSVersion < 1014) {
+            if (OSVersion < 1014) {
                 vb.add(Box.createVerticalStrut(20));
             }
 
@@ -149,7 +154,7 @@ public class FilePreview extends JComponent implements BrowserPreviewRenderer {
                 vb.add(typeSizeView);
             }
 
-            if (OSXSystemProperties.OSVersion >= 1014) {
+            if (OSVersion >= 1014) {
                 vb.add(Box.createVerticalStrut(20));
             }
         }
@@ -181,18 +186,25 @@ public class FilePreview extends JComponent implements BrowserPreviewRenderer {
 
     @Override
     protected void paintComponent(Graphics g) {
+        AppearanceManager.withContext(g, this, this::paint);
+    }
 
-        AppearanceManager.ensureAppearance(this);
-        Color background = AquaColors.getBackground(this, "controlBackground");
-        Color labelForeground = AquaColors.getSystemColor(this, "secondaryLabel");
-        Color valueForeground = AquaColors.getSystemColor(this, "label");
+    public void paint(Graphics2D g, JComponent c, @NotNull PaintingContext pc) {
+        Color background = pc.appearance.getColor("controlBackground");
+        Color labelForeground = pc.appearance.getColor("secondaryLabel");
+        Color valueForeground = pc.appearance.getColor("label");
 
-        nameRenderer.setColor(AquaColors.getOrdinaryColor(labelForeground));
-        valueRenderer.setColor(AquaColors.getOrdinaryColor(valueForeground));
-        if (typeSizeView != null) {
-            typeSizeView.setForeground(AquaColors.getOrdinaryColor(labelForeground));
-        } else if (OSXSystemProperties.OSVersion >= 1010) {
-            valueRenderer.setRowZeroColor(AquaColors.getOrdinaryColor(labelForeground));
+        if (labelForeground != null) {
+            Color labelColor = AquaColors.getOrdinaryColor(labelForeground);
+            nameRenderer.setColor(labelColor);
+            if (typeSizeView != null) {
+                typeSizeView.setForeground(labelColor);
+            } else if (OSVersion >= 1010) {
+                valueRenderer.setRowZeroColor(labelColor);
+            }        }
+
+        if (valueForeground != null) {
+            valueRenderer.setColor(AquaColors.getOrdinaryColor(valueForeground));
         }
 
         // Avoid the magic eraser when displayed as a sheet
@@ -256,7 +268,7 @@ public class FilePreview extends JComponent implements BrowserPreviewRenderer {
 
         AttributeTableModel m = new AttributeTableModel();
 
-        if (OSXSystemProperties.OSVersion < 1010) {
+        if (OSVersion < 1010) {
             m.add("name", name);
             m.add("kind", kind);
             if (size != null) {
@@ -283,7 +295,7 @@ public class FilePreview extends JComponent implements BrowserPreviewRenderer {
             // TBD: in 10.14, it can take a long time to determine that the last used date is not
             // available to an untrusted program.
 
-            if (OSXSystemProperties.OSVersion < 1014) {
+            if (OSVersion < 1014) {
                 Date lastUsedDate = OSXFile.getLastUsedDate(file);
                 if (lastUsedDate != null) {
                     m.add("lastUsed", getLastUsedString(lastUsedDate));
@@ -538,11 +550,11 @@ public class FilePreview extends JComponent implements BrowserPreviewRenderer {
         protected void firePropertyChange(String propertyName, Object oldValue, Object newValue) {
             // Strings get interned...
             if (propertyName=="text"
-                    || propertyName == "labelFor"
-                    || propertyName == "displayedMnemonic"
-                    || ((propertyName == "font" || propertyName == "foreground")
-                        && oldValue != newValue
-                        && getClientProperty(BasicHTML.propertyKey) != null)) {
+              || propertyName == "labelFor"
+              || propertyName == "displayedMnemonic"
+              || ((propertyName == "font" || propertyName == "foreground")
+              && oldValue != newValue
+              && getClientProperty(BasicHTML.propertyKey) != null)) {
 
                 super.firePropertyChange(propertyName, oldValue, newValue);
             }

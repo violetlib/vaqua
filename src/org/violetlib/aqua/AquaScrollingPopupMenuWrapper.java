@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2021 Alan Snyder.
+ * Copyright (c) 2015-2026 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -8,11 +8,11 @@
 
 package org.violetlib.aqua;
 
+import java.awt.*;
+import java.awt.event.*;
 import javax.swing.*;
 import javax.swing.border.Border;
 import javax.swing.border.EmptyBorder;
-import java.awt.*;
-import java.awt.event.*;
 
 /**
  * The container that wraps a component to support vertical scrolling and rounded corners. Used for contextual menus,
@@ -258,20 +258,19 @@ public class AquaScrollingPopupMenuWrapper extends JPanel {
 
     @Override
     public void paintComponent(Graphics g) {
-
+        super.paintComponent(g);
         configure(false);
 
         // The following code supports pop up menus with rounded corners. The key requirement is that the popup must
         // not paint near the corners.
 
         Border b = getBorder();
-        if (b instanceof BackgroundPainter) {
-            BackgroundPainter bp = (BackgroundPainter) b;
+        BackgroundPainter bp = AquaBorderSupport.get(b, BackgroundPainter.class);
+        if (bp != null) {
+            PaintingContext pc = PaintingContext.getDefault();
             Rectangle bounds = getBounds();
-            bp.paintBackground(this, g, bounds.x, bounds.y, bounds.width, bounds.height);
+            bp.paintBackground(this, g, pc, bounds.x, bounds.y, bounds.width, bounds.height);
         }
-
-        super.paintComponent(g);
     }
 
     protected void configure(boolean forceLayout) {
@@ -303,7 +302,7 @@ public class AquaScrollingPopupMenuWrapper extends JPanel {
             validate();
             repaint();
         }
-   }
+    }
 
     protected ArrowPane createArrowPane(boolean isTop) {
         return new ArrowPane(isTop);

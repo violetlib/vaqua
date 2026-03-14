@@ -1,5 +1,5 @@
 /*
- * Changes Copyright (c) 2015-2021 Alan Snyder.
+ * Changes Copyright (c) 2015-2026 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -40,7 +40,7 @@ import javax.swing.plaf.basic.BasicOptionPaneUI;
 import javax.swing.text.Document;
 import javax.swing.text.View;
 
-import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.*;
 
 public class AquaOptionPaneUI extends BasicOptionPaneUI implements AquaComponentUI {
     private static final int kOKCancelButtonWidth = 79;
@@ -74,16 +74,7 @@ public class AquaOptionPaneUI extends BasicOptionPaneUI implements AquaComponent
     }
 
     @Override
-    public void appearanceChanged(@NotNull JComponent c, @NotNull AquaAppearance appearance) {
-    }
-
-    @Override
-    public void activeStateChanged(@NotNull JComponent c, boolean isActive) {
-    }
-
-    @Override
     public final void update(Graphics g, JComponent c) {
-        AppearanceManager.registerCurrentAppearance(c);
         paint(g, c);
     }
 
@@ -221,9 +212,9 @@ public class AquaOptionPaneUI extends BasicOptionPaneUI implements AquaComponent
     }
 
     protected void addMessageComponents(Container container,
-                                     GridBagConstraints cons,
-                                     Object msg, int maxll,
-                                     boolean internallyCreated) {
+                                        GridBagConstraints cons,
+                                        Object msg, int maxll,
+                                        boolean internallyCreated) {
         if (msg == null) {
             return;
         }
@@ -308,7 +299,6 @@ public class AquaOptionPaneUI extends BasicOptionPaneUI implements AquaComponent
             } else {
                 JComponent c = createTextComponent(s, maxll);
                 c.setName("OptionPane.label");
-                configureMessageLabel(c);
                 addMessageComponents(container, cons, c, maxll, true);
             }
         }
@@ -319,6 +309,7 @@ public class AquaOptionPaneUI extends BasicOptionPaneUI implements AquaComponent
             maxll = 80;
         }
         JLabel label = new JLabel(text, JLabel.LEADING);
+        configureMessageLabel(label);
         Dimension preferredSize = label.getPreferredSize();
         int preferredWidth = preferredSize.width;
         int columnWidth = label.getFontMetrics(label.getFont()).charWidth('n');
@@ -347,14 +338,13 @@ public class AquaOptionPaneUI extends BasicOptionPaneUI implements AquaComponent
             textArea.setEditable(false);
             textArea.setOpaque(false);
             textArea.setFocusable(false);
-            //textArea.setBackground(UIManager.getColor("Label.background"));
             textArea.setFont(UIManager.getFont("Label.font"));
             textArea.setWrapStyleWord(true);
             textArea.setLineWrap(true);
             textArea.setText(text);
-            // The following is a pitiful attempt to get JTextArea to compute a plausible
-            // preferred size. It is better than nothing. Do not set columns, it just increases the
-            // preferred width.
+            configureMessageLabel(textArea);
+            // The following is a pitiful attempt to get JTextArea to compute a plausible preferred size. It is better
+            // than nothing. Do not set columns, it just increases the preferred width.
             int columnWidth = textArea.getFontMetrics(textArea.getFont()).charWidth('n');
             textArea.setPreferredWidth(maxll * columnWidth);
             return textArea;
@@ -392,6 +382,6 @@ public class AquaOptionPaneUI extends BasicOptionPaneUI implements AquaComponent
             label.setFont(messageFont);
         }
         label.setOpaque(false);
-        label.setBackground(AquaColors.CLEAR);
+        label.setBackground(new Color(0, 0, 0, 0));  // don't allow the text component UI to override
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Changes copyright (c) 2015-2021 Alan Snyder.
+ * Changes copyright (c) 2015-2025 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -38,8 +38,7 @@ import java.awt.image.BufferedImage;
 import javax.swing.*;
 import javax.swing.plaf.UIResource;
 
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.*;
 import org.violetlib.aqua.AquaUtils.RecyclableSingleton;
 import org.violetlib.jnr.Painter;
 
@@ -82,6 +81,10 @@ public class AquaIcon {
             return ((ImageIcon)i).getImage();
         }
 
+        if (i instanceof ImageBasedIcon) {
+            return ((ImageBasedIcon)i).getImage();
+        }
+
         int w = i.getIconWidth();
         int h = i.getIconHeight();
 
@@ -117,7 +120,98 @@ public class AquaIcon {
         }
     }
 
-    public static abstract class CachingScalingIcon implements Icon, UIResource {
+    public interface ImageBasedIcon {
+        @NotNull Image getImage();
+    }
+
+    public static @NotNull Icon createIcon(@Nullable Image im, @NotNull Dimension size) {
+        return im != null ? new NativeIcon(im, size) : new DummyIcon(size);
+    }
+
+    public static @NotNull Icon createIcon(@Nullable Image im, int width, int height) {
+        return im != null ? new NativeIcon(im, width, height) : new DummyIcon(width, height);
+    }
+
+    public static boolean isDummy(@NotNull Icon ic) {
+        return ic instanceof DummyIcon;
+    }
+
+    /**
+     * An icon created from a native (probably multiresolution) image with a specified nominal size.
+     */
+    private static class NativeIcon implements Icon, ImageBasedIcon, UIResource {
+        private final @NotNull Image base;
+        private final int nominalWidth;
+        private final int nominalHeight;
+
+        public NativeIcon(@NotNull Image base, @NotNull Dimension d) {
+            this(base, d.width, d.height);
+        }
+
+        public NativeIcon(@NotNull Image base, int nominalWidth, int nominalHeight) {
+            this.base = base;
+            this.nominalWidth = nominalWidth;
+            this.nominalHeight = nominalHeight;
+        }
+
+        @Override
+        public int getIconWidth() {
+            return nominalWidth;
+        }
+
+        @Override
+        public int getIconHeight() {
+            return nominalHeight;
+        }
+
+        @Override
+        public @NotNull Image getImage() {
+            return base;
+        }
+
+        @Override
+        public void paintIcon(Component c, Graphics g, int x, int y) {
+            g = g.create();
+
+            if (g instanceof Graphics2D) {
+                // improves icon rendering quality in Quartz
+                ((Graphics2D)g).setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
+            }
+
+            g.drawImage(base, x, y, nominalWidth, nominalHeight, null);
+            g.dispose();
+        }
+    }
+
+    private static class DummyIcon implements Icon, UIResource {
+        private final int width;
+        private final int height;
+
+        public DummyIcon(@NotNull Dimension d) {
+            this(d.width, d.height);
+        }
+
+        public DummyIcon(int width, int height) {
+            this.width = width;
+            this.height = height;
+        }
+
+        @Override
+        public void paintIcon(Component c, Graphics g, int x, int y) {
+        }
+
+        @Override
+        public int getIconWidth() {
+            return width;
+        }
+
+        @Override
+        public int getIconHeight() {
+            return height;
+        }
+    }
+
+    public static abstract class CachingScalingIcon implements Icon, ImageBasedIcon, UIResource {
         int width;
         int height;
         Image image;
@@ -133,7 +227,8 @@ public class AquaIcon {
             this.image = null;
         }
 
-        @Nullable Image getImage() {
+        @Override
+        public @NotNull Image getImage() {
             if (image != null) {
                 return image;
             }
@@ -142,15 +237,16 @@ public class AquaIcon {
                 image = createImage();
             }
 
+            if (image == null) {
+                image = new BufferedImage(0, 0, BufferedImage.TYPE_INT_ARGB_PRE);
+            }
+
             return image;
         }
 
         abstract Image createImage();
 
-        public boolean hasIconRef() {
-            return getImage() != null;
-        }
-
+        @Override
         public void paintIcon(Component c, Graphics g, int x, int y) {
             g = g.create();
 
@@ -167,10 +263,12 @@ public class AquaIcon {
             g.dispose();
         }
 
+        @Override
         public int getIconWidth() {
             return width;
         }
 
+        @Override
         public int getIconHeight() {
             return height;
         }
@@ -196,7 +294,7 @@ public class AquaIcon {
             if (g instanceof Graphics2D) {
                 // improves icon rendering quality in Quartz
                 ((Graphics2D) g).setRenderingHint(RenderingHints.KEY_RENDERING,
-                        RenderingHints.VALUE_RENDER_QUALITY);
+                  RenderingHints.VALUE_RENDER_QUALITY);
             }
 
             org.violetlib.jnr.Painter painter = getPainter(width, height);
@@ -217,6 +315,29 @@ public class AquaIcon {
         public int getIconHeight() {
             return height;
         }
+    }
+
+    public static @NotNull Icon scaleToFit(@NotNull Icon source, int width, int height) {
+        int iconWidth = source.getIconWidth();
+        int iconHeight = source.getIconHeight();
+        if (iconWidth > width || iconHeight > height) {
+            // scaling is needed
+            float vsf = ((float) height) / iconHeight;
+            float hsf = ((float) width) / iconWidth;
+            float scaleFactor = Math.min(vsf, hsf);
+            return AquaIcon.createScaledIcon(source, scaleFactor);
+        }
+        return source;
+    }
+
+    public static @NotNull Icon createScaledIcon(@NotNull Icon source, double scalingFactor) {
+        int width = (int) Math.floor(source.getIconWidth() * scalingFactor);
+        int height = (int) Math.floor(source.getIconHeight() * scalingFactor);
+        return new AquaIcon.CachingScalingIcon(width, height) {
+            Image createImage() {
+                return AquaIcon.getImageForIcon(source);
+            }
+        };
     }
 
     public static Image getStopIconImage() {
