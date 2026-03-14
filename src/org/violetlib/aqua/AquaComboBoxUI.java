@@ -178,6 +178,7 @@ public class AquaComboBoxUI extends BasicComboBoxUI
             ((AquaComboBoxPopup) popup).removeHierarchyListener(popupListener);
         }
         comboBox.removePropertyChangeListener(propertyChangeListener);
+        comboBox.removeHierarchyListener(hierarchyListener);
         hierarchyListener = null;
         AquaUtilControlSize.removeSizePropertyListener(comboBox);
         OSXSystemProperties.unregister(comboBox);
