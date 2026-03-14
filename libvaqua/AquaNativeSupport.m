@@ -1370,7 +1370,7 @@ static jboolean colorPanelBeingConfigured;
         GET_METHOD(jm_createColor, jc_Color, "<init>", "(FFFF)V");
         CGFloat r, g, b, a;
         [color getRed:&r green:&g blue:&b alpha:&a];
-        jobject jColor = (*env)->CallStaticObjectMethod(env, jc_Color, jm_createColor, r, g, b, a);
+        jobject jColor = (*env)->NewObject(env, jc_Color, jm_createColor, (jfloat)r, (jfloat)g, (jfloat)b, (jfloat)a);
         CHECK_EXCEPTION();
         // Using dynamic lookup because we do not know which class loader was used
         jclass cl = (*env)->GetObjectClass(env, colorPanelCallback);
