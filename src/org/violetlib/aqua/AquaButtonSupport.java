@@ -22,6 +22,7 @@ import org.violetlib.jnr.Insetter;
 import org.violetlib.jnr.LayoutInfo;
 import org.violetlib.jnr.aqua.*;
 
+import static org.violetlib.aqua.OSXSystemProperties.macOS11;
 import static org.violetlib.aqua.OSXSystemProperties.macOS26;
 import static org.violetlib.jnr.aqua.AquaUIPainter.ButtonWidget;
 import static org.violetlib.jnr.aqua.AquaUIPainter.ButtonWidget.*;
@@ -188,40 +189,39 @@ public class AquaButtonSupport {
         if (text != null && !text.isEmpty() && (icon != null || AquaButtonExtendedTypes.isToolbarItemStyleSpecified(b))) {
             // If the application specifies a toolbar item, then that style is used even if there is no icon.
             // The client property must be used, as this method is involved in choosing a widget.
-            return createToolbarItemStyleInfo(b, BUTTON_TOOLBAR_ITEM);
+            return createToolbarButtonStyleInfo(b, BUTTON_TOOLBAR_ITEM);
         }
 
         int version = AquaPainting.getVersion();
         if (version >= macOS26) {
-            AquaUIPainter.Size specifiedSize = AquaUtilControlSize.getOptionalUserSizeFrom(b);
-            if (specifiedSize == null) {
-                return new ButtonStyleInfo(BUTTON_TOOLBAR, EXTRA_LARGE);
-            }
-            return new ButtonStyleInfo(BUTTON_TOOLBAR, specifiedSize);
+            return createToolbarButtonStyleInfo(b, BUTTON_TOOLBAR);
         }
 
         if (text == null || text.isEmpty()) {
-            return createToolbarItemStyleInfo(b, BUTTON_TOOLBAR);
+            return createToolbarButtonStyleInfo(b, BUTTON_TOOLBAR);
         }
 
-        ButtonWidget widget = BUTTON_TEXTURED_TOOLBAR;
+        ButtonWidget widget = version >= macOS11 ? BUTTON_TOOLBAR : BUTTON_TEXTURED_TOOLBAR;
         ButtonWidget w = isButtonWidgetUsable(b, widget, painter) ? widget : BUTTON_BEVEL_ROUND;
-        return createToolbarItemStyleInfo(b, w);
+        return createToolbarButtonStyleInfo(b, w);
     }
 
-    private static @NotNull ButtonStyleInfo createToolbarItemStyleInfo(@NotNull AbstractButton b,
-                                                                       @NotNull ButtonWidget widget) {
+    private static @NotNull ButtonStyleInfo createToolbarButtonStyleInfo(@NotNull AbstractButton b,
+                                                                         @NotNull ButtonWidget widget) {
         AquaUIPainter.Size size = getPreferredToolbarButtonSize(b, widget);
         return new ButtonStyleInfo(widget, size);
     }
 
     public static @NotNull AquaUIPainter.Size
     getPreferredToolbarButtonSize(@NotNull AbstractButton b, @NotNull AquaUIPainter.GenericButtonWidget widget) {
-        AquaUIPainter.Size size = AquaUtilControlSize.getOptionalUserSizeFrom(b);
-        if (size != null) {
-            return size;
+        int version = AquaPainting.getVersion();
+        if (version < macOS26) {
+            AquaUIPainter.Size size = AquaUtilControlSize.getOptionalUserSizeFrom(b);
+            if (size != null) {
+                return size;
+            }
         }
-        size = AquaUtils.getToolbarSize(widget);
+        AquaUIPainter.Size size = AquaUtils.getToolbarSize(widget);
         return size != null ? size : REGULAR;
     }
 

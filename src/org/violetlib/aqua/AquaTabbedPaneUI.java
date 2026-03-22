@@ -930,8 +930,9 @@ public class AquaTabbedPaneUI extends AquaTabbedPaneCopyFromBasicUI
                     // This is not a general solution, but it works where needed.
                     Rectangle bounds = shapes.getOuterBounds();
                     assert bounds != null;
+                    int arc = 8;
                     RoundRectangle2D rr = new RoundRectangle2D.Double(bounds.getX(), bounds.getY(),
-                      bounds.getWidth(), bounds.getHeight(), 8, 8);
+                      bounds.getWidth(), bounds.getHeight(), arc, arc);
                     shapes = new Shapes();
                     shapes.add(rr);
                     return shapes;

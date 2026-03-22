@@ -517,7 +517,7 @@ public class AquaButtonExtendedTypes {
         result.put(BUTTON_SEGMENTED, segmentedRounded);
         result.put(BUTTON_TAB, segmentedRounded);
         result.put(SegmentedButtonWidget.BUTTON_SEGMENTED_SLIDER, segmentedRounded);
-        result.put(SegmentedButtonWidget.BUTTON_SEGMENTED_SLIDER_TOOLBAR , segmentedRounded);
+        result.put(SegmentedButtonWidget.BUTTON_SEGMENTED_SLIDER_TOOLBAR , segmentedRounded.withRolloverEnabled());
         result.put(BUTTON_SEGMENTED_SEPARATED, segmentedSeparated);
 
         WidgetInfo gradient = new WidgetInfo(AquaColors.GRADIENT_BUTTON_COLORS);
@@ -543,6 +543,7 @@ public class AquaButtonExtendedTypes {
               .withRolloverEnabled());
         } else {
             result.put(BUTTON_TOOLBAR, new WidgetInfo(AquaColors.TOOLBAR_COLORS)
+              .withFontFinder((sz) -> UIManager.getFont("Button.font").deriveFont(fontSize(sz, 18, 16, 14, 12)))
               .withRolloverEnabled()
               .withIconTextGap(2));
         }

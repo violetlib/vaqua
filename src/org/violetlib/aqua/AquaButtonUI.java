@@ -72,7 +72,7 @@ public class AquaButtonUI extends BasicButtonUI
     public static final String ENABLE_TRANSLUCENT_COLORS_KEY = "JButton.enableTranslucentColors";
 
     public static final float OUTLINE_OFFSET = 0;
-    public static final float OUTLINE_CORNER = 9;
+    public static final float OUTLINE_ARC = 9;
 
     public static final String LAYOUT_CONFIGURATION_PROPERTY = "Aqua.Button.LayoutConfiguration";
     public static final String DEFAULT_FONT_PROPERTY = "Aqua.Button.DefaultFont";
@@ -239,7 +239,7 @@ public class AquaButtonUI extends BasicButtonUI
         int width = c.getWidth();
         int height = c.getHeight();
         return new RoundRectangle2D.Double(OUTLINE_OFFSET, OUTLINE_OFFSET,
-          width-2*OUTLINE_OFFSET, height-2*OUTLINE_OFFSET, OUTLINE_CORNER, OUTLINE_CORNER);
+          width-2*OUTLINE_OFFSET, height-2*OUTLINE_OFFSET, OUTLINE_ARC, OUTLINE_ARC);
     }
 
     @Override

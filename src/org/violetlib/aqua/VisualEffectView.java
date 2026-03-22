@@ -22,6 +22,7 @@ import org.jetbrains.annotations.Nullable;
 public class VisualEffectView {
     private final JComponent component;
     private final int style;
+    private final int cornerRadius;
     private final boolean supportSelections;
     private VisualEffectViewPeer peer;
     private Rectangle oldBounds;
@@ -33,11 +34,13 @@ public class VisualEffectView {
      * Create an object to manage a NSVisualEffectView or a collection of NSVisualEffectViews.
      * @param c The component that the NSVisualEffectView(s) will track.
      * @param style The style of the (master) NSVisualEffectView.
+     * @param cornerRadius The corner radius.
      * @param supportSelections If true, enable support for subregions with a distinct selection background.
      */
-    public VisualEffectView(JComponent c, int style, boolean supportSelections) {
+    public VisualEffectView(JComponent c, int style, int cornerRadius, boolean supportSelections) {
         this.component = c;
         this.style = style;
+        this.cornerRadius = cornerRadius;
         this.supportSelections = supportSelections;
         tracker = new MyComponentTracker();
         tracker.attach(component);
@@ -93,7 +96,7 @@ public class VisualEffectView {
 
         // If there is no visual effect view and the (new) window is displayable, create a visual effect view.
         if (peer == null && window != null && window.isDisplayable()) {
-            peer = AquaVibrantSupport.createVisualEffectView(window, style, supportSelections);
+            peer = AquaVibrantSupport.createVisualEffectView(window, style, cornerRadius, supportSelections);
             visibleBoundsChanged();
         }
     }

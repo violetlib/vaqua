@@ -117,9 +117,11 @@ public class AquaTextPasswordFieldUI extends AquaTextFieldUI {
     static class CapsLockSymbolPainter extends KeyAdapter implements Border, UIResource {
         protected Shape capsLockShape;
         protected Shape getCapsLockShape() {
-            if (capsLockShape != null) return capsLockShape;
-
-            RoundRectangle2D rect = new RoundRectangle2D.Double(0.5, 0.5, 16, 16, 8, 8);
+            if (capsLockShape != null) {
+                return capsLockShape;
+            }
+            int arc = 8;
+            RoundRectangle2D rect = new RoundRectangle2D.Double(0.5, 0.5, 16, 16, arc, arc);
             GeneralPath shape = new GeneralPath(rect);
             shape.setWindingRule(Path2D.WIND_EVEN_ODD);
 

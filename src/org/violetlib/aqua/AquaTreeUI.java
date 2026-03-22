@@ -382,7 +382,8 @@ public class AquaTreeUI extends BasicTreeUI
             disposeSidebarVibrantEffects();
         }
         if (sidebarVibrantEffects == null) {
-            sidebarVibrantEffects = new SidebarVibrantEffects(top);
+            int cornerRadius = AquaVibrantSupport.getCornerRadius(AquaVibrantSupport.SIDEBAR_STYLE);
+            sidebarVibrantEffects = new SidebarVibrantEffects(top, cornerRadius);
             configureVibrantEffects();
         }
     }
@@ -409,8 +410,8 @@ public class AquaTreeUI extends BasicTreeUI
     protected class SidebarVibrantEffects extends VisualEffectView {
         protected TreeSelectionBoundsTracker bt;
 
-        public SidebarVibrantEffects(JComponent top) {
-            super(top, AquaVibrantSupport.SIDEBAR_STYLE, true);
+        public SidebarVibrantEffects(JComponent top, int cornerRadius) {
+            super(top, AquaVibrantSupport.SIDEBAR_STYLE, cornerRadius, true);
             bt = new TreeSelectionBoundsTracker(tree, this::updateSelectionBackgrounds) {
                 @Override
                 protected int convertRowYCoordinateToSelectionDescription(int y) {

@@ -44,6 +44,12 @@ public class AquaNamedButtonBorder extends AquaButtonBorder {
 
     @Override
     public boolean isToolbarStyle(@NotNull AbstractButton b) {
+        // This method is used in the selection of the button widget, so it must use the client property.
+        Object o = b.getClientProperty(AquaButtonUI.BUTTON_TYPE);
+        if (o instanceof String) {
+            String s = (String) o;
+            return s.contains("toolbar") || s.contains("Toolbar");
+        }
         return false;
     }
 

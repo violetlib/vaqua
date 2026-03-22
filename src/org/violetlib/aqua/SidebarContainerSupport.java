@@ -26,7 +26,8 @@ import org.jetbrains.annotations.*;
 public class SidebarContainerSupport
   implements Border, UIResource
 {
-    private final int radius = 36;
+    private final int radius = 18;
+    private final int arc = radius * 2;
     private final int inset = 1;
 
     private final @NotNull JComponent container;
@@ -76,7 +77,7 @@ public class SidebarContainerSupport
     {
         int w = container.getWidth();
         int h = container.getHeight();
-        Shape outerShape = new RoundRectangle2D.Double(0, 0, w, h, radius, radius);
+        Shape outerShape = new RoundRectangle2D.Double(0, 0, w, h, arc, arc);
 
         Graphics2D g = (Graphics2D) o.create();
         g.clip(outerShape);
@@ -105,8 +106,7 @@ public class SidebarContainerSupport
 
         if (isActive || pc.appearance.isHighContrast()) {
             float d = 0.5f;
-            float r = radius;
-            Shape borderPath = new RoundRectangle2D.Float(x+d, y+d, width-2*d, height-2*d, r, r);
+            Shape borderPath = new RoundRectangle2D.Float(x+d, y+d, width-2*d, height-2*d, arc, arc);
             Graphics2D g = (Graphics2D) o;
 
             Color color = pc.appearance.getColor(isActive ? "sidebarBorder" : "sidebarBorder_inactive");
@@ -135,8 +135,8 @@ public class SidebarContainerSupport
     public @Nullable Insetter2D getInsetter()
     {
         float d = 2;
-        float r = radius + 0.5f;
-        return (w, h) -> new RoundRectangle2D.Float(d, d, w-2*d, h-2*d, r, r);
+        float arc = radius + 0.5f;
+        return (w, h) -> new RoundRectangle2D.Float(d, d, w-2*d, h-2*d, arc, arc);
     }
 
     private void updateSplitPaneParent()

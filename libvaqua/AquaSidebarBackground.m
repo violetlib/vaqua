@@ -35,6 +35,7 @@ BOOL DEBUG = NO;
 
 - (AquaSidebarBackground *) initWithFrame: (NSRect) frameRect
                                     style: (UInt16) style
+                             cornerRadius: (jint) cornerRadius
                               forceActive: (BOOL) shouldForceActive {
     self = [super initWithFrame: frameRect];
 
@@ -60,6 +61,9 @@ BOOL DEBUG = NO;
         useInset = NO;
         if (@available(macOS 10.16, *)) {
             useInset = YES;
+        }
+        if (cornerRadius > 0) {
+            self.layer.cornerRadius = cornerRadius;
         }
     }
 
@@ -141,7 +145,7 @@ BOOL DEBUG = NO;
     float width = self.bounds.size.width;
 
     if (DEBUG) {
-        NSLog(@"Updating selection views %@ %f %f %d",
+        NSLog(@"Updating selection views %@ %f %f count=%d",
             [self description],
             self.frame.size.width,
             self.frame.size.height,
@@ -245,7 +249,7 @@ BOOL DEBUG = NO;
                    cornerRadius: (jint) cornerRadius
 {
     if (DEBUG) {
-        NSLog(@"Configuring selection view %@", [self description]);
+        NSLog(@"Configuring selection view %@ %d %d %d", [self description], leftInset, rightInset, cornerRadius);
     }
 
     CGFloat x = fullFrame.origin.x + leftInset;

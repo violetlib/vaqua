@@ -118,7 +118,7 @@ public class AquaContextualPopup {
 
         if (installVibrantSelection && content instanceof JPopupMenu) {
             JPopupMenu menu = (JPopupMenu) content;
-            effects = new MenuVibrantEffects(wrapper, menu, AquaVibrantSupport.MENU_STYLE);
+            effects = new MenuVibrantEffects(wrapper, menu, AquaVibrantSupport.MENU_STYLE, corner);
         }
 
         PopupFactory f = PopupFactory.getSharedInstance();

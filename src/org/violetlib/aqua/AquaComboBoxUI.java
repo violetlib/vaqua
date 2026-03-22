@@ -316,8 +316,14 @@ public class AquaComboBoxUI extends BasicComboBoxUI
         // The exceptions:
         // Default style buttons lose their colored arrow button.
         // Textured buttons display dimmed.
+        // Toolbar buttons on macOS 26+ display as rolled over even when inactive.
 
         if (!isActive) {
+            // on macOS26, toolbar buttons exhibit rollover behavior even in an inactive window
+            int version = AquaNativeRendering.getSystemRenderingVersion();
+            if (version >= AquaNativeRendering.macOS26 && arrowButton.isRollover && isToolbarStyle()) {
+                return State.ROLLOVER;
+            }
             Object w = getWidget();
             if (w == BUTTON_POP_DOWN || w == BUTTON_POP_UP || w == BUTTON_COMBO_BOX || isTextured) {
                 return State.INACTIVE;
@@ -325,6 +331,18 @@ public class AquaComboBoxUI extends BasicComboBoxUI
         }
 
         return State.ACTIVE;
+    }
+
+    private boolean isToolbarStyle() {
+        if (isToolbar) {
+            return true;
+        }
+        Object o = comboBox.getClientProperty(STYLE_CLIENT_PROPERTY_KEY);
+        if (o instanceof String) {
+            String s = (String) o;
+            return s.contains("toolbar") || s.contains("Toolbar");
+        }
+        return false;
     }
 
     private static boolean isPopupReallyVisible(@NotNull ComboPopup p)
@@ -861,7 +879,7 @@ public class AquaComboBoxUI extends BasicComboBoxUI
                 int y = -textFieldBounds.y;
                 return new RoundRectangle2D.Double(x+AquaButtonUI.OUTLINE_OFFSET, y+AquaButtonUI.OUTLINE_OFFSET,
                   width-2*AquaButtonUI.OUTLINE_OFFSET, height-2*AquaButtonUI.OUTLINE_OFFSET,
-                  AquaButtonUI.OUTLINE_CORNER, AquaButtonUI.OUTLINE_CORNER);
+                  AquaButtonUI.OUTLINE_ARC, AquaButtonUI.OUTLINE_ARC);
             }
 
             return null;

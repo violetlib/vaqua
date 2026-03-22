@@ -466,7 +466,8 @@ public class AquaListUI extends BasicListUI implements AquaComponentUI, AquaView
             disposeVibrantEffects();
         }
         if (vibrantEffects == null) {
-            vibrantEffects = new ListVibrantEffects(top, style);
+            int cornerRadius = AquaVibrantSupport.getCornerRadius(style);
+            vibrantEffects = new ListVibrantEffects(top, style, cornerRadius);
             configureVibrantEffects();
         }
     }
@@ -494,8 +495,8 @@ public class AquaListUI extends BasicListUI implements AquaComponentUI, AquaView
         protected @Nullable ListSelectionBoundsTracker bt;
         protected final int style;
 
-        public ListVibrantEffects(@NotNull JComponent top, int style) {
-            super(top, style, true);
+        public ListVibrantEffects(@NotNull JComponent top, int style, int cornerRadius) {
+            super(top, style, cornerRadius, true);
 
             this.style = style;
             bt = new ListSelectionBoundsTracker(list, this::updateSelectionBackgrounds) {

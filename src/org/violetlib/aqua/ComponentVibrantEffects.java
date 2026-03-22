@@ -25,8 +25,8 @@ public class ComponentVibrantEffects extends VisualEffectView {
      * @param bt An optional selection bounds tracker, if the component has selected item regions that should display
      *              using a vibrant style. A consumer will be installed in the tracker.
      */
-    public ComponentVibrantEffects(JComponent c, int style, SelectionBoundsTracker bt) {
-        super(c, style, bt != null);
+    public ComponentVibrantEffects(JComponent c, int style, int cornerRadius, SelectionBoundsTracker bt) {
+        super(c, style, cornerRadius, bt != null);
         this.boundsTracker = bt;
 
         if (bt != null) {

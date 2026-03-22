@@ -23,8 +23,11 @@ public class MenuVibrantEffects extends VisualEffectView {
     protected @Nullable MenuSelectionBoundsTracker bt;
     protected final int style;
 
-    public MenuVibrantEffects(@NotNull JComponent top, @NotNull JPopupMenu menu, int style) {
-        super(top, style, true);
+    public MenuVibrantEffects(@NotNull JComponent top,
+                              @NotNull JPopupMenu menu,
+                              int style,
+                              int cornerRadius) {
+        super(top, style, cornerRadius, true);
 
         this.style = style;
         bt = new MenuSelectionBoundsTracker(menu, this::updateSelectionBackgrounds) {

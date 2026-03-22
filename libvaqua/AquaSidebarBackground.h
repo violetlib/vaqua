@@ -13,6 +13,7 @@
 @interface AquaSidebarBackground : AquaVisualEffectView
 - (AquaSidebarBackground *) initWithFrame: (NSRect) frameRect
                                     style: (UInt16) style
+                             cornerRadius: (jint) cornerRadius
                               forceActive: (BOOL) forceActive;
 - (void) removeSelectionViews;
 - (void) configureSelectionsWithLeftInset: (jint) leftInset

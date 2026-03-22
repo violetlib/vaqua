@@ -23,7 +23,7 @@ import org.violetlib.geom.ExpandableOutline;
 public class AquaFocusRingPainter {
     protected static final int ANIMATION_DURATION = 100;
 
-    protected static final float DEFAULT_CORNER = 4;
+    protected static final float DEFAULT_ARC = 4;
 
     private JComponent currentFocusRingOwner;
     private FocusRingOutlineProvider currentFocusRingProvider;
@@ -149,7 +149,7 @@ public class AquaFocusRingPainter {
             innerShape = s;
             Rectangle2D r = s.getBounds2D();
             Shape ss = new RoundRectangle2D.Double(r.getX(), r.getY(), r.getWidth(), r.getHeight(),
-              DEFAULT_CORNER, DEFAULT_CORNER);
+              DEFAULT_ARC, DEFAULT_ARC);
             outline = ExpandableOutline.fromShape(ss);
             outerShape = outline.getShape(currentOuterOffset);
         } else {

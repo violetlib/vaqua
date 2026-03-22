@@ -468,7 +468,6 @@ public class AquaTableUI extends BasicTableUI
 
     @Override
     public void scrollPaneRoundedBorderStatusChanged(boolean isRoundedBorder) {
-
     }
 
     private void updateInset() {

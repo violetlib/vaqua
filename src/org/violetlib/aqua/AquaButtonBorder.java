@@ -148,7 +148,8 @@ public abstract class AquaButtonBorder extends AquaBorder implements FocusRingOu
 
         int version = AquaPainting.getVersion();
         if (bg.getWidget() == BUTTON_TOOLBAR_ITEM && version < macOS11) {
-            RoundRectangle2D shape = new RoundRectangle2D.Double(x, y, width - 1, height - 1, 8, 8);
+            int arc = 8;
+            RoundRectangle2D shape = new RoundRectangle2D.Double(x, y, width - 1, height - 1, arc, arc);
             AquaButtonSupport.paintToolbarItemBackground((ButtonConfiguration) bg, pc, g, shape);
             return;
         }
@@ -181,7 +182,8 @@ public abstract class AquaButtonBorder extends AquaBorder implements FocusRingOu
             double y2 = y1 + hh;
 
             if (OSVersion >= 1300) {
-                rr = new RoundRectangle2D.Double(x1, y1, ww, hh, 4, 4);
+                int arc = 4;
+                rr = new RoundRectangle2D.Double(x1, y1, ww, hh, arc, arc);
             } else {
                 rr = new Rectangle2D.Double(x1, y1, ww, hh);
             }
