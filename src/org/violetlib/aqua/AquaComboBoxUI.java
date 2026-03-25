@@ -319,9 +319,9 @@ public class AquaComboBoxUI extends BasicComboBoxUI
         // Toolbar buttons on macOS 26+ display as rolled over even when inactive.
 
         if (!isActive) {
-            // on macOS26, toolbar buttons exhibit rollover behavior even in an inactive window
+            // Starting with (at least) macOS11, toolbar buttons exhibit rollover behavior even in an inactive window
             int version = AquaNativeRendering.getSystemRenderingVersion();
-            if (version >= AquaNativeRendering.macOS26 && arrowButton.isRollover && isToolbarStyle()) {
+            if (version >= AquaNativeRendering.macOS11 && arrowButton.isRollover && isToolbarStyle()) {
                 return State.ROLLOVER;
             }
             Object w = getWidget();
@@ -967,7 +967,7 @@ public class AquaComboBoxUI extends BasicComboBoxUI
 
         @Override
         public @Nullable Color getForeground() {
-            if (!hasFocus && cellStatus != null) {
+            if (!hasFocus && cellStatus == null) {
                 return comboBox.getForeground();
             }
             return super.getForeground();

@@ -59,7 +59,7 @@ public class AquaNamedButtonBorder extends AquaButtonBorder {
     }
 
     @Override
-    protected @NotNull AquaButtonExtendedTypes.WidgetInfo getWidgetInfo(@NotNull AbstractButton b) {
+    protected @NotNull AquaButtonExtendedTypes.WidgetInfo getWidgetInfoForLayout(@NotNull AbstractButton b) {
         return info;
     }
 

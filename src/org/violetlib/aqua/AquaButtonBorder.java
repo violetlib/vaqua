@@ -219,7 +219,7 @@ public abstract class AquaButtonBorder extends AquaBorder implements FocusRingOu
     }
 
     public boolean isRollover(@NotNull AbstractButton b) {
-        return isRolloverEnabled(b) && b.getModel().isRollover();
+        return b.getModel().isRollover() && isRolloverEnabled(b);
     }
 
     public boolean isRolloverEnabled(AbstractButton b) {
@@ -323,7 +323,7 @@ public abstract class AquaButtonBorder extends AquaBorder implements FocusRingOu
     }
 
     public int getIconTextGap(AbstractButton b) {
-        AquaButtonExtendedTypes.WidgetInfo info = getWidgetInfo(b);
+        AquaButtonExtendedTypes.WidgetInfo info = getWidgetInfoForLayout(b);
         int gap = info.getIconTextGap();
         return gap > 0 ? gap : 4;
     }
@@ -412,7 +412,7 @@ public abstract class AquaButtonBorder extends AquaBorder implements FocusRingOu
     }
 
     protected int getDefaultSideMargin(@NotNull AbstractButton b) {
-        AquaButtonExtendedTypes.WidgetInfo info = getWidgetInfo(b);
+        AquaButtonExtendedTypes.WidgetInfo info = getWidgetInfoForLayout(b);
         return info.getDefaultSideMargin();
     }
 
@@ -698,9 +698,28 @@ public abstract class AquaButtonBorder extends AquaBorder implements FocusRingOu
         }
     }
 
-    protected @NotNull AquaButtonExtendedTypes.WidgetInfo getWidgetInfo(@NotNull AbstractButton b) {
+    /**
+     * Return the widget info for the button. This method uses the cached layout configuration, which is valid only for
+     * layout purposes.
+     */
+    protected @NotNull AquaButtonExtendedTypes.WidgetInfo getWidgetInfoForLayout(@NotNull AbstractButton b) {
         Object widget = null;
         LayoutConfiguration g = getLayoutConfiguration(b);
+        if (g instanceof ButtonLayoutConfiguration) {
+            widget = ((ButtonLayoutConfiguration) g).getButtonWidget();
+        }
+        if (g instanceof SegmentedButtonLayoutConfiguration) {
+            widget = ((SegmentedButtonLayoutConfiguration) g).getWidget();
+        }
+        return AquaButtonExtendedTypes.getWidgetInfo(widget);
+    }
+
+    /**
+     * Return the widget info for the button. This method calculates the layout configuration.
+     */
+    protected @NotNull AquaButtonExtendedTypes.WidgetInfo getWidgetInfo(@NotNull AbstractButton b) {
+        Object widget = null;
+        LayoutConfiguration g = determineLayoutConfiguration(b);
         if (g instanceof ButtonLayoutConfiguration) {
             widget = ((ButtonLayoutConfiguration) g).getButtonWidget();
         }

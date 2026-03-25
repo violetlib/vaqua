@@ -335,6 +335,13 @@ public class SystemColors {
         }
         colors.add("selectedTexturedSegmentedText_inactive", 0, 64);
 
+        if (OSVersion >= macOS11 && OSVersion < macOS26) {
+            colors.add("selectedSegmentedText_rollover", "selectedSegmentedText");
+            colors.add("selectedTexturedSegmentedText_rollover", "selectedTexturedSegmentedText");
+            colors.add("selectedNonexclusiveText_rollover", "selectedNonexclusiveText");
+            colors.add("selectedNonexclusiveTexturedText_rollover", "selectedNonexclusiveTexturedText");
+        }
+
         // colors related to gradient buttons
         if (OSVersion < 1014) {
             colors.add("gradientText", 0, 216);
@@ -398,6 +405,9 @@ public class SystemColors {
             colors.add("toolbarText", 80);
             colors.add("toolbarText_inactive", 184);
             colors.add("toolbarText_rollover", 80);
+        } else if (OSVersion >= macOS11) {
+            colors.add("toolbarText", 0, 172);
+            colors.add("toolbarText_rollover", 0, 144);
         }
 
         // colors related to sidebars
@@ -598,6 +608,15 @@ public class SystemColors {
             colors.add("selectedTexturedSegmentedToolbarText_disabled", base, 100);
             colors.add("selectedTexturedSegmentedToolbarText_inactive", base, 150);
             colors.add("selectedTexturedSegmentedToolbarText_inactive_disabled", base, 100);
+        }
+
+        if (OSVersion >= macOS11 && OSVersion < macOS26) {
+            colors.add("selectedTexturedToolbarText_rollover", "selectedTexturedToolbarText");
+            colors.add("selectedTexturedSegmentedToolbarText_rollover", "selectedTexturedSegmentedToolbarText");
+            colors.add("selectedSegmentedText_rollover", "selectedSegmentedText");
+            colors.add("selectedTexturedSegmentedText_rollover", "selectedTexturedSegmentedText");
+            colors.add("selectedNonexclusiveText_rollover", "selectedNonexclusiveText");
+            colors.add("selectedNonexclusiveTexturedText_rollover", "selectedNonexclusiveTexturedText");
         }
 
         if (OSVersion < 1014) {
@@ -872,6 +891,13 @@ public class SystemColors {
             colors.add("selectedSegmentedText_inactive", 0);
         }
 
+        if (OSVersion >= macOS11 && OSVersion < macOS26) {
+            colors.add("selectedSegmentedText_rollover", "selectedSegmentedText");
+            colors.add("selectedTexturedSegmentedText_rollover", "selectedTexturedSegmentedText");
+            colors.add("selectedNonexclusiveText_rollover", "selectedNonexclusiveText");
+            colors.add("selectedNonexclusiveTexturedText_rollover", "selectedNonexclusiveTexturedText");
+        }
+
         colors.add("nonexclusiveText_disabled", "disabledControlText");
         colors.add("nonexclusiveText_inactive", "controlText");
 
@@ -919,7 +945,6 @@ public class SystemColors {
             colors.add("toolbarText_inactive", 106);
             colors.add("toolbarText_rollover", 238);
         } else {
-            colors.add("toolbarText", "controlText");
             colors.add("toolbarText_pressed", "controlText_pressed");
             colors.add("toolbarText_inactive", "disabledControlText");
             colors.add("toolbarText_disabled", "disabledControlText");
@@ -927,10 +952,14 @@ public class SystemColors {
             colors.defineText("selectedToolbarText", "alternateSelectedControlText");
 
             if (OSVersion >= macOS11) {
+                colors.add("toolbarText", 255, 172);
+                colors.add("toolbarText_rollover", 255, 144);
                 colors.add("selectedToolbarBackground_inactive", 39);
                 colors.add("selectedToolbarText", 190);
-                colors.add("selectedToolbarText_rollover", 236);
+                //colors.add("selectedToolbarText_rollover", 236);
                 colors.add("selectedToolbarText_inactive", 93);
+            } else {
+                colors.add("toolbarText", "controlText");
             }
         }
 
@@ -1097,6 +1126,8 @@ public class SystemColors {
         colors.add("toolbarBackground_rollover", "clear");
         colors.add("toolbarBackground_pressed", "controlBackground_pressed");
         if (OSVersion >= macOS11) {
+            colors.add("toolbarText_rollover", "toolbarText");
+
             colors.add("selectedToolbarBackground", 171);
             colors.add("selectedToolbarBackground_rollover", "selectedToolbarBackground");
             colors.add("selectedToolbarBackground_inactive", 87);
@@ -1111,6 +1142,17 @@ public class SystemColors {
         colors.add("selectedSidebarIcon_focused", "alternateSelectedControlText");
         colors.add("selectedSidebarIcon", 255, 140);
         colors.add("selectedSidebarText_inactive", 255, 140);
+
+        if (OSVersion >= macOS11 && OSVersion < macOS26) {
+            colors.add("texturedToolbarText_rollover", "texturedText");
+            colors.add("selectedTexturedToolbarText_rollover", "selectedTexturedToolbarText");
+            colors.add("texturedToolbarText", "texturedText");
+            colors.add("selectedTexturedSegmentedToolbarText_rollover", "selectedTexturedSegmentedToolbarText");
+            colors.add("selectedSegmentedText_rollover", "selectedSegmentedText");
+            colors.add("selectedTexturedSegmentedText_rollover", "selectedTexturedSegmentedText");
+            colors.add("selectedNonexclusiveText_rollover", "selectedNonexclusiveText");
+            colors.add("selectedNonexclusiveTexturedText_rollover", "selectedNonexclusiveTexturedText");
+        }
 
         // file tag colors (dark mode)
         colors.add("tagBlue", 103, 176, 255);

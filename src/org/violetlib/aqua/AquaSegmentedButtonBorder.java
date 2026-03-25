@@ -87,6 +87,11 @@ public class AquaSegmentedButtonBorder extends AquaButtonBorder implements Focus
     }
 
     @Override
+    protected @NotNull AquaButtonExtendedTypes.WidgetInfo getWidgetInfoForLayout(@NotNull AbstractButton b) {
+        return info;
+    }
+
+    @Override
     protected @NotNull AquaButtonExtendedTypes.WidgetInfo getWidgetInfo(@NotNull AbstractButton b) {
         return info;
     }

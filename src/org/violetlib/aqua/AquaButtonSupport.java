@@ -670,9 +670,9 @@ public class AquaButtonSupport {
             return isActive ? AquaUIPainter.State.DISABLED : AquaUIPainter.State.DISABLED_INACTIVE;
         }
 
-        // on macOS26, toolbar buttons exhibit rollover behavior even in an inactive window
+        // Starting with (at least) macOS 11, toolbar buttons exhibit rollover behavior even in an inactive window
         int version = AquaNativeRendering.getSystemRenderingVersion();
-        if (version >= AquaNativeRendering.macOS26) {
+        if (version >= AquaNativeRendering.macOS11) {
             if (isToolbarStyle(b)) {
                 ButtonModel model = b.getModel();
                 if (model.isArmed() && model.isPressed()) {
