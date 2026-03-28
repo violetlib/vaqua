@@ -9,6 +9,7 @@
 #import "AquaSidebarBackground.h"
 #import "org_violetlib_aqua_AquaVibrantSupport.h"
 #import <Availability.h>
+#include "log.h"
 
 BOOL DEBUG = NO;
 
@@ -72,7 +73,7 @@ BOOL DEBUG = NO;
 
 - (void) setFrame: (NSRect) frameRect {
     if (DEBUG) {
-        NSLog(@"Updating selection background bounds %@ %f %f %f %f",
+        OSLog(@"Updating selection background bounds %@ %f %f %f %f",
             [self description],
             frameRect.origin.x,
             frameRect.origin.y,
@@ -98,7 +99,7 @@ BOOL DEBUG = NO;
     int count = (int) selectionViews.count;
 
     if (DEBUG) {
-        NSLog(@"Configuring selection views %@ %d %f %f %f",
+        OSLog(@"Configuring selection views %@ %d %f %f %f",
             [self description],
             count,
             selectionLeftInset,
@@ -125,7 +126,7 @@ BOOL DEBUG = NO;
     selectionCornerRadius = cornerRadius;
 
     if (DEBUG) {
-        NSLog(@"Setting selection view configuration parameters %f %f %f",
+        OSLog(@"Setting selection view configuration parameters %f %f %f",
             selectionLeftInset,
             selectionRightInset,
             selectionCornerRadius);
@@ -145,7 +146,7 @@ BOOL DEBUG = NO;
     float width = self.bounds.size.width;
 
     if (DEBUG) {
-        NSLog(@"Updating selection views %@ %f %f count=%d",
+        OSLog(@"Updating selection views %@ %f %f count=%d",
             [self description],
             self.frame.size.width,
             self.frame.size.height,
@@ -165,7 +166,7 @@ BOOL DEBUG = NO;
         AquaSelectionView *v = index < currentCount ? [selectionViews objectAtIndex:index] : nil;
         if (v) {
             if (DEBUG) {
-                NSLog(@"Reusing selection view %@ bounds = %f %f %f %f", [v description], 0, y, width, h);
+                OSLog(@"Reusing selection view %@ bounds = %d %d %f %d", [v description], 0, y, width, h);
             }
             [v reuseWithFrame:frame emphasized:emphasized forceActive:forceActive];
             if (useInset) {
@@ -173,7 +174,7 @@ BOOL DEBUG = NO;
             }
         } else {
             if (DEBUG) {
-                NSLog(@"Creating selection view bounds = %f %f %f %f", 0, y, width, h);
+                OSLog(@"Creating selection view bounds = %d %d %f %d", 0, y, width, h);
             }
             v = [[AquaSelectionView alloc] initWithFrame:frame
                                               emphasized:emphasized
@@ -249,7 +250,7 @@ BOOL DEBUG = NO;
                    cornerRadius: (jint) cornerRadius
 {
     if (DEBUG) {
-        NSLog(@"Configuring selection view %@ %d %d %d", [self description], leftInset, rightInset, cornerRadius);
+        OSLog(@"Configuring selection view %@ %d %d %d", [self description], leftInset, rightInset, cornerRadius);
     }
 
     CGFloat x = fullFrame.origin.x + leftInset;
@@ -277,7 +278,7 @@ BOOL DEBUG = NO;
     self.needsDisplay = YES;
 
     if (DEBUG) {
-        NSLog(@"Updating selection view bounds %f %f %f %f",
+        OSLog(@"Updating selection view bounds %f %f %f %f",
             self.frame.origin.x,
             self.frame.origin.y,
             self.frame.size.width,

@@ -1,7 +1,7 @@
 /*
  * @(#)KeyWindowPatch.m
  *
- * Copyright (c) 2018-2023 Alan Snyder.
+ * Copyright (c) 2018-2026 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -11,6 +11,7 @@
 #import <Cocoa/Cocoa.h>
 
 #include "jnix.h"
+#include "log.h"
 #import "KeyWindowPatch.h"
 #import "AquaWrappedWindowDelegate.h"
 #import "CMenuItemCategory.h"
@@ -46,7 +47,7 @@ void ensureWindowDelegateWrapper(NSWindow *w)
     id delegate = [w delegate];
     if (![delegate isKindOfClass: [AquaWrappedWindowDelegate class]]) {
 #ifdef DEBUG_PATCH
-        NSLog(@"Installing window delegate: %@ %@", [w title], delegate);
+        OSLog(@"Installing window delegate: %@ %@", [w title], delegate);
 #endif
         delegate = [[AquaWrappedWindowDelegate alloc] initWithObject: delegate];
         [w setDelegate: delegate];

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2025 Alan Snyder.
+ * Copyright (c) 2018-2026 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -7,6 +7,7 @@
  */
 
 #import "AquaVisualEffectView.h"
+#include "log.h"
 
 void VAppearances_updateAppearance(NSAppearance *appearance);
 
@@ -14,7 +15,7 @@ void VAppearances_updateAppearance(NSAppearance *appearance);
 
 static void updateAppearanceMissing(NSAppearance *appearance)
 {
-    NSLog(@"VAppearances_updateAppearance is undefined");
+    OSLog(@"VAppearances_updateAppearance is undefined");
 }
 
 /*
@@ -55,7 +56,7 @@ static NSAppearance *getVibrantAppearance(NSAppearance *context, UInt16 style)
     }
 
     // debug
-    // NSLog(@"Vibrant appearance: %@", name);
+    // OSLog(@"Vibrant appearance: %@", name);
 
     return [NSAppearance appearanceNamed: name];
 }
