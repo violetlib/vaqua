@@ -489,11 +489,11 @@ public class AquaTableUI extends BasicTableUI
         // the inset view style is installed, the row margin is set to zero, to allow joining of adjacent selected
         // rows.
 
-        if (AquaUtils.isInsetViewSupported()) {
+        if (OSXSystemProperties.useInsetViewStyle()) {
             String value = getViewStyleProperty();
-            return "inset".equals(value)
-              && table.getRowMargin() <= 1
-              && !table.getShowHorizontalLines();
+            if ("inset".equals(value) && table.getRowMargin() <= 1 && !table.getShowHorizontalLines()) {
+                return true;
+            }
         }
         return false;
     }

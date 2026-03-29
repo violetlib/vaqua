@@ -507,10 +507,6 @@ final public class AquaUtils {
         return result != 0;
     }
 
-    public static boolean isInsetViewSupported() {
-        return OSVersion >= macOS11;
-    }
-
     public static boolean isCellComponent(@NotNull Component c) {
         if (c instanceof JComponent) {
             JComponent jc = (JComponent) c;

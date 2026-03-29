@@ -72,12 +72,12 @@ public class AquaListUI extends BasicListUI implements AquaComponentUI, AquaView
 
     private boolean isSideBar;
     private boolean isStriped;
-    private boolean isInset;
+    private boolean isRoundedScrollable;  // depends upon isSideBar
+    private boolean isInset;  // depends upon isRoundedScrollable, isSidebar, isVibrantMenu
     private boolean isMenu;
     private AquaComboBoxType comboBoxType;
     private AquaUIPainter.Size comboBoxSize;
     private boolean isVibrantMenu;
-    private boolean isRoundedScrollable;
 
     private boolean hasSelection;
     private boolean isDropActive;
@@ -133,11 +133,11 @@ public class AquaListUI extends BasicListUI implements AquaComponentUI, AquaView
 
         list.putClientProperty(AquaCellEditorPolicy.IS_CELL_CONTAINER_PROPERTY, true);
         sidebarContainerSupport = new LocalSidebarContainerSupport(list, this);
-        isRoundedScrollable = AquaUtils.isRoundedScrollable(list);
-        isStriped = getStripedValue();
-        isInset = getInsetValue();
         isSideBar = getSideBarValue();
-        colors = determineColors();
+        isRoundedScrollable = AquaUtils.isRoundedScrollable(list);  // depends upon isSideBar
+        isInset = getInsetValue();  // depends upon isRoundedScrollable, isSidebar, isVibrantMenu
+        isStriped = getStripedValue();
+        colors = determineColors();  // depends upon isStriped and isSideBar
         sidebarContainerSupport.update();
         updateVibrantEffects();
     }
@@ -278,7 +278,7 @@ public class AquaListUI extends BasicListUI implements AquaComponentUI, AquaView
                 list.repaint();
             } else {
                 if (isStyleProperty(prop)) {
-                    if (getSideBarValue() && list.getLayoutOrientation() != JList.VERTICAL && AquaUtils.isInsetViewSupported()) {
+                    if (getSideBarValue() && list.getLayoutOrientation() != JList.VERTICAL && OSXSystemProperties.useInsetViewStyle()) {
                         // These options are incompatible (because the implementation of wrapped is private)
                         inhibitPropertyChangeListener = true;
                         list.setLayoutOrientation(JList.VERTICAL);
@@ -286,15 +286,14 @@ public class AquaListUI extends BasicListUI implements AquaComponentUI, AquaView
                     }
                     updateStyleProperties();
                 } else if ("layoutOrientation".equals(prop)) {
-                    if (list.getLayoutOrientation() != JList.VERTICAL && isSideBar() && AquaUtils.isInsetViewSupported()) {
+                    if (list.getLayoutOrientation() != JList.VERTICAL && isSideBar() && OSXSystemProperties.useInsetViewStyle()) {
                         // These options are incompatible (because the implementation of wrapped is private)
                         list.setLayoutOrientation(JList.VERTICAL);
                         return;
                     }
-                    updateInset();
-                    updateStriped();
+                    updateStyleProperties();
                 } else if (isViewStyleProperty(prop)) {
-                    updateInset();
+                    updateStyleProperties();
                 } else if ("ancestor".equals(prop)) {
                     updateSideBarConfiguration();
                 } else if ("transferHandler".equals(prop)) {
@@ -401,12 +400,12 @@ public class AquaListUI extends BasicListUI implements AquaComponentUI, AquaView
         if (isSideBar()) {
             list.setLayoutOrientation(JList.VERTICAL);
             // On macOS 11+, the sidebar style implies the inset view style.
-            if (AquaUtils.isInsetViewSupported()) {
+            if (OSXSystemProperties.useInsetViewStyle()) {
                 updateInset();
             }
             updateVibrantEffects();
         } else {
-            if (AquaUtils.isInsetViewSupported()) {
+            if (OSXSystemProperties.useInsetViewStyle()) {
                 updateInset();
             }
             updateVibrantEffects();
@@ -549,19 +548,31 @@ public class AquaListUI extends BasicListUI implements AquaComponentUI, AquaView
             isSideBar = sideBarValue;
             isSideBarChanged = true;
         }
+        boolean isRoundedScrollableChanged = false;
+        boolean roundedScrollableValue = AquaUtils.isRoundedScrollable(list);  // depends upon isSideBar
+        if (roundedScrollableValue != isRoundedScrollable) {
+            isRoundedScrollable = roundedScrollableValue;
+            isRoundedScrollableChanged = true;
+        }
+        boolean isInsetValueChanged = false;
+        boolean insetValue = getInsetValue(); // depends upon isRoundedScrollable, isSidebar, isVibrantMenu
+        if (insetValue != isInset) {
+            isInset = insetValue;
+            isInsetValueChanged = true;
+        }
         if (isStripedChanged || isSideBarChanged) {
             colors = determineColors();
         }
         if (isSideBarChanged) {
             updateSideBarConfiguration();
         }
-    }
-
-    private void updateStriped() {
-        boolean value = getStripedValue();
-        if (value != isStriped) {
-            isStriped = value;
-            colors = isStriped ? AquaColors.STRIPED_CONTAINER_COLORS : AquaColors.CONTAINER_COLORS;
+        if (isInsetValueChanged || isRoundedScrollableChanged) {
+            // affects content insets
+            updateInsetConfiguration();
+        }
+        if (isSideBarChanged) {
+            list.revalidate();
+            list.repaint();
         }
     }
 
@@ -580,8 +591,7 @@ public class AquaListUI extends BasicListUI implements AquaComponentUI, AquaView
 
     @Override
     public void scrollPaneRoundedBorderStatusChanged(boolean isRoundedBorder) {
-        isRoundedScrollable = isRoundedBorder;
-        updateInset();
+        updateStyleProperties();
     }
 
     private void updateInset() {
@@ -600,14 +610,12 @@ public class AquaListUI extends BasicListUI implements AquaComponentUI, AquaView
     }
 
     private boolean getInsetValue() {
-        if (AquaUtils.isInsetViewSupported() && list.getLayoutOrientation() == JList.VERTICAL) {
+        if (OSXSystemProperties.useInsetViewStyle() && list.getLayoutOrientation() == JList.VERTICAL) {
             String value = getViewStyleProperty();
             if ("inset".equals(value)) {
                 return true;
             }
-            if (isRoundedScrollable) {
-                return true;
-            }
+           return isRoundedScrollable || isSideBar() || isVibrantMenu;
         }
         return false;
     }
@@ -637,7 +645,7 @@ public class AquaListUI extends BasicListUI implements AquaComponentUI, AquaView
 
     @Override
     public boolean isInset() {
-        return isInset || (OSXSystemProperties.useInsetViewStyle() && (isVibrant() || isSideBar()));
+        return isInset;
     }
 
     protected boolean isStyleProperty(String prop) {

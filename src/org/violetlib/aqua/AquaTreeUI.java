@@ -109,8 +109,8 @@ public class AquaTreeUI extends BasicTreeUI
     protected boolean isCellFilled;
     protected boolean isSideBar;
     protected boolean isStriped;
-    private boolean isRoundedScrollable;
-    protected boolean _isInset;
+    private boolean isRoundedScrollable;  // depends upon isSideBar
+    protected boolean _isInset;  // depends upon isRoundedScrollable, isSidebar
     protected @Nullable Boolean _isShallowSideBar;
     private @Nullable LocalSidebarContainerSupport sidebarContainerSupport;
     protected int indentationPerLevel = 16;
@@ -167,10 +167,10 @@ public class AquaTreeUI extends BasicTreeUI
         originalTreeCellEditor = null;
         cellEditorChanged();
         sidebarContainerSupport = new LocalSidebarContainerSupport(tree, this);
-        isRoundedScrollable = AquaUtils.isRoundedScrollable(tree);
-        isStriped = getStripedValue();
-        _isInset = getInsetValue();
         isSideBar = getSideBarValue();
+        isRoundedScrollable = AquaUtils.isRoundedScrollable(tree);  // depends upon isRoundedScrollable
+        _isInset = getInsetValue();  // depends upon isRoundedScrollable, isSideBar
+        isStriped = getStripedValue();
         isCellFilled = getCellFilledValue();
 
         tree.repaint();
@@ -355,7 +355,7 @@ public class AquaTreeUI extends BasicTreeUI
         setRightChildIndent(indentationPerLevel - left);
 
         // On macOS 11+, the sidebar style implies the inset view style.
-        if (AquaUtils.isInsetViewSupported()) {
+        if (OSXSystemProperties.useInsetViewStyle()) {
             updateRowHeight();
             tree.revalidate();
             tree.repaint();
@@ -511,12 +511,32 @@ public class AquaTreeUI extends BasicTreeUI
             isSideBar = sideBarValue;
             isSideBarChanged = true;
         }
+        boolean isRoundedScrollableChanged = false;
+        boolean roundedScrollableValue = AquaUtils.isRoundedScrollable(tree);  // depends upon isSideBar
+        if (roundedScrollableValue != isRoundedScrollable) {
+            isRoundedScrollable = roundedScrollableValue;
+            isRoundedScrollableChanged = true;
+        }
+        boolean isInsetValueChanged = false;
+        boolean insetValue = getInsetValue(); // depends upon isRoundedScrollable, isSideBar
+        if (insetValue != _isInset) {
+            _isInset = insetValue;
+            isInsetValueChanged = true;
+        }
         if (isStripedChanged || isSideBarChanged) {
             colors = determineColors();
             tree.repaint();
         }
         if (isSideBarChanged) {
             updateSideBarConfiguration();
+        }
+        if (isInsetValueChanged || isRoundedScrollableChanged) {
+            // affects content insets
+            updateInsetConfiguration();
+        }
+        if (isRoundedScrollableChanged || isSideBarChanged) {
+            tree.revalidate();
+            tree.repaint();
         }
     }
 
@@ -560,7 +580,7 @@ public class AquaTreeUI extends BasicTreeUI
     }
 
     private boolean getInsetValue() {
-        if (AquaUtils.isInsetViewSupported()) {
+        if (OSXSystemProperties.useInsetViewStyle()) {
             String value = getViewStyleProperty();
             if ("inset".equals(value)) {
                 return true;
@@ -568,6 +588,7 @@ public class AquaTreeUI extends BasicTreeUI
             if (isRoundedScrollable) {
                 return true;
             }
+            return isSideBar();
         }
         return false;
     }
@@ -621,7 +642,7 @@ public class AquaTreeUI extends BasicTreeUI
 
     @Override
     public boolean isInset() {
-        return _isInset || (isSideBar() && OSXSystemProperties.useInsetViewStyle());
+        return _isInset;
     }
 
     private boolean isBackgroundClear() {
@@ -1999,7 +2020,7 @@ public class AquaTreeUI extends BasicTreeUI
                 updateStyleProperties();
                 return;
             } else if (isViewStyleProperty(pn)) {
-                updateInset();
+                updateStyleProperties();
                 return;
             } else if (isCellFilledProperty(pn)) {
                 updateCellFilled();
