@@ -41,7 +41,7 @@ public final class AquaTreeEditorBorder
 
     private @Nullable Color getBackground(@NotNull Component c)
     {
-        PaintingContext pc = PaintingContext.getDefault();
+        PaintingContext pc = AppearanceManager.getPaintingContext(c);
         if (pc.appearance.isDark()) {
             return AquaColors.getCellEditorBackground();
         }

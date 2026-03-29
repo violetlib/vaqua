@@ -56,22 +56,16 @@ public final class AquaLineBorder
     @Override
     protected void paint(@NotNull JComponent c, @NotNull Graphics2D g, int x, int y, int width, int height)
     {
-        Color color = getColor();
+        PaintingContext pc = AppearanceManager.getPaintingContext(c);
+        Color color = pc.appearance.getColor(colorName);
         if (color == null) {
             color = Color.gray;
         }
-
         g.setColor(color);
         g.fillRect(x, y, width, 1);
         g.fillRect(x, y+1, 1, height-2);
         g.fillRect(x, y + height - 1, width, 1);
         g.fillRect(x + width - 1, y+1, 1, height-2);
-    }
-
-    private @Nullable Color getColor()
-    {
-        PaintingContext pc = PaintingContext.getDefault();
-        return pc.appearance.getColor(colorName);
     }
 
     @Override

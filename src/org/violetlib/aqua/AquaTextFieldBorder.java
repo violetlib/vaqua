@@ -222,7 +222,7 @@ public class AquaTextFieldBorder extends AquaTextComponentBorder {
     protected @NotNull Painter getConfiguredPainter(@NotNull Component c) {
         int width = c.getWidth();
         int height = c.getHeight();
-        PaintingContext pc = PaintingContext.getDefault();
+        PaintingContext pc = AppearanceManager.getPaintingContext(c);
         AquaUtils.configure(painter, pc.appearance, tf, width, height);
         TextFieldConfiguration tg = getConfiguration();
         return painter.getPainter(tg);

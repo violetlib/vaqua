@@ -75,7 +75,7 @@ public final class AquaTableHeaderBorder
         // Unlike the Aqua Look and Feel painter, our painter should not draw a top or bottom border.
         // Therefore, we do not need to offset the rendering vertically.
 
-        PaintingContext pc = PaintingContext.getDefault();
+        PaintingContext pc = AppearanceManager.getPaintingContext(c);
         AquaUtils.configure(painter, pc.appearance, c, width+1, height);
         Configuration tg = getConfiguration(c);
         painter.getPainter(tg).paint(g, x-1, y);

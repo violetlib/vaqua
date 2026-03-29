@@ -80,14 +80,14 @@ public class AquaGroupBorder extends AquaBorder {
         return (Insets) borderInsets.clone();
     }
 
-    protected void paint(JComponent c, Graphics2D g, int x, int y, int width, int height) {
+    protected void paint(@NotNull JComponent c, @NotNull Graphics2D g, int x, int y, int width, int height) {
         x += boxInsets.left;
         y += boxInsets.top;
         width -= (boxInsets.left + boxInsets.right);
         height -= (boxInsets.top + boxInsets.bottom);
 
         // TBD: state is not currently used, but perhaps someday it will be...
-        PaintingContext pc = PaintingContext.getDefault();
+        PaintingContext pc = AppearanceManager.getPaintingContext(c);
         AquaUtils.configure(painter, pc.appearance, c, width, height);
         Configuration bg = getConfiguration();
         painter.getPainter(bg).paint(g, x, y);

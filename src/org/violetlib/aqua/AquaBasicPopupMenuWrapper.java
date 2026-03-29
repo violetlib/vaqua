@@ -36,7 +36,7 @@ public class AquaBasicPopupMenuWrapper extends JPanel {
 
         BackgroundPainter p = AquaBorderSupport.get(this, BackgroundPainter.class);
         if (p != null) {
-            PaintingContext pc = PaintingContext.getDefault();
+            PaintingContext pc = AppearanceManager.getPaintingContext(this);
             Rectangle bounds = getBounds();
             p.paintBackground(this, g, pc, bounds.x, bounds.y, bounds.width, bounds.height);
         }

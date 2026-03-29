@@ -101,7 +101,7 @@ public class SidebarContainerSupport
 
     @Override
     public void paintBorder(Component c, Graphics o, int x, int y, int width, int height) {
-        PaintingContext pc = PaintingContext.getDefault();
+        PaintingContext pc = AppearanceManager.getPaintingContext(c);
         boolean isActive = AquaFocusHandler.isActive((JComponent)c);
 
         if (isActive || pc.appearance.isHighContrast()) {

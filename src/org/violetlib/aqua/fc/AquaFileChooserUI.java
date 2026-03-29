@@ -586,7 +586,7 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements ActiveSensi
             super.paintComponent(g); // sets up the painting context
             if (!useGroupBox() && !AquaSheetSupport.isSheet(fc)) {
                 // Paint a background that is appearance-sensitive
-                PaintingContext pc = PaintingContext.getDefault();
+                PaintingContext pc = AppearanceManager.getPaintingContext(this);
                 boolean isSave = fc.getDialogType() == JFileChooser.SAVE_DIALOG;
                 String name = isSave ? "saveOptionsArea" : "openOptionsArea";
                 EffectName effect = AquaFocusHandler.isActive(fc) ? EffectName.EFFECT_NONE : EffectName.EFFECT_DISABLED;
@@ -2786,7 +2786,7 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements ActiveSensi
             if (value instanceof SidebarTreeNode) {
                 SidebarTreeNode info = (SidebarTreeNode) value;
                 setText(info.getUserName());
-                PaintingContext pc = PaintingContext.getDefault();
+                PaintingContext pc = AppearanceManager.getPaintingContext(tree);
                 setIcon(info.getIcon(pc.appearance));
             }
             return this;

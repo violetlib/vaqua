@@ -157,7 +157,7 @@ public class AquaTextPasswordFieldUI extends AquaTextFieldUI {
 
         @Override
         public void paintBorder(Component c, Graphics g, int x, int y, int width, int height) {
-            PaintingContext pc = PaintingContext.getDefault();
+            PaintingContext pc = AppearanceManager.getPaintingContext(c);
             Color color = pc.appearance.getColor("capsLockIcon");
             g = g.create(width - 23, height / 2 - 8, 18, 18);
             g.setColor(color);

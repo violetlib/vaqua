@@ -283,7 +283,7 @@ public class ListViewImpl extends ListView {
         }
 
         protected Component fix(Component c, boolean selected) {
-            PaintingContext pc = PaintingContext.getDefault();
+            PaintingContext pc = AppearanceManager.getPaintingContext(c);
             Color fg = pc.appearance.getColor(selected ? "alternateSelectedControlText" : textColorName);
             if (fg == null) {
                 fg = Color.BLACK;
@@ -302,7 +302,7 @@ public class ListViewImpl extends ListView {
         public Component getTreeTableCellRendererComponent(TreeTable treeTable, Object value, boolean selected,
                                                            boolean hasFocus, int row, int column, boolean expanded,
                                                            boolean leaf) {
-            PaintingContext pc = PaintingContext.getDefault();
+            PaintingContext pc = AppearanceManager.getPaintingContext(treeTable);
             ContainerContextualColors colors = AquaColors.STRIPED_CONTAINER_COLORS;
             Component c = fileRenderer.getCellRendererComponent(treeTable, pc.appearance, colors, value, selected, hasFocus);
             if (c == null) {

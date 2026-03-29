@@ -1704,7 +1704,7 @@ public class AquaTreeUI extends BasicTreeUI
         }
         int x = center.x - width / 2;
         int y = center.y - height / 2;
-        PaintingContext pc = PaintingContext.getDefault();
+        PaintingContext pc = AppearanceManager.getPaintingContext(tree);
         AquaUtils.configure(painter, pc.appearance, tree, width, height);
         painter.getPainter(tg).paint(g, x, y);
     }

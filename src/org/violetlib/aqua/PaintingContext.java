@@ -44,8 +44,7 @@ public final class PaintingContext
     }
 
     /**
-     * The current painting context. If not null, a paint operation is in progress and the painting context is correct
-     * for the component currently being painted.
+     * The current painting context, if known.
      */
     private static @Nullable PaintingContext current;
 
@@ -53,22 +52,13 @@ public final class PaintingContext
      * Return the current painting context.
      * <p>
      * This method should not be used by components or component UIs.
-     * Components and component UIs should use getDefault, which most likely will
+     * Components and component UIs should use AppearanceManager.getPaintingContext, which most likely will
      * return an appropriate result.
      * @return the current painting context, or null if none.
      */
     public static @Nullable PaintingContext get()
     {
         return current;
-    }
-
-    public static @NotNull PaintingContext getDefault()
-      throws UnsupportedOperationException
-    {
-        if (current != null) {
-            return current;
-        }
-        return PaintingContext.of(AquaAppearances.getApplicationEffectiveAppearance());
     }
 
     public static @NotNull PaintingContext push(@NotNull JComponent owner, @NotNull AquaAppearance appearance)

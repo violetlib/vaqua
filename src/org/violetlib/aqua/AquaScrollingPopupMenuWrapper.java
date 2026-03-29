@@ -267,7 +267,7 @@ public class AquaScrollingPopupMenuWrapper extends JPanel {
         Border b = getBorder();
         BackgroundPainter bp = AquaBorderSupport.get(b, BackgroundPainter.class);
         if (bp != null) {
-            PaintingContext pc = PaintingContext.getDefault();
+            PaintingContext pc = AppearanceManager.getPaintingContext(this);
             Rectangle bounds = getBounds();
             bp.paintBackground(this, g, pc, bounds.x, bounds.y, bounds.width, bounds.height);
         }

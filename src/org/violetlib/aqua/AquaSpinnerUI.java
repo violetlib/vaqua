@@ -551,7 +551,7 @@ public class AquaSpinnerUI extends SpinnerUI implements AquaComponentUI, AquaUti
                 g.fillRect(0, 0, getWidth(), getHeight());
             }
             Rectangle bounds = getBounds();
-            PaintingContext pc = PaintingContext.getDefault();
+            PaintingContext pc = AppearanceManager.getPaintingContext(spinner);
             AquaUtils.configure(painter, pc.appearance, spinner, bounds.width, bounds.height);
             Configuration cg = getConfiguration();
             painter.getPainter(cg).paint(g, 0, 0);

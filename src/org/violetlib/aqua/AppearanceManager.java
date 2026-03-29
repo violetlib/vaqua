@@ -236,7 +236,7 @@ public class AppearanceManager {
     /**
      * This method for use by painters not associated with a VAqua component.
      */
-    public static @NotNull PaintingContext getPaintingContext(@NotNull Component c)
+    public static @NotNull PaintingContext getPaintingContext(@Nullable Component c)
     {
         PaintingContext pc = PaintingContext.get();
         if (pc != null) {
@@ -245,11 +245,11 @@ public class AppearanceManager {
         return getWindowPaintingContext(c);
     }
 
-    public static @NotNull PaintingContext getWindowPaintingContext(@NotNull Component c)
+    public static @NotNull PaintingContext getWindowPaintingContext(@Nullable Component c)
       throws UnsupportedOperationException
     {
         if (isEnabled) {
-            if (isSpecifiedAppearanceFeatureEnabled) {
+            if (isSpecifiedAppearanceFeatureEnabled && c != null) {
                 Window w = SwingUtilities.getWindowAncestor(c);
                 if (w != null) {
                     JRootPane rp = AquaUtils.getRootPane(w);
@@ -296,10 +296,7 @@ public class AppearanceManager {
      */
     public static void withContext(@NotNull Graphics g, @NotNull JComponent jc, @NotNull ComponentPainter painter)
     {
-        PaintingContext pc = PaintingContext.get();
-        if (pc == null) {
-            pc = getWindowPaintingContext(jc);
-        }
+        PaintingContext pc = getPaintingContext(jc);
         painter.paint((Graphics2D) g, jc, pc);
     }
 

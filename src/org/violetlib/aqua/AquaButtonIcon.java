@@ -62,8 +62,8 @@ public class AquaButtonIcon implements Icon, UIResource, ImageObserver {
     }
 
     @Override
-    public void paintIcon(Component c, Graphics g, int x, int y) {
-        PaintingContext pc = PaintingContext.getDefault();
+    public void paintIcon(@Nullable Component c, @NotNull Graphics g, int x, int y) {
+        PaintingContext pc = AppearanceManager.getPaintingContext(c);
         Object operator = operatorSupplier.getCurrentImageProcessingOperator(b, isTemplate, pc);
         Icon icon = AquaImageFactory.getProcessedImage(basicIcon, operator);
         // Using the button as the image observer can fail because it aborts drawing the image if the button

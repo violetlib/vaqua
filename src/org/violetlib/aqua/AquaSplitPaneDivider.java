@@ -104,10 +104,7 @@ public class AquaSplitPaneDivider extends BasicSplitPaneDivider {
      */
     @Override
     public void paint(Graphics g) {
-        PaintingContext pc = PaintingContext.get();
-        if (pc == null) {
-            pc = AppearanceManager.getWindowPaintingContext(splitPane);
-        }
+        PaintingContext pc = AppearanceManager.getPaintingContext(splitPane);
         paint((Graphics2D) g, pc);
     }
 
