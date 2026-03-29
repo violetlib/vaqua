@@ -128,7 +128,7 @@ JNIEnv *JNU_SUPPORT(getAppkitJNIEnvironment)()
 {
     //AWT_ASSERT_APPKIT_THREAD;
     if (appKitEnv == NULL) {
-        (*jvm)->AttachCurrentThreadAsDaemon(jvm, &appKitEnv, NULL);
+        (*jvm)->AttachCurrentThreadAsDaemon(jvm, (void**) &appKitEnv, NULL);
     }
     return appKitEnv;
 }
