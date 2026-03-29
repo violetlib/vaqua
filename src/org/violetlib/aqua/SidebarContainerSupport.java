@@ -135,7 +135,7 @@ public class SidebarContainerSupport
     public @Nullable Insetter2D getInsetter()
     {
         float d = 2;
-        float arc = radius + 0.5f;
+        float arc = this.arc + 0.5f;
         return (w, h) -> new RoundRectangle2D.Float(d, d, w-2*d, h-2*d, arc, arc);
     }
 
