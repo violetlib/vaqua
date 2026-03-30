@@ -245,9 +245,7 @@ public class SystemColors {
 
         if (OSVersion >= macOS11) {
             colors.add("recessedText", 0, 140);
-            if (OSVersion < macOS26) {
-                colors.add("recessedText_rollover", 0);
-            }
+            colors.add("recessedText_rollover", 0);
             colors.defineTextInactiveDisabled("selectedRecessedText", 0, 206, 64, 32);
             colors.add("selectedRecessedText_pressed", 0, 140);
             colors.add("selectedRecessedText_rollover", 0, 140);
@@ -374,6 +372,7 @@ public class SystemColors {
 
             if (OSVersion >= macOS11) {
                 colors.add("selectedToolbarBackground_inactive", 234);
+                colors.add("selectedToolbarText", 0);
                 colors.add("selectedToolbarText_inactive", 175);
             }
         }
@@ -581,6 +580,7 @@ public class SystemColors {
             colors.add("selectedBevelText_inactive", 0);
             colors.add("selectedPushButtonText_inactive", 0);
             colors.add("recessedText", 0, 200);
+            colors.add("recessedText_rollover", 0);
             colors.add("recessedText_inactive", 0, 150);
             colors.add("recessedText_disabled", 0, 100);  // native is darker, seems wrong
             colors.add("recessedText_inactive_disabled", 0, 100);
@@ -952,11 +952,11 @@ public class SystemColors {
             colors.defineText("selectedToolbarText", "alternateSelectedControlText");
 
             if (OSVersion >= macOS11) {
-                colors.add("toolbarText", 255, 172);
-                colors.add("toolbarText_rollover", 255, 144);
+                colors.add("toolbarText", 255, 134);
+                colors.add("toolbarText_rollover", 255, 160);
                 colors.add("selectedToolbarBackground_inactive", 39);
-                colors.add("selectedToolbarText", 190);
-                //colors.add("selectedToolbarText_rollover", 236);
+                colors.add("selectedToolbarText", 255, 220);
+                colors.add("selectedToolbarText_rollover", 255, 234);
                 colors.add("selectedToolbarText_inactive", 93);
             } else {
                 colors.add("toolbarText", "controlText");
@@ -1084,6 +1084,8 @@ public class SystemColors {
             colors.add("toolbarText_disabled", 146);
             colors.add("toolbarText_inactive", 146);
             colors.add("toolbarText_inactive_disabled", 98);
+
+            colors.add("recessedText_rollover", 255);
         } else {
             if (OSVersion >= macOS11 && OSVersion < 1500) {
                 colors.add("segmentedText_pressed", 0);

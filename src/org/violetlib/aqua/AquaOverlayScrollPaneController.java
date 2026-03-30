@@ -32,7 +32,11 @@ public class AquaOverlayScrollPaneController {
     protected final static int FADE_OUT_TIME = 250;
     protected final static int DEACTIVATE_DELAY_TIME = 750;
 
-    public AquaOverlayScrollPaneController(@NotNull JScrollPane scrollPane) {
+    public AquaOverlayScrollPaneController() {
+        this(null);
+    }
+
+    public AquaOverlayScrollPaneController(@Nullable JScrollPane scrollPane) {
         deactivationTimer = new Timer(DEACTIVATE_DELAY_TIME, new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
