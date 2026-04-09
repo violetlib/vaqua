@@ -260,6 +260,7 @@ public class AquaTableUI extends BasicTableUI
         configureAppearanceContext(null);
         updateInset();
         useShortDropLineColor = Boolean.TRUE.equals(table.getClientProperty(USE_SHORT_DROP_LINE_COLOR_KEY));
+        configureDropTargetListener();
     }
 
     @Override
@@ -323,7 +324,10 @@ public class AquaTableUI extends BasicTableUI
 
     private void configureDropTargetListener() {
         if (knownDropTarget != null) {
-            knownDropTarget.removeDropTargetListener(dropTargetListener);
+            try {
+                knownDropTarget.removeDropTargetListener(dropTargetListener);
+            } catch (IllegalArgumentException ignore) {
+            }
             knownDropTarget = null;
         }
 
@@ -336,6 +340,7 @@ public class AquaTableUI extends BasicTableUI
             try {
                 knownDropTarget.addDropTargetListener(dropTargetListener);
             } catch (TooManyListenersException ignore) {
+                knownDropTarget = null;
             }
         }
     }

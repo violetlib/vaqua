@@ -1,5 +1,5 @@
 /*
- * Changes Copyright (c) 2015-2024 Alan Snyder.
+ * Changes Copyright (c) 2015-2026 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -135,6 +135,7 @@ public class AquaListUI extends BasicListUI implements AquaComponentUI, AquaView
         updateSideBarConfiguration();
         updateVibrantEffects();
         configureAppearanceContext(null);
+        configureDropTargetListener();
     }
 
     @Override
@@ -277,7 +278,10 @@ public class AquaListUI extends BasicListUI implements AquaComponentUI, AquaView
 
     private void configureDropTargetListener() {
         if (knownDropTarget != null) {
-            knownDropTarget.removeDropTargetListener(dropTargetListener);
+            try {
+                knownDropTarget.removeDropTargetListener(dropTargetListener);
+            } catch (IllegalArgumentException ignore) {
+            }
             knownDropTarget = null;
         }
 
@@ -290,6 +294,7 @@ public class AquaListUI extends BasicListUI implements AquaComponentUI, AquaView
             try {
                 knownDropTarget.addDropTargetListener(dropTargetListener);
             } catch (TooManyListenersException ignore) {
+                knownDropTarget = null;
             }
         }
     }

@@ -1,5 +1,5 @@
 /*
- * Changes Copyright (c) 2015-2024 Alan Snyder.
+ * Changes Copyright (c) 2015-2026 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -173,6 +173,7 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
         updateInset();
         updateSideBarConfiguration();
         configureAppearanceContext(null);
+        configureDropTargetListener();
     }
 
     protected void cellEditorChanged() {
@@ -1778,7 +1779,10 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
 
     protected void configureDropTargetListener() {
         if (knownDropTarget != null) {
-            knownDropTarget.removeDropTargetListener(dropTargetListener);
+            try {
+                knownDropTarget.removeDropTargetListener(dropTargetListener);
+            } catch (IllegalArgumentException ignore) {
+            }
             knownDropTarget = null;
         }
 
@@ -1791,6 +1795,7 @@ public class AquaTreeUI extends BasicTreeUI implements SelectionRepaintable, Aqu
             try {
                 knownDropTarget.addDropTargetListener(dropTargetListener);
             } catch (TooManyListenersException ignore) {
+                knownDropTarget = null;
             }
         }
     }
