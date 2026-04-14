@@ -290,8 +290,8 @@ public class AquaSliderUI extends BasicSliderUI
     }
 
     protected SliderPainter getConfiguredPainter(@Nullable PaintingContext pc) {
-        // PaintingContext not needed when performing a layout-related inquiry
-        AquaAppearance appearance = pc != null ? pc.appearance : null;
+        // PaintingContext not used when performing a layout-related inquiry
+        AquaAppearance appearance = pc != null ? pc.appearance : AquaAppearances.getDefaultAppearance();
         AquaUtils.configure(painter, appearance, slider, trackRect.width, trackRect.height);
         SliderConfiguration sg = getConfiguration();
         return (SliderPainter) painter.getPainter(sg);
