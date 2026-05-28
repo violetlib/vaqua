@@ -104,14 +104,16 @@ public class SidebarContainerSupport
         PaintingContext pc = AppearanceManager.getPaintingContext(c);
         boolean isActive = AquaFocusHandler.isActive((JComponent)c);
 
-        if (isActive || pc.appearance.isHighContrast()) {
-            float d = 0.5f;
+        if (isActive || pc.appearance.isHighContrast() || pc.appearance.isDark()) {
+            boolean isThick = pc.appearance.isHighContrast();
+            float thickness = isThick ? 2f : 1f;
+            float d = thickness / 2;
             Shape borderPath = new RoundRectangle2D.Float(x+d, y+d, width-2*d, height-2*d, arc, arc);
             Graphics2D g = (Graphics2D) o;
 
             Color color = pc.appearance.getColor(isActive ? "sidebarBorder" : "sidebarBorder_inactive");
             g.setColor(color);
-            g.setStroke(new BasicStroke(0.5f));
+            g.setStroke(new BasicStroke(thickness));
             AquaUtils.drawAntiAliased(g, borderPath);
         }
     }

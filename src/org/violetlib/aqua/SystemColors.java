@@ -425,8 +425,8 @@ public class SystemColors {
         }
 
         if (OSVersion >= macOS26) {
-            colors.add("sidebarBackground", 237);
-            colors.add("sidebarBackground_inactive", 243);
+            colors.add("sidebarBackground", 250);
+            colors.add("sidebarBackground_inactive", 248);
         }
 
         // colors related to (non-sidebar) trees
@@ -488,8 +488,8 @@ public class SystemColors {
 
         if (OSVersion >= macOS26) {
             int bc = OSVersion >= 2602 ? 251 : 237;
-            int sb = OSVersion >= 2602 ? 10 : 73;
-            int sbi = OSVersion >= 2602 ? 99 : 138;
+            int sb = OSVersion >= 2602 ? 141 : 73;
+            int sbi = OSVersion >= 2602 ? 181 : 138;
             colors.add("sidebarBackground", bc);
             colors.add("sidebarBackground_inactive", bc);
             colors.add("sidebarBorder", sb);
@@ -1003,6 +1003,7 @@ public class SystemColors {
 
         if (OSVersion >= macOS26) {
             colors.add("sidebarBackground_inactive", 45);
+            colors.add("sidebarBorder", 54);
         }
 
         // colors related to (non-sidebar) trees (dark mode)
@@ -1043,8 +1044,8 @@ public class SystemColors {
 
         if (OSVersion >= macOS26) {
             int bc = OSVersion >= 2602 ? 12 : 30;
-            int sb = OSVersion >= 2602 ? 168 : 196;
-            int sbi = OSVersion >= 2602 ? 133 : 138;
+            int sb = OSVersion >= 2602 ? 142 : 196;
+            int sbi = OSVersion >= 2602 ? 102 : 138;
 
             colors.add("sidebarBackground", bc);
             colors.add("sidebarBackground_inactive", bc);
