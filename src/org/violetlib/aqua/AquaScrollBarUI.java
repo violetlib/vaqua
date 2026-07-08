@@ -552,8 +552,8 @@ public class AquaScrollBarUI extends ScrollBarUI implements AquaComponentUI {
                 fScrollBar.repaint();
                 fScrollBar.revalidate();
                 fScrollBar.repaint();
-            } else if (AquaFocusHandler.FRAME_ACTIVE_PROPERTY.equals(propertyName)) {
-                fScrollBar.repaint();
+//            } else if (AquaFocusHandler.FRAME_ACTIVE_PROPERTY.equals(propertyName)) {
+//                fScrollBar.repaint();
             } else if (INTERNAL_THUMB_STYLE_CLIENT_PROPERTY_KEY.equals(propertyName)) {
                 fScrollBar.repaint();
             } else if (INTERNAL_STYLE_CLIENT_PROPERTY_KEY.equals(propertyName)) {

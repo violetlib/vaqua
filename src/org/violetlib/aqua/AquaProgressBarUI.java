@@ -136,9 +136,9 @@ public class AquaProgressBarUI
     public void propertyChange(PropertyChangeEvent e) {
         String prop = e.getPropertyName();
 
-        if (AquaFocusHandler.FRAME_ACTIVE_PROPERTY.equals(prop)) {
+        /* if (AquaFocusHandler.FRAME_ACTIVE_PROPERTY.equals(prop)) {
             progressBar.repaint();
-        } else if ("indeterminate".equals(prop)) {
+        } else */ if ("indeterminate".equals(prop)) {
             stopAnimationTimer();
             progressBar.repaint();
         } else if (isStyleProperty(prop)) {
