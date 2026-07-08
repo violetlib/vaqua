@@ -253,7 +253,7 @@ public class AquaSliderUI extends BasicSliderUI
 
     public void paint(Graphics2D g, JComponent c, @NotNull PaintingContext pc) {
 
-        AquaUIPainter.State state = AquaUIPainter.State.ACTIVE;
+        AquaUIPainter.State state = getState();
         AppearanceContext appearanceContext = new AppearanceContext(pc.appearance, state, false, false);
         AquaColors.installColors(c, appearanceContext, colors);
 
@@ -311,24 +311,6 @@ public class AquaSliderUI extends BasicSliderUI
         SliderWidget widget = getSliderWidget();
         TickMarkPosition tickPosition = getTickMarkPosition();
         boolean isFocused = slider.hasFocus();
-
-//        // Possible workaround for a hopefully temporary macOS 26 beta problem that caused disabled sliders to paint
-//        // the thumb in the minimum position.
-//
-//        if (AquaPainting.getVersion() == macOS26 && widget != SliderWidget.SLIDER_CIRCULAR && thumbPosition > 0) {
-//            if (state == State.DISABLED || state == State.DISABLED_INACTIVE) {
-//                String message = "Replacing slider state with inactive state";
-//                String name = slider.getName();
-//                if (name != null) {
-//                    message = message + ": " + name;
-//                } else {
-//                    message = message + ": " + thumbPosition;
-//                }
-//                Utils.logDebug(message);
-//                state = State.INACTIVE;
-//            }
-//        }
-
         Double neutralValue = getNeutralValue();
         if (neutralValue != null) {
             double relativeValue = (neutralValue - slider.getMinimum()) / valueRange;
@@ -337,7 +319,6 @@ public class AquaSliderUI extends BasicSliderUI
             } catch (NoSuchMethodError ignore) {
             }
         }
-
         return new SliderConfiguration(widget, sizeVariant, state, isFocused, thumbPosition, tickCount, tickPosition);
     }
 
