@@ -18,6 +18,7 @@ import org.jetbrains.annotations.Nullable;
 
 import static org.violetlib.aqua.AquaUtils.execute;
 import static org.violetlib.aqua.AquaUtils.syslog;
+import static org.violetlib.aqua.OSXSystemProperties.macOS26;
 
 /**
  * Support for vibrant backgrounds. A vibrant background is implemented by a special NSView that is installed as a
@@ -71,7 +72,7 @@ public class AquaVibrantSupport {
     private static final PropertyChangeListener vibrantStylePropertyChangeListener = new VibrantStylePropertyChangeListener();
 
     public static int getCornerRadius(int style) {
-        if (OSXSystemProperties.OSVersion >= OSXSystemProperties.macOS26) {
+        if (AquaPainting.getVersion() >= macOS26) {
             if (style == SIDEBAR_STYLE) {
                 return 18;  // see SidebarContainerSupport
             }

@@ -237,7 +237,7 @@ public class AquaButtonSupport {
             String text = b.getText();
             if (text == null || text.isEmpty()) {
                 w = BUTTON_TOOLBAR;
-                if (AquaNativeRendering.getSystemRenderingVersion() > AquaNativeRendering.macOS26) {
+                if (AquaPainting.getVersion() > macOS26) {
                     size = EXTRA_LARGE;
                 }
             }
@@ -247,19 +247,19 @@ public class AquaButtonSupport {
 
     private static @NotNull ButtonStyleInfo getSegmentedButtonStyleInfo(@NotNull AbstractButton b,
                                                                         @NotNull AquaUIPainter.SegmentedButtonWidget w) {
-        int version = AquaNativeRendering.getSystemRenderingVersion();
+        int version = AquaPainting.getVersion();
 
         boolean isOnToolbar = AquaUtils.isOnToolbar(b);
         AquaUIPainter.Size size;
         if (isOnToolbar && w == AquaUIPainter.SegmentedButtonWidget.BUTTON_SEGMENTED) {
-            if (version >= AquaUIPainter.macOS26) {
+            if (version >= macOS26) {
                 w = AquaUIPainter.SegmentedButtonWidget.BUTTON_SEGMENTED_SLIDER_TOOLBAR;
             } else {
                 w = AquaUIPainter.SegmentedButtonWidget.BUTTON_SEGMENTED_TEXTURED_TOOLBAR;
             }
             size = AquaButtonSupport.getPreferredToolbarButtonSize(b, w);
         } else if (isOnToolbar && w == AquaUIPainter.SegmentedButtonWidget.BUTTON_SEGMENTED_SEPARATED) {
-            if (version >= AquaUIPainter.macOS26) {
+            if (version >= macOS26) {
                 w = AquaUIPainter.SegmentedButtonWidget.BUTTON_SEGMENTED_SEPARATED;
             } else {
                 w = AquaUIPainter.SegmentedButtonWidget.BUTTON_SEGMENTED_TEXTURED_SEPARATED_TOOLBAR;
@@ -671,8 +671,8 @@ public class AquaButtonSupport {
         }
 
         // Starting with (at least) macOS 11, toolbar buttons exhibit rollover behavior even in an inactive window
-        int version = AquaNativeRendering.getSystemRenderingVersion();
-        if (version >= AquaNativeRendering.macOS11) {
+        int version = AquaPainting.getVersion();
+        if (version >= macOS11) {
             if (isToolbarStyle(b)) {
                 ButtonModel model = b.getModel();
                 if (model.isArmed() && model.isPressed()) {

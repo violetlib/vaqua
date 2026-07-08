@@ -41,7 +41,6 @@ import javax.swing.border.Border;
 
 import org.jetbrains.annotations.*;
 import org.violetlib.aqua.AquaUtils.RecyclableSingleton;
-import org.violetlib.jnr.aqua.AquaNativeRendering;
 import org.violetlib.jnr.aqua.AquaUIPainter;
 import org.violetlib.jnr.aqua.AquaUIPainter.ButtonWidget;
 import org.violetlib.jnr.aqua.AquaUIPainter.Position;
@@ -88,7 +87,7 @@ public class AquaButtonExtendedTypes {
     }
 
     private static @NotNull String mapToolbarButtonType(@NotNull String buttonType) {
-        if (AquaNativeRendering.getSystemRenderingVersion() >= AquaUIPainter.macOS26) {
+        if (AquaPainting.getVersion() >= macOS26) {
             if (buttonType.equals("segmentedTextured") || buttonType.equals("segmentedTexturedSeparated")) {
                 return "segmented";
             }

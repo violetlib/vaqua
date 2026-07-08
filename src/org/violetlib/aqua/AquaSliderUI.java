@@ -315,7 +315,7 @@ public class AquaSliderUI extends BasicSliderUI
 //        // Possible workaround for a hopefully temporary macOS 26 beta problem that caused disabled sliders to paint
 //        // the thumb in the minimum position.
 //
-//        if (AquaPainting.getSystemRenderingVersion() == 2600 && widget != SliderWidget.SLIDER_CIRCULAR && thumbPosition > 0) {
+//        if (AquaPainting.getVersion() == macOS26 && widget != SliderWidget.SLIDER_CIRCULAR && thumbPosition > 0) {
 //            if (state == State.DISABLED || state == State.DISABLED_INACTIVE) {
 //                String message = "Replacing slider state with inactive state";
 //                String name = slider.getName();

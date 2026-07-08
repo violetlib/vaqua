@@ -39,8 +39,7 @@ import org.jetbrains.annotations.*;
 import org.violetlib.jnr.aqua.*;
 import org.violetlib.jnr.aqua.AquaUIPainter.*;
 
-import static org.violetlib.aqua.OSXSystemProperties.OSVersion;
-import static org.violetlib.aqua.OSXSystemProperties.macOS26;
+import static org.violetlib.aqua.OSXSystemProperties.*;
 import static org.violetlib.jnr.aqua.SegmentedButtonConfiguration.DividerState;
 
 /**
@@ -172,8 +171,8 @@ public class AquaSegmentedButtonBorder extends AquaButtonBorder implements Focus
                 return true;
             }
             if (widget == SegmentedButtonWidget.BUTTON_SEGMENTED && isExclusive) {
-                int version = AquaNativeRendering.getSystemRenderingVersion();
-                return version >= 1100;
+                int version = AquaPainting.getVersion();
+                return version >= macOS11;
             }
         }
         return false;
