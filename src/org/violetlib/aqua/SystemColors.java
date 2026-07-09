@@ -10,8 +10,7 @@ package org.violetlib.aqua;
 
 import org.jetbrains.annotations.*;
 
-import static org.violetlib.aqua.OSXSystemProperties.macOS11;
-import static org.violetlib.aqua.OSXSystemProperties.macOS26;
+import static org.violetlib.aqua.OSXSystemProperties.*;
 
 /**
  * A set of color definitions that can be combined to form a complete set of colors for an appearance.
@@ -427,7 +426,15 @@ public class SystemColors {
         if (OSVersion >= macOS26) {
             colors.add("sidebarBackground", 250);
             colors.add("sidebarBackground_inactive", 248);
-        }
+            colors.add("sidebarIcon", 25);
+            colors.add("sidebarText", "sidebarIcon");
+            colors.add("selectedSidebarIcon", "controlAccent_pressed");
+            colors.add("selectedSidebarIcon_focused", "selectedSidebarIcon");
+            colors.add("selectedSidebarIcon_inactive", "controlAccent_disabled");
+            colors.add("selectedSidebarText", "selectedSidebarIcon");
+            colors.add("selectedSidebarText_focused", "selectedSidebarIcon_focused");
+            colors.add("selectedSidebarText_inactive", "selectedSidebarIcon_inactive");
+         }
 
         // colors related to (non-sidebar) trees
         colors.add("treeIcon", 140);
@@ -533,6 +540,15 @@ public class SystemColors {
             colors.add("selectedSidebarText_inactive", 0, 200);
         } else {
             colors.add("selectedSidebarText_inactive", 0);
+        }
+
+        if (OSVersion >= macOS26) {
+            colors.add("selectedSidebarIcon", "controlAccent_pressed");
+            colors.add("selectedSidebarIcon_focused", "selectedSidebarIcon");
+            colors.add("selectedSidebarIcon_inactive", "controlAccent_disabled");
+            colors.add("selectedSidebarText", "selectedSidebarIcon");
+            colors.add("selectedSidebarText_focused", "selectedSidebarIcon_focused");
+            colors.add("selectedSidebarText_inactive", "selectedSidebarIcon_inactive");
         }
 
         if (OSVersion >= macOS11) {
@@ -1004,6 +1020,14 @@ public class SystemColors {
         if (OSVersion >= macOS26) {
             colors.add("sidebarBackground_inactive", 45);
             colors.add("sidebarBorder", 54);
+            colors.add("sidebarIcon", 244);
+            colors.add("sidebarText", "sidebarIcon");
+            colors.add("selectedSidebarIcon", "controlAccent");
+            colors.add("selectedSidebarIcon_focused", "selectedSidebarIcon");
+            colors.add("selectedSidebarIcon_inactive", "controlAccent_disabled");
+            colors.add("selectedSidebarText", "selectedSidebarIcon");
+            colors.add("selectedSidebarText_focused", "selectedSidebarIcon_focused");
+            colors.add("selectedSidebarText_inactive", "selectedSidebarIcon_inactive");
         }
 
         // colors related to (non-sidebar) trees (dark mode)
@@ -1145,6 +1169,15 @@ public class SystemColors {
         colors.add("selectedSidebarIcon_focused", "alternateSelectedControlText");
         colors.add("selectedSidebarIcon", 255, 140);
         colors.add("selectedSidebarText_inactive", 255, 140);
+
+        if (OSVersion >= macOS26) {
+            colors.add("selectedSidebarIcon", "controlAccent_pressed");
+            colors.add("selectedSidebarIcon_focused", "selectedSidebarIcon");
+            colors.add("selectedSidebarIcon_inactive", "controlAccent_disabled");
+            colors.add("selectedSidebarText", "selectedSidebarIcon");
+            colors.add("selectedSidebarText_focused", "selectedSidebarIcon_focused");
+            colors.add("selectedSidebarText_inactive", "selectedSidebarIcon_inactive");
+        }
 
         if (OSVersion >= macOS11 && OSVersion < macOS26) {
             colors.add("texturedToolbarText_rollover", "texturedText");
