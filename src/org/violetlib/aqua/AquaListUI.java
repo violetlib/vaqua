@@ -995,7 +995,7 @@ public class AquaListUI extends BasicListUI implements AquaComponentUI, AquaView
             Color background = colors.getBackground(ac);
             g.setColor(background);
             if (!AquaColors.isPriority(list.getSelectionBackground())) {
-                Color c = isInset() ? AquaColors.CLEAR : background;
+                Color c = isInset() && isVibrant() ? AquaColors.CLEAR : background;
                 list.setSelectionBackground(c);
             }
 

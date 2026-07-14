@@ -466,9 +466,10 @@ public class AquaColors {
 
     private static @NotNull ContainerContextualColors createSidebarContainerColors() {
         AquaContextualColorImpl background = new AquaContextualColorImpl("SidebarContainerColors.background", "sidebarBackground");
-        background.setActiveDefaultSelectedName("selectedContentBackground");
-        background.setSelectedName("unemphasizedSelectedTextBackground");
+        background.setActiveDefaultSelectedName("selectedSidebarBackground_focused");
+        background.setSelectedName("selectedSidebarBackground");
         background.setInactiveName("sidebarBackground_inactive");
+        background.setInactiveSelectedName("selectedSidebarBackground_inactive");
 
         AquaContextualColorImpl foreground = new AquaContextualColorImpl("SidebarContainerColors.foreground", "sidebarText");
         foreground.setSelectedName("selectedSidebarText");

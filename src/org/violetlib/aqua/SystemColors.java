@@ -10,7 +10,8 @@ package org.violetlib.aqua;
 
 import org.jetbrains.annotations.*;
 
-import static org.violetlib.aqua.OSXSystemProperties.*;
+import static org.violetlib.aqua.OSXSystemProperties.macOS11;
+import static org.violetlib.aqua.OSXSystemProperties.macOS26;
 
 /**
  * A set of color definitions that can be combined to form a complete set of colors for an appearance.
@@ -148,6 +149,12 @@ public class SystemColors {
         colors.add("selectedGradientText_disabled", "gradientText_disabled");
 
         colors.addAll("sidebarBackground", "controlBackground");
+        colors.add("selectedSidebarBackground", "unemphasizedSelectedTextBackground");
+        if (OSVersion >= macOS26) {
+            colors.add("selectedSidebarBackground_focused", "selectedSidebarBackground");
+        } else {
+            colors.add("selectedSidebarBackground_focused", "selectedContentBackground");
+        }
         colors.add("sidebarBorder", "scrollPaneBorder");
         colors.add("sidebarBorder_inactive", "sidebarBorder");
 
@@ -424,8 +431,10 @@ public class SystemColors {
         }
 
         if (OSVersion >= macOS26) {
-            colors.add("sidebarBackground", 250);
-            colors.add("sidebarBackground_inactive", 248);
+            colors.add("sidebarBackground", 250, 204);
+            colors.add("sidebarBackground_inactive", 247);
+            colors.add("selectedSidebarBackground", 0, 16);
+            colors.add("selectedSidebarBackground_inactive", 241);
             colors.add("sidebarIcon", 25);
             colors.add("sidebarText", "sidebarIcon");
             colors.add("selectedSidebarIcon", "controlAccent_pressed");
@@ -434,7 +443,7 @@ public class SystemColors {
             colors.add("selectedSidebarText", "selectedSidebarIcon");
             colors.add("selectedSidebarText_focused", "selectedSidebarIcon_focused");
             colors.add("selectedSidebarText_inactive", "selectedSidebarIcon_inactive");
-         }
+        }
 
         // colors related to (non-sidebar) trees
         colors.add("treeIcon", 140);
@@ -494,11 +503,14 @@ public class SystemColors {
         BasicColorsBuilder colors = new BasicColorsBuilder("High Contrast Light", instrumentation, log);
 
         if (OSVersion >= macOS26) {
-            int bc = OSVersion >= 2602 ? 251 : 237;
+            int bc = OSVersion >= 2602 ? 242 : 237;
+            int ibc = OSVersion >= 2602 ? 250 : 237;
             int sb = OSVersion >= 2602 ? 141 : 73;
             int sbi = OSVersion >= 2602 ? 181 : 138;
             colors.add("sidebarBackground", bc);
-            colors.add("sidebarBackground_inactive", bc);
+            colors.add("sidebarBackground_inactive", ibc);
+            colors.add("selectedSidebarBackground", 210);
+            colors.add("selectedSidebarBackground_inactive", 233);
             colors.add("sidebarBorder", sb);
             colors.add("sidebarBorder_inactive", sbi);
         } else if (OSVersion < 1014) {
@@ -691,7 +703,12 @@ public class SystemColors {
         colors.add("searchFieldPrompt", 255, 63);
 
         // colors related to the unified title and toolbar window style (dark mode)
-        colors.add("windowBackground", 36);
+
+        if (OSVersion >= macOS26) {
+            colors.add("windowBackground", 28);
+        } else {
+            colors.add("windowBackground", 36);
+        }
         colors.add("windowBackground_disabled", 45);
         colors.add("texturedWindowBackground", 42);
         colors.add("texturedWindowBackground_disabled", 45);
@@ -1018,7 +1035,10 @@ public class SystemColors {
         colors.add("selectedSidebarText_focused", 255);
 
         if (OSVersion >= macOS26) {
-            colors.add("sidebarBackground_inactive", 45);
+            colors.add("sidebarBackground", 255, 2);
+            colors.add("sidebarBackground_inactive", 40);
+            colors.add("selectedSidebarBackground", 255, 16);
+            colors.add("selectedSidebarBackground_inactive", 48);
             colors.add("sidebarBorder", 54);
             colors.add("sidebarIcon", 244);
             colors.add("sidebarText", "sidebarIcon");
@@ -1067,7 +1087,7 @@ public class SystemColors {
         colors.add("texturedWindowBackground", 53);
 
         if (OSVersion >= macOS26) {
-            int bc = OSVersion >= 2602 ? 12 : 30;
+            int bc = OSVersion >= 2602 ? 14 : 30;
             int sb = OSVersion >= 2602 ? 142 : 196;
             int sbi = OSVersion >= 2602 ? 102 : 138;
 
@@ -1171,6 +1191,9 @@ public class SystemColors {
         colors.add("selectedSidebarText_inactive", 255, 140);
 
         if (OSVersion >= macOS26) {
+            colors.add("sidebarBackground", 14);
+            colors.add("selectedSidebarBackground", 48);
+            colors.add("selectedSidebarBackground_inactive", 31);
             colors.add("selectedSidebarIcon", "controlAccent_pressed");
             colors.add("selectedSidebarIcon_focused", "selectedSidebarIcon");
             colors.add("selectedSidebarIcon_inactive", "controlAccent_disabled");

@@ -42,7 +42,7 @@ public class AquaPainting {
     public static boolean isSidebarVibrant(@NotNull JComponent jc)
     {
         if (useLiquidGlassSidebar()) {
-            return true;
+            return false;
         }
 
         AquaAppearance appearance = AppearanceManager.findAppearanceForComponent(jc);
