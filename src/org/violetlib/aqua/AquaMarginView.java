@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2021 Alan Snyder.
+ * Copyright (c) 2015-2026 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -37,13 +37,13 @@ public class AquaMarginView extends View {
     public AquaMarginView(@NotNull View base, int margin) {
         super(base.getElement());
         this.base = base;
-        this.margin = margin;
+        this.margin = Math.max(0, margin);
         tempRect = new Rectangle();
         base.setParent(this);
     }
 
     public void setMargin(int margin) {
-        this.margin = margin;
+        this.margin = Math.max(0, margin);
     }
 
     @Override
