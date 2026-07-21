@@ -159,11 +159,19 @@ public class AquaTextFieldBorder extends AquaTextComponentBorder {
             // The goal is to give the appearance of a specific left and right margin, but the portion of the margin
             // that is not reserved by the border is available for editing.
             TextFieldWidget widget = getWidget();
-            int target = widget == TextFieldWidget.TEXT_FIELD_ROUND ? 11 : 3;
+            int target = isTextFieldRounded(widget) ? 11 : 3;
             Insets s = getBorderInsets(tf);
             int averageInset = (s.left + s.right) / 2;
             return Math.max(0, target - averageInset);
         }
+    }
+
+    private boolean isTextFieldRounded(@NotNull TextFieldWidget widget)
+    {
+        if (widget == TextFieldWidget.TEXT_FIELD && AquaPainting.getVersion() < macOS26) {
+            return false;
+        }
+        return true;
     }
 
     @Override
