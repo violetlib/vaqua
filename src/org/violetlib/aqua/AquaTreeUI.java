@@ -1383,7 +1383,11 @@ public class AquaTreeUI extends BasicTreeUI
 
             if (!isLayout) {
                 if (icon != null) {
-                    icon = convertIcon(isCategory, isSelected, icon);
+                    AquaLabelUI ui = AquaUtils.getUI(label, AquaLabelUI.class);
+                    if (ui == null) {
+                        // AquaLabelUI knows how to handle template images
+                        icon = convertIcon(isCategory, isSelected, icon);
+                    }
                 }
                 if (icon != oldCellRendererIcon) {
                     label.setIcon(icon);
