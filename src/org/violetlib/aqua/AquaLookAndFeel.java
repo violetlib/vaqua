@@ -156,6 +156,10 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
 
     @Override
     public Icon getDisabledIcon(JComponent component, Icon icon) {
+        if (suppressCreationOfDisabledButtonIcons) {
+            // A LAF-provided icon is not wanted.
+            return null;
+        }
         if (component instanceof AbstractButton) {
             AbstractButton b = (AbstractButton) component;
             AquaButtonUI ui = AquaUtils.getUI(component, AquaButtonUI.class);
@@ -170,11 +174,7 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
                 return icon;
             }
         }
-        if (!suppressCreationOfDisabledButtonIcons) {
-            return AquaIcon.createDisabledLightIcon(icon);
-        } else {
-            return null;
-        }
+        return AquaIcon.createDisabledLightIcon(icon);
     }
 
     @Override
