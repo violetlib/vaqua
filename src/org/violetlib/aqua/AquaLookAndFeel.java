@@ -156,21 +156,25 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
 
     @Override
     public Icon getDisabledIcon(JComponent component, Icon icon) {
-//        if (!suppressCreationOfDisabledButtonIcons) {
-//            if (icon instanceof ImageIcon) {
-//                if (component instanceof AbstractButton) {
-//                    AquaButtonUI ui = AquaUtils.getUI(component, AquaButtonUI.class);
-//                    if (ui != null) {
-//                        return AquaButtonSupport.createDisabledIcon((AbstractButton) component, (ImageIcon) icon);
-//                    }
-//                }
-//            }
-//
-//            return super.getDisabledIcon(component, icon);
-//        } else {
-//            return null;
-//        }
-        return null;
+        if (component instanceof AbstractButton) {
+            AbstractButton b = (AbstractButton) component;
+            AquaButtonUI ui = AquaUtils.getUI(component, AquaButtonUI.class);
+            if (ui != null && AquaButtonSupport.determineTemplateIconStatus(b)) {
+                // AquaButtonUI can handle template images
+                return icon;
+            }
+        } else if (component instanceof JLabel) {
+            AquaLabelUI ui = AquaUtils.getUI(component, AquaLabelUI.class);
+            if (ui != null && AquaIcon.isTemplateImage(icon)) {
+                // AquaLabelUI can handle template images
+                return icon;
+            }
+        }
+        if (!suppressCreationOfDisabledButtonIcons) {
+            return AquaIcon.createDisabledLightIcon(icon);
+        } else {
+            return null;
+        }
     }
 
     @Override

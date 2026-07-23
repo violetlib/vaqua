@@ -102,13 +102,13 @@ public class AquaLabelUI extends BasicLabelUI implements AquaComponentUI {
 
         JLabel label = (JLabel)c;
         String text = label.getText();
-        Icon icon = (label.isEnabled()) ? label.getIcon() : label.getDisabledIcon();
+        Icon icon = label.isEnabled() ? label.getIcon() : label.getDisabledIcon();
 
         if ((icon == null) && (text == null)) {
             return;
         }
 
-        AquaUIPainter.State state = AquaUIPainter.State.ACTIVE;
+        AquaUIPainter.State state = label.isEnabled() ? AquaUIPainter.State.ACTIVE : AquaUIPainter.State.DISABLED;
         appearanceContext = new AppearanceContext(pc.appearance, state, false, false);
         // If the label is being used as a cell renderer component, it is up to the cell renderer to configure
         // its colors.
@@ -153,7 +153,7 @@ public class AquaLabelUI extends BasicLabelUI implements AquaComponentUI {
     private @NotNull String layout(JLabel label, FontMetrics fm, int width, int height) {
         Insets insets = label.getInsets(null);
         String text = label.getText();
-        Icon icon = (label.isEnabled()) ? label.getIcon() : label.getDisabledIcon();
+        Icon icon = label.isEnabled() ? label.getIcon() : label.getDisabledIcon();
         Rectangle paintViewR = new Rectangle();
         paintViewR.x = insets.left;
         paintViewR.y = insets.top;

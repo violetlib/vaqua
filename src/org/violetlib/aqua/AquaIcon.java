@@ -1,5 +1,5 @@
 /*
- * Changes copyright (c) 2015-2025 Alan Snyder.
+ * Changes copyright (c) 2015-2026 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -134,6 +134,16 @@ public class AquaIcon {
 
     public static boolean isDummy(@NotNull Icon ic) {
         return ic instanceof DummyIcon;
+    }
+
+    public static boolean isTemplateImage(@Nullable Icon icon)
+    {
+        if (icon instanceof ImageIcon) {
+            ImageIcon ii = (ImageIcon) icon;
+            Image im = ii.getImage();
+            return AquaImageFactory.isTemplateImage(im);
+        }
+        return false;
     }
 
     /**
