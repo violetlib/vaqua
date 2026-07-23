@@ -1,5 +1,5 @@
 /*
- * Changes copyright (c) 2015-2025 Alan Snyder.
+ * Changes copyright (c) 2015-2026 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -226,6 +226,20 @@ public class AquaImageFactory {
                     Utils.logDebug("Rendered image file " + path);
                 }
                 result = AquaMultiResolutionImage.createImage(width, height, buffers[0], buffers[1]);
+
+                // Workaround:
+                //
+                // On macOS26 (and probably other releases) the SidebarGenericFile icon has a broken 18x18 image.
+                // This is a particular problem on JDK 8, where the 1x image is used even on a 2x display.
+
+                if (path.contains("SidebarGenericFile") && result instanceof AquaMultiResolutionImage) {
+                    AquaMultiResolutionImage m = (AquaMultiResolutionImage) result;
+                    Image m2 = JavaSupport.getResolutionVariant(m, width * 2, height * 2);
+                    Image m1 = m2.getScaledInstance(width, height, Image.SCALE_SMOOTH);
+                    BufferedImage b1 = Images.toBufferedImage(m1);
+                    BufferedImage b2 = Images.toBufferedImage(m2);
+                    result = JavaSupport.createMultiResolutionImage(b1, b2);
+                }
             }
             return result;
         }
