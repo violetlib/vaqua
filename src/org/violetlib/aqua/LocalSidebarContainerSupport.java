@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Alan Snyder.
+ * Copyright (c) 2025=2026 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -125,8 +125,9 @@ public class LocalSidebarContainerSupport
     private void reconfigureScrollPane(@NotNull JScrollPane sp, boolean shouldConfigure)
     {
         AquaScrollPaneUI spui = AquaUtils.getUI(sp, AquaScrollPaneUI.class);
-        assert spui != null;
-        spui.configureAsSidebarContainer(shouldConfigure ? ui : null);
+        if (spui != null) {
+            spui.configureAsSidebarContainer(shouldConfigure ? ui : null);
+        }
     }
 
     protected void updateLocalSideBarConfiguration()
