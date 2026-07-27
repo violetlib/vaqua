@@ -25,7 +25,7 @@ public final class AquaTreeEditorBorder
     }
 
     @Override
-    public void paintBackground(@NotNull Component c,
+    public void paintBackground(@NotNull JComponent c,
                                 @NotNull Graphics g,
                                 @Nullable Color background,
                                 @Nullable Color borderColor)

@@ -391,7 +391,8 @@ public class AquaTextFieldSearch {
             public void layoutContainer(Container parent) {
                 if (tf != null) {
                     Rectangle bounds = new Rectangle(0, 0, tf.getWidth(), tf.getHeight());
-                    TextFieldLayoutConfiguration g = getLayoutConfiguration();
+                    TextFieldWidget w = getWidget();
+                    TextFieldLayoutConfiguration g = getLayoutConfiguration(w);
 
                     if (findButton != null) {
                         Insetter s = painter.getLayoutInfo().getSearchButtonInsets(g);

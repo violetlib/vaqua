@@ -42,14 +42,11 @@ import javax.swing.plaf.UIResource;
 import org.jetbrains.annotations.*;
 import org.violetlib.jnr.*;
 import org.violetlib.jnr.Painter;
-import org.violetlib.jnr.aqua.AquaUIPainter;
-import org.violetlib.jnr.aqua.AquaUIPainter.Size;
-import org.violetlib.jnr.aqua.AquaUIPainter.State;
 import org.violetlib.jnr.aqua.AquaUIPainter.TextFieldWidget;
-import org.violetlib.jnr.aqua.TextFieldConfiguration;
 import org.violetlib.jnr.aqua.TextFieldLayoutConfiguration;
 
 import static org.violetlib.aqua.OSXSystemProperties.macOS26;
+import static org.violetlib.jnr.aqua.AquaUIPainter.TextFieldWidget.*;
 
 /**
  * A border that is associated with a text field but can be attached to a text field or the scroll pane that
@@ -73,7 +70,7 @@ public class AquaTextFieldBorder extends AquaTextComponentBorder {
     }
 
     @Override
-    public void paintBackground(@NotNull Component c,
+    public void paintBackground(@NotNull JComponent c,
                                 @NotNull Graphics g,
                                 @Nullable Color background,
                                 @Nullable Color borderColor) {
@@ -86,7 +83,7 @@ public class AquaTextFieldBorder extends AquaTextComponentBorder {
                 g.setColor(background);
                 int width = c.getWidth();
                 int height = c.getHeight();
-                Shape outline = getFocusRingOutline((JComponent)c);
+                Shape outline = getFocusRingOutline(c);
                 if (outline != null && !(outline instanceof Rectangle2D)) {
                     Graphics2D gg = (Graphics2D) g;
                     AquaUtils.fillAntiAliased(gg, outline);
@@ -95,7 +92,8 @@ public class AquaTextFieldBorder extends AquaTextComponentBorder {
                 }
             }
         } else {
-            Painter p = getConfiguredPainter(c);
+            TextFieldWidget w = getWidget();
+            Painter p = getConfiguredPainter(c, w);
             p.paint(g, 0, 0);
         }
     }
@@ -107,42 +105,17 @@ public class AquaTextFieldBorder extends AquaTextComponentBorder {
         }
 
         // A rounded border is not opaque.
-        TextFieldLayoutConfiguration g = getLayoutConfiguration();
+        TextFieldWidget w = getWidget();
+        TextFieldLayoutConfiguration g = getLayoutConfiguration(w);
         AquaUtils.configure(painter, null, tf, tf.getWidth(), tf.getHeight());
         Shape s = painter.getOutline(g);
         return s instanceof Rectangle2D;
     }
 
     public @NotNull LayoutInfo getLayoutInfo() {
-        TextFieldLayoutConfiguration g = getLayoutConfiguration();
+        TextFieldWidget w = getWidget();
+        TextFieldLayoutConfiguration g = getLayoutConfiguration(w);
         return painter.getLayoutInfo().getLayoutInfo(g);
-    }
-
-    public @Nullable Shape getFocusRingOutline(@NotNull JComponent c) {
-
-        // If the text component is scrollable, the text component defines the outline shape and the scroll pane
-        // defines the outline size.
-
-        JComponent cc = getComponentForFocusRing(c);
-        if (cc != null) {
-            TextFieldLayoutConfiguration g = getLayoutConfiguration();
-            AquaUtils.configure(painter, null, tf, cc.getWidth(), cc.getHeight());
-            return painter.getOutline(g);
-        }
-        return null;
-    }
-
-    private @Nullable JComponent getComponentForFocusRing(@NotNull JComponent c) {
-        if (c == tf) {
-            return tf;
-        }
-        if (c instanceof JScrollPane) {
-            JScrollPane sp = (JScrollPane) c;
-            if (sp.getViewport().getView() == tf) {
-                return sp;
-            }
-        }
-        return null;
     }
 
     /**
@@ -168,10 +141,7 @@ public class AquaTextFieldBorder extends AquaTextComponentBorder {
 
     private boolean isTextFieldRounded(@NotNull TextFieldWidget widget)
     {
-        if (widget == TextFieldWidget.TEXT_FIELD && AquaPainting.getVersion() < macOS26) {
-            return false;
-        }
-        return true;
+        return widget != TEXT_FIELD_SQUARE;
     }
 
     @Override
@@ -199,27 +169,18 @@ public class AquaTextFieldBorder extends AquaTextComponentBorder {
         if (AquaCellEditorPolicy.getInstance().getCellStatus(tf) != null) {
             return new Insets2D(0, 0, 0, 0);
         }
-
         Insetter s = getTextInsets();
         Insets2D n = s.asInsets2D();
         if (n != null) {
             return new Insets2DUIResource(n);
         }
-
         return new Insets2DUIResource(3, 3, 3, 3);
     }
 
-    @Override
-    public @NotNull Insetter getTextInsets() {
-        TextFieldLayoutConfiguration g = getLayoutConfiguration();
-        return painter.getLayoutInfo().getTextFieldTextInsets(g);
-    }
-
     protected int getExtraHeight() {
-        TextFieldLayoutConfiguration g = getLayoutConfiguration();
-        TextFieldWidget widget = g.getWidget();
+        TextFieldWidget widget = getWidget();
         switch (widget) {
-            case TEXT_FIELD:
+            case TEXT_FIELD_SQUARE:
             case TEXT_FIELD_ROUND:
                 return 3;
             default:
@@ -227,47 +188,15 @@ public class AquaTextFieldBorder extends AquaTextComponentBorder {
         }
     }
 
-    protected @NotNull Painter getConfiguredPainter(@NotNull Component c) {
-        int width = c.getWidth();
-        int height = c.getHeight();
-        PaintingContext pc = AppearanceManager.getPaintingContext(c);
-        AquaUtils.configure(painter, pc.appearance, tf, width, height);
-        TextFieldConfiguration tg = getConfiguration();
-        return painter.getPainter(tg);
-    }
-
-    protected @NotNull TextFieldLayoutConfiguration getLayoutConfiguration() {
-        TextFieldWidget widget = getWidget();
-        Size size = getControlSize();
-        AquaUIPainter.UILayoutDirection ld = AquaUtils.getLayoutDirection(tf);
-        return new TextFieldLayoutConfiguration(widget, size, ld);
-    }
-
-    protected @NotNull TextFieldConfiguration getConfiguration() {
-        TextFieldWidget widget = getWidget();
-        Size size = getControlSize();
-        State state = getState();
-        boolean isFocused = State.ACTIVE == state && tf.hasFocus();
-        AquaUIPainter.UILayoutDirection ld = AquaUtils.getLayoutDirection(tf);
-        return new TextFieldConfiguration(widget, size, state, isFocused, ld);
-    }
-
-    protected @NotNull Size getControlSize() {
-        TextFieldWidget widget = getWidget();
-        if (widget != null) {
-            boolean isToolbar = AquaUtils.isOnToolbar(tf);
-            return AquaUtils.getSize(tf, isToolbar, widget);
-        }
-        return null;
-    }
-
+    @Override
     public @NotNull TextFieldWidget getWidget() {
-        Object o = tf.getClientProperty(AquaTextFieldUI.TEXT_FIELD_STYLE_KEY);
-        if ("round".equals(o)) {
-            return AquaUtils.isOnToolbar(tf) ? TextFieldWidget.TEXT_FIELD_ROUND_TOOLBAR : TextFieldWidget.TEXT_FIELD_ROUND;
-        } else if (AquaUtils.isOnToolbar(tf)) {
-            return TextFieldWidget.TEXT_FIELD_ROUND_TOOLBAR;
+        TextFieldWidget w = getConfiguredTextWidget();
+        if (w == null) {
+            w = getDefaultTextWidget();
         }
-        return TextFieldWidget.TEXT_FIELD;
+        if (w == TEXT_FIELD_ROUND && AquaUtils.isOnToolbar(tf)) {
+            return TEXT_FIELD_ROUND_TOOLBAR;
+        }
+        return w;
     }
 }

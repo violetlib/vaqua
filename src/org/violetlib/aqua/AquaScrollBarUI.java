@@ -179,7 +179,7 @@ public class AquaScrollBarUI extends ScrollBarUI implements AquaComponentUI {
 
         if (c.isOpaque()) {
             g.setColor(c.getBackground());
-            g.fillRect(0, 0, c.getWidth(),c.getHeight());
+            g.fillRect(0, 0, c.getWidth(), c.getHeight());
         }
 
         int width = fScrollBar.getWidth();
@@ -261,10 +261,9 @@ public class AquaScrollBarUI extends ScrollBarUI implements AquaComponentUI {
 
     private boolean computeNoTrackOption(@NotNull ScrollBarWidget w, @NotNull PaintingContext pc)
     {
-        boolean isLegacy = w == LEGACY || w == LEGACY_SIDEBAR;
         int version = AquaPainting.getVersion();
         if (version >= macOS26) {
-            return !isLegacy;
+            return false;
         }
         if (version >= macOS11) {
             return isSidebar();

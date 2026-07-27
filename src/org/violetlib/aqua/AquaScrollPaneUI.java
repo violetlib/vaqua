@@ -410,7 +410,19 @@ public class AquaScrollPaneUI extends BasicScrollPaneUI
 
     private @Nullable String getScrollbarStyle(boolean isSidebar, boolean isOverlay)
     {
-        return isSidebar ? "sideBar" : null;
+        return isRoundedBorder() ? "sideBar" : null;
+    }
+
+    public boolean isRoundedBorder()
+    {
+        if (isSidebar) {
+            return true;
+        }
+        AquaTextComponentBorder tcb = AquaBorderSupport.get(scrollpane.getBorder(), AquaTextComponentBorder.class);
+        if (tcb != null && tcb.isRoundedBorder()) {
+            return true;
+        }
+        return false;
     }
 
     public boolean isOverlayScrollBars() {
@@ -607,9 +619,22 @@ public class AquaScrollPaneUI extends BasicScrollPaneUI
             if (sidebarContainerSupport != null) {
                 nlm.setScrollBarExtraMargin(sidebarScrollBarExtraMargin);
             } else {
-                nlm.setScrollBarExtraMargin(0);
+                int margin = 0;
+                AquaTextComponentBorder tcb = AquaBorderSupport.get(scrollpane.getBorder(), AquaTextComponentBorder.class);
+                if (tcb != null && tcb.isRoundedBorder()) {
+                    Insets s = tcb.getTextInsets().asInsets();
+                    if (s != null) {
+                        margin = getExtraMargin(s);
+                    }
+                }
+                nlm.setScrollBarExtraMargin(margin);
             }
         }
+    }
+
+    private int getExtraMargin(@NotNull Insets s)
+    {
+        return Math.max(s.left, Math.max(s.right, Math.max(s.top, s.bottom)));
     }
 
     protected void updateScrollBars()

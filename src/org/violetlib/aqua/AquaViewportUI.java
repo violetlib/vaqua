@@ -54,8 +54,13 @@ public class AquaViewportUI extends ViewportUI implements AquaComponentUI {
 
     public boolean shouldSuppressBackground()
     {
-        JComponent view = viewport != null ? (JComponent) viewport.getView() : null;
-        return view != null && AquaVibrantSupport.isVibrant(view);
+        if (viewport != null) {
+            JComponent view = (JComponent) viewport.getView();
+            if (view != null && AquaVibrantSupport.isVibrant(view)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     protected AquaUIPainter.State getState() {

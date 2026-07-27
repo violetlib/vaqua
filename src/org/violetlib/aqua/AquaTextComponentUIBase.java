@@ -118,8 +118,10 @@ public abstract class AquaTextComponentUIBase
     protected void propertyChange(@NotNull PropertyChangeEvent evt) {
         super.propertyChange(evt);
         String prop = evt.getPropertyName();
-        if ("enabled".equals(prop) || "editable".equals(prop)) {
-            editor.repaint();
+        if (prop != null) {
+            if (prop.equals("enabled") || prop.equals("editable")) {
+                editor.repaint();
+            }
         }
     }
 

@@ -21,6 +21,8 @@ import javax.swing.plaf.UIResource;
 
 import org.jetbrains.annotations.*;
 
+import static org.violetlib.aqua.AquaTextFieldUI.TEXT_FIELD_STYLE_KEY;
+
 /**
  * A base class for multiple-line text component UIs.
  */
@@ -92,8 +94,17 @@ public class AquaTextPaneUIBase extends AquaTextComponentUIBase {
     protected void propertyChange(@NotNull PropertyChangeEvent evt) {
         super.propertyChange(evt);
         String prop = evt.getPropertyName();
-        if ("border".equals(prop) && !installingBorder) {
-            updateBorderOwner();
+        if (prop != null) {
+            if (prop.equals("border") && !installingBorder) {
+                updateBorderOwner();
+            } else if (prop.equals(TEXT_FIELD_STYLE_KEY)) {
+                if (owningScrollPane != null) {
+                    owningScrollPane.revalidate();
+                    owningScrollPane.repaint();
+                } else {
+                    editor.repaint();
+                }
+            }
         }
     }
 
@@ -133,7 +144,9 @@ public class AquaTextPaneUIBase extends AquaTextComponentUIBase {
                     // If the application set the opaque attribute, do not install our border
                     editor.setBorder(null);
                 } else {
-                    AquaBackgroundBorder abb = textComponentBorder != null ? AquaBorderSupport.get(textComponentBorder, AquaBackgroundBorder.class) : null;
+                    AquaBackgroundBorder abb = textComponentBorder != null
+                      ? AquaBorderSupport.get(textComponentBorder, AquaBackgroundBorder.class)
+                      : null;
                     if (abb == null) {
                         Border b = new AquaTextComponentBorder(editor, null);
                         editor.setBorder(b);
@@ -242,6 +255,15 @@ public class AquaTextPaneUIBase extends AquaTextComponentUIBase {
     }
 
     protected boolean shouldPaintBackground() {
-        return editor.isOpaque() || owningScrollPane != null;
+        if (editor.isOpaque()) {
+            return true;
+        }
+        if (owningScrollPane != null) {
+            AquaScrollPaneUI ui = AquaUtils.getUI(owningScrollPane, AquaScrollPaneUI.class);
+            if (ui != null) {
+                return !ui.isRoundedBorder();
+            }
+        }
+        return false;
     }
 }
