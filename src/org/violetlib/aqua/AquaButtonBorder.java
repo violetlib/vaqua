@@ -608,8 +608,14 @@ public abstract class AquaButtonBorder extends AquaBorder implements FocusRingOu
             int width = Icons.getIconWidthInFixedHeight(iconSize, fixedHeight);
             return new Dimension(width, fixedHeight);
         }
-        int width = Math.max(iconSize.width, (int) info.getMinimumVisualWidth());
-        int height = Math.max(iconSize.height, (int) info.getMinimumVisualHeight());
+        int minWidth = (int) info.getMinimumVisualWidth();
+        int minHeight = (int) info.getMinimumVisualHeight();
+        if (s != null) {
+            minWidth = s.apply(minWidth, 100).width;
+            minHeight = s.apply(100, minHeight).height;
+        }
+        int width = Math.max(iconSize.width, minWidth);
+        int height = Math.max(iconSize.height, minHeight);
         return new Dimension(width, height);
     }
 
