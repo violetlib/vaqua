@@ -21,9 +21,9 @@ public class OSXSystemProperties {
 
     public static final Object USER_PREFERENCE_CHANGE_TYPE = "UserPreferenceChangeType";
 
-    public static int simulatedOSVersion = 0;  // must come before OSVersion
+    private static int simulatedOSVersion = 0;  // must come before OSVersion
 
-    public static final int OSVersion = getOSVersion();  // for example: 1014 = macOS 10.14
+    private static final int OSVersion = getOSVersion();  // for example: 1014 = macOS 10.14
     public static final int macOS11 = 1016;  // macOS 11 was renamed after being available as 10.16
     public static final int macOS26 = 1600;  // macOS 26 was renamed after being available as 16
 
@@ -31,6 +31,15 @@ public class OSXSystemProperties {
     private static boolean isFullKeyboardAccessEnabled; // cached value
     private static boolean useOverlayScrollBars;        // cached value
     private static boolean reduceTransparency;          // cached value
+
+    public static int getOSRelease() {
+        return OSVersion;
+    }
+
+    public void setSimulatedOSRelease(int n)
+    {
+        simulatedOSVersion = n;
+    }
 
     private static int getOSVersion() {
 

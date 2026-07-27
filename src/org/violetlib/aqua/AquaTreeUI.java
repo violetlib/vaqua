@@ -62,7 +62,6 @@ import org.violetlib.jnr.aqua.AquaUIPainter.UILayoutDirection;
 
 import static org.violetlib.aqua.AquaImageFactory.LIGHTEN_FOR_DISABLED;
 import static org.violetlib.aqua.AquaLookAndFeel.NOTHING_BORDER;
-import static org.violetlib.aqua.OSXSystemProperties.OSVersion;
 import static org.violetlib.aqua.OSXSystemProperties.macOS11;
 import static org.violetlib.jnr.aqua.AquaUIPainter.State.*;
 
@@ -1012,7 +1011,7 @@ public class AquaTreeUI extends BasicTreeUI
         }
         int fudge = 0;  // the first indentation may be larger
         if (isSideBar()) {
-            if (OSVersion < macOS11) {
+            if (AquaPainting.getVersion() < macOS11) {
                 if (!isCategory(depth)) {
                     fudge = 3;
                 }
@@ -1943,7 +1942,7 @@ public class AquaTreeUI extends BasicTreeUI
         if (isSideBar()) {
             TreePath path = getPathForRow(tree, row);
             if (path != null && path.getPathCount() == 2) {
-                if (OSVersion >= macOS11) {
+                if (AquaPainting.getVersion() >= macOS11) {
                     return 14;
                 }
                 return 9;

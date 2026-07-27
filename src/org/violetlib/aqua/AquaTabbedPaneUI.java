@@ -58,7 +58,8 @@ import org.violetlib.jnr.aqua.AquaUIPainter.*;
 import org.violetlib.jnr.aqua.SegmentedButtonConfiguration;
 import org.violetlib.jnr.aqua.SegmentedButtonLayoutConfiguration;
 
-import static org.violetlib.aqua.OSXSystemProperties.*;
+import static org.violetlib.aqua.OSXSystemProperties.macOS11;
+import static org.violetlib.aqua.OSXSystemProperties.macOS26;
 import static org.violetlib.jnr.aqua.AquaUIPainter.Position.*;
 import static org.violetlib.jnr.aqua.SegmentedButtonConfiguration.DividerState;
 
@@ -75,7 +76,9 @@ public class AquaTabbedPaneUI extends AquaTabbedPaneCopyFromBasicUI
     private static final double kNinetyDegrees = (Math.PI / 2.0); // used for rotation
 
     public static final SegmentedButtonWidget buttonWidget
-      = OSVersion >= macOS11 ? SegmentedButtonWidget.BUTTON_SEGMENTED_SLIDER : SegmentedButtonWidget.BUTTON_TAB;
+      = AquaPainting.getVersion() >= macOS11
+      ? SegmentedButtonWidget.BUTTON_SEGMENTED_SLIDER
+      : SegmentedButtonWidget.BUTTON_TAB;
 
     protected final Insets currentContentDrawingInsets = new Insets(0, 0, 0, 0);
     protected final Insets currentContentBorderInsets = new Insets(0, 0, 0, 0);
@@ -896,7 +899,7 @@ public class AquaTabbedPaneUI extends AquaTabbedPaneCopyFromBasicUI
     protected @Nullable Shapes getContentBorderCutout() {
         int tabCount = tabPane.getTabCount();
         if (tabCount > 0) {
-            if (DEBUG_CUTOUT || isDark || OSVersion >= macOS11) {
+            if (DEBUG_CUTOUT || isDark || AquaPainting.getVersion() >= macOS11) {
 
                 Shapes shapes = new Shapes();
 

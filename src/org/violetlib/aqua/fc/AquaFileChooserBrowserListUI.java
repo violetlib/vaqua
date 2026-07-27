@@ -12,12 +12,12 @@ import java.awt.*;
 
 import org.jetbrains.annotations.*;
 import org.violetlib.aqua.AquaListUI;
+import org.violetlib.aqua.AquaPainting;
 import org.violetlib.aqua.JListModel;
 
 import javax.swing.*;
 import javax.swing.event.MouseInputListener;
 
-import static org.violetlib.aqua.OSXSystemProperties.OSVersion;
 import static org.violetlib.aqua.OSXSystemProperties.macOS11;
 
 /**
@@ -69,7 +69,7 @@ public class AquaFileChooserBrowserListUI extends AquaListUI implements Abstract
     public @NotNull Insets getContentInsets() {
         boolean isInset = isInset();
         int v = isInset ? 2 : 0;
-        int side = isInset ? (OSVersion >= macOS11 ? 9 : 5) : 0;
+        int side = isInset ? (AquaPainting.getVersion() >= macOS11 ? 9 : 5) : 0;
         return new Insets(v, side, v, side);
     }
 }

@@ -16,8 +16,6 @@ import javax.swing.plaf.UIResource;
 import org.jetbrains.annotations.*;
 import org.violetlib.jnr.aqua.PopupButtonLayoutConfiguration;
 
-import static org.violetlib.aqua.OSXSystemProperties.OSVersion;
-import static org.violetlib.aqua.OSXSystemProperties.macOS11;
 import static org.violetlib.jnr.aqua.AquaUIPainter.Size;
 
 /**

@@ -47,7 +47,6 @@ import org.violetlib.jnr.aqua.TextFieldLayoutConfiguration;
 
 import static org.violetlib.aqua.AquaLabelUI.AQUA_LABEL_ROLE_PROPERTY;
 import static org.violetlib.aqua.AquaLabelUI.AQUA_SEARCH_FIELD_PROMPT_ROLE_VALUE;
-import static org.violetlib.aqua.OSXSystemProperties.OSVersion;
 
 public class AquaTextFieldSearch {
 
@@ -308,12 +307,13 @@ public class AquaTextFieldSearch {
 
         @Override
         public @NotNull TextFieldWidget getWidget() {
+            int version = AquaPainting.getVersion();
             boolean hasFocus = AquaFocusHandler.hasFocus(tf);
             String text = tf.getText();
-            boolean hasMenu = hasPopupMenu(tf) && (hasFocus || OSVersion >= 1014);
+            boolean hasMenu = hasPopupMenu(tf) && (hasFocus || version >= 1014);
             boolean hasCancelButton = !text.isEmpty();
 
-            if (!hasCancelButton && OSVersion < 1011) {
+            if (!hasCancelButton && version < 1011) {
                 // In Yosemite, the cancel button is shown when focused even if there is no text.
                 hasCancelButton = hasFocus;
             }

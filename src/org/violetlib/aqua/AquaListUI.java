@@ -54,7 +54,6 @@ import org.violetlib.jnr.aqua.AquaUIPainter;
 
 import static org.violetlib.aqua.AquaLookAndFeel.ENABLE_VIBRANT_MENU;
 import static org.violetlib.aqua.AquaLookAndFeel.NOTHING_BORDER;
-import static org.violetlib.aqua.OSXSystemProperties.OSVersion;
 import static org.violetlib.aqua.OSXSystemProperties.macOS11;
 import static org.violetlib.jnr.aqua.AquaUIPainter.State.*;
 
@@ -366,7 +365,7 @@ public class AquaListUI extends BasicListUI implements AquaComponentUI, AquaView
 
     protected AquaUIPainter.State getState() {
         // Not sure which OS release made this change:
-        if (!AquaFocusHandler.isActive(list) && OSVersion >= 1500) {
+        if (!AquaFocusHandler.isActive(list) && AquaPainting.getVersion() >= 1500) {
             return INACTIVE;
         }
         return list.isEnabled() ? (shouldDisplayAsFocused() ? ACTIVE_DEFAULT : ACTIVE) : DISABLED;
@@ -925,7 +924,7 @@ public class AquaListUI extends BasicListUI implements AquaComponentUI, AquaView
         boolean isSideBar = isSideBar();
         boolean isGlass = isSideBar && AquaPainting.useLiquidGlassSidebar();
         int v = isInset ? isRoundedScrollable ? 10 : 5 : 0;
-        int side = isGlass || isInset ? (OSVersion >= macOS11 ? 9 : 5) : 0;
+        int side = isGlass || isInset ? (AquaPainting.getVersion() >= macOS11 ? 9 : 5) : 0;
         return new Insets(v, side, v, side);
     }
 

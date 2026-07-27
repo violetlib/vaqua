@@ -14,7 +14,6 @@ import org.jetbrains.annotations.*;
 import org.violetlib.jnr.aqua.AquaNativeRendering;
 import org.violetlib.jnr.aqua.AquaUIPainter;
 
-import static org.violetlib.aqua.OSXSystemProperties.OSVersion;
 import static org.violetlib.aqua.OSXSystemProperties.macOS26;
 
 /**
@@ -29,7 +28,7 @@ public class AquaPainting {
         if (cachedRenderingVersion > 0) {
             return cachedRenderingVersion;
         }
-        int version = OSVersion;
+        int version = OSXSystemProperties.getOSRelease();
         if (version >= 1600) {
             try {
                 version = AquaNativeRendering.getSystemRenderingVersion() / 100;

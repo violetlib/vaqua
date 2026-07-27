@@ -50,7 +50,6 @@ import org.jetbrains.annotations.*;
 
 import static org.violetlib.aqua.AquaVibrantSupport.NO_VIBRANT_STYLE;
 import static org.violetlib.aqua.AquaVibrantSupport.WINDOW_BACKGROUND_STYLE;
-import static org.violetlib.aqua.OSXSystemProperties.OSVersion;
 import static org.violetlib.aqua.OSXSystemProperties.macOS26;
 
 public class AquaRootPaneUI extends BasicRootPaneUI implements AquaComponentUI, ActiveSensitiveComponentUI {
@@ -555,7 +554,7 @@ public class AquaRootPaneUI extends BasicRootPaneUI implements AquaComponentUI, 
             try {
 
                 // The vibrant style of the window depends upon the appearance.
-                if (OSVersion >= 1014 && !vibrantStyleIsExplicitlySet) {
+                if (AquaPainting.getVersion() >= 1014 && !vibrantStyleIsExplicitlySet) {
                     int vibrantStyle = getDefaultWindowVibrantStyle();
                     vibrantStyleUpdated = updateVibrantStyle(vibrantStyle, false);
                 }

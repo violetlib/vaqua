@@ -23,10 +23,8 @@ import javax.swing.event.TreeSelectionListener;
 import javax.swing.tree.TreePath;
 import javax.swing.tree.TreeSelectionModel;
 
-import org.violetlib.aqua.AquaBorderSupport;
+import org.violetlib.aqua.AquaPainting;
 import org.violetlib.aqua.AquaUtils;
-
-import static org.violetlib.aqua.OSXSystemProperties.OSVersion;
 
 /**
  * An implementation of column view.
@@ -52,7 +50,8 @@ public class ColumnViewImpl extends ColumnView {
 
         int columnMinimumWidth;
 
-        if (OSVersion <= 1013) {
+        int version = AquaPainting.getVersion();
+        if (version <= 1013) {
             columnMinimumWidth = 164;
         } else {
             columnMinimumWidth = 206;
@@ -66,9 +65,9 @@ public class ColumnViewImpl extends ColumnView {
 
         int minimumHeight;
 
-        if (OSVersion <= 1011) {
+        if (version <= 1011) {
             minimumHeight = 332;
-        } else if (OSVersion == 1012) {
+        } else if (version == 1012) {
             minimumHeight = 203;
         } else {
             minimumHeight = 100;

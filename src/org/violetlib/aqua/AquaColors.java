@@ -17,7 +17,6 @@ import javax.swing.text.JTextComponent;
 import org.jetbrains.annotations.*;
 import org.violetlib.jnr.aqua.AquaUIPainter;
 
-import static org.violetlib.aqua.OSXSystemProperties.OSVersion;
 import static org.violetlib.aqua.OSXSystemProperties.macOS11;
 
 /**
@@ -177,11 +176,13 @@ public class AquaColors {
     }
 
     public static @NotNull BasicContextualColors getMenuColors() {
-        return OSVersion < 1014 ? LEGACY_MENU_COLORS : MENU_COLORS;
+        int version = AquaPainting.getVersion();
+        return version < 1014 ? LEGACY_MENU_COLORS : MENU_COLORS;
     }
 
     public static @NotNull BasicContextualColors getComboBoxMenuColors() {
-        return OSVersion < 1014 ? LEGACY_COMBO_BOX_MENU_COLORS : MENU_COLORS;
+        int version = AquaPainting.getVersion();
+        return version < 1014 ? LEGACY_COMBO_BOX_MENU_COLORS : MENU_COLORS;
     }
 
 //    public static @NotNull Color getForeground(@NotNull JComponent c, @NotNull String colorName) {
@@ -475,7 +476,7 @@ public class AquaColors {
         foreground.setSelectedName("selectedSidebarText");
         foreground.setActiveDefaultSelectedName("selectedSidebarText_focused");
         foreground.setInactiveSelectedName("selectedSidebarText_inactive");
-        if (OSVersion < 1014) {
+        if (AquaPainting.getVersion() < 1014) {
             foreground.setInactiveName("sidebarText");
         }
 
@@ -492,8 +493,9 @@ public class AquaColors {
         AquaContextualColorImpl evenRowBackground;
         AquaContextualColorImpl oddRowBackground;
 
-        /* Before macOS 11 striped tables row are grey first; since macOS 11 striped tables rows are white first */
-        if (OSVersion >= macOS11) {
+        /* Before macOS 11 striped tables row are gray first; since macOS 11 striped tables rows are white first */
+        int version = AquaPainting.getVersion();
+        if (version >= macOS11) {
             evenRowBackground = new AquaContextualColorImpl("StripedContainerColors.background 0", "alternatingContentBackground_0");
             oddRowBackground = new AquaContextualColorImpl("StripedContainerColors.background 1", "alternatingContentBackground_1");
         } else {

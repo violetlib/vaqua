@@ -56,7 +56,6 @@ import org.violetlib.jnr.aqua.AquaUIPainter.ProgressWidget;
 import org.violetlib.jnr.aqua.AquaUIPainter.Size;
 import org.violetlib.jnr.aqua.AquaUIPainter.State;
 
-import static org.violetlib.aqua.OSXSystemProperties.OSVersion;
 import static org.violetlib.aqua.OSXSystemProperties.macOS11;
 
 public class AquaProgressBarUI
@@ -242,9 +241,10 @@ public class AquaProgressBarUI
         State state = getState();
         Orientation orientation = isHorizontal() ? Orientation.HORIZONTAL : Orientation.VERTICAL;
         if (progressBar.isIndeterminate()) {
-            int frameCount = isCircular ? (OSVersion >= macOS11 ? 24 : 15) : 90;
+            int version = AquaPainting.getVersion();
+            int frameCount = isCircular ? (version >= macOS11 ? 24 : 15) : 90;
             long intervals = System.currentTimeMillis() / (repaintInterval > 0 ? repaintInterval : 100);
-            int speed = isCircular ? (OSVersion >= macOS11 ? 3 : 1) : 4;
+            int speed = isCircular ? (version >= macOS11 ? 3 : 1) : 4;
             int animationFrame = (int) (speed * intervals % frameCount);
             AquaUIPainter.ProgressWidget w = isCircular ? ProgressWidget.INDETERMINATE_SPINNER : ProgressWidget.INDETERMINATE_BAR;
             return new IndeterminateProgressIndicatorConfiguration(w, sizeVariant, state, orientation, animationFrame);

@@ -40,7 +40,6 @@ import org.violetlib.aqua.*;
 
 import static org.violetlib.aqua.AquaButtonUI.BUTTON_TYPE;
 import static org.violetlib.aqua.AquaRootPaneUI.*;
-import static org.violetlib.aqua.OSXSystemProperties.OSVersion;
 import static org.violetlib.aqua.OSXSystemProperties.macOS11;
 
 /**
@@ -80,7 +79,8 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements ActiveSensi
     private FileSystemTreeModel model = null;
     private SubtreeTreeModel subtreeModel = null;
 
-    private final static boolean isOptionsButtonAvailable = OSVersion >= 1011;
+    private final int version = AquaPainting.getVersion();
+    private final boolean isOptionsButtonAvailable = version >= 1011;
     private boolean isOptionsEnabled = false;  // used only when the options button is displayed
     private @Nullable String windowStyle;
     private boolean useToolBar;  // true if the top panel should act like a tool bar when the textured window style is used
@@ -558,13 +558,13 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements ActiveSensi
 
         public void reconfigure() {
             if (fc.getDialogType() == JFileChooser.SAVE_DIALOG) {
-                if (OSVersion >= 1011) {
+                if (version >= 1011) {
                     setBorder(new EmptyBorder(9, 11, 6, 11));
                 } else {
                     setBorder(new EmptyBorder(17, 11, 6, 11));
                 }
             } else {
-                if (OSVersion >= 1014) {
+                if (version >= 1014) {
                     setBorder(new EmptyBorder(5, 8, 6, 8));
                 } else {
                     setBorder(new EmptyBorder(3, 8, 2, 8));
@@ -625,8 +625,8 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements ActiveSensi
         }
 
         boolean useGroupBox() {
-            if (OSVersion < 1013) {
-                return OSVersion == 1010 || fc.getDialogType() == JFileChooser.SAVE_DIALOG;
+            if (version < 1013) {
+                return version == 1010 || fc.getDialogType() == JFileChooser.SAVE_DIALOG;
             } else {
                 return false;
             }
@@ -690,7 +690,7 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements ActiveSensi
             // The margins were decreased in El Capitan, except for save dialogs.
             // One wonders if save dialogs were not changed intentionally or by omission.
 
-            if (fc.getDialogType() == JFileChooser.SAVE_DIALOG || OSVersion < 1011) {
+            if (fc.getDialogType() == JFileChooser.SAVE_DIALOG || version < 1011) {
                 setBorder(BorderFactory.createEmptyBorder(10, 23, 9, 10));
             } else {
                 setBorder(BorderFactory.createEmptyBorder(8, 8, 9, 8));
@@ -786,9 +786,9 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements ActiveSensi
         gridBagConstraints.insets = new Insets(0, 6, 0, 0);
         fileNameLine.add(fileNameSpringPanel, gridBagConstraints);
 
-        if (OSVersion >= 1013) {
+        if (version >= 1013) {
             fileNameLine.setBorder(new EmptyBorder(5, 0, 7, 0));
-        } else if (OSVersion >= 1011) {
+        } else if (version >= 1011) {
             fileNameLine.setBorder(new EmptyBorder(12, 0, 7, 0));
         } else {
             fileNameLine.setBorder(new EmptyBorder(12, 0, 14, 0));
@@ -796,7 +796,7 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements ActiveSensi
 
         savePanel.add(fileNameLine);
 
-        if (OSVersion != 1013) {
+        if (version != 1013) {
             savePanel.add(separator);
         }
 
@@ -1167,7 +1167,7 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements ActiveSensi
     private class DirectoryComboBox extends JComboBox {
 
         public DirectoryComboBox() {
-            if (OSVersion < macOS11) {
+            if (version < macOS11) {
                 putClientProperty("JComboBox.style", "textured");
             } else {
                 putClientProperty("JComboBox.style", null);
@@ -2209,7 +2209,7 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements ActiveSensi
 
     private void updateButton(JButton b) {
         String buttonType = null;
-        if (fc.getDialogType() == JFileChooser.OPEN_DIALOG && OSVersion >= 1011 && OSVersion <= 1012) {
+        if (fc.getDialogType() == JFileChooser.OPEN_DIALOG && version >= 1011 && version <= 1012) {
             buttonType = "textured";
         }
         b.putClientProperty(BUTTON_TYPE, buttonType);
@@ -3667,7 +3667,7 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements ActiveSensi
         RootPaneContainer d = getStandardDialog();
         if (d != null) {
             isStandardDialog = true;
-            useToolBar = OSVersion < macOS11;
+            useToolBar = version < macOS11;
 
             JRootPane rp = d.getRootPane();
 
@@ -3699,7 +3699,7 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements ActiveSensi
             return null;
         }
         if (fc.getDialogType() == JFileChooser.OPEN_DIALOG) {
-            return OSVersion < macOS11 ? "texturedToolBar" : "noTitleBar";
+            return version < macOS11 ? "texturedToolBar" : "noTitleBar";
         } else {
             return "overlayTitleBar";
         }

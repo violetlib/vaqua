@@ -29,12 +29,7 @@ import javax.swing.table.*;
 import javax.swing.tree.TreePath;
 
 import org.jetbrains.annotations.*;
-import org.violetlib.aqua.AppearanceManager;
-import org.violetlib.aqua.AquaBorderSupport;
-import org.violetlib.aqua.AquaColors;
-import org.violetlib.aqua.PaintingContext;
-
-import static org.violetlib.aqua.OSXSystemProperties.OSVersion;
+import org.violetlib.aqua.*;
 
 /**
  * The FilePreview is used to render the preview column in the file chooser browser view.
@@ -61,12 +56,15 @@ public class FilePreview extends JComponent implements BrowserPreviewRenderer {
       throws UnsupportedOperationException {
         this.fileChooser = fileChooser;
 
+        int version = AquaPainting.getVersion();
+
         int minWidth = 210;
-        int prefWidth = OSVersion >= 1014 ? 240 : minWidth;
+        int prefWidth = version >= 1014 ? 240 : minWidth;
         int minHeight = 335;
 
         setMinimumSize(new Dimension(minWidth, minHeight));
         setPreferredSize(new Dimension(prefWidth, minHeight));
+
 
         viewHolder = new JPanel();
         viewHolder.setMinimumSize(new Dimension(128, 128));
@@ -128,7 +126,7 @@ public class FilePreview extends JComponent implements BrowserPreviewRenderer {
         Box vb = new Box(BoxLayout.Y_AXIS);
         add(vb, BorderLayout.SOUTH);
 
-        if (OSVersion < 1010) {
+        if (version < 1010) {
             GrayLine b = new GrayLine();
             b.setBorder(new EmptyBorder(5, 25, 5, 25));
             vb.add(b);
@@ -136,7 +134,7 @@ public class FilePreview extends JComponent implements BrowserPreviewRenderer {
             nameView = new NameView();
             nameView.setAlignmentX(0.5f);
 
-            if (OSVersion >= 1014) {
+            if (version >= 1014) {
                 typeSizeView = new JLabel();
                 typeSizeView.setFont(typeSizeFont);
                 typeSizeView.setAlignmentX(0.5f);
@@ -146,7 +144,7 @@ public class FilePreview extends JComponent implements BrowserPreviewRenderer {
 
             vb.add(Box.createVerticalStrut(5));
             vb.add(nameView);
-            if (OSVersion < 1014) {
+            if (version < 1014) {
                 vb.add(Box.createVerticalStrut(20));
             }
 
@@ -154,7 +152,7 @@ public class FilePreview extends JComponent implements BrowserPreviewRenderer {
                 vb.add(typeSizeView);
             }
 
-            if (OSVersion >= 1014) {
+            if (version >= 1014) {
                 vb.add(Box.createVerticalStrut(20));
             }
         }
@@ -190,6 +188,8 @@ public class FilePreview extends JComponent implements BrowserPreviewRenderer {
     }
 
     public void paint(Graphics2D g, JComponent c, @NotNull PaintingContext pc) {
+        int version = AquaPainting.getVersion();
+
         Color background = pc.appearance.getColor("controlBackground");
         Color labelForeground = pc.appearance.getColor("secondaryLabel");
         Color valueForeground = pc.appearance.getColor("label");
@@ -199,7 +199,7 @@ public class FilePreview extends JComponent implements BrowserPreviewRenderer {
             nameRenderer.setColor(labelColor);
             if (typeSizeView != null) {
                 typeSizeView.setForeground(labelColor);
-            } else if (OSVersion >= 1010) {
+            } else if (version >= 1010) {
                 valueRenderer.setRowZeroColor(labelColor);
             }        }
 
@@ -268,7 +268,9 @@ public class FilePreview extends JComponent implements BrowserPreviewRenderer {
 
         AttributeTableModel m = new AttributeTableModel();
 
-        if (OSVersion < 1010) {
+        int version = AquaPainting.getVersion();
+
+        if (version < 1010) {
             m.add("name", name);
             m.add("kind", kind);
             if (size != null) {
@@ -295,7 +297,7 @@ public class FilePreview extends JComponent implements BrowserPreviewRenderer {
             // TBD: in 10.14, it can take a long time to determine that the last used date is not
             // available to an untrusted program.
 
-            if (OSVersion < 1014) {
+            if (version < 1014) {
                 Date lastUsedDate = OSXFile.getLastUsedDate(file);
                 if (lastUsedDate != null) {
                     m.add("lastUsed", getLastUsedString(lastUsedDate));

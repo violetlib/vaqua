@@ -46,7 +46,8 @@ import org.violetlib.jnr.aqua.AquaUIPainter.ButtonWidget;
 import org.violetlib.jnr.aqua.AquaUIPainter.Position;
 import org.violetlib.jnr.aqua.AquaUIPainter.SegmentedButtonWidget;
 
-import static org.violetlib.aqua.OSXSystemProperties.*;
+import static org.violetlib.aqua.OSXSystemProperties.macOS11;
+import static org.violetlib.aqua.OSXSystemProperties.macOS26;
 import static org.violetlib.jnr.aqua.AquaUIPainter.ButtonWidget.*;
 import static org.violetlib.jnr.aqua.AquaUIPainter.ComboBoxWidget.*;
 import static org.violetlib.jnr.aqua.AquaUIPainter.PopupButtonWidget.*;
@@ -494,6 +495,8 @@ public class AquaButtonExtendedTypes {
     }
 
     protected static Map<Object, WidgetInfo> getAllWidgets() {
+        int version = AquaPainting.getVersion();
+
         Map<Object, WidgetInfo> result = new HashMap<>();
 
         result.put(BUTTON_CHECK_BOX, new WidgetInfo(AquaColors.LABELLED_BUTTON_COLORS));
@@ -587,7 +590,7 @@ public class AquaButtonExtendedTypes {
           .withNonexclusiveSelectionColors(AquaColors.TEXTURED_TOOLBAR_NONEXCLUSIVE_COLORS)
           ;
 
-        if (OSVersion >= macOS11) {
+        if (version >= macOS11) {
             texturedToolbar = texturedToolbar.withRolloverEnabled();
         }
 
@@ -614,7 +617,7 @@ public class AquaButtonExtendedTypes {
 
         {
             BasicContextualColors colors = AquaColors.GRADIENT_SEGMENTED_BUTTON_COLORS;
-            if (OSVersion < 1011) {
+            if (version < 1011) {
                 colors = AquaColors.SEGMENTED_BUTTON_COLORS;
             }
             WidgetInfo segmentedRoundedRect = roundedRect.copy().withSegmented().withColors(colors).withSideMargin(9);
@@ -659,6 +662,8 @@ public class AquaButtonExtendedTypes {
     }
 
     protected static Map<String, TypeSpecifier> getAllTypes() {
+        int version = AquaPainting.getVersion();
+
         Map<String, TypeSpecifier> specifiersByName = new HashMap<String, TypeSpecifier>();
 
         TypeSpecifier[] specifiers = {
@@ -687,11 +692,11 @@ public class AquaButtonExtendedTypes {
           new BorderDefinedTypeSpecifier("help", BUTTON_HELP),
           new BorderDefinedTypeSpecifier("round", BUTTON_ROUND),
           new BorderDefinedTypeSpecifier("round-onToolbar",
-            OSVersion >= 1011 ? BUTTON_ROUND_TEXTURED_TOOLBAR : BUTTON_ROUND),
+            version >= 1011 ? BUTTON_ROUND_TEXTURED_TOOLBAR : BUTTON_ROUND),
           new BorderDefinedTypeSpecifier("texturedRound", BUTTON_ROUND_INSET),  // TBD: this is not correct, but the button type is undocumented
           new BorderDefinedTypeSpecifier("roundTextured", BUTTON_ROUND_TEXTURED),
           new BorderDefinedTypeSpecifier("roundTextured-onToolbar",
-            OSVersion >= 1011 ? BUTTON_ROUND_TEXTURED_TOOLBAR : BUTTON_ROUND_TEXTURED),
+            version >= 1011 ? BUTTON_ROUND_TEXTURED_TOOLBAR : BUTTON_ROUND_TEXTURED),
           new BorderDefinedTypeSpecifier("roundInset", BUTTON_ROUND_INSET),
           new BorderDefinedTypeSpecifier("colorWell", BUTTON_COLOR_WELL),
 

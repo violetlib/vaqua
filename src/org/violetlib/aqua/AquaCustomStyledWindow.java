@@ -20,7 +20,6 @@ import javax.swing.plaf.UIResource;
 import org.jetbrains.annotations.*;
 
 import static org.violetlib.aqua.AquaUtils.*;
-import static org.violetlib.aqua.OSXSystemProperties.OSVersion;
 import static org.violetlib.aqua.OSXSystemProperties.macOS11;
 
 /**
@@ -83,7 +82,7 @@ public class AquaCustomStyledWindow {
     public static final int STYLE_COMBINED = 5;         // AKA combined title bar and toolbar
     public static final int STYLE_UNDECORATED = 6;      // Internal use
 
-    protected final int TITLE_BAR_HEIGHT = OSVersion >= macOS11 ? 27: 22;
+    protected final int TITLE_BAR_HEIGHT = AquaPainting.getVersion() >= macOS11 ? 27: 22;
     protected final int TITLE_BAR_BUTTONS_WIDTH = 78;
 
     protected @Nullable Window w;

@@ -63,7 +63,8 @@ import org.violetlib.jnr.aqua.AquaUIPainter.PopupButtonWidget;
 import org.violetlib.jnr.aqua.AquaUIPainter.Size;
 import org.violetlib.jnr.aqua.AquaUIPainter.State;
 
-import static org.violetlib.aqua.OSXSystemProperties.*;
+import static org.violetlib.aqua.OSXSystemProperties.macOS11;
+import static org.violetlib.aqua.OSXSystemProperties.macOS26;
 import static org.violetlib.jnr.aqua.AquaUIPainter.ComboBoxWidget.*;
 import static org.violetlib.jnr.aqua.AquaUIPainter.PopupButtonWidget.*;
 
@@ -398,7 +399,8 @@ public class AquaComboBoxUI extends BasicComboBoxUI
         if (bg != null && state == State.ACTIVE) {
             Object widget = bg.getWidget();
             if (widget == BUTTON_POP_UP_RECESSED || widget == BUTTON_POP_DOWN_RECESSED) {
-                if (OSVersion >= macOS11 && OSVersion < macOS26) {
+                int version = AquaPainting.getVersion();
+                if (version >= macOS11 && version < macOS26) {
                     if (!pc.appearance.isDark() && pc.appearance.isHighContrast()) {
                         isSelected = true;
                     }
@@ -502,7 +504,7 @@ public class AquaComboBoxUI extends BasicComboBoxUI
 
         } else if (st == State.INACTIVE) {
             if (isTextured) {
-                return OSVersion < 1015;
+                return AquaPainting.getVersion() < 1015;
             }
         }
         return false;
@@ -1569,7 +1571,7 @@ public class AquaComboBoxUI extends BasicComboBoxUI
             Object widget = getWidget();
             AquaButtonExtendedTypes.WidgetInfo info = AquaButtonExtendedTypes.getWidgetInfo(widget);
             int bottomGap = info.getBottomMenuGap();
-            if (OSVersion >= 1014 && isTextured) {
+            if (AquaPainting.getVersion() >= 1014 && isTextured) {
                 // If no focus ring is shown, then we need less room.
                 bottomGap -= 2;
             }

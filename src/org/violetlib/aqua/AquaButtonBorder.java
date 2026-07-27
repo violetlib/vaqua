@@ -52,7 +52,8 @@ import org.violetlib.jnr.aqua.AquaUIPainter.Size;
 import org.violetlib.jnr.aqua.AquaUIPainter.State;
 
 import static org.violetlib.aqua.AquaButtonSupport.isColorWell;
-import static org.violetlib.aqua.OSXSystemProperties.*;
+import static org.violetlib.aqua.OSXSystemProperties.macOS11;
+import static org.violetlib.aqua.OSXSystemProperties.macOS26;
 import static org.violetlib.jnr.aqua.AquaUIPainter.ButtonState.OFF;
 import static org.violetlib.jnr.aqua.AquaUIPainter.ButtonState.ON;
 import static org.violetlib.jnr.aqua.AquaUIPainter.ButtonWidget.BUTTON_TOOLBAR_ITEM;
@@ -181,7 +182,7 @@ public abstract class AquaButtonBorder extends AquaBorder implements FocusRingOu
             double hh = height - 2 * t;
             double y2 = y1 + hh;
 
-            if (OSVersion >= 1300) {
+            if (version >= 1300) {
                 int arc = 4;
                 rr = new RoundRectangle2D.Double(x1, y1, ww, hh, arc, arc);
             } else {
@@ -209,7 +210,7 @@ public abstract class AquaButtonBorder extends AquaBorder implements FocusRingOu
             gg.setColor(c);
             AquaUtils.fillAntiAliased(gg, rr);
 
-            if (OSVersion >= 1300 && c.getAlpha() != 255) {
+            if (version >= 1300 && c.getAlpha() != 255) {
                 gg.setColor(pc.appearance.isDark() ? new Color(255, 255, 255, 52) : new Color(0, 0, 0, 52));
                 AquaUtils.drawAntiAliased(gg, rr);
             }
@@ -256,6 +257,7 @@ public abstract class AquaButtonBorder extends AquaBorder implements FocusRingOu
                                              @NotNull GenericButtonConfiguration g,
                                              @NotNull PaintingContext pc,
                                              boolean isIcon) {
+        int version = AquaPainting.getVersion();
         State state = g.getState();
         AquaButtonExtendedTypes.WidgetInfo info = getWidgetInfo(b);
         boolean isEnabled = b.getModel().isEnabled();
@@ -267,7 +269,7 @@ public abstract class AquaButtonBorder extends AquaBorder implements FocusRingOu
             // Starting with macOS 12, the foreground color of any button does not change.
             if (state == State.PRESSED_DEFAULT) {
                 state = State.ACTIVE_DEFAULT;
-            } else if (OSVersion >= 1200 && state == State.PRESSED) {
+            } else if (version >= 1200 && state == State.PRESSED) {
                 state = State.ACTIVE;
             }
 
@@ -485,7 +487,7 @@ public abstract class AquaButtonBorder extends AquaBorder implements FocusRingOu
 
         } else if (st == State.INACTIVE) {
             if (g.isTextured()) {
-                return OSVersion < 1015;
+                return AquaPainting.getVersion() < 1015;
             }
         }
         return false;

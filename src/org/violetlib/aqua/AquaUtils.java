@@ -62,7 +62,8 @@ import org.violetlib.jnr.Insetter;
 import org.violetlib.jnr.aqua.AquaUIPainter;
 
 import static org.violetlib.aqua.JavaSupport.FocusEventCause.*;
-import static org.violetlib.aqua.OSXSystemProperties.*;
+import static org.violetlib.aqua.OSXSystemProperties.macOS11;
+import static org.violetlib.aqua.OSXSystemProperties.macOS26;
 import static org.violetlib.jnr.aqua.AquaUIPainter.ButtonWidget.*;
 import static org.violetlib.jnr.aqua.AquaUIPainter.Size.*;
 
@@ -1690,7 +1691,7 @@ final public class AquaUtils {
                 case TITLE_BAR_HIDDEN:
                     isFullWindowContent = true;
                     isTransparentTitleBar = true;
-                    isMovable = OSVersion < 1011;
+                    isMovable = AquaPainting.getVersion() < 1011;
                     isMovableByBackground = false;
                     isFixNeeded = true;
                     isHidden = true;

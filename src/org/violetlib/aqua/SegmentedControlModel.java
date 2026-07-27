@@ -19,8 +19,10 @@ import org.jetbrains.annotations.*;
 import org.violetlib.jnr.aqua.AquaUIPainter.SegmentedButtonWidget;
 import org.violetlib.jnr.aqua.LayoutConfiguration;
 
-import static org.violetlib.aqua.OSXSystemProperties.*;
-import static org.violetlib.jnr.aqua.AquaUIPainter.SegmentedButtonWidget.*;
+import static org.violetlib.aqua.OSXSystemProperties.macOS11;
+import static org.violetlib.aqua.OSXSystemProperties.macOS26;
+import static org.violetlib.jnr.aqua.AquaUIPainter.SegmentedButtonWidget.BUTTON_SEGMENTED;
+import static org.violetlib.jnr.aqua.AquaUIPainter.SegmentedButtonWidget.BUTTON_SEGMENTED_SLIDER;
 
 /**
  * A model of a segmented control. A segmented control model is created as needed when there are potential interactions
@@ -300,7 +302,7 @@ public class SegmentedControlModel {
     }
 
     private static boolean isPotentialSegmentedControlMember(@NotNull AbstractButton b) {
-        if (OSVersion < macOS11) {
+        if (AquaPainting.getVersion() < macOS11) {
             return false;
         }
 
@@ -317,7 +319,7 @@ public class SegmentedControlModel {
     public static @NotNull SegmentedButtonWidget getWidget(@NotNull AbstractButton b, @NotNull LayoutConfiguration g)
     {
         SegmentedButtonWidget standardWidget = (SegmentedButtonWidget) g.getWidget();
-        if (OSVersion >= macOS11) {
+        if (AquaPainting.getVersion() >= macOS11) {
             SegmentedButtonWidget special = getSpecialWidget(b, standardWidget);
             if (special != null) {
                 return special;

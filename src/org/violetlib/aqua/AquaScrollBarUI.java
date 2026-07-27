@@ -52,8 +52,10 @@ import org.violetlib.jnr.Painter;
 import org.violetlib.jnr.aqua.*;
 import org.violetlib.jnr.aqua.AquaUIPainter.*;
 
-import static org.violetlib.aqua.OSXSystemProperties.*;
-import static org.violetlib.jnr.aqua.AquaUIPainter.ScrollBarWidget.*;
+import static org.violetlib.aqua.OSXSystemProperties.macOS11;
+import static org.violetlib.aqua.OSXSystemProperties.macOS26;
+import static org.violetlib.jnr.aqua.AquaUIPainter.ScrollBarWidget.LEGACY;
+import static org.violetlib.jnr.aqua.AquaUIPainter.ScrollBarWidget.LEGACY_SIDEBAR;
 
 public class AquaScrollBarUI extends ScrollBarUI implements AquaComponentUI {
 
@@ -355,7 +357,7 @@ public class AquaScrollBarUI extends ScrollBarUI implements AquaComponentUI {
 
         boolean isOverlay = isOverlay();
         if (isSidebar() && !isOverlay) {
-            if (OSVersion < macOS11 && pc != null && pc.appearance.isHighContrast()) {
+            if (AquaPainting.getVersion() < macOS11 && pc != null && pc.appearance.isHighContrast()) {
                 return LEGACY;
             }
             return LEGACY_SIDEBAR;
