@@ -376,9 +376,10 @@ public class AquaToolBarUI extends BasicToolBarUI implements SwingConstants, Aqu
         }
 
         private void configure() {
-            if (!isConfigured) {
-                isConfigured = true;
+            if (isConfigured) {
+                return;
             }
+            isConfigured = true;
 
             gl = new GroupLayout(toolBar);
             major = gl.createSequentialGroup();
