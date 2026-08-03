@@ -50,6 +50,8 @@ import org.violetlib.jnr.aqua.AquaUIPainter;
 import org.violetlib.jnr.aqua.ButtonLayoutConfiguration;
 import org.violetlib.jnr.aqua.LayoutConfiguration;
 
+import static org.violetlib.aqua.OSXSystemProperties.macOS11;
+
 public class AquaToolBarUI extends BasicToolBarUI implements SwingConstants, AquaComponentUI {
 
     public static ComponentUI createUI(JComponent c) {
@@ -68,7 +70,8 @@ public class AquaToolBarUI extends BasicToolBarUI implements SwingConstants, Aqu
     protected boolean isRendering;
 
     public AquaToolBarUI() {
-        colors = AquaColors.CLEAR_CONTROL_COLORS;
+        int version = AquaPainting.getVersion();
+        colors = version >= macOS11 ? AquaColors.UNIFIED_TOOLBAR_COLORS : AquaColors.CLEAR_CONTROL_COLORS;
     }
 
     @Override
@@ -273,14 +276,26 @@ public class AquaToolBarUI extends BasicToolBarUI implements SwingConstants, Aqu
     }
 
     public void paint(Graphics2D g, JComponent c, @NotNull PaintingContext pc) {
-        AquaUIPainter.State state = AquaUIPainter.State.ACTIVE;
+        AquaUIPainter.State state = getState(c);
         AppearanceContext appearanceContext = new AppearanceContext(pc.appearance, state, false, false);
         AquaColors.installColors(c, appearanceContext, colors);
 
-        if (!isRendering && c.isOpaque()) {
+        if (!isRendering && shouldPaintBackground(c)) {
             Color bc = c.getBackground();
             AquaUtils.fillRect(g, c, bc, AquaUtils.ERASE_IF_TEXTURED|AquaUtils.ERASE_IF_VIBRANT);
         }
+    }
+
+    private @NotNull AquaUIPainter.State getState(@NotNull JComponent c)
+    {
+        JRootPane rp = SwingUtilities.getRootPane(c);
+        boolean isActive = rp != null && AquaFocusHandler.isActive(rp);
+        return isActive ? AquaUIPainter.State.ACTIVE : AquaUIPainter.State.INACTIVE;
+    }
+
+    private boolean shouldPaintBackground(@NotNull JComponent c)
+    {
+        return c.getBackground() instanceof UIResource || c.isOpaque();
     }
 
     @Override

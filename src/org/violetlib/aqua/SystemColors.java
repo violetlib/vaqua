@@ -54,13 +54,21 @@ public class SystemColors {
 
         // default definitions
 
+        colors.add("unifiedToolbarBackground", "windowBackground");
+
         colors.add("texturedWindowBackground", "windowBackground");
         colors.add("texturedWindowBackground_disabled", "windowBackground_disabled");
 
         colors.add("topWindowMarginBackground", "windowBackground");
-        colors.add("topWindowMarginBackground_disabled", "windowBackground_disabled");
         colors.add("bottomWindowMarginBackground", "windowBackground");
-        colors.add("bottomWindowMarginBackground_disabled", "windowBackground_disabled");
+
+        if (OSVersion >= macOS11) {
+            colors.add("topWindowMarginBackground_disabled", "topWindowMarginBackground");
+            colors.add("bottomWindowMarginBackground_disabled", "bottomWindowMarginBackground");
+        } else {
+            colors.add("topWindowMarginBackground_disabled", "windowBackground_disabled");
+            colors.add("bottomWindowMarginBackground_disabled", "windowBackground_disabled");
+        }
 
         colors.add("topTexturedWindowMarginBackground", "texturedWindowBackground");
         colors.add("topTexturedWindowMarginBackground_disabled", "texturedWindowBackground_disabled");
@@ -468,16 +476,28 @@ public class SystemColors {
             colors.addAlphaGradient("topWindowMarginBackground", 0, 4, 28);
             colors.addAlphaGradient("bottomWindowMarginBackground", 0, 8, 22);
         } else {
-            colors.addColorGradient("topTexturedWindowMarginBackground", 255, 180, 80);
-            colors.addAlphaGradient("bottomTexturedWindowMarginBackground", 255, 144, 8);
-            colors.addAlphaGradient("topWindowMarginBackground", 0, 8, 36);
-            colors.addAlphaGradient("bottomWindowMarginBackground", 0, 0, 24);
+            if (OSVersion < macOS11) {
+                colors.addAlphaGradient("topWindowMarginBackground", 0, 8, 36);
+                colors.addAlphaGradient("bottomWindowMarginBackground", 0, 0, 24);
+                colors.addColorGradient("topTexturedWindowMarginBackground", 255, 180, 80);
+                colors.addAlphaGradient("bottomTexturedWindowMarginBackground", 255, 144, 8);
+            } else {
+                if (OSVersion < macOS26) {
+                    colors.add("topWindowMarginBackground", 236);
+                    colors.add("bottomWindowMarginBackground", 236);
+                    colors.add("unifiedToolbarBackground", 238);
+                    colors.add("unifiedToolbarBackground_disabled", 228);
+                }
+                colors.add("bottomWindowMarginBackground", 233);
+            }
         }
 
-        colors.add("topWindowMarginBackground_disabled", 246);
-        colors.add("bottomWindowMarginBackground_disabled", 246);
-        colors.add("topTexturedWindowBackground_disabled", 246);
-        colors.add("bottomTexturedWindowBackground_disabled", 246);
+        if (OSVersion < macOS11) {
+            colors.add("topWindowMarginBackground_disabled", 246);
+            colors.add("bottomWindowMarginBackground_disabled", 246);
+            colors.add("topTexturedWindowBackground_disabled", 246);
+            colors.add("bottomTexturedWindowBackground_disabled", 246);
+        }
 
         if (OSVersion < 1014) {
             colors.add("topWindowDivider", 0, 36);
@@ -651,10 +671,20 @@ public class SystemColors {
             colors.addAlphaGradient("topWindowMarginBackground", 0, 16, 40);
             colors.addAlphaGradient("bottomWindowMarginBackground", 0, 22, 36);
         } else {
-            colors.addAlphaGradient("topWindowMarginBackground", 0, 8, 34);
-            colors.addAlphaGradient("bottomWindowMarginBackground", 0, 0, 26);
-            colors.addColorGradient("topTexturedWindowMarginBackground", 255, 200, 104);
-            colors.addAlphaGradient("bottomTexturedWindowMarginBackground", 255, 144, 8);
+            if (OSVersion < macOS11) {
+                colors.addAlphaGradient("topWindowMarginBackground", 0, 8, 34);
+                colors.addAlphaGradient("bottomWindowMarginBackground", 0, 0, 26);
+                colors.addColorGradient("topTexturedWindowMarginBackground", 255, 200, 104);
+                colors.addAlphaGradient("bottomTexturedWindowMarginBackground", 255, 144, 8);
+            } else {
+                if (OSVersion < macOS26) {
+                    colors.add("topWindowMarginBackground", 252);
+                    colors.add("bottomWindowMarginBackground", 252);
+                    colors.add("unifiedToolbarBackground", 252);
+                    colors.add("unifiedToolbarBackground_disabled", 240);
+                }
+                colors.add("bottomWindowMarginBackground", 246);
+            }
         }
 
         {
@@ -1067,13 +1097,22 @@ public class SystemColors {
 
         // colors related to window content borders (dark mode)
 
-        colors.addMagicAlphaGradient("topTexturedWindowMarginBackground", 255, 24, 8);
-        colors.add("topTexturedWindowMarginBackground_disabled", new TintedEraser(0, 32));
-        colors.addColorGradient("bottomTexturedWindowMarginBackground", 60, 38, 128);
-        colors.addAlphaGradient("topWindowMarginBackground", 255, 24, 8);
-        colors.add("topWindowMarginBackground_disabled", new TintedEraser(32, 64));
-        // using translucent colors will reveal a vibrant background, which is incorrect for the bottom margin
-        colors.addColorGradient("bottomWindowMarginBackground", 50, 40, 255);
+        if (OSVersion < macOS11) {
+            colors.addAlphaGradient("topWindowMarginBackground", 255, 24, 8);
+            colors.addColorGradient("bottomWindowMarginBackground", 50, 40, 255);
+            colors.addMagicAlphaGradient("topTexturedWindowMarginBackground", 255, 24, 8);
+            colors.add("topTexturedWindowMarginBackground_disabled", new TintedEraser(0, 32));
+            colors.addColorGradient("bottomTexturedWindowMarginBackground", 60, 38, 128);
+            colors.add("topWindowMarginBackground_disabled", new TintedEraser(32, 64));
+            // using translucent colors will reveal a vibrant background, which is incorrect for the bottom margin
+        } else {
+            if (OSVersion < macOS26) {
+                colors.add("topWindowMarginBackground", 55);
+                colors.add("unifiedToolbarBackground_disabled", 36);
+                colors.add("unifiedToolbarBackground", 55);
+            }
+            colors.add("bottomWindowMarginBackground", 27);
+        }
 
         colors.add("topWindowDivider_disabled", 55);  // flat divider over vibrant background
 
@@ -1235,9 +1274,18 @@ public class SystemColors {
         // support for scroll panes (dark mode)
         colors.add("scrollPaneBorder", 153, 128);
 
-        colors.addColorGradient("bottomTexturedWindowMarginBackground", 80, 48, 128);
-        // using translucent colors will reveal a vibrant background, which is incorrect for the bottom margin
-        colors.addColorGradient("bottomWindowMarginBackground", 66, 53, 255);
+        if (OSVersion < macOS11) {
+            colors.addColorGradient("bottomTexturedWindowMarginBackground", 80, 48, 128);
+            // using translucent colors will reveal a vibrant background, which is incorrect for the bottom margin
+            colors.addColorGradient("bottomWindowMarginBackground", 66, 53, 255);
+        } else {
+            colors.add("bottomWindowMarginBackground", 40);
+        }
+
+        if (OSVersion >= macOS11 && OSVersion < macOS26) {
+            colors.add("unifiedToolbarBackground", 56);
+            colors.add("unifiedToolbarBackground_disabled", 36);
+        }
 
         {
             int c = 255;

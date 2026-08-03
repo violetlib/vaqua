@@ -44,19 +44,19 @@ import static org.violetlib.aqua.OSXSystemProperties.macOS11;
  *
  * <li>{@code STYLE_UNIFIED}</li> - This option requires a non-floatable JToolBar or toolbar panel as a child component
  * of the content pane positioned at the top of the content pane. It creates a unified title bar and toolbar by using a
- * transparent title bar, painting a textured window background that includes a gradient under the title bar and
- * toolbar, and by installing a default toolbar border with a top inset, so that the toolbar is positioned below the
- * title bar. The content pane and toolbar are set to not-opaque to expose the textured background. The window title is
- * cleared; the application should avoid setting a title on the window. A mouse listener is attached to the toolbar to
- * support dragging the window.
+ * transparent title bar, painting a textured window background that includes a gradient under the title bar and toolbar
+ * (for some system releases), and by installing a default toolbar border with a top inset, so that the toolbar is
+ * positioned below the title bar. The content pane and toolbar are set to not-opaque to expose the textured background.
+ * The window title is cleared; the application should avoid setting a title on the window. A mouse listener is attached
+ * to the toolbar to support dragging the window.
  *
- * <li>{@code STYLE_COMBINED}</li> - This option requires a non-floatable JToolBar or toolbar panel as a child
- * component of the content pane positioned at the top of the content pane. It creates a combined title bar and toolbar
- * by using a transparent title bar, painting a textured window background that includes a gradient under the title bar
- * and toolbar, and by installing a default toolbar border with a left inset, so that the toolbar is positioned to
- * the right of the title bar buttons. The content pane and toolbar are set to not-opaque to expose the textured
- * background. The window title is cleared; the application should avoid setting a title on the window. A mouse listener
- * is attached to the toolbar to support dragging the window.
+ * <li>{@code STYLE_COMBINED}</li> - This option requires a non-floatable JToolBar or toolbar panel as a child component
+ * of the content pane positioned at the top of the content pane. It creates a combined title bar and toolbar by using a
+ * transparent title bar, painting a textured window background that includes a gradient under the title bar and toolbar
+ * (for some system releases), and by installing a default toolbar border with a left inset, so that the toolbar is
+ * positioned to the right of the title bar buttons. The content pane and toolbar are set to not-opaque to expose the
+ * textured background. The window title is cleared; the application should avoid setting a title on the window. A mouse
+ * listener is attached to the toolbar to support dragging the window.
  *
  * <li>{@code STYLE_TEXTURED_HIDDEN}</li> - This option requires a non-floatable JToolBar or toolbar panel as a child
  * component of the content pane positioned at the top of the content pane. It creates a textured window with a toolbar
@@ -184,11 +184,13 @@ public class AquaCustomStyledWindow {
         titleBarStyle = getTitleBarStyleForWindowStyle(style);
         isTextured = getTexturedStyleForWindowStyle(style);
 
-        if (isTextured) {
-            if (windowToolBar == null) {
-                throw new RequiredToolBarNotFoundException();
+        if (windowToolBar != null) {
+            if (isTextured) {
+                setupClearToolbar(windowToolBar);
+                setupToolbar(windowToolBar);
+            } else if (isToolbarMerged(style)) {
+                setupToolbar(windowToolBar);
             }
-            setupToolbar(windowToolBar);
         }
 
         setupContentPane(contentPane);
@@ -226,7 +228,12 @@ public class AquaCustomStyledWindow {
         }
     }
 
-    public boolean getTexturedStyleForWindowStyle(int style) {
+    private boolean isToolbarMerged(int style)
+    {
+        return style == STYLE_UNIFIED || style == STYLE_COMBINED;
+    }
+
+    private boolean getTexturedStyleForWindowStyle(int style) {
         switch (style) {
             case STYLE_OVERLAY:
             case STYLE_TRANSPARENT:
@@ -236,7 +243,7 @@ public class AquaCustomStyledWindow {
             case STYLE_UNIFIED:
             case STYLE_TEXTURED_HIDDEN:
             case STYLE_COMBINED:
-                return true;
+                return AquaPainting.getVersion() < macOS11;
             default:
                 throw new IllegalArgumentException("Invalid style");
         }
@@ -334,16 +341,17 @@ public class AquaCustomStyledWindow {
         }
     }
 
-    protected void setupToolbar(JComponent tb) {
+    protected void setupClearToolbar(@NotNull JComponent tb) {
         tb.setOpaque(false);
-
         Container p = tb;
         while ((p = p.getParent()) != contentPane && p != null) {
             if (p instanceof JComponent) {
                 ((JComponent) p).setOpaque(false);
             }
         }
+    }
 
+    protected void setupToolbar(JComponent tb) {
         installToolbarBorder(tb);
         attachWindowDraggingMouseListener(tb);
         attachHierarchyListener(tb);
@@ -384,7 +392,7 @@ public class AquaCustomStyledWindow {
             if (c instanceof JToolBar) {
                 c.setBorder(AquaToolBarUI.getToolBarBorder((JToolBar) c));
             } else {
-               c.setBorder(null);
+                c.setBorder(null);
             }
         }
     }

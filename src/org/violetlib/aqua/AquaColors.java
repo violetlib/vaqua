@@ -134,6 +134,7 @@ public class AquaColors {
     private static final BasicContextualColors LEGACY_COMBO_BOX_MENU_COLORS = createLegacyComboBoxMenuColors();
     public static final BasicContextualColors SEPARATOR_COLORS = createSeparatorColors();
     public static final BasicContextualColors TABLE_HEADER_COLORS = createTableHeaderColors();
+    public static final BasicContextualColors UNIFIED_TOOLBAR_COLORS = createUnifiedToolbarColors();
     public static final ContainerContextualColors CONTAINER_COLORS = createContainerColors();
     public static final ContainerContextualColors STRIPED_CONTAINER_COLORS = createStripedContainerColors();
     public static final ContainerContextualColors SIDEBAR_CONTAINER_COLORS = createSidebarContainerColors();
@@ -397,6 +398,13 @@ public class AquaColors {
         AquaContextualColorImpl foreground = new AquaContextualColorImpl("BasicClearControlColors.foreground", "controlText");
         foreground.setSelectedName("alternateSelectedControlText");
         foreground.setInactiveSelectedName("unemphasizedSelectedControlText");
+        return new BasicContextualColorsImpl(background, foreground);
+    }
+
+    private static @NotNull BasicContextualColors createUnifiedToolbarColors() {
+        AquaContextualColorImpl background = new AquaContextualColorImpl("UnifiedToolbarColors.background", "unifiedToolbarBackground");
+        // foreground is not used
+        AquaContextualColorImpl foreground = new AquaContextualColorImpl("UnifiedToolbarColors.foreground", "controlText");
         return new BasicContextualColorsImpl(background, foreground);
     }
 
