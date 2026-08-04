@@ -386,6 +386,7 @@ public class AquaToolBarUI extends BasicToolBarUI implements SwingConstants, Aqu
         GroupLayout.SequentialGroup major;
         GroupLayout.ParallelGroup minor;
         boolean isConfigured;
+        boolean isConfiguringGroupLayout;
 
         AquaToolBarLayout() {
         }
@@ -395,6 +396,7 @@ public class AquaToolBarUI extends BasicToolBarUI implements SwingConstants, Aqu
                 return;
             }
             isConfigured = true;
+            isConfiguringGroupLayout = true;
 
             gl = new GroupLayout(toolBar);
             major = gl.createSequentialGroup();
@@ -417,6 +419,7 @@ public class AquaToolBarUI extends BasicToolBarUI implements SwingConstants, Aqu
                 gl.setVerticalGroup(major);
                 gl.setHorizontalGroup(minor);
             }
+            isConfiguringGroupLayout = false;
         }
 
         public void addLayoutComponent(String name, Component comp) {
@@ -462,7 +465,9 @@ public class AquaToolBarUI extends BasicToolBarUI implements SwingConstants, Aqu
         }
 
         public void invalidateLayout(Container target) {
-            isConfigured = false;
+            if (!isConfiguringGroupLayout) {
+                isConfigured = false;
+            }
         }
 
         public void propertyChange(PropertyChangeEvent e) {
