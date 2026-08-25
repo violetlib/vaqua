@@ -2074,31 +2074,6 @@ JNIEXPORT jint JNICALL Java_org_violetlib_aqua_AquaUtils_nativeSetTitleBarProper
 }
 
 /*
- * Class:     org_violetlib_aqua_AquaUtils
- * Method:    nativeAddToolbarToWindow
- * Signature: (J)I
- */
-JNIEXPORT jint JNICALL Java_org_violetlib_aqua_AquaUtils_nativeAddToolbarToWindow
-    (JNIEnv *env, jclass cl, jlong wptr)
-{
-    jint result = -1;
-
-    COCOA_ENTER();
-
-    NSWindow *w = (NSWindow *) wptr;
-    runOnMainThread(^() {
-        NSToolbar *tb = [[NSToolbar alloc] initWithIdentifier: @"Foo"];
-        [tb setShowsBaselineSeparator: NO];
-        [w setToolbar: tb];
-    });
-    result = 0;
-
-    COCOA_EXIT();
-
-    return result;
-}
-
-/*
  * Class:     org_violetlib_aqua_AquaSheetSupport
  * Method:    nativeDisplayAsSheet
  * Signature: (JJ)I

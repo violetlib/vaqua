@@ -1735,19 +1735,6 @@ final public class AquaUtils {
         }
     }
 
-    public static void addNativeToolbarToWindow(Window w) throws UnsupportedOperationException {
-        ensureWindowPeer(w);
-        execute(w, AquaUtils::addNativeToolbarToWindow);
-    }
-
-    private static long addNativeToolbarToWindow(long wptr) throws UnsupportedOperationException {
-        int result = nativeAddToolbarToWindow(wptr);
-        if (result != 0) {
-            throw new UnsupportedOperationException("Unable to add native toolbar to window");
-        }
-        return 0;
-    }
-
     /**
      * Ensure that the window peer has been created, as a prerequisite for calling native code that operates on the
      * native window.
@@ -2227,7 +2214,6 @@ final public class AquaUtils {
     private static native boolean nativeIsFullScreenWindow(long w);
     private static native int nativeSetTitleBarStyle(long w, int style);
     private static native int nativeSetTitleBarProperties(long w, boolean hasTitleBar, boolean isMovable, boolean isHidden, boolean isFixNeeded);
-    private static native int nativeAddToolbarToWindow(long w);
     private static native int nativeSetWindowCornerRadius(long w, float radius);
     private static native int nativeUpdateWindowInsets(Window w, Insets s);
     private static native int nativeSetWindowRepresentedFilename(long w, String name);
