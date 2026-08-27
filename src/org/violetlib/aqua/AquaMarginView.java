@@ -22,6 +22,12 @@ import org.jetbrains.annotations.NotNull;
  */
 public class AquaMarginView extends View {
 
+    public static @NotNull AquaMarginView create(@NotNull View base, int textMargin) {
+        AquaMarginView v = new AquaMarginView(base, textMargin);
+        v.base.setParent(v);
+        return v;
+    }
+
     protected final @NotNull View base;
     protected int margin;
 
@@ -39,7 +45,6 @@ public class AquaMarginView extends View {
         this.base = base;
         this.margin = Math.max(0, margin);
         tempRect = new Rectangle();
-        base.setParent(this);
     }
 
     public void setMargin(int margin) {

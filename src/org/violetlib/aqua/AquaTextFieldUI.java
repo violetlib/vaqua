@@ -221,8 +221,11 @@ public class AquaTextFieldUI extends AquaTextComponentUIBase implements ToolbarS
             return null;
         }
         // TBD: support the complex layout cases: GlyphView and I18nFieldView
-        int textMargin = getTextMargin();
-        return new AquaMarginView(base, textMargin);
+        if (base instanceof AquaFieldView) {
+            int textMargin = getTextMargin();
+            return AquaMarginView.create(base, textMargin);
+        }
+        return base;
     }
 
     protected @Nullable View createBasicView(@NotNull Element elem) {
