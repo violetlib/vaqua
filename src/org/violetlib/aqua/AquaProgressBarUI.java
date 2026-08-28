@@ -147,7 +147,7 @@ public class AquaProgressBarUI
             stopAnimationTimer();
             progressBar.revalidate();
             progressBar.repaint();
-        } else if ("orientation".equals(prop)) {
+        } else if ("orientation".equals(prop) || "componentOrientation".equals(prop)) {
             progressBar.revalidate();
             progressBar.repaint();
         }
