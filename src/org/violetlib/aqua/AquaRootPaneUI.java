@@ -619,13 +619,15 @@ public class AquaRootPaneUI extends BasicRootPaneUI implements AquaComponentUI, 
     protected void configureRepresentedFilename() {
         Window w = getDisplayableWindow();
         if (w != null) {
-            Object o = rootPane.getClientProperty(AQUA_WINDOW_REPRESENTED_FILENAME_KEY);
-            String filename = "";
-            if (o instanceof String) {
-                filename = (String) o;
-            }
+            String filename = getWindowRepresentedFilename();
             AquaUtils.setWindowRepresentedFilename(w, filename);
         }
+    }
+
+    public @NotNull String getWindowRepresentedFilename()
+    {
+        Object o = rootPane.getClientProperty(AQUA_WINDOW_REPRESENTED_FILENAME_KEY);
+        return o instanceof String ? (String) o : "";
     }
 
     protected void configureLayeredPane()

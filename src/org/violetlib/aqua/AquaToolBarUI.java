@@ -379,6 +379,16 @@ public class AquaToolBarUI extends BasicToolBarUI implements SwingConstants, Aqu
         return getDockingColor();
     }
 
+    public void updateLayout(boolean isGlueNeeded) {
+        if (isGluePresent(toolBar) != isGlueNeeded) {
+            if (isGlueNeeded) {
+                installGlue(toolBar);
+            } else {
+                removeGlue(toolBar);
+            }
+        }
+    }
+
     private class AquaToolBarLayout
       implements LayoutManager2, Serializable, PropertyChangeListener, UIResource {
 
@@ -475,6 +485,35 @@ public class AquaToolBarUI extends BasicToolBarUI implements SwingConstants, Aqu
             if( name.equals("orientation") ) {
                 isConfigured = false;
             }
+        }
+    }
+
+    protected boolean isGluePresent(JComponent tb) {
+        int count = tb.getComponentCount();
+        if (count > 0) {
+            Component c = tb.getComponent(0);
+            return isGlue(c);
+        }
+        return false;
+    }
+
+    protected boolean isGlue(Component c) {
+        return c instanceof MyGlue;
+    }
+
+    protected void installGlue(JComponent tb) {
+        tb.add(new MyGlue(), 0);
+    }
+
+    protected void removeGlue(JComponent tb) {
+        tb.remove(0);
+    }
+
+    protected static class MyGlue
+      extends Box.Filler
+    {
+        public MyGlue() {
+            super(new Dimension(0,0), new Dimension(0,0), new Dimension(Short.MAX_VALUE, 0));
         }
     }
 }

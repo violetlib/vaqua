@@ -198,10 +198,6 @@ public class AquaCustomStyledWindow {
         propertyChangeListener = new WindowPropertyChangeListener();
         rp.addPropertyChangeListener(AquaFocusHandler.FRAME_ACTIVE_PROPERTY, propertyChangeListener);
 
-        if (style == STYLE_COMBINED) {
-            AquaUtils.setWindowTitle(w, "");
-        }
-
         AquaUtils.setTitleBarStyle(w, titleBarStyle);
     }
 
@@ -216,13 +212,14 @@ public class AquaCustomStyledWindow {
                 return TITLE_BAR_OVERLAY;
             case STYLE_TRANSPARENT:
             case STYLE_UNIFIED:
-            case STYLE_COMBINED:
                 return TITLE_BAR_TRANSPARENT;
             case STYLE_HIDDEN:
             case STYLE_TEXTURED_HIDDEN:
                 return TITLE_BAR_HIDDEN;
             case STYLE_UNDECORATED:
                 return TITLE_BAR_NONE;
+            case STYLE_COMBINED:
+                return TITLE_BAR_COMBINED;
             default:
                 throw new IllegalArgumentException("Invalid style");
         }
@@ -352,6 +349,7 @@ public class AquaCustomStyledWindow {
     }
 
     protected void setupToolbar(JComponent tb) {
+        updateToolbarLayout(tb);
         installToolbarBorder(tb);
         attachWindowDraggingMouseListener(tb);
         attachHierarchyListener(tb);
@@ -359,6 +357,13 @@ public class AquaCustomStyledWindow {
 
     public void setupWindowDragging() {
         attachWindowDraggingMouseListener(rp);
+    }
+
+    protected void updateToolbarLayout(JComponent tb) {
+        AquaToolBarUI ui = AquaUtils.getUI(tb, AquaToolBarUI.class);
+        if (ui != null) {
+            ui.updateLayout(style == STYLE_COMBINED);
+        }
     }
 
     protected void installToolbarBorder(JComponent tb) {

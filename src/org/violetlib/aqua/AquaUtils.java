@@ -1613,6 +1613,7 @@ final public class AquaUtils {
     public final static int TITLE_BAR_TRANSPARENT = 2;
     public final static int TITLE_BAR_HIDDEN = 3;
     public final static int TITLE_BAR_OVERLAY = 4;
+    public final static int TITLE_BAR_COMBINED = 5;
 
     /**
      * Set the title bar style for a window.
@@ -1628,6 +1629,8 @@ final public class AquaUtils {
      *      corners. The window title and represented file are not painted.</li>
      *     <li>TITLE_BAR_OVERLAY - The window has a normal title bar. The context view occupies the entire window
      *      frame.</li>
+     *     <li>TITLE_BAR_COMBINED - A transparent title bar combined with a toolbar. If necessary, the
+     *      window title and represented file will be hidden.</li>
      * </ul>
      * <p>
      * When the title bar is transparent or hidden, it is the responsibility of the application to implement window
@@ -1687,6 +1690,14 @@ final public class AquaUtils {
                     isTransparentTitleBar = true;
                     isMovableByBackground = false;
                     isFixNeeded = true;
+                    break;
+
+                case TITLE_BAR_COMBINED:
+                    isFullWindowContent = true;
+                    isTransparentTitleBar = true;
+                    isMovableByBackground = false;
+                    isFixNeeded = true;
+                    isTitleHidden = AquaPainting.getVersion() < 1600;
                     break;
 
                 case TITLE_BAR_HIDDEN:
