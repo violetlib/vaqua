@@ -1876,7 +1876,9 @@ static const jint TITLEBAR_OVERLAY = 4;
 JNIEXPORT jint JNICALL Java_org_violetlib_aqua_AquaUtils_nativeSetTitleBarStyle
     (JNIEnv *env, jclass cl, jlong wptr, jint style)
 {
-    // This method uses API introduced in Yosemite
+    // This method uses API introduced in Yosemite.
+
+    // This method is used only on macOS 11 and earlier.
 
     jint result = -1;
 
@@ -1946,15 +1948,17 @@ JNIEXPORT jint JNICALL Java_org_violetlib_aqua_AquaUtils_nativeSetTitleBarStyle
 
             if (((originalStyleMask ^ styleMask) & NSWindowStyleMaskFullSizeContentView) != 0) {
                 // The full size content view option has changed.
-                // The content view must be resized first, otherwise the window will be resized to fit the existing
-                // content view.
-                NSRect frame = w.frame;
-                NSRect screenContentRect = [NSWindow contentRectForFrameRect:frame styleMask:styleMask];
-                NSRect contentFrame = NSMakeRect(screenContentRect.origin.x - frame.origin.x,
-                    screenContentRect.origin.y - frame.origin.y,
-                    screenContentRect.size.width,
-                    screenContentRect.size.height);
-                w.contentView.frame = contentFrame;
+                if ((originalStyleMask & NSWindowStyleMaskFullSizeContentView)) {
+                    // The full size content view option will be turned off.
+                    // That can cause the window to be resized to fit the existing content view.
+                    // Temporarily set the content view height to zero.
+                    NSLog(@"Turning off full size content view option");
+                    NSSize currentWindowSize = w.frame.size;
+                    NSRect currentBounds = w.contentView.frame;
+                    NSRect fr = NSMakeRect(currentBounds.origin.x, currentWindowSize.height, currentBounds.size.width, 0);
+                    w.contentView.frame = fr;
+                    NSLog(@"Setting content view bounds to %f %f %f %f", fr.origin.x, fr.origin.y, fr.size.width, fr.size.height);
+                }
             }
 
             if ([w respondsToSelector: @selector(setStyleMaskOverride:)]) {
