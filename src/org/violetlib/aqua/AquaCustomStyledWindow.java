@@ -37,10 +37,10 @@ import static org.violetlib.aqua.OSXSystemProperties.macOS11;
  * title bar.
  *
  * <li>{@code STYLE_HIDDEN}</li> - A title bar with a transparent background is used, and an attempt is made to ensure
- * that the title bar does not paint anything. (The application should avoid setting a title on the window.) This
- * option is used to create a window with rounded corners but no (apparent) title bar. It is up to the application to
- * implement window dragging. Optional top and bottom window margins are painted if defined. If either a top or bottom
- * margin is defined, the content pane is set to not-opaque to expose the margin backgrounds.
+ * that the title bar does not paint anything. This option is used to create a window with rounded corners but no
+ * (apparent) title bar. It is up to the application to implement window dragging. Optional top and bottom window
+ * margins are painted if defined. If either a top or bottom margin is defined, the content pane is set to not-opaque to
+ * expose the margin backgrounds.
  *
  * <li>{@code STYLE_UNIFIED}</li> - This option requires a non-floatable JToolBar or toolbar panel as a child component
  * of the content pane positioned at the top of the content pane. It creates a unified title bar and toolbar by using a
@@ -55,15 +55,15 @@ import static org.violetlib.aqua.OSXSystemProperties.macOS11;
  * transparent title bar, painting a textured window background that includes a gradient under the title bar and toolbar
  * (for some system releases), and by installing a default toolbar border with a left inset, so that the toolbar is
  * positioned to the right of the title bar buttons. The content pane and toolbar are set to not-opaque to expose the
- * textured background. The window title is cleared; the application should avoid setting a title on the window. A mouse
- * listener is attached to the toolbar to support dragging the window.
+ * textured background. The window title and file icon may not be painted, if they are likely to overlap the toolbar. A
+ * mouse listener is attached to the toolbar to support dragging the window.
  *
  * <li>{@code STYLE_TEXTURED_HIDDEN}</li> - This option requires a non-floatable JToolBar or toolbar panel as a child
  * component of the content pane positioned at the top of the content pane. It creates a textured window with a toolbar
  * instead of a title bar by using a transparent title bar, and by painting a textured window background that includes a
- * gradient under the toolbar. The content pane and toolbar are set to not-opaque to expose the textured background.
- * The window title is cleared; the application should avoid setting a title on the window. A mouse listener is attached
- * to the toolbar to support dragging the window.
+ * gradient under the toolbar. The content pane and toolbar are set to not-opaque to expose the textured background. The
+ * stoplight buttons, window title, and file icon are not painted. A mouse listener is attached to the toolbar to
+ * support dragging the window.
  */
 public class AquaCustomStyledWindow {
 

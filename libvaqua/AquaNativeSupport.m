@@ -2013,10 +2013,10 @@ JNIEXPORT jint JNICALL Java_org_violetlib_aqua_AquaUtils_nativeSetTitleBarStyle
 /*
  * Class:     org_violetlib_aqua_AquaUtils
  * Method:    nativeSetTitleBarProperties
- * Signature: (JZZZ)I
  */
 JNIEXPORT jint JNICALL Java_org_violetlib_aqua_AquaUtils_nativeSetTitleBarProperties
-  (JNIEnv *env, jclass cl, jlong wptr, jboolean hasTitleBar, jboolean isMovable, jboolean isHidden, jboolean isFixNeeded)
+  (JNIEnv *env, jclass cl, jlong wptr, jboolean hasTitleBar, jboolean isMovable, jboolean isHidden,
+      jboolean isTitleHidden, jboolean isFixNeeded)
 {
     __block jint result = -1;
 
@@ -2026,6 +2026,10 @@ JNIEXPORT jint JNICALL Java_org_violetlib_aqua_AquaUtils_nativeSetTitleBarProper
     GET_METHOD_RETURN(jm_setStyleBits, jc_CPlatformWindow, "setStyleBits", "(IZ)V", -1);
 
     COCOA_ENTER();
+
+    if (isHidden || !hasTitleBar) {
+        isTitleHidden = YES;
+    }
 
     NSWindow *w = (NSWindow *) wptr;
     runOnMainThread(^() {
@@ -2047,6 +2051,7 @@ JNIEXPORT jint JNICALL Java_org_violetlib_aqua_AquaUtils_nativeSetTitleBarProper
         [[w standardWindowButton:NSWindowCloseButton] setHidden:isHidden];
         [[w standardWindowButton:NSWindowMiniaturizeButton] setHidden:isHidden];
         [[w standardWindowButton:NSWindowZoomButton] setHidden:isHidden];
+        [w setTitleVisibility: isTitleHidden ? NSWindowTitleHidden : NSWindowTitleVisible];
 
         if (isFixNeeded) {
             // Workaround for a mysterious problem observed in some circumstances but not others.

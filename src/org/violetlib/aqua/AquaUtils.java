@@ -1625,8 +1625,8 @@ final public class AquaUtils {
      *      occupies the entire window frame, including under the title bar.</li>
      *     <li>TITLE_BAR_HIDDEN - The window has a title bar, but it is fully transparent. The content view
      *      occupies the entire window frame. Unlike having no title bar, this option creates a window with rounded
-     *      corners. The window title will be set to the empty string.</li>
-     *      <li>TITLE_BAR_OVERLAY - The window has a normal title bar. The context view occupies the entire window
+     *      corners. The window title and represented file are not painted.</li>
+     *     <li>TITLE_BAR_OVERLAY - The window has a normal title bar. The context view occupies the entire window
      *      frame.</li>
      * </ul>
      * <p>
@@ -1668,17 +1668,18 @@ final public class AquaUtils {
         int result = 0;
 
         if (!WindowStylePatch.isNeeded()) {
-            boolean hasTitleBar = true;
+            boolean isDecorated = true;
             boolean isFullWindowContent = false;
             boolean isTransparentTitleBar = false;
             boolean isMovableByBackground = isNativeTextured(w);
             boolean isMovable = true;
             boolean isFixNeeded = false;
             boolean isHidden = false;
+            boolean isTitleHidden = false;
 
             switch (style) {
                 case TITLE_BAR_NONE:
-                    hasTitleBar = false;
+                    isDecorated = false;
                     break;
 
                 case TITLE_BAR_TRANSPARENT:
@@ -1710,7 +1711,7 @@ final public class AquaUtils {
             rp.putClientProperty("apple.awt.transparentTitleBar", isTransparentTitleBar);
             rp.putClientProperty("apple.awt.draggableWindowBackground", isMovableByBackground);
             if (wptr != 0) {
-                result = nativeSetTitleBarProperties(wptr, hasTitleBar, isMovable, isHidden, isFixNeeded);
+                result = nativeSetTitleBarProperties(wptr, isDecorated, isMovable, isHidden, isTitleHidden, isFixNeeded);
             }
 
         } else {
@@ -1721,18 +1722,8 @@ final public class AquaUtils {
 
         if (result != 0) {
             throw new UnsupportedOperationException("Unable to set window title bar style");
-        } else if (style == TITLE_BAR_HIDDEN) {
-            setWindowTitle(w, "");
         }
         return 0;
-    }
-
-    public static void setWindowTitle(Window w, String title) {
-        if (w instanceof Frame) {
-            ((Frame) w).setTitle(title);
-        } else if (w instanceof Dialog) {
-            ((Dialog) w).setTitle(title);
-        }
     }
 
     /**
@@ -1783,7 +1774,7 @@ final public class AquaUtils {
                 if (!isOK) {
                     syslog("Window bounds/insets not updated after waiting");
                 }
-            } catch (InterruptedException ex) {
+            } catch (InterruptedException ignore) {
             }
 
             //w.setSize(oldWidth, newHeight);
@@ -1945,7 +1936,7 @@ final public class AquaUtils {
     /**
      * I have not found a reliable way to ensure that enough opaque pixels are present to allow AppKit to compute
      * the window shadow for a vibrant popup. This class is a workaround for that problem.
-     *
+     * <p>
      * See bug JDK-7124236.
      */
     private static class ShadowMaker implements ActionListener, Runnable {
@@ -2213,7 +2204,8 @@ final public class AquaUtils {
     private static native void nativeSetWindowBackground(Window w, Color color);
     private static native boolean nativeIsFullScreenWindow(long w);
     private static native int nativeSetTitleBarStyle(long w, int style);
-    private static native int nativeSetTitleBarProperties(long w, boolean hasTitleBar, boolean isMovable, boolean isHidden, boolean isFixNeeded);
+    private static native int nativeSetTitleBarProperties(long w, boolean hasTitleBar, boolean isMovable,
+                                                          boolean isHidden, boolean isTitleHidden, boolean isFixNeeded);
     private static native int nativeSetWindowCornerRadius(long w, float radius);
     private static native int nativeUpdateWindowInsets(Window w, Insets s);
     private static native int nativeSetWindowRepresentedFilename(long w, String name);
