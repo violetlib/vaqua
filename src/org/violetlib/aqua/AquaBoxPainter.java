@@ -79,7 +79,8 @@ public class AquaBoxPainter implements BackgroundPainter {
             int labelW = size.width;
             int labelH = size.height;
             if (boxTop >= labelH) {
-                int labelX = boxLeft + titleIndent;
+                ComponentOrientation co = c.getComponentOrientation();
+                int labelX = co.isLeftToRight() ? boxLeft + titleIndent : boxLeft + boxWidth - labelW - titleIndent;
                 int labelY = boxTop - labelH;
                 g.translate(labelX, labelY);
                 titleLabel.setSize(labelW, labelH);
