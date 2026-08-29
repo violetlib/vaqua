@@ -11,7 +11,7 @@ package org.violetlib.aqua;
 import javax.swing.*;
 import javax.swing.plaf.ComponentUI;
 
-import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.*;
 
 /**
  * The UI for JTextPane.

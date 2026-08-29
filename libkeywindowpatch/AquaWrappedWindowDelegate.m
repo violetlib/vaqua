@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2023 Alan Snyder.
+ * Copyright (c) 2018-2026 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -8,6 +8,7 @@
 
 #import "KeyWindowPatch.h"
 #import "AquaWrappedWindowDelegate.h"
+#include "log.h"
 
 @interface CMenuBar { }
 @end
@@ -51,14 +52,14 @@
 - (void)forwardInvocation:(NSInvocation *)invocation
 {
     NSString *selectorString = NSStringFromSelector(invocation.selector);
-    // NSLog(@"%@: %@", selectorString, [[delegate nsWindow] title]);
+    // OSLog(@"%@: %@", selectorString, [[delegate nsWindow] title]);
     [invocation invokeWithTarget:delegate];
 }
 
 - (void) windowDidBecomeKey: (NSNotification *) notification
 {
 #ifdef DEBUG_PATCH
-  NSLog(@"windowDidBecomeKey: %@", [[delegate nsWindow] title]);
+  OSLog(@"windowDidBecomeKey: %@", [[delegate nsWindow] title]);
 #endif
 
     if (![[delegate nsWindow] isMainWindow]) {
@@ -70,7 +71,7 @@
 - (void) windowDidBecomeMain: (NSNotification *) notification
 {
 #ifdef DEBUG_PATCH
-    NSLog(@"windowDidBecomeMain: %@", [[delegate nsWindow] title]);
+    OSLog(@"windowDidBecomeMain: %@", [[delegate nsWindow] title]);
 #endif
 
     if (![[delegate nsWindow] isKeyWindow]) {
@@ -105,7 +106,7 @@
 - (void) windowDidResignKey: (NSNotification *) notification
 {
 #ifdef DEBUG_PATCH
-    NSLog(@"windowDidResignKey: %@", [[delegate nsWindow] title]);
+    OSLog(@"windowDidResignKey: %@", [[delegate nsWindow] title]);
 #endif
 
     [AWTToolkit eventCountPlusPlus];
@@ -117,7 +118,7 @@
 - (void) windowDidResignMain: (NSNotification *) notification
 {
 #ifdef DEBUG_PATCH
-    NSLog(@"windowDidResignMain: %@", [[delegate nsWindow] title]);
+    OSLog(@"windowDidResignMain: %@", [[delegate nsWindow] title]);
 #endif
 
     [AWTToolkit eventCountPlusPlus];
@@ -129,7 +130,7 @@
 - (void) deactivateWindow {
 //AWT_ASSERT_APPKIT_THREAD;
 #ifdef DEBUG_PATCH
-    NSLog(@"deactivating window: %@", [[self nsWindow] title]);
+    OSLog(@"deactivating window: %@", [[self nsWindow] title]);
 #endif
 
     [[delegate javaMenuBar] deactivate];
@@ -151,14 +152,14 @@
 - (BOOL) canBecomeKeyWindow
 {
     BOOL result = [delegate canBecomeKeyWindow];
-    // NSLog(@"canBecomeKeyWindow: %@ %s", [[delegate nsWindow] title], result ? "true" : "false");
+    // OSLog(@"canBecomeKeyWindow: %@ %s", [[delegate nsWindow] title], result ? "true" : "false");
     return result;
 }
 
 - (BOOL) canBecomeMainWindow
 {
     BOOL result = [delegate canBecomeMainWindow];
-    // NSLog(@"canBecomeMainWindow: %@ %s", [[delegate nsWindow] title], result ? "true" : "false");
+    // OSLog(@"canBecomeMainWindow: %@ %s", [[delegate nsWindow] title], result ? "true" : "false");
     return result;
 }
 

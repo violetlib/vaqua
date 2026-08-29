@@ -29,6 +29,7 @@
 #define __JNU_H
 
 #include "jni.h"
+#include "log.h"
 
 #import <Cocoa/Cocoa.h>
 
@@ -243,7 +244,7 @@ extern JNIEnv *JNU_SUPPORT(getAppkitJNIEnvironment());
 #define COCOA_EXIT() \
  } \
  @catch (NSException *e) { \
-     NSLog(@"%@", [e callStackSymbols]); \
+     OSLog(@"%@", [e callStackSymbols]); \
  } \
  @finally { \
     [pool drain]; \

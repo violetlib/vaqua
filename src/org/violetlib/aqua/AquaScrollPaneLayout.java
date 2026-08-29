@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015 Alan Snyder.
+ * Copyright (c) 2015-2026 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -38,16 +38,24 @@ package org.violetlib.aqua;
 import java.awt.*;
 import javax.swing.*;
 import javax.swing.border.Border;
-import javax.swing.plaf.ScrollPaneUI;
 import javax.swing.plaf.UIResource;
 
 /**
- * The layout manager for a scroll pane using overlay scroll bars.
+ * A layout manager for a scroll pane that uses AquaScrollPaneUI.
+ * It supports scrollBarExtraMargin, for when a scroll bar would otherwise overlap a rounded corner in a sidebar.
+ * It syncs additional scroll pane attributes that might get lost when a scroll pane is rearranged.
  */
-public class AquaOverlayScrollPaneLayout extends ScrollPaneLayout implements UIResource {
+
+public class AquaScrollPaneLayout extends ScrollPaneLayout implements UIResource {
 
     protected boolean isHorizontalScrollBarNeeded;
     protected boolean isVerticalScrollBarNeeded;
+
+    protected int scrollBarExtraMargin;
+
+    public void setScrollBarExtraMargin(int n) {
+        scrollBarExtraMargin = n;
+    }
 
     public boolean isHorizontalScrollBarNeeded() {
         return isHorizontalScrollBarNeeded;
@@ -72,7 +80,6 @@ public class AquaOverlayScrollPaneLayout extends ScrollPaneLayout implements UIR
 
     protected void sync(Container parent) {
         // The rearrangements possibly made by AquaScrollPaneUI may cause some cached values to be lost
-
         JScrollPane scrollPane = (JScrollPane)parent;
         vsbPolicy = scrollPane.getVerticalScrollBarPolicy();
         hsbPolicy = scrollPane.getHorizontalScrollBarPolicy();
@@ -82,16 +89,17 @@ public class AquaOverlayScrollPaneLayout extends ScrollPaneLayout implements UIR
     }
 
     @Override
-    public void layoutContainer(Container parent)
-    {
+    public void layoutContainer(Container parent) {
         JScrollPane scrollPane = (JScrollPane)parent;
         sync(parent);
 
-        ScrollPaneUI ui = scrollPane.getUI();
-        if (ui instanceof AquaScrollPaneUI) {
-            AquaScrollPaneUI a = (AquaScrollPaneUI) ui;
-            a.syncOverlayScrollPaneViewportHolderSize();
+        AquaScrollPaneUI ui = AquaUtils.getUI(scrollPane, AquaScrollPaneUI.class);
+        if (ui == null) {
+            super.layoutContainer(parent);
+            return;
         }
+        ui.syncInterposedContainerSize();
+        boolean isOverlay = ui.isOverlayScrollBars();
 
         Rectangle availR = scrollPane.getBounds();
         availR.x = availR.y = 0;
@@ -102,35 +110,24 @@ public class AquaOverlayScrollPaneLayout extends ScrollPaneLayout implements UIR
         availR.width -= insets.left + insets.right;
         availR.height -= insets.top + insets.bottom;
 
-        /* Get the scrollPane's orientation.
-         */
+        // Get the scrollPane's orientation.
         boolean isLeftToRight = !AquaScrollPaneUI.isRTLSupported || AquaUtils.isLeftToRight(scrollPane);
 
-        /* If there's a visible column header remove the space it
-         * needs from the top of availR.  The column header is treated
-         * as if it were fixed height, arbitrary width.
-         */
-
-        Rectangle colHeadR = new Rectangle(0, availR.y, 0, 0);
-
+        // If there's a visible column header remove the space it needs from the top of availR. The column header is
+        // treated as if it were fixed height, arbitrary width.
+        Rectangle colHeadR = new Rectangle(0, availR.y, availR.width, 0);
         if ((colHead != null) && (colHead.isVisible())) {
-            int colHeadHeight = Math.min(availR.height,
-                                         colHead.getPreferredSize().height);
+            int colHeadHeight = Math.min(availR.height, colHead.getPreferredSize().height);
             colHeadR.height = colHeadHeight;
             availR.y += colHeadHeight;
             availR.height -= colHeadHeight;
         }
 
-        /* If there's a visible row header remove the space it needs
-         * from the left or right of availR.  The row header is treated
-         * as if it were fixed width, arbitrary height.
-         */
-
-        Rectangle rowHeadR = new Rectangle(0, 0, 0, 0);
-
+        // If there's a visible row header remove the space it needs from the left or right of availR. The row header
+        // is treated as if it were fixed width, arbitrary height.
+        Rectangle rowHeadR = new Rectangle(0, 0, 0, availR.height);
         if ((rowHead != null) && (rowHead.isVisible())) {
-            int rowHeadWidth = Math.min(availR.width,
-                                        rowHead.getPreferredSize().width);
+            int rowHeadWidth = Math.min(availR.width, rowHead.getPreferredSize().width);
             rowHeadR.width = rowHeadWidth;
             availR.width -= rowHeadWidth;
             if (isLeftToRight) {
@@ -141,10 +138,7 @@ public class AquaOverlayScrollPaneLayout extends ScrollPaneLayout implements UIR
             }
         }
 
-        /* If there's a JScrollPane.viewportBorder, remove the
-         * space it occupies for availR.
-         */
-
+        // If there's a JScrollPane.viewportBorder, remove the space it occupies for availR.
         Border viewportBorder = scrollPane.getViewportBorder();
         Insets vpbInsets;
         if (viewportBorder != null) {
@@ -153,27 +147,80 @@ public class AquaOverlayScrollPaneLayout extends ScrollPaneLayout implements UIR
             availR.y += vpbInsets.top;
             availR.width -= vpbInsets.left + vpbInsets.right;
             availR.height -= vpbInsets.top + vpbInsets.bottom;
-        }
-        else {
+        } else {
             vpbInsets = new Insets(0,0,0,0);
         }
 
         determineScrollBarsNeeded(availR);
 
-        if (viewport != null) {
-            viewport.setBounds(availR);
+        Rectangle viewportBounds = new Rectangle(availR);
+
+        // Adjust the viewport bounds based on the presence of permanent (not overlay) scroll bars.
+
+        int vsbWidth = 0;
+        int hsbHeight = 0;
+        if (!isOverlay) {
+            if (vsb != null && isVerticalScrollBarNeeded) {
+                vsbWidth = vsb.getPreferredSize().width;
+                viewportBounds.width -= vsbWidth;
+                if (!isLeftToRight) {
+                    viewportBounds.x += vsbWidth;
+                }
+            }
+            if (hsb != null && isHorizontalScrollBarNeeded) {
+                hsbHeight = hsb.getPreferredSize().height;
+                viewportBounds.height -= hsbHeight;
+            }
         }
 
-        /* We now have the final size of the viewport: availR.
-         * Now fixup the header and scrollbar widths/heights.
-         */
-        rowHeadR.height = availR.height + vpbInsets.top + vpbInsets.bottom;
-        rowHeadR.y = availR.y - vpbInsets.top;
-        colHeadR.width = availR.width + vpbInsets.left + vpbInsets.right;
-        colHeadR.x = availR.x - vpbInsets.left;
+        // When the scroll bars are permanent (not overlay) and both are present, the viewport bounds
+        // excludes both track areas. That should be sufficient to prevent the scroll bars from
+        // hitting the scroll pane border, even if the border has rounded corners. In other words,
+        // the extra margin is not needed in the corner where the scroll bars meet.
 
-        /* Set the bounds of the remaining components.
-         */
+        boolean isPermanentCorner = !isOverlay && vsb != null && isVerticalScrollBarNeeded
+          && hsb != null && isHorizontalScrollBarNeeded;
+
+        if (vsb != null) {
+            if (isVerticalScrollBarNeeded) {
+                int width = vsb.getPreferredSize().width;
+                int height = viewportBounds.height - scrollBarExtraMargin;
+                if (!isPermanentCorner) {
+                    height -= scrollBarExtraMargin;
+                }
+                if (isLeftToRight) {
+                    vsb.setBounds(availR.x + availR.width - width, availR.y + scrollBarExtraMargin, width, height);
+                } else {
+                    vsb.setBounds(availR.x, availR.y + scrollBarExtraMargin, width, height);
+                }
+                if (!isOverlay) {
+                    vsb.setVisible(true);
+                }
+            } else {
+                vsb.setBounds(0, 0, 0, 0);
+            }
+        }
+
+        if (hsb != null) {
+            if (isHorizontalScrollBarNeeded) {
+                int height = hsb.getPreferredSize().height;
+                int width = viewportBounds.width - scrollBarExtraMargin;
+                if (!isPermanentCorner) {
+                    width -= scrollBarExtraMargin;
+                }
+                hsb.setBounds(availR.x + scrollBarExtraMargin, availR.y + availR.height - height, width, height);
+                if (!isOverlay) {
+                    hsb.setVisible(true);
+                }
+            } else {
+                hsb.setBounds(0, 0, 0, 0);
+            }
+        }
+
+        //rowHeadR.height = availR.height + vpbInsets.top + vpbInsets.bottom;
+        rowHeadR.y = availR.y - vpbInsets.top;
+        //colHeadR.width = availR.width + vpbInsets.left + vpbInsets.right;
+        colHeadR.x = availR.x - vpbInsets.left;
 
         if (rowHead != null) {
             rowHead.setBounds(rowHeadR);
@@ -183,26 +230,11 @@ public class AquaOverlayScrollPaneLayout extends ScrollPaneLayout implements UIR
             colHead.setBounds(colHeadR);
         }
 
-        if (vsb != null) {
-            if (isVerticalScrollBarNeeded) {
-                int width = vsb.getPreferredSize().width;
-                vsb.setBounds(isLeftToRight ? availR.x + availR.width - width : availR.x,
-                        availR.y, width, availR.height);
-            } else {
-                vsb.setBounds(0, 0, 0, 0);
-            }
+        if (viewport != null) {
+            viewport.setBounds(viewportBounds);
         }
 
-        if (hsb != null) {
-            if (isHorizontalScrollBarNeeded) {
-                int height = hsb.getPreferredSize().height;
-                hsb.setBounds(availR.x, availR.y + availR.height - height, availR.width, height);
-            } else {
-                hsb.setBounds(0, 0, 0, 0);
-            }
-        }
-
-        // The only possible corner is between a row head and a column head.
+        // The only corner of interest is between a row head and a column head.
         boolean needCorner = rowHead != null && colHead != null && rowHead.isVisible() && colHead.isVisible();
 
         if (lowerLeft != null) {
@@ -232,28 +264,17 @@ public class AquaOverlayScrollPaneLayout extends ScrollPaneLayout implements UIR
 
     protected void determineScrollBarsNeeded(Rectangle availR) {
 
-         /*
-         * At this point availR is the space available for the viewport.
-         * We'll decide about putting up scrollbars by comparing the
-         * viewport views preferred size with the viewports extent
-         * size (generally just its size).  Using the preferredSize is
-         * reasonable because layout proceeds top down - so we expect
-         * the viewport to be laid out next.  And we assume that the
-         * viewports layout manager will give the view it's preferred
-         * size.  One exception to this is when the view implements
-         * Scrollable and Scrollable.getViewTracksViewport{Width,Height}
-         * methods return true.  If the view is tracking the viewports
-         * width we don't bother with a horizontal scrollbar, similarly
-         * if view.getViewTracksViewport(Height) is true we don't bother
-         * with a vertical scrollbar.
-         */
+        // At this point availR is the space available for the viewport. We'll decide about putting up scrollbars by
+        // comparing the viewport views preferred size with the viewports extent size (generally just its size). Using
+        // the preferredSize is reasonable because layout proceeds top down, so we expect the viewport to be laid out
+        // next. And we assume that the viewport's layout manager will give the view its preferred size. One exception
+        // to this is when the view implements Scrollable and Scrollable.getViewTracksViewport{Width,Height} methods
+        // return true. If the view is tracking the viewports width we don't bother with a horizontal scrollbar,
+        // similarly if view.getViewTracksViewport(Height) is true we don't bother with a vertical scrollbar.
 
         Component view = (viewport != null) ? SwingUtilities.getUnwrappedView(viewport) : null;
         Dimension viewPrefSize = (view != null) ? view.getPreferredSize() : new Dimension(0,0);
-
-        Dimension extentSize = (viewport != null) ? viewport.toViewCoordinates(availR.getSize())
-                : new Dimension(0,0);
-
+        Dimension extentSize = (viewport != null) ? viewport.toViewCoordinates(availR.getSize()) : new Dimension(0,0);
         boolean viewTracksViewportWidth = false;
         boolean viewTracksViewportHeight = false;
         boolean isEmpty = (availR.width < 0 || availR.height < 0);
@@ -269,13 +290,13 @@ public class AquaOverlayScrollPaneLayout extends ScrollPaneLayout implements UIR
 
         isVerticalScrollBarNeeded = false;
         isHorizontalScrollBarNeeded = false;
-
         if (vsb != null && !isEmpty && vsbPolicy != VERTICAL_SCROLLBAR_NEVER) {
-            isVerticalScrollBarNeeded = !viewTracksViewportHeight && (viewPrefSize.height > extentSize.height);
+            isVerticalScrollBarNeeded = vsbPolicy == VERTICAL_SCROLLBAR_ALWAYS
+              || !viewTracksViewportHeight && (viewPrefSize.height > extentSize.height);
         }
-
         if (hsb != null && !isEmpty && hsbPolicy != HORIZONTAL_SCROLLBAR_NEVER) {
-            isHorizontalScrollBarNeeded = !viewTracksViewportWidth && (viewPrefSize.width > extentSize.width);
+            isHorizontalScrollBarNeeded = hsbPolicy == HORIZONTAL_SCROLLBAR_ALWAYS
+              || !viewTracksViewportWidth && (viewPrefSize.width > extentSize.width);
         }
     }
 }

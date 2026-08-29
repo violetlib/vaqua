@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2021 Alan Snyder.
+ * Copyright (c) 2015-2026 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -18,6 +18,7 @@ import org.jetbrains.annotations.Nullable;
 
 import static org.violetlib.aqua.AquaUtils.execute;
 import static org.violetlib.aqua.AquaUtils.syslog;
+import static org.violetlib.aqua.OSXSystemProperties.macOS26;
 
 /**
  * Support for vibrant backgrounds. A vibrant background is implemented by a special NSView that is installed as a
@@ -69,6 +70,15 @@ public class AquaVibrantSupport {
     private static final String VIBRANT_WINDOW_KEY = "AquaInternal.vibrantWindow";
 
     private static final PropertyChangeListener vibrantStylePropertyChangeListener = new VibrantStylePropertyChangeListener();
+
+    public static int getCornerRadius(int style) {
+        if (AquaPainting.getVersion() >= macOS26) {
+            if (style == SIDEBAR_STYLE) {
+                return 18;  // see SidebarContainerSupport
+            }
+        }
+        return 0;
+    }
 
     public static int parseVibrantStyle(Object o, boolean allowSidebar) {
         if (o instanceof String) {
@@ -195,7 +205,8 @@ public class AquaVibrantSupport {
         if (o instanceof String) {
             int style = AquaVibrantSupport.parseVibrantStyle(o, true);
             if (style >= 0) {
-                installVibrantStyle(c, style, null);
+                int cornerRadius = getCornerRadius(style);
+                installVibrantStyle(c, style, cornerRadius, null);
                 return;
             }
         }
@@ -208,7 +219,10 @@ public class AquaVibrantSupport {
      * @param style The vibrant style.
      * @param bt An optional selection bounds tracker, to support regions displaying a vibrant selection background.
      */
-    private static void installVibrantStyle(@NotNull JComponent c, int style, @Nullable SelectionBoundsTracker bt) {
+    private static void installVibrantStyle(@NotNull JComponent c,
+                                            int style,
+                                            int cornerRadius,
+                                            @Nullable SelectionBoundsTracker bt) {
         Object o = c.getClientProperty(AquaVibrantSupport.VIBRANT_EFFECTS_KEY);
         if (o != null) {
             if (o instanceof VisualEffectView) {
@@ -222,7 +236,7 @@ public class AquaVibrantSupport {
         }
 
         debug("Installing visual effect view: style " + style);
-        VisualEffectView v = new ComponentVibrantEffects(c, style, bt);
+        VisualEffectView v = new ComponentVibrantEffects(c, style, cornerRadius, bt);
         c.putClientProperty(AquaVibrantSupport.VIBRANT_EFFECTS_KEY, v);
     }
 
@@ -302,14 +316,18 @@ public class AquaVibrantSupport {
      * Create a visual effect view behind the content view of the specified window.
      * @param w The window.
      * @param style The vibrant style.
+     * @param cornerRadius The corner radius.
      * @param supportSelections If true, support is enabled for additional visual effect views to implement regions with
      *                          a vibrant selection background.
      * @return a peer that can be used to specify the bounds of the background view and the bounds of the regions
      *         displaying a vibrant selection background.
      */
-    public static VisualEffectViewPeer createVisualEffectView(@NotNull Window w, int style, boolean supportSelections) {
+    public static VisualEffectViewPeer createVisualEffectView(@NotNull Window w,
+                                                              int style,
+                                                              int cornerRadius,
+                                                              boolean supportSelections) {
         boolean forceActive = w.getType() == Window.Type.POPUP || !AquaUtils.isDecorated(w);
-        long ptr = execute(w, wptr -> nativeCreateVisualEffectView(wptr, style, supportSelections, forceActive));
+        long ptr = execute(w, wptr -> nativeCreateVisualEffectView(wptr, style, cornerRadius, supportSelections, forceActive));
         if (ptr != 0) {
             AquaUtils.enableTranslucency(w);
             return new VisualEffectViewPeerImpl(w, ptr);
@@ -361,8 +379,21 @@ public class AquaVibrantSupport {
             }
         }
 
-        public void updateSelectionBackgrounds(SelectionBoundsDescription sd) {
-            int rc = nativeUpdateSelectionBackgrounds(nativeNSViewPointer, sd != null ? sd.getData() : null);
+        @Override
+        public void configureSelections(int leftInset, int rightInset, int cornerRadius) {
+            int rc = nativeConfigureSelections(nativeNSViewPointer, leftInset, rightInset, cornerRadius);
+            if (rc != 0) {
+                Utils.logError("configureSelections failed");
+            }
+        }
+
+        public void updateSelectionBackgrounds(@Nullable SelectionBoundsDescription sd) {
+            int rc;
+            if (sd == null) {
+                rc = nativeRemoveSelectionBackgrounds(nativeNSViewPointer);
+            } else {
+                rc = nativeUpdateSelectionBackgrounds(nativeNSViewPointer, sd.getData());
+            }
             if (rc != 0) {
                 Utils.logError("updateSelectionBackgrounds failed");
             }
@@ -377,8 +408,11 @@ public class AquaVibrantSupport {
 
     private static native int setupVisualEffectWindow(long w, int style, boolean forceActive);
     private static native int removeVisualEffectWindow(long w);
-    private static native long nativeCreateVisualEffectView(long w, int style, boolean supportSelections, boolean forceActive);
+    private static native long nativeCreateVisualEffectView(long w, int style, int cornerRadius,
+                                                            boolean supportSelections, boolean forceActive);
     private static native int setViewFrame(long viewPtr, int x, int y, int width, int height, int yflipped);
+    private static native int nativeRemoveSelectionBackgrounds(long viewPtr);
     private static native int nativeUpdateSelectionBackgrounds(long viewPtr, int[] data);
+    private static native int nativeConfigureSelections(long viewPtr, int leftInset, int rightInset, int cornerRadius);
     private static native int disposeVisualEffectView(long viewPtr);
 }

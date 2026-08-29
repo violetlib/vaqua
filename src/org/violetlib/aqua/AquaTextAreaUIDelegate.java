@@ -176,7 +176,7 @@ public class AquaTextAreaUIDelegate implements AquaTextComponentUIDelegate {
                 JTextArea area = (JTextArea) c;
                 if (! area.getLineWrap()) {
                     // no limit if unwrapped
-                    return Integer.MAX_VALUE;
+                    return AquaUtils.INFINITY;
                 }
             }
             return super.getFlowSpan(index);
@@ -193,8 +193,8 @@ public class AquaTextAreaUIDelegate implements AquaTextComponentUIDelegate {
                 } else {
                     req.minimum = 0;
                     req.preferred = getWidth();
-                    if (req.preferred == Integer.MAX_VALUE) {
-                        // We have been initially set to MAX_VALUE, but we don't want this as our preferred.
+                    if (AquaUtils.isUnlimitedSize(req.preferred)) {
+                        // We have been initially set to INFINITY, but we don't want this as our preferred.
                         req.preferred = 100;
                     }
                 }

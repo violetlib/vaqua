@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2023 Alan Snyder.
+ * Copyright (c) 2018-2026 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -9,6 +9,7 @@
 #import <Cocoa/Cocoa.h>
 #include <Carbon/Carbon.h>
 #include "jnix.h"
+#include "log.h"
 #import "KeyWindowPatch.h"
 #import "CMenuBarCategory.h"
 
@@ -38,7 +39,7 @@ NSString *CMenuBarDidReuseItemNotification =
     }
 
 #ifdef DEBUG_PATCH
-    NSLog(@"activating menu bar: %@", menubar);
+    OSLog(@"activating menu bar: %@", menubar);
 #endif
 
     @synchronized([CMenuBar class]) {
@@ -134,7 +135,7 @@ NSString *CMenuBarDidReuseItemNotification =
 
     if (isDeactivated) {
 #ifdef DEBUG_PATCH
-        NSLog(@"deactivating menu bar: %@", self);
+        OSLog(@"deactivating menu bar: %@", self);
 #endif
 
         @synchronized(self) {

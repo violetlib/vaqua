@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014-2024 Alan Snyder.
+ * Copyright (c) 2014-2026 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -23,8 +23,8 @@ import javax.swing.event.TreeSelectionListener;
 import javax.swing.tree.TreePath;
 import javax.swing.tree.TreeSelectionModel;
 
+import org.violetlib.aqua.AquaPainting;
 import org.violetlib.aqua.AquaUtils;
-import org.violetlib.aqua.OSXSystemProperties;
 
 /**
  * An implementation of column view.
@@ -48,10 +48,9 @@ public class ColumnViewImpl extends ColumnView {
 
         setFocusable(false);
 
-        int version = OSXSystemProperties.OSVersion;
-
         int columnMinimumWidth;
 
+        int version = AquaPainting.getVersion();
         if (version <= 1013) {
             columnMinimumWidth = 164;
         } else {

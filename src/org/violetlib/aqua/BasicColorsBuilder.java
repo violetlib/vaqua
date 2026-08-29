@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2020 Alan Snyder.
+ * Copyright (c) 2018-2026 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -173,6 +173,41 @@ public class BasicColorsBuilder {
         for (String suffix : getAllColorSuffixes()) {
             addDerived(selectedRoot, selectedSynonymRoot, suffix, option);
         }
+    }
+
+    public void defineText(@NotNull String root, int basicColor, int dimAlpha) {
+        add(root, basicColor);
+        add(root + "_inactive", basicColor, dimAlpha);
+        add(root + "_disabled", basicColor, dimAlpha);
+        add(root + "_inactive_disabled", basicColor, dimAlpha);
+    }
+
+    public void defineText(@NotNull String root, int activeColor, int inactiveColor, int dimAlpha) {
+        add(root, activeColor);
+        add(root + "_inactive", inactiveColor);
+        add(root + "_disabled", inactiveColor, dimAlpha);
+        add(root + "_inactive_disabled", inactiveColor, dimAlpha);
+    }
+
+    public void defineText(@NotNull String root, @NotNull String synonymRoot) {
+        add(root, synonymRoot);
+        add(root + "_inactive", synonymRoot + "_inactive");
+        add(root + "_disabled", synonymRoot + "_disabled");
+        add(root + "_inactive_disabled", synonymRoot + "_inactive_disabled");
+    }
+
+    public void defineTextInactiveDisabled(@NotNull String root, int activeColor, int dimInactive, int dimDisabled) {
+        add(root, activeColor);
+        add(root + "_inactive", activeColor, dimInactive);
+        add(root + "_disabled", activeColor, dimDisabled);
+        add(root + "_inactive_disabled", activeColor, dimDisabled);
+    }
+
+    public void defineTextInactiveDisabled(@NotNull String root, int activeColor, int activeAlpha, int dimInactive, int dimDisabled) {
+        add(root, activeColor, activeAlpha);
+        add(root + "_inactive", activeColor, dimInactive);
+        add(root + "_disabled", activeColor, dimDisabled);
+        add(root + "_inactive_disabled", activeColor, dimDisabled);
     }
 
     private void addDerived(@NotNull String root, @NotNull String synonymRoot, @NotNull String suffix, int option) {

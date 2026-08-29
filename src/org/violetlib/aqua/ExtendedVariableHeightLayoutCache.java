@@ -218,12 +218,12 @@ public class ExtendedVariableHeightLayoutCache extends AbstractLayoutCache {
       * into which the item identified by <code>path</code> will be drawn.
       *
       * @param path  the path to be drawn
-      * @param placeIn the bounds of the enclosing rectangle
+      * @param placeIn An optional rectangle to use for the result.
       * @return the bounds of the enclosing rectangle or <code>null</code>
       *    if the node could not be ascertained
       */
     public Rectangle getBounds(TreePath path, Rectangle placeIn) {
-        TreeStateNode       node = getNodeForPath(path, true, false);
+        TreeStateNode node = getNodeForPath(path, true, false);
 
         if(node != null) {
             if(updateNodeSizes)

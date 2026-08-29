@@ -25,11 +25,11 @@
 
 package org.violetlib.aqua;
 
-import javax.swing.*;
 import java.awt.dnd.DnDConstants;
 import java.awt.dnd.DragSource;
 import java.awt.event.InputEvent;
 import java.awt.event.MouseEvent;
+import javax.swing.*;
 
 /**
  * Drag recognition support. Copied from DragRecognitionSupport because we need it to write drag gesture recognition
@@ -174,7 +174,7 @@ public class AquaDragRecognitionSupport {
                 dropAction = DnDConstants.ACTION_MOVE & sourceActions;
             }
         } else if ( 0 != (modifiersEx & (InputEvent.ALT_DOWN_MASK | InputEvent.ALT_GRAPH_DOWN_MASK)) &&
-                0 != (modifiersEx & (InputEvent.META_DOWN_MASK)))  {
+          0 != (modifiersEx & (InputEvent.META_DOWN_MASK)))  {
             dropAction = DnDConstants.ACTION_LINK & sourceActions;
             if (dropAction == DnDConstants.ACTION_NONE) {
                 dropAction = DnDConstants.ACTION_MOVE & sourceActions;
@@ -182,7 +182,7 @@ public class AquaDragRecognitionSupport {
         } else {
             dropAction = DnDConstants.ACTION_MOVE & sourceActions;
             if (dropAction == DnDConstants.ACTION_NONE) {
-            dropAction = DnDConstants.ACTION_COPY & sourceActions;
+                dropAction = DnDConstants.ACTION_COPY & sourceActions;
             }
         }
         return dropAction;

@@ -2,6 +2,7 @@
  * @(#)Images.java
  *
  * Copyright (c) 2005-2013 Werner Randelshofer, Switzerland.
+ * Copyright (c) 2025 Alan Snyder.
  * You may not use, copy or modify this file, except in compliance with the
  * accompanying license terms.
  */
@@ -16,6 +17,8 @@ import java.io.InputStream;
 import java.net.URL;
 import java.util.Properties;
 import javax.swing.*;
+
+import org.jetbrains.annotations.*;
 
 /**
  * Image processing methods.
@@ -37,7 +40,7 @@ public class Images {
         return graphiteFilter;
     }
 
-//    public static Image getImage(Class baseClass, String location) {
+    //    public static Image getImage(Class baseClass, String location) {
 //        // As of Java 1.8, only getImage() supports multiresolution images
 //        URL resource=baseClass.getResource(location);
 //        if (resource==null) throw new IllegalArgumentException("no resource found for location:"+location);
@@ -133,83 +136,79 @@ public class Images {
         } else {
             Raster r = rImg.getData();
             WritableRaster wr = WritableRaster.createWritableRaster(
-                    r.getSampleModel(), null);
+              r.getSampleModel(), null);
             rImg.copyData(wr);
             image = new BufferedImage(
-                    rImg.getColorModel(),
-                    wr,
-                    rImg.getColorModel().isAlphaPremultiplied(),
-                    null);
+              rImg.getColorModel(),
+              wr,
+              rImg.getColorModel().isAlphaPremultiplied(),
+              null);
         }
         return image;
     }
 
-    public static BufferedImage toBufferedImage(Image image) {
+    /**
+     * Convert an image to a buffered image.
+     * @param image The image.
+     * @return the equivalent buffered image.
+     */
+    public static @NotNull BufferedImage toBufferedImage(@NotNull Image image) {
         if (image instanceof BufferedImage) {
             return (BufferedImage) image;
         }
 
-        // This code ensures that all the pixels in the image are loaded
-        image = new ImageIcon(image).getImage();
-
-        // Create a buffered image with a format that's compatible with the screen
-        BufferedImage bimage = null;
-
-        // Determine if the image has transparent pixels; for this method's
-        // implementation, see e661 Determining If an Image Has Transparent Pixels
-        boolean hasAlpha;
-        try {
-            hasAlpha = hasAlpha(image);
-        } catch (IllegalAccessError e) {
-            // If we can't determine this, we assume that we have an alpha,
-            // in order not to lose data.
-            hasAlpha = true;
-        }
-
-        GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
-        try {
-            // Determine the type of transparency of the new buffered image
-            int transparency = Transparency.OPAQUE;
-            if (hasAlpha) {
-                transparency = Transparency.TRANSLUCENT;
-            }
-
-            // Create the buffered image
-            GraphicsDevice gs = ge.getDefaultScreenDevice();
-            GraphicsConfiguration gc = gs.getDefaultConfiguration();
-            bimage = gc.createCompatibleImage(
-                    image.getWidth(null), image.getHeight(null), transparency);
-        } catch (Exception e) {
-            //} catch (HeadlessException e) {
-            // The system does not have a screen
-        }
-
-        if (bimage == null) {
-            // Create a buffered image using the default color model
-            int type = BufferedImage.TYPE_INT_RGB;
-            if (hasAlpha) {
-                type = BufferedImage.TYPE_INT_ARGB_PRE;
-            }
-            bimage = new BufferedImage(image.getWidth(null), image.getHeight(null), type);
-        }
-
-        // Copy image to buffered image
-        Graphics g = bimage.createGraphics();
-
-        // Paint the image onto the buffered image
-        g.drawImage(image, 0, 0, null);
-        g.dispose();
-
-        return bimage;
+        ImageIcon ic = new ImageIcon(image);
+        return toBufferedImage(ic);
     }
 
     /**
-     * This method returns true if the specified image has transparent pixels
-     *
-     * Code taken from the Java Developers Almanac 1.4
-     * http://javaalmanac.com/egs/java.awt.image/HasAlpha.html
+     * Convert an image icon to a buffered image.
+     * @param ic The image icon.
+     * @return the equivalent buffered image.
+     */
+    public static @NotNull BufferedImage toBufferedImage(@NotNull ImageIcon ic) {
+        int width = ic.getIconWidth();
+        int height = ic.getIconHeight();
+        BufferedImage b = createBufferedImage(ic.getImage(), width, height);
+        Graphics g = b.createGraphics();
+        g.drawImage(ic.getImage(), 0, 0, null);
+        g.dispose();
+        return b;
+    }
+
+    /**
+     * Create a buffered image with a format that is compatible with the screen.
+     * @param im If not null, this image is used to determine if transparency is needed.
+     * @param width The image width.
+     * @param height The image height.
+     */
+    public static @NotNull BufferedImage createBufferedImage(@Nullable Image im, int width, int height) {
+        // Determine if the image has transparent pixels.
+        boolean hasAlpha = true;
+        if (im != null) {
+            try {
+                hasAlpha = hasAlpha(im);
+            } catch (IllegalAccessError ignore) {
+            }
+        }
+        GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
+        try {
+            int transparency = hasAlpha ? Transparency.TRANSLUCENT : Transparency.OPAQUE;
+            GraphicsDevice gs = ge.getDefaultScreenDevice();
+            GraphicsConfiguration gc = gs.getDefaultConfiguration();
+            return gc.createCompatibleImage(width, height, transparency);
+        } catch (Exception e) {
+            // Create a buffered image using the default color model
+            int type = hasAlpha ? BufferedImage.TYPE_INT_ARGB_PRE : BufferedImage.TYPE_INT_RGB;
+            return new BufferedImage(width, height, type);
+        }
+    }
+
+    /**
+     * This method returns true if the specified image contains transparent pixels.
      */
     public static boolean hasAlpha(Image image) {
+        // Source: Java Developers Almanac 1.4 [http://javaalmanac.com/egs/java.awt.image/HasAlpha.html]
         // If buffered image, the color model is readily available
         if (image instanceof BufferedImage) {
             BufferedImage bimage = (BufferedImage) image;
@@ -221,14 +220,14 @@ public class Images {
         PixelGrabber pg = new PixelGrabber(image, 0, 0, 1, 1, false);
         try {
             pg.grabPixels();
-        } catch (InterruptedException e) {
+        } catch (InterruptedException ignore) {
         }
 
         // Get the image's color model
         // We must check for null here, because the pixel grabber
         // may not have been able to retrieve the color model.
         ColorModel cm = pg.getColorModel();
-        return (cm != null) ? cm.hasAlpha() : false;
+        return cm != null && cm.hasAlpha();
     }
 
     /**
@@ -244,12 +243,12 @@ public class Images {
         for (int i = 0; i < count; i++) {
             if (isHorizontal) {
                 parts[i] = src.getSubimage(
-                        src.getWidth() / count * i, 0,
-                        src.getWidth() / count, src.getHeight());
+                  src.getWidth() / count * i, 0,
+                  src.getWidth() / count, src.getHeight());
             } else {
                 parts[i] = src.getSubimage(
-                        0, src.getHeight() / count * i,
-                        src.getWidth(), src.getHeight() / count);
+                  0, src.getHeight() / count * i,
+                  src.getWidth(), src.getHeight() / count);
             }
         }
         return parts;

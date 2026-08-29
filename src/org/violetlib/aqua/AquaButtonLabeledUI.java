@@ -1,5 +1,5 @@
 /*
- * Changes copyright (c) 2015-2020 Alan Snyder.
+ * Changes copyright (c) 2015-2026 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -37,7 +37,7 @@ import java.awt.*;
 import javax.swing.*;
 import javax.swing.border.Border;
 
-import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.*;
 
 /**
  * The base class for check box and radio button UIs. These UIs are shared.
@@ -56,8 +56,8 @@ public abstract class AquaButtonLabeledUI extends AquaButtonUI {
     }
 
     @Override
-    protected void paint(@NotNull Graphics2D g, @NotNull AbstractButton b) {
+    protected void paint(@NotNull Graphics2D g, @NotNull AbstractButton b, @NotNull PaintingContext pc) {
         Rectangle viewRect = new Rectangle(b.getWidth(), b.getHeight());
-        widgetBorder.paintButton(g, b, null, viewRect);
+        widgetBorder.paintButton(g, b, null, viewRect, pc);
     }
 }

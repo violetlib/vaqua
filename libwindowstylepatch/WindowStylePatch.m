@@ -1,7 +1,7 @@
 /*
  * @(#)WindowStyleMaskPatch.m
  *
- * Copyright (c) 2018 Alan Snyder.
+ * Copyright (c) 2018-2026 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -9,8 +9,8 @@
  */
 
 #import <Cocoa/Cocoa.h>
-
 #import <objc/runtime.h>
+#include "log.h"
 
 /*
   The purpose of this patch is to preserve certain window style mask bits set by VAqua from being reset by AWT.
@@ -50,7 +50,7 @@ static NSWindowStyleMask MY_STYLE_BITS = NSWindowStyleMaskTitled | NSWindowStyle
 - (void) setStyleMaskOverride: (NSWindowStyleMask) mask
 {
 #ifdef DEBUG_PATCH
-    NSLog(@"Overriding window style mask %lx", (unsigned long) mask);
+    OSLog(@"Overriding window style mask %lx", (unsigned long) mask);
 #endif
     WindowStyleMaskPatchMaskHolder *holder = objc_getAssociatedObject(self, &holderKey);
     if (holder == nil) {
@@ -65,14 +65,14 @@ static NSWindowStyleMask MY_STYLE_BITS = NSWindowStyleMaskTitled | NSWindowStyle
 - (void) setStyleMask: (NSWindowStyleMask) mask
 {
 #ifdef DEBUG_PATCH
-    NSLog(@"Setting window style mask %lx", (unsigned long) mask);
+    OSLog(@"Setting window style mask %lx", (unsigned long) mask);
 #endif
     WindowStyleMaskPatchMaskHolder *holder = objc_getAssociatedObject(self, &holderKey);
     if (holder) {
         NSWindowStyleMask revised = (mask & ~MY_STYLE_BITS) | (holder.specifiedMask & MY_STYLE_BITS);
         if (revised != mask) {
 #ifdef DEBUG_PATCH
-            NSLog(@"Fixing window style mask %lx -> %lx", (unsigned long) mask, (unsigned long) revised);
+            OSLog(@"Fixing window style mask %lx -> %lx", (unsigned long) mask, (unsigned long) revised);
 #endif
             mask = revised;
         }
@@ -86,7 +86,7 @@ static NSWindowStyleMask MY_STYLE_BITS = NSWindowStyleMaskTitled | NSWindowStyle
 - (void) setStyleMaskOverride: (NSWindowStyleMask) mask
 {
 #ifdef DEBUG_PATCH
-    NSLog(@"Overriding panel style mask %lx", (unsigned long) mask);
+    OSLog(@"Overriding panel style mask %lx", (unsigned long) mask);
 #endif
     WindowStyleMaskPatchMaskHolder *holder = objc_getAssociatedObject(self, &holderKey);
     if (holder == nil) {
@@ -101,14 +101,14 @@ static NSWindowStyleMask MY_STYLE_BITS = NSWindowStyleMaskTitled | NSWindowStyle
 - (void) setStyleMask: (NSWindowStyleMask) mask
 {
 #ifdef DEBUG_PATCH
-    NSLog(@"Setting panel style mask %lx", (unsigned long) mask);
+    OSLog(@"Setting panel style mask %lx", (unsigned long) mask);
 #endif
     WindowStyleMaskPatchMaskHolder *holder = objc_getAssociatedObject(self, &holderKey);
     if (holder) {
         NSWindowStyleMask revised = (mask & ~MY_STYLE_BITS) | (holder.specifiedMask & MY_STYLE_BITS);
         if (revised != mask) {
 #ifdef DEBUG_PATCH
-            NSLog(@"Fixing panel style mask %lx -> %lx", (unsigned long) mask, (unsigned long) revised);
+            OSLog(@"Fixing panel style mask %lx -> %lx", (unsigned long) mask, (unsigned long) revised);
 #endif
             mask = revised;
         }

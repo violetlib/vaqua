@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2025 Alan Snyder.
+ * Copyright (c) 2015-2026 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -9,6 +9,7 @@
 #import "AquaWrappedAWTView.h"
 #import "AquaVisualEffectView.h"
 #import "AquaNativeSupport.h"
+#include "log.h"
 
 void VAppearances_updateAppearance(NSAppearance *appearance);
 
@@ -16,7 +17,7 @@ void VAppearances_updateAppearance(NSAppearance *appearance);
 
 static void updateAppearanceMissing(NSAppearance *appearance)
 {
-    NSLog(@"VAppearances_updateAppearance is undefined");
+    OSLog(@"VAppearances_updateAppearance is undefined");
 }
 
 @implementation AquaWrappedAWTView {
@@ -68,7 +69,7 @@ static void updateAppearanceMissing(NSAppearance *appearance)
     NSWindow *w = self.window;
     if (layer && w) {
         if (![w hasShadow]) {
-            NSLog(@"Window %@ has no shadow", w);
+            OSLog(@"Window %@ has no shadow", w);
         }
         isPopup = YES;
         layer.cornerRadius = cornerRadius;
@@ -85,7 +86,7 @@ static void updateAppearanceMissing(NSAppearance *appearance)
         w.backgroundColor = [NSColor clearColor];
         return 0;
     } else {
-        NSLog(@"Unable to set corner radius: missing layer or window");
+        OSLog(@"Unable to set corner radius: missing layer or window");
         return -1;
     }
 }
@@ -153,7 +154,7 @@ static void updateAppearanceMissing(NSAppearance *appearance)
     NSString *previousAppearanceName = lastKnownEffectiveAppearanceName;
     if (previousAppearanceName == nil || ![previousAppearanceName isEqualToString:appearanceName]) {
         lastKnownEffectiveAppearanceName = appearanceName;
-        NSLog(@"New appearance for AWT Window: %@", appearanceName);
+        OSLog(@"New appearance for AWT Window: %@", appearanceName);
         deliverWindowChangedAppearance(self.window, appearance);
     }
 

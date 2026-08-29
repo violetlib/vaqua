@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014-2020 Alan Snyder.
+ * Copyright (c) 2014-2026 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -10,12 +10,13 @@ package org.violetlib.aqua;
 
 import javax.swing.*;
 
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.*;
 import org.violetlib.jnr.aqua.*;
 import org.violetlib.jnr.aqua.AquaUIPainter.ButtonWidget;
 import org.violetlib.jnr.aqua.AquaUIPainter.GenericButtonWidget;
 import org.violetlib.jnr.aqua.AquaUIPainter.SegmentedButtonWidget;
+
+import static org.violetlib.aqua.OSXSystemProperties.macOS11;
 
 /**
  * A border for a toggle button with no client specified button style. A generic button border must adapt to any size
@@ -27,37 +28,44 @@ import org.violetlib.jnr.aqua.AquaUIPainter.SegmentedButtonWidget;
 public class AquaToggleButtonBorder extends AquaButtonBorder implements FocusRingOutlineProvider {
 
     @Override
-    public final @NotNull GenericButtonWidget getButtonWidget(@NotNull AbstractButton b) {
+    public final @NotNull ButtonStyleInfo getButtonStyleInfo(@NotNull AbstractButton b) {
         boolean isOnToolbar = AquaUtils.isOnToolbar(b);
+        if (isOnToolbar) {
+            return AquaButtonSupport.getToolbarButtonStyleInfo(b, painter);
+        }
 
-        GenericButtonWidget preferredWidget = isOnToolbar
-                ? ButtonWidget.BUTTON_TEXTURED_TOOLBAR
-                : SegmentedButtonWidget.BUTTON_SEGMENTED;
-        if (isProposedButtonWidgetUsable(b, preferredWidget)) {
-            return preferredWidget;
+        int version = AquaPainting.getVersion();
+
+        GenericButtonWidget preferredWidget
+          = version < macOS11 ? SegmentedButtonWidget.BUTTON_SEGMENTED : ButtonWidget.BUTTON_PUSH;
+        if (AquaButtonSupport.isButtonWidgetUsable(b, preferredWidget, painter)) {
+            return AquaButtonSupport.getButtonStyleInfo(b, preferredWidget);
         }
 
         if (b.getIcon() != null) {
-            return isOnToolbar ? ButtonWidget.BUTTON_TOOLBAR_ITEM : ButtonWidget.BUTTON_GRADIENT;
+            ButtonWidget w = version < 1500 ? ButtonWidget.BUTTON_GRADIENT : ButtonWidget.BUTTON_BEVEL_ROUND;
+            return AquaButtonSupport.getButtonStyleInfo(b, w);
         }
 
-        return ButtonWidget.BUTTON_BEVEL_ROUND;
+        return AquaButtonSupport.getButtonStyleInfo(b, ButtonWidget.BUTTON_BEVEL_ROUND);
     }
 
     @Override
-    public @Nullable GenericButtonConfiguration getConfiguration(@NotNull AbstractButton b, int width, int height) {
+    public @Nullable GenericButtonConfiguration getConfiguration(@NotNull AbstractButton b,
+                                                                 @NotNull PaintingContext pc,
+                                                                 int width, int height) {
 
         LayoutConfiguration g = getLayoutConfiguration(b);
 
         if (g instanceof SegmentedButtonLayoutConfiguration) {
-            AquaUIPainter.State state = getState(b);
+            AquaUIPainter.State state = AquaButtonSupport.getState(b);
             boolean isFocused = computeIsFocused(state, b);
             boolean isSelected = b.getModel().isSelected();
             AquaUIPainter.Direction d = AquaUIPainter.Direction.NONE;
             return new SegmentedButtonConfiguration((SegmentedButtonLayoutConfiguration) g, state, isSelected,
-                    isFocused, d, SegmentedButtonConfiguration.DividerState.NONE, SegmentedButtonConfiguration.DividerState.NONE);
+              isFocused, d, SegmentedButtonConfiguration.DividerState.NONE, SegmentedButtonConfiguration.DividerState.NONE);
         }
 
-        return super.getConfiguration(b, width, height);
+        return super.getConfiguration(b, pc, width, height);
     }
 }

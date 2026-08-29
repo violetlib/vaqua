@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Alan Snyder.
+ * Copyright (c) 2021-2026 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -23,8 +23,11 @@ public class MenuVibrantEffects extends VisualEffectView {
     protected @Nullable MenuSelectionBoundsTracker bt;
     protected final int style;
 
-    public MenuVibrantEffects(@NotNull JComponent top, @NotNull JPopupMenu menu, int style) {
-        super(top, style, true);
+    public MenuVibrantEffects(@NotNull JComponent top,
+                              @NotNull JPopupMenu menu,
+                              int style,
+                              int cornerRadius) {
+        super(top, style, cornerRadius, true);
 
         this.style = style;
         bt = new MenuSelectionBoundsTracker(menu, this::updateSelectionBackgrounds) {
@@ -44,6 +47,7 @@ public class MenuVibrantEffects extends VisualEffectView {
     }
 
     public void update() {
+        configureSelection(4, 4, 4);
         if (bt != null) {
             bt.update();
         }
@@ -60,6 +64,7 @@ public class MenuVibrantEffects extends VisualEffectView {
     @Override
     protected void windowChanged(Window newWindow) {
         super.windowChanged(newWindow);
+        configureSelection(4, 4, 4);
         if (bt != null) {
             bt.reset();
         }

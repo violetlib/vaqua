@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2021 Alan Snyder.
+ * Copyright (c) 2018-2026 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -46,8 +46,7 @@ import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableColumn;
 import javax.swing.table.TableColumnModel;
 
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.*;
 import org.violetlib.jnr.aqua.AquaUIPainter;
 
 public class AquaTableHeaderUI extends BasicTableHeaderUI implements AquaComponentUI {
@@ -88,7 +87,6 @@ public class AquaTableHeaderUI extends BasicTableHeaderUI implements AquaCompone
         if (prevRenderer instanceof UIResource) {
             header.setDefaultRenderer(new AquaTableHeaderCellRenderer());
         }
-        configureAppearanceContext(null);
     }
 
     @Override
@@ -105,12 +103,12 @@ public class AquaTableHeaderUI extends BasicTableHeaderUI implements AquaCompone
         super.installListeners();
         propertyChangeListener = new AquaPropertyChangeListener();
         header.addPropertyChangeListener(propertyChangeListener);
-        AppearanceManager.installListeners(header);
+        AppearanceManager.install(header);
     }
 
     @Override
     protected void uninstallListeners() {
-        AppearanceManager.uninstallListeners(header);
+        AppearanceManager.uninstall(header);
         header.removePropertyChangeListener(propertyChangeListener);
         propertyChangeListener = null;
         super.uninstallListeners();
@@ -132,42 +130,29 @@ public class AquaTableHeaderUI extends BasicTableHeaderUI implements AquaCompone
         }
     }
 
-    @Override
-    public void appearanceChanged(@NotNull JComponent c, @NotNull AquaAppearance appearance) {
-        configureAppearanceContext(appearance);
-    }
-
-    @Override
-    public void activeStateChanged(@NotNull JComponent c, boolean isActive) {
-        configureAppearanceContext(null);
-    }
-
-    protected void configureAppearanceContext(@Nullable AquaAppearance appearance) {
-        if (appearance == null) {
-            appearance = AppearanceManager.ensureAppearance(header);
-        }
-        AquaUIPainter.State state = getState();
-        appearanceContext = new AppearanceContext(appearance, state, false, false);
-        AquaColors.installColors(header, appearanceContext, colors);
-        EffectName effect = state == AquaUIPainter.State.ACTIVE ? EffectName.EFFECT_NONE : EffectName.EFFECT_DISABLED;
-        separatorColor = appearance.getColorForEffect("tableHeaderSeparator", effect);
-        header.repaint();
-    }
-
     protected @NotNull AquaUIPainter.State getState() {
         return AquaFocusHandler.isActive(header) ? AquaUIPainter.State.ACTIVE : AquaUIPainter.State.INACTIVE;
     }
 
     @Override
     public void update(Graphics g, JComponent c) {
-        AppearanceManager.registerCurrentAppearance(c);
         paint(g, c);
     }
 
     @Override
     public void paint(Graphics g, JComponent c) {
-        Color background = c.getBackground();
+        AppearanceManager.withContext(g, c, this::paint);
+    }
 
+    public void paint(Graphics2D g, JComponent c, @NotNull PaintingContext pc) {
+
+        AquaUIPainter.State state = getState();
+        appearanceContext = new AppearanceContext(pc.appearance, state, false, false);
+        AquaColors.installColors(header, appearanceContext, colors);
+        EffectName effect = state == AquaUIPainter.State.ACTIVE ? EffectName.EFFECT_NONE : EffectName.EFFECT_DISABLED;
+        separatorColor = pc.appearance.getColorForEffect("tableHeaderSeparator", effect);
+
+        Color background = c.getBackground();
         if (c.isOpaque()) {
             g.setColor(background);
             g.fillRect(0, 0, c.getWidth(), c.getHeight());
@@ -246,14 +231,14 @@ public class AquaTableHeaderUI extends BasicTableHeaderUI implements AquaCompone
                 // Draw a gray well in place of the moving column.
                 g.setColor(header.getParent().getBackground());
                 g.fillRect(draggedCellRect.x, draggedCellRect.y,
-                        draggedCellRect.width, draggedCellRect.height);
+                  draggedCellRect.width, draggedCellRect.height);
 
                 draggedCellRect.x += header.getDraggedDistance();
 
                 // Fill the background.
                 g.setColor(background);
                 g.fillRect(draggedCellRect.x, draggedCellRect.y,
-                        draggedCellRect.width, draggedCellRect.height);
+                  draggedCellRect.width, draggedCellRect.height);
 
                 paintCell(g, draggedCellRect, draggedColumnIndex);
             }
@@ -270,13 +255,13 @@ public class AquaTableHeaderUI extends BasicTableHeaderUI implements AquaCompone
             }
 
             boolean hasFocus = !header.isPaintingForPrint()
-                    // && (columnIndex == getSelectedColumnIndex())
-                    && header.hasFocus();
+              // && (columnIndex == getSelectedColumnIndex())
+              && header.hasFocus();
 
             Component rendererComponent = renderer.getTableCellRendererComponent(header.getTable(),
-                    aColumn.getHeaderValue(),
-                    false, hasFocus,
-                    -1, columnIndex);
+              aColumn.getHeaderValue(),
+              false, hasFocus,
+              -1, columnIndex);
 
             return rendererComponent;
         }
@@ -305,7 +290,7 @@ public class AquaTableHeaderUI extends BasicTableHeaderUI implements AquaCompone
             }
 
             rendererPane.paintComponent(g, rendererComponent, header, cellRect.x, cellRect.y,
-                    cellRect.width, cellRect.height, true);
+              cellRect.width, cellRect.height, true);
 
             // Setting the foreground or background color of a DefaultTableCellRenderer makes that color the color
             // to use when the cell is not selected. So, if we installed a color, we should also remove it.
@@ -381,9 +366,7 @@ public class AquaTableHeaderUI extends BasicTableHeaderUI implements AquaCompone
 
     private Dimension createHeaderSizeAqua(long width) {
         // None of the callers include the intercell spacing, do it here.
-        if (width > Integer.MAX_VALUE) {
-            width = Integer.MAX_VALUE;
-        }
+        width = AquaUtils.limitSize(width);
         return new Dimension((int)width, getHeaderHeightAqua());
     }
 

@@ -1,5 +1,5 @@
 /*
- * Changes copyright (c) 2018-2023 Alan Snyder.
+ * Changes copyright (c) 2018-2025 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -133,10 +133,10 @@ public class AquaTabbedPaneCopyFromBasicUI extends TabbedPaneUI implements Swing
 
 // Transient variables (recalculated each time TabbedPane is layed out)
 
-    protected int tabRuns[] = new int[10];
+    protected int[] tabRuns = new int[10];
     protected int runCount = 0;
     protected int selectedRun = -1;
-    protected Rectangle rects[] = new Rectangle[0];
+    protected Rectangle[] rects = new Rectangle[0];
     protected int maxTabHeight;
     protected int maxTabWidth;
 
@@ -2288,16 +2288,18 @@ public class AquaTabbedPaneCopyFromBasicUI extends TabbedPaneUI implements Swing
      * This class should be treated as a &quot;protected&quot; inner class.
      * Instantiate it only within subclasses of BasicTabbedPaneUI.
      */
-    public class TabbedPaneLayout implements LayoutManager {
+    public class TabbedPaneLayout implements LayoutManager2 {
         // MACOSX adding accessor for superclass
         protected Container getTabContainer() {
             return tabContainer;
         }
         // END MACOSX
 
-        public void addLayoutComponent(String name, Component comp) {}
+        public void addLayoutComponent(String name, Component comp) {
+        }
 
-        public void removeLayoutComponent(Component comp) {}
+        public void removeLayoutComponent(Component comp) {
+        }
 
         public Dimension preferredLayoutSize(Container parent) {
             return calculateSize(false);
@@ -2305,6 +2307,30 @@ public class AquaTabbedPaneCopyFromBasicUI extends TabbedPaneUI implements Swing
 
         public Dimension minimumLayoutSize(Container parent) {
             return calculateSize(true);
+        }
+
+        @Override
+        public void addLayoutComponent(Component comp, Object constraints) {
+        }
+
+        @Override
+        public Dimension maximumLayoutSize(Container target) {
+            return new Dimension(100000, 100000);
+        }
+
+        @Override
+        public float getLayoutAlignmentX(Container target) {
+            return 0;
+        }
+
+        @Override
+        public float getLayoutAlignmentY(Container target) {
+            return 0;
+        }
+
+        @Override
+        public void invalidateLayout(Container target) {
+            layoutInvalidated();
         }
 
         protected Dimension calculateSize(boolean minimum) {
@@ -2525,6 +2551,7 @@ public class AquaTabbedPaneCopyFromBasicUI extends TabbedPaneUI implements Swing
                 }
             }
             layoutTabComponents();
+            layoutCompleted();
             if(shouldChangeFocus) {
                 if(!requestFocusForVisibleComponent()) {
                     tabPane.requestFocus();
@@ -2956,6 +2983,7 @@ public class AquaTabbedPaneCopyFromBasicUI extends TabbedPaneUI implements Swing
                 tabScroller.croppedEdge.resetParams();
                 tabScroller.scrollForwardButton.setVisible(false);
                 tabScroller.scrollBackwardButton.setVisible(false);
+                layoutCompleted();
                 return;
             }
 
@@ -2963,7 +2991,7 @@ public class AquaTabbedPaneCopyFromBasicUI extends TabbedPaneUI implements Swing
 
             // In order to allow programs to use a single component
             // as the display for multiple tabs, we will not change
-            // the visible compnent if the currently selected tab
+            // the visible component if the currently selected tab
             // has a null component.  This is a bit dicey, as we don't
             // explicitly state we support this in the spec, but since
             // programs are now depending on this, we're making it work.
@@ -3141,6 +3169,7 @@ public class AquaTabbedPaneCopyFromBasicUI extends TabbedPaneUI implements Swing
                     }
                 }
             }
+            layoutCompleted();
         }
 
         private void layoutCroppedEdge() {
@@ -3268,6 +3297,15 @@ public class AquaTabbedPaneCopyFromBasicUI extends TabbedPaneUI implements Swing
             tabScroller.tabPanel.setPreferredSize(new Dimension(totalWidth, totalHeight));
             tabScroller.tabPanel.invalidate();
         }
+    }
+
+    protected void layoutInvalidated() {
+    }
+
+    protected void layoutCompleted() {
+    }
+
+    protected void tabsChanged() {
     }
 
     private class ScrollableTabSupport implements ActionListener,
@@ -3736,6 +3774,7 @@ public class AquaTabbedPaneCopyFromBasicUI extends TabbedPaneUI implements Swing
        replaced by something which uses that.  */
 
         public void componentAdded(ContainerEvent e) {
+            tabsChanged();
             JTabbedPane tp = (JTabbedPane)e.getContainer();
             Component child = e.getChild();
             if (child instanceof UIResource) {
@@ -3745,6 +3784,7 @@ public class AquaTabbedPaneCopyFromBasicUI extends TabbedPaneUI implements Swing
             updateHtmlViews(tp.indexOfComponent(child));
         }
         public void componentRemoved(ContainerEvent e) {
+            tabsChanged();
             JTabbedPane tp = (JTabbedPane)e.getContainer();
             Component child = e.getChild();
             if (child instanceof UIResource) {

@@ -1,5 +1,5 @@
 /*
- * Changes copyright (c) 2016-2021 Alan Snyder.
+ * Changes copyright (c) 2016-2026 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -39,18 +39,18 @@ import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.Serializable;
 import javax.swing.*;
-import javax.swing.border.AbstractBorder;
 import javax.swing.border.Border;
 import javax.swing.event.MouseInputListener;
 import javax.swing.plaf.ComponentUI;
 import javax.swing.plaf.UIResource;
 import javax.swing.plaf.basic.BasicToolBarUI;
 
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.*;
 import org.violetlib.jnr.aqua.AquaUIPainter;
 import org.violetlib.jnr.aqua.ButtonLayoutConfiguration;
 import org.violetlib.jnr.aqua.LayoutConfiguration;
+
+import static org.violetlib.aqua.OSXSystemProperties.macOS11;
 
 public class AquaToolBarUI extends BasicToolBarUI implements SwingConstants, AquaComponentUI {
 
@@ -66,12 +66,12 @@ public class AquaToolBarUI extends BasicToolBarUI implements SwingConstants, Aqu
     private LayoutManager originalLayoutManager;
 
     protected @NotNull BasicContextualColors colors;
-    protected @Nullable AppearanceContext appearanceContext;
 
     protected boolean isRendering;
 
     public AquaToolBarUI() {
-        colors = AquaColors.CLEAR_CONTROL_COLORS;
+        int version = AquaPainting.getVersion();
+        colors = version >= macOS11 ? AquaColors.UNIFIED_TOOLBAR_COLORS : AquaColors.CLEAR_CONTROL_COLORS;
     }
 
     @Override
@@ -89,7 +89,6 @@ public class AquaToolBarUI extends BasicToolBarUI implements SwingConstants, Aqu
             toolBar.setLayout(new AquaToolBarLayout());
         }
         toolBar.setFloatable(false);
-        configureAppearanceContext(null);
     }
 
     protected void installBorder() {
@@ -115,33 +114,13 @@ public class AquaToolBarUI extends BasicToolBarUI implements SwingConstants, Aqu
     @Override
     protected void installListeners(){
         super.installListeners();
-        AppearanceManager.installListeners(toolBar);
+        AppearanceManager.install(toolBar);
     }
 
     @Override
     protected void uninstallListeners(){
-        AppearanceManager.uninstallListeners(toolBar);
+        AppearanceManager.uninstall(toolBar);
         super.uninstallListeners();
-    }
-
-    @Override
-    public void appearanceChanged(@NotNull JComponent c, @NotNull AquaAppearance appearance) {
-        configureAppearanceContext(appearance);
-    }
-
-    @Override
-    public void activeStateChanged(@NotNull JComponent c, boolean isActive) {
-        configureAppearanceContext(null);
-    }
-
-    protected void configureAppearanceContext(@Nullable AquaAppearance appearance) {
-        if (appearance == null) {
-            appearance = AppearanceManager.ensureAppearance(toolBar);
-        }
-        AquaUIPainter.State state = getState();
-        appearanceContext = new AppearanceContext(appearance, state, false, false);
-        AquaColors.installColors(toolBar, appearanceContext, colors);
-        toolBar.repaint();
     }
 
     protected AquaUIPainter.State getState() {
@@ -160,9 +139,12 @@ public class AquaToolBarUI extends BasicToolBarUI implements SwingConstants, Aqu
 
     /* ToolBarBorder and drag-off handle, based loosely on MetalBumps */
     @SuppressWarnings("serial") // Superclass is not serializable across versions
-    private class ToolBarBorder extends AbstractBorder implements UIResource, javax.swing.SwingConstants {
-
-        public void paintBorder(Component c, Graphics g, int x, int y, int w, int h) {
+    private class ToolBarBorder
+      extends AquaBorder
+    {
+        @Override
+        protected void paint(@NotNull JComponent c, @NotNull Graphics2D g, int x, int y, int w, int h)
+        {
             g.translate(x, y);
 
             if (!isRendering && c.isOpaque()) {
@@ -179,7 +161,8 @@ public class AquaToolBarUI extends BasicToolBarUI implements SwingConstants, Aqu
             g.translate(-x, -y);
         }
 
-        private void paintHandle(JToolBar tb, Graphics g, int w, int h) {
+        private void paintHandle(JToolBar tb, Graphics g, int w, int h)
+        {
             Color oldColor = g.getColor();
             ComponentOrientation orient = tb.getComponentOrientation();
             boolean horizontal = tb.getOrientation() == SwingConstants.HORIZONTAL;
@@ -197,7 +180,8 @@ public class AquaToolBarUI extends BasicToolBarUI implements SwingConstants, Aqu
             g.setColor(oldColor);
         }
 
-        private void fillHandle(Graphics g, int x1, int y1, int x2, int y2, boolean horizontal) {
+        private void fillHandle(Graphics g, int x1, int y1, int x2, int y2, boolean horizontal)
+        {
             g.setColor(UIManager.getColor("ToolBar.borderHandleColor"));
             if (horizontal) {
                 int h = y2 - y1 - 2;
@@ -210,51 +194,43 @@ public class AquaToolBarUI extends BasicToolBarUI implements SwingConstants, Aqu
             }
         }
 
-        public Insets getBorderInsets(Component c) {
-            Insets borderInsets = new Insets(5, 5, 5, 5);
-            return getBorderInsets(c, borderInsets);
-        }
-
-        public Insets getBorderInsets(Component c, Insets borderInsets) {
-
+        public @NotNull Insets getBorderInsets(@NotNull Component c)
+        {
             JToolBar tb = (JToolBar) c;
 
             boolean isTallFormat = isTallFormatToolBar(tb);
+            int version = AquaPainting.getVersion();
 
-            borderInsets.left = 4;
-            borderInsets.right = 4;
-            borderInsets.top = 4;
-            borderInsets.bottom = isTallFormat ? 0 : 4;
+            int left = 4;
+            int right = 4;
+            int top = 4;
+            int bottom = isTallFormat && version < 1500 ? 0 : 4;
 
             if (tb.isFloatable()) {
                 if (tb.getOrientation() == HORIZONTAL) {
-                    borderInsets.left = 12;
+                    left = 12;
                     // We don't have to adjust for right-to-left
                 } else { // vertical
-                    borderInsets.top = 12;
+                    top = 12;
                 }
             }
 
             Insets margin = tb.getMargin();
-
             if (margin != null) {
-                borderInsets.left += margin.left;
-                borderInsets.top += margin.top;
-                borderInsets.right += margin.right;
-                borderInsets.bottom += margin.bottom;
+                left += margin.left;
+                top += margin.top;
+                right += margin.right;
+                bottom += margin.bottom;
             }
 
-            return borderInsets;
-        }
-
-        public boolean isBorderOpaque() {
-            return false;
+            return new Insets(top, left, bottom, right);
         }
     }
 
     /**
      * Determine if the toolbar or toolbar panel contains a tall format button. A tall format button is a toggle button
-     * that uses the toolbar item button style. A tall format button should have no space below it in the toolbar.
+     * that uses the toolbar item button style. On some releases, a tall format button should have no space below it in
+     * the toolbar.
      */
     public static boolean isTallFormatToolBar(@NotNull JComponent tb) {
         int count = tb.getComponentCount();
@@ -272,13 +248,12 @@ public class AquaToolBarUI extends BasicToolBarUI implements SwingConstants, Aqu
 
     /**
      * Determine if the specified button is a tall format button. A tall format button is a toggle button that uses the
-     * toolbar item button style. A tall format button should have no space below it in the toolbar.
+     * toolbar item button style. On some releases, tall format button should have no space below it in the toolbar.
      */
     protected static boolean isTallFormatButton(AbstractButton b) {
         Border border = b.getBorder();
-
-        if (border instanceof AquaButtonBorder) {
-            AquaButtonBorder bb = (AquaButtonBorder) border;
+        AquaButtonBorder bb = AquaBorderSupport.get(border, AquaButtonBorder.class);
+        if (bb != null) {
             LayoutConfiguration g = bb.getLayoutConfiguration(b);
             if (g instanceof ButtonLayoutConfiguration) {
                 ButtonLayoutConfiguration bg = (ButtonLayoutConfiguration) g;
@@ -292,12 +267,35 @@ public class AquaToolBarUI extends BasicToolBarUI implements SwingConstants, Aqu
 
     @Override
     public void update(Graphics g, JComponent c) {
-        AppearanceManager.registerCurrentAppearance(c);
-        if (!isRendering && c.isOpaque()) {
+        paint(g, c);
+    }
+
+    @Override
+    public void paint(Graphics g, JComponent c) {
+        AppearanceManager.withContext(g, c, this::paint);
+    }
+
+    public void paint(Graphics2D g, JComponent c, @NotNull PaintingContext pc) {
+        AquaUIPainter.State state = getState(c);
+        AppearanceContext appearanceContext = new AppearanceContext(pc.appearance, state, false, false);
+        AquaColors.installColors(c, appearanceContext, colors);
+
+        if (!isRendering && shouldPaintBackground(c)) {
             Color bc = c.getBackground();
             AquaUtils.fillRect(g, c, bc, AquaUtils.ERASE_IF_TEXTURED|AquaUtils.ERASE_IF_VIBRANT);
         }
-        paint(g, c);
+    }
+
+    private @NotNull AquaUIPainter.State getState(@NotNull JComponent c)
+    {
+        JRootPane rp = SwingUtilities.getRootPane(c);
+        boolean isActive = rp != null && AquaFocusHandler.isActive(rp);
+        return isActive ? AquaUIPainter.State.ACTIVE : AquaUIPainter.State.INACTIVE;
+    }
+
+    private boolean shouldPaintBackground(@NotNull JComponent c)
+    {
+        return c.getBackground() instanceof UIResource || c.isOpaque();
     }
 
     @Override
@@ -344,7 +342,7 @@ public class AquaToolBarUI extends BasicToolBarUI implements SwingConstants, Aqu
                 Point dragOffset = e.getPoint();
                 if (!AquaUtils.isLeftToRight(toolBar)) {
                     dragOffset.x -= (toolBar.getSize().width
-                                     - toolBar.getPreferredSize().width);
+                      - toolBar.getPreferredSize().width);
                 }
                 setDragOffset(dragOffset);
             }
@@ -381,21 +379,34 @@ public class AquaToolBarUI extends BasicToolBarUI implements SwingConstants, Aqu
         return getDockingColor();
     }
 
+    public void updateLayout(boolean isGlueNeeded) {
+        if (isGluePresent(toolBar) != isGlueNeeded) {
+            if (isGlueNeeded) {
+                installGlue(toolBar);
+            } else {
+                removeGlue(toolBar);
+            }
+        }
+    }
+
     private class AquaToolBarLayout
-        implements LayoutManager2, Serializable, PropertyChangeListener, UIResource {
+      implements LayoutManager2, Serializable, PropertyChangeListener, UIResource {
 
         GroupLayout gl;
         GroupLayout.SequentialGroup major;
         GroupLayout.ParallelGroup minor;
         boolean isConfigured;
+        boolean isConfiguringGroupLayout;
 
         AquaToolBarLayout() {
         }
 
         private void configure() {
-            if (!isConfigured) {
-                isConfigured = true;
+            if (isConfigured) {
+                return;
             }
+            isConfigured = true;
+            isConfiguringGroupLayout = true;
 
             gl = new GroupLayout(toolBar);
             major = gl.createSequentialGroup();
@@ -418,6 +429,7 @@ public class AquaToolBarUI extends BasicToolBarUI implements SwingConstants, Aqu
                 gl.setVerticalGroup(major);
                 gl.setHorizontalGroup(minor);
             }
+            isConfiguringGroupLayout = false;
         }
 
         public void addLayoutComponent(String name, Component comp) {
@@ -463,7 +475,9 @@ public class AquaToolBarUI extends BasicToolBarUI implements SwingConstants, Aqu
         }
 
         public void invalidateLayout(Container target) {
-            isConfigured = false;
+            if (!isConfiguringGroupLayout) {
+                isConfigured = false;
+            }
         }
 
         public void propertyChange(PropertyChangeEvent e) {
@@ -471,6 +485,35 @@ public class AquaToolBarUI extends BasicToolBarUI implements SwingConstants, Aqu
             if( name.equals("orientation") ) {
                 isConfigured = false;
             }
+        }
+    }
+
+    protected boolean isGluePresent(JComponent tb) {
+        int count = tb.getComponentCount();
+        if (count > 0) {
+            Component c = tb.getComponent(0);
+            return isGlue(c);
+        }
+        return false;
+    }
+
+    protected boolean isGlue(Component c) {
+        return c instanceof MyGlue;
+    }
+
+    protected void installGlue(JComponent tb) {
+        tb.add(new MyGlue(), 0);
+    }
+
+    protected void removeGlue(JComponent tb) {
+        tb.remove(0);
+    }
+
+    protected static class MyGlue
+      extends Box.Filler
+    {
+        public MyGlue() {
+            super(new Dimension(0,0), new Dimension(0,0), new Dimension(Short.MAX_VALUE, 0));
         }
     }
 }

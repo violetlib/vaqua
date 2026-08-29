@@ -1,5 +1,5 @@
 /*
- * Changes copyright (c) 2018 Alan Snyder.
+ * Changes copyright (c) 2018-2026 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -33,31 +33,27 @@
 
 package org.violetlib.aqua;
 
-import java.awt.Color;
-import java.awt.Component;
-import java.awt.Graphics;
-import java.awt.Insets;
+import java.awt.*;
+import javax.swing.*;
 
-import javax.swing.border.Border;
+import org.jetbrains.annotations.*;
 
 /**
  * The class represents the border of a {@code JMenuBar}.
  */
-public class AquaMenuBarBorder implements Border {
-
+public class AquaMenuBarBorder
+  extends AquaBorder
+{
     @Override
-    public void paintBorder(Component c, Graphics g, int x, int y, int width, int height) {
+    protected void paint(@NotNull JComponent c, @NotNull Graphics2D g, int x, int y, int width, int height)
+    {
         g.setColor(Color.gray);
         AquaUtils.drawHLine(g, x, x + width - 1, y + height - 1);
     }
 
     @Override
-    public Insets getBorderInsets(Component c) {
+    public Insets getBorderInsets(@NotNull Component c)
+    {
         return new Insets(0, 0, 1, 0);
-    }
-
-    @Override
-    public boolean isBorderOpaque() {
-        return false;
     }
 }

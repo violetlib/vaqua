@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2021 Alan Snyder.
+ * Copyright (c) 2015-2026 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -14,19 +14,18 @@ import java.awt.event.HierarchyListener;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import javax.swing.*;
-import javax.swing.border.AbstractBorder;
 import javax.swing.border.Border;
 import javax.swing.plaf.UIResource;
 
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.*;
 
 import static org.violetlib.aqua.AquaUtils.*;
+import static org.violetlib.aqua.OSXSystemProperties.macOS11;
 
 /**
  * This class supports custom window styles that use the NSView full content view option on a decorated window. In all
  * cases the content pane occupies the entire window and title bar paints over the content pane. The styles differ in
- * the treatment of the title bar, the tool bar (if any), and the window background.
+ * the treatment of the title bar, the toolbar (if any), and the window background.
  *
  * <ul>
  * <li>{@code STYLE_OVERLAY}</li> - A normal title bar is used. The content pane will be visible beneath the title bar
@@ -38,52 +37,52 @@ import static org.violetlib.aqua.AquaUtils.*;
  * title bar.
  *
  * <li>{@code STYLE_HIDDEN}</li> - A title bar with a transparent background is used, and an attempt is made to ensure
- * that the title bar does not paint anything. (The application should avoid setting a title on the window.) This
- * option is used to create a window with rounded corners but no (apparent) title bar. It is up to the application to
- * implement window dragging. Optional top and bottom window margins are painted if defined. If either a top or bottom
- * margin is defined, the content pane is set to not-opaque to expose the margin backgrounds.
+ * that the title bar does not paint anything. This option is used to create a window with rounded corners but no
+ * (apparent) title bar. It is up to the application to implement window dragging. Optional top and bottom window
+ * margins are painted if defined. If either a top or bottom margin is defined, the content pane is set to not-opaque to
+ * expose the margin backgrounds.
  *
  * <li>{@code STYLE_UNIFIED}</li> - This option requires a non-floatable JToolBar or toolbar panel as a child component
- * of the content pane positioned at the top of the content pane. It creates a unified title bar and tool bar by using a
- * transparent title bar, painting a textured window background that includes a gradient under the title bar and tool
- * bar, and by installing a default tool bar border with a top inset, so that the tool bar is positioned below the title
- * bar. The content pane and tool bar are set to not-opaque to expose the textured background. The window title is
- * cleared; the application should avoid setting a title on the window. A mouse listener is attached to the toolbar to
- * support dragging the window.
- *
- * <li>{@code STYLE_COMBINED}</li> - This option requires a non-floatable JToolBar or toolbar panel as a child
- * component of the content pane positioned at the top of the content pane. It creates a combined title bar and tool bar
- * by using a transparent title bar, painting a textured window background that includes a gradient under the title bar
- * and tool bar, and by installing a default tool bar border with a left inset, so that the tool bar is positioned to
- * the right of the title bar buttons. The content pane and tool bar are set to not-opaque to expose the textured
- * background. The window title is cleared; the application should avoid setting a title on the window. A mouse listener
- * is attached to the toolbar to support dragging the window.
- *
- * <li>{@code STYLE_TEXTURED_HIDDEN}</li> - This option requires a non-floatable JToolBar or toolbar panel as a child
- * component of the content pane positioned at the top of the content pane. It creates a textured window with a tool bar
- * instead of a title bar by using a transparent title bar, and by painting a textured window background that includes a
- * gradient under the tool bar. The content pane and tool bar are set to not-opaque to expose the textured background.
+ * of the content pane positioned at the top of the content pane. It creates a unified title bar and toolbar by using a
+ * transparent title bar, painting a textured window background that includes a gradient under the title bar and toolbar
+ * (for some system releases), and by installing a default toolbar border with a top inset, so that the toolbar is
+ * positioned below the title bar. The content pane and toolbar are set to not-opaque to expose the textured background.
  * The window title is cleared; the application should avoid setting a title on the window. A mouse listener is attached
  * to the toolbar to support dragging the window.
+ *
+ * <li>{@code STYLE_COMBINED}</li> - This option requires a non-floatable JToolBar or toolbar panel as a child component
+ * of the content pane positioned at the top of the content pane. It creates a combined title bar and toolbar by using a
+ * transparent title bar, painting a textured window background that includes a gradient under the title bar and toolbar
+ * (for some system releases), and by installing a default toolbar border with a left inset, so that the toolbar is
+ * positioned to the right of the title bar buttons. The content pane and toolbar are set to not-opaque to expose the
+ * textured background. The window title and file icon may not be painted, if they are likely to overlap the toolbar. A
+ * mouse listener is attached to the toolbar to support dragging the window.
+ *
+ * <li>{@code STYLE_TEXTURED_HIDDEN}</li> - This option requires a non-floatable JToolBar or toolbar panel as a child
+ * component of the content pane positioned at the top of the content pane. It creates a textured window with a toolbar
+ * instead of a title bar by using a transparent title bar, and by painting a textured window background that includes a
+ * gradient under the toolbar. The content pane and toolbar are set to not-opaque to expose the textured background. The
+ * stoplight buttons, window title, and file icon are not painted. A mouse listener is attached to the toolbar to
+ * support dragging the window.
  */
 public class AquaCustomStyledWindow {
 
     public static class RequiredToolBarNotFoundException extends IllegalArgumentException {
         public RequiredToolBarNotFoundException() {
             super("Window content pane must contain a non-floatable JToolBar or a toolbar panel identified by "
-                    + TOOLBAR_PANEL_PROPERTY + "=true");
+              + TOOLBAR_PANEL_PROPERTY + "=true");
         }
     }
 
     public static final int STYLE_OVERLAY = 0;          // AKA overlay title bar
     public static final int STYLE_TRANSPARENT = 1;      // AKA transparent title bar
     public static final int STYLE_HIDDEN = 2;           // AKA no title bar
-    public static final int STYLE_UNIFIED = 3;          // AKA unified tool bar
-    public static final int STYLE_TEXTURED_HIDDEN = 4;  // AKA textured tool bar
-    public static final int STYLE_COMBINED = 5;         // AKA combined title and tool bar
+    public static final int STYLE_UNIFIED = 3;          // AKA unified toolbar
+    public static final int STYLE_TEXTURED_HIDDEN = 4;  // AKA textured toolbar
+    public static final int STYLE_COMBINED = 5;         // AKA combined title bar and toolbar
     public static final int STYLE_UNDECORATED = 6;      // Internal use
 
-    protected final int TITLE_BAR_HEIGHT = OSXSystemProperties.OSVersion >= 1016 ? 27: 22;
+    protected final int TITLE_BAR_HEIGHT = AquaPainting.getVersion() >= macOS11 ? 27: 22;
     protected final int TITLE_BAR_BUTTONS_WIDTH = 78;
 
     protected @Nullable Window w;
@@ -130,7 +129,7 @@ public class AquaCustomStyledWindow {
     protected final boolean isTextured;
 
     protected JComponent contentPane;   // the window content pane
-    protected JComponent windowToolBar;   // the window tool bar, if we care about it -- depends on the style
+    protected JComponent windowToolBar;   // the window toolbar, if we care about it -- depends on the style
 
     protected WindowPropertyChangeListener propertyChangeListener;
     protected WindowDraggingMouseListener windowDraggingMouseListener;
@@ -149,7 +148,7 @@ public class AquaCustomStyledWindow {
      *  pane is not a JComponent, or a required JToolBar or toolbar panel is not found.
      */
     public AquaCustomStyledWindow(@NotNull Window w, int style, int declaredTopMarginHeight, int declaredBottomMarginHeight)
-            throws IllegalArgumentException {
+      throws IllegalArgumentException {
 
         boolean isDecorated = AquaUtils.isDecorated(w);
         if (style == STYLE_UNDECORATED) {
@@ -185,21 +184,19 @@ public class AquaCustomStyledWindow {
         titleBarStyle = getTitleBarStyleForWindowStyle(style);
         isTextured = getTexturedStyleForWindowStyle(style);
 
-        if (isTextured) {
-            if (windowToolBar == null) {
-                throw new RequiredToolBarNotFoundException();
+        if (windowToolBar != null) {
+            if (isTextured) {
+                setupClearToolbar(windowToolBar);
+                setupToolbar(windowToolBar);
+            } else if (isToolbarMerged(style)) {
+                setupToolbar(windowToolBar);
             }
-            setupToolbar(windowToolBar);
         }
 
         setupContentPane(contentPane);
 
         propertyChangeListener = new WindowPropertyChangeListener();
         rp.addPropertyChangeListener(AquaFocusHandler.FRAME_ACTIVE_PROPERTY, propertyChangeListener);
-
-        if (style == STYLE_COMBINED) {
-            AquaUtils.setWindowTitle(w, "");
-        }
 
         AquaUtils.setTitleBarStyle(w, titleBarStyle);
     }
@@ -215,19 +212,25 @@ public class AquaCustomStyledWindow {
                 return TITLE_BAR_OVERLAY;
             case STYLE_TRANSPARENT:
             case STYLE_UNIFIED:
-            case STYLE_COMBINED:
                 return TITLE_BAR_TRANSPARENT;
             case STYLE_HIDDEN:
             case STYLE_TEXTURED_HIDDEN:
                 return TITLE_BAR_HIDDEN;
             case STYLE_UNDECORATED:
                 return TITLE_BAR_NONE;
+            case STYLE_COMBINED:
+                return TITLE_BAR_COMBINED;
             default:
                 throw new IllegalArgumentException("Invalid style");
         }
     }
 
-    public boolean getTexturedStyleForWindowStyle(int style) {
+    private boolean isToolbarMerged(int style)
+    {
+        return style == STYLE_UNIFIED || style == STYLE_COMBINED;
+    }
+
+    private boolean getTexturedStyleForWindowStyle(int style) {
         switch (style) {
             case STYLE_OVERLAY:
             case STYLE_TRANSPARENT:
@@ -237,7 +240,7 @@ public class AquaCustomStyledWindow {
             case STYLE_UNIFIED:
             case STYLE_TEXTURED_HIDDEN:
             case STYLE_COMBINED:
-                return true;
+                return AquaPainting.getVersion() < macOS11;
             default:
                 throw new IllegalArgumentException("Invalid style");
         }
@@ -267,8 +270,8 @@ public class AquaCustomStyledWindow {
 
     public boolean isValid(int style, int declaredTopMarginHeight, int declaredBottomMarginHeight) {
         return style == this.style
-                && declaredTopMarginHeight == this.declaredTopMarginHeight
-                && declaredBottomMarginHeight == this.declaredBottomMarginHeight;
+          && declaredTopMarginHeight == this.declaredTopMarginHeight
+          && declaredBottomMarginHeight == this.declaredBottomMarginHeight;
     }
 
     public boolean isTextured() {
@@ -335,28 +338,42 @@ public class AquaCustomStyledWindow {
         }
     }
 
-    protected void setupToolbar(JComponent tb) {
+    protected void setupClearToolbar(@NotNull JComponent tb) {
         tb.setOpaque(false);
-
         Container p = tb;
         while ((p = p.getParent()) != contentPane && p != null) {
             if (p instanceof JComponent) {
                 ((JComponent) p).setOpaque(false);
             }
         }
+    }
 
+    protected void setupToolbar(JComponent tb) {
+        updateToolbarLayout(tb);
         installToolbarBorder(tb);
         attachWindowDraggingMouseListener(tb);
         attachHierarchyListener(tb);
     }
 
+    public void setupWindowDragging() {
+        attachWindowDraggingMouseListener(rp);
+    }
+
+    protected void updateToolbarLayout(JComponent tb) {
+        AquaToolBarUI ui = AquaUtils.getUI(tb, AquaToolBarUI.class);
+        if (ui != null) {
+            ui.updateLayout(style == STYLE_COMBINED);
+        }
+    }
+
     protected void installToolbarBorder(JComponent tb) {
         Border b = tb.getBorder();
         if (b == null || b instanceof UIResource) {
+            int version = AquaPainting.getVersion();
             boolean isTall = AquaToolBarUI.isTallFormatToolBar(tb);
             int left = 4;
             int top = 4;
-            int bottom = isTall ? 0 : 4;
+            int bottom = isTall && version < 1500 ? 0 : 4;
             if (style == STYLE_UNIFIED) {
                 tb.setBorder(new CustomToolbarBorder(left, TITLE_BAR_HEIGHT, bottom));
             } else if (style == STYLE_COMBINED) {
@@ -431,7 +448,7 @@ public class AquaCustomStyledWindow {
         tb.addHierarchyListener(toolbarHierarchyListener);
     }
 
-    public void paintMarginBackgrounds(@NotNull Graphics g) {
+    public void paintMarginBackgrounds(@NotNull Graphics g, @NotNull PaintingContext pc) {
         // Update the possibly dynamic margin heights
         topMarginHeight = calculateTopMarginHeight();
         bottomMarginHeight = calculateBottomMarginHeight();
@@ -439,15 +456,16 @@ public class AquaCustomStyledWindow {
         assert rp != null;
 
         if (topMarginHeight > 0) {
-            paintMarginBackground(g, 0, topMarginHeight, true);
+            paintMarginBackground(g, 0, topMarginHeight, true, pc);
         }
         if (bottomMarginHeight > 0) {
             int y = rp.getHeight() - bottomMarginHeight;
-            paintMarginBackground(g, y, bottomMarginHeight, false);
+            paintMarginBackground(g, y, bottomMarginHeight, false, pc);
         }
     }
 
-    protected void paintMarginBackground(@NotNull Graphics g, int y, int height, boolean isTop) {
+    protected void paintMarginBackground(@NotNull Graphics g, int y, int height, boolean isTop,
+                                         @NotNull PaintingContext pc) {
         if (height > 0) {
             Graphics2D gg = (Graphics2D) g.create();
             try {
@@ -459,7 +477,7 @@ public class AquaCustomStyledWindow {
                 if (isSheet) {
                     c = AquaColors.CLEAR;
                 } else {
-                    c = AquaUtils.getWindowMarginBackground(rp, isTop);
+                    c = AquaUtils.getWindowMarginBackground(rp, isTop, pc);
                 }
 
                 AquaUtils.fillRect(g, c, 0, y, rp.getWidth(), height);
@@ -473,7 +491,7 @@ public class AquaCustomStyledWindow {
                 int rootPaneHeight = rp.getHeight();
                 if (dividerY < rootPaneHeight) {
                     int width = rp.getWidth();
-                    paintUnifiedDivider(gg, dividerY, width, isActive, isTop);
+                    paintUnifiedDivider(gg, dividerY, width, isActive, isTop, pc);
                 }
             } finally {
                 gg.dispose();
@@ -481,9 +499,10 @@ public class AquaCustomStyledWindow {
         }
     }
 
-    protected void paintUnifiedDivider(Graphics2D g, int y, int width, boolean isActive, boolean isTop) {
+    protected void paintUnifiedDivider(Graphics2D g, int y, int width, boolean isActive, boolean isTop,
+                                       @NotNull PaintingContext pc) {
         assert rp != null;
-        Color c = AquaUtils.getWindowMarginDividerColor(rp, isTop);
+        Color c = AquaUtils.getWindowMarginDividerColor(rp, isTop, pc);
         AquaUtils.fillRect(g, c, 0, y, width, 1);
     }
 
@@ -602,18 +621,25 @@ public class AquaCustomStyledWindow {
         }
     }
 
-    protected class CustomBorderBase
-            extends AbstractBorder
-            implements UIResource {
+    private static abstract class CustomBorderBase
+      extends AquaBorder
+    {
+        @Override
+        protected void paint(@NotNull JComponent c, @NotNull Graphics2D g, int x, int y, int width, int height)
+        {
+        }
     }
 
-    protected class CustomContentPaneBorder extends CustomBorderBase {
+    private static class CustomContentPaneBorder
+      extends CustomBorderBase
+    {
         private int top;
         private int left;
         private int bottom;
         private int right;
 
-        public CustomContentPaneBorder(int top, int left, int bottom, int right) {
+        public CustomContentPaneBorder(int top, int left, int bottom, int right)
+        {
             this.top = top;
             this.left = left;
             this.bottom = bottom;
@@ -621,36 +647,31 @@ public class AquaCustomStyledWindow {
         }
 
         @Override
-        public Insets getBorderInsets(Component c, Insets insets)
+        public @NotNull Insets getBorderInsets(@NotNull Component c)
         {
-            insets.top = top;
-            insets.left = left;
-            insets.bottom = bottom;
-            insets.right = right;
-            return insets;
+            return new Insets(top, left, bottom, right);
         }
     }
 
-    protected class CustomToolbarBorder extends CustomBorderBase {
+    private static class CustomToolbarBorder
+      extends CustomBorderBase
+    {
         protected int extraTop;
         protected int extraLeft;
         protected int extraBottom;
 
-        public CustomToolbarBorder(int extraLeft, int extraTop, int extraBottom) {
+        public CustomToolbarBorder(int extraLeft, int extraTop, int extraBottom)
+        {
             this.extraLeft = extraLeft;
             this.extraTop = extraTop;
             this.extraBottom = extraBottom;
         }
 
         @Override
-        public Insets getBorderInsets(Component c, Insets insets)
+        public @NotNull Insets getBorderInsets(@NotNull Component c)
         {
             Insets margin = c instanceof JToolBar ? ((JToolBar) c).getMargin() : new Insets(0, 0, 0, 0);
-            insets.left = margin.left + extraLeft;
-            insets.top = margin.top + extraTop;
-            insets.right = margin.right;
-            insets.bottom = margin.bottom + extraBottom + 1;
-            return insets;
+            return new Insets(margin.top + extraTop, margin.left + extraLeft, margin.bottom + extraBottom + 1, margin.right);
         }
     }
 }

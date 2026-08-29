@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2023 Alan Snyder.
+ * Copyright (c) 2015-2026 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -19,16 +19,27 @@ import org.jetbrains.annotations.Nullable;
  */
 public class OSXSystemProperties {
 
-    public static Object USER_PREFERENCE_CHANGE_TYPE = "UserPreferenceChangeType";
+    public static final Object USER_PREFERENCE_CHANGE_TYPE = "UserPreferenceChangeType";
 
-    public static int simulatedOSVersion = 0;  // must come before OSVersion
+    private static int simulatedOSVersion = 0;  // must come before OSVersion
 
-    public final static int OSVersion = getOSVersion();  // for example: 1014 = macOS 10.14
+    private static final int OSVersion = getOSVersion();  // for example: 1014 = macOS 10.14
+    public static final int macOS11 = 1016;  // macOS 11 was renamed after being available as 10.16
+    public static final int macOS26 = 1600;  // macOS 26 was renamed after being available as 16
 
     private static boolean hasBeenSynchronized;
     private static boolean isFullKeyboardAccessEnabled; // cached value
     private static boolean useOverlayScrollBars;        // cached value
     private static boolean reduceTransparency;          // cached value
+
+    public static int getOSRelease() {
+        return OSVersion;
+    }
+
+    public void setSimulatedOSRelease(int n)
+    {
+        simulatedOSVersion = n;
+    }
 
     private static int getOSVersion() {
 
@@ -109,7 +120,7 @@ public class OSXSystemProperties {
     }
 
     public static boolean useInsetViewStyle() {
-        return OSVersion >= 1016;
+        return OSVersion >= macOS11;
     }
 
     public static boolean isFullKeyboardAccessEnabled() {
@@ -123,9 +134,8 @@ public class OSXSystemProperties {
     }
 
     public static boolean doScrollPanesSupportRTL() {
-        // OS X scroll bars do not change in RTL orientation
-        // Perhaps this may change...
-        return false;
+        // Not sure when this changed...
+        return OSVersion >= 1500;
     }
 
     /**

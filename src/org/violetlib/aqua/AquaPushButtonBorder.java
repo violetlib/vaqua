@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2020 Alan Snyder.
+ * Copyright (c) 2015-2026 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -10,7 +10,7 @@ package org.violetlib.aqua;
 
 import javax.swing.*;
 
-import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.*;
 import org.violetlib.jnr.aqua.AquaUIPainter.ButtonWidget;
 
 /**
@@ -23,20 +23,24 @@ import org.violetlib.jnr.aqua.AquaUIPainter.ButtonWidget;
 public class AquaPushButtonBorder extends AquaButtonBorder {
 
     @Override
-    public @NotNull ButtonWidget getButtonWidget(@NotNull AbstractButton b) {
+    public @NotNull ButtonStyleInfo getButtonStyleInfo(@NotNull AbstractButton b) {
         boolean isOnToolbar = AquaUtils.isOnToolbar(b);
+        if (isOnToolbar) {
+            return AquaButtonSupport.getToolbarButtonStyleInfo(b, painter);
+        }
 
-        ButtonWidget preferredWidget = isOnToolbar
-                ? ButtonWidget.BUTTON_TEXTURED_TOOLBAR
-                : ButtonWidget.BUTTON_PUSH;
-        if (isProposedButtonWidgetUsable(b, preferredWidget)) {
-            return preferredWidget;
+        ButtonWidget preferredWidget = ButtonWidget.BUTTON_PUSH;
+        if (AquaButtonSupport.isButtonWidgetUsable(b, preferredWidget, painter)) {
+            return AquaButtonSupport.getButtonStyleInfo(b, preferredWidget);
         }
 
         if (b.getIcon() != null) {
-            return isOnToolbar ? ButtonWidget.BUTTON_TOOLBAR_ITEM : ButtonWidget.BUTTON_GRADIENT;
+            int version = AquaPainting.getVersion();
+            boolean isOld = version < 1500;
+            ButtonWidget w  = isOld ? ButtonWidget.BUTTON_GRADIENT : ButtonWidget.BUTTON_BEVEL_ROUND;
+            return AquaButtonSupport.getButtonStyleInfo(b, w);
         }
 
-        return ButtonWidget.BUTTON_BEVEL_ROUND;
+        return AquaButtonSupport.getButtonStyleInfo(b, ButtonWidget.BUTTON_BEVEL_ROUND);
     }
 }

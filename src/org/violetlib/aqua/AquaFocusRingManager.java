@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2016 Alan Snyder.
+ * Copyright (c) 2015-2026 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -12,7 +12,6 @@ import javax.swing.*;
 import java.awt.*;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
-import java.security.cert.Extension;
 
 /**
  * Implement focus rings drawn over components, not by them.
@@ -77,6 +76,13 @@ public class AquaFocusRingManager {
                 currentOwner = null;
             }
             isInstalled = false;
+        }
+    }
+
+    public void update()
+    {
+        if (currentOwner != null) {
+            painter.update();
         }
     }
 

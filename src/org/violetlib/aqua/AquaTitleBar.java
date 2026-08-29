@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2018 Alan Snyder.
+ * Copyright (c) 2015-2026 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -12,7 +12,7 @@ import java.awt.*;
 import java.util.Arrays;
 import javax.swing.*;
 
-import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.*;
 import org.violetlib.jnr.Insetter;
 import org.violetlib.jnr.LayoutInfo;
 import org.violetlib.jnr.aqua.*;
@@ -100,7 +100,7 @@ public class AquaTitleBar {
 
     protected TitleBarLayout createTitleBarLayout() {
         TitleBarLayout result = new TitleBarLayout();
-        result.buttonAreaLeft = Integer.MAX_VALUE;
+        result.buttonAreaLeft = AquaUtils.INFINITY;
         result.buttonAreaRight = 0;
 
         AquaUILayoutInfo uiLayoutInfo = titleBarPainter.getLayoutInfo();
@@ -129,15 +129,19 @@ public class AquaTitleBar {
         return result;
     }
 
-    public void paint(@NotNull Graphics g) {
-        AquaAppearance appearance = AppearanceManager.ensureAppearance(frame);
+    public void paint(Graphics g) {
+        PaintingContext pc = AppearanceManager.getPaintingContext(frame);
+        paint((Graphics2D) g, pc);
+    }
+
+    public void paint(Graphics2D g, @NotNull PaintingContext pc) {
         boolean isSelected = AquaFocusHandler.isActive(frame) && (frame.isSelected() || widget == AquaUIPainter.TitleBarWidget.UTILITY_WINDOW);
         EffectName effect = isSelected ? EffectName.EFFECT_NONE : EffectName.EFFECT_DISABLED;
-        Color textColor = appearance.getColorForOptionalEffect("text", effect);
+        Color textColor = pc.appearance.getColorForOptionalEffect("text", effect);
         assert textColor != null;
         // paint the background and buttons
         Configuration tg = getConfiguration();
-        AquaUtils.configure(titleBarPainter, frame.getRootPane(), width, titleBarHeight);
+        AquaUtils.configure(titleBarPainter, pc.appearance, frame.getRootPane(), width, titleBarHeight);
         titleBarPainter.getPainter(tg).paint(g, 0, 0);
         // now the title and the icon
         paintTitleContents(g, textColor);
@@ -182,9 +186,9 @@ public class AquaTitleBar {
 
     protected AquaUIPainter.State getState(boolean pressed, boolean rollover, boolean active, boolean enabled) {
         if (!enabled) return AquaUIPainter.State.DISABLED;
+        if (rollover) return AquaUIPainter.State.ROLLOVER;
         if (!active) return AquaUIPainter.State.INACTIVE;
         if (pressed) return AquaUIPainter.State.PRESSED;
-        if (rollover) return AquaUIPainter.State.ROLLOVER;
         return AquaUIPainter.State.ACTIVE;
     }
 

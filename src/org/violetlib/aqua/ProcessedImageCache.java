@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2021 Alan Snyder.
+ * Copyright (c) 2018-2025 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -10,13 +10,10 @@ package org.violetlib.aqua;
 
 import java.awt.*;
 import java.lang.ref.SoftReference;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.WeakHashMap;
+import java.util.*;
 import javax.swing.*;
 
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.*;
 
 /**
  * Softly cache processed images and image analysis results to avoid recomputation.
@@ -29,12 +26,19 @@ public abstract class ProcessedImageCache {
     /**
      * Return the processed version of the specified icon.
      * @param icon The source icon.
-     * @param operator The operation to be performed on the icon image, or null to return the actual icon image.
-     * @return the processed version of {@code icon}, or null if the icon is not valid.
+     * @param operator The operation to be performed on the icon image, or null to return the original icon.
+     * @return the processed version of {@code icon}, or an empty icon if the icon is not valid.
      */
-    public @Nullable Image getProcessedImage(@NotNull Icon icon, @Nullable Object operator) {
+    public @NotNull Icon getProcessedImage(@NotNull Icon icon, @Nullable Object operator) {
+        if (operator == null) {
+            return icon;
+        }
         ImageInfo info = getIconImageInfo(icon);
-        return info != null ? info.getProcessedImage(operator) : null;
+        if (info == null) {
+            return AquaIcon.createIcon(null, icon.getIconWidth(), icon.getIconHeight());
+        }
+        Image replacement = info.getProcessedImage(operator);
+        return AquaIcon.createIcon(replacement, icon.getIconWidth(), icon.getIconHeight());
     }
 
     /**
@@ -66,6 +70,16 @@ public abstract class ProcessedImageCache {
     public boolean isTemplateIcon(@NotNull Icon icon) {
         ImageInfo info = getIconImageInfo(icon);
         return info != null && info.isTemplate;
+    }
+
+    /**
+     * Flush cached images whose processing may be appearance dependent.
+     */
+    public void flushAppearanceDependentImages() {
+        Collection<ImageInfo> ns = imageMap.values();
+        for (ImageInfo n : ns) {
+            n.flushAppearanceDependentImages();
+        }
     }
 
     private @Nullable ImageInfo getIconImageInfo(@NotNull Icon icon) {
@@ -129,6 +143,19 @@ public abstract class ProcessedImageCache {
             }
             processedImageMap.put(operator, new SoftReference<>(result));
             return result;
+        }
+
+        public void flushAppearanceDependentImages()
+        {
+            // only Color processed templates need to be flushed
+            if (isTemplate && processedImageMap != null && !processedImageMap.isEmpty()) {
+                Set<Object> operators = new HashSet<>(processedImageMap.keySet());
+                for (Object operator : operators) {
+                    if (operator instanceof Color) {
+                        processedImageMap.remove(operator);
+                    }
+                }
+            }
         }
     }
 

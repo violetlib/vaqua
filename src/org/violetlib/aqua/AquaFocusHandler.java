@@ -1,5 +1,5 @@
 /*
- * Changes Copyright (c) 2015-2021 Alan Snyder.
+ * Changes Copyright (c) 2015-2025 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -40,7 +40,7 @@ import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import javax.swing.*;
 
-import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.*;
 
 /**
  * This class is used by the text components, AquaEditorPaneUI, AquaTextAreaUI, AquaTextFieldUI and AquaTextPaneUI to
@@ -54,7 +54,13 @@ public class AquaFocusHandler implements FocusListener, PropertyChangeListener {
     // Flag to track when a border needs a repaint due to a window becoming activate/inactive.
     private boolean repaintBorder = false;
 
+    /**
+     * This property is public ONLY to allow other code to monitor the property using a property change listener and to
+     * allow applications to read the value. All updates to the property value should be made using methods of this
+     * class. All access to the value from within other VAqua classes should be made using methods of this class.
+     */
     public static final String FRAME_ACTIVE_PROPERTY = "Frame.active";
+
     public static final String HAS_FOCUS_DELEGATE_KEY = "Component.hasFocusDelegate";
     public static final String QUAQUA_HAS_FOCUS_DELEGATE_KEY = "Quaqua.Component.cellRendererFor";
     public static final String DISPLAY_AS_FOCUSED_KEY = "Aqua.displayAsFocused";
@@ -161,29 +167,45 @@ public class AquaFocusHandler implements FocusListener, PropertyChangeListener {
         }
     }
 
-    public static boolean isActive(JComponent c) {
+    public static boolean isActive(@Nullable JComponent c) {
         if (c == null) return true;
         Object activeObj = c.getClientProperty(AquaFocusHandler.FRAME_ACTIVE_PROPERTY);
         if (Boolean.FALSE.equals(activeObj)) return false;
         return true;
     }
 
-    static final PropertyChangeListener REPAINT_LISTENER = new PropertyChangeListener() {
-        public void propertyChange(PropertyChangeEvent evt) {
-            Object source = evt.getSource();
-            if (source instanceof JComponent) {
-                ((JComponent)source).repaint();
-            }
+    /* package private */ static void setActiveStatus(@NotNull Component c, boolean isActive)
+    {
+        if (c instanceof JComponent) {
+            JComponent jc = (JComponent) c;
+            setActiveStatus(jc, isActive);
         }
-    };
-
-    protected static void install(JComponent c) {
-        c.addPropertyChangeListener(FRAME_ACTIVE_PROPERTY, REPAINT_LISTENER);
     }
 
-    protected static void uninstall(JComponent c) {
-        c.removePropertyChangeListener(FRAME_ACTIVE_PROPERTY, REPAINT_LISTENER);
-    }
+    /* package private */ static void setActiveStatus(@NotNull JComponent jc, boolean isActive)
+    {
+        jc.putClientProperty(AquaFocusHandler.FRAME_ACTIVE_PROPERTY, isActive);
+        AppearanceManager.handleActiveStatusChange(jc, isActive);
+     }
+
+    // The following code could be useful, but it is not currently needed.
+
+//    static final PropertyChangeListener REPAINT_LISTENER = new PropertyChangeListener() {
+//        public void propertyChange(PropertyChangeEvent evt) {
+//            Object source = evt.getSource();
+//            if (source instanceof JComponent) {
+//                ((JComponent)source).repaint();
+//            }
+//        }
+//    };
+//
+//    /* package private */ static void installActiveRepaintListener(JComponent c) {
+//        c.addPropertyChangeListener(FRAME_ACTIVE_PROPERTY, REPAINT_LISTENER);
+//    }
+//
+//    /* package private */ static void uninstallActiveRepaintListener(JComponent c) {
+//        c.removePropertyChangeListener(FRAME_ACTIVE_PROPERTY, REPAINT_LISTENER);
+//    }
 
     // Based on SwingUtilities2.compositeRequestFocus. It returns the component that compositeRequestFocus()
     // would request focus on.

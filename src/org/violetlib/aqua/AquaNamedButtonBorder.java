@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2020 Alan Snyder.
+ * Copyright (c) 2015-2026 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -22,12 +22,12 @@ import org.violetlib.jnr.aqua.ButtonLayoutConfiguration;
  */
 public class AquaNamedButtonBorder extends AquaButtonBorder {
 
-    protected final @NotNull ButtonWidget widget;
+    protected final @NotNull ButtonWidget initialWidget;
     private final @NotNull AquaButtonExtendedTypes.WidgetInfo info;
     private final boolean allowsContent;
 
     public AquaNamedButtonBorder(@NotNull ButtonWidget w, @NotNull AquaButtonExtendedTypes.WidgetInfo info) {
-        this.widget = w;
+        this.initialWidget = w;
         this.info = info;
         this.allowsContent = determineAllowsContent(w);
     }
@@ -43,12 +43,23 @@ public class AquaNamedButtonBorder extends AquaButtonBorder {
     }
 
     @Override
-    public @NotNull ButtonWidget getButtonWidget(@NotNull AbstractButton b) {
-        return widget;
+    public boolean isToolbarStyle(@NotNull AbstractButton b) {
+        // This method is used in the selection of the button widget, so it must use the client property.
+        Object o = b.getClientProperty(AquaButtonUI.BUTTON_TYPE);
+        if (o instanceof String) {
+            String s = (String) o;
+            return s.contains("toolbar") || s.contains("Toolbar");
+        }
+        return false;
     }
 
     @Override
-    protected @NotNull AquaButtonExtendedTypes.WidgetInfo getWidgetInfo(@NotNull AbstractButton b) {
+    public @NotNull ButtonStyleInfo getButtonStyleInfo(@NotNull AbstractButton b) {
+        return AquaButtonSupport.getButtonStyleInfo(b, initialWidget);
+    }
+
+    @Override
+    protected @NotNull AquaButtonExtendedTypes.WidgetInfo getWidgetInfoForLayout(@NotNull AbstractButton b) {
         return info;
     }
 

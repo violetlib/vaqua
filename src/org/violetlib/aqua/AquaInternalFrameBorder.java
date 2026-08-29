@@ -1,5 +1,5 @@
 /*
- * Changes copyright (c) 2015-2018 Alan Snyder.
+ * Changes copyright (c) 2015-2026 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -35,15 +35,14 @@ package org.violetlib.aqua;
 
 import java.awt.*;
 import javax.swing.*;
-import javax.swing.border.Border;
-import javax.swing.plaf.UIResource;
 
+import org.jetbrains.annotations.*;
 import org.violetlib.jnr.aqua.AquaUIPainter.TitleBarWidget;
 
 /**
  * The primary responsibility of this class is to know the title bar bounds relative to this border.
  */
-public class AquaInternalFrameBorder implements Border, UIResource {
+public class AquaInternalFrameBorder extends AquaBorder {
     public static final int kCloseButton = 0;
     public static final int kIconButton = 1;
     public static final int kGrowButton = 2;
@@ -75,13 +74,12 @@ public class AquaInternalFrameBorder implements Border, UIResource {
         return new Insets(titleBarHeight, 0, 0, 0);
     }
 
-    // Border interface
     @Override
-    public void paintBorder(Component c, Graphics g, int x, int y, int w, int h) {
+    protected void paint(@NotNull JComponent c, @NotNull Graphics2D g, int x, int y, int width, int height) {
         // For expanded InternalFrames, the frame & component are the same object
         titleBarX = x;
         titleBarY = y;
-        titleBar.setWidth(w);
+        titleBar.setWidth(width);
         g.translate(x, y);
         titleBar.paint(g);
         g.translate(-x, -y);

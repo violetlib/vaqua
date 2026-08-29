@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2005-2013 Werner Randelshofer, Switzerland.
- * Copyright (c) 2018 Alan Snyder
+ * Copyright (c) 2018-2026 Alan Snyder
  * You may not use, copy or modify this file, except in compliance with the
  * accompanying license terms.
  */
@@ -16,8 +16,9 @@ import javax.swing.plaf.UIResource;
 import javax.swing.tree.TreeModel;
 import javax.swing.tree.TreePath;
 
+import org.jetbrains.annotations.*;
 import org.violetlib.aqua.AppearanceManager;
-import org.violetlib.aqua.AquaAppearance;
+import org.violetlib.aqua.PaintingContext;
 
 /**
  * BasicBrowserUI.
@@ -48,7 +49,7 @@ public class BasicBrowserUI extends BrowserUI {
 
     protected void installDefaults() {
         if (browser.getColumnCellRenderer() == null ||
-                (browser.getColumnCellRenderer() instanceof UIResource)) {
+          (browser.getColumnCellRenderer() instanceof UIResource)) {
             browser.setColumnCellRenderer(createCellRenderer());
         }
         TransferHandler th = browser.getTransferHandler();
@@ -72,14 +73,22 @@ public class BasicBrowserUI extends BrowserUI {
 
     @Override
     public void update(Graphics g, JComponent c) {
-        AquaAppearance appearance = AppearanceManager.ensureAppearance(c);
-         if (c.isOpaque()) {
-             Color background = appearance.getColor("controlBackground");
-             g.setColor(background);
-             g.fillRect(0, 0, c.getWidth(),c.getHeight());
-         }
-         paint(g, c);
-     }
+        paint(g, c);
+    }
+
+    @Override
+    public void paint(Graphics g, JComponent c) {
+        AppearanceManager.withContext(g, c, this::paint);
+    }
+
+    public void paint(Graphics2D g, JComponent c, @NotNull PaintingContext pc) {
+        if (c.isOpaque()) {
+            Color background = pc.appearance.getColor("controlBackground");
+            g.setColor(background);
+            g.fillRect(0, 0, c.getWidth(),c.getHeight());
+        }
+        super.paint(g, c);
+    }
 
     protected ListCellRenderer createCellRenderer() {
         return new DefaultColumnCellRenderer.UIResource(browser);
