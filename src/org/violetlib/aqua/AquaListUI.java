@@ -614,7 +614,7 @@ public class AquaListUI extends BasicListUI implements AquaComponentUI, AquaView
             if ("inset".equals(value)) {
                 return true;
             }
-           return isRoundedScrollable || isSideBar() || isVibrantMenu;
+            return isRoundedScrollable || isSideBar() || isVibrantMenu;
         }
         return false;
     }
@@ -791,39 +791,71 @@ public class AquaListUI extends BasicListUI implements AquaComponentUI, AquaView
 
         if (isStriped && list.getModel() != null) {
             Dimension vs = list.getSize();
-            Insets s = list.getInsets();
-            int rh = list.getFixedCellHeight();
-            int n = list.getModel().getSize();
-            if (rh <= 0) {
-                rh = (n == 0) ? 17 : getCellBounds(list, 0, 0).height;
-            }
-            int maximumVisibleRowCount = (int) Math.ceil(vs.getHeight() / rh);
-            int row = 0;
-            int y = s.top;
+            int rowCount = list.getModel().getSize();
             ListSelectionModel selectionModel = list.getSelectionModel();
+            int extraRowHeight = getExtraRowHeight();
+            Insets insets = list.getInsets();
+            int extraRowLeft = rowCount > 0 ? list.getCellBounds(0, 0).x : insets.left;
+            int extraRowWidth = rowCount > 0 ? list.getCellBounds(0, 0).width : vs.width - insets.left - insets.right;
 
-            while (row < maximumVisibleRowCount) {
-                boolean isSelected = row < n && selectionModel.isSelectedIndex(row);
-                colors.configureForRow(row, isSelected && !isInset());
-                Color background = colors.getBackground(appearanceContext);
-                g.setColor(background);
-                if (isInset()) {
-                    if (row % 2 == 1) {
-                        SelectionHighlightDescription d = getStripeDescription();
-                        int cx = d.left;
-                        int cy = y + d.top;
-                        int cw = vs.width - (d.left + d.right);
-                        int ch = rh - (d.top + d.bottom);
-                        int r = d.cornerRadius;
-                        AquaUtils.paintInsetStripedRow(g, cx, cy, cw, ch, r);
-                    }
-                } else {
-                    g.fillRect(0, y, vs.width, rh);
+            int lastY = 0;
+            int row = 0;
+            while (row < rowCount) {
+                boolean isSelected = selectionModel.isSelectedIndex(row);
+                Rectangle bounds = list.getCellBounds(row, row);
+                if (bounds != null) {
+                    paintStripe(g, appearanceContext, row, isSelected, bounds);
+                    lastY = bounds.y + bounds.height;
                 }
                 row++;
-                y += rh;
+            }
+
+            // fill extra space with stripes
+            while (lastY < vs.height) {
+                Rectangle bounds = new Rectangle(extraRowLeft, lastY, extraRowWidth, extraRowHeight);
+                paintStripe(g, appearanceContext, row, false, bounds);
+                row++;
+                lastY += extraRowHeight;
             }
         }
+    }
+
+    private void paintStripe(@NotNull Graphics2D g,
+                             @NotNull AppearanceContext appearanceContext,
+                             int row,
+                             boolean isSelected,
+                             @NotNull Rectangle bounds)
+    {
+        colors.configureForRow(row, isSelected && !isInset());
+        Color background = colors.getBackground(appearanceContext);
+        g.setColor(background);
+        Dimension vs = list.getSize();
+        if (isInset()) {
+            if (row % 2 == 1) {
+                SelectionHighlightDescription d = getStripeDescription();
+                int cx = d.left;
+                int cy = bounds.y + d.top;
+                int cw = vs.width - (d.left + d.right);
+                int ch = bounds.height - (d.top + d.bottom);
+                int r = d.cornerRadius;
+                AquaUtils.paintInsetStripedRow(g, cx, cy, cw, ch, r);
+            }
+        } else {
+            g.fillRect(0, bounds.y, vs.width, bounds.height);
+        }
+    }
+
+    private int getExtraRowHeight()
+    {
+        int rh = list.getFixedCellHeight();
+        if (rh > 0) {
+            return rh;
+        }
+        int rowCount = list.getModel().getSize();
+        if (rowCount > 0) {
+            return getCellBounds(list, 0, 0).height;
+        }
+        return 17;
     }
 
     @Override
