@@ -223,7 +223,8 @@ public class AquaMarginView extends View {
         // If there is room for the text and one margin, then allocate the margin on the preferred side.
 
         if (textWidth + margin <= availableWidth) {
-            boolean useLeft = horizontalAlignment == LEFT || horizontalAlignment == CENTER && isLTR;
+            boolean useLeft = horizontalAlignment == LEFT
+              || isLTR && (horizontalAlignment == LEADING || horizontalAlignment == CENTER);
             if (useLeft) {
                 tempRect.x += margin;
             }
