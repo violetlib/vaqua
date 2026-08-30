@@ -217,7 +217,7 @@ public class AquaSheetSupport {
             rp.putClientProperty(AquaVibrantSupport.BACKGROUND_STYLE_KEY, "vibrantSheet");
             String windowStyle = AquaRootPaneUI.getWindowStyleKey(rp);
             if (AquaPainting.getVersion() >= 1013) {
-                if (!"undecorated".equals(windowStyle)) {
+                if (isDecorated(w)) {
                     if (!sheetWindowStyle.equals(windowStyle)) {
                         windowStyleToRestore = windowStyle;
                         debug("Installing the window style for a sheet: " + sheetWindowStyle);
@@ -268,6 +268,22 @@ public class AquaSheetSupport {
         }
 
         w.setVisible(true); // cause the lightweight components to be painted -- this method blocks on a modal dialog
+    }
+
+    private static boolean isDecorated(@NotNull Window w)
+    {
+        if (AquaUtils.isDecorated(w)) {
+            // Check for the case that the window is marked to be undecorated, but the change has not yet happened.
+            JRootPane rp = AquaUtils.getRootPane(w);
+            if (rp != null) {
+                String windowStyle = AquaRootPaneUI.getWindowStyleKey(rp);
+                if ("undecorated".equals(windowStyle)) {
+                    return false;
+                }
+            }
+            return true;
+        }
+        return false;
     }
 
     private static void prepaintSheet(@NotNull Window w, @NotNull JRootPane rp) {
