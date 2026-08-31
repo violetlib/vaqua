@@ -61,6 +61,17 @@ public class AquaButtonIcon implements Icon, UIResource, ImageObserver {
         return basicIcon.getIconHeight();
     }
 
+    public @NotNull Icon getProcessedTemplate(@NotNull Color color)
+    {
+        if (isTemplate) {
+            Icon icon = AquaImageFactory.getProcessedImage(basicIcon, color);
+            PaintingContext pc = AppearanceManager.getPaintingContext(null);
+            Object operator = operatorSupplier.getCurrentImageProcessingOperator(b, isTemplate, pc);
+            return AquaImageFactory.getProcessedImage(icon, operator);
+        }
+        return this;
+    }
+
     @Override
     public void paintIcon(@Nullable Component c, @NotNull Graphics g, int x, int y) {
         PaintingContext pc = AppearanceManager.getPaintingContext(c);

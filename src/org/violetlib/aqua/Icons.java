@@ -71,8 +71,14 @@ public class Icons
     }
 
     public static @NotNull Icon processTemplateIcon(@NotNull Icon icon, @Nullable Color color) {
-        if (color != null && !(icon instanceof AquaButtonIcon) && AquaImageFactory.isTemplateIcon(icon)) {
-            return AquaImageFactory.getProcessedImage(icon, color);
+        if (color != null) {
+            if (icon instanceof AquaButtonIcon) {
+                AquaButtonIcon aquaButtonIcon = (AquaButtonIcon) icon;
+                return aquaButtonIcon.getProcessedTemplate(color);
+            }
+            if (AquaImageFactory.isTemplateIcon(icon)) {
+                return AquaImageFactory.getProcessedImage(icon, color);
+            }
         }
         return icon;
     }
