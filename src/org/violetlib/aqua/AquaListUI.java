@@ -139,6 +139,7 @@ public class AquaListUI extends BasicListUI implements AquaComponentUI, AquaView
         colors = determineColors();  // depends upon isStriped and isSideBar
         sidebarContainerSupport.update();
         updateVibrantEffects();
+        configureDropTargetListener();
     }
 
     @Override
@@ -301,6 +302,14 @@ public class AquaListUI extends BasicListUI implements AquaComponentUI, AquaView
                     if (hasSelection) {
                         list.repaint();
                     }
+                    try {
+                        super.propertyChange(e);
+                    } catch (NullPointerException ex) {
+                        // Apparently at one time an NPE could be thrown here. I am not able to reproduce.
+                        // The fix for this NPE (not calling super) was incorrect.
+                        Utils.logError("NPE from change to dropLocation", ex);
+                        ex.printStackTrace();
+                    }
                     return;
                 }
                 super.propertyChange(e);
@@ -310,7 +319,10 @@ public class AquaListUI extends BasicListUI implements AquaComponentUI, AquaView
 
     private void configureDropTargetListener() {
         if (knownDropTarget != null) {
-            knownDropTarget.removeDropTargetListener(dropTargetListener);
+            try {
+                knownDropTarget.removeDropTargetListener(dropTargetListener);
+            } catch (IllegalArgumentException ignore) {
+            }
             knownDropTarget = null;
         }
 
@@ -323,6 +335,7 @@ public class AquaListUI extends BasicListUI implements AquaComponentUI, AquaView
             try {
                 knownDropTarget.addDropTargetListener(dropTargetListener);
             } catch (TooManyListenersException ignore) {
+                knownDropTarget = null;
             }
         }
     }
@@ -679,9 +692,14 @@ public class AquaListUI extends BasicListUI implements AquaComponentUI, AquaView
 
         AquaUIPainter.State state = getState();
         appearanceContext = new AppearanceContext(pc.appearance, state, false, false);
+
         colors.configureForContainer();
+
+        inhibitPropertyChangeListener = true;
         AquaColors.installColors(list, appearanceContext, colors);
         updateOpaque();
+
+        inhibitPropertyChangeListener = false;
 
         hasSelection = !list.getSelectionModel().isSelectionEmpty();
         isSelectionMuted = false;
@@ -1027,7 +1045,9 @@ public class AquaListUI extends BasicListUI implements AquaComponentUI, AquaView
             g.setColor(background);
             if (!AquaColors.isPriority(list.getSelectionBackground())) {
                 Color c = isInset() && isVibrant() ? AquaColors.CLEAR : background;
+                inhibitPropertyChangeListener = true;
                 list.setSelectionBackground(c);
+                inhibitPropertyChangeListener = false;
             }
 
             if (isInset()) {
