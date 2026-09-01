@@ -2082,13 +2082,27 @@ JNIEXPORT jint JNICALL Java_org_violetlib_aqua_AquaUtils_nativeSetTitleBarProper
     return result;
 }
 
+static void invokeResponder(jobject jcallback, NSInteger response)
+{
+    runFromNativeThread(^(JNIEnv *env) {
+        jclass cl = (*env)->GetObjectClass(env, jcallback);
+        jmethodID m = (*env)->GetMethodID(env, cl, "acceptResponse", "(I)V");
+        if (m != NULL) {
+            (*env)->CallVoidMethod(env, jcallback, m, response);
+        } else {
+            OSLog(@"Unable to invoke callback -- acceptResponse method not found");
+        }
+        (*env)->DeleteGlobalRef(env, jcallback);
+    });
+}
+
 /*
  * Class:     org_violetlib_aqua_AquaSheetSupport
  * Method:    nativeDisplayAsSheet
  * Signature: (JJ)I
  */
 JNIEXPORT jint JNICALL Java_org_violetlib_aqua_AquaSheetSupport_nativeDisplayAsSheet
-    (JNIEnv *env, jclass cl, jlong wptr, jlong owner_wptr)
+    (JNIEnv *env, jclass cl, jlong wptr, jlong owner_wptr, jobject jcallback)
 {
     jint result = -1;
 
@@ -2096,9 +2110,10 @@ JNIEXPORT jint JNICALL Java_org_violetlib_aqua_AquaSheetSupport_nativeDisplayAsS
 
     NSWindow *w = (NSWindow *) wptr;
     NSWindow *no = (NSWindow *) owner_wptr;
+    jobject callback = (*env)->NewGlobalRef(env, jcallback);
 
-    runOnMainThread(^() {
-        [no beginSheet:w completionHandler:^(NSModalResponse r){OSLog(@"Modal sheet session terminated");}];
+    APPKIT_EXEC_LATER(^() {
+        [no beginSheet:w completionHandler:^(NSModalResponse r){invokeResponder(callback,r);}];
     });
     result = 0;
 

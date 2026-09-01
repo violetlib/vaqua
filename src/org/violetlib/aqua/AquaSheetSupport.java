@@ -259,7 +259,11 @@ public class AquaSheetSupport {
             Utils.logDebug("Injected failure to display sheet");
             result = -1;
         } else {
-            result = (int) execute(w, ptr -> displayAsSheet(ptr, owner));
+            Responder r = rc -> {
+                Utils.logDebug("Sheet session completed: " + rc);
+                closer.completed();
+            };
+            result = (int) execute(w, ptr -> displayAsSheet(ptr, owner, r));
         }
 
         if (result != 0) {
@@ -297,8 +301,8 @@ public class AquaSheetSupport {
         AquaUtils.syncAWTView(w);
     }
 
-    private static long displayAsSheet(long wptr, Window owner) {
-        return execute(owner, owner_wptr -> nativeDisplayAsSheet(wptr, owner_wptr));
+    private static long displayAsSheet(long wptr, @NotNull Window owner, @NotNull Responder r) {
+        return execute(owner, owner_wptr -> nativeDisplayAsSheet(wptr, owner_wptr, r));
     }
 
     /**
@@ -404,7 +408,7 @@ public class AquaSheetSupport {
             completed();
         }
 
-        private void completed() {
+        public void completed() {
             if (!hasClosed) {
                 hasClosed = true;
                 dispose();
@@ -448,6 +452,11 @@ public class AquaSheetSupport {
         }
     }
 
-    private static native int nativeDisplayAsSheet(long wptr, long owner_wptr);
+    interface Responder
+    {
+        void acceptResponse(int r);
+    }
+
+    private static native int nativeDisplayAsSheet(long wptr, long owner_wptr, @NotNull Responder r);
     private static native int nativeEndSheetSession(long wptr, long owner_wptr);
 }
