@@ -235,7 +235,7 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
      * Display a window as a sheet, if possible. A sheet is dismissed when the window is hidden or disposed.
      * <p>
      * The behavior of a sheet is similar to a document modal dialog in that it prevents user interaction with the
-     * existing windows in the hierarchy of the owner. Unlike {@code setVisible(true)} on a model dialog, however, this
+     * existing windows in the hierarchy of the owner. Unlike {@code setVisible(true)} on a modal dialog, however, this
      * method does not block waiting for the sheet to be dismissed.
      *
      * @param w the window. The window must have a visible owner. The window must not be visible. If the window is a

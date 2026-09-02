@@ -483,7 +483,14 @@ public class AquaTableUI extends BasicTableUI
             int verticalMargin = isInset ? insetVerticalMargin : 0;
             table.putClientProperty(INSET_VIEW_MARGIN_KEY, margin);
             table.putClientProperty(INSET_VIEW_VERTICAL_MARGIN_KEY, verticalMargin);
-            table.setRowMargin(isInset ? 0 : 1);
+
+            // If row margin > 1 is the reason why the inset style is not being used, then it should not be changed.
+            if (isInset) {
+                table.setRowMargin(0);
+            } else if (table.getRowMargin() == 0) {
+                table.setRowMargin(1);
+            }
+
             table.revalidate();
             table.repaint();
         }
