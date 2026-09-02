@@ -269,6 +269,8 @@ public class AquaComboBoxUI extends BasicComboBoxUI
                 comboBox.repaint();
             } else if (name.equals("renderer")) {
                 updateFromRenderer();
+            } else if (name.equals("componentOrientation")) {
+                configure(null);
             }
         }
     }
