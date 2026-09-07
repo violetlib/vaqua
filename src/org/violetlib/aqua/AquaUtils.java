@@ -906,6 +906,17 @@ final public class AquaUtils {
         return false;
     }
 
+    public static boolean isPriority(@Nullable Object o) {
+        if (o instanceof Color) {
+            return AquaColors.isPriority((Color) o);
+        }
+        return o != null && !(o instanceof UIResource);
+    }
+
+    public static boolean isUIDefault(@Nullable Object o) {
+        return o instanceof UIResource;
+    }
+
     /**
      * Determine the visible bounds of the specified component in the coordinate space of the AWT content view.
      * The bounds are normally the bounds of the component. However, if the component is within a viewport view, then

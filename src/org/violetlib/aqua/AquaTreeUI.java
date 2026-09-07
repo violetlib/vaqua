@@ -48,7 +48,6 @@ import javax.swing.event.TreeModelListener;
 import javax.swing.plaf.ColorUIResource;
 import javax.swing.plaf.ComponentUI;
 import javax.swing.plaf.FontUIResource;
-import javax.swing.plaf.UIResource;
 import javax.swing.plaf.basic.BasicTreeUI;
 import javax.swing.tree.*;
 
@@ -60,7 +59,6 @@ import org.violetlib.jnr.aqua.AquaUIPainter.ButtonWidget;
 import org.violetlib.jnr.aqua.AquaUIPainter.State;
 import org.violetlib.jnr.aqua.AquaUIPainter.UILayoutDirection;
 
-import static org.violetlib.aqua.AquaImageFactory.LIGHTEN_FOR_DISABLED;
 import static org.violetlib.aqua.AquaLookAndFeel.NOTHING_BORDER;
 import static org.violetlib.aqua.OSXSystemProperties.macOS11;
 import static org.violetlib.jnr.aqua.AquaUIPainter.State.*;
@@ -307,7 +305,7 @@ public class AquaTreeUI extends BasicTreeUI
 
     protected AquaUIPainter.State getState() {
         if (!AquaFocusHandler.isActive(tree)) {
-            return INACTIVE;
+            return tree.isEnabled() ? INACTIVE : DISABLED_INACTIVE;
         }
         return tree.isEnabled() ? (shouldDisplayAsFocused() ? ACTIVE_DEFAULT : ACTIVE) : DISABLED;
     }
@@ -1362,9 +1360,12 @@ public class AquaTreeUI extends BasicTreeUI
             oldCellRendererIcon = label.getIcon();
             oldCellRendererDisabledIcon = label.getDisabledIcon();
 
+            boolean isEnabled = tree.isEnabled();
+
             Color fc = appearanceContext != null ? colors.getForeground(appearanceContext) : null;
             Font f = null;
-            Icon icon = oldCellRendererIcon;
+            Icon oldIcon = isEnabled ? oldCellRendererIcon : oldCellRendererDisabledIcon;
+            Icon icon = oldIcon;
 
             if (isSideBar()) {
                 if (isCategory) {
@@ -1382,18 +1383,18 @@ public class AquaTreeUI extends BasicTreeUI
 
             if (!isLayout) {
                 if (icon != null) {
-                    AquaLabelUI ui = AquaUtils.getUI(label, AquaLabelUI.class);
-                    if (ui == null) {
-                        // AquaLabelUI knows how to handle template images
-                        icon = convertIcon(isCategory, isSelected, icon);
-                    }
+                    icon = convertIcon(isCategory, isSelected, icon, fc);
                 }
-                if (icon != oldCellRendererIcon) {
-                    label.setIcon(icon);
+                if (icon != oldIcon) {
+                    if (isEnabled) {
+                        label.setIcon(icon);
+                    } else {
+                        label.setDisabledIcon(icon);
+                    }
                 }
                 if (fc != null) {
                     Color existingForeground = label.getForeground();
-                    if (existingForeground == null || existingForeground instanceof UIResource) {
+                    if (!AquaColors.isPriority(existingForeground)) {
                         label.setForeground(fc);
                     }
                 }
@@ -1404,7 +1405,7 @@ public class AquaTreeUI extends BasicTreeUI
             }
 
             Border existing = label.getBorder();
-            if (existing instanceof UIResource && existing != NOTHING_BORDER) {
+            if (AquaUtils.isUIDefault(existing) && existing != NOTHING_BORDER) {
                 label.setBorder(NOTHING_BORDER);
             }
         }
@@ -1424,49 +1425,74 @@ public class AquaTreeUI extends BasicTreeUI
         // No icon is painted for a category header in a sidebar tree.
         boolean isCategory = isCategory(path);
         boolean isSelected = tree.isPathSelected(path);
-        icon = convertIcon(isCategory, isSelected, icon);
+        Color fc = appearanceContext != null ? colors.getForeground(appearanceContext) : null;
+        icon = convertIcon(isCategory, isSelected, icon, fc);
         if (icon != null) {
             icon.paintIcon(tree, g, x, y);
         }
     }
 
-    protected @Nullable Icon convertIcon(boolean isCategory, boolean isSelected, @NotNull Icon icon) {
+    protected @Nullable Icon convertIcon(boolean isCategory, boolean isSelected, @NotNull Icon icon, @Nullable Color fc) {
         // If the icon is a template icon, convert it to an image icon using an appropriate color.
         // No icon should be painted for a category header in a sidebar tree.
 
         if (isCategory && isSideBar()) {
             return null;
         }
-
         if (AquaImageFactory.isTemplateIcon(icon)) {
-            Object operator = getOperatorForTemplateIcon(isSelected);
-            if (operator != null) {
-                return AquaImageFactory.getProcessedImage(icon, operator);
-            }
+            Color c = getColorForTemplateIcon(isSelected, fc);
+            return AquaImageFactory.getProcessedImage(icon, c);
         }
         return icon;
     }
 
-    protected @Nullable Object getOperatorForTemplateIcon(boolean isSelected) {
-        State state = appearanceContext != null
-          ? appearanceContext.getState()
-          : AquaFocusHandler.isActive(tree) ? ACTIVE : INACTIVE;
-        AquaAppearance appearance = appearanceContext != null ? appearanceContext.getAppearance() : null;
-        if (isSideBar()) {
-            if (appearance != null) {
-                String colorName = getSidebarIconColorName(isSelected, state);
-                return appearance.getColor(colorName);
-            } else {
-                return AquaFocusHandler.isActive(tree) ? null : LIGHTEN_FOR_DISABLED;
-            }
-        } else {
-            // For best results over a selection background, use the corresponding text color
-            if (isSelected && appearanceContext != null && AquaFocusHandler.isActive(tree)) {
-                AppearanceContext ac = appearanceContext.withSelected(true);
-                return colors.getForeground(ac);
-            }
-            return appearance != null ? appearance.getColor("treeIcon") : null;
+    protected @NotNull Color getColorForTemplateIcon(boolean isSelected, @Nullable Color fc) {
+        if (AquaColors.isPriority(fc)) {
+            return fc;
         }
+        if (appearanceContext != null) {
+            Color c = getSpecialColorForTemplateIcon(isSelected, appearanceContext);
+            if (c != null) {
+                return c;
+            }
+            // If no icon color is defined, use the foreground color
+            return colors.getForeground(appearanceContext);
+        }
+        return fc != null ? fc : Color.GRAY;
+    }
+
+    private @Nullable Color getSpecialColorForTemplateIcon(boolean isSelected, @NotNull AppearanceContext ac) {
+        if (isSideBar()) {
+            String colorName = getSidebarIconColorName(isSelected, ac.getState());
+            return ac.getAppearance().getColor(colorName);
+        } else {
+            String colorName = getIconColorName(isSelected, ac.getState());
+            return ac.getAppearance().getColor(colorName);
+        }
+    }
+
+    private @NotNull String getIconColorName(boolean isSelected, @NotNull State state)
+    {
+        if (isSelected) {
+            if (state == ACTIVE_DEFAULT) {
+                return "selectedTreeIcon_focused";
+            }
+            if (state == ACTIVE) {
+                return "selectedTreeIcon";
+            }
+            if (state == DISABLED || state == DISABLED_INACTIVE) {
+                return "selectedTreeIcon_disabled";
+            }
+            return "selectedTreeIcon_inactive";
+        } else {
+            if (state == ACTIVE_DEFAULT || state == ACTIVE) {
+                return "treeIcon";
+            }
+            if (state == DISABLED || state == DISABLED_INACTIVE) {
+                return "treeIcon_disabled";
+            }
+        }
+        return "treeIcon_inactive";
     }
 
     private @NotNull String getSidebarIconColorName(boolean isSelected, @NotNull State state)
@@ -1478,9 +1504,16 @@ public class AquaTreeUI extends BasicTreeUI
             if (state == ACTIVE) {
                 return "selectedSidebarIcon";
             }
+            if (state == DISABLED || state == DISABLED_INACTIVE) {
+                return "selectedSidebarIcon_disabled";
+            }
+            return "selectedSidebarIcon_inactive";
         } else {
             if (state == ACTIVE_DEFAULT || state == ACTIVE) {
                 return "sidebarIcon";
+            }
+            if (state == DISABLED || state == DISABLED_INACTIVE) {
+                return "sidebarIcon_disabled";
             }
         }
         return "sidebarIcon_inactive";
@@ -1682,11 +1715,12 @@ public class AquaTreeUI extends BasicTreeUI
 
         Point center = getExpandControlCenter(path);
         if (center != null) {
-            drawExpandControl(g, path, isExpanded, center);
+            drawExpandControl(g, row, path, isExpanded, center);
         }
     }
 
     protected void drawExpandControl(@NotNull Graphics g,
+                                     int row,
                                      @NotNull TreePath path,
                                      boolean isExpanded,
                                      @NotNull Point center) {
@@ -1694,22 +1728,69 @@ public class AquaTreeUI extends BasicTreeUI
         if (!fIsInBounds && state == PRESSED) {
             state = ACTIVE;
         }
+        if (state == ACTIVE && (!AquaFocusHandler.isActive(tree) || !AquaFocusHandler.hasFocus(tree))) {
+            state = INACTIVE;
+        }
+        Color c = getExpandControlColor(row, state);
         boolean isLTR = AquaUtils.isLeftToRight(tree);
-        Configuration tg = getDisclosureTriangleConfiguration(state, isExpanded, isLTR);
-        LayoutInfo layoutInfo = painter.getLayoutInfo().getLayoutInfo((LayoutConfiguration) tg);
-        int width = (int) Math.ceil(layoutInfo.getFixedVisualWidth());
-        int height = (int) Math.ceil(layoutInfo.getFixedVisualHeight());
-        if (width == 0) {
-            width = 20;
+        Icon icon = AquaImageFactory.getTreeExpandIcon(g, isExpanded, isLTR, c);
+        if (icon != null) {
+            int width = icon.getIconWidth();
+            int height = icon.getIconHeight();
+            int x = center.x - width / 2;
+            int y = center.y - height / 2;
+            icon.paintIcon(tree, g, x, y);
+        } else {
+            Configuration tg = getDisclosureTriangleConfiguration(state, isExpanded, isLTR);
+            LayoutInfo layoutInfo = painter.getLayoutInfo().getLayoutInfo((LayoutConfiguration) tg);
+            int width = (int) Math.ceil(layoutInfo.getFixedVisualWidth());
+            int height = (int) Math.ceil(layoutInfo.getFixedVisualHeight());
+            if (width == 0) {
+                width = 20;
+            }
+            if (height == 0) {
+                height = width;
+            }
+            int x = center.x - width / 2;
+            int y = center.y - height / 2;
+            PaintingContext pc = AppearanceManager.getPaintingContext(tree);
+            AquaUtils.configure(painter, pc.appearance, tree, width, height);
+            painter.getPainter(tg).paint(g, x, y);
         }
-        if (height == 0) {
-            height = width;
+    }
+
+    private @NotNull Color getExpandControlColor(int row, @NotNull State state) {
+        boolean usingSelectedBackground = shouldPaintSelection && !isSelectionMuted && tree.isRowSelected(row);
+        boolean isSideBar = isSideBar();
+        String colorName = getExpandControlColorName(state, usingSelectedBackground, isSideBar);
+        if (appearanceContext != null) {
+            AquaAppearance appearance = appearanceContext.getAppearance();
+            Color c = appearance.getColor(colorName);
+            if (c != null) {
+                return c;
+            }
         }
-        int x = center.x - width / 2;
-        int y = center.y - height / 2;
-        PaintingContext pc = AppearanceManager.getPaintingContext(tree);
-        AquaUtils.configure(painter, pc.appearance, tree, width, height);
-        painter.getPainter(tg).paint(g, x, y);
+        return Color.GRAY;
+    }
+
+    private @NotNull String getExpandControlColorName(@NotNull State state, boolean isSelected, boolean isSideBar)
+    {
+        String basic = isSideBar ? "SidebarExpandIcon" : "ExpandIcon";
+        String basic1 = isSideBar ? "sidebarExpandIcon" : "expandIcon";
+
+        if (isSelected) {
+            if (state == ACTIVE_DEFAULT) {
+                return "selected" + basic + "_focused";
+            }
+            if (state == ACTIVE) {
+                return "selected" + basic;
+            }
+        } else {
+            if (state == ACTIVE_DEFAULT || state == ACTIVE) {
+                return basic1;
+            }
+        }
+        return basic1 + "_inactive";
     }
 
     private @NotNull Dimension getExpansionControlSize() {
@@ -1794,21 +1875,9 @@ public class AquaTreeUI extends BasicTreeUI
         x = findCenteredX(x, icon.getIconWidth());
         y = y - icon.getIconHeight() / 2;
 
-        if (icon instanceof ImageIcon) {
-            ImageIcon ii = (ImageIcon) icon;
-            Image image = ii.getImage();
-            if (AquaImageFactory.isTemplateImage(image)) {
-                Color iconColor = getIconColor();
-                Image im = AquaImageFactory.getProcessedImage(image, iconColor);
-                boolean isComplete = g.drawImage(im, x, y, c);
-                if (!isComplete) {
-                    new ImageIcon(im);
-                    if (!g.drawImage(im, x, y, c)) {
-                        Utils.logError("Button icon not drawn!");
-                    }
-                }
-                return;
-            }
+        if (AquaImageFactory.isTemplateIcon(icon)) {
+            Color iconColor = getIconColor();
+            icon = AquaImageFactory.getProcessedImage(icon, iconColor);
         }
 
         icon.paintIcon(c, g, x, y);
@@ -1848,7 +1917,7 @@ public class AquaTreeUI extends BasicTreeUI
         if (AquaUtils.isLeftToRight(tree)) {
             return icon;
         }
-        if (!(icon instanceof UIResource)) {
+        if (!AquaUtils.isUIDefault(icon)) {
             return icon;
         }
         return UIManager.getIcon("Tree.rightToLeftCollapsedIcon");

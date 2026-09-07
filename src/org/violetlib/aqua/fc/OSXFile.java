@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2009-2013 Werner Randelshofer, Switzerland.
- * Copyright (c) 2014-2021 Alan Snyder.
+ * Copyright (c) 2014-2026 Alan Snyder.
  * You may not use, copy or modify this file, except in compliance with the accompanying license terms.
  */
 
@@ -48,8 +48,6 @@ public class OSXFile {
     private static final RecyclableFileIcon fileIcon;
     private static final RecyclableFileIcon networkIcon;
 
-    private static final RecyclableSidebarIcon genericFileSidebarIcon;
-
     private static class RecyclableFileIcon extends RecyclableSingleton<ImageIconUIResource> {
 
         private final @NotNull File file;
@@ -82,24 +80,6 @@ public class OSXFile {
         }
     }
 
-    private static class RecyclableSidebarIcon extends RecyclableSingleton<ImageIcon> {
-
-        private final @NotNull File file;
-
-        public RecyclableSidebarIcon(@NotNull File file) {
-            this.file = file;
-        }
-
-        public RecyclableSidebarIcon(@NotNull String path) {
-            this.file = new File(path);
-        }
-
-        @Override
-        protected ImageIcon getInstance() {
-            return new ImageIcon(AquaImageFactory.getImage(file, 18));
-        }
-    }
-
     private static RecyclableFileIcon createIcon(@NotNull String name) {
         return createIcon(name, false);
     }
@@ -109,19 +89,11 @@ public class OSXFile {
         return new RecyclableFileIcon(prefix + name + ".icns", convertToTemplate);
     }
 
-    private static RecyclableSidebarIcon createSidebarIcon(@NotNull String name) {
-        String prefix = "/System/Library/CoreServices/CoreTypes.bundle/Contents/Resources/Sidebar";
-        RecyclableSidebarIcon icon = new RecyclableSidebarIcon(prefix + name + ".icns");
-        return icon;
-    }
-
     static {
         aliasBadgeIcon = createIcon("AliasBadgeIcon");
         directoryIcon = createIcon("GenericFolderIcon");
         fileIcon = createIcon("GenericDocumentIcon", false);    // did not look good
         networkIcon = createIcon("GenericNetworkIcon");
-
-        genericFileSidebarIcon = createSidebarIcon("GenericFile");
     }
 
     public static ImageIcon getAliasBadgeIcon() {
@@ -146,10 +118,6 @@ public class OSXFile {
 
     public static ImageIcon getNetworkIcon() {
         return networkIcon.getInstance();
-    }
-
-    public static ImageIcon getGenericFileSidebarIcon() {
-        return genericFileSidebarIcon.getInstance();
     }
 
     /**

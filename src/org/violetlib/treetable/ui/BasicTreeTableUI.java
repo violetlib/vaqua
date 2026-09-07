@@ -29,7 +29,6 @@ import javax.swing.border.Border;
 import javax.swing.border.EmptyBorder;
 import javax.swing.event.*;
 import javax.swing.plaf.TreeUI;
-import javax.swing.plaf.UIResource;
 import javax.swing.plaf.basic.BasicTreeUI;
 import javax.swing.plaf.synth.Region;
 import javax.swing.table.*;
@@ -66,7 +65,7 @@ public class BasicTreeTableUI extends TreeTableUI {
 
     protected void installDefaults() {
         AquaUtils.installFont(treeTable,"Table.font");
-        if (treeTable.getAlternateRowColor() == null || treeTable.getAlternateRowColor() instanceof UIResource) {
+        if (!AquaUtils.isPriority(treeTable.getAlternateRowColor())) {
             Color c = UIManager.getColor("Table.alternateRowColor");
             treeTable.setAlternateRowColor(c);
         }
@@ -77,9 +76,9 @@ public class BasicTreeTableUI extends TreeTableUI {
 
     protected void installComponents() {
         handler = createHandler();
-        TreeTableCellRenderer focusRenderer = treeTable.getFocusRenderer();
-        if (focusRenderer == null || focusRenderer instanceof UIResource)
+        if (!AquaUtils.isPriority(treeTable.getFocusRenderer())) {
             treeTable.setFocusRenderer(createFocusRenderer());
+        }
         tree = createAndConfigureTree();
         table = createAndConfigureTable();
         finishConfiguration(tree, table);
@@ -1448,8 +1447,9 @@ public class BasicTreeTableUI extends TreeTableUI {
     }
 
     private static Color createColor(Color c) {
-        if (c instanceof UIResource)
+        if (AquaUtils.isUIDefault(c)) {
             c = new Color(c.getRed(), c.getGreen(), c.getBlue(), c.getAlpha());
+        }
         return c;
     }
 

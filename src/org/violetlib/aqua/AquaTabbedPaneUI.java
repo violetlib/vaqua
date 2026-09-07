@@ -46,7 +46,6 @@ import javax.swing.*;
 import javax.swing.border.Border;
 import javax.swing.event.*;
 import javax.swing.plaf.ComponentUI;
-import javax.swing.plaf.UIResource;
 import javax.swing.text.View;
 
 import org.jetbrains.annotations.*;
@@ -123,9 +122,9 @@ public class AquaTabbedPaneUI extends AquaTabbedPaneCopyFromBasicUI
     protected void installDefaults() {
         super.installDefaults();
 
-        if (tabPane.getFont() instanceof UIResource) {
+        if (AquaUtils.isUIDefault(tabPane.getFont())) {
             Boolean b = (Boolean)UIManager.get("TabbedPane.useSmallLayout");
-            if (b != null && b == Boolean.TRUE) {
+            if (b == Boolean.TRUE) {
                 tabPane.setFont(UIManager.getFont("TabbedPane.smallFont"));
                 sizeVariant = Size.SMALL;
             }
@@ -677,7 +676,7 @@ public class AquaTabbedPaneUI extends AquaTabbedPaneCopyFromBasicUI
         }
 
         Color color = tabPane.getForegroundAt(tabIndex);
-        if (color instanceof UIResource) {
+        if (AquaUtils.isUIDefault(color)) {
             g2d.setColor(getTabTextColor(bg));
         } else {
             g2d.setColor(color);
@@ -1357,7 +1356,7 @@ public class AquaTabbedPaneUI extends AquaTabbedPaneCopyFromBasicUI
         }
 
         Color background = tabPane.getBackgroundAt(i);
-        if (!(background instanceof UIResource)) {
+        if (!AquaUtils.isUIDefault(background)) {
             menuItem.setBackground(background);
         }
 

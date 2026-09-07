@@ -41,7 +41,6 @@ import java.beans.PropertyChangeEvent;
 import javax.swing.*;
 import javax.swing.border.Border;
 import javax.swing.plaf.ComponentUI;
-import javax.swing.plaf.UIResource;
 import javax.swing.text.*;
 
 import org.jetbrains.annotations.*;
@@ -80,7 +79,7 @@ public class AquaTextFieldUI extends AquaTextComponentUIBase implements ToolbarS
         super.installDefaults();
         Border b = tf.getBorder();
         AquaTreeEditorBorder eb = b != null ? AquaBorderSupport.get(b, AquaTreeEditorBorder.class) : null;
-        if (((b == null) || (b instanceof UIResource)) && eb == null) {
+        if ((!AquaUtils.isPriority(b)) && eb == null) {
             AquaTextFieldBorder bb = new AquaTextFieldBorder(tf);
             tf.setBorder(bb);
             if (!bb.isOpaque()) {
@@ -165,7 +164,7 @@ public class AquaTextFieldUI extends AquaTextComponentUIBase implements ToolbarS
      */
     private void updateFontSize() {
         Font f = tf.getFont();
-        if (f != null && !(f instanceof UIResource)) {
+        if (AquaUtils.isPriority(f)) {
             return;
         }
         AquaUIPainter.Size sz = AquaUtilControlSize.getOptionalUserSizeFrom(tf);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2021 Alan Snyder.
+ * Copyright (c) 2018-2026 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -49,7 +49,6 @@ public class AppearanceColorsBuilder {
         colors.add(systemColors.defaultColors, "Default");
         colors.addAll(appearance.getColors());
         colors.addAll(nativeColors);
-        colors.add("controlText_disabled", "disabledControlText");
 
         if (appearance.isDark()) {
             colors.add(systemColors.darkColors, "Dark");

@@ -2693,11 +2693,12 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements ActiveSensi
      */
     static class DirectoryComboBoxRenderer extends BasicComboBoxRenderer {
 
-        IndentIcon ii = new IndentIcon();
+        IndentIcon ii;
         private final @NotNull JComponent empty = new EmptyComponent();
 
         public DirectoryComboBoxRenderer(JComboBox cb) {
             //super(cb);
+            ii = new IndentIcon(cb);
             empty.setPreferredSize(new Dimension(9, 9));
         }
 
@@ -2818,10 +2819,19 @@ public class AquaFileChooserUI extends BasicFileChooserUI implements ActiveSensi
 
         Icon icon = null;
         int depth = 0;
+        JComponent owner;
+
+        public IndentIcon(JComponent owner)
+        {
+            this.owner = owner;
+        }
 
         @Override
         public void paintIcon(Component c, Graphics g, int x, int y) {
             if (icon != null) {
+                if (c == null) {
+                    c = owner;
+                }
                 if (c.getComponentOrientation().isLeftToRight()) {
                     icon.paintIcon(c, g, x + depth * space, y);
                 } else {

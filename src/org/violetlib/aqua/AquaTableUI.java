@@ -1163,7 +1163,7 @@ public class AquaTableUI extends BasicTableUI
 
     protected boolean isDefault(@NotNull Class<?> valueClass, @Nullable Object o) {
 
-        if (o instanceof UIResource) {
+        if (AquaUtils.isUIDefault(o)) {
             return true;
         }
 

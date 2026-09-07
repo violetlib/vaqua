@@ -42,7 +42,6 @@ import javax.swing.*;
 import javax.swing.border.Border;
 import javax.swing.border.EmptyBorder;
 import javax.swing.plaf.ComponentUI;
-import javax.swing.plaf.UIResource;
 import javax.swing.plaf.basic.BasicScrollPaneUI;
 
 import org.jetbrains.annotations.*;
@@ -188,11 +187,11 @@ public class AquaScrollPaneUI extends BasicScrollPaneUI
         originalHorizontalScrollBar = scrollpane.getHorizontalScrollBar();
         originalVerticalScrollBar = scrollpane.getVerticalScrollBar();
 
-        if (originalVerticalScrollBar instanceof UIResource) {
+        if (AquaUtils.isUIDefault(originalVerticalScrollBar)) {
             scrollpane.setHorizontalScrollBar(
               new AquaScrollBar(JScrollBar.HORIZONTAL, defaultSmoothScrollingUnitIncrement));
         }
-        if (originalVerticalScrollBar instanceof UIResource) {
+        if (AquaUtils.isUIDefault(originalVerticalScrollBar)) {
             scrollpane.setVerticalScrollBar(
               new AquaScrollBar(JScrollBar.VERTICAL, defaultSmoothScrollingUnitIncrement));
         }
@@ -538,7 +537,7 @@ public class AquaScrollPaneUI extends BasicScrollPaneUI
 
     protected boolean shouldUseOverlayScrollBars() {
         LayoutManager lm = scrollpane.getLayout();
-        if (lm != null && !(lm instanceof UIResource)) {
+        if (AquaUtils.isPriority(lm)) {
             return false;
         }
 
@@ -707,7 +706,7 @@ public class AquaScrollPaneUI extends BasicScrollPaneUI
             // The legacy layout manager is installed
             legacyLayoutManager = m;
             if (shouldUseCustomLayoutManager()) {
-                if (m instanceof UIResource) {
+                if (AquaUtils.isUIDefault(m)) {
                     // OK to replace
                     AquaScrollPaneLayout nlm = new AquaScrollPaneLayout();
                     scrollpane.setLayout(nlm);

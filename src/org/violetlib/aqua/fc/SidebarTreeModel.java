@@ -2,7 +2,7 @@
  * @(#)SidebarTreeModel.java
  *
  * Copyright (c) 2007-2013 Werner Randelshofer, Switzerland.
- * Copyright (c) 2015-2018 Alan Snyder.
+ * Copyright (c) 2015-2026 Alan Snyder.
  * All rights reserved.
  *
  * The copyright of this software is owned by Werner Randelshofer.
@@ -13,8 +13,10 @@
 
 package org.violetlib.aqua.fc;
 
+import java.awt.*;
 import java.io.File;
 import java.util.*;
+import java.util.List;
 import javax.swing.*;
 import javax.swing.event.TreeModelEvent;
 import javax.swing.event.TreeModelListener;
@@ -24,6 +26,7 @@ import javax.swing.tree.TreeNode;
 import javax.swing.tree.TreePath;
 
 import org.jetbrains.annotations.NotNull;
+import org.violetlib.aqua.AquaImageFactory;
 import org.violetlib.aqua.AquaUtils;
 import org.violetlib.aqua.fc.OSXFile.SystemItemInfo;
 
@@ -254,6 +257,11 @@ public class SidebarTreeModel extends DefaultTreeModel implements TreeModelListe
         if (icon == null) {
             icon = isTraversable(f) ? UIManager.getIcon("FileView.directoryIcon")
                                     : UIManager.getIcon("FileView.fileIcon");
+            if (icon instanceof ImageIcon && !AquaImageFactory.isTemplateIcon(icon)) {
+                Image im = ((ImageIcon) icon).getImage();
+                im = AquaImageFactory.generateTemplateImage(im);
+                icon = new ImageIcon(im);
+            }
         }
         return new SidebarTreeNode(info, icon);
     }

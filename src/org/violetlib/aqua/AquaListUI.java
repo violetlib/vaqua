@@ -1089,7 +1089,7 @@ public class AquaListUI extends BasicListUI implements AquaComponentUI, AquaView
         if (rendererComponent instanceof JLabel) {
             JLabel label = (JLabel) rendererComponent;
             Border existing = label.getBorder();
-            if (existing instanceof UIResource && existing != NOTHING_BORDER) {
+            if (AquaUtils.isUIDefault(existing) && existing != NOTHING_BORDER) {
                 label.setBorder(NOTHING_BORDER);
             }
         }

@@ -12,7 +12,6 @@ import java.awt.*;
 import java.awt.geom.Rectangle2D;
 import javax.swing.*;
 import javax.swing.border.Border;
-import javax.swing.plaf.UIResource;
 import javax.swing.plaf.basic.BasicHTML;
 import javax.swing.text.View;
 
@@ -56,23 +55,13 @@ public class AquaButtonSupport {
      */
     public static boolean determineTemplateIconStatus(AbstractButton b) {
         Icon standardIcon = b.getIcon();
-        if (standardIcon instanceof ImageIcon) {
-            ImageIcon im = (ImageIcon) standardIcon;
-            Image image = im.getImage();
-
-            return !isApplicationDefined(b.getPressedIcon())
-              && !isApplicationDefined(getDisabledIcon(b))
-              && !isApplicationDefined(b.getSelectedIcon())
-              && !isApplicationDefined(getDisabledSelectedIcon(b))
-              && !isApplicationDefined(b.getRolloverIcon())
-              && !isApplicationDefined(b.getRolloverSelectedIcon())
-              && AquaImageFactory.isTemplateImage(image);
-        }
-        return false;
-    }
-
-    private static boolean isApplicationDefined(@Nullable Icon ic) {
-        return ic != null && !(ic instanceof UIResource);
+        return !AquaUtils.isPriority(b.getPressedIcon())
+          && !AquaUtils.isPriority(getDisabledIcon(b))
+          && !AquaUtils.isPriority(b.getSelectedIcon())
+          && !AquaUtils.isPriority(getDisabledSelectedIcon(b))
+          && !AquaUtils.isPriority(b.getRolloverIcon())
+          && !AquaUtils.isPriority(b.getRolloverSelectedIcon())
+          && AquaImageFactory.isTemplateIcon(standardIcon);
     }
 
     /**
@@ -609,27 +598,27 @@ public class AquaButtonSupport {
 
     public static void removeCachedIcons(AbstractButton b) {
 
-        if (b.getSelectedIcon() instanceof UIResource) {
+        if (AquaUtils.isUIDefault(b.getSelectedIcon())) {
             b.setSelectedIcon(null);
         }
 
-        if (getDisabledIcon(b) instanceof UIResource) {
+        if (AquaUtils.isUIDefault(getDisabledIcon(b))) {
             b.setDisabledIcon(null);
         }
 
-        if (getDisabledSelectedIcon(b) instanceof UIResource) {
+        if (AquaUtils.isUIDefault(getDisabledSelectedIcon(b))) {
             b.setDisabledSelectedIcon(null);
         }
 
-        if (b.getPressedIcon() instanceof UIResource) {
+        if (AquaUtils.isUIDefault(b.getPressedIcon())) {
             b.setPressedIcon(null);
         }
 
-        if (b.getRolloverIcon() instanceof UIResource) {
+        if (AquaUtils.isUIDefault(b.getRolloverIcon())) {
             b.setRolloverIcon(null);
         }
 
-        if (b.getRolloverSelectedIcon() instanceof UIResource) {
+        if (AquaUtils.isUIDefault(b.getRolloverSelectedIcon())) {
             b.setRolloverSelectedIcon(null);
         }
     }

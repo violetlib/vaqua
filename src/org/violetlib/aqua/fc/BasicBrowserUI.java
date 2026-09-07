@@ -18,6 +18,7 @@ import javax.swing.tree.TreePath;
 
 import org.jetbrains.annotations.*;
 import org.violetlib.aqua.AppearanceManager;
+import org.violetlib.aqua.AquaUtils;
 import org.violetlib.aqua.PaintingContext;
 
 /**
@@ -48,12 +49,10 @@ public class BasicBrowserUI extends BrowserUI {
     }
 
     protected void installDefaults() {
-        if (browser.getColumnCellRenderer() == null ||
-          (browser.getColumnCellRenderer() instanceof UIResource)) {
+        if (!AquaUtils.isPriority(browser.getColumnCellRenderer())) {
             browser.setColumnCellRenderer(createCellRenderer());
         }
-        TransferHandler th = browser.getTransferHandler();
-        if (th == null || th instanceof UIResource) {
+        if (!AquaUtils.isPriority(browser.getTransferHandler())) {
             browser.setTransferHandler(defaultTransferHandler);
         }
     }
@@ -66,7 +65,7 @@ public class BasicBrowserUI extends BrowserUI {
         uninstallDefaults();
     }
     protected void uninstallDefaults() {
-        if (browser.getTransferHandler() instanceof UIResource) {
+        if (AquaUtils.isUIDefault(browser.getTransferHandler())) {
             browser.setTransferHandler(null);
         }
     }

@@ -85,15 +85,14 @@ public class AquaToolBarUI extends BasicToolBarUI implements SwingConstants, Aqu
         super.installDefaults();
         installBorder();
         originalLayoutManager = toolBar.getLayout();
-        if (originalLayoutManager instanceof UIResource) {
+        if (AquaUtils.isUIDefault(originalLayoutManager)) {
             toolBar.setLayout(new AquaToolBarLayout());
         }
         toolBar.setFloatable(false);
     }
 
     protected void installBorder() {
-        Border b = toolBar.getBorder();
-        if (b == null || b instanceof UIResource) {
+        if (!AquaUtils.isPriority(toolBar.getBorder())) {
             toolBar.setBorder(createBorder());
         }
     }
@@ -295,7 +294,7 @@ public class AquaToolBarUI extends BasicToolBarUI implements SwingConstants, Aqu
 
     private boolean shouldPaintBackground(@NotNull JComponent c)
     {
-        return c.getBackground() instanceof UIResource || c.isOpaque();
+        return AquaUtils.isUIDefault(c.getBackground()) || c.isOpaque();
     }
 
     @Override

@@ -1,5 +1,5 @@
 /*
- * Changes copyright (c) 2016-2023 Alan Snyder.
+ * Changes copyright (c) 2016-2026 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -82,6 +82,12 @@ public class Java9Support implements JavaSupport.JavaSupportImpl {
     @Override
     public void installAATextInfo(UIDefaults table) {
         AquaUtils.nativeInstallAATextInfo(table);
+    }
+
+    @Override
+    public @NotNull Image createImage(@NotNull BufferedImage im, int width, int height)
+    {
+        return new SingleRepresentationImage9(im, width, height);
     }
 
     @Override

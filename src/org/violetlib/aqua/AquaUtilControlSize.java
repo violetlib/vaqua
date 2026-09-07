@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2025 Alan Snyder.
+ * Copyright (c) 2015-2026 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -38,7 +38,6 @@ import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.security.PrivilegedAction;
 import javax.swing.*;
-import javax.swing.plaf.UIResource;
 
 import org.jetbrains.annotations.*;
 import org.violetlib.aqua.AquaUtils.RecyclableSingleton;
@@ -208,13 +207,11 @@ public class AquaUtilControlSize {
     }
 
     public static boolean isOKToInstallDefaultFont(@NotNull JComponent c) {
-        Font f = c.getFont();
-        return f == null || f instanceof UIResource;
+        return !AquaUtils.isPriority(c.getFont());
     }
 
     public static void uninstallDefaultFont(JComponent c) {
-        Font f = c.getFont();
-        if (f instanceof UIResource) {
+        if (AquaUtils.isUIDefault(c.getFont())) {
             c.setFont(null);
         }
     }

@@ -43,7 +43,6 @@ import javax.swing.event.AncestorListener;
 import javax.swing.plaf.ColorUIResource;
 import javax.swing.plaf.ComponentUI;
 import javax.swing.plaf.MenuBarUI;
-import javax.swing.plaf.UIResource;
 import javax.swing.plaf.basic.BasicRootPaneUI;
 
 import org.jetbrains.annotations.*;
@@ -566,7 +565,7 @@ public class AquaRootPaneUI extends BasicRootPaneUI implements AquaComponentUI, 
                 AquaUtils.setBackgroundCarefully(w, c);
                 // Make sure that the default window foreground is not considered an application priority.
                 Color fc = w.getForeground();
-                if (!(fc instanceof UIResource)) {
+                if (!AquaUtils.isUIDefault(fc)) {
                     w.setForeground(new ColorUIResource(fc));
                 }
                 rootPane.repaint();

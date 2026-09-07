@@ -160,6 +160,9 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
             // A LAF-provided icon is not wanted.
             return null;
         }
+        if (AquaImageFactory.isTemplateIcon(icon)) {
+            return icon;
+        }
         if (component instanceof AbstractButton) {
             AbstractButton b = (AbstractButton) component;
             AquaButtonUI ui = AquaUtils.getUI(component, AquaButtonUI.class);
@@ -791,9 +794,9 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
           "Tree.rightChildIndent", 12,
           "Tree.rowHeight", 0,   // The default row height depends upon style
           "Tree.scrollsOnExpand", false,
-          "Tree.openIcon",(LazyValue) t -> AquaImageFactory.getTreeOpenFolderIcon(), // Open folder icon
-          "Tree.closedIcon",(LazyValue) t -> AquaImageFactory.getTreeFolderIcon(), // Closed folder icon
-          "Tree.leafIcon", OSXFile.getGenericFileSidebarIcon(),
+          "Tree.openIcon",(LazyValue) t -> AquaImageFactory.getGenericFolderIcon(), // Open folder icon
+          "Tree.closedIcon",(LazyValue) t -> AquaImageFactory.getGenericFolderIcon(), // Closed folder icon
+          "Tree.leafIcon", AquaImageFactory.getGenericFileSidebarIcon(),
           "Tree.repaintWholeRow", true,
           // no expand or collapse icons
           "Tree.changeSelectionWithFocus", true,

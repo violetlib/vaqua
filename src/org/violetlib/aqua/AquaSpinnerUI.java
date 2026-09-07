@@ -49,7 +49,6 @@ import javax.swing.JSpinner.DefaultEditor;
 import javax.swing.plaf.ActionMapUIResource;
 import javax.swing.plaf.ComponentUI;
 import javax.swing.plaf.SpinnerUI;
-import javax.swing.plaf.UIResource;
 import javax.swing.plaf.basic.BasicButtonUI;
 import javax.swing.text.InternationalFormatter;
 
@@ -285,12 +284,12 @@ public class AquaSpinnerUI extends SpinnerUI implements AquaComponentUI, AquaUti
         editor.setOpaque(false);
         editor.setInheritsPopupMenu(true);
 
-        if (editor.getFont() instanceof UIResource) {
+        if (!AquaUtils.isPriority(editor.getFont())) {
             editor.setFont(spinner.getFont());
         }
 
         JFormattedTextField editorTextField = ((DefaultEditor)editor).getTextField();
-        if (editorTextField.getFont() instanceof UIResource) {
+        if (AquaUtils.isUIDefault(editorTextField.getFont())) {
             editorTextField.setFont(spinner.getFont());
         }
         InputMap spinnerInputMap = getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT);
@@ -763,7 +762,7 @@ public class AquaSpinnerUI extends SpinnerUI implements AquaComponentUI, AquaUti
                         JTextField tf =
                           ((JSpinner.DefaultEditor) editor).getTextField();
                         if (tf != null) {
-                            if (tf.getFont() instanceof UIResource) {
+                            if (AquaUtils.isUIDefault(tf.getFont())) {
                                 tf.setFont(spinner.getFont());
                             }
                         }

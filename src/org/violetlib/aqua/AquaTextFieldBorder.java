@@ -37,7 +37,6 @@ import java.awt.*;
 import java.awt.geom.Rectangle2D;
 import javax.swing.*;
 import javax.swing.plaf.InsetsUIResource;
-import javax.swing.plaf.UIResource;
 
 import org.jetbrains.annotations.*;
 import org.violetlib.jnr.*;
@@ -78,7 +77,7 @@ public class AquaTextFieldBorder extends AquaTextComponentBorder {
             return;
         }
         // An application-specified background supersedes the native background unless the text field has focus
-        if (background != null && !(background instanceof UIResource) && !AquaFocusHandler.hasFocus(c)) {
+        if (AquaUtils.isPriority(background) && !AquaFocusHandler.hasFocus(c)) {
             if (background.getAlpha() > 0) {
                 g.setColor(background);
                 int width = c.getWidth();

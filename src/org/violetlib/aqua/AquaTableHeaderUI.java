@@ -40,7 +40,6 @@ import java.util.Enumeration;
 import javax.swing.*;
 import javax.swing.plaf.ColorUIResource;
 import javax.swing.plaf.ComponentUI;
-import javax.swing.plaf.UIResource;
 import javax.swing.plaf.basic.BasicTableHeaderUI;
 import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableColumn;
@@ -84,7 +83,7 @@ public class AquaTableHeaderUI extends BasicTableHeaderUI implements AquaCompone
         borderHeight = UIManager.getInt("TableHeader.borderHeight");
 
         prevRenderer = header.getDefaultRenderer();
-        if (prevRenderer instanceof UIResource) {
+        if (AquaUtils.isUIDefault(prevRenderer)) {
             header.setDefaultRenderer(new AquaTableHeaderCellRenderer());
         }
     }
@@ -294,12 +293,10 @@ public class AquaTableHeaderUI extends BasicTableHeaderUI implements AquaCompone
 
             // Setting the foreground or background color of a DefaultTableCellRenderer makes that color the color
             // to use when the cell is not selected. So, if we installed a color, we should also remove it.
-            Color fc = rendererComponent.getForeground();
-            if (fc instanceof UIResource) {
+            if (AquaUtils.isUIDefault(rendererComponent.getForeground())) {
                 rendererComponent.setForeground(null);
             }
-            bc = rendererComponent.getBackground();
-            if (bc instanceof UIResource) {
+            if (AquaUtils.isUIDefault(rendererComponent.getBackground())) {
                 rendererComponent.setBackground(null);
             }
         }

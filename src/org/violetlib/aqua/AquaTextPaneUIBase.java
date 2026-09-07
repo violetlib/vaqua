@@ -17,7 +17,6 @@ import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import javax.swing.*;
 import javax.swing.border.Border;
-import javax.swing.plaf.UIResource;
 
 import org.jetbrains.annotations.*;
 
@@ -110,14 +109,12 @@ public class AquaTextPaneUIBase extends AquaTextComponentUIBase {
 
     protected void updateBorderOwner() {
         if (editor != null && !JavaSupport.hasOpaqueBeenExplicitlySet(editor)) {
-            Border textComponentBorder = editor.getBorder();
-            if (textComponentBorder == null || textComponentBorder instanceof UIResource) {
+            if (!AquaUtils.isPriority(editor.getBorder())) {
                 Container parent = editor.getParent();
                 if (parent instanceof JViewport && parent.getComponentCount() == 1) {
                     JScrollPane scrollPane = AquaUtils.getScrollPaneAncestor(editor);
                     if (scrollPane != null) {
-                        Border b = scrollPane.getBorder();
-                        if (b == null || b instanceof UIResource) {
+                        if (!AquaUtils.isPriority(scrollPane.getBorder())) {
                             updateScrollPaneBorder(scrollPane, parent);
                             return;
                         }
@@ -138,7 +135,7 @@ public class AquaTextPaneUIBase extends AquaTextComponentUIBase {
     private void installBorder() {
         if (editor != null) {
             Border textComponentBorder = editor.getBorder();
-            if (textComponentBorder == null || textComponentBorder instanceof UIResource) {
+            if (!AquaUtils.isPriority(textComponentBorder)) {
                 installingBorder = true;
                 if (JavaSupport.hasOpaqueBeenExplicitlySet(editor)) {
                     // If the application set the opaque attribute, do not install our border

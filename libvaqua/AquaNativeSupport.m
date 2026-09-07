@@ -926,6 +926,124 @@ JNIEXPORT void JNICALL Java_org_violetlib_aqua_fc_CatalinaFileIconServiceImpl_na
     COCOA_EXIT();
 }
 
+@interface NSImage (Tint)
+- (NSImage *)imageByApplyingTintColor:(NSColor *)color;
+@end
+
+@implementation NSImage (Tint)
+- (NSImage *)imageByApplyingTintColor:(NSColor *)color {
+    if (!color) {
+        return self;
+    }
+    NSImage *tintedImage = [self copy];
+    [tintedImage lockFocus];
+    [color set];
+    NSRect imageRect = NSMakeRect(0, 0, tintedImage.size.width, tintedImage.size.height);
+    // Paints the color only onto existing pixels, keeping transparency intact
+    NSRectFillUsingOperation(imageRect, NSCompositingOperationSourceAtop);
+    [tintedImage unlockFocus];
+    tintedImage.template = NO;
+    return tintedImage;
+}
+@end
+
+static void copyNSImageIntoArray(NSImage *srcImage, int *dstPixels, NSRect fromRect, NSRect toRect)
+{
+    // mimics CImage_CopyNSImageIntoArray
+    int width = toRect.size.width;
+    int height = toRect.size.height;
+    CGColorSpaceRef colorspace = CGColorSpaceCreateDeviceRGB();
+    CGBitmapInfo b = (CGBitmapInfo) kCGImageAlphaPremultipliedFirst | kCGBitmapByteOrder32Host;
+    CGContextRef cgRef = CGBitmapContextCreate(dstPixels, width, height, 8, width * 4, colorspace, b);
+    CGColorSpaceRelease(colorspace);
+    NSGraphicsContext *context = [NSGraphicsContext graphicsContextWithCGContext:cgRef flipped:NO];
+    CGContextRelease(cgRef);
+    NSGraphicsContext *oldContext = [[NSGraphicsContext currentContext] retain];
+    [NSGraphicsContext setCurrentContext:context];
+    [srcImage drawInRect:toRect
+                fromRect:fromRect
+               operation:NSCompositingOperationSourceOver
+                fraction:1.0];
+    [NSGraphicsContext setCurrentContext:oldContext];
+    [oldContext release];
+}
+
+JNIEXPORT jintArray JNICALL Java_org_violetlib_aqua_AquaImageFactory_nativeGetSymbolPixels
+            (JNIEnv *env, jclass cl, jobject jSymbolName, jfloat points, jfloat fontWeight,
+              jint red, jint green, jint blue, jint alpha, jfloat scaleFactor, jintArray jsizeOutput)
+{
+    jintArray result = NULL;
+
+    COCOA_ENTER();
+
+    NSString *symbolName = TO_NSSTRING(jSymbolName);
+    NSImage *im = [NSImage imageWithSystemSymbolName:symbolName accessibilityDescription:symbolName];
+
+    if (im) {
+        float nominalWidth = im.size.width;
+        float nominalHeight = im.size.height;
+
+        NSLog(@"Processing symbol: %@ [%f x %f]", symbolName, nominalWidth, nominalHeight);
+
+        BOOL configNeeded = NO;
+        if (fontWeight != 0) {
+            configNeeded = YES;
+        }
+        if (points > 0 && points != 18.0) {
+            configNeeded = YES;
+        }
+        if (configNeeded) {
+            if (points <= 0) {
+                points = 18.0;
+            }
+        }
+
+        if (configNeeded) {
+            NSLog(@"Using point size %f", points);
+            NSLog(@"Using font weight %f", fontWeight);
+            NSImageSymbolConfiguration *g = [NSImageSymbolConfiguration configurationWithPointSize:points weight:fontWeight];
+            im = [im imageWithSymbolConfiguration:g];
+            nominalWidth = im.size.width;
+            nominalHeight = im.size.height;
+            NSLog(@"Updated symbol size: [%f x %f]", nominalWidth, nominalHeight);
+        }
+
+        if (alpha > 0) {
+            NSColor *c = [NSColor colorWithSRGBRed:red/255.0 green:green/255.0 blue:blue/255.0 alpha:alpha/255.0];
+            NSImage *tintedImage = [im imageByApplyingTintColor:c];
+            im = tintedImage;
+        }
+
+        int rasterWidth = (int) (im.size.width * scaleFactor);
+        int rasterHeight = (int) (im.size.height * scaleFactor);
+        NSRect sourceRect = NSMakeRect(0, 0, im.size.width, im.size.height);
+        NSRect targetRect = NSMakeRect(0, 0, rasterWidth, rasterHeight);
+        int pixelCount = rasterWidth * rasterHeight;
+
+        jintArray jraster = (*env)->NewIntArray(env, pixelCount);
+        if (jraster) {
+            jboolean isCopy = JNI_FALSE;
+            int *raster = (*env)->GetPrimitiveArrayCritical(env, jraster, &isCopy);
+            if (raster != NULL) {
+                copyNSImageIntoArray(im, raster, sourceRect, targetRect);
+                (*env)->ReleasePrimitiveArrayCritical(env, jraster, raster, 0);
+                result = jraster;
+            }
+        }
+
+        jint *sizeOut = (*env)->GetPrimitiveArrayCritical(env, jsizeOutput, NULL);
+        if (sizeOut) {
+            sizeOut[0] = rasterWidth;
+            sizeOut[1] = rasterHeight;
+            (*env)->ReleasePrimitiveArrayCritical(env, jsizeOutput, sizeOut, 0);
+        }
+    }
+
+    COCOA_EXIT();
+
+    return result;
+}
+
 /*
  * Class:     org_violetlib_aqua_AquaImageFactory
  * Method:    nativeRenderImageFile

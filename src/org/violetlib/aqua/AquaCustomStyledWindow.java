@@ -15,7 +15,6 @@ import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import javax.swing.*;
 import javax.swing.border.Border;
-import javax.swing.plaf.UIResource;
 
 import org.jetbrains.annotations.*;
 
@@ -368,7 +367,7 @@ public class AquaCustomStyledWindow {
 
     protected void installToolbarBorder(JComponent tb) {
         Border b = tb.getBorder();
-        if (b == null || b instanceof UIResource) {
+        if (!AquaUtils.isPriority(b)) {
             int version = AquaPainting.getVersion();
             boolean isTall = AquaToolBarUI.isTallFormatToolBar(tb);
             int left = 4;
@@ -386,14 +385,14 @@ public class AquaCustomStyledWindow {
 
     protected void installContentPaneBorder(JComponent c, int top, int left, int bottom, int right) {
         Border b = c.getBorder();
-        if (b == null || b instanceof UIResource) {
+        if (!AquaUtils.isPriority(b)) {
             c.setBorder(new CustomContentPaneBorder(top, left, bottom, right));
         }
     }
 
     protected void resetBorder(JComponent c) {
         Border b = c.getBorder();
-        if (b == null || b instanceof UIResource) {
+        if (!AquaUtils.isPriority(b)) {
             if (c instanceof JToolBar) {
                 c.setBorder(AquaToolBarUI.getToolBarBorder((JToolBar) c));
             } else {

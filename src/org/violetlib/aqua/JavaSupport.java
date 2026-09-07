@@ -1,5 +1,5 @@
 /*
- * Changes copyright (c) 2016-2023 Alan Snyder.
+ * Changes copyright (c) 2016-2026 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -48,6 +48,7 @@ public class JavaSupport {
         String getClippedString(JComponent c, FontMetrics fm, String string, int availTextWidth);
         float getStringWidth(JComponent c, FontMetrics fm, String string);
         void installAATextInfo(UIDefaults table);
+        Image createImage(@NotNull BufferedImage im, int width, int height);
         AquaMultiResolutionImage createMultiResolutionImage(BufferedImage im);
         AquaMultiResolutionImage createMultiResolutionImage(BufferedImage im1, BufferedImage im2);
         @NotNull AquaMultiResolutionImage createImage(int rasterWidth, int rasterHeight, int[] data, float scale);
@@ -98,6 +99,11 @@ public class JavaSupport {
 
     public static void installAATextInfo(UIDefaults table) {
         impl.installAATextInfo(table);
+    }
+
+    public static @NotNull Image createImage(@NotNull BufferedImage im, int width, int height)
+    {
+        return impl.createImage(im, width, height);
     }
 
     public static AquaMultiResolutionImage createMultiResolutionImage(BufferedImage im) {

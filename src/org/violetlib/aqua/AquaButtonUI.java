@@ -40,7 +40,6 @@ import java.beans.PropertyChangeEvent;
 import javax.swing.*;
 import javax.swing.border.Border;
 import javax.swing.plaf.ComponentUI;
-import javax.swing.plaf.UIResource;
 import javax.swing.plaf.basic.BasicButtonListener;
 import javax.swing.plaf.basic.BasicButtonUI;
 import javax.swing.plaf.basic.BasicHTML;
@@ -194,7 +193,7 @@ public class AquaButtonUI extends BasicButtonUI
             b.setBorder(customBorder);
         } else {
             Border oldBorder = b.getBorder();
-            if (oldBorder == null || oldBorder instanceof UIResource) {
+            if (!AquaUtils.isPriority(oldBorder)) {
                 Border border = getDefaultBorder(b, isToolbar);
                 if (border == null) {
                     border = new AquaPushButtonBorder();
@@ -266,7 +265,7 @@ public class AquaButtonUI extends BasicButtonUI
     protected Color getDefaultForegroundColor(AbstractButton b, @NotNull AquaAppearance appearance) {
         boolean isEnabled = b.getModel().isEnabled();
         Color existingColor = b.getForeground();
-        if (existingColor == null || existingColor instanceof UIResource || !isEnabled) {
+        if (!AquaColors.isPriority(existingColor) || !isEnabled) {
             // Most buttons do not display text differently when the window is inactive
             if (useSelectedForeground(b)) {
                 return appearance.getColor("alternateSelectedControlText");
@@ -316,7 +315,7 @@ public class AquaButtonUI extends BasicButtonUI
 
     protected void setButtonMarginIfNeeded(AbstractButton b, Insets insets) {
         Insets margin = b.getMargin();
-        if (margin == null || (margin instanceof UIResource)) {
+        if (!AquaUtils.isPriority(margin)) {
             b.setMargin(insets);
         }
     }

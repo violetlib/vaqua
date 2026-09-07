@@ -120,14 +120,9 @@ public class AquaLabelUI extends BasicLabelUI implements AquaComponentUI {
         String clippedText = layout(label, fm, c.getWidth(), c.getHeight());
 
         if (icon != null) {
-            if (icon instanceof ImageIcon) {
-                ImageIcon ii = (ImageIcon) icon;
-                Image im = ii.getImage();
-                if (AquaImageFactory.isTemplateImage(im)) {
-                    Color foreground = label.getForeground();
-                    Image coloredImage = AquaImageFactory.getProcessedImage(im, foreground);
-                    icon = new ImageIcon(coloredImage);
-                }
+            if (AquaImageFactory.isTemplateIcon(icon)) {
+                Color foreground = label.getForeground();
+                icon = AquaImageFactory.getProcessedImage(icon, foreground);
             }
             icon.paintIcon(c, g, paintIconR.x, paintIconR.y);
         }

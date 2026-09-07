@@ -38,7 +38,6 @@ import java.awt.geom.Path2D;
 import java.awt.geom.Rectangle2D;
 import java.awt.geom.RoundRectangle2D;
 import javax.swing.*;
-import javax.swing.plaf.UIResource;
 
 import org.jetbrains.annotations.*;
 import org.violetlib.aqua.AquaUtils.RecyclableSingleton;
@@ -263,7 +262,7 @@ public abstract class AquaButtonBorder extends AquaBorder implements FocusRingOu
         boolean isEnabled = b.getModel().isEnabled();
         boolean useNonexclusive = shouldUseNonexclusiveStyle(b, info);
         Color existingColor = b.getForeground();
-        if (existingColor == null || existingColor instanceof UIResource || !isEnabled || useNonexclusive) {
+        if (!AquaColors.isPriority(existingColor) || !isEnabled || useNonexclusive) {
             AquaUIPainter.ButtonState bs = getButtonState(b);
             // The foreground color of a default button does not change when pressed.
             // Starting with macOS 12, the foreground color of any button does not change.
@@ -368,7 +367,7 @@ public abstract class AquaButtonBorder extends AquaBorder implements FocusRingOu
      */
     protected @Nullable Insets getMarginAdjustments(@NotNull AbstractButton b) {
         Insets margin = b.getMargin();
-        if (margin != null && !(margin instanceof UIResource)) {
+        if (AquaUtils.isPriority(margin)) {
             // always use an application provided margin
             return margin;
         } else {

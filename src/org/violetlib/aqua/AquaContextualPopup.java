@@ -13,7 +13,6 @@ import java.awt.event.MouseEvent;
 import javax.swing.*;
 import javax.swing.border.Border;
 import javax.swing.border.EmptyBorder;
-import javax.swing.plaf.UIResource;
 
 import org.jetbrains.annotations.*;
 import org.violetlib.jnr.aqua.AquaUIPainter;
@@ -108,7 +107,7 @@ public class AquaContextualPopup {
         }
 
         Border existingBorder = content.getBorder();
-        if (existingBorder == null || existingBorder instanceof UIResource) {
+        if (!AquaUtils.isPriority(existingBorder)) {
             content.setBorder(null);
         }
 

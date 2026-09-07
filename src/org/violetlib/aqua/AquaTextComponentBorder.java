@@ -37,7 +37,6 @@ import java.awt.*;
 import java.awt.geom.Rectangle2D;
 import javax.swing.*;
 import javax.swing.plaf.InsetsUIResource;
-import javax.swing.plaf.UIResource;
 import javax.swing.text.JTextComponent;
 
 import org.jetbrains.annotations.*;
@@ -97,7 +96,7 @@ public class AquaTextComponentBorder extends AquaBorder implements AquaBackgroun
         }
 
         // An application-specified background supersedes the native background unless the component has focus
-        if (background != null && !(background instanceof UIResource) && !AquaFocusHandler.hasFocus(tc)) {
+        if (AquaUtils.isPriority(background) && !AquaFocusHandler.hasFocus(tc)) {
             paintBasicBackground(c, g, background, borderColor);
         } else {
             TextFieldWidget w = getWidget();

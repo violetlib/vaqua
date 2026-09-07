@@ -34,15 +34,10 @@
 package org.violetlib.aqua;
 
 import java.awt.*;
-import java.awt.image.BufferedImage;
-import java.awt.image.ImageFilter;
-import java.awt.image.ImageObserver;
-import java.awt.image.RGBImageFilter;
+import java.awt.image.*;
 import java.io.File;
 import java.net.URL;
 import java.security.PrivilegedAction;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Objects;
 import java.util.function.Function;
 import javax.swing.*;
@@ -65,6 +60,8 @@ public class AquaImageFactory {
     public static final Object LIGHTEN_25 = new LightenOperator(25);
     public static final Object INVERT_FOR_DARK_MODE = new Object();
 
+    public static boolean USE_SYMBOLS = true;  // for debugging
+
     public static boolean debugNativeRendering = false;
     private static final int kAlertIconSize = 64;
 
@@ -73,6 +70,10 @@ public class AquaImageFactory {
     // To avoid recomputation, we soft-cache this information.
 
     private static final AquaImageCache imageCache = new AquaImageCache();
+    private static final AquaIconCache iconCache = new AquaIconCache();
+
+    private static @Nullable Icon genericFileSidebarIcon;
+    private static @Nullable Icon genericFolderIcon;
 
     static class AquaImageCache extends ProcessedImageCache {
         @Override
@@ -331,8 +332,6 @@ public class AquaImageFactory {
         return null;
     }
 
-    private static final Map<Object,Icon> iconCache = new HashMap<>();
-
     public static @NotNull Icon getMenuSelectionIcon(@NotNull JComponent c, @NotNull Dimension size) {
         String cacheKey = "MenuCheckmark" + getSizeCacheKeySuffix(size);
         return getMenuSelectionIcon(c, size, cacheKey);
@@ -423,9 +422,185 @@ public class AquaImageFactory {
         return southArrowIcon.get();
     }
 
+    public static @NotNull Icon getGenericFileSidebarIcon() {
+        if (genericFileSidebarIcon == null) {
+            genericFileSidebarIcon = createSidebarIcon("document", "GenericFile");
+        }
+        return genericFileSidebarIcon;
+    }
+
+    public static @NotNull Icon getGenericFolderIcon() {
+        if (genericFolderIcon == null) {
+            Image im = OSXFile.getDirectoryIconImage(20);
+            genericFolderIcon = AquaIcon.createIcon(im, 20, 20);
+        }
+        return genericFolderIcon;
+    }
+
+    private static @NotNull Icon createIcon(@Nullable String symbolName, @NotNull String name) {
+        if (symbolName != null) {
+            Icon icon = getSymbol(symbolName, 18, -0.4f, null, 2);
+            if (icon != null) {
+                return icon;
+            }
+        }
+        String prefix = "/System/Library/CoreServices/CoreTypes.bundle/Contents/Resources/";
+        File f = new File(prefix + name + ".icns");
+        Image im = getImage(f, 18);
+        if (im != null && !AquaImageFactory.isTemplateImage(im)) {
+            im = AquaImageFactory.generateTemplateImage(im);
+        }
+        return AquaIcon.createIcon(im, 18, 18);
+    }
+
+    private static @NotNull Icon createSidebarIcon(@Nullable String symbolName, @NotNull String name) {
+        if (symbolName != null) {
+            Icon icon = getSymbol(symbolName, 18, -0.4f, null, 2);
+            if (icon != null) {
+                return icon;
+            }
+        }
+        String prefix = "/System/Library/CoreServices/CoreTypes.bundle/Contents/Resources/Sidebar";
+        File f = new File(prefix + name + ".icns");
+        Image im = getImage(f, 18);
+        return AquaIcon.createIcon(im, 18, 18);
+    }
+
+    public static @Nullable Icon getTreeExpandIcon(@NotNull Graphics g, boolean isExpanded, boolean isLTR, @NotNull Color c) {
+        String name = getTreeExpandSymbolName(isExpanded, isLTR);
+        int scaleFactor = JavaSupport.getScaleFactor(g);
+        return getSymbol(name, 10, 0.4f, c, scaleFactor);
+    }
+
+    private static @NotNull String getTreeExpandSymbolName(boolean isExpanded, boolean isLTR) {
+        if (isExpanded) {
+            return "chevron.down";
+        }
+        return isLTR ? "chevron.right" : "chevron.left";
+    }
+
 //    private static @Nullable Image getNSImage(@NotNull String imageName, int width, int height) {
 //        return getNativeImage(imageName, width, height);
 //    }
+
+    private static class SymbolKey {
+        public final @NotNull String name;
+        public final float pointSize;
+        public final float weight;
+        public final @Nullable Color color;
+        public final int scaleFactor;
+
+        public SymbolKey(@NotNull String name,
+                         float pointSize,
+                         float weight,
+                         @Nullable Color color,
+                         int scaleFactor) {
+            this.name = name;
+            this.pointSize = pointSize;
+            this.weight = weight;
+            this.color = color;
+            this.scaleFactor = scaleFactor;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+            SymbolKey symbolKey = (SymbolKey) o;
+            return Float.compare(pointSize, symbolKey.pointSize) == 0
+              && Float.compare(weight, symbolKey.weight) == 0
+              && Objects.equals(name, symbolKey.name)
+              && Objects.equals(color, symbolKey.color)
+              && scaleFactor == symbolKey.scaleFactor;
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(name, pointSize, weight, color, scaleFactor);
+        }
+    }
+
+    /**
+     * Return a system symbol as an icon.
+     * @param name The symbol name.
+     * @param pointSize The desired point size, or zero to use a default size.
+     * @param weight The desired font weight. Font weights range from -1 (lighter) to 1 (heavier).
+     * Zero represents the default font weight.
+     * @param color The color to use for the visible pixels, or null to return a template image.
+     * @param scaleFactor The display scale factor.
+     * @return the icon, or null if not available.
+     */
+
+    private static @Nullable Icon getSymbol(@NotNull String name,
+                                            float pointSize,
+                                            float weight,
+                                            @Nullable Color color,
+                                            int scaleFactor)
+    {
+        if (OSXSystemProperties.getOSRelease() < 1100 || !USE_SYMBOLS) {
+            Utils.logDebug("Not using symbols: " + OSXSystemProperties.getOSRelease() + " " + USE_SYMBOLS);
+            return null;
+        }
+
+        if (pointSize == 0) {
+            pointSize = 18.0f;
+        }
+
+        SymbolKey key = new SymbolKey(name, pointSize, weight, color, scaleFactor);
+        Icon existing = iconCache.get(key);
+        if (existing != null) {
+            return existing;
+        }
+
+        int red = 0;
+        int green = 0;
+        int blue = 0;
+        int alpha = 0;
+        if (color != null) {
+            red = color.getRed();
+            green = color.getGreen();
+            blue = color.getBlue();
+            alpha = color.getAlpha();
+        }
+
+        int[] size = new int[2];
+        int[] pixels = nativeGetSymbolPixels(name, pointSize, weight, red, green, blue, alpha, scaleFactor, size);
+        if (pixels != null) {
+            Icon icon;
+            int rasterWidth = size[0];
+            int rasterHeight = size[1];
+            NativeRaster r = NativeRaster.create(rasterWidth, rasterHeight, pixels);
+            BufferedImage b = createImage(r);
+            if (scaleFactor > 1) {
+                int w = Math.round(rasterWidth / scaleFactor);
+                int h = Math.round(rasterHeight / scaleFactor);
+                icon = new ImageIcon(JavaSupport.createImage(b, w, h));
+            } else {
+                icon = new ImageIcon(b);
+            }
+            iconCache.put(key, icon);
+            return icon;
+        }
+
+        Utils.logDebug("Symbol not found: " + name);
+
+        return null;
+    }
+
+    private static native int @Nullable []
+    nativeGetSymbolPixels(@NotNull String symbolName, float points, float fontWeight,
+                          int red, int green, int blue, int alpha, float scaleFactor,
+                          int @NotNull [] sizeOutput);
+
+    private static @NotNull BufferedImage createImage(@NotNull NativeRaster pixels) {
+        BufferedImage b = Images.createBufferedImage(null, pixels.width, pixels.height);
+        ColorModel cm = b.getColorModel();
+        WritableRaster raster = cm.createCompatibleWritableRaster(pixels.width, pixels.height);
+        raster.setDataElements(0, 0, pixels.width, pixels.height, pixels.data);
+        b.setData(raster);
+        return b;
+    }
 
     private static Image getNSIcon(String imageName) {
 

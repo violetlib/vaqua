@@ -1,5 +1,5 @@
 /*
- * Changes copyright (c) 2016-2023 Alan Snyder.
+ * Changes copyright (c) 2016-2026 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -141,6 +141,12 @@ public class Java8Support implements JavaSupport.JavaSupportImpl {
     public void installAATextInfo(UIDefaults table) {
         Object aaTextInfo = SwingUtilities2.AATextInfo.getAATextInfo(true);
         table.put(SwingUtilities2.AA_TEXT_PROPERTY_KEY, aaTextInfo);
+    }
+
+    @Override
+    public @NotNull Image createImage(@NotNull BufferedImage im, int width, int height)
+    {
+        return new SingleRepresentationImage8(im, width, height);
     }
 
     @Override

@@ -273,11 +273,8 @@ public class AquaInternalFrameUI extends BasicInternalFrameUI implements SwingCo
         // but if *that's* null, we get the JDesktop, which makes ours look invisible!
         // So JInternalFrame has to have a background color
         // See Sun bugs 4268949 & 4320889
-        Color bg = frame.getBackground();
-        boolean replaceColor = (bg == null || bg instanceof UIResource);
-
-        Font font = frame.getFont();
-        boolean replaceFont = (font == null || font instanceof UIResource);
+        boolean replaceColor = !AquaUtils.isPriority(frame.getBackground());
+        boolean replaceFont = !AquaUtils.isPriority(frame.getFont());
 
         boolean isPalette = false;
         if (frameType.equals(OPTION_DIALOG)) {

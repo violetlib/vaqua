@@ -39,7 +39,6 @@ import java.beans.PropertyChangeListener;
 import javax.swing.*;
 import javax.swing.border.Border;
 import javax.swing.plaf.ComponentUI;
-import javax.swing.plaf.UIResource;
 import javax.swing.plaf.basic.BasicPanelUI;
 
 import org.jetbrains.annotations.*;
@@ -133,7 +132,7 @@ public class AquaPanelUI extends BasicPanelUI implements AquaComponentUI {
         c.repaint();
 
         Border b = c.getBorder();
-        if (b == null || b instanceof UIResource) {
+        if (!AquaUtils.isPriority(b)) {
             c.setBorder(getDefaultBorder(c));
         }
     }

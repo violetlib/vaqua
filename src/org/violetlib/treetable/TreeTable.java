@@ -26,12 +26,10 @@ import javax.swing.*;
 import javax.swing.RowSorter.SortKey;
 import javax.swing.border.Border;
 import javax.swing.event.*;
-import javax.swing.plaf.UIResource;
 import javax.swing.table.*;
 import javax.swing.text.Position;
 import javax.swing.tree.*;
 
-import org.violetlib.aqua.AquaBorderSupport;
 import org.violetlib.aqua.AquaUtils;
 import org.violetlib.treetable.event.*;
 import org.violetlib.treetable.ui.BasicTreeTableUI;
@@ -178,16 +176,21 @@ public class TreeTable extends JComponent implements Scrollable {
     }
 
     protected void updateUIProperties() {
-        if (leafIcon instanceof UIResource)
+        if (AquaUtils.isUIDefault(leafIcon)) {
             leafIcon = null;
-        if (openIcon instanceof UIResource)
+        }
+        if (AquaUtils.isUIDefault(openIcon)) {
             openIcon = null;
-        if (closedIcon instanceof UIResource)
+        }
+        if (AquaUtils.isUIDefault(closedIcon)) {
             closedIcon = null;
-        if (ascendingSortIcon instanceof UIResource)
+        }
+        if (AquaUtils.isUIDefault(ascendingSortIcon)) {
             ascendingSortIcon = null;
-        if (descendingSortIcon instanceof UIResource)
+        }
+        if (AquaUtils.isUIDefault(descendingSortIcon)) {
             descendingSortIcon = null;
+        }
         updateUIRenderers();
         updateUIEditors();
     }
@@ -306,8 +309,7 @@ public class TreeTable extends JComponent implements Scrollable {
         if (getAutoCreateColumnHeader()) {
             scrollPane.setColumnHeaderView(getTableHeader());
             //  scrollPane.getViewport().setBackingStoreEnabled(true);
-            Border border = scrollPane.getBorder();
-            if (border == null || border instanceof UIResource) {
+            if (!AquaUtils.isPriority(scrollPane.getBorder())) {
                 Border scrollPaneBorder =
                   UIManager.getBorder("Table.scrollPaneBorder");
                 if (scrollPaneBorder != null) {

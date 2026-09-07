@@ -288,7 +288,7 @@ public class AquaComboBoxUI extends BasicComboBoxUI
     protected @Nullable ListCellRenderer<?> getCustomRenderer()
     {
         ListCellRenderer<?> r = comboBox.getRenderer();
-        if (r == null || r instanceof UIResource) {
+        if (!AquaUtils.isPriority(r)) {
             return null;
         }
         return r;
@@ -473,15 +473,10 @@ public class AquaComboBoxUI extends BasicComboBoxUI
     private @NotNull Icon getTitleIcon(@NotNull Icon icon, @Nullable PaintingContext pc) {
         State st = getState();
 
-        if (icon instanceof ImageIcon) {
-            ImageIcon ii = (ImageIcon) icon;
-            if (AquaImageFactory.isTemplateImage(ii.getImage())) {
-                Color color = comboBox.getForeground();
-                if (color != null) {
-                    Image im = ii.getImage();
-                    im = AquaImageFactory.getProcessedImage(im, color);
-                    return new ImageIconUIResource(im);
-                }
+        if (AquaImageFactory.isTemplateIcon(icon)) {
+            Color color = comboBox.getForeground();
+            if (color != null) {
+                return AquaImageFactory.getProcessedImage(icon, color);
             }
         }
 
