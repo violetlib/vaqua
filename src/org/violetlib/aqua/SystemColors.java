@@ -62,6 +62,8 @@ public class SystemColors {
         colors.add("topWindowMarginBackground", "windowBackground");
         colors.add("bottomWindowMarginBackground", "windowBackground");
 
+        colors.add("windowBackground_disabled", "windowBackground");
+
         if (OSVersion >= macOS11) {
             colors.add("topWindowMarginBackground_disabled", "topWindowMarginBackground");
             colors.add("bottomWindowMarginBackground_disabled", "bottomWindowMarginBackground");
@@ -194,8 +196,6 @@ public class SystemColors {
             colors.add("alternateSelectedControlText_disabled", 255, 89); // was 128
             colors.add("selectedMenuItemText", 255);
         }
-
-        colors.add("windowBackground_disabled", "windowBackground");
 
         // disabled system colors
         if (OSVersion < 1014) {
@@ -449,8 +449,13 @@ public class SystemColors {
         }
 
         if (OSVersion >= macOS26) {
-            colors.add("sidebarBackground", 250, 204);
-            colors.add("sidebarBackground_inactive", 247);
+            if (OSVersion >= 2700) {
+                colors.add("sidebarBackground", 255, 135);
+                colors.add("sidebarBackground_inactive", 255, 132);
+            } else {
+                colors.add("sidebarBackground", 255, 198);
+                colors.add("sidebarBackground_inactive", 255, 180);
+            }
             colors.add("selectedSidebarBackground", 0, 16);
             colors.add("selectedSidebarBackground_inactive", 241);
             colors.add("sidebarIcon", 25);
@@ -544,12 +549,15 @@ public class SystemColors {
         BasicColorsBuilder colors = new BasicColorsBuilder("High Contrast Light", instrumentation, log);
 
         if (OSVersion >= macOS26) {
-            int bc = OSVersion >= 2602 ? 242 : 237;
-            int ibc = OSVersion >= 2602 ? 250 : 237;
             int sb = OSVersion >= 2602 ? 141 : 73;
             int sbi = OSVersion >= 2602 ? 181 : 138;
-            colors.add("sidebarBackground", bc);
-            colors.add("sidebarBackground_inactive", ibc);
+            if (OSVersion >= 2700) {
+                colors.add("sidebarBackground", 255, 205);
+                colors.add("sidebarBackground_inactive", 255, 100);
+            } else {
+                colors.add("sidebarBackground", 255, 245);
+                colors.add("sidebarBackground_inactive", 255, 254);
+            }
             colors.add("selectedSidebarBackground", 210);
             colors.add("selectedSidebarBackground_inactive", 233);
             colors.add("sidebarBorder", sb);
@@ -773,8 +781,8 @@ public class SystemColors {
             colors.add("windowBackground", 28);
         } else {
             colors.add("windowBackground", 36);
+            colors.add("windowBackground_disabled", 45);
         }
-        colors.add("windowBackground_disabled", 45);
         colors.add("texturedWindowBackground", 42);
         colors.add("texturedWindowBackground_disabled", 45);
 
@@ -1108,8 +1116,13 @@ public class SystemColors {
         colors.add("selectedExpandIcon_inactive", 255, 142);
 
         if (OSVersion >= macOS26) {
-            colors.add("sidebarBackground", 255, 2);
-            colors.add("sidebarBackground_inactive", 40);
+            if (OSVersion >= 2700) {
+                colors.add("sidebarBackground", 0, 96);
+                colors.add("sidebarBackground_inactive", 0, 96);
+            } else {
+                colors.add("sidebarBackground", 0, 124);
+                colors.add("sidebarBackground_inactive", 0, 112);
+            }
             colors.add("selectedSidebarBackground", 255, 16);
             colors.add("selectedSidebarBackground_inactive", 48);
             colors.add("sidebarBorder", 54);
@@ -1171,18 +1184,13 @@ public class SystemColors {
     private @NotNull BasicColors createHighContrastDarkColors(int OSVersion) {
         BasicColorsBuilder colors = new BasicColorsBuilder("High Contrast Dark", instrumentation, log);
 
-        colors.add("windowBackground", 40);
-        colors.add("texturedWindowBackground", 53);
-
         if (OSVersion >= macOS26) {
             int bc = OSVersion >= 2602 ? 14 : 30;
             int sb = OSVersion >= 2602 ? 142 : 196;
             int sbi = OSVersion >= 2602 ? 102 : 138;
 
-            colors.add("sidebarBackground", bc);
-            colors.add("sidebarBackground_inactive", bc);
-            colors.add("windowBackground", 22);
-            colors.add("texturedWindowBackground", 22);
+            colors.add("windowBackground", 30);
+            colors.add("texturedWindowBackground", 30);
             colors.add("sidebarBorder", sb);
             colors.add("sidebarBorder_inactive", sbi);
 
@@ -1223,6 +1231,9 @@ public class SystemColors {
             if (OSVersion >= macOS11 && OSVersion < 1500) {
                 colors.add("segmentedText_pressed", 0);
             }
+
+            colors.add("windowBackground", 40);
+            colors.add("texturedWindowBackground", 53);
 
             int sbc = OSVersion < 1200 ? 0 : 255;
             int tc = 0;
@@ -1278,7 +1289,13 @@ public class SystemColors {
         colors.add("selectedSidebarIcon_disabled", 255, 140);
 
         if (OSVersion >= macOS26) {
-            colors.add("sidebarBackground", 14);
+            if (OSVersion >= 2700) {
+                colors.add("sidebarBackground", 0, 120);
+                colors.add("sidebarBackground_inactive", 0, 32);
+            } else {
+                colors.add("sidebarBackground", 0, 245);
+                colors.add("sidebarBackground_inactive", 0, 245);
+            }
             colors.add("selectedSidebarBackground", 48);
             colors.add("selectedSidebarBackground_inactive", 31);
             colors.add("selectedSidebarIcon", "controlAccent_pressed");

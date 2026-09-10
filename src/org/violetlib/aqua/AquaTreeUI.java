@@ -1088,8 +1088,10 @@ public class AquaTreeUI extends BasicTreeUI
             }
         }
 
-        Color background = getBackgroundColor();
-        paintBackground(g, background);
+        if (sidebarContainerSupport == null) {
+            Color background = getBackgroundColor();
+            paintBackground(g, background);
+        }
 
         super.paint(g, c);
 
