@@ -30,6 +30,11 @@ public class LocalSidebarContainerSupport
         this.ui = ui;
     }
 
+    public boolean isLocalBackgroundNeeded()
+    {
+        return configuredScrollPaneAncestor == null;
+    }
+
     public void detach()
     {
         updateConfiguredScrollPaneAncestor(null);

@@ -40,17 +40,17 @@ public class AquaPainting {
 
     public static boolean isSidebarVibrant(@NotNull JComponent jc)
     {
-        if (useLiquidGlassSidebar()) {
+        if (useLiquidGlassSidebar() || getVersion() >= 2700) {
             return false;
         }
-
         AquaAppearance appearance = AppearanceManager.findAppearanceForComponent(jc);
         return !appearance.isHighContrast();
     }
 
     public static boolean useLiquidGlassSidebar()
     {
-        return getVersion() >= macOS26;
+        int version = getVersion();
+        return version >= macOS26 && version < 2700;
     }
 
     public static @NotNull AquaUIPainter create() {

@@ -581,6 +581,9 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
           "List.cellRenderer", listCellRendererActiveValue,
           "List.focusInputMap", aquaKeyBindings.getListInputMap(),
 
+          "List.sideBar.font", sideBarFont,
+          "List.sideBar.selectionFont", sideBarSelectionFont,
+
           // *** Menus
           "Menu.font", menuFont,
           "Menu.acceleratorFont", menuFont,

@@ -1088,9 +1088,11 @@ public class AquaTreeUI extends BasicTreeUI
             }
         }
 
-        if (sidebarContainerSupport == null) {
+        if (sidebarContainerSupport == null || sidebarContainerSupport.isLocalBackgroundNeeded()) {
             Color background = getBackgroundColor();
             paintBackground(g, background);
+        } else {
+            paintRowBackgrounds(g);
         }
 
         super.paint(g, c);
@@ -1110,6 +1112,10 @@ public class AquaTreeUI extends BasicTreeUI
             AquaUtils.fillRect(g, background, 0, 0, width, height);
         }
 
+        paintRowBackgrounds(g);
+    }
+
+    private void paintRowBackgrounds(@NotNull Graphics g) {
         Rectangle paintBounds = g.getClipBounds();
         TreePath initialPath = getClosestPathForLocation(tree, 0, paintBounds.y);
         Enumeration<?> paintingEnumerator = treeState.getVisiblePathsFrom(initialPath);

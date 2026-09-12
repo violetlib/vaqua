@@ -45,12 +45,13 @@ import javax.swing.border.Border;
 import javax.swing.event.MouseInputListener;
 import javax.swing.plaf.ColorUIResource;
 import javax.swing.plaf.ComponentUI;
-import javax.swing.plaf.UIResource;
+import javax.swing.plaf.FontUIResource;
 import javax.swing.plaf.basic.BasicListUI;
 import javax.swing.text.JTextComponent;
 
 import org.jetbrains.annotations.*;
 import org.violetlib.jnr.aqua.AquaUIPainter;
+import org.violetlib.jnr.aqua.AquaUIPainter.State;
 
 import static org.violetlib.aqua.AquaLookAndFeel.ENABLE_VIBRANT_MENU;
 import static org.violetlib.aqua.AquaLookAndFeel.NOTHING_BORDER;
@@ -82,6 +83,11 @@ public class AquaListUI extends BasicListUI implements AquaComponentUI, AquaView
     private boolean isDropActive;
     private boolean isSelectionMuted;
     private boolean hasDropOnTarget;
+
+    // state variables needed for cell renderer configuration
+    private Font oldCellRendererFont;
+    private Icon oldCellRendererIcon;
+    private Icon oldCellRendererDisabledIcon;
 
     // Vibrant effects for sidebar lists (prior to macOS 26) and optionally for menus
     private @Nullable ListVibrantEffects vibrantEffects;
@@ -634,6 +640,10 @@ public class AquaListUI extends BasicListUI implements AquaComponentUI, AquaView
 
     private boolean getSideBarValue() {
         String style = getStyleProperty();
+        return getSideBarValue(style);
+    }
+
+    private boolean getSideBarValue(@Nullable Object style) {
         return style != null && (style.equals("sideBar") || style.equals("sourceList"));
     }
 
@@ -926,8 +936,12 @@ public class AquaListUI extends BasicListUI implements AquaComponentUI, AquaView
         int extraHeight = s.top + s.bottom + contentInsets.top + contentInsets.bottom;
         for (int i = 0; i < rowCount; i++) {
             Object value = list.getModel().getElementAt(i);
-            Component c = renderer.getListCellRendererComponent(list, value, i, false, false);
+            // may use a larger font (bold) when selected
+            boolean isSelected = true;
+            Component c = renderer.getListCellRendererComponent(list, value, i, isSelected, false);
+            configureCellRenderer(true, c, isSelected);
             Dimension prefSize = c.getPreferredSize();
+            unconfigureCellRenderer(c);
             int h = Math.max(prefSize.height + extraHeight, minimumHeight);
             popupSize.height += h;
             popupSize.width = Math.max(prefSize.width + extraWidth, popupSize.width);
@@ -973,7 +987,7 @@ public class AquaListUI extends BasicListUI implements AquaComponentUI, AquaView
         boolean isInset = isInset();
         boolean isSideBar = isSideBar();
         boolean isGlass = isSideBar && AquaPainting.useLiquidGlassSidebar();
-        int v = isInset ? isRoundedScrollable ? 10 : 5 : 0;
+        int v = isInset ? 5 : 0;
         int side = isGlass || isInset ? (AquaPainting.getVersion() >= macOS11 ? 9 : 5) : 0;
         return new Insets(v, side, v, side);
     }
@@ -1077,22 +1091,7 @@ public class AquaListUI extends BasicListUI implements AquaComponentUI, AquaView
         Component rendererComponent =
           cellRenderer.getListCellRendererComponent(list, value, row, isSelected, cellHasFocus);
 
-        if (rendererComponent instanceof JTextComponent) {
-            ((JTextComponent) rendererComponent).putClientProperty(AquaColors.COMPONENT_COLORS_KEY, AquaColors.CELL_TEXT_COLORS);
-        }
-
-        if (isInset() && rendererComponent.isOpaque() && rendererComponent instanceof JComponent) {
-            JComponent jc = (JComponent) rendererComponent;
-            AquaUtils.setOpaqueCarefully(jc, false);
-        }
-
-        if (rendererComponent instanceof JLabel) {
-            JLabel label = (JLabel) rendererComponent;
-            Border existing = label.getBorder();
-            if (AquaUtils.isUIDefault(existing) && existing != NOTHING_BORDER) {
-                label.setBorder(NOTHING_BORDER);
-            }
-        }
+        configureCellRenderer(false, rendererComponent, isSelected);
 
         Insets s = getContentInsets();
         cx += s.left;
@@ -1101,8 +1100,192 @@ public class AquaListUI extends BasicListUI implements AquaComponentUI, AquaView
         ch -= (s.top + s.bottom);
         rendererPane.paintComponent(g, rendererComponent, list, cx, cy, cw, ch, true);
 
-        if (rendererComponent instanceof JTextComponent) {
-            ((JTextComponent) rendererComponent).putClientProperty(AquaColors.COMPONENT_COLORS_KEY, null);
+        unconfigureCellRenderer(rendererComponent);
+    }
+
+    protected void configureCellRenderer(boolean isLayout, @NotNull Component component, boolean isSelected) {
+        if (isInset() && component.isOpaque() && component instanceof JComponent) {
+            JComponent jc = (JComponent) component;
+            AquaUtils.setOpaqueCarefully(jc, false);
+        }
+
+        if (component instanceof JLabel) {
+            JLabel label = (JLabel) component;
+
+            oldCellRendererFont = label.getFont();
+            oldCellRendererIcon = label.getIcon();
+            oldCellRendererDisabledIcon = label.getDisabledIcon();
+
+            boolean isEnabled = list.isEnabled();
+
+            Color fc = appearanceContext != null ? colors.getForeground(appearanceContext) : null;
+            Font f = null;
+            Icon oldIcon = isEnabled ? oldCellRendererIcon : oldCellRendererDisabledIcon;
+            Icon icon = oldIcon;
+
+            if (isSideBar()) {
+                fc = getSideBarForeground(isSelected);
+                Font sf = getSideBarFont(isSelected);
+                if (sf != null) {
+                    // Trick the renderer into accepting the font. It ignores instances of FontUIResource.
+                    f = fixFont(sf);
+                }
+            }
+
+            if (!isLayout) {
+                if (icon != null) {
+                    icon = convertIcon(isSelected, icon, fc);
+                }
+                if (icon != oldIcon) {
+                    if (isEnabled) {
+                        label.setIcon(icon);
+                    } else {
+                        label.setDisabledIcon(icon);
+                    }
+                }
+                if (fc != null) {
+                    Color existingForeground = label.getForeground();
+                    if (!AquaColors.isPriority(existingForeground)) {
+                        label.setForeground(fc);
+                    }
+                }
+            }
+
+            if (f != null) {
+                label.setFont(f);
+            }
+
+            Border existing = label.getBorder();
+            if (AquaUtils.isUIDefault(existing) && existing != NOTHING_BORDER) {
+                label.setBorder(NOTHING_BORDER);
+            }
+        }
+
+        if (component instanceof JTextComponent) {
+            ((JTextComponent) component).putClientProperty(AquaColors.COMPONENT_COLORS_KEY, AquaColors.CELL_TEXT_COLORS);
+        }
+    }
+
+    protected void unconfigureCellRenderer(@NotNull Component component) {
+        if (component instanceof JTextComponent) {
+            ((JTextComponent) component).putClientProperty(AquaColors.COMPONENT_COLORS_KEY, null);
+        }
+        if (component instanceof JLabel) {
+            JLabel label = (JLabel) component;
+            label.setFont(oldCellRendererFont);
+            label.setIcon(oldCellRendererIcon);
+            label.setDisabledIcon(oldCellRendererDisabledIcon);
+        }
+    }
+
+    protected @Nullable Icon convertIcon(boolean isSelected, @NotNull Icon icon, @Nullable Color fc) {
+        // If the icon is a template icon, convert it to an image icon using an appropriate color.
+        // No icon should be painted for a category header in a sidebar tree.
+
+        if (AquaImageFactory.isTemplateIcon(icon)) {
+            Color c = getColorForTemplateIcon(isSelected, fc);
+            return AquaImageFactory.getProcessedImage(icon, c);
+        }
+        return icon;
+    }
+
+    protected @NotNull Color getColorForTemplateIcon(boolean isSelected, @Nullable Color fc) {
+        if (AquaColors.isPriority(fc)) {
+            return fc;
+        }
+        if (appearanceContext != null) {
+            Color c = getSpecialColorForTemplateIcon(isSelected, appearanceContext);
+            if (c != null) {
+                return c;
+            }
+            // If no icon color is defined, use the foreground color
+            return colors.getForeground(appearanceContext);
+        }
+        return fc != null ? fc : Color.GRAY;
+    }
+
+    private @Nullable Color getSpecialColorForTemplateIcon(boolean isSelected, @NotNull AppearanceContext ac) {
+        if (isSideBar()) {
+            String colorName = getSidebarIconColorName(isSelected, ac.getState());
+            return ac.getAppearance().getColor(colorName);
+        } else {
+            String colorName = getIconColorName(isSelected, ac.getState());
+            return ac.getAppearance().getColor(colorName);
+        }
+    }
+
+    private @NotNull String getIconColorName(boolean isSelected, @NotNull State state)
+    {
+        if (isSelected) {
+            if (state == ACTIVE_DEFAULT) {
+                return "selectedTreeIcon_focused";
+            }
+            if (state == ACTIVE) {
+                return "selectedTreeIcon";
+            }
+            if (state == DISABLED || state == DISABLED_INACTIVE) {
+                return "selectedTreeIcon_disabled";
+            }
+            return "selectedTreeIcon_inactive";
+        } else {
+            if (state == ACTIVE_DEFAULT || state == ACTIVE) {
+                return "treeIcon";
+            }
+            if (state == DISABLED || state == DISABLED_INACTIVE) {
+                return "treeIcon_disabled";
+            }
+        }
+        return "treeIcon_inactive";
+    }
+
+    private @NotNull String getSidebarIconColorName(boolean isSelected, @NotNull State state)
+    {
+        if (isSelected) {
+            if (state == ACTIVE_DEFAULT) {
+                return "selectedSidebarIcon_focused";
+            }
+            if (state == ACTIVE) {
+                return "selectedSidebarIcon";
+            }
+            if (state == DISABLED || state == DISABLED_INACTIVE) {
+                return "selectedSidebarIcon_disabled";
+            }
+            return "selectedSidebarIcon_inactive";
+        } else {
+            if (state == ACTIVE_DEFAULT || state == ACTIVE) {
+                return "sidebarIcon";
+            }
+            if (state == DISABLED || state == DISABLED_INACTIVE) {
+                return "sidebarIcon_disabled";
+            }
+        }
+        return "sidebarIcon_inactive";
+    }
+
+    protected Font getSideBarFont(boolean isSelected) {
+        if (isSelected) {
+            return UIManager.getFont("List.sideBar.selectionFont");
+        } else {
+            return UIManager.getFont("List.sideBar.font");
+        }
+    }
+
+    protected Color getSideBarForeground(boolean isSelected) {
+        AppearanceContext context = AquaListUI.this.appearanceContext;
+        if (context == null) {
+            // configuring the cell renderer for layout, color does not matter
+            return Color.WHITE;
+        }
+        return colors.getForeground(context);
+    }
+
+    protected Font fixFont(Font f) {
+        return f instanceof FontUIResource ? new MyFont(f) : f;
+    }
+
+    protected class MyFont extends Font {
+        public MyFont(Font f) {
+            super(f);
         }
     }
 

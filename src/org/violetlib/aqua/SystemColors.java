@@ -115,6 +115,7 @@ public class SystemColors {
         colors.addAll("glassButtonText", "bevelText");  // maps to bevel prior to macOS 26
         colors.addAll("sidebarText", "controlText");
         colors.addAll("toolbarItemText", "toolbarText");
+        colors.addAll("selectedSidebarText", "sidebarText");
 
         colors.add("toolbarBackground", "clear");
         colors.add("selectedToolbarBackground", "controlBackground_pressed");
@@ -440,7 +441,6 @@ public class SystemColors {
         colors.add("sidebarIcon", "controlAccent_pressed");
         colors.add("selectedSidebarIcon", "controlAccent_pressed");
         colors.add("sidebarIcon_inactive", "sidebarText_disabled");
-        colors.add("sidebarText", 30, 220);
 
         if (OSVersion >= macOS11) {
             colors.add("selectedSidebarText_inactive", 0, 100);
@@ -450,24 +450,29 @@ public class SystemColors {
 
         if (OSVersion >= macOS26) {
             if (OSVersion >= 2700) {
-                colors.add("sidebarBackground", 255, 135);
-                colors.add("sidebarBackground_inactive", 255, 132);
+                colors.add("sidebarBackground", 0, 16);
+                colors.add("sidebarBackground_inactive", 0, 11);
+                colors.add("selectedSidebarBackground", 0, 20);
+                colors.add("selectedSidebarBackground_inactive", 0, 10);
             } else {
                 colors.add("sidebarBackground", 255, 198);
                 colors.add("sidebarBackground_inactive", 255, 180);
+                colors.add("selectedSidebarBackground", 0, 16);
+                colors.add("selectedSidebarBackground_inactive", 241);
+                colors.add("selectedSidebarText", "selectedSidebarIcon");
+                colors.add("selectedSidebarIcon_inactive", "controlAccent_disabled");
             }
-            colors.add("selectedSidebarBackground", 0, 16);
-            colors.add("selectedSidebarBackground_inactive", 241);
             colors.add("sidebarIcon", 25);
             colors.add("sidebarText", "sidebarIcon");
             colors.add("selectedSidebarIcon", "controlAccent_pressed");
-            colors.add("selectedSidebarIcon_inactive", "controlAccent_disabled");
             colors.add("selectedSidebarIcon_disabled", 25);
-            colors.add("selectedSidebarText", "selectedSidebarIcon");
-            colors.add("selectedSidebarText_inactive", "selectedSidebarIcon_inactive");
         } else if (OSVersion >= 1500) {
             colors.add("selectedSidebarIcon_inactive", "controlAccent_disabled");
             colors.add("sidebarIcon_inactive", "controlAccent_disabled");
+        }
+
+        if (OSVersion < macOS26) {
+            colors.add("sidebarText", 30, 220);
         }
 
         // These colors are for 26 UI
@@ -593,8 +598,6 @@ public class SystemColors {
         colors.add("nonexclusiveTexturedToolbarBackground_rollover", "clear");
         colors.add("nonexclusiveTexturedToolbarBackground_pressed", "controlBackground_pressed");
         colors.add("selectedSidebarText_inactive", 0);
-        colors.add("selectedSidebarText", 0);
-        colors.add("selectedSidebarIcon", 0, 140);
         if (OSVersion >= macOS11) {
             colors.add("selectedSidebarText_inactive", 0, 200);
         } else {
@@ -603,16 +606,27 @@ public class SystemColors {
 
         if (OSVersion >= macOS26) {
             colors.add("selectedSidebarIcon", "controlAccent_pressed");
-            colors.add("selectedSidebarIcon_inactive", "controlAccent_disabled");
             colors.add("selectedSidebarIcon_disabled", 0, 140);
-            colors.add("selectedSidebarText", "selectedSidebarIcon");
-            colors.add("selectedSidebarText_inactive", "selectedSidebarIcon_inactive");
+            if (OSVersion < 2700) {
+                colors.add("selectedSidebarText", "selectedSidebarIcon");
+                colors.add("selectedSidebarText_inactive", "selectedSidebarIcon_inactive");
+            }
+            if (OSVersion >= 2700) {
+                colors.add("sidebarBackground", 0, 12);
+                colors.add("sidebarBackground_inactive", 0, 10);
+                colors.add("selectedSidebarBackground", 0, 76);
+                colors.add("selectedSidebarBackground_inactive", 0, 31);
+            } else {
+                colors.add("selectedSidebarIcon_inactive", "controlAccent_disabled");
+            }
         } else if (OSVersion >= 1500) {
             colors.add("selectedSidebarText_inactive", 150);
             colors.add("sidebarText_inactive", 116);
             colors.add("selectedSidebarIcon_inactive", "controlAccent_disabled");
             colors.add("sidebarIcon_inactive", "controlAccent_disabled");
         } else {
+            colors.add("selectedSidebarText", 0);
+            colors.add("selectedSidebarIcon", 0, 140);
             colors.add("selectedSidebarText_focused", "alternateSelectedControlText");
             colors.add("selectedSidebarIcon_focused", "alternateSelectedControlText");
         }
@@ -1117,22 +1131,24 @@ public class SystemColors {
 
         if (OSVersion >= macOS26) {
             if (OSVersion >= 2700) {
-                colors.add("sidebarBackground", 0, 96);
-                colors.add("sidebarBackground_inactive", 0, 96);
+                colors.add("sidebarBackground", 255, 16);
+                colors.add("sidebarBackground_inactive", 255, 16);
+                colors.add("selectedSidebarBackground", 255, 40);
+                colors.add("selectedSidebarBackground_inactive", 255, 20);
             } else {
                 colors.add("sidebarBackground", 0, 124);
                 colors.add("sidebarBackground_inactive", 0, 112);
+                colors.add("selectedSidebarBackground", 255, 16);
+                colors.add("selectedSidebarBackground_inactive", 48);
+                colors.add("selectedSidebarText", "selectedSidebarIcon");
+                colors.add("selectedSidebarText_inactive", "selectedSidebarIcon_inactive");
+                colors.add("selectedSidebarIcon_inactive", "controlAccent_disabled");
             }
-            colors.add("selectedSidebarBackground", 255, 16);
-            colors.add("selectedSidebarBackground_inactive", 48);
             colors.add("sidebarBorder", 54);
             colors.add("sidebarIcon", 244);
             colors.add("sidebarText", "sidebarIcon");
             colors.add("selectedSidebarIcon", "controlAccent");
-            colors.add("selectedSidebarIcon_inactive", "controlAccent_disabled");
             colors.add("selectedSidebarIcon_disabled", 255, 140);
-            colors.add("selectedSidebarText", "selectedSidebarIcon");
-            colors.add("selectedSidebarText_inactive", "selectedSidebarIcon_inactive");
         } else if (OSVersion >= 1500) {
             colors.add("selectedSidebarIcon", "controlAccent");
             colors.add("sidebarIcon", "controlAccent");
@@ -1283,33 +1299,36 @@ public class SystemColors {
             colors.add("selectedToolbarText_inactive", 205);
         }
 
-        colors.add("selectedSidebarText", 255, 140);
-        colors.add("selectedSidebarIcon", 255, 140);
-        colors.add("selectedSidebarText_inactive", 255, 140);
-        colors.add("selectedSidebarIcon_disabled", 255, 140);
+        if (OSVersion < macOS26) {
+            colors.add("selectedSidebarText", 255, 140);
+            colors.add("selectedSidebarIcon", 255, 140);
+            colors.add("selectedSidebarText_inactive", 255, 140);
+            colors.add("selectedSidebarIcon_disabled", 255, 140);
+        }
 
         if (OSVersion >= macOS26) {
             if (OSVersion >= 2700) {
-                colors.add("sidebarBackground", 0, 120);
-                colors.add("sidebarBackground_inactive", 0, 32);
+                colors.add("sidebarBackground", 255, 11);
+                colors.add("sidebarBackground_inactive", 255, 24);
+                colors.add("selectedSidebarBackground", 255, 84);
+                colors.add("selectedSidebarBackground_inactive", 255, 44);
             } else {
                 colors.add("sidebarBackground", 0, 245);
                 colors.add("sidebarBackground_inactive", 0, 245);
+                colors.add("selectedSidebarBackground", 48);
+                colors.add("selectedSidebarBackground_inactive", 31);
+                colors.add("selectedSidebarText", "selectedSidebarIcon");
+                colors.add("selectedSidebarText_inactive", "selectedSidebarIcon_inactive");
+                colors.add("selectedSidebarIcon_inactive", "controlAccent_disabled");
             }
-            colors.add("selectedSidebarBackground", 48);
-            colors.add("selectedSidebarBackground_inactive", 31);
             colors.add("selectedSidebarIcon", "controlAccent_pressed");
-            colors.add("selectedSidebarIcon_inactive", "controlAccent_disabled");
-            colors.add("selectedSidebarText", "selectedSidebarIcon");
-            colors.add("selectedSidebarText_inactive", "selectedSidebarIcon_inactive");
         } else if (OSVersion >= macOS11) {
             colors.add("selectedSidebarIcon", "controlAccent_rollover");
             colors.add("sidebarIcon", "controlAccent_pressed");
-            colors.add("selectedSidebarIcon_inactive", "controlAccent_disabled");
             colors.add("sidebarIcon_inactive", "controlAccent_disabled");
             colors.add("selectedSidebarText", 255);
-            colors.add("sidebarText", 251);
             colors.add("selectedSidebarText_inactive", 163);
+            colors.add("sidebarText", 251);
             colors.add("sidebarText_inactive", 146);
             colors.add("selectedSidebarBackground", 85);
             colors.add("selectedSidebarBackground_focused", 85);

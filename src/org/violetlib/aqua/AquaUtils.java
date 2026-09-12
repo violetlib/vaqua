@@ -1157,7 +1157,7 @@ final public class AquaUtils {
     public static boolean isRoundedBorderScrollPane(@NotNull JScrollPane sp) {
         // Note: this code and AquaScrollPaneUI assume that rounded borders are used only by sidebar scroll panes.
         int version = AquaPainting.getVersion();
-        if (version >= macOS26) {
+        if (version >= macOS26 && version < 2700) {
             AquaScrollPaneUI ui = getUI(sp, AquaScrollPaneUI.class);
             return ui != null && ui.isSidebar();
         }
