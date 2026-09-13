@@ -714,7 +714,7 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
           "TabbedPane.useSmallLayout", false,//sSmallTabs ? true : false,
           "TabbedPane.textIconGap", 4,
           "TabbedPane.tabInsets", new InsetsUIResource(0, 10, 3, 10), // Label within tab (top, left, bottom, right)
-          "TabbedPane.tabAreaInsets", new InsetsUIResource(3, 9, -1, 9), // Tabs relative to edge of pane (negative value for overlapping)
+          "TabbedPane.tabAreaInsets", new InsetsUIResource(3, 15, -1, 15), // Tabs relative to edge of pane (negative value for overlapping)
           // (top = side opposite pane, left = edge || to pane, bottom = side adjacent to pane, right = left) - see rotateInsets
           "TabbedPane.contentBorderInsets", new InsetsUIResource(8, 0, 0, 0), // width of border
           "TabbedPane.selectedTabPadInsets", new InsetsUIResource(0, 0, 0, 0), // Really outsets, this is where we allow for overlap

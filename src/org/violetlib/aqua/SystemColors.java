@@ -547,6 +547,10 @@ public class SystemColors {
         colors.add("bottomTexturedWindowDivider", 0, 56);
         colors.add("bottomTexturedWindowDivider_disabled", 0, 28);
 
+        if (OSVersion >= 2700) {
+            colors.add("tabControlBackground", 238);
+        }
+
         return colors.get();
     }
 
@@ -780,6 +784,10 @@ public class SystemColors {
         colors.add("selectedExpandIcon", 255, 192);
         colors.add("selectedExpandIcon_inactive", 93);
 
+        if (OSVersion >= 2700) {
+            colors.add("tabControlBackground", 216);
+        }
+
         return colors.get();
     }
 
@@ -1004,6 +1012,12 @@ public class SystemColors {
                 colors.add("selectedSegmentedText_inactive", 0, 192);
                 colors.add("selectedSegmentedText_inactive_disabled", 0, 192);
             }
+        }
+
+        if (OSVersion >= 2700) {
+            colors.add("selectedTabText", "tabText");
+            colors.add("selectedTabText_inactive", "tabText_inactive");
+            colors.add("tabControlBackground", 48);
         }
 
         if (OSVersion >= macOS26) {
@@ -1406,6 +1420,10 @@ public class SystemColors {
         colors.add("expandIcon", 141);
         colors.add("selectedExpandIcon", 255, 176);
         colors.add("selectedExpandIcon_inactive", 255, 128);
+
+        if (OSVersion >= 2700) {
+            colors.add("tabControlBackground", 74);
+        }
 
         // This definition should not be needed, but it is.
         colors.add("selectedControlText", 0);

@@ -75,7 +75,7 @@ public class AquaTabbedPaneUI extends AquaTabbedPaneCopyFromBasicUI
     private static final double kNinetyDegrees = (Math.PI / 2.0); // used for rotation
 
     public static final SegmentedButtonWidget buttonWidget
-      = AquaPainting.getVersion() >= macOS11
+      = AquaPainting.getVersion() >= macOS11 && AquaPainting.getVersion() < 2700
       ? SegmentedButtonWidget.BUTTON_SEGMENTED_SLIDER
       : SegmentedButtonWidget.BUTTON_TAB;
 
@@ -872,7 +872,19 @@ public class AquaTabbedPaneUI extends AquaTabbedPaneCopyFromBasicUI
             bg.translate(-clipRect.x, -clipRect.y);
             border.paintBorder(tabPane, bg, x, y, w, h);
             bg.setComposite(AlphaComposite.Src);
-            bg.setColor(DEBUG_CUTOUT ? new Color(255, 0, 0, 120) : AquaColors.CLEAR);
+
+            int version = AquaPainting.getVersion();
+            Color c;
+            if (DEBUG_CUTOUT) {
+                c = new Color(255, 0, 0, 120);
+            } else if (version >= 2700) {
+                assert appearanceContext != null;
+                Color bc = appearanceContext.getAppearance().getColor("tabControlBackground");
+                c = bc != null ? bc : new Color(150, 150, 150);
+            } else {
+                c = AquaColors.CLEAR;
+            }
+            bg.setColor(c);
             cutout.fill(bg);
             bg.dispose();
             g.drawImage(b, clipRect.x, clipRect.y, clipRect.width, clipRect.height, null);
@@ -932,9 +944,22 @@ public class AquaTabbedPaneUI extends AquaTabbedPaneCopyFromBasicUI
                     // This is not a general solution, but it works where needed.
                     Rectangle bounds = shapes.getOuterBounds();
                     assert bounds != null;
-                    int arc = 8;
-                    RoundRectangle2D rr = new RoundRectangle2D.Double(bounds.getX(), bounds.getY(),
-                      bounds.getWidth(), bounds.getHeight(), arc, arc);
+
+                    double d;
+                    int arc;
+                    if (AquaPainting.getVersion() >= 2700) {
+                        // The cutout serves as a control background
+                        d = 1.25;
+                        arc = getTabControlCornerRadius(sizeVariant);
+                    } else {
+                        d = 0;
+                        arc = 8;
+                    }
+                    double x = bounds.getX() - d;
+                    double y = bounds.getY() - d;
+                    double w = bounds.getWidth() + 2 * d;
+                    double h = bounds.getHeight() + 1.5 * d;
+                    RoundRectangle2D rr = new RoundRectangle2D.Double(x, y, w, h, arc, arc);
                     shapes = new Shapes();
                     shapes.add(rr);
                     return shapes;
@@ -942,6 +967,22 @@ public class AquaTabbedPaneUI extends AquaTabbedPaneCopyFromBasicUI
             }
         }
         return null;
+    }
+
+    private int getTabControlCornerRadius(@NotNull AquaUIPainter.Size sz)
+    {
+        switch (sz) {
+            case SMALL:
+                return 6;
+            case MINI:
+                return 8;
+            case LARGE:
+                return 30;
+            case EXTRA_LARGE:
+                return 36;
+            default:
+                return 10;
+        }
     }
 
     private void addTabShape(@NotNull Shapes shapes, int tabIndex, @NotNull Rectangle rect) {
