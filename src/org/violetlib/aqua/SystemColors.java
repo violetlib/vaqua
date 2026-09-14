@@ -719,6 +719,26 @@ public class SystemColors {
             colors.add("selectedNonexclusiveTexturedText_rollover", "selectedNonexclusiveTexturedText");
         }
 
+        if (OSVersion >= 2700) {
+            int base = 255;
+            colors.add("selectedSegmentedText", base);
+            colors.add("selectedSegmentedText_rollover", base);
+            colors.add("selectedSegmentedText_disabled", base, 134);
+            colors.add("selectedSegmentedText_inactive", base, 150);
+            colors.add("selectedSegmentedText_inactive_disabled", base, 100);
+            colors.add("selectedTexturedToolbarText_rollover", base);
+            colors.add("selectedTexturedSegmentedText", base);
+            colors.add("selectedTexturedSegmentedText_rollover", base);
+            colors.add("selectedTexturedSegmentedText_disabled", base, 134);
+            colors.add("selectedTexturedSegmentedText_inactive", base, 150);
+            colors.add("selectedTexturedSegmentedText_inactive_disabled", base, 100);
+            colors.add("selectedTexturedSegmentedToolbarText", base);
+            colors.add("selectedTexturedSegmentedToolbarText_rollover", base);
+            colors.add("selectedTexturedSegmentedToolbarText_disabled", base, 134);
+            colors.add("selectedTexturedSegmentedToolbarText_inactive", base, 150);
+            colors.add("selectedTexturedSegmentedToolbarText_inactive_disabled", base, 100);
+        }
+
         if (OSVersion < 1014) {
             colors.addAlphaGradient("topWindowMarginBackground", 0, 16, 40);
             colors.addAlphaGradient("bottomWindowMarginBackground", 0, 22, 36);
