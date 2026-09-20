@@ -17,6 +17,8 @@ import org.jetbrains.annotations.Nullable;
 import org.violetlib.jnr.aqua.AquaNativeRendering;
 import org.violetlib.vappearances.VAppearance;
 
+import static org.violetlib.aqua.OSXSystemProperties.macOS26;
+
 /**
  * Build a set of color definitions for an appearance.
  */
@@ -132,6 +134,24 @@ public class AppearanceColorsBuilder {
                     colors.add("alternatingContentBackground_1_disabled", 128, 13);
                 }
             }
+        }
+
+        // windowBackground_disabled is translucent on macOS 27, but translucent colors do not work with the new UI
+        int platformVersion = OSXSystemProperties.getOSRelease();
+        if (platformVersion >= 2700) {
+            int uiVersion = AquaPainting.getVersion();
+            if (uiVersion >= macOS26) {
+                fixTranslucentColor(colors, "windowBackground");
+                fixTranslucentColor(colors, "windowBackground_disabled");
+            }
+        }
+    }
+
+    private void fixTranslucentColor(@NotNull ColorsBuilder colors, @NotNull String colorName)
+    {
+        Color c = colors.get(colorName);
+        if (c != null && c.getAlpha() < 255) {
+            colors.add(colorName, c.getRed(), c.getGreen(), c.getBlue());
         }
     }
 }

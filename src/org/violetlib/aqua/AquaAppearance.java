@@ -75,7 +75,7 @@ public class AquaAppearance
         Colors colors = AquaAppearances.getColorsForAppearance(appearance);
         Color color = colors.get(colorName);
         if (AquaColors.isDebugging()) {
-            log.log("  Color " + colorName + ": " + AquaColors.toString(color));
+            log.log("  Color " + colorName + " for " + appearance.getName() + ": " + AquaColors.toString(color));
         }
         return color;
     }

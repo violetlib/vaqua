@@ -454,6 +454,7 @@ public class SystemColors {
                 colors.add("sidebarBackground_inactive", 0, 11);
                 colors.add("selectedSidebarBackground", 0, 20);
                 colors.add("selectedSidebarBackground_inactive", 0, 10);
+                colors.add("windowBackground", 255);  // translucent background has nothing underneath
             } else {
                 colors.add("sidebarBackground", 255, 198);
                 colors.add("sidebarBackground_inactive", 255, 180);
@@ -563,6 +564,7 @@ public class SystemColors {
             if (OSVersion >= 2700) {
                 colors.add("sidebarBackground", 255, 205);
                 colors.add("sidebarBackground_inactive", 255, 100);
+                colors.add("windowBackground", 255);  // translucent background has nothing underneath
             } else {
                 colors.add("sidebarBackground", 255, 245);
                 colors.add("sidebarBackground_inactive", 255, 254);
