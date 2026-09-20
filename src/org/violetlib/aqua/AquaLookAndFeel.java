@@ -269,6 +269,18 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
         AquaRootPaneUI.setForceActiveWindowDisplay(b);
     }
 
+    public void installColorsInstrumentation(@NotNull Object instrumentation) {
+        if (instrumentation instanceof ColorsInstrumentation) {
+            InstalledColorsInstrumentation.installed = (ColorsInstrumentation) instrumentation;
+        } else {
+            throw new UnsupportedOperationException("Incorrect argument type");
+        }
+    }
+
+    public void installColorsInstrumentation(@NotNull ColorsInstrumentation instrumentation) {
+        InstalledColorsInstrumentation.installed = instrumentation;
+    }
+
     @Override
     protected ActionMap getAudioActionMap() {
         ActionMap audioActionMap = (ActionMap)UIManager.get("AuditoryCues.actionMap");

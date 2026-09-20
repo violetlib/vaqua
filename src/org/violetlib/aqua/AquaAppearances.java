@@ -201,6 +201,7 @@ public class AquaAppearances {
     {
         int OSVersion = AquaPainting.getVersion();
         Map<String,Color> nativeColors = AquaNativeRendering.createPainter().getColors(appearance);
-        return new AppearanceColorsBuilder(appearance, OSVersion, nativeColors, null, Utils::logDebug).getResult();
+        return new AppearanceColorsBuilder(appearance, OSVersion, nativeColors,
+          InstalledColorsInstrumentation.installed, Utils::logDebug).getResult();
     }
 }
