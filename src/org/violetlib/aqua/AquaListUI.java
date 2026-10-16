@@ -53,7 +53,6 @@ import org.jetbrains.annotations.*;
 import org.violetlib.jnr.aqua.AquaUIPainter;
 import org.violetlib.jnr.aqua.AquaUIPainter.State;
 
-import static org.violetlib.aqua.AquaLookAndFeel.ENABLE_VIBRANT_MENU;
 import static org.violetlib.aqua.AquaLookAndFeel.NOTHING_BORDER;
 import static org.violetlib.aqua.OSXSystemProperties.macOS11;
 import static org.violetlib.jnr.aqua.AquaUIPainter.State.*;
@@ -106,7 +105,7 @@ public class AquaListUI extends BasicListUI implements AquaComponentUI, AquaView
 
     public void configureAsMenu(@NotNull AquaComboBoxType type, @NotNull AquaUIPainter.Size size, boolean isVibrant) {
         isMenu = true;
-        isVibrantMenu = isVibrant && ENABLE_VIBRANT_MENU;
+        isVibrantMenu = isVibrant && AquaPainting.isPopupMenuVibrant();
         comboBoxType = type;
         comboBoxSize = size;
         updateVibrantEffects();

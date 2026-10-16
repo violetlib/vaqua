@@ -105,7 +105,7 @@ public class AquaMenuItemUI extends BasicMenuItemUI implements AquaComponentUI {
 
         MenuDescription md = getMenuDescription();
         if (md != null) {
-            if (AquaLookAndFeel.ENABLE_VIBRANT_MENU) {
+            if (AquaPainting.isPopupMenuVibrant()) {
                 Object o = getParent().getClientProperty(AquaPopupMenuUI.POP_UP_TRACKER);
                 if (o instanceof MenuSelectionBoundsTracker) {
                     MenuSelectionBoundsTracker tracker = (MenuSelectionBoundsTracker) o;

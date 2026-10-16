@@ -14,6 +14,7 @@ import org.jetbrains.annotations.*;
 import org.violetlib.jnr.aqua.AquaNativeRendering;
 import org.violetlib.jnr.aqua.AquaUIPainter;
 
+import static org.violetlib.aqua.AquaLookAndFeel.ENABLE_VIBRANT_MENU;
 import static org.violetlib.aqua.OSXSystemProperties.macOS26;
 
 /**
@@ -36,6 +37,11 @@ public class AquaPainting {
             }
         }
         return cachedRenderingVersion = version;
+    }
+
+    public static boolean isPopupMenuVibrant()
+    {
+        return getVersion() < 2600 && ENABLE_VIBRANT_MENU;
     }
 
     public static boolean isSidebarVibrant(@NotNull JComponent jc)

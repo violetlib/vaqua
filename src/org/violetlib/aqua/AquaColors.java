@@ -125,6 +125,10 @@ public class AquaColors {
     public static final BasicContextualColors GRADIENT_SEGMENTED_BUTTON_COLORS
       = createButtonColors("GradientSegmentedButton", "gradientSegmentedText");
 
+    /** For the round rect style of segmented buttons **/
+    public static final BasicContextualColors ROUND_RECT_SEGMENTED_BUTTON_COLORS
+      = createButtonColors("RoundRectSegmentedButton", "roundRectSegmentedText");
+
     public static final BasicContextualColors CELL_TEXT_COLORS = createCellTextColors();
     public static final BasicContextualColors CONTROL_COLORS = createBasicControlColors();
     public static final BasicContextualColors CLEAR_CONTROL_COLORS = createBasicClearControlColors();

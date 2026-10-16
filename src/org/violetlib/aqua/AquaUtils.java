@@ -1261,7 +1261,7 @@ final public class AquaUtils {
 
     public static int getInsetCornerRadius()
     {
-        return 6;
+        return AquaPainting.getVersion() < 2600 ? 6 : 7;
     }
 
     public static int getMinimumMenuRowHeight(@Nullable AquaUIPainter.Size size) {

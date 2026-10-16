@@ -172,6 +172,7 @@
       name="VAquaOnly"
       expandedName="VAqua"
       dist="${distdir}"
+      expandedDist="${distdir}"
       release="8"
       mavenCoordinates="${artifactCoordinates}"
       buildRoot="${builddir}"

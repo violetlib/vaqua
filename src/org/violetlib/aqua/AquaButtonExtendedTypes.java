@@ -533,6 +533,7 @@ public class AquaButtonExtendedTypes {
 
         result.put(BUTTON_BEVEL_ROUND, new WidgetInfo(AquaColors.BEVEL_BUTTON_COLORS)
           .withSideMargin(6));
+
         result.put(BUTTON_GLASS, new WidgetInfo(AquaColors.GLASS_BUTTON_COLORS)
           .withRolloverEnabled()
           .withSideMargin(6));
@@ -619,6 +620,8 @@ public class AquaButtonExtendedTypes {
             BasicContextualColors colors = AquaColors.GRADIENT_SEGMENTED_BUTTON_COLORS;
             if (version < 1011) {
                 colors = AquaColors.SEGMENTED_BUTTON_COLORS;
+            } else if (version >= 2700) {
+                colors = AquaColors.ROUND_RECT_SEGMENTED_BUTTON_COLORS;
             }
             WidgetInfo segmentedRoundedRect = roundedRect.copy().withSegmented().withColors(colors).withSideMargin(9);
             result.put(BUTTON_SEGMENTED_INSET, segmentedRoundedRect);
