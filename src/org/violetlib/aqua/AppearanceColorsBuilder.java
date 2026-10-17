@@ -12,8 +12,7 @@ import java.awt.*;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.*;
 import org.violetlib.jnr.aqua.AquaNativeRendering;
 import org.violetlib.vappearances.VAppearance;
 
@@ -29,11 +28,11 @@ public class AppearanceColorsBuilder {
     private final @NotNull Colors result;
 
     public AppearanceColorsBuilder(
-            @NotNull VAppearance appearance,
-            int OSVersion,
-            @Nullable Map<String,Color> nativeColors,
-            @Nullable ColorsInstrumentation instrumentation,
-            @Nullable Logger log) {
+      @NotNull VAppearance appearance,
+      int OSVersion,
+      @Nullable Map<String,Color> nativeColors,
+      @Nullable ColorsInstrumentation instrumentation,
+      @Nullable Logger log) {
 
         this.instrumentation = instrumentation;
 
@@ -136,14 +135,11 @@ public class AppearanceColorsBuilder {
             }
         }
 
-        // windowBackground_disabled is translucent on macOS 27, but translucent colors do not work with the new UI
-        int platformVersion = OSXSystemProperties.getOSRelease();
-        if (platformVersion >= 2700) {
-            int uiVersion = AquaPainting.getVersion();
-            if (uiVersion >= macOS26) {
-                fixTranslucentColor(colors, "windowBackground");
-                fixTranslucentColor(colors, "windowBackground_disabled");
-            }
+        // windowBackground_disabled is translucent on macOS 26 and 27, but translucent colors do not work with the new UI
+        int uiVersion = AquaPainting.getVersion();
+        if (uiVersion >= macOS26) {
+            fixTranslucentColor(colors, "windowBackground");
+            fixTranslucentColor(colors, "windowBackground_disabled");
         }
     }
 
