@@ -96,7 +96,7 @@ public class AquaTabbedPaneUI extends AquaTabbedPaneCopyFromBasicUI
     protected Boolean isDefaultFocusReceiver = null;
     protected boolean hasAvoidedFirstFocus = false;
 
-    protected final AquaTabbedPaneTabState visibleTabState = new AquaTabbedPaneTabState(this);
+    final @NotNull AquaTabbedPaneTabState visibleTabState = new AquaTabbedPaneTabState(this);
     protected final AquaUIPainter painter = AquaPainting.create();
 
     protected Size sizeVariant = Size.REGULAR;
@@ -233,7 +233,28 @@ public class AquaTabbedPaneUI extends AquaTabbedPaneCopyFromBasicUI
         }
         maxIconSize = fixedTabHeight - delta;
 
+        updateScrollTabWidth();
+
         invalidatePaneModel();  // layout uses insets based on tab position
+    }
+
+    private void updateScrollTabWidth()
+    {
+        // determine the width of a scroll tab, which is based on the width of the arrow icons
+
+        Icon left = getIconForScrollTab(true, true);
+        Icon right = getIconForScrollTab(false, true);
+        int leftWidth = left != null ? left.getIconWidth() : 0;
+        int rightWidth = right != null ? right.getIconWidth() : 0;
+        int iconWidth = Math.max(leftWidth, rightWidth);
+        int tabWidth = AquaTabbedPaneTabState.DEFAULT_SCROLL_TAB_LENGTH; // a default and a minimum
+        if (iconWidth > 0) {
+            int w = iconWidth + leftTabInsets.left + leftTabInsets.right;
+            if (w > tabWidth) {
+                tabWidth = w;
+            }
+        }
+        visibleTabState.setScrollTabLength(tabWidth);
     }
 
     protected Insets getTabInsets(Position pos) {
@@ -483,14 +504,14 @@ public class AquaTabbedPaneUI extends AquaTabbedPaneCopyFromBasicUI
         return 0;
     }
 
-    protected @Nullable Icon getIconForScrollTab(int tab, boolean enabled) {
-        int direction = tab == LEFT_SCROLL_TAB ? WEST : EAST;
+    protected @Nullable Icon getIconForScrollTab(boolean isLeft, boolean isEnabled) {
+        int direction = isLeft ? WEST : EAST;
         Image image = AquaImageFactory.getArrowImageForDirection(direction);
         if (image == null) {
             return null;
         }
 
-        if (!enabled) {
+        if (!isEnabled) {
             image = AquaImageFactory.getProcessedImage(image, AquaImageFactory.LIGHTEN_FOR_DISABLED);
         } else if (isDark) {
             image = AquaImageFactory.getProcessedImage(image, AquaImageFactory.LIGHTEN_100);
@@ -620,7 +641,7 @@ public class AquaTabbedPaneUI extends AquaTabbedPaneCopyFromBasicUI
 
         if (isScrollArrowTab(tab)) {
             title = null;
-            icon = getIconForScrollTab(tab, tabPane.isEnabled());
+            icon = getIconForScrollTab(tab == LEFT_SCROLL_TAB, tabPane.isEnabled());
         } else {
             Component component = getTabComponentAt(tab);
             if (component != null) {

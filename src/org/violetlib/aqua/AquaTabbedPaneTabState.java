@@ -1,5 +1,5 @@
 /*
- * Changes Copyright (c) 2015-2025 Alan Snyder.
+ * Changes Copyright (c) 2015-2026 Alan Snyder.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the license agreement. For details see
@@ -37,7 +37,10 @@ import java.awt.*;
 import javax.swing.*;
 
 class AquaTabbedPaneTabState {
-    static final int FIXED_SCROLL_TAB_LENGTH = 30;
+
+    public static final int DEFAULT_SCROLL_TAB_LENGTH = 30;
+
+    int scrollTabLength = DEFAULT_SCROLL_TAB_LENGTH;
 
     protected final Rectangle leftScrollTabRect = new Rectangle();
     protected final Rectangle rightScrollTabRect = new Rectangle();
@@ -55,6 +58,11 @@ class AquaTabbedPaneTabState {
 
     protected AquaTabbedPaneTabState(AquaTabbedPaneUI pane) {
         this.pane = pane;
+    }
+
+    public void setScrollTabLength(int len)
+    {
+        scrollTabLength = len;
     }
 
     protected int getIndex(int i) {
@@ -150,11 +158,11 @@ class AquaTabbedPaneTabState {
         // if top or bottom, width is hard-coded
         // if left or right height should be hardcoded.
         if (isVertical) {
-            rightScrollTabRect.height = FIXED_SCROLL_TAB_LENGTH;
-            leftScrollTabRect.height = FIXED_SCROLL_TAB_LENGTH;
+            rightScrollTabRect.height = scrollTabLength;
+            leftScrollTabRect.height = scrollTabLength;
         } else {
-            rightScrollTabRect.width = FIXED_SCROLL_TAB_LENGTH;
-            leftScrollTabRect.width = FIXED_SCROLL_TAB_LENGTH;
+            rightScrollTabRect.width = scrollTabLength;
+            leftScrollTabRect.width = scrollTabLength;
         }
 
         // we have all the tab rects, we just need to adjust the x coordinates
@@ -193,7 +201,7 @@ class AquaTabbedPaneTabState {
             left = -1;
         }
 
-        int remainingSpace = tabsLength - pane.tabAreaInsets.right - pane.tabAreaInsets.left - FIXED_SCROLL_TAB_LENGTH * 2;
+        int remainingSpace = tabsLength - pane.tabAreaInsets.right - pane.tabAreaInsets.left - scrollTabLength * 2;
         int visibleCount = 0;
 
         Rectangle firstRect = rects[right];
@@ -367,16 +375,16 @@ class AquaTabbedPaneTabState {
 
         int slack = size.width - totalRunLength - pane.tabAreaInsets.left - pane.tabAreaInsets.right;
         if (needsLeftScrollTab()) {
-            slack -= FIXED_SCROLL_TAB_LENGTH;
+            slack -= scrollTabLength;
         }
         if (needsRightScrollTab()) {
-            slack -= FIXED_SCROLL_TAB_LENGTH;
+            slack -= scrollTabLength;
         }
 
         int minSlack = (int)((float)(slack) / (float)(totalTabs));
         int extraSlack = slack - (minSlack * totalTabs);
         int runningLength = 0;
-        int xOffset = pane.tabAreaInsets.left + (needsLeftScrollTab() ? FIXED_SCROLL_TAB_LENGTH : 0);
+        int xOffset = pane.tabAreaInsets.left + (needsLeftScrollTab() ? scrollTabLength : 0);
 
         if (!isReversed) {
             for (int i = firstTabIndex; i <= lastTabIndex; i++) {
@@ -428,16 +436,16 @@ class AquaTabbedPaneTabState {
 
         int slack = size.height - totalRunLength - pane.tabAreaInsets.left - pane.tabAreaInsets.right;
         if (needsLeftScrollTab()) {
-            slack -= FIXED_SCROLL_TAB_LENGTH;
+            slack -= scrollTabLength;
         }
         if (needsRightScrollTab()) {
-            slack -= FIXED_SCROLL_TAB_LENGTH;
+            slack -= scrollTabLength;
         }
 
         int minSlack = (int)((float)(slack) / (float)(totalTabs));
         int extraSlack = slack - (minSlack * totalTabs);
         int runningLength = 0;
-        int yOffset = pane.tabAreaInsets.left + (needsLeftScrollTab() ? FIXED_SCROLL_TAB_LENGTH : 0);
+        int yOffset = pane.tabAreaInsets.left + (needsLeftScrollTab() ? scrollTabLength : 0);
 
         for (int i = firstTabIndex; i <= lastTabIndex; i++) {
             Rectangle rect = rects[i];
