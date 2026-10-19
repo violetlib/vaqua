@@ -197,13 +197,13 @@ public class AquaToolBarUI extends BasicToolBarUI implements SwingConstants, Aqu
         {
             JToolBar tb = (JToolBar) c;
 
-            boolean isTallFormat = isTallFormatToolBar(tb);
             int version = AquaPainting.getVersion();
+            boolean isTallFormat = version < 1500 && isTallFormatToolBar(tb);
 
             int left = 4;
             int right = 4;
             int top = 4;
-            int bottom = isTallFormat && version < 1500 ? 0 : 4;
+            int bottom = isTallFormat ? 0 : 4;
 
             if (tb.isFloatable()) {
                 if (tb.getOrientation() == HORIZONTAL) {

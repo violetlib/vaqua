@@ -329,6 +329,10 @@ public class AquaInternalFrameUI extends BasicInternalFrameUI implements SwingCo
         JRootPane rp = frame.getRootPane();
         rp.setOpaque(true);
         rp.setBackground(bc);
+
+        if (fAquaBorder != null) {
+            fAquaBorder.setWindowBackground(bc);
+        }
     }
 
     private @NotNull Color getWindowBackground(@NotNull AppearanceContext ac)
@@ -343,6 +347,12 @@ public class AquaInternalFrameUI extends BasicInternalFrameUI implements SwingCo
         if (color == null) {
             color = new Color(150, 150, 150);
         }
+
+        // The window background must be opaque, to hide overlapping portions of the shadow.
+        if (color.getAlpha() < 255) {
+            color = new Color(color.getRed(), color.getGreen(), color.getBlue(), 255);
+        }
+
         return color;
     }
 

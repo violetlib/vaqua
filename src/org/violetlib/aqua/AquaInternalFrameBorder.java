@@ -51,10 +51,15 @@ public class AquaInternalFrameBorder extends AquaBorder {
     protected final AquaTitleBar titleBar;
     protected int titleBarX;
     protected int titleBarY;
+    protected Color windowBackground;
 
     public AquaInternalFrameBorder(JInternalFrame frame, TitleBarWidget widget) {
         this.frame = frame;
         titleBar = new AquaTitleBar(frame, widget);
+    }
+
+    public void setWindowBackground(@NotNull Color c) {
+        windowBackground = c;
     }
 
     public void invalidateLayout() {
@@ -81,6 +86,13 @@ public class AquaInternalFrameBorder extends AquaBorder {
         titleBarY = y;
         titleBar.setWidth(width);
         g.translate(x, y);
+
+        // The title bar must be opaque, to hide overlapping portions of the shadow.
+        if (windowBackground != null) {
+            g.setColor(windowBackground);
+            g.fillRect(0, 0, width, titleBar.getTitleBarHeight());
+        }
+
         titleBar.paint(g);
         g.translate(-x, -y);
     }
