@@ -535,6 +535,10 @@ public class SystemColors {
         colors.add("tableHeaderSeparator", 192);
         colors.add("tableHeaderSeparator_disabled", 197);
 
+        if (OSVersion >= 2700) {
+            colors.add("tableHeaderSeparator", 0, 28);
+        }
+
         colors.add("browserColumnSeparator", 128);
 
         // colors related to window content borders
@@ -845,6 +849,10 @@ public class SystemColors {
             colors.add("bottomWindowDivider_disabled", c, a);
             colors.add("topTexturedWindowDivider_disabled", c, a);
             colors.add("bottomTexturedWindowDivider_disabled", c, a);
+        }
+
+        if (OSVersion >= 2700) {
+            colors.add("tableHeaderSeparator", 0, 174);
         }
 
         // file tag colors
@@ -1300,6 +1308,10 @@ public class SystemColors {
         colors.add("tableHeaderSeparator", 70);
         colors.add("tableHeaderSeparator_disabled", 83);
 
+        if (OSVersion >= 2700) {
+            colors.add("tableHeaderSeparator", 255, 30);
+        }
+
         colors.add("browserColumnSeparator", 60);  // my choice, 0 in current beta is invisible
 
         // colors related to window content borders (dark mode)
@@ -1343,7 +1355,7 @@ public class SystemColors {
                 colors.add("glassButtonText_inactive", 160, 145);
                 colors.add("glassButtonText_inactive_disabled", 120, 145);
                 colors.add("glassButtonText_disabled", 120, 145);
-                colors.add("selectedGlassButtonText", 120, 145);
+                colors.add("selectedGlassButtonText", 255);
                 colors.add("selectedGlassButtonText_disabled", 230, 130);
                 colors.add("selectedGlassButtonText_inactive", 80, 110);
                 colors.add("selectedGlassButtonText_inactive_disabled", 160, 180);
@@ -1509,6 +1521,9 @@ public class SystemColors {
             colors.add("selectedNonexclusiveTexturedText_rollover", "selectedNonexclusiveTexturedText");
         }
 
+        if (OSVersion >= 2700) {
+            colors.add("tableHeaderSeparator", 255, 170);
+        }
         // file tag colors (dark mode)
         colors.add("tagBlue", 103, 176, 255);
         colors.add("tagGray", 172, 172, 176);
