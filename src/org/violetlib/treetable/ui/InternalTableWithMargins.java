@@ -96,6 +96,15 @@ public class InternalTableWithMargins
     }
 
     @Override
+    public int rowAtPoint(@NotNull Point point)
+    {
+        if (margin > 0 || verticalMargin > 0) {
+            point = new Point(point.x - margin, point.y - verticalMargin);
+        }
+        return super.rowAtPoint(point);
+    }
+
+    @Override
     public @NotNull Rectangle getCellRect(int row, int column, boolean includeSpacing)
     {
         Rectangle r = super.getCellRect(row, column, includeSpacing);
