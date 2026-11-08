@@ -90,6 +90,9 @@ public class AquaButtonUI extends BasicButtonUI
     @Override
     public void installUI(JComponent c) {
         super.installUI(c);
+        if (c.getClientProperty(BasicHTML.propertyKey) != null) {
+            configure((AbstractButton) c);
+        }
         AquaButtonSupport.removeCachedIcons((AbstractButton) c);
     }
 
