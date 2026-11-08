@@ -37,7 +37,7 @@ public class CompoundLabelLayoutEngine {
      *             null, no space will be allocated for the display of text. Otherwise, space is allocated for text
      *             even if {@code text} is empty.
      * @param fm The font metrics used to determine the space required for text. This parameter is required if
-     *           {@code text} is not null and not empty.
+     *           {@code v} is supplied or {@code text} is not null and not empty.
      * @param alignment The requested alignment when space is allocated both for an icon and for text.
      * @param iconTextGap The gap between the spaces allocated for an icon and for text.
      */
@@ -95,11 +95,11 @@ public class CompoundLabelLayoutEngine {
 
         // Determine the space required for text
         TextLayoutInfo textLayoutInfo;
-        if (text != null) {
+        if (view != null || text != null) {
             if (fm == null) {
                 throw new UnsupportedOperationException("Font metrics required");
             }
-            if (text.isEmpty()) {
+            if (view == null && text.isEmpty()) {
                 // layout as if there is text (to match other buttons with text)
                 textLayoutInfo = new TextLayoutInfo(1, fm.getHeight(), 0, false);
             } else {
@@ -125,7 +125,9 @@ public class CompoundLabelLayoutEngine {
             if (!alignment.isVerticalArrangement() && iconSize != null) {
                 availTextWidth = availableWidth - (iconSize.width + iconTextGap);
             }
-            if (textLayoutInfo.width > availTextWidth) {
+            if (view != null && textLayoutInfo.width > availTextWidth) {
+                textRect.width = Math.max(0, availTextWidth);
+            } else if (view == null && textLayoutInfo.width > availTextWidth) {
                 String substitute = computeClippedText(availTextWidth);
                 clippedText = substitute != null ? substitute : clipString;
                 textRect.width = SwingUtilities.computeStringWidth(fm, clippedText);
