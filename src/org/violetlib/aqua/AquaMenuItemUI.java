@@ -38,6 +38,7 @@ import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import javax.swing.*;
 import javax.swing.plaf.ComponentUI;
+import javax.swing.plaf.FontUIResource;
 import javax.swing.plaf.basic.BasicMenuItemUI;
 
 import org.jetbrains.annotations.*;
@@ -127,6 +128,12 @@ public class AquaMenuItemUI extends BasicMenuItemUI implements AquaComponentUI {
                 }
             }
             AquaMenuSupport.instance().paintMenuItem(g, menuItem, appearanceContext, md);
+        } else {
+            if (menuItem.isOpaque()) {
+                g.setColor(menuItem.getBackground());
+                g.fillRect(0, 0, menuItem.getWidth(), menuItem.getHeight());
+            }
+            AquaMenuSupport.instance().paintMenuItem(g, menuItem, appearanceContext, getStandaloneMenuDescription());
         }
     }
 
@@ -138,6 +145,16 @@ public class AquaMenuItemUI extends BasicMenuItemUI implements AquaComponentUI {
     private @Nullable MenuDescription getMenuDescription() {
         AquaPopupMenuUI ui = AquaUtils.getUI(menuItem.getParent(), AquaPopupMenuUI.class);
         return ui != null ? ui.getMenuDescription() : null;
+    }
+
+    private @NotNull MenuDescription getStandaloneMenuDescription() {
+        Font f = UIManager.getFont("MenuItem.font");
+        if (f == null) {
+            f = new FontUIResource(null, Font.PLAIN, 13);
+        }
+        MenuLayoutInfo layoutInfo = new MenuLayoutInfo(new Insets(1, 14, 1, 14), menuItem.getFontMetrics(f), 4);
+        Icon dummy = new EmptyIcon(0, 0);
+        return new MenuDescription(layoutInfo, dummy, dummy, dummy, dummy, f, f, colors);
     }
 
     private @NotNull JPopupMenu getParent() {
@@ -153,11 +170,10 @@ public class AquaMenuItemUI extends BasicMenuItemUI implements AquaComponentUI {
                                                  Icon ingoreArrowIcon,
                                                  int ignoreTextIconGap) {
         MenuDescription md = getMenuDescription();
-        if (md != null) {
-            return AquaMenuSupport.instance().getPreferredMenuItemSize(menuItem, md.layoutInfo);
-        } else {
-            return new Dimension(0, 0);
+        if (md == null) {
+            md = getStandaloneMenuDescription();
         }
+        return AquaMenuSupport.instance().getPreferredMenuItemSize(menuItem, md.layoutInfo);
     }
 
     protected void doClick(MenuSelectionManager msm) {
