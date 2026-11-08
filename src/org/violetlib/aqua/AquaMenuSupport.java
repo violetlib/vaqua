@@ -38,6 +38,7 @@ import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
 import java.awt.geom.Rectangle2D;
 import javax.swing.*;
+import javax.swing.plaf.UIResource;
 import javax.swing.plaf.basic.BasicHTML;
 import javax.swing.text.View;
 
@@ -153,9 +154,15 @@ public class AquaMenuSupport {
         ButtonModel model = b.getModel();
         Rectangle viewRect = new Rectangle(0, 0, b.getWidth(), b.getHeight());
 
-        Font f = md.labelFont;
+        Font f = b.getFont();
+        FontMetrics fm;
+        if (f == null || f instanceof UIResource) {
+            f = md.labelFont;
+            fm = md.layoutInfo.labelFontMetrics;
+        } else {
+            fm = b.getFontMetrics(f);
+        }
         g.setFont(f);
-        FontMetrics fm = md.layoutInfo.labelFontMetrics;
 
         // get Accelerator text
         KeyStroke accelerator = b.getAccelerator();
