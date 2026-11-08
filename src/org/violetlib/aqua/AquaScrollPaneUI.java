@@ -293,7 +293,7 @@ public class AquaScrollPaneUI extends BasicScrollPaneUI
             if (isVibrant(c)) {
                 AquaUtils.fillRect(g, c, AquaUtils.ERASE_ALWAYS);
             }
-        } else if (!isVibrant(c)) {
+        } else if (!isVibrant(c) && c.isOpaque()) {
             EffectName effect = state == AquaUIPainter.State.ACTIVE ? EffectName.EFFECT_NONE : EffectName.EFFECT_INACTIVE;
             Color background = AquaColors.getBackground(c, pc, isSidebar ? "sidebarBackground" : "controlBackground", effect);
             AquaUtils.fillRect(g, c, background, 0);
