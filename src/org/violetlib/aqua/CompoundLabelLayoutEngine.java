@@ -17,7 +17,7 @@ import org.violetlib.jnr.Insets2D;
 
 /**
  * Allocate space for displaying an icon and a text label in a button-like control.
- * The icon and text are centered in the available space.
+ * The icon and text are centered in the available space, unless a left or right horizontal alignment is specified.
  */
 public class CompoundLabelLayoutEngine {
     private final @Nullable Dimension iconSize;
@@ -26,6 +26,7 @@ public class CompoundLabelLayoutEngine {
     private final int iconTextGap;
     private final @Nullable FontMetrics fm;
     private final @NotNull CompoundLabelAlignment alignment;
+    private final int horizontalAlignment;
     private final @NotNull String clipString = "...";
 
     /**
@@ -48,6 +49,23 @@ public class CompoundLabelLayoutEngine {
                                      @NotNull CompoundLabelAlignment alignment,
                                      int iconTextGap)
     {
+        this(iconSize, v, text, fm, alignment, iconTextGap, SwingConstants.CENTER);
+    }
+
+    /**
+     * As above, with a horizontal alignment.
+     * @param horizontalAlignment The placement of the content in a horizontal arrangement when the available width
+     *                            exceeds the content width: {@link SwingConstants#LEFT}, {@link SwingConstants#RIGHT},
+     *                            or {@link SwingConstants#CENTER}.
+     */
+    public CompoundLabelLayoutEngine(@Nullable Dimension iconSize,
+                                     @Nullable View v,
+                                     @Nullable String text,
+                                     @Nullable FontMetrics fm,  // required if text is not empty
+                                     @NotNull CompoundLabelAlignment alignment,
+                                     int iconTextGap,
+                                     int horizontalAlignment)
+    {
         // No space needed for an icon
         if (iconSize != null && (iconSize.width == 0 || iconSize.height == 0)) {
             iconSize = null;
@@ -58,6 +76,7 @@ public class CompoundLabelLayoutEngine {
         this.text = v != null ? null : text;
         this.fm = fm;
         this.alignment = alignment;
+        this.horizontalAlignment = horizontalAlignment;
     }
 
     /**
@@ -219,10 +238,22 @@ public class CompoundLabelLayoutEngine {
     }
 
     private int getLeft(int extraHorizontal) {
+        if (horizontalAlignment == SwingConstants.LEFT) {
+            return 0;
+        }
+        if (horizontalAlignment == SwingConstants.RIGHT) {
+            return extraHorizontal;
+        }
         return extraHorizontal / 2;
     }
 
     private int getRight(int extraHorizontal) {
+        if (horizontalAlignment == SwingConstants.LEFT) {
+            return extraHorizontal;
+        }
+        if (horizontalAlignment == SwingConstants.RIGHT) {
+            return 0;
+        }
         return extraHorizontal / 2;
     }
 
