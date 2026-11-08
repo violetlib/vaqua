@@ -417,7 +417,8 @@ public class AquaButtonSupport {
             Object o = b.getClientProperty(BasicHTML.propertyKey);
             if (o instanceof View) {
                 View v = (View) o;
-                v.paint(g, textRect);
+                // HTML block views (eg javax.swing.text.html.BlockView) cast the allocation to Rectangle
+                v.paint(g, textRect.getBounds());
             } else {
                 FontMetrics fm = g.getFontMetrics();
                 int mnemonicIndex = AquaMnemonicHandler.isMnemonicHidden() ? -1 : b.getDisplayedMnemonicIndex();
