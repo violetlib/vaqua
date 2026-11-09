@@ -146,6 +146,11 @@ public class AquaMenuSupport {
         return ancestor;
     }
 
+    private static @NotNull FontMetrics getLabelFontMetrics(@NotNull JMenuItem b, @NotNull MenuLayoutInfo ml) {
+        Font f = b.getFont();
+        return f == null || f instanceof UIResource ? ml.labelFontMetrics : b.getFontMetrics(f);
+    }
+
     public void paintMenuItem(@NotNull Graphics2D g,
                               @NotNull JMenuItem b,
                               @NotNull AppearanceContext context,
@@ -154,14 +159,8 @@ public class AquaMenuSupport {
         ButtonModel model = b.getModel();
         Rectangle viewRect = new Rectangle(0, 0, b.getWidth(), b.getHeight());
 
-        Font f = b.getFont();
-        FontMetrics fm;
-        if (f == null || f instanceof UIResource) {
-            f = md.labelFont;
-            fm = md.layoutInfo.labelFontMetrics;
-        } else {
-            fm = b.getFontMetrics(f);
-        }
+        FontMetrics fm = getLabelFontMetrics(b, md.layoutInfo);
+        Font f = fm.getFont();
         g.setFont(f);
 
         // get Accelerator text
@@ -396,10 +395,11 @@ public class AquaMenuSupport {
             acceleratorR.width = acceleratorR.height = 0;
         } else {
             FontMetrics fm = ml.acceleratorFontMetrics;
+            FontMetrics labelFM = getLabelFontMetrics(menuItem, ml);
             acceleratorR.width = SwingUtilities.computeStringWidth(fm, modifiersString);
             // The keyStrings should all line up, so always adjust the width by the same amount
             // (if they're multi-char, they won't line up but at least they won't be cut off)
-            acceleratorR.width += Math.max(fm.charWidth('M'), SwingUtilities.computeStringWidth(fm, keyString));
+            acceleratorR.width += Math.max(labelFM.charWidth('M'), SwingUtilities.computeStringWidth(labelFM, keyString));
             acceleratorR.height = fm.getHeight();
         }
         int acceleratorExtraWidth = acceleratorR.width > 0 ? acceleratorR.width + ml.arrowIconSeparation : 0;
