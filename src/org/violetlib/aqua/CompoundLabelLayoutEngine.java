@@ -17,7 +17,7 @@ import org.violetlib.jnr.Insets2D;
 
 /**
  * Allocate space for displaying an icon and a text label in a button-like control.
- * The icon and text are centered in the available space, unless a left or right horizontal alignment is specified.
+ * The icon and text are centered in the available space, unless a horizontal or vertical alignment is specified.
  */
 public class CompoundLabelLayoutEngine {
     private final @Nullable Dimension iconSize;
@@ -27,6 +27,7 @@ public class CompoundLabelLayoutEngine {
     private final @Nullable FontMetrics fm;
     private final @NotNull CompoundLabelAlignment alignment;
     private final int horizontalAlignment;
+    private final int verticalAlignment;
     private final @NotNull String clipString = "...";
 
     /**
@@ -49,14 +50,17 @@ public class CompoundLabelLayoutEngine {
                                      @NotNull CompoundLabelAlignment alignment,
                                      int iconTextGap)
     {
-        this(iconSize, v, text, fm, alignment, iconTextGap, SwingConstants.CENTER);
+        this(iconSize, v, text, fm, alignment, iconTextGap, SwingConstants.CENTER, SwingConstants.CENTER);
     }
 
     /**
-     * As above, with a horizontal alignment.
+     * As above, with horizontal and vertical alignments.
      * @param horizontalAlignment The placement of the content when the available width
      *                            exceeds the content width: {@link SwingConstants#LEFT}, {@link SwingConstants#RIGHT},
      *                            or {@link SwingConstants#CENTER}.
+     * @param verticalAlignment The placement of the content when the available height exceeds the content height:
+     *                          {@link SwingConstants#TOP}, {@link SwingConstants#BOTTOM}, or
+     *                          {@link SwingConstants#CENTER}.
      */
     public CompoundLabelLayoutEngine(@Nullable Dimension iconSize,
                                      @Nullable View v,
@@ -64,7 +68,8 @@ public class CompoundLabelLayoutEngine {
                                      @Nullable FontMetrics fm,  // required if text is not empty
                                      @NotNull CompoundLabelAlignment alignment,
                                      int iconTextGap,
-                                     int horizontalAlignment)
+                                     int horizontalAlignment,
+                                     int verticalAlignment)
     {
         // No space needed for an icon
         if (iconSize != null && (iconSize.width == 0 || iconSize.height == 0)) {
@@ -77,6 +82,7 @@ public class CompoundLabelLayoutEngine {
         this.fm = fm;
         this.alignment = alignment;
         this.horizontalAlignment = horizontalAlignment;
+        this.verticalAlignment = verticalAlignment;
     }
 
     /**
@@ -167,7 +173,7 @@ public class CompoundLabelLayoutEngine {
         if (!isPreferredSizeCalculation) {
             // This code supports four options:
             //   vertical arrangement, text on top or bottom (horizontally aligned)
-            //   horizontal arrangement, text on left or right (vertically centered)
+            //   horizontal arrangement, text on left or right (vertically aligned)
 
             if (alignment.isVerticalArrangement()) {
                 if (iconRect != null) {
@@ -196,10 +202,10 @@ public class CompoundLabelLayoutEngine {
 
             } else {
                 if (iconRect != null) {
-                    iconRect.y = (availableHeight - iconRect.height) / 2;
+                    iconRect.y = getY(availableHeight, contentHeight, iconRect.height);
                 }
                 if (textRect != null) {
-                    textRect.y = (availableHeight - textRect.height) / 2;
+                    textRect.y = getY(availableHeight, contentHeight, textRect.height);
                 }
                 int left = getLeft(availableWidth - contentWidth);
                 int right = getRight(availableWidth - contentWidth);
@@ -229,11 +235,33 @@ public class CompoundLabelLayoutEngine {
         return new ButtonLayoutInfo(iconRect, textRect, contentRect, clippedText);
     }
 
+    private int getY(int availableHeight, int contentHeight, int height) {
+        if (verticalAlignment == SwingConstants.TOP) {
+            return (contentHeight - height) / 2;
+        }
+        if (verticalAlignment == SwingConstants.BOTTOM) {
+            return availableHeight - contentHeight + (contentHeight - height) / 2;
+        }
+        return (availableHeight - height) / 2;
+    }
+
     private int getTop(int extraVertical) {
+        if (verticalAlignment == SwingConstants.TOP) {
+            return 0;
+        }
+        if (verticalAlignment == SwingConstants.BOTTOM) {
+            return extraVertical;
+        }
         return extraVertical / 2;
     }
 
     private int getBottom(int extraVertical) {
+        if (verticalAlignment == SwingConstants.TOP) {
+            return extraVertical;
+        }
+        if (verticalAlignment == SwingConstants.BOTTOM) {
+            return 0;
+        }
         return extraVertical / 2;
     }
 

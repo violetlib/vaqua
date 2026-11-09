@@ -153,7 +153,8 @@ public class AquaButtonSupport {
             alignment = getCompoundLabelAlignment(b, g);
         }
         int iconTextGap = b.getIconTextGap();
-        return new CompoundLabelLayoutEngine(iconSize, v, text, fm, alignment, iconTextGap, getHorizontalAlignment(b));
+        return new CompoundLabelLayoutEngine(iconSize, v, text, fm, alignment, iconTextGap, getHorizontalAlignment(b),
+          b.getVerticalAlignment());
     }
 
     private static int getHorizontalAlignment(@NotNull AbstractButton b) {
