@@ -153,7 +153,23 @@ public class AquaButtonSupport {
             alignment = getCompoundLabelAlignment(b, g);
         }
         int iconTextGap = b.getIconTextGap();
-        return new CompoundLabelLayoutEngine(iconSize, v, text, fm, alignment, iconTextGap);
+        return new CompoundLabelLayoutEngine(iconSize, v, text, fm, alignment, iconTextGap, getHorizontalAlignment(b),
+          b.getVerticalAlignment());
+    }
+
+    private static int getHorizontalAlignment(@NotNull AbstractButton b) {
+        int a = b.getHorizontalAlignment();
+        boolean isLTR = b.getComponentOrientation().isLeftToRight();
+        if (a == SwingConstants.LEADING) {
+            return isLTR ? SwingConstants.LEFT : SwingConstants.RIGHT;
+        }
+        if (a == SwingConstants.TRAILING) {
+            return isLTR ? SwingConstants.RIGHT : SwingConstants.LEFT;
+        }
+        if (a == SwingConstants.LEFT || a == SwingConstants.RIGHT) {
+            return a;
+        }
+        return SwingConstants.CENTER;
     }
 
     public static @Nullable Font getDefaultFontPropertyValue(@NotNull AbstractButton b) {
