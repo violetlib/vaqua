@@ -54,7 +54,7 @@ public class CompoundLabelLayoutEngine {
 
     /**
      * As above, with a horizontal alignment.
-     * @param horizontalAlignment The placement of the content in a horizontal arrangement when the available width
+     * @param horizontalAlignment The placement of the content when the available width
      *                            exceeds the content width: {@link SwingConstants#LEFT}, {@link SwingConstants#RIGHT},
      *                            or {@link SwingConstants#CENTER}.
      */
@@ -166,15 +166,15 @@ public class CompoundLabelLayoutEngine {
         // If calculating a preferred size, only the content dimensions are needed.
         if (!isPreferredSizeCalculation) {
             // This code supports four options:
-            //   vertical arrangement, text on top or bottom (horizontally centered)
+            //   vertical arrangement, text on top or bottom (horizontally aligned)
             //   horizontal arrangement, text on left or right (vertically centered)
 
             if (alignment.isVerticalArrangement()) {
                 if (iconRect != null) {
-                    iconRect.x = (availableWidth - iconRect.width) / 2;
+                    iconRect.x = getX(availableWidth, contentWidth, iconRect.width);
                 }
                 if (textRect != null) {
-                    textRect.x = (availableWidth - textRect.width) / 2;
+                    textRect.x = getX(availableWidth, contentWidth, textRect.width);
                 }
                 int top = getTop(availableHeight - contentHeight);
                 int bottom = getBottom(availableHeight - contentHeight);
@@ -235,6 +235,16 @@ public class CompoundLabelLayoutEngine {
 
     private int getBottom(int extraVertical) {
         return extraVertical / 2;
+    }
+
+    private int getX(int availableWidth, int contentWidth, int width) {
+        if (horizontalAlignment == SwingConstants.LEFT) {
+            return (contentWidth - width) / 2;
+        }
+        if (horizontalAlignment == SwingConstants.RIGHT) {
+            return availableWidth - contentWidth + (contentWidth - width) / 2;
+        }
+        return (availableWidth - width) / 2;
     }
 
     private int getLeft(int extraHorizontal) {
